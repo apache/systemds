@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -75,13 +75,13 @@ var activeTableTab = "activeTableTab";
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
+<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
+<li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
@@ -130,6 +130,25 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- =========== FIELD SUMMARY =========== -->
+<ul class="blockList">
+<li class="blockList"><a name="field.summary">
+<!--   -->
+</a>
+<h3>Field Summary</h3>
+<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Field Summary table, listing fields, and an explanation">
+<caption><span>Fields</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Field and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>int[]</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#Z:Z_domainSizes">_domainSizes</a></span></code>&nbsp;</td>
+</tr>
+</table>
+</li>
+</ul>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <ul class="blockList">
 <li class="blockList"><a name="constructor.summary">
@@ -142,9 +161,20 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#EncoderDummycode-org.apache.wink.json4j.JSONObject-java.lang.String:A-int-">EncoderDummycode</a></span>(org.apache.wink.json4j.JSONObject&nbsp;parsedSpec,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#EncoderDummycode--">EncoderDummycode</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#EncoderDummycode-int:A-int-int:A-long-">EncoderDummycode</a></span>(int[]&nbsp;colList,
+                int&nbsp;clen,
+                int[]&nbsp;domainSizes,
+                long&nbsp;dummycodedLength)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#EncoderDummycode-org.apache.wink.json4j.JSONObject-java.lang.String:A-int-int-int-">EncoderDummycode</a></span>(org.apache.wink.json4j.JSONObject&nbsp;parsedSpec,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
-                int&nbsp;clen)</code>&nbsp;</td>
+                int&nbsp;clen,
+                int&nbsp;minCol,
+                int&nbsp;maxCol)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -206,13 +236,38 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
 </tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
+       int&nbsp;row,
+       int&nbsp;col)</code>
+<div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>
+<div class="block">Returns a new Encoder that only handles a sub range of columns.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#updateDomainSizes-java.util.List-">updateDomainSizes</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&gt;&nbsp;encoders)</code>&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#updateIndexRanges-long:A-long:A-">updateIndexRanges</a></span>(long[]&nbsp;beginDims,
+                 long[]&nbsp;endDims)</code>
+<div class="block">Update index-ranges to after encoding.</div>
+</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.transform.encode.Encoder">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.transform.encode.<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getColList--">getColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initColList-int:A-">initColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initColList-org.apache.wink.json4j.JSONArray-">initColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable--">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable-int-">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-">mergeAt</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#setColList-int:A-">setColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#subRangeEncoder-int-int-">subRangeEncoder</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getColList--">getColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initColList-int:A-">initColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initColList-org.apache.wink.json4j.JSONArray-">initColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable--">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable-int-">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#setColList-int:A-">setColList</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -229,26 +284,66 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <div class="details">
 <ul class="blockList">
 <li class="blockList">
+<!-- ============ FIELD DETAIL =========== -->
+<ul class="blockList">
+<li class="blockList"><a name="field.detail">
+<!--   -->
+</a>
+<h3>Field Detail</h3>
+<a name="Z:Z_domainSizes">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>_domainSizes</h4>
+<pre>public&nbsp;int[] _domainSizes</pre>
+</li>
+</ul>
+</li>
+</ul>
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
 <ul class="blockList">
 <li class="blockList"><a name="constructor.detail">
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="EncoderDummycode-org.apache.wink.json4j.JSONObject-java.lang.String:A-int-">
+<a name="EncoderDummycode-org.apache.wink.json4j.JSONObject-java.lang.String:A-int-int-int-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>EncoderDummycode</h4>
 <pre>public&nbsp;EncoderDummycode(org.apache.wink.json4j.JSONObject&nbsp;parsedSpec,
                         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
-                        int&nbsp;clen)
+                        int&nbsp;clen,
+                        int&nbsp;minCol,
+                        int&nbsp;maxCol)
                  throws org.apache.wink.json4j.JSONException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>org.apache.wink.json4j.JSONException</code></dd>
 </dl>
+</li>
+</ul>
+<a name="EncoderDummycode--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>EncoderDummycode</h4>
+<pre>public&nbsp;EncoderDummycode()</pre>
+</li>
+</ul>
+<a name="EncoderDummycode-int:A-int-int:A-long-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>EncoderDummycode</h4>
+<pre>public&nbsp;EncoderDummycode(int[]&nbsp;colList,
+                        int&nbsp;clen,
+                        int[]&nbsp;domainSizes,
+                        long&nbsp;dummycodedLength)</pre>
 </li>
 </ul>
 </li>
@@ -331,6 +426,76 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>output matrix block</dd>
 </dl>
+</li>
+</ul>
+<a name="subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>subRangeEncoder</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;subRangeEncoder(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">Encoder</a></code></span></div>
+<div class="block">Returns a new Encoder that only handles a sub range of columns.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ixRange</code> - the range (1-based, begin inclusive, end exclusive)</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>an encoder of the same type, just for the sub-range</dd>
+</dl>
+</li>
+</ul>
+<a name="mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>mergeAt</h4>
+<pre>public&nbsp;void&nbsp;mergeAt(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
+                    int&nbsp;row,
+                    int&nbsp;col)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">Encoder</a></code></span></div>
+<div class="block">Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
+ <code>Encoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with every
+ other <code>Encoder</code>.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>other</code> - the encoder that should be merged in</dd>
+<dd><code>row</code> - the row where it should be placed (1-based)</dd>
+<dd><code>col</code> - the col where it should be placed (1-based)</dd>
+</dl>
+</li>
+</ul>
+<a name="updateIndexRanges-long:A-long:A-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>updateIndexRanges</h4>
+<pre>public&nbsp;void&nbsp;updateIndexRanges(long[]&nbsp;beginDims,
+                              long[]&nbsp;endDims)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#updateIndexRanges-long:A-long:A-">Encoder</a></code></span></div>
+<div class="block">Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#updateIndexRanges-long:A-long:A-">updateIndexRanges</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>beginDims</code> - begin dimensions of range</dd>
+<dd><code>endDims</code> - end dimensions of range</dd>
+</dl>
+</li>
+</ul>
+<a name="updateDomainSizes-java.util.List-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>updateDomainSizes</h4>
+<pre>public&nbsp;void&nbsp;updateDomainSizes(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&gt;&nbsp;encoders)</pre>
 </li>
 </ul>
 <a name="getMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">
@@ -445,13 +610,13 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
+<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
+<li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>

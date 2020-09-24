@@ -104,31 +104,87 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#copySettings-org.apache.sysds.runtime.compress.CompressionSettings-">copySettings</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;that)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#addValidCompression-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-">addValidCompression</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&nbsp;cp)</code>
+<div class="block">Add a single valid compression type to the EnumSet of valid compressions.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setAllowSharedDDCDictionary-boolean-">setAllowSharedDDCDictionary</a></span>(boolean&nbsp;allowSharedDDCDictionary)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#clearValidCompression--">clearValidCompression</a></span>()</code>
+<div class="block">Clear all the compression types allowed in the compression.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setInvestigateEstimate-boolean-">setInvestigateEstimate</a></span>(boolean&nbsp;investigateEstimate)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#copySettings-org.apache.sysds.runtime.compress.CompressionSettings-">copySettings</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;that)</code>
+<div class="block">Copy the settings from another CompressionSettings Builder, modifies this, not that.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSamplingRatio-double-">setSamplingRatio</a></span>(double&nbsp;samplingRatio)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setAllowSharedDictionary-boolean-">setAllowSharedDictionary</a></span>(boolean&nbsp;allowSharedDictionary)</code>
+<div class="block">Allow the Dictionaries to be shared between different column groups.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSeed-int-">setSeed</a></span>(int&nbsp;seed)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setColumnPartitioner-org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType-">setColumnPartitioner</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a>&nbsp;columnPartitioner)</code>
+<div class="block">Set the type of CoCoding Partitioner type to use for combining columns together.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setTransposeInput-boolean-">setTransposeInput</a></span>(boolean&nbsp;transposeInput)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setInvestigateEstimate-boolean-">setInvestigateEstimate</a></span>(boolean&nbsp;investigateEstimate)</code>
+<div class="block">Set if the compression should be investigated while compressing.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setValidCompressions-java.util.List-">setValidCompressions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&gt;&nbsp;validCompressions)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setLossy-boolean-">setLossy</a></span>(boolean&nbsp;lossy)</code>
+<div class="block">Set the Compression to use Lossy compression.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setmaxStaticColGroupCoCode-int-">setmaxStaticColGroupCoCode</a></span>(int&nbsp;maxStaticColGroupCoCode)</code>
+<div class="block">Set the maximum number of columns to CoCode together in the static CoCoding strategy.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSamplingRatio-double-">setSamplingRatio</a></span>(double&nbsp;samplingRatio)</code>
+<div class="block">Set the sampling ratio in percent to sample the input matrix.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSeed-int-">setSeed</a></span>(int&nbsp;seed)</code>
+<div class="block">Set the seed for the compression operation.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSkipList-boolean-">setSkipList</a></span>(boolean&nbsp;skipList)</code>
+<div class="block">Specify if the Offset list encoding should utilize skip lists.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSortValuesByLength-boolean-">setSortValuesByLength</a></span>(boolean&nbsp;sortValuesByLength)</code>
+<div class="block">Set the sortValuesByLength flag.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setTransposeInput-boolean-">setTransposeInput</a></span>(boolean&nbsp;transposeInput)</code>
+<div class="block">Specify if the input matrix should be transposed before compression.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setValidCompressions-java.util.EnumSet-">setValidCompressions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&gt;&nbsp;validCompressions)</code>
+<div class="block">Set the valid compression strategies used for the compression.</div>
+</td>
 </tr>
 </tbody>
 </table>

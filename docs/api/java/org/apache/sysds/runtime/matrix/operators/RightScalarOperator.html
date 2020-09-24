@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10};
+var methods = {"i0":10,"i1":10,"i2":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -174,6 +174,11 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Sca
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/RightScalarOperator.html#RightScalarOperator-org.apache.sysds.runtime.functionobjects.ValueFunction-double-">RightScalarOperator</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;p,
                    double&nbsp;cst)</code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/RightScalarOperator.html#RightScalarOperator-org.apache.sysds.runtime.functionobjects.ValueFunction-double-int-">RightScalarOperator</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;p,
+                   double&nbsp;cst,
+                   int&nbsp;numThreads)</code>&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -199,13 +204,18 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Sca
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/RightScalarOperator.html#setConstant-double-">setConstant</a></span>(double&nbsp;cst)</code>&nbsp;</td>
 </tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/RightScalarOperator.html#setConstant-double-int-">setConstant</a></span>(double&nbsp;cst,
+           int&nbsp;numThreads)</code>&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.matrix.operators.ScalarOperator">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.matrix.operators.<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html#getConstant--">getConstant</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html#getConstant--">getConstant</a>, <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html#getNumThreads--">getNumThreads</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -231,11 +241,22 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Sca
 <a name="RightScalarOperator-org.apache.sysds.runtime.functionobjects.ValueFunction-double-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>RightScalarOperator</h4>
 <pre>public&nbsp;RightScalarOperator(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;p,
                            double&nbsp;cst)</pre>
+</li>
+</ul>
+<a name="RightScalarOperator-org.apache.sysds.runtime.functionobjects.ValueFunction-double-int-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>RightScalarOperator</h4>
+<pre>public&nbsp;RightScalarOperator(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;p,
+                           double&nbsp;cst,
+                           int&nbsp;numThreads)</pre>
 </li>
 </ul>
 </li>
@@ -256,6 +277,20 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Sca
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html#setConstant-double-">setConstant</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="setConstant-double-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setConstant</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;setConstant(double&nbsp;cst,
+                                  int&nbsp;numThreads)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html#setConstant-double-int-">setConstant</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></code></dd>
 </dl>
 </li>
 </ul>

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -219,6 +219,10 @@ implements <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTr
 </td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getOutput--">getOutput</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getOutputVariableName--">getOutputVariableName</a></span>()</code>&nbsp;</td>
 </tr>
@@ -235,7 +239,7 @@ implements <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTr
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.instructions.<a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getBeginColumn--">getBeginColumn</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getBeginLine--">getBeginLine</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getEndColumn--">getEndColumn</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getEndLine--">getEndLine</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getExtendedOpcode--">getExtendedOpcode</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getFilename--">getFilename</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getInstID--">getInstID</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getInstructionString--">getInstructionString</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getLineNum--">getLineNum</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getOpcode--">getOpcode</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getPrivacyConstraint--">getPrivacyConstraint</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#postprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">postprocessInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#printMe--">printMe</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setInstID-long-">setInstID</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setLocation-org.apache.sysds.parser.DataIdentifier-">setLocation</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setLocation-org.apache.sysds.runtime.instructions.Instruction-">setLocation</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setLocation-org.apache.sysds.lops.Lop-">setLocation</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setLocation-java.lang.String-int-int-int-int-">setLocation</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setPrivacyConstraint-org.apache.sysds.lops.Lop-">setPrivacyConstraint</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setPrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">setPrivacyConstraint</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#toString--">toString</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#updateInstructionThreadID-java.lang.String-java.lang.String-">updateInstructionThreadID</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getBeginColumn--">getBeginColumn</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getBeginLine--">getBeginLine</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getEndColumn--">getEndColumn</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getEndLine--">getEndLine</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getExtendedOpcode--">getExtendedOpcode</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getFilename--">getFilename</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getInstID--">getInstID</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getInstructionString--">getInstructionString</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getLineNum--">getLineNum</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getOpcode--">getOpcode</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getOperator--">getOperator</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#getPrivacyConstraint--">getPrivacyConstraint</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#postprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">postprocessInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#printMe--">printMe</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setInstID-long-">setInstID</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setLocation-org.apache.sysds.parser.DataIdentifier-">setLocation</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setLocation-org.apache.sysds.runtime.instructions.Instruction-">setLocation</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setLocation-org.apache.sysds.lops.Lop-">setLocation</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setLocation-java.lang.String-int-int-int-int-">setLocation</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setPrivacyConstraint-org.apache.sysds.lops.Lop-">setPrivacyConstraint</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#setPrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">setPrivacyConstraint</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#toString--">toString</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#updateInstructionThreadID-java.lang.String-java.lang.String-">updateInstructionThreadID</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -316,6 +320,15 @@ implements <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTr
 <li class="blockList">
 <h4>getOutputVariableName</h4>
 <pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getOutputVariableName()</pre>
+</li>
+</ul>
+<a name="getOutput--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOutput</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;getOutput()</pre>
 </li>
 </ul>
 <a name="getInputs--">

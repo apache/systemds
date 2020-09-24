@@ -18,8 +18,8 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":9,"i12":10};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/DenseRowIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/DictionaryShared.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/colgroup/Dictionary.html" target="_top">Frames</a></li>
@@ -100,24 +100,24 @@ var activeTableTab = "activeTableTab";
 <li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ADictionary</a></li>
+<li>
+<ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.colgroup.Dictionary</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
-<dl>
-<dt>Direct Known Subclasses:</dt>
-<dd><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/DictionaryShared.html" title="class in org.apache.sysds.runtime.compress.colgroup">DictionaryShared</a></dd>
-</dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">Dictionary</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></pre>
-<div class="block">This dictionary class aims to encapsulate the storage and operations over
- unique floating point values of a column group. The primary reason for its
- introduction was to provide an entry point for specialization such as shared
+extends <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></pre>
+<div class="block">This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
+ group. The primary reason for its introduction was to provide an entry point for specialization such as shared
  dictionaries, which require additional information.</div>
 </li>
 </ul>
@@ -149,7 +149,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
@@ -157,39 +157,91 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#aggregate-double-org.apache.sysds.runtime.functionobjects.Builtin-">aggregate</a></span>(double&nbsp;init,
-         <a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code>&nbsp;</td>
+         <a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code>
+<div class="block">Aggregate all the contained values, useful in value only computations where the operation is iterating through
+ all values contained in the dictionary.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#aggregateCols-double:A-org.apache.sysds.runtime.functionobjects.Builtin-int:A-">aggregateCols</a></span>(double[]&nbsp;init,
-             <a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-             int[]&nbsp;cols)</code>&nbsp;</td>
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#apply-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">apply</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>
+<div class="block">Applies the scalar operation on the dictionary.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#apply-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">apply</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#applyScalarOp-org.apache.sysds.runtime.matrix.operators.ScalarOperator-double-int-">applyScalarOp</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+             double&nbsp;newVal,
+             int&nbsp;numCols)</code>
+<div class="block">Applies the scalar operation on the dictionary.</div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#clone--">clone</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#clone--">clone</a></span>()</code>
+<div class="block">Returns a deep clone of the dictionary.</div>
+</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getInMemorySize--">getInMemorySize</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getExactSizeOnDisk--">getExactSizeOnDisk</a></span>()</code>
+<div class="block">Calculate the space consumption if the dictionary is stored on disk.</div>
+</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>double</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getValue-int-">getValue</a></span>(int&nbsp;i)</code>&nbsp;</td>
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getInMemorySize--">getInMemorySize</a></span>()</code>
+<div class="block">Returns the memory usage of the dictionary.</div>
+</td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getValues--">getValues</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getNumberOfValues-int-">getNumberOfValues</a></span>(int&nbsp;ncol)</code>
+<div class="block">Get the number of values given that the column group has n columns</div>
+</td>
 </tr>
 <tr id="i7" class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getValue-int-">getValue</a></span>(int&nbsp;i)</code>
+<div class="block">Get Specific value contained in the dictionary at index.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getValues--">getValues</a></span>()</code>
+<div class="block">Get all the values contained in the dictionary as a linearized double array.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#hasZeroTuple-int-">hasZeroTuple</a></span>(int&nbsp;ncol)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#getValuesLength--">getValuesLength</a></span>()</code>
+<div class="block">returns the count of values contained in the dictionary.</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#hasZeroTuple-int-">hasZeroTuple</a></span>(int&nbsp;ncol)</code>
+<div class="block">Determines if the content has a zero tuple.</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#read-java.io.DataInput-">read</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)</code>&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#write-java.io.DataOutput-">write</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)</code>
+<div class="block">Write the dictionary to a DataOutput.</div>
+</td>
 </tr>
 </table>
+<ul class="blockList">
+<li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.ADictionary">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></h3>
+<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#aggregateCols-double:A-org.apache.sysds.runtime.functionobjects.Builtin-int:A-">aggregateCols</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#read-java.io.DataInput-boolean-">read</a></code></li>
+</ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
@@ -235,6 +287,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>getValues</h4>
 <pre>public&nbsp;double[]&nbsp;getValues()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getValues--">ADictionary</a></code></span></div>
+<div class="block">Get all the values contained in the dictionary as a linearized double array.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getValues--">getValues</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>linearized double array</dd>
+</dl>
 </li>
 </ul>
 <a name="getValue-int-">
@@ -244,6 +304,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>getValue</h4>
 <pre>public&nbsp;double&nbsp;getValue(int&nbsp;i)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getValue-int-">ADictionary</a></code></span></div>
+<div class="block">Get Specific value contained in the dictionary at index.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getValue-int-">getValue</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>i</code> - The index to extract the value from</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The value contained at the index</dd>
+</dl>
 </li>
 </ul>
 <a name="getInMemorySize--">
@@ -253,6 +323,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>getInMemorySize</h4>
 <pre>public&nbsp;long&nbsp;getInMemorySize()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getInMemorySize--">ADictionary</a></code></span></div>
+<div class="block">Returns the memory usage of the dictionary.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getInMemorySize--">getInMemorySize</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a long value in number of bytes for the dictionary.</dd>
+</dl>
 </li>
 </ul>
 <a name="hasZeroTuple-int-">
@@ -262,6 +340,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>hasZeroTuple</h4>
 <pre>public&nbsp;int&nbsp;hasZeroTuple(int&nbsp;ncol)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#hasZeroTuple-int-">ADictionary</a></code></span></div>
+<div class="block">Determines if the content has a zero tuple. meaning all values at a specific row are zero value. This is useful
+ information to find out if the dictionary is used in a dense context. To improve some specific operations.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#hasZeroTuple-int-">hasZeroTuple</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ncol</code> - The number of columns in the dictionary.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The index at which the zero tuple is located.</dd>
+</dl>
 </li>
 </ul>
 <a name="aggregate-double-org.apache.sysds.runtime.functionobjects.Builtin-">
@@ -272,17 +361,18 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>aggregate</h4>
 <pre>public&nbsp;double&nbsp;aggregate(double&nbsp;init,
                         <a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</pre>
-</li>
-</ul>
-<a name="aggregateCols-double:A-org.apache.sysds.runtime.functionobjects.Builtin-int:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>aggregateCols</h4>
-<pre>public&nbsp;double[]&nbsp;aggregateCols(double[]&nbsp;init,
-                              <a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-                              int[]&nbsp;cols)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#aggregate-double-org.apache.sysds.runtime.functionobjects.Builtin-">ADictionary</a></code></span></div>
+<div class="block">Aggregate all the contained values, useful in value only computations where the operation is iterating through
+ all values contained in the dictionary.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#aggregate-double-org.apache.sysds.runtime.functionobjects.Builtin-">aggregate</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>init</code> - The initial Value, in cases such as Max value, this could be -infinity</dd>
+<dd><code>fn</code> - The Function to apply to values</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The aggregated value as a double.</dd>
+</dl>
 </li>
 </ul>
 <a name="apply-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">
@@ -292,18 +382,142 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>apply</h4>
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a>&nbsp;apply(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#apply-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">ADictionary</a></code></span></div>
+<div class="block">Applies the scalar operation on the dictionary. Note that this operation modifies the underlying data, and
+ normally require a copy of the original Dictionary to preserve old objects.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#apply-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">apply</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operator to apply to the dictionary values.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this dictionary with modified values.</dd>
+</dl>
+</li>
+</ul>
+<a name="applyScalarOp-org.apache.sysds.runtime.matrix.operators.ScalarOperator-double-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>applyScalarOp</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a>&nbsp;applyScalarOp(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                                double&nbsp;newVal,
+                                int&nbsp;numCols)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#applyScalarOp-org.apache.sysds.runtime.matrix.operators.ScalarOperator-double-int-">ADictionary</a></code></span></div>
+<div class="block">Applies the scalar operation on the dictionary. The returned dictionary should contain a new instance of the
+ underlying data. Therefore it will not modify the previous object.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#applyScalarOp-org.apache.sysds.runtime.matrix.operators.ScalarOperator-double-int-">applyScalarOp</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operator to apply to the dictionary values.</dd>
+<dd><code>newVal</code> - The value to append to the dictionary.</dd>
+<dd><code>numCols</code> - The number of columns stored in the dictionary.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>Another dictionary with modified values.</dd>
+</dl>
 </li>
 </ul>
 <a name="clone--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>clone</h4>
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a>&nbsp;clone()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#clone--">ADictionary</a></code></span></div>
+<div class="block">Returns a deep clone of the dictionary.</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#clone--">clone</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="getValuesLength--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getValuesLength</h4>
+<pre>public&nbsp;int&nbsp;getValuesLength()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getValuesLength--">ADictionary</a></code></span></div>
+<div class="block">returns the count of values contained in the dictionary.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getValuesLength--">getValuesLength</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>an integer of count of values.</dd>
+</dl>
+</li>
+</ul>
+<a name="read-java.io.DataInput-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>read</h4>
+<pre>public static&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a>&nbsp;read(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)
+                       throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="write-java.io.DataOutput-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>write</h4>
+<pre>public&nbsp;void&nbsp;write(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)
+           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#write-java.io.DataOutput-">ADictionary</a></code></span></div>
+<div class="block">Write the dictionary to a DataOutput.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#write-java.io.DataOutput-">write</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>out</code> - the output sink to write the dictionary to.</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if the sink fails.</dd>
+</dl>
+</li>
+</ul>
+<a name="getExactSizeOnDisk--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getExactSizeOnDisk</h4>
+<pre>public&nbsp;long&nbsp;getExactSizeOnDisk()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getExactSizeOnDisk--">ADictionary</a></code></span></div>
+<div class="block">Calculate the space consumption if the dictionary is stored on disk.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getExactSizeOnDisk--">getExactSizeOnDisk</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the long count of bytes to store the dictionary.</dd>
+</dl>
+</li>
+</ul>
+<a name="getNumberOfValues-int-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getNumberOfValues</h4>
+<pre>public&nbsp;int&nbsp;getNumberOfValues(int&nbsp;ncol)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getNumberOfValues-int-">ADictionary</a></code></span></div>
+<div class="block">Get the number of values given that the column group has n columns</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#getNumberOfValues-int-">getNumberOfValues</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ncol</code> - The number of Columns in the ColumnGroup.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the number of value tuples contained in the dictionary.</dd>
 </dl>
 </li>
 </ul>
@@ -336,7 +550,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/DenseRowIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/DictionaryShared.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/colgroup/Dictionary.html" target="_top">Frames</a></li>

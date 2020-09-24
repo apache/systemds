@@ -87,10 +87,14 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.cocode">org.apache.sysds.runtime.compress.cocode</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -112,7 +116,9 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#create--">create</a></span>()</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#create--">create</a></span>()</code>
+<div class="block">Create the CompressionSettings object to use in the compression.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -124,12 +130,12 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.compress.CompressionSettings-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
         <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;customSettings)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-org.apache.sysds.runtime.compress.CompressionSettings-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
         int&nbsp;k,
         <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>
@@ -138,22 +144,17 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#copySettings-org.apache.sysds.runtime.compress.CompressionSettings-">copySettings</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;that)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#copySettings-org.apache.sysds.runtime.compress.CompressionSettings-">copySettings</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;that)</code>
+<div class="block">Copy the settings from another CompressionSettings Builder, modifies this, not that.</div>
+</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/UncompressedBitmap.html" title="class in org.apache.sysds.runtime.compress">UncompressedBitmap</a></code></td>
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BitmapEncoder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/BitmapEncoder.html#extractBitmap-int:A-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.compress.CompressionSettings-">extractBitmap</a></span>(int[]&nbsp;colIndices,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawBlock,
              <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>
 <div class="block">Generate uncompressed bitmaps for a set of columns in an uncompressed matrix block.</div>
 </td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/UncompressedBitmap.html" title="class in org.apache.sysds.runtime.compress">UncompressedBitmap</a></code></td>
-<td class="colLast"><span class="typeNameLabel">BitmapEncoder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/BitmapEncoder.html#extractBitmapFromSample-int:A-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-org.apache.sysds.runtime.compress.CompressionSettings-">extractBitmapFromSample</a></span>(int[]&nbsp;colIndices,
-                       <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawBlock,
-                       int[]&nbsp;sampleIndexes,
-                       <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -164,23 +165,64 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionDense.html#ReaderColumnSelectionDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-boolean-org.apache.sysds.runtime.compress.CompressionSettings-">ReaderColumnSelectionDense</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionDense.html#ReaderColumnSelectionDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-org.apache.sysds.runtime.compress.CompressionSettings-">ReaderColumnSelectionDense</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
                           int[]&nbsp;colIndices,
-                          boolean&nbsp;skipZeros,
                           <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionDenseSample.html#ReaderColumnSelectionDenseSample-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-int:A-boolean-org.apache.sysds.runtime.compress.CompressionSettings-">ReaderColumnSelectionDenseSample</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionDenseSample.html#ReaderColumnSelectionDenseSample-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-int:A-org.apache.sysds.runtime.compress.CompressionSettings-">ReaderColumnSelectionDenseSample</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
                                 int[]&nbsp;colIndexes,
                                 int[]&nbsp;sampleIndexes,
-                                boolean&nbsp;skipZeros,
                                 <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionSparse.html#ReaderColumnSelectionSparse-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-boolean-org.apache.sysds.runtime.compress.CompressionSettings-">ReaderColumnSelectionSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionSparse.html#ReaderColumnSelectionSparse-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-org.apache.sysds.runtime.compress.CompressionSettings-">ReaderColumnSelectionSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
                            int[]&nbsp;colIndexes,
-                           boolean&nbsp;skipZeros,
                            <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.cocode">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a> in <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/package-summary.html">org.apache.sysds.runtime.compress.cocode</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/package-summary.html">org.apache.sysds.runtime.compress.cocode</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">PlanningCoCoder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.html#findCoCodesByPartitioning-org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-int-int-org.apache.sysds.runtime.compress.CompressionSettings-">findCoCodesByPartitioning</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;sizeEstimator,
+                         <a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;colInfos,
+                         int&nbsp;numRows,
+                         int&nbsp;k,
+                         <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>
+<div class="block">Main entry point of CoCode.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ColumnGroupPartitionerStatic.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitionerStatic.html#partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">partitionColumns</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;groupCols,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo,
+                <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ColumnGroupPartitionerBinPacking.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitionerBinPacking.html#partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">partitionColumns</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;groupCols,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo,
+                <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ColumnGroupPartitioner.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html#partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">partitionColumns</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;groupCols,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo,
+                <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>
+<div class="block">Partitions a list of columns into a list of partitions that contains subsets of columns.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -207,11 +249,11 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#compress-int:A-int-org.apache.sysds.runtime.compress.UncompressedBitmap-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.matrix.data.MatrixBlock-">compress</a></span>(int[]&nbsp;colIndexes,
+<td class="colLast"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#compress-int:A-int-org.apache.sysds.runtime.compress.utils.ABitmap-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.matrix.data.MatrixBlock-">compress</a></span>(int[]&nbsp;colIndexes,
         int&nbsp;rlen,
-        <a href="../../../../../../org/apache/sysds/runtime/compress/UncompressedBitmap.html" title="class in org.apache.sysds.runtime.compress">UncompressedBitmap</a>&nbsp;ubm,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a>&nbsp;ubm,
         <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&nbsp;compType,
-        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
         <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawMatrixBlock)</code>
 <div class="block">Method for compressing an ColGroup.</div>
 </td>
@@ -224,21 +266,6 @@
                  <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
                  int&nbsp;k)</code>
 <div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
-</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
-<caption><span>Constructors in <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colOne" scope="col">Constructor and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#ColGroupUncompressed-int:A-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.compress.CompressionSettings-">ColGroupUncompressed</a></span>(int[]&nbsp;colIndicesList,
-                    <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawBlock,
-                    <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>
-<div class="block">Main constructor for Uncompressed ColGroup.</div>
 </td>
 </tr>
 </tbody>

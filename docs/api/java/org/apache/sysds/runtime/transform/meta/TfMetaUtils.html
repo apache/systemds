@@ -161,13 +161,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseBinningColIDs-org.apache.wink.json4j.JSONObject-java.lang.String:A-">parseBinningColIDs</a></span>(org.apache.wink.json4j.JSONObject&nbsp;jSpec,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseBinningColIDs-org.apache.wink.json4j.JSONObject-java.lang.String:A-int-int-">parseBinningColIDs</a></span>(org.apache.wink.json4j.JSONObject&nbsp;jSpec,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
+                  int&nbsp;minCol,
+                  int&nbsp;maxCol)</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseBinningColIDs-java.lang.String-java.lang.String:A-">parseBinningColIDs</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseBinningColIDs-java.lang.String-java.lang.String:A-int-int-">parseBinningColIDs</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
+                  int&nbsp;minCol,
+                  int&nbsp;maxCol)</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>static int[]</code></td>
@@ -193,9 +197,11 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>static int[]</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseJsonObjectIDList-org.apache.wink.json4j.JSONObject-java.lang.String:A-java.lang.String-">parseJsonObjectIDList</a></span>(org.apache.wink.json4j.JSONObject&nbsp;spec,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseJsonObjectIDList-org.apache.wink.json4j.JSONObject-java.lang.String:A-java.lang.String-int-int-">parseJsonObjectIDList</a></span>(org.apache.wink.json4j.JSONObject&nbsp;spec,
                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;group)</code>&nbsp;</td>
+                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;group,
+                     int&nbsp;minCol,
+                     int&nbsp;maxCol)</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
@@ -347,7 +353,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="parseJsonObjectIDList-org.apache.wink.json4j.JSONObject-java.lang.String:A-java.lang.String-">
+<a name="parseJsonObjectIDList-org.apache.wink.json4j.JSONObject-java.lang.String:A-java.lang.String-int-int-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -355,7 +361,9 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>parseJsonObjectIDList</h4>
 <pre>public static&nbsp;int[]&nbsp;parseJsonObjectIDList(org.apache.wink.json4j.JSONObject&nbsp;spec,
                                           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
-                                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;group)
+                                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;group,
+                                          int&nbsp;minCol,
+                                          int&nbsp;maxCol)
                                    throws org.apache.wink.json4j.JSONException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -411,14 +419,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="parseBinningColIDs-java.lang.String-java.lang.String:A-">
+<a name="parseBinningColIDs-java.lang.String-java.lang.String:A-int-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>parseBinningColIDs</h4>
 <pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;parseBinningColIDs(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
-                                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames)
+                                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
+                                               int&nbsp;minCol,
+                                               int&nbsp;maxCol)
                                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -426,14 +436,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="parseBinningColIDs-org.apache.wink.json4j.JSONObject-java.lang.String:A-">
+<a name="parseBinningColIDs-org.apache.wink.json4j.JSONObject-java.lang.String:A-int-int-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>parseBinningColIDs</h4>
 <pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;parseBinningColIDs(org.apache.wink.json4j.JSONObject&nbsp;jSpec,
-                                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames)
+                                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
+                                               int&nbsp;minCol,
+                                               int&nbsp;maxCol)
                                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>

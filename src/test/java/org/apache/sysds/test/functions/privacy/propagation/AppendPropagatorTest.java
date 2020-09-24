@@ -19,8 +19,7 @@
 
 package org.apache.sysds.test.functions.privacy.propagation;
 
-import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -30,6 +29,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -196,6 +196,69 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 			new DataRange(new long[length1], new long[]{length1+length2-1})
 		);
 		secondHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint2.getPrivacyLevel(),level));
+	}
+
+	@Test
+	public void generalOnlyListRemoveAppendPrivate1Test(){
+		generalOnlyListRemoveAppendTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint(),
+			PrivacyLevel.Private, PrivacyLevel.Private);
+	}
+
+	@Test
+	public void generalOnlyListRemoveAppendPrivateAggregation1Test(){
+		generalOnlyListRemoveAppendTest(new PrivacyConstraint(PrivacyLevel.PrivateAggregation), new PrivacyConstraint(),
+			PrivacyLevel.PrivateAggregation, PrivacyLevel.PrivateAggregation);
+	}
+
+	@Test
+	public void generalOnlyListRemoveAppendNoneTest(){
+		generalOnlyListRemoveAppendTest(new PrivacyConstraint(), new PrivacyConstraint(),
+			PrivacyLevel.None, PrivacyLevel.None);
+	}
+
+	@Test
+	public void generalOnlyListRemoveAppendPrivate2Test(){
+		generalOnlyListRemoveAppendTest(new PrivacyConstraint(), new PrivacyConstraint(PrivacyLevel.Private),
+			PrivacyLevel.Private, PrivacyLevel.Private);
+	}
+
+	@Test
+	public void generalOnlyListRemoveAppendPrivateAggregation2Test(){
+		generalOnlyListRemoveAppendTest(new PrivacyConstraint(), new PrivacyConstraint(PrivacyLevel.PrivateAggregation),
+			PrivacyLevel.PrivateAggregation, PrivacyLevel.PrivateAggregation);
+	}
+
+	@Test
+	public void generalOnlyListRemoveAppendPrivatePrivateTest(){
+		generalOnlyListRemoveAppendTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint(PrivacyLevel.Private),
+			PrivacyLevel.Private, PrivacyLevel.Private);
+	}
+
+	@Test
+	public void generalOnlyListRemoveAppendPrivatePrivateAggregationTest(){
+		generalOnlyListRemoveAppendTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint(PrivacyLevel.PrivateAggregation),
+			PrivacyLevel.Private, PrivacyLevel.Private);
+	}
+
+	private void generalOnlyListRemoveAppendTest(
+		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expected1, PrivacyLevel expected2){
+		int dataLength = 9;
+		List<Data> dataList = new ArrayList<>();
+		for ( int i = 0; i < dataLength; i++){
+			dataList.add(new DoubleObject(i));
+		}
+		ListObject inputList = new ListObject(dataList);
+
+		int removePositionInt = 5;
+		ScalarObject removePosition = new IntObject(removePositionInt);
+
+		PropagatorMultiReturn propagator = new ListRemovePropagator(inputList, constraint1, removePosition, constraint2);
+		PrivacyConstraint[] mergedConstraints = propagator.propagate();
+
+		Assert.assertEquals(expected1, mergedConstraints[0].getPrivacyLevel());
+		Assert.assertEquals(expected2, mergedConstraints[1].getPrivacyLevel());
+		Assert.assertFalse("The first output constraint should have no fine-grained constraints", mergedConstraints[0].hasFineGrainedConstraints());
+		Assert.assertFalse("The second output constraint should have no fine-grained constraints", mergedConstraints[1].hasFineGrainedConstraints());
 	}
 
 	@Test
@@ -430,5 +493,108 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 2",
 				secondHalfPrivacy.containsValue(constraint.getValue()))
 		);
+	}
+
+	@Test
+	public void testFunction(){
+		int dataLength = 9;
+		List<Data> dataList = new ArrayList<>();
+		for ( int i = 0; i < dataLength; i++){
+			dataList.add(new DoubleObject(i));
+		}
+		ListObject l = new ListObject(dataList);
+		ListObject lCopy = l.copy();
+		int position = 4;
+		ListObject output = l.remove(position);
+		Assert.assertEquals(lCopy.getData(position), output.getData().get(0));
+	}
+
+	@Test
+	public void finegrainedListRemoveAppendNone1(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1},new long[]{2}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		finegrainedListRemoveAppendTest(constraint1, constraint2, PrivacyLevel.None);
+	}
+
+	@Test
+	public void finegrainedListRemoveAppendPrivate1(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1},new long[]{6}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		finegrainedListRemoveAppendTest(constraint1, constraint2, PrivacyLevel.Private);
+	}
+
+	@Test
+	public void finegrainedListRemoveAppendPrivate2(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1},new long[]{6}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		finegrainedListRemoveAppendTest(constraint1, constraint2, PrivacyLevel.Private);
+	}
+
+	@Test
+	public void finegrainedListRemoveAppendPrivate3(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint(PrivacyLevel.Private);
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1},new long[]{6}), PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		finegrainedListRemoveAppendTest(constraint1, constraint2, PrivacyLevel.Private);
+	}
+
+	@Test
+	public void finegrainedListRemoveAppendPrivate4(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{4},new long[]{4}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		finegrainedListRemoveAppendTest(constraint1, constraint2, PrivacyLevel.Private, true);
+	}
+
+	@Test
+	public void finegrainedListRemoveAppendPrivateAndPrivateAggregate1(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1},new long[]{2}), PrivacyLevel.Private);
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{3},new long[]{5}), PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		finegrainedListRemoveAppendTest(constraint1, constraint2, PrivacyLevel.PrivateAggregation);
+	}
+
+	@Test
+	public void finegrainedListRemoveAppendPrivateAggregate2(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{5},new long[]{8}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		finegrainedListRemoveAppendTest(constraint1, constraint2, PrivacyLevel.PrivateAggregation);
+	}
+
+	private void finegrainedListRemoveAppendTest(
+		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expectedOutput2){
+		finegrainedListRemoveAppendTest(constraint1, constraint2, expectedOutput2, false);
+	}
+
+	private void finegrainedListRemoveAppendTest(
+		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expectedOutput2, boolean singleElementPrivacy){
+		int dataLength = 9;
+		List<Data> dataList = new ArrayList<>();
+		for ( int i = 0; i < dataLength; i++){
+			dataList.add(new DoubleObject(i));
+		}
+		ListObject inputList = new ListObject(dataList);
+		int removePositionInt = 5;
+		ScalarObject removePosition = new IntObject(removePositionInt);
+		PropagatorMultiReturn propagator = new ListRemovePropagator(inputList, constraint1, removePosition, constraint2);
+		PrivacyConstraint[] mergedConstraints = propagator.propagate();
+
+		if ( !singleElementPrivacy ){
+			Map<DataRange, PrivacyLevel> outputPrivacy = mergedConstraints[0].getFineGrainedPrivacy().getPrivacyLevel(
+				new DataRange(new long[]{0}, new long[]{dataLength-1})
+			);
+			constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+				constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
+					outputPrivacy.containsValue(constraint.getValue()))
+			);
+		}
+
+		Assert.assertEquals(expectedOutput2, mergedConstraints[1].getPrivacyLevel());
+		Assert.assertFalse(mergedConstraints[1].hasFineGrainedConstraints());
 	}
 }

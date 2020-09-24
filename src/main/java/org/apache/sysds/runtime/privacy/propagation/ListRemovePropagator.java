@@ -25,20 +25,21 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.sysds.runtime.privacy.finegrained.DataRange;
-import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
 
 import java.util.Map;
 
 public class ListRemovePropagator implements PropagatorMultiReturn {
 	private final ScalarObject removePosition;
+	private final PrivacyConstraint removePositionPrivacyConstraint;
 	private final ListObject list;
 	private final PrivacyConstraint listPrivacyConstraint;
 
 
-	public ListRemovePropagator(ListObject list, PrivacyConstraint listPrivacyConstraint, ScalarObject removePosition){
+	public ListRemovePropagator(ListObject list, PrivacyConstraint listPrivacyConstraint, ScalarObject removePosition, PrivacyConstraint removePositionPrivacyConstraint){
 		this.list = list;
 		this.listPrivacyConstraint = listPrivacyConstraint;
 		this.removePosition = removePosition;
+		this.removePositionPrivacyConstraint = removePositionPrivacyConstraint;
 	}
 
 	@Override
@@ -89,15 +90,16 @@ public class ListRemovePropagator implements PropagatorMultiReturn {
 		if ( output2PrivacyConstraint.getPrivacyLevel() != PrivacyLevel.Private ){
 			Map<DataRange, PrivacyLevel> elementPrivacy = listPrivacyConstraint.getFineGrainedPrivacy()
 				.getPrivacyLevelOfElement(new long[]{removePosition.getLongValue()-1});
-			if ( elementPrivacy.containsValue(PrivacyLevel.PrivateAggregation) )
+			if ( elementPrivacy.containsValue(PrivacyLevel.Private) )
+				output2PrivacyConstraint.setPrivacyLevel(PrivacyLevel.Private);
+			else if ( elementPrivacy.containsValue(PrivacyLevel.PrivateAggregation) )
 				output2PrivacyConstraint.setPrivacyLevel(PrivacyLevel.PrivateAggregation);
 		}
 	}
 
 	private void propagateGeneralConstraints(PrivacyConstraint output1PrivacyConstraint, PrivacyConstraint output2PrivacyConstraint){
 		PrivacyLevel[] inputPrivacyLevels = PrivacyUtils.getGeneralPrivacyLevels(new PrivacyConstraint[]{
-			listPrivacyConstraint,
-			removePosition.getPrivacyConstraint()
+			listPrivacyConstraint, removePositionPrivacyConstraint
 		});
 		PrivacyLevel outputPrivacyLevel = PrivacyPropagator.corePropagation(inputPrivacyLevels, OperatorType.NonAggregate);
 		output1PrivacyConstraint.setPrivacyLevel(outputPrivacyLevel);

@@ -312,7 +312,7 @@ public class PrivacyPropagator
 				ListObject input1 = (ListObject) ec.getVariable(inst.input1);
 				if ( inst.getOpcode().equals("remove")){
 					ScalarObject removePosition = ec.getScalarInput(inst.input2);
-					PropagatorMultiReturn propagator = new ListRemovePropagator(input1, privacyConstraints[0], removePosition);
+					PropagatorMultiReturn propagator = new ListRemovePropagator(input1, privacyConstraints[0], removePosition, removePosition.getPrivacyConstraint());
 					PrivacyConstraint[] outputConstraints = propagator.propagate();
 					inst.output.setPrivacyConstraint(outputConstraints[0]);
 					((ListAppendRemoveCPInstruction) inst).getOutput2().setPrivacyConstraint(outputConstraints[1]);

@@ -39,6 +39,7 @@ from systemds.utils.helpers import get_module_dir
 from systemds.operator import OperationNode
 from systemds.script_building import OutputType
 
+
 class SystemDSContext(object):
     """A context with a connection to a java instance with which SystemDS operations are executed. 
     The java process is started and is running using a random tcp port for instruction parsing."""
@@ -274,8 +275,21 @@ class SystemDSContext(object):
 
         return OperationNode(self, 'rand', [], named_input_nodes=named_input_nodes)
 
-    def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]):
-        return OperationNode(self, 'read', [f'"{path}"'], named_input_nodes=kwargs)
+    def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+        """ Read an file from disk. Supportted types include:
+        CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binay
+        See: http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions for more details
+        :return: an Operation Node, containing the read data.
+        """
+        return OperationNode(self, 'read', [f'"{path}"'], named_input_nodes=kwargs, shape=(-1,))
 
-    def scalar(self, v: Dict[str, VALID_INPUT_TYPES]):
-        return OperationNode(self, v, output_type=OutputType.SCALAR)
+    def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+        """ Construct an scalar value, this can contain str, float, double, integers and booleans.
+        :return: An `OperationNode` containing the scalar value.
+        """
+        if type(v) is str:
+            if not ((v[0] == '"' and v[-1] == '"') or (v[0] == "'" and v[-1] == "'")):
+                v = f'"{v}"'
+        # output type assign simply assigns the given variable to the value
+        # therefore the output type is assign.
+        return OperationNode(self, v, output_type=OutputType.ASSIGN)

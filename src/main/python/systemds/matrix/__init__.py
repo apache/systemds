@@ -21,6 +21,5 @@
 
 from systemds.matrix.matrix import Matrix
 from systemds.matrix.federated import Federated
-from systemds.matrix import data_gen
 
-__all__ = [Matrix, Federated, data_gen]
+__all__ = [Matrix, Federated]

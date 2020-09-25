@@ -34,6 +34,7 @@ class OutputType(Enum):
     MATRIX = auto()
     DOUBLE = auto()
     LIST = auto()
+    NONE = auto()
 
 
 class DAGNode(ABC):
@@ -92,7 +93,11 @@ class DAGNode(ABC):
     @property
     def is_python_local_data(self):
         return self._is_python_local_data
-    
+
     @property
     def number_of_outputs(self):
         return self._number_of_outputs
+
+    @property
+    def output_type(self):
+        return self._output_type

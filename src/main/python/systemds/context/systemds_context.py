@@ -36,6 +36,7 @@ from py4j.java_gateway import GatewayParameters, JavaGateway
 from py4j.protocol import Py4JNetworkError
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
+from systemds.operator import OperationNode
 
 
 class SystemDSContext(object):
@@ -200,3 +201,78 @@ class SystemDSContext(object):
         port = s.getsockname()[1]
         s.close()
         return port
+
+    def full(self, shape: Tuple[int, int], value: Union[float, int]) -> 'OperationNode':
+        """Generates a matrix completely filled with a value
+
+        :param sds_context: SystemDS context
+        :param shape: shape (rows and cols) of the matrix TODO tensor
+        :param value: the value to fill all cells with
+        :return: the OperationNode representing this operation
+        """
+        unnamed_input_nodes = [value]
+        named_input_nodes = {'rows': shape[0], 'cols': shape[1]}
+        return OperationNode(self, 'matrix', unnamed_input_nodes, named_input_nodes)
+
+    def seq(self, start: Union[float, int], stop: Union[float, int] = None,
+            step: Union[float, int] = 1) -> 'OperationNode':
+        """Create a single column vector with values from `start` to `stop` and an increment of `step`.
+        If no stop is defined and only one parameter is given, then start will be 0 and the parameter will be interpreted as
+        stop.
+
+        :param sds_context: SystemDS context
+        :param start: the starting value
+        :param stop: the maximum value
+        :param step: the step size
+        :return: the OperationNode representing this operation
+        """
+        if stop is None:
+            stop = start
+            start = 0
+        unnamed_input_nodes = [start, stop, step]
+        return OperationNode(self, 'seq', unnamed_input_nodes)
+
+    def rand(self, rows: int, cols: int,
+             min: Union[float, int] = None, max: Union[float, int] = None, pdf: str = "uniform",
+             sparsity: Union[float, int] = None, seed: Union[float, int] = None,
+             lambd: Union[float, int] = 1) -> 'OperationNode':
+        """Generates a matrix filled with random values
+
+        :param sds_context: SystemDS context
+        :param rows: number of rows
+        :param cols: number of cols
+        :param min: min value for cells
+        :param max: max value for cells
+        :param pdf: "uniform"/"normal"/"poison" distribution
+        :param sparsity: fraction of non-zero cells
+        :param seed: random seed
+        :param lambd: lamda value for "poison" distribution
+        :return:
+        """
+        available_pdfs = ["uniform", "normal", "poisson"]
+        if rows < 0:
+            raise ValueError("In rand statement, can only assign rows a long (integer) value >= 0 "
+                             "-- attempted to assign value: {r}".format(r=rows))
+        if cols < 0:
+            raise ValueError("In rand statement, can only assign cols a long (integer) value >= 0 "
+                             "-- attempted to assign value: {c}".format(c=cols))
+        if pdf not in available_pdfs:
+            raise ValueError("The pdf passed is invalid! given: {g}, expected: {e}".format(
+                g=pdf, e=available_pdfs))
+
+        pdf = '\"' + pdf + '\"'
+        named_input_nodes = {
+            'rows': rows, 'cols': cols, 'pdf': pdf, 'lambda': lambd}
+        if min is not None:
+            named_input_nodes['min'] = min
+        if max is not None:
+            named_input_nodes['max'] = max
+        if sparsity is not None:
+            named_input_nodes['sparsity'] = sparsity
+        if seed is not None:
+            named_input_nodes['seed'] = seed
+
+        return OperationNode(self, 'rand', [], named_input_nodes=named_input_nodes)
+
+    def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+        return OperationNode(self, 'read', [f'"{path}"'], named_input_nodes=kwargs)

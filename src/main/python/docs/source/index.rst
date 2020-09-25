@@ -69,7 +69,6 @@ tensors (multi-dimensional arrays) whose first dimension may have a heterogeneou
 
    api/operator/algorithms.rst
    api/context/systemds_context.rst
-   api/matrix/data_gen.rst
    api/matrix/matrix.rst
    api/matrix/federated.rst
    api/operator/operation_node.rst

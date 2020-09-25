@@ -76,7 +76,7 @@ class OperationNode(DAGNode):
         self.operation = operation
         self._unnamed_input_nodes = unnamed_input_nodes
         self._named_input_nodes = named_input_nodes
-        self.output_type = output_type
+        self._output_type = output_type
         self._is_python_local_data = is_python_local_data
         self._result_var = None
         self._lineage_trace = None
@@ -159,6 +159,8 @@ class OperationNode(DAGNode):
                 output += f'{var_name}_{idx},'
             output = output[:-1] + "]"
             return f'{output}={self.operation}({inputs_comma_sep});'
+        elif self.output_type == OutputType.NONE:
+            return f'{self.operation}({inputs_comma_sep});'
         else:
             return f'{var_name}={self.operation}({inputs_comma_sep});'
 
@@ -335,3 +337,94 @@ class OperationNode(DAGNode):
             unnamed_inputs.append(weights)
         unnamed_inputs.append(moment)
         return OperationNode(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
+
+    def write(self, destination: str, format:str = "binary", **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+        
+        unnamed_inputs = [self, f'"{destination}"']
+        named_parameters = {"format":f'"{format}"'}
+        named_parameters.update(kwargs)
+        return OperationNode(self.sds_context, 'write', unnamed_inputs, named_parameters, output_type= OutputType.NONE)
+
+    def rev(self) -> 'OperationNode':
+        """ Reverses the rows in a matrix
+
+        :return: the OperationNode representing this operation
+        """
+
+        self._check_matrix_op()
+        return OperationNode(self.sds_context, 'rev', [self])
+
+    def order(self, by: int = 1, decreasing: bool = False,
+              index_return: bool = False) -> 'OperationNode':
+        """ Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data
+
+        :param by: sort matrix by this column number
+        :param decreasing: If true the matrix will be sorted in decreasing order
+        :param index_return: If true, the index numbers will be returned
+        :return: the OperationNode representing this operation
+        """
+
+        self._check_matrix_op()
+
+        cols = self._np_array.shape[1]
+        if by > cols:
+            raise IndexError(
+                "Index {i} is out of bounds for axis 1 with size {c}".format(i=by, c=cols))
+
+        named_input_nodes = {'target': self, 'by': by, 'decreasing': str(decreasing).upper(),
+                             'index.return': str(index_return).upper()}
+
+        return OperationNode(self.sds_context, 'order', [], named_input_nodes=named_input_nodes)
+
+    def t(self) -> 'OperationNode':
+        """ Transposes the input matrix
+
+        :return: the OperationNode representing this operation
+        """
+
+        self._check_matrix_op()
+        return OperationNode(self.sds_context, 't', [self])
+
+    def cholesky(self, safe: bool = False) -> 'OperationNode':
+        """ Computes the Cholesky decomposition of a symmetric, positive definite matrix
+
+        :param safe: default value is False, if flag is True additional checks to ensure
+            that the matrix is symmetric positive definite are applied, if False, checks will be skipped
+        :return: the OperationNode representing this operation
+        """
+
+        self._check_matrix_op()
+        # check square dimension
+        if self.shape[0] != self.shape[1]:
+            raise ValueError("Last 2 dimensions of the array must be square")
+
+        if safe:
+            # check if mat is positive definite
+            if not np.all(np.linalg.eigvals(self._np_array) > 0):
+                raise ValueError("Matrix is not positive definite")
+
+            # check if mat is symmetric
+            if not np.allclose(self._np_array, self._np_array.transpose()):
+                raise ValueError("Matrix is not symmetric")
+
+        return OperationNode(self.sds_context, 'cholesky', [self])
+
+    def to_one_hot(self, num_classes: int) -> 'OperationNode':
+        """ OneHot encode the matrix.
+
+        It is assumed that there is only one column to encode, and all values are whole numbers > 0
+
+        :param num_classes: The number of classes to encode into. max value contained in the matrix must be <= num_classes
+        :return: The OperationNode containing the oneHotEncoded values
+        """
+        
+        self._check_matrix_op()
+        if len(self.shape) != 1:
+            raise ValueError(
+                "Only Matrixes  with a single column or row is valid in One Hot, " + str(self.shape) + " is invalid")
+
+        if num_classes < 2:
+            raise ValueError("Number of classes should be larger than 1")
+
+        named_input_nodes = {"X": self, "numClasses": num_classes}
+        return OperationNode(self.sds_context, 'toOneHot', named_input_nodes=named_input_nodes, shape=(self.shape[0], num_classes))

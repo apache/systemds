@@ -22,10 +22,7 @@
 import numpy as np
 from py4j.java_gateway import JavaClass, JavaObject, JVMView
 
-from systemds.context import SystemDSContext
-
-
-def numpy_to_matrix_block(sds: SystemDSContext, np_arr: np.array):
+def numpy_to_matrix_block(sds: 'SystemDSContext', np_arr: np.array):
     """Converts a given numpy array, to internal matrix block representation.
 
     :param sds: The current systemds context.

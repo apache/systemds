@@ -24,7 +24,7 @@ from typing import Any, Collection, KeysView, Tuple, Union, Optional, Dict, TYPE
 from py4j.java_collections import JavaArray
 from py4j.java_gateway import JavaObject, JavaGateway
 
-from systemds.script_building.dag import DAGNode
+from systemds.script_building.dag import DAGNode, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
@@ -140,15 +140,17 @@ class DMLScript:
         :param dag_root: the topmost operation of our DAG, result of operation will be output
         """
         baseOutVarString = self._dfs_dag_nodes(dag_root)
-        if(dag_root.number_of_outputs > 1):
-            self.out_var_name = []
-            for idx in range(dag_root.number_of_outputs):
-                self.add_code(
-                    f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
-                self.out_var_name.append(f'{baseOutVarString}_{idx}')
-        else:
-            self.out_var_name.append(baseOutVarString)
-            self.add_code(f'write({baseOutVarString}, \'./tmp\');')
+        if(dag_root.output_type != OutputType.NONE):
+            if(dag_root.number_of_outputs > 1):
+                self.out_var_name = []
+                for idx in range(dag_root.number_of_outputs):
+                    self.add_code(
+                        f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
+                    self.out_var_name.append(f'{baseOutVarString}_{idx}')
+            else:
+                self.out_var_name.append(baseOutVarString)
+                self.add_code(f'write({baseOutVarString}, \'./tmp\');')
+
 
     def _dfs_dag_nodes(self, dag_node: VALID_INPUT_TYPES) -> str:
         """Uses Depth-First-Search to create code from DAG

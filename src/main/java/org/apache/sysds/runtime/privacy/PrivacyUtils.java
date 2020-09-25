@@ -35,6 +35,7 @@ public class PrivacyUtils {
 
 	/**
 	 * Returns true if the privacy constraint is not null and the privacy level is set to Private or PrivateAggregation.
+	 * This only works for the general privacy levels, the fine-grained constraints are not checked!
 	 * @param constraint to check
 	 * @return true if the privacy constraint is not null and activated
 	 */
@@ -51,6 +52,27 @@ public class PrivacyUtils {
 	 */
 	public static boolean privacyConstraintFineGrainedActivated(PrivacyConstraint constraint){
 		return constraint != null && constraint.getFineGrainedPrivacy().hasConstraints();
+	}
+
+	/**
+	 * Returns true if some constraints are set for either of two input privacy constraints.
+	 * This only checks first two elements in privacy constraint array.
+	 * @param privacyConstraints input privacy constraints
+	 * @return true if one of the two constraints are activated
+	 */
+	public static boolean someConstraintSetBinary(PrivacyConstraint[] privacyConstraints){
+		return privacyConstraints != null &&
+			((privacyConstraints[0] != null && privacyConstraints[0].hasConstraints())
+				|| (privacyConstraints[1] != null && privacyConstraints[1].hasConstraints()));
+	}
+
+	/**
+	 * Returns true if the constraint is set for the input privacy constraint.
+	 * @param privacyConstraint input to check
+	 * @return true if any constraint is activated
+	 */
+	public static boolean someConstraintSetUnary(PrivacyConstraint privacyConstraint){
+		return privacyConstraint != null && privacyConstraint.hasConstraints();
 	}
 
 	public static PrivacyLevel getGeneralPrivacyLevel(PrivacyConstraint privacyConstraint){

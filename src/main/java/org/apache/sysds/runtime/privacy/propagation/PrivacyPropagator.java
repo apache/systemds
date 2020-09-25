@@ -269,7 +269,7 @@ public class PrivacyPropagator
 
 	private static Instruction preprocessAggregateBinaryCPInstruction(AggregateBinaryCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
-		if ( someConstraintSetBinary(privacyConstraints) ){
+		if ( PrivacyUtils.someConstraintSetBinary(privacyConstraints) ){
 			PrivacyConstraint mergedPrivacyConstraint;
 			if ( (privacyConstraints[0] != null && privacyConstraints[0].hasFineGrainedConstraints() ) ||
 				(privacyConstraints[1] != null && privacyConstraints[1].hasFineGrainedConstraints() )){
@@ -287,21 +287,9 @@ public class PrivacyPropagator
 		return inst;
 	}
 
-	/**
-	 * Returns true if some constraints are set for either of two input privacy constraints.
-	 * This only checks first two elements in privacy constraint array.
-	 * @param privacyConstraints input privacy constraints
-	 * @return true if one of the two constraints are activated
-	 */
-	private static boolean someConstraintSetBinary(PrivacyConstraint[] privacyConstraints){
-		return privacyConstraints != null &&
-			((privacyConstraints[0] != null && privacyConstraints[0].hasConstraints())
-				|| (privacyConstraints[1] != null && privacyConstraints[1].hasConstraints()));
-	}
-
 	public static Instruction preprocessAppendCPInstruction(AppendCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
-		if ( someConstraintSetBinary(privacyConstraints) ){
+		if ( PrivacyUtils.someConstraintSetBinary(privacyConstraints) ){
 			if ( inst.getAppendType() == AppendCPInstruction.AppendType.STRING ){
 				PrivacyLevel[] privacyLevels = new PrivacyLevel[2];
 				privacyLevels[0] = PrivacyUtils.getGeneralPrivacyLevel(privacyConstraints[0]);
@@ -618,7 +606,7 @@ public class PrivacyPropagator
 		if (!instOutputs.isEmpty()){
 			for ( CPOperand output : instOutputs ){
 				PrivacyConstraint outputPrivacyConstraint = output.getPrivacyConstraint();
-				if ( PrivacyUtils.privacyConstraintActivated(outputPrivacyConstraint) )
+				if ( PrivacyUtils.someConstraintSetUnary(outputPrivacyConstraint) )
 					setOutputPrivacyConstraint(ec, outputPrivacyConstraint, output.getName());
 			}
 		}

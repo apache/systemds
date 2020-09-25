@@ -32,10 +32,9 @@ from systemds.context import SystemDSContext
 from systemds.matrix import Matrix
 
 
-class TestWrite(unittest.TestCase):
+class TestPrint(unittest.TestCase):
 
     sds: SystemDSContext = None
-    temp_dir: str = "tests/matrix/temp_write/"
 
     @classmethod
     def setUpClass(cls):
@@ -45,24 +44,13 @@ class TestWrite(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def tearDown(self):
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    def test_print_01(self):
+        Matrix(self.sds, np.array([1])).to_string().print().compute()
+        self.assertEquals('1.000',self.sds.get_stdout()[0])
 
-    def test_write_01(self):
-        original = np.ones([10, 10])
-        X = Matrix(self.sds, original)
-        X.write(self.temp_dir + "01").compute()
-        NX = self.sds.read(self.temp_dir + "01")
-        res = NX.compute()
-        self.assertTrue(np.allclose(original, res))
-
-    def test_write_02(self):
-        original = np.array([[1,2,3,4,5]])
-        X = Matrix(self.sds, original)
-        X.write(self.temp_dir + "02").compute()
-        NX = self.sds.read(self.temp_dir + "02")
-        res = NX.compute()
-        self.assertTrue(np.allclose(original, res))
+    def test_print_02(self):
+        self.sds.scalar(1).print().compute()
+        self.assertEquals('1', self.sds.get_stdout()[0])
 
 if __name__ == "__main__":
     unittest.main(exit=False)

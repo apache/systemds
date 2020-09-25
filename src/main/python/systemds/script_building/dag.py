@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 class OutputType(Enum):
     MATRIX = auto()
     DOUBLE = auto()
+    SCALAR = auto()
     LIST = auto()
     NONE = auto()
 

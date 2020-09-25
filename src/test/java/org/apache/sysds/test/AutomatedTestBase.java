@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test;
 
+import java.util.concurrent.TimeoutException;
 import static org.apache.sysds.runtime.controlprogram.federated.FederatedData.executeFederatedOperation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -1390,8 +1391,9 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
-	private static void waitForFederatedWorker(int port) {
+	private static void waitForFederatedWorker(int port) throws TimeoutException {
 		long start = System.currentTimeMillis();
+		boolean failed = true;
 		while(System.currentTimeMillis() - start <= FED_WORKER_CONNECTION_WAIT) {
 			FederatedResponse response = null;
 			try {
@@ -1404,10 +1406,14 @@ public abstract class AutomatedTestBase {
 			if(response != null) {
 				if(!(response.isSuccessful()))
 					LOG.error("Ping failed: " + response.getErrorMessage());
-				else
+				else {
+					failed = false;
 					break;
+				}
 			}
 		}
+		if(failed)
+			throw new TimeoutException("Start of federated worker timed out");
 	}
 
 	/**
@@ -1416,10 +1422,12 @@ public abstract class AutomatedTestBase {
 	 * @param ports the ports to use
 	 * @return the processes associated with the workers
 	 */
-	protected Process[] startLocalFedWorkers(int... ports) {
+	protected Process[] startLocalFedWorkers(int... ports) throws TimeoutException {
 		Process[] processes = Arrays.stream(ports).mapToObj(port -> startLocalFedWorker(port, false))
 			.toArray(Process[]::new);
-		Arrays.stream(ports).forEach(AutomatedTestBase::waitForFederatedWorker);
+		for (int port : ports) {
+			waitForFederatedWorker(port);
+		}
 		return processes;
 	}
 

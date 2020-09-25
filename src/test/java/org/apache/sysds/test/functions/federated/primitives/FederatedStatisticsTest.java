@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.federated.primitives;
 import java.util.Arrays;
 import java.util.Collection;
 
+import java.util.concurrent.TimeoutException;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -63,16 +64,16 @@ public class FederatedStatisticsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedSinglenodeLogReg() {
+	public void federatedSinglenodeLogReg() throws TimeoutException {
 		federatedLogReg(Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void federatedHybridLogReg() {
+	public void federatedHybridLogReg() throws TimeoutException {
 		federatedLogReg(Types.ExecMode.HYBRID);
 	}
 
-	public void federatedLogReg(Types.ExecMode execMode) {
+	public void federatedLogReg(Types.ExecMode execMode) throws TimeoutException {
 		ExecMode platformOld = setExecMode(execMode);
 
 		getAndLoadTestConfiguration(TEST_NAME);

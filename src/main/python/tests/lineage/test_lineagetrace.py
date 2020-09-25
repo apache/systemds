@@ -25,7 +25,6 @@ import sys
 import unittest
 
 from systemds.context import SystemDSContext
-from systemds.matrix.data_gen import full
 from systemds.utils.helpers import get_module_dir
 
 os.environ['SYSDS_QUIET'] = "1"
@@ -51,7 +50,7 @@ class TestLineageTrace(unittest.TestCase):
 
     def test_compare_trace1(self):  # test getLineageTrace() on an intermediate
         if "SYSTEMDS_ROOT" in os.environ:
-            m = full(self.sds, (10, 10), 1)
+            m = self.sds.full((10, 10), 1)
             m_res = m + m
 
             python_trace = [x.strip().split("°")
@@ -90,7 +89,6 @@ def create_execute_and_trace_dml(script: str, name: str):
 
     command = "systemds " + script_file_name + \
         " > " + result_file_name + " 2> /dev/null"
-    print(command)
     os.system(command)
     return parse_trace(result_file_name)
 

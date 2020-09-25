@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix.data_gen import full, seq
 from systemds.matrix import Matrix
 
 

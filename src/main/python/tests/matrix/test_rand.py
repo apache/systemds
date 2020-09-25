@@ -28,7 +28,6 @@ import unittest
 import numpy as np
 import scipy.stats as st
 from systemds.context import SystemDSContext
-from systemds.matrix.data_gen import rand
 
 np.random.seed(7)
 # TODO Remove the randomness of the test, such that
@@ -54,19 +53,19 @@ class TestRand(unittest.TestCase):
         cls.sds.close()
 
     def test_rand_shape(self):
-        m = rand(self.sds, rows=shape[0], cols=shape[1]).compute()
+        m = self.sds.rand(rows=shape[0], cols=shape[1]).compute()
         self.assertTrue(m.shape == shape)
 
     def test_rand_min_max(self):
         m = (
-            rand(self.sds, rows=shape[0], cols=shape[1],
-                 min=min_max[0], max=min_max[1])
+            self.sds.rand(rows=shape[0], cols=shape[1],
+                          min=min_max[0], max=min_max[1])
             .compute())
         self.assertTrue((m.min() >= min_max[0]) and (m.max() <= min_max[1]))
 
     def test_rand_sparsity(self):
-        m = rand(self.sds, rows=shape[0], cols=shape[1],
-                 sparsity=sparsity, seed=0).compute()
+        m = self.sds.rand(rows=shape[0], cols=shape[1],
+                          sparsity=sparsity, seed=0).compute()
         non_zero_value_percent = np.count_nonzero(m) * 100 / np.prod(m.shape)
 
         self.assertTrue(math.isclose(
@@ -74,13 +73,13 @@ class TestRand(unittest.TestCase):
 
     def test_rand_uniform_distribution(self):
         m = (
-            rand(self.sds,
-                 rows=dist_shape[0],
-                 cols=dist_shape[1],
-                 pdf="uniform",
-                 min=min_max[0],
-                 max=min_max[1],
-                 seed=0)
+            self.sds.rand(
+                rows=dist_shape[0],
+                cols=dist_shape[1],
+                pdf="uniform",
+                min=min_max[0],
+                max=min_max[1],
+                seed=0)
             .compute())
 
         dist = find_best_fit_distribution(m.flatten("F"), distributions)
@@ -88,29 +87,29 @@ class TestRand(unittest.TestCase):
 
     def test_rand_normal_distribution(self):
         m = (
-            rand(self.sds,
-                 rows=dist_shape[0],
-                 cols=dist_shape[1],
-                 pdf="normal",
-                 min=min_max[0],
-                 max=min_max[1],
-                 seed=0)
+            self.sds.rand(
+                rows=dist_shape[0],
+                cols=dist_shape[1],
+                pdf="normal",
+                min=min_max[0],
+                max=min_max[1],
+                seed=0)
             .compute())
 
         dist = find_best_fit_distribution(m.flatten("F"), distributions)
         self.assertTrue(dist == "norm")
 
     def test_rand_zero_shape(self):
-        m = rand(self.sds, rows=0, cols=0).compute()
+        m = self.sds.rand(rows=0, cols=0).compute()
         self.assertTrue(np.allclose(m, np.array([[]])))
 
     def test_rand_invalid_shape(self):
         with self.assertRaises(ValueError) as context:
-            rand(self.sds, rows=1, cols=-10).compute()
+            self.sds.rand(rows=1, cols=-10).compute()
 
     def test_rand_invalid_pdf(self):
         with self.assertRaises(ValueError) as context:
-            rand(self.sds, rows=1, cols=10, pdf="norm").compute()
+            self.sds.rand(rows=1, cols=10, pdf="norm").compute()
 
 
 def find_best_fit_distribution(data, distribution_lst):

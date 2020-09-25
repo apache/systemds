@@ -33,13 +33,12 @@ Making use of SystemDS, let us multiply an Matrix with an scalar:
 
   # Import SystemDSContext
   from systemds.context import SystemDSContext
-  from systemds.matrix.data_gen import full
   # Create a context and if necessary (no SystemDS py4j instance running)
   # it starts a subprocess which does the execution in SystemDS
   with SystemDSContext() as sds:
       # Full generates a matrix completely filled with one number.
       # Generate a 5x10 matrix filled with 4.2
-      m = full(sds,(5, 10), 4.20)
+      m = sds.full((5, 10), 4.20)
       # multiply with scalar. Nothing is executed yet!
       m_res = m * 3.1
       # Do the calculation in SystemDS by calling compute().

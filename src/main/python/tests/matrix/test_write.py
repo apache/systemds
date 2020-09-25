@@ -19,21 +19,43 @@
 #
 # -------------------------------------------------------------
 
+import math
+import os
+import random
+import shutil
+import sys
+import unittest
+
+import numpy as np
+import scipy.stats as st
 from systemds.context import SystemDSContext
 from systemds.matrix import Matrix
-from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
-from systemds.examples.tutorials.mnist import DataManager
 
-d = DataManager()
 
-with SystemDSContext() as sds:
-    # Train Data
-    X = Matrix(sds, d.get_train_data().reshape((60000, 28*28)))
-    Y = Matrix(sds, d.get_train_labels()) + 1.0
-    bias = multiLogReg(X, Y, tol= 0.0001, verbose= False)
-    # Test data
-    Xt = Matrix(sds, d.get_test_data().reshape((10000, 28*28)))
-    Yt = Matrix(sds, d.get_test_labels()) + 1.0
-    [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
+class TestWrite(unittest.TestCase):
 
-print(acc)
+    sds: SystemDSContext = None
+    temp_dir: str = "tests/matrix/temp_write/"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sds = SystemDSContext()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sds.close()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_write_01(self):
+        original = np.ones([10, 10])
+        X = Matrix(self.sds, original)
+        X.write(self.temp_dir + "01").compute()
+        NX = self.sds.read(self.temp_dir + "01")
+        res = NX.compute()
+        self.assertTrue(np.allclose(original, res))
+
+
+if __name__ == "__main__":
+    unittest.main(exit=False)

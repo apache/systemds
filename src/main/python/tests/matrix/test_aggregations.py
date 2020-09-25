@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix.data_gen import full, seq
 from systemds.matrix import Matrix
 
 dim = 5
@@ -72,11 +71,11 @@ class TestMatrixAggFn(unittest.TestCase):
 
     def test_full(self):
         self.assertTrue(np.allclose(
-            full(self.sds, (2, 3), 10.1).compute(), np.full((2, 3), 10.1)))
+            self.sds.full( (2, 3), 10.1).compute(), np.full((2, 3), 10.1)))
 
     def test_seq(self):
         self.assertTrue(np.allclose(
-            seq(self.sds, 3).compute(), np.arange(4).reshape(4, 1)))
+            self.sds.seq(3).compute(), np.arange(4).reshape(4, 1)))
 
     def test_var1(self):
         self.assertTrue(np.allclose(

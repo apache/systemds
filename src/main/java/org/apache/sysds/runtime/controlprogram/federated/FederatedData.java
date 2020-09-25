@@ -95,6 +95,7 @@ public class FederatedData {
 	/**
 	 * Make a copy of the <code>FederatedData</code> metadata, but use another varID (refer to another object on worker)
 	 * @param varID the varID of the variable we refer to
+	 * @return new <code>FederatedData</code> with different varID set
 	 */
 	public FederatedData copyWithNewID(long varID) {
 		FederatedData copy = new FederatedData(_dataType, _address, _filepath);

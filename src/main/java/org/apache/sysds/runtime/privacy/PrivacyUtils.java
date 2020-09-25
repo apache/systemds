@@ -60,7 +60,7 @@ public class PrivacyUtils {
 	 * @param privacyConstraints input privacy constraints
 	 * @return true if one of the two constraints are activated
 	 */
-	public static boolean someConstraintSetBinary(PrivacyConstraint[] privacyConstraints){
+	public static boolean someConstraintSetBinary(PrivacyConstraint... privacyConstraints){
 		return privacyConstraints != null &&
 			((privacyConstraints[0] != null && privacyConstraints[0].hasConstraints())
 				|| (privacyConstraints[1] != null && privacyConstraints[1].hasConstraints()));

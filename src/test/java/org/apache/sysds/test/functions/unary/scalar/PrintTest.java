@@ -38,7 +38,7 @@ public class PrintTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		
+		setOutputBuffering(true);
 		addTestConfiguration("PrintTest", new TestConfiguration(TEST_CLASS_DIR, "PrintTest", new String[] {}));
 		addTestConfiguration("PrintTest2", new TestConfiguration(TEST_CLASS_DIR, "PrintTest2", new String[] {}));
 		addTestConfiguration("PrintTest3", new TestConfiguration(TEST_CLASS_DIR, "PrintTest3", new String[] {}));

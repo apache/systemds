@@ -161,7 +161,7 @@ class OperationNode(DAGNode):
             return f'{output}={self.operation}({inputs_comma_sep});'
         elif self.output_type == OutputType.NONE:
             return f'{self.operation}({inputs_comma_sep});'
-        elif self.output_type == OutputType.SCALAR:
+        elif self.output_type == OutputType.ASSIGN:
             return f'{var_name}={self.operation};'
         else:
             return f'{var_name}={self.operation}({inputs_comma_sep});'
@@ -341,15 +341,30 @@ class OperationNode(DAGNode):
         return OperationNode(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
 
     def write(self, destination: str, format:str = "binary", **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+        """ Write input to disk. 
+        The written format is easily read by SystemDSContext.read(). 
+        There is no return on write.
+
+        :param destination: The location which the file is stored. Defaulting to HDFS paths if available.
+        :param format: The format which the file is saved in. Default is binary to improve SystemDS reading times.
+        :param kwargs: Contains multiple extra specific arguments, can be seen at http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions
+        """
         unnamed_inputs = [self, f'"{destination}"']
         named_parameters = {"format":f'"{format}"'}
         named_parameters.update(kwargs)
         return OperationNode(self.sds_context, 'write', unnamed_inputs, named_parameters, output_type= OutputType.NONE)
 
     def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
-        return OperationNode(self.sds_context, 'toString', [self], kwargs, output_type= OutputType.DOUBLE)
+        """ Converts the input to a string representation.
+        :return: `OperationNode` containing the string.
+        """
+        return OperationNode(self.sds_context, 'toString', [self], kwargs, output_type= OutputType.SCALAR)
 
     def print(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+        """ Prints the given Operation Node.
+        There is no return on calling.
+        To get the returned string look at the stdout of SystemDSContext.
+        """
         return OperationNode(self.sds_context, 'print', [self], kwargs, output_type= OutputType.NONE)
 
     def rev(self) -> 'OperationNode':

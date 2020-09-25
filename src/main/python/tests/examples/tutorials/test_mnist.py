@@ -36,6 +36,7 @@ class Test_DMLScript(unittest.TestCase):
 
     sds: SystemDSContext = None
     d: DataManager = None
+    base_path = "systemds/examples/tutorials/mnist/"
 
     @classmethod
     def setUpClass(cls):
@@ -83,6 +84,29 @@ class Test_DMLScript(unittest.TestCase):
         [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
 
         self.assertGreater(acc, 80)
+
+    def test_multi_log_reg_with_read(self):
+        train_count = 100
+        test_count = 100
+        X = Matrix(self.sds, self.d.get_train_data().reshape(
+            (60000, 28*28))[:train_count])
+        X.write(self.base_path + "train_data").compute()
+        Y = Matrix(self.sds, self.d.get_train_labels()[:train_count]) + 1
+        Y.write(self.base_path + "train_labels").compute()
+
+        Xr = self.sds.read(self.base_path + "train_data")
+        Yr = self.sds.read(self.base_path + "train_labels")
+
+        bias = multiLogReg(Xr, Yr, verbose=False)
+        # Test data
+        Xt = Matrix(self.sds, self.d.get_test_data().reshape(
+            (10000, 28*28))[:test_count])
+        Yt = Matrix(self.sds, self.d.get_test_labels()[:test_count])
+        Yt = Yt + 1.0
+
+        [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute(verbose=True)
+        
+        self.assertGreater(acc, 70)
 
 
 if __name__ == "__main__":

@@ -34,6 +34,7 @@ class OutputType(Enum):
     MATRIX = auto()
     DOUBLE = auto()
     SCALAR = auto()
+    ASSIGN = auto()
     LIST = auto()
     NONE = auto()
 

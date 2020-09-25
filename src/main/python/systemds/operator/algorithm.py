@@ -156,10 +156,14 @@ def multiLogReg(x: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_IN
     if y.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
                          .format(s=y.shape))
-
+    if -1 in x.shape:
+        output_shape = (-1,)
+    else:
+        output_shape = (x.shape[1],)
+        
     params_dict = {'X': x, 'Y': y}
     params_dict.update(kwargs)
-    return OperationNode(x.sds_context, 'multiLogReg', named_input_nodes=params_dict, shape = (x.shape[1],))
+    return OperationNode(x.sds_context, 'multiLogReg', named_input_nodes=params_dict, shape = output_shape)
 
 
 def multiLogRegPredict(x: OperationNode, b: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:

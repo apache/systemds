@@ -129,7 +129,8 @@ public class FullMinus1MultTest extends AutomatedTestBase
 			//check generated opcode
 			if( rewrites ){
 				if( instType == ExecType.CP )
-					Assert.assertTrue("Missing opcode: 1-*", Statistics.getCPHeavyHitterOpCodes().contains("1-*"));
+					Assert.assertTrue("Missing opcode: 1-*", Statistics.getCPHeavyHitterOpCodes().contains("1-*") ||
+							Statistics.getCPHeavyHitterOpCodes().contains("gpu_1-*"));
 				else if( instType == ExecType.SPARK )
 					Assert.assertTrue("Missing opcode: sp_1-* | sp_map1-*", 
 							Statistics.getCPHeavyHitterOpCodes().contains("sp_1-*") || 

@@ -161,6 +161,8 @@ class OperationNode(DAGNode):
             return f'{output}={self.operation}({inputs_comma_sep});'
         elif self.output_type == OutputType.NONE:
             return f'{self.operation}({inputs_comma_sep});'
+        elif self.output_type == OutputType.SCALAR:
+            return f'{var_name}={self.operation};'
         else:
             return f'{var_name}={self.operation}({inputs_comma_sep});'
 
@@ -339,11 +341,16 @@ class OperationNode(DAGNode):
         return OperationNode(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
 
     def write(self, destination: str, format:str = "binary", **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
-        
         unnamed_inputs = [self, f'"{destination}"']
         named_parameters = {"format":f'"{format}"'}
         named_parameters.update(kwargs)
         return OperationNode(self.sds_context, 'write', unnamed_inputs, named_parameters, output_type= OutputType.NONE)
+
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+        return OperationNode(self.sds_context, 'toString', [self], kwargs, output_type= OutputType.DOUBLE)
+
+    def print(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+        return OperationNode(self.sds_context, 'print', [self], kwargs, output_type= OutputType.NONE)
 
     def rev(self) -> 'OperationNode':
         """ Reverses the rows in a matrix

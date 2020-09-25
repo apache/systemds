@@ -37,7 +37,7 @@ from py4j.protocol import Py4JNetworkError
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
 from systemds.operator import OperationNode
-
+from systemds.script_building import OutputType
 
 class SystemDSContext(object):
     """A context with a connection to a java instance with which SystemDS operations are executed. 
@@ -276,3 +276,6 @@ class SystemDSContext(object):
 
     def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]):
         return OperationNode(self, 'read', [f'"{path}"'], named_input_nodes=kwargs)
+
+    def scalar(self, v: Dict[str, VALID_INPUT_TYPES]):
+        return OperationNode(self, v, output_type=OutputType.SCALAR)

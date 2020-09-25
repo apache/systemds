@@ -41,6 +41,7 @@ public class StopTest2 extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
+		setOutputBuffering(true);
 		availableTestConfigurations.put(TEST_STOP, new TestConfiguration(TEST_CLASS_DIR, TEST_STOP, new String[] {}));
 	}
 

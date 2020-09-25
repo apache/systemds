@@ -261,6 +261,10 @@ public abstract class AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 	}
 
+	protected void setOutputBuffering(boolean value) {
+		outputBuffering = value;
+	}
+
 	/**
 	 * <p>
 	 * Returns a test configuration from the list of available configurations. If no configuration is added for the

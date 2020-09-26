@@ -28,12 +28,11 @@ The Documentation is separated into different parts by sub folders.
 .
 ├── _layouts
 │   ├── global.html # The Default content layout and html file.
+│   ├── site.html   # The Default content layout for docs pages contained in site folder
 ├── _site # If run locally a _site folder is generated containing the compiled site.
 ├── _config.yml # The configuration for jekyll to construct the site.
 ├── Gemfile.yml # The dependency list for the documentation
 ├── index.md #  The main entry File
-├── _layouts
-│   ├── global.html
 ├── css # The style files folder
 ├── img # The Images folder
 ├── js  # The JavaScript folder

@@ -23,7 +23,7 @@ limitations under the License.
 
 ## 5.1 Principal Component Analysis
 
-### Description
+### PCA Description
 
 Principal Component Analysis (PCA) is a simple, non-parametric method to
 transform the given data set with possibly correlated columns into a set
@@ -36,135 +36,7 @@ dimensionality reduction technique, where the original data is projected
 or rotated onto a low-dimensional space with basis vectors defined by
 top-$K$ (for a given value of $K$) principal components.
 
-
-### Usage
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f PCA.dml
-                            -nvargs INPUT=<file>
-                                    K=<int>
-                                    CENTER=[int]
-                                    SCALE=[int]
-                                    PROJDATA=<int>
-                                    OFMT=[format]
-                                    MODEL=<file>
-                                    OUTPUT=<file>
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f PCA.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs INPUT=<file>
-                                         K=<int>
-                                         CENTER=[int]
-                                         SCALE=[int]
-                                         PROJDATA=<int>
-                                         OFMT=[format]
-                                         MODEL=<file>
-                                         OUTPUT=<file>
-</div>
-</div>
-
-
-#### Arguments
-
-**INPUT**: Location (on HDFS) to read the input matrix.
-
-**K**: Indicates dimension of the new vector space constructed from $K$
-    principal components. It must be a value between `1` and the number
-    of columns in the input data.
-
-**CENTER**: (default: `0`) `0` or `1`. Indicates whether or not to
-    *center* input data prior to the computation of
-    principal components.
-
-**SCALE**: (default: `0`) `0` or `1`. Indicates whether or not to
-    *scale* input data prior to the computation of
-    principal components.
-
-**PROJDATA**: `0` or `1`. Indicates whether or not the input data must be projected
-    on to new vector space defined over principal components.
-
-**OFMT**: (default: `"csv"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-**MODEL**: Either the location (on HDFS) where the computed model is
-    stored; or the location of an existing model.
-
-**OUTPUT**: Location (on HDFS) to store the data rotated on to the new
-    vector space.
-
-
-#### Examples
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f PCA.dml 
-                            -nvargs INPUT=/user/ml/input.mtx
-                                    K=10
-                                    CENTER=1
-                                    SCALE=1
-                                    FMT=csv
-                                    PROJDATA=1
-                                    OUTPUT=/user/ml/pca_output/
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f PCA.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs INPUT=/user/ml/input.mtx
-                                         K=10
-                                         CENTER=1
-                                         SCALE=1
-                                         FMT=csv
-                                         PROJDATA=1
-                                         OUTPUT=/user/ml/pca_output/
-</div>
-</div>
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f PCA.dml
-                            -nvargs INPUT=/user/ml/test_input.mtx
-                                    K=10
-                                    CENTER=1
-                                    SCALE=1
-                                    FMT=csv
-                                    PROJDATA=1
-                                    MODEL=/user/ml/pca_output/
-                                    OUTPUT=/user/ml/test_output.mtx
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f PCA.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs INPUT=/user/ml/test_input.mtx
-                                         K=10
-                                         CENTER=1
-                                         SCALE=1
-                                         FMT=csv
-                                         PROJDATA=1
-                                         MODEL=/user/ml/pca_output/
-                                         OUTPUT=/user/ml/test_output.mtx
-</div>
-</div>
-
-
-#### Details
+#### PCA Details
 
 Principal Component Analysis (PCA) is a non-parametric procedure for
 orthogonal linear transformation of the input data to a new coordinate
@@ -198,8 +70,7 @@ their corresponding eigenvalue. The computed eigenvectors (also known as
 root of eigen values provide the amount of variance in the input data
 explained by each coordinate or eigenvector.
 
-
-#### Returns
+#### PCA Returns
 
 When MODEL is not provided, PCA procedure is
 applied on INPUT data to generate MODEL as well as the rotated data
@@ -212,12 +83,11 @@ MODEL is provided, INPUT data is rotated according to the coordinate
 system defined by MODEL$/dominant.eigen.vectors$. The resulting data is
 stored at location OUTPUT.
 
-
 * * *
 
-## 5.2 Matrix Completion via Alternating Minimizations
+## Matrix Completion via Alternating Minimizations
 
-### Description
+### MCAM Description
 
 Low-rank matrix completion is an effective technique for statistical
 data analysis widely used in the data mining and machine learning
@@ -233,289 +103,7 @@ entries of the rating matrix. This implementation uses the alternating
 least-squares (ALS) technique for solving large-scale matrix completion
 problems.
 
-
-### Usage
-
-**ALS**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f ALS.dml
-                            -nvargs V=<file>
-                                    L=<file>
-                                    R=<file>
-                                    rank=[int]
-                                    reg=[L2|wL2]
-                                    lambda=[double]
-                                    maxi=[int]
-                                    check=[boolean]
-                                    thr=[double]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f ALS.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs V=<file>
-                                         L=<file>
-                                         R=<file>
-                                         rank=[int]
-                                         reg=[L2|wL2]
-                                         lambda=[double]
-                                         maxi=[int]
-                                         check=[boolean]
-                                         thr=[double]
-                                         fmt=[format]
-</div>
-</div>
-
-**ALS Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f ALS_predict.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    L=<file>
-                                    R=<file>
-                                    Vrows=<int>
-                                    Vcols=<int>
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f ALS_predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         L=<file>
-                                         R=<file>
-                                         Vrows=<int>
-                                         Vcols=<int>
-                                         fmt=[format]
-</div>
-</div>
-
-**ALS Top-K Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f ALS_topk_predict.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    L=<file>
-                                    R=<file>
-                                    V=<file>
-                                    K=[int]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f ALS_topk_predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         L=<file>
-                                         R=<file>
-                                         V=<file>
-                                         K=[int]
-                                         fmt=[format]
-</div>
-</div>
-
-
-### Arguments - ALS
-
-**V**: Location (on HDFS) to read the input (user-item) matrix $V$ to be
-factorized
-
-**L**: Location (on HDFS) to write the left (user) factor matrix $L$
-
-**R**: Location (on HDFS) to write the right (item) factor matrix $R$
-
-**rank**: (default: `10`) Rank of the factorization
-
-**reg**: (default: `L2`) Regularization:
-
-  * `L2` = `L2` regularization
-  * `wL2` = weighted `L2` regularization
-
-**lambda**: (default: `0.000001`) Regularization parameter
-
-**maxi**: (default: `50`) Maximum number of iterations
-
-**check**: (default: `FALSE`) Check for convergence after every iteration, i.e., updating
-$L$ and $R$ once
-
-**thr**: (default: `0.0001`) Assuming `check=TRUE`, the algorithm stops and
-convergence is declared if the decrease in loss in any two consecutive
-iterations falls below threshold `thr`; if
-`check=FALSE`, parameter `thr` is ignored.
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-
-### Arguments - ALS Prediction/Top-K Prediction
-
-**X**: Location (on HDFS) to read the input matrix $X$ with following format:
-
-  * for `ALS_predict.dml`: a 2-column matrix that contains
-    the user-ids (first column) and the item-ids (second column)
-  * for `ALS_topk_predict.dml`: a 1-column matrix that
-    contains the user-ids
-
-**Y**: Location (on HDFS) to write the output of prediction with the following
-format:
-
-  * for `ALS_predict.dml`: a 3-column matrix that contains
-    the user-ids (first column), the item-ids (second column) and the
-    predicted ratings (third column)
-  * for `ALS_topk_predict.dml`: a (`K+1`)-column matrix
-    that contains the user-ids in the first column and the top-K
-    item-ids in the remaining `K` columns will be stored at
-    `Y`. Additionally, a matrix with the same dimensions that
-    contains the corresponding actual top-K ratings will be stored at
-    `Y.ratings`; see below for details
-
-**L**: Location (on HDFS) to read the left (user) factor matrix $L$
-
-**R**: Location (on HDFS) to write the right (item) factor matrix $R$
-
-**V**: Location (on HDFS) to read the user-item matrix $V$
-
-**Vrows**: Number of rows of $V$ (i.e., number of users)
-
-**Vcols**: Number of columns of $V$ (i.e., number of items)
-
-**K**: (default: `5`) Number of top-K items for top-K prediction
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-
-### Examples
-
-**ALS**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f ALS.dml
-                            -nvargs V=/user/ml/V
-                                    L=/user/ml/L
-                                    R=/user/ml/R
-                                    rank=10
-                                    reg="wL"
-                                    lambda=0.0001
-                                    maxi=50
-                                    check=TRUE
-                                    thr=0.001
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f ALS.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs V=/user/ml/V
-                                         L=/user/ml/L
-                                         R=/user/ml/R
-                                         rank=10
-                                         reg="wL"
-                                         lambda=0.0001
-                                         maxi=50
-                                         check=TRUE
-                                         thr=0.001
-                                         fmt=csv
-</div>
-</div>
-
-**ALS Prediction**:
-
-To compute predicted ratings for a given list of users and items:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f ALS_predict.dml
-                            -nvargs X=/user/ml/X
-                                    Y=/user/ml/Y
-                                    L=/user/ml/L
-                                    R=/user/ml/R
-                                    Vrows=100000
-                                    Vcols=10000
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f ALS_predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X
-                                         Y=/user/ml/Y
-                                         L=/user/ml/L
-                                         R=/user/ml/R
-                                         Vrows=100000
-                                         Vcols=10000
-                                         fmt=csv
-</div>
-</div>
-
-**ALS Top-K Prediction**:
-
-To compute top-K items with highest predicted ratings together with the
-predicted ratings for a given list of users:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f ALS_topk_predict.dml
-                            -nvargs X=/user/ml/X
-                                    Y=/user/ml/Y
-                                    L=/user/ml/L
-                                    R=/user/ml/R
-                                    V=/user/ml/V
-                                    K=10
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f ALS_topk_predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X
-                                         Y=/user/ml/Y
-                                         L=/user/ml/L
-                                         R=/user/ml/R
-                                         V=/user/ml/V
-                                         K=10
-                                         fmt=csv
-</div>
-</div>
-
-
-### Details
+### MCAM Details
 
 Given an $m \times n$ input matrix $V$ and a rank parameter
 $r \ll \min{(m,n)}$, low-rank matrix factorization seeks to find an
@@ -557,10 +145,11 @@ commonly used for matrix completion [[ZhouWSP08]](algorithms-bibliography.html).
 
 * * *
 
-<a name="table16" />
-**Table 16**: Popular loss functions supported by our ALS implementation; $$N_{i*}$$
-  and $$N_{*j}$$, respectively, denote the number of nonzero entries in
-  row $i$ and column $j$ of $V$.
+#### Table 16
+
+Popular loss functions supported by our ALS implementation; $$N_{i*}$$
+and $$N_{*j}$$, respectively, denote the number of nonzero entries in
+row $i$ and column $j$ of $V$.
 
 | Loss                  | Definition |
 | --------------------- | ---------- |
@@ -568,20 +157,18 @@ commonly used for matrix completion [[ZhouWSP08]](algorithms-bibliography.html).
 | $$\mathcal{L}_\text{Nzsl+L2}$$  | $$\mathcal{L}_\text{Nzsl} + \lambda \Bigl( \sum_{ik} L_{ik}^2 + \sum_{kj} R_{kj}^2 \Bigr)$$
 | $$\mathcal{L}_\text{Nzsl+wL2}$$ | $$\mathcal{L}_\text{Nzsl} + \lambda \Bigl(\sum_{ik}N_{i*} L_{ik}^2 + \sum_{kj}N_{*j} R_{kj}^2 \Bigr)$$
 
-
 * * *
-
 
 Note that the matrix completion problem as defined in (1)
 is a non-convex problem for all loss functions from
-[**Table 16**](algorithms-matrix-factorization.html#table16). However, when fixing one of the matrices
+[**Table 16**](table-16). However, when fixing one of the matrices
 $L$ or $R$, we get a least-squares problem with a globally optimal
 solution. For example, for the case of $$\mathcal{L}_\text{Nzsl+wL2}$$ we
 have the following closed form solutions
 
 $$\begin{aligned}
   L^\top_{n+1,i*} &\leftarrow (R^{(i)}_n {[R^{(i)}_n]}^\top + \lambda N_2 I)^{-1} R_n V^\top_{i*}, \\
-  R_{n+1,*j} &\leftarrow ({[L^{(j)}_{n+1}]}^\top L^{(j)}_{n+1} + \lambda N_1 I)^{-1} L^\top_{n+1} V_{*j}, 
+  R_{n+1,*j} &\leftarrow ({[L^{(j)}_{n+1}]}^\top L^{(j)}_{n+1} + \lambda N_1 I)^{-1} L^\top_{n+1} V_{*j},
   \end{aligned}
 $$
 
@@ -594,7 +181,6 @@ $$L^{(j)}_{n+1}$$) refers to the corresponding columns of $R_n$ (rows of
 $$L_{n+1}$$), and $N_1$ (resp. $N_2$) denotes a diagonal matrix that
 contains the number of nonzero entries in row $i$ (column $j$) of $V$.
 
-
 **Prediction.** Based on the factor matrices computed by ALS we provide
 two prediction scripts:
 
@@ -604,8 +190,7 @@ list of users and items.
 given as input) with highest predicted ratings together with their
 corresponding ratings for a given list of users.
 
-
-### Returns
+### MCAM Returns
 
 We output the factor matrices $L$ and $R$ after the algorithm has
 converged. The algorithm is declared as converged if one of the two
@@ -624,5 +209,3 @@ ratings together with the predicted ratings for a given list of users.
 Note that the predictions will only be provided for the users who have
 rated at least one item, i.e., the corresponding rows contain at least
 one nonzero entry.
-
-

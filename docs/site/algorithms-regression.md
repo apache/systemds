@@ -21,9 +21,9 @@ limitations under the License.
 {% endcomment %}
 -->
 
-## 4.1. Linear Regression
+## Linear Regression
 
-### Description
+### LR Description
 
 Linear Regression scripts are used to model the relationship between one
 numerical response variable and one or more explanatory (feature)
@@ -46,7 +46,7 @@ $$
 y_i \sim Normal(\mu_i, \sigma^2) \,\,\,\,\textrm{where}\,\,\,\,
 \mu_i \,=\, \beta_0 + \beta_1 x_{i,1} + \ldots + \beta_m x_{i,m}
 \end{equation}
-$$ 
+$$
 
 Distribution
 $y_i \sim Normal(\mu_i, \sigma^2)$
@@ -70,268 +70,11 @@ efficient when the number of features $m$ is relatively small
 `LinearRegCG.dml` is more efficient. If $m > 50000$, use only
 `LinearRegCG.dml`.
 
-
-### Usage
-
-**Linear Regression - Direct Solve**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-from systemml.mllearn import LinearRegression
-# C = 1/reg (to disable regularization, use float("inf"))
-lr = LinearRegression(sqlCtx, fit_intercept=True, normalize=False, C=float("inf"), solver='direct-solve')
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
-y_test = lr.fit(X_train, y_train)
-# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
-y_test = lr.fit(df_train)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f LinearRegDS.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    B=<file>
-                                    O=[file]
-                                    icpt=[int]
-                                    reg=[double]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f LinearRegDS.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         B=<file>
-                                         O=[file]
-                                         icpt=[int]
-                                         reg=[double]
-                                         fmt=[format]
-</div>
-</div>
-
-**Linear Regression - Conjugate Gradient**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-from systemml.mllearn import LinearRegression
-# C = 1/reg (to disable regularization, use float("inf"))
-lr = LinearRegression(sqlCtx, fit_intercept=True, normalize=False, max_iter=100, tol=0.000001, C=float("inf"), solver='newton-cg')
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrames or SciPy Sparse matrices
-y_test = lr.fit(X_train, y_train)
-# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
-y_test = lr.fit(df_train)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f LinearRegCG.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    B=<file>
-                                    O=[file]
-                                    Log=[file]
-                                    icpt=[int]
-                                    reg=[double]
-                                    tol=[double]
-                                    maxi=[int]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f LinearRegCG.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         B=<file>
-                                         O=[file]
-                                         Log=[file]
-                                         icpt=[int]
-                                         reg=[double]
-                                         tol=[double]
-                                         maxi=[int]
-                                         fmt=[format]
-</div>
-</div>
-
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the matrix of feature vectors, each row
-constitutes one feature vector
-
-**Y**: Location to read the 1-column matrix of response values
-
-**B**: Location to store the estimated regression parameters (the $\beta_j$’s),
-with the intercept parameter $\beta_0$ at position
-B\[$m\,{+}\,1$, 1\] if available
-
-**O**: (default: `" "`) Location to store the CSV-file of summary statistics defined
-in [**Table 7**](algorithms-regression.html#table7), the default is to print it to the
-standard output
-
-**Log**: (default: `" "`, `LinearRegCG.dml` only) Location to store
-iteration-specific variables for monitoring and debugging purposes, see
-[**Table 8**](algorithms-regression.html#table8)
-for details.
-
-**icpt**: (default: `0`) Intercept presence and shifting/rescaling the features
-in $X$:
-
-  * 0 = no intercept (hence no $\beta_0$), no shifting or
-rescaling of the features
-  * 1 = add intercept, but do not shift/rescale the features
-in $X$
-  * 2 = add intercept, shift/rescale the features in $X$ to
-mean 0, variance 1
-
-**reg**: (default: `0.000001`) L2-regularization parameter $\lambda\geq 0$; set to nonzero for highly
-dependent, sparse, or numerous ($m \gtrsim n/10$) features
-
-**tol**: (default: `0.000001`, `LinearRegCG.dml` only) Tolerance $\varepsilon\geq 0$ used in the
-convergence criterion: we terminate conjugate gradient iterations when
-the $\beta$-residual reduces in L2-norm by this factor
-
-**maxi**: (default: `0`, `LinearRegCG.dml` only) Maximum number of conjugate
-gradient iterations, or `0` if no maximum limit provided
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
-more details on the Python API. 
-
-### Examples
-
-**Linear Regression - Direct Solve**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-import numpy as np
-from sklearn import datasets
-from systemml.mllearn import LinearRegression
-# Load the diabetes dataset
-diabetes = datasets.load_diabetes()
-# Use only one feature
-diabetes_X = diabetes.data[:, np.newaxis, 2]
-# Split the data into training/testing sets
-diabetes_X_train = diabetes_X[:-20]
-diabetes_X_test = diabetes_X[-20:]
-# Split the targets into training/testing sets
-diabetes_y_train = diabetes.target[:-20]
-diabetes_y_test = diabetes.target[-20:]
-# Create linear regression object
-regr = LinearRegression(spark, solver='direct-solve')
-# Train the model using the training sets
-regr.fit(diabetes_X_train, diabetes_y_train)
-# The mean square error
-print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f LinearRegDS.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    B=/user/ml/B.mtx
-                                    fmt=csv
-                                    O=/user/ml/stats.csv
-                                    icpt=2
-                                    reg=1.0
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f LinearRegDS.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         B=/user/ml/B.mtx
-                                         fmt=csv
-                                         O=/user/ml/stats.csv
-                                         icpt=2
-                                         reg=1.0
-</div>
-</div>
-
-**Linear Regression - Conjugate Gradient**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-import numpy as np
-from sklearn import datasets
-from systemml.mllearn import LinearRegression
-# Load the diabetes dataset
-diabetes = datasets.load_diabetes()
-# Use only one feature
-diabetes_X = diabetes.data[:, np.newaxis, 2]
-# Split the data into training/testing sets
-diabetes_X_train = diabetes_X[:-20]
-diabetes_X_test = diabetes_X[-20:]
-# Split the targets into training/testing sets
-diabetes_y_train = diabetes.target[:-20]
-diabetes_y_test = diabetes.target[-20:]
-# Create linear regression object
-regr = LinearRegression(spark, solver='newton-cg')
-# Train the model using the training sets
-regr.fit(diabetes_X_train, diabetes_y_train)
-# The mean square error
-print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f LinearRegCG.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    B=/user/ml/B.mtx
-                                    fmt=csv
-                                    O=/user/ml/stats.csv
-                                    icpt=2
-                                    reg=1.0
-                                    tol=0.00000001
-                                    maxi=100
-                                    Log=/user/ml/log.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f LinearRegCG.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         B=/user/ml/B.mtx
-                                         fmt=csv
-                                         O=/user/ml/stats.csv
-                                         icpt=2
-                                         reg=1.0
-                                         tol=0.00000001
-                                         maxi=100
-                                         Log=/user/ml/log.csv
-</div>
-</div>
-
-
 * * *
 
-<a name="table7" />
-**Table 7**: Besides $\beta$, linear regression scripts compute a few summary statistics
+#### table 7
+
+Besides $\beta$, linear regression scripts compute a few summary statistics
 listed below.  The statistics are provided in CSV format, one comma-separated name-value
 pair per each line.
 
@@ -353,22 +96,21 @@ pair per each line.
 
 * * *
 
-<a name="table8" />
+#### Table 8
+
 **Table 8**: The `Log` file for the `LinearRegCG.dml` script
 contains the above iteration variables in CSV format, each line
 containing a triple (Name, Iteration\#, Value) with Iteration\# being 0
 for initial values.
-
 
 | Name                  | Meaning |
 | --------------------- | ------- |
 | CG\_RESIDUAL\_NORM    | L2-norm of conjug. grad. residual, which is $A$ %\*% $\beta - t(X)$ %\*% $y$ where $A = t(X)$ %\*% $X + diag(\lambda)$, or a similar quantity
 | CG\_RESIDUAL\_RATIO   | Ratio of current L2-norm of conjug. grad. residual over the initial
 
-* * * 
+* * *
 
-
-### Details
+### LR Details
 
 To solve a linear regression problem over feature matrix $X$ and
 response vector $Y$, we can find coefficients
@@ -380,15 +122,15 @@ $y_i \sim Normal(\mu_i, \sigma^2)$
 is proportional to the product of
 $\exp\big({-}\,(y_i - \mu_i)^2 / (2\sigma^2)\big)$, we can take the
 logarithm of this product, then multiply by $-2\sigma^2 < 0$ to obtain a
-least squares problem: 
+least squares problem:
 
 $$
 \begin{equation}
-\sum_{i=1}^n \, (y_i - \mu_i)^2 \,\,=\,\, 
+\sum_{i=1}^n \, (y_i - \mu_i)^2 \,\,=\,\,
 \sum_{i=1}^n \Big(y_i - \beta_0 - \sum_{j=1}^m \beta_j x_{i,j}\Big)^2
 \,\,\to\,\,\min
 \end{equation}
-$$ 
+$$
 
 This may not be enough, however. The minimum may
 sometimes be attained over infinitely many $\beta$-vectors, for example
@@ -408,7 +150,7 @@ $$
 \,+\,\, \lambda \sum_{j=1}^m \beta_j^2
 \,\,\to\,\,\min
 \end{equation}
-$$ 
+$$
 
 The choice of $\lambda>0$, the regularization
 constant, typically involves cross-validation where the dataset is
@@ -428,7 +170,7 @@ A\left[\textstyle\beta_{1:m}\atop\textstyle\beta_0\right] \,=\, \big[X,\,1\big]^
 A \,=\, \big[X,\,1\big]^T \big[X,\,1\big]\,+\,\hspace{0.5pt} diag(\hspace{0.5pt}
 \underbrace{\lambda,\ldots, \lambda}_{\scriptstyle m}, 0)
 \end{equation}
-$$ 
+$$
 
 where $[X,\,1]$ is $X$ with an extra column of 1s
 appended on the right, and the diagonal matrix of $\lambda$’s has a zero
@@ -469,11 +211,11 @@ $R^2$ are:
 
 $$R^2 = 1 - \frac{\mathrm{RSS}}{\mathrm{TSS}},\quad
 \sigma \,=\, \sqrt{\frac{\mathrm{RSS}}{n - m - 1}},\quad
-R^2_{\textrm{adj.}} = 1 - \frac{\sigma^2 (n-1)}{\mathrm{TSS}}$$ 
+R^2_{\textrm{adj.}} = 1 - \frac{\sigma^2 (n-1)}{\mathrm{TSS}}$$
 
 where
 
-$$\mathrm{RSS} \,=\, \sum_{i=1}^n \Big(y_i - \hat{\mu}_i - 
+$$\mathrm{RSS} \,=\, \sum_{i=1}^n \Big(y_i - \hat{\mu}_i -
 \frac{1}{n} \sum_{i'=1}^n \,(y_{i'} - \hat{\mu}_{i'})\Big)^2; \quad
 \mathrm{TSS} \,=\, \sum_{i=1}^n \Big(y_i - \frac{1}{n} \sum_{i'=1}^n y_{i'}\Big)^2$$
 
@@ -491,8 +233,7 @@ more than large-variance columns (with small $\beta_j$’s). At the end,
 the estimated regression coefficients are shifted and rescaled to apply
 to the original features.
 
-
-### Returns
+### LR Returns
 
 The estimated regression coefficients (the $\hat{\beta}_j$’s) are
 populated into a matrix and written to an HDFS file whose path/name was
@@ -500,13 +241,13 @@ provided as the `B` input argument. What this matrix
 contains, and its size, depends on the input argument `icpt`,
 which specifies the user’s intercept and rescaling choice:
 
-  * **icpt=0**: No intercept, matrix $B$ has size $m\,{\times}\,1$, with
+- **icpt=0**: No intercept, matrix $B$ has size $m\,{\times}\,1$, with
 $B[j, 1] = \hat{\beta}_j$ for each $j$ from 1 to $m = {}$ncol$(X)$.
-  * **icpt=1**: There is intercept, but no shifting/rescaling of $X$; matrix $B$ has
+- **icpt=1**: There is intercept, but no shifting/rescaling of $X$; matrix $B$ has
 size $(m\,{+}\,1) \times 1$, with $B[j, 1] = \hat{\beta}_j$ for $j$ from
 1 to $m$, and $B[m\,{+}\,1, 1] = \hat{\beta}_0$, the estimated intercept
 coefficient.
-  * **icpt=2**: There is intercept, and the features in $X$ are shifted to mean$ = 0$
+- **icpt=2**: There is intercept, and the features in $X$ are shifted to mean$ = 0$
 and rescaled to variance$ = 1$; then there are two versions of
 the $\hat{\beta}_j$’s, one for the original features and another for the
 shifted/rescaled features. Now matrix $B$ has size
@@ -517,128 +258,21 @@ obtained from $B[\cdot, 2]$ by complementary shifting and rescaling.
 
 The estimated summary statistics, including residual standard
 deviation $\sigma$ and the $R^2$, are printed out or sent into a file
-(if specified) in CSV format as defined in [**Table 7**](algorithms-regression.html#table7).
+(if specified) in CSV format as defined in [**Table 7**](table-7).
 For conjugate gradient iterations, a log file with monitoring variables
-can also be made available, see [**Table 8**](algorithms-regression.html#table8).
-
+can also be made available, see [**Table 8**](table-8).
 
 * * *
 
-## 4.2. Stepwise Linear Regression
+## Stepwise Linear Regression
 
-### Description
+### SLR Description
 
 Our stepwise linear regression script selects a linear model based on
 the Akaike information criterion (AIC): the model that gives rise to the
 lowest AIC is computed.
 
-
-### Usage
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f StepLinearRegDS.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    B=<file>
-                                    S=[file]
-                                    O=[file]
-                                    icpt=[int]
-                                    thr=[double]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f StepLinearRegDS.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         B=<file>
-                                         S=[file]
-                                         O=[file]
-                                         icpt=[int]
-                                         thr=[double]
-                                         fmt=[format]
-</div>
-</div>
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the matrix of feature vectors, each row
-contains one feature vector.
-
-**Y**: Location (on HDFS) to read the 1-column matrix of response values
-
-**B**: Location (on HDFS) to store the estimated regression parameters (the
-$\beta_j$’s), with the intercept parameter $\beta_0$ at position
-B\[$m\,{+}\,1$, 1\] if available
-
-**S**: (default: `" "`) Location (on HDFS) to store the selected feature-ids in the
-order as computed by the algorithm; by default the selected feature-ids
-are forwarded to the standard output.
-
-**O**: (default: `" "`) Location (on HDFS) to store the CSV-file of summary
-statistics defined in [**Table 7**](algorithms-regression.html#table7); by default the
-summary statistics are forwarded to the standard output.
-
-**icpt**: (default: `0`) Intercept presence and shifting/rescaling the features
-in $X$:
-
-  * 0 = no intercept (hence no $\beta_0$), no shifting or
-rescaling of the features;
-  * 1 = add intercept, but do not shift/rescale the features
-in $X$;
-  * 2 = add intercept, shift/rescale the features in $X$ to
-mean 0, variance 1
-
-**thr**: (default: `0.01`) Threshold to stop the algorithm: if the decrease in the value
-of the AIC falls below `thr` no further features are being
-checked and the algorithm stops.
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-
-### Examples
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f StepLinearRegDS.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    B=/user/ml/B.mtx
-                                    S=/user/ml/selected.csv
-                                    O=/user/ml/stats.csv
-                                    icpt=2
-                                    thr=0.05
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f StepLinearRegDS.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         B=/user/ml/B.mtx
-                                         S=/user/ml/selected.csv
-                                         O=/user/ml/stats.csv
-                                         icpt=2
-                                         thr=0.05
-                                         fmt=csv
-</div>
-</div>
-
-
-### Details
+### SLR Details
 
 Stepwise linear regression iteratively selects predictive variables in
 an automated procedure. Currently, our implementation supports forward
@@ -662,8 +296,7 @@ For fitting a model in each iteration we use the `direct solve` method
 as in the script `LinearRegDS.dml` discussed in
 [Linear Regression](algorithms-regression.html#linear-regression).
 
-
-### Returns
+### SLR Returns
 
 Similar to the outputs from `LinearRegDS.dml` the stepwise
 linear regression script computes the estimated regression coefficients
@@ -675,18 +308,17 @@ order they have been selected by the algorithm, i.e., $i$th entry in
 matrix $S$ corresponds to the variable which improves the AIC the most
 in $i$th iteration. If the model with the lowest AIC includes no
 variables matrix $S$ will be empty (contains one 0). Moreover, the
-estimated summary statistics as defined in [**Table 7**](algorithms-regression.html#table7)
+estimated summary statistics as defined in [**Table 7**](table-7)
 are printed out or stored in a file (if requested). In the case where an
 empty model achieves the best AIC these statistics will not be produced.
-
 
 * * *
 
 ## 4.3. Generalized Linear Models
 
-### Description
+### GLM Description
 
-Generalized Linear Models 
+Generalized Linear Models
 [[Gill2000](algorithms-bibliography.html),
 [McCullagh1989](algorithms-bibliography.html),
 [Nelder1972](algorithms-bibliography.html)]
@@ -702,7 +334,7 @@ outcome of a noise distribution
 $Prob[y\mid \mu_i]\,$[^2]
 with that mean $\mu_i$:
 
-$$x_i \,\,\,\,\mapsto\,\,\,\, \eta_i = \beta_0 + \sum\nolimits_{j=1}^m \beta_j x_{i,j} 
+$$x_i \,\,\,\,\mapsto\,\,\,\, \eta_i = \beta_0 + \sum\nolimits_{j=1}^m \beta_j x_{i,j}
 \,\,\,\,\mapsto\,\,\,\, \mu_i \,\,\,\,\mapsto \,\,\,\, y_i \sim Prob[y\mid \mu_i]$$
 
 In linear regression the response mean $\mu_i$ *equals* some linear
@@ -726,204 +358,17 @@ $Prob[y\mid \mu]$
 are user-provided. Our GLM script supports a standard set of
 distributions and link functions, see below for details.
 
-
-### Usage
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    B=<file>
-                                    fmt=[format]
-                                    O=[file]
-                                    Log=[file]
-                                    dfam=[int]
-                                    vpow=[double]
-                                    link=[int]
-                                    lpow=[double]
-                                    yneg=[double]
-                                    icpt=[int]
-                                    reg=[double]
-                                    tol=[double]
-                                    disp=[double]
-                                    moi=[int]
-                                    mii=[int]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         B=<file>
-                                         fmt=[format]
-                                         O=[file]
-                                         Log=[file]
-                                         dfam=[int]
-                                         vpow=[double]
-                                         link=[int]
-                                         lpow=[double]
-                                         yneg=[double]
-                                         icpt=[int]
-                                         reg=[double]
-                                         tol=[double]
-                                         disp=[double]
-                                         moi=[int]
-                                         mii=[int]
-</div>
-</div>
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the matrix of feature vectors; each row
-constitutes an example.
-
-**Y**: Location to read the response matrix, which may have 1 or 2 columns
-
-**B**: Location to store the estimated regression parameters (the $\beta_j$’s),
-with the intercept parameter $\beta_0$ at position
-B\[$m\,{+}\,1$, 1\] if available
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-**O**: (default: `" "`) Location to write certain summary statistics described 
-in [**Table 9**](algorithms-regression.html#table9), 
-by default it is standard output.
-
-**Log**: (default: `" "`) Location to store iteration-specific variables for monitoring
-and debugging purposes, see [**Table 10**](algorithms-regression.html#table10) for details.
-
-**dfam**: (default: `1`) Distribution family code to specify
-$Prob[y\mid \mu]$,
-see [**Table 11**](algorithms-regression.html#table11):
-
-  * 1 = power distributions with $Var(y) = \mu^{\alpha}$
-  * 2 = binomial or Bernoulli
-
-**vpow**: (default: `0.0`) When `dfam=1`, this provides the $q$ in
-$Var(y) = a\mu^q$, the power
-dependence of the variance of $y$ on its mean. In particular, use:
-
-  * 0.0 = Gaussian
-  * 1.0 = Poisson
-  * 2.0 = Gamma
-  * 3.0 = inverse Gaussian
-
-**link**: (default: `0`) Link function code to determine the link
-function $\eta = g(\mu)$:
-
-  * 0 = canonical link (depends on the distribution family),
-see [**Table 11**](algorithms-regression.html#table11)
-  * 1 = power functions
-  * 2 = logit
-  * 3 = probit
-  * 4 = cloglog
-  * 5 = cauchit
-
-**lpow**: (default: `1.0`) When link=1, this provides the $s$ in
-$\eta = \mu^s$, the power link function; `lpow=0.0` gives the
-log link $\eta = \log\mu$. Common power links:
-
-  * -2.0 = $1/\mu^2$ 
-  * -1.0 = reciprocal
-  * 0.0 = log 
-  * 0.5 = sqrt 
-  * 1.0 = identity
-
-**yneg**: (default: `0.0`) When `dfam=2` and the response matrix $Y$ has
-1 column, this specifies the $y$-value used for Bernoulli "No" label
-("Yes" is $1$):
-0.0 when $y\in\\{0, 1\\}$; -1.0 when
-$y\in\\{-1, 1\\}$
-
-**icpt**: (default: `0`) Intercept and shifting/rescaling of the features in $X$:
-
-  * 0 = no intercept (hence no $\beta_0$), no
-shifting/rescaling of the features
-  * 1 = add intercept, but do not shift/rescale the features
-in $X$
-  * 2 = add intercept, shift/rescale the features in $X$ to
-mean 0, variance 1
-
-**reg**: (default: `0.0`) L2-regularization parameter ($\lambda$)
-
-**tol**: (default: `0.000001`) Tolerance ($\varepsilon$) used in the convergence criterion: we
-terminate the outer iterations when the deviance changes by less than
-this factor; see below for details
-
-**disp**: (default: `0.0`) Dispersion parameter, or 0.0 to estimate it from
-data
-
-**moi**: (default: `200`) Maximum number of outer (Fisher scoring) iterations
-
-**mii**: (default: `0`) Maximum number of inner (conjugate gradient) iterations, or 0
-if no maximum limit provided
-
-
-### Examples
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    B=/user/ml/B.mtx
-                                    fmt=csv
-                                    dfam=2
-                                    link=2
-                                    yneg=-1.0
-                                    icpt=2
-                                    reg=0.01
-                                    tol=0.00000001
-                                    disp=1.0
-                                    moi=100
-                                    mii=10
-                                    O=/user/ml/stats.csv
-                                    Log=/user/ml/log.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         B=/user/ml/B.mtx
-                                         fmt=csv
-                                         dfam=2
-                                         link=2
-                                         yneg=-1.0
-                                         icpt=2
-                                         reg=0.01
-                                         tol=0.00000001
-                                         disp=1.0
-                                         moi=100
-                                         mii=10
-                                         O=/user/ml/stats.csv
-                                         Log=/user/ml/log.csv
-</div>
-</div>
-
 * * *
 
-<a name="table9" />
-**Table 9**: Besides $\beta$, GLM regression script computes a few summary
+#### Table 9
+
+Besides $\beta$, GLM regression script computes a few summary
 statistics listed below. They are provided in CSV format, one
 comma-separated name-value pair per each line.
 
 | Name                  | Meaning |
 | --------------------- | ------- |
-| TERMINATION\_CODE   | A positive integer indicating success/failure as follows: <br />1 = Converged successfully; 2 = Maximum \# of iterations reached; 3 = Input (X, Y) out of range; 4 = Distribution/link not supported
+| TERMINATION\_CODE   | A positive integer indicating success/failure as follows: 1 = Converged successfully; 2 = Maximum \# of iterations reached; 3 = Input (X, Y) out of range; 4 = Distribution/link not supported
 | BETA\_MIN           | Smallest beta value (regression coefficient), excluding the intercept
 | BETA\_MIN\_INDEX    | Column index for the smallest beta value
 | BETA\_MAX           | Largest beta value (regression coefficient), excluding the intercept
@@ -934,11 +379,11 @@ comma-separated name-value pair per each line.
 | DEVIANCE\_UNSCALED  | Deviance from the saturated model, assuming dispersion $= 1.0$
 | DEVIANCE\_SCALED    | Deviance from the saturated model, scaled by DISPERSION value
 
-
 * * *
 
-<a name="table10" />
-**Table 10**: The Log file for GLM regression contains the below
+#### Table 10
+
+The Log file for GLM regression contains the below
 iteration variables in CSV format, each line containing a triple (Name,
 Iteration\#, Value) with Iteration\# being 0 for initial values.
 
@@ -957,40 +402,40 @@ Iteration\#, Value) with Iteration\# being 0 for initial values.
 | IS\_POINT\_UPDATED  | 1 = new point accepted; 0 = new point rejected, old point restored
 | TRUST\_DELTA        | Updated trust region size, the "delta"
 
-
 * * *
 
-<a name="table11" />
-**Table 11**: Common GLM distribution families and link functions. (Here "\*" stands
+#### Table 11
+
+Common GLM distribution families and link functions. (Here "\*" stands
 for "any value.")
 
-| dfam | vpow | link | lpow | Distribution<br />Family | Link<br /> Function | Canonical |
+| dfam | vpow | link | lpow | Distribution Family | Link Function | Canonical |
 | :--: | :--: | :--: | :--: | :------------: | :--------: | :----: |
-|   1  |  0.0 |   1  | -1.0 |    Gaussian    |   inverse  | 
-|   1  |  0.0 |   1  |  0.0 |    Gaussian    |     log    | 
+|   1  |  0.0 |   1  | -1.0 |    Gaussian    |   inverse  |
+|   1  |  0.0 |   1  |  0.0 |    Gaussian    |     log    |
 |   1  |  0.0 |   1  |  1.0 |    Gaussian    |  identity  |   Yes
 |   1  |  1.0 |   1  |  0.0 |     Poisson    |     log    |   Yes
-|   1  |  1.0 |   1  |  0.5 |     Poisson    |   sq.root  | 
-|   1  |  1.0 |   1  |  1.0 |     Poisson    |  identity  | 
+|   1  |  1.0 |   1  |  0.5 |     Poisson    |   sq.root  |
+|   1  |  1.0 |   1  |  1.0 |     Poisson    |  identity  |
 |   1  |  2.0 |   1  | -1.0 |      Gamma     |   inverse  |   Yes
-|   1  |  2.0 |   1  |  0.0 |      Gamma     |     log    | 
-|   1  |  2.0 |   1  |  1.0 |      Gamma     |  identity  | 
+|   1  |  2.0 |   1  |  0.0 |      Gamma     |     log    |
+|   1  |  2.0 |   1  |  1.0 |      Gamma     |  identity  |
 |   1  |  3.0 |   1  | -2.0 |  Inverse Gauss |  $1/\mu^2$ |   Yes
-|   1  |  3.0 |   1  | -1.0 |  Inverse Gauss |   inverse  | 
-|   1  |  3.0 |   1  |  0.0 |  Inverse Gauss |     log    | 
-|   1  |  3.0 |   1  |  1.0 |  Inverse Gauss |  identity  | 
-|   2  |   \* |   1  |  0.0 |    Binomial    |     log    | 
-|   2  |   \* |   1  |  0.5 |    Binomial    |   sq.root  | 
+|   1  |  3.0 |   1  | -1.0 |  Inverse Gauss |   inverse  |
+|   1  |  3.0 |   1  |  0.0 |  Inverse Gauss |     log    |
+|   1  |  3.0 |   1  |  1.0 |  Inverse Gauss |  identity  |
+|   2  |   \* |   1  |  0.0 |    Binomial    |     log    |
+|   2  |   \* |   1  |  0.5 |    Binomial    |   sq.root  |
 |   2  |   \* |   2  |   \* |    Binomial    |    logit   |   Yes
-|   2  |   \* |   3  |   \* |    Binomial    |   probit   | 
-|   2  |   \* |   4  |   \* |    Binomial    |   cloglog  | 
-|   2  |   \* |   5  |   \* |    Binomial    |   cauchit  | 
-
+|   2  |   \* |   3  |   \* |    Binomial    |   probit   |
+|   2  |   \* |   4  |   \* |    Binomial    |   cloglog  |
+|   2  |   \* |   5  |   \* |    Binomial    |   cauchit  |
 
 * * *
 
-<a name="table12" />
-**Table 12**: The supported non-power link functions for the Bernoulli and the
+#### Table 12
+
+The supported non-power link functions for the Bernoulli and the
 binomial distributions. Here $\mu$ is the Bernoulli mean.
 
 | Name                  | Link Function |
@@ -1000,11 +445,9 @@ binomial distributions. Here $\mu$ is the Bernoulli mean.
 | Cloglog | $\displaystyle \eta = \log \big(- \log(1 - \mu)\big)^{\mathstrut}$
 | Cauchit | $\displaystyle \eta = \tan\pi(\mu - 1/2)$
 
-
 * * *
 
-
-### Details
+### GLM Details
 
 In GLM, the noise distribution
 $Prob[y\mid \mu]$
@@ -1016,10 +459,10 @@ $$
 Y \sim\, Prob[y\mid \mu] \,=\, \exp\left(\frac{y\theta - b(\theta)}{a}
 + c(y, a)\right),\,\,\textrm{where}\,\,\,\mu = E(Y) = b'(\theta).
 \end{equation}
-$$ 
+$$
 
 Changing the mean in such a distribution simply
-multiplies all 
+multiplies all
 $Prob[y\mid \mu]$
 by $e^{\,y\hspace{0.2pt}\theta/a}$ and rescales them so
 that they again integrate to 1. Parameter $\theta$ is called
@@ -1077,7 +520,7 @@ We estimate the regression parameters via L2-regularized negative
 log-likelihood minimization:
 
 $$f(\beta; X, Y) \,\,=\,\, -\sum\nolimits_{i=1}^n \big(y_i\theta_i - b(\theta_i)\big)
-\,+\,(\lambda/2) \sum\nolimits_{j=1}^m \beta_j^2\,\,\to\,\,\min$$ 
+\,+\,(\lambda/2) \sum\nolimits_{j=1}^m \beta_j^2\,\,\to\,\,\min$$
 
 where
 $\theta_i$ and $b(\theta_i)$ are from (6); note that $a$ and
@@ -1094,7 +537,7 @@ the data. Note that the intercept is never regularized.
 Our iterative minimizer for $f(\beta; X, Y)$ uses the Fisher scoring
 approximation to the difference
 $\varDelta f(z; \beta) = f(\beta + z; X, Y) \,-\, f(\beta; X, Y)$,
-recomputed at each iteration: 
+recomputed at each iteration:
 
 $$\begin{gathered}
 \varDelta f(z; \beta) \,\,\,\approx\,\,\, 1/2 \cdot z^T A z \,+\, G^T z,
@@ -1105,7 +548,7 @@ $$\begin{gathered}
 w_i = \big[v(\mu_i)\,g'(\mu_i)^2\big]^{-1}
 \!\!\!\!\!\!,\,\,\,\,\,\,\,\,\,
 u_i = (y_i - \mu_i)\big[v(\mu_i)\,g'(\mu_i)\big]^{-1}
-\!\!\!\!\!\!.\,\,\,\,\end{gathered}$$ 
+\!\!\!\!\!\!.\,\,\,\,\end{gathered}$$
 
 Here
 $v(\mu_i)=Var(y_i)/a$, the
@@ -1117,13 +560,13 @@ scoring iterations as the *outer* iterations), which approximately solve
 the following problem:
 
 $$1/2 \cdot z^T A z \,+\, G^T z \,\,\to\,\,\min\,\,\,\,\textrm{subject to}\,\,\,\,
-\|z\|_2 \leq \delta$$ 
+\|z\|_2 \leq \delta$$
 
 The conjugate gradient algorithm closely follows
 Algorithm 7.2 on page 171 of [[Nocedal2006]](algorithms-bibliography.html). The trust region
 size $\delta$ is initialized as
 $0.5\sqrt{m}\,/ \max\nolimits_i \|x_i\|_2$ and updated as described
-in [[Nocedal2006]](algorithms-bibliography.html). 
+in [[Nocedal2006]](algorithms-bibliography.html).
 The user can specify the maximum number of
 the outer and the inner iterations with input parameters
 `moi` and `mii`, respectively. The Fisher scoring
@@ -1145,7 +588,7 @@ $$
 \begin{equation}
 \hat{a} \,\,=\,\, \frac{1}{n-m}\cdot \sum_{i=1}^n \frac{(y_i - \mu_i)^2}{v(\mu_i)}
 \end{equation}
-$$ 
+$$
 
 and use it to adjust our deviance estimate:
 $D_{\hat{a}}(\beta) = D_1(\beta)/\hat{a}$. If input argument
@@ -1153,8 +596,7 @@ disp is 0.0 we estimate $\hat{a}$, otherwise
 we use its value as $a$. Note that in (7) $m$ counts
 the intercept ($m \leftarrow m+1$) if it is present.
 
-
-### Returns
+### GLM Returns
 
 The estimated regression parameters (the $\hat{\beta}_j$’s) are
 populated into a matrix and written to an HDFS file whose path/name was
@@ -1162,13 +604,13 @@ provided as the `B` input argument. What this matrix
 contains, and its size, depends on the input argument `icpt`,
 which specifies the user’s intercept and rescaling choice:
 
-  * **icpt=0**: No intercept, matrix $B$ has size $m\,{\times}\,1$, with
+- **icpt=0**: No intercept, matrix $B$ has size $m\,{\times}\,1$, with
 $B[j, 1] = \hat{\beta}_j$ for each $j$ from 1 to $m = {}$ncol$(X)$.
-  * **icpt=1**: There is intercept, but no shifting/rescaling of $X$; matrix $B$ has
+- **icpt=1**: There is intercept, but no shifting/rescaling of $X$; matrix $B$ has
 size $(m\,{+}\,1) \times 1$, with $B[j, 1] = \hat{\beta}_j$ for $j$ from
 1 to $m$, and $B[m\,{+}\,1, 1] = \hat{\beta}_0$, the estimated intercept
 coefficient.
-  * **icpt=2**: There is intercept, and the features in $X$ are shifted to mean${} = 0$
+- **icpt=2**: There is intercept, and the features in $X$ are shifted to mean${} = 0$
 and rescaled to variance${} = 1$; then there are two versions of
 the $\hat{\beta}_j$’s, one for the original features and another for the
 shifted/rescaled features. Now matrix $B$ has size
@@ -1183,8 +625,7 @@ $D_{\hat{a}}(\hat{\beta})$, see [**Table 9**](algorithms-regression.html#table9)
 log file with variables monitoring progress through the iterations can
 also be made available, see [**Table 10**](algorithms-regression.html#table10).
 
-
-### See Also
+### GLM See Also
 
 In case of binary classification problems, consider using L2-SVM or
 binary logistic regression; for multiclass classification, use
@@ -1192,170 +633,18 @@ multiclass SVM or multinomial logistic regression. For the special cases
 of linear regression and logistic regression, it may be more efficient
 to use the corresponding specialized scripts instead of GLM.
 
-
 * * *
 
-## 4.4. Stepwise Generalized Linear Regression
+## Stepwise Generalized Linear Regression
 
-### Description
+### SGLR Description
 
 Our stepwise generalized linear regression script selects a model based
 on the Akaike information criterion (AIC): the model that gives rise to
 the lowest AIC is provided. Note that currently only the Bernoulli
 distribution family is supported (see below for details).
 
-
-### Usage
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f StepGLM.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    B=<file>
-                                    S=[file]
-                                    O=[file]
-                                    link=[int]
-                                    yneg=[double]
-                                    icpt=[int]
-                                    tol=[double]
-                                    disp=[double]
-                                    moi=[int]
-                                    mii=[int]
-                                    thr=[double]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f StepGLM.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         B=<file>
-                                         S=[file]
-                                         O=[file]
-                                         link=[int]
-                                         yneg=[double]
-                                         icpt=[int]
-                                         tol=[double]
-                                         disp=[double]
-                                         moi=[int]
-                                         mii=[int]
-                                         thr=[double]
-                                         fmt=[format]
-</div>
-</div>
-
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the matrix of feature vectors; each row is an
-example.
-
-**Y**: Location (on HDFS) to read the response matrix, which may have 1 or 2
-columns
-
-**B**: Location (on HDFS) to store the estimated regression parameters (the
-$\beta_j$’s), with the intercept parameter $\beta_0$ at position
-B\[$m\,{+}\,1$, 1\] if available
-
-**S**: (default: `" "`) Location (on HDFS) to store the selected feature-ids in the
-order as computed by the algorithm, by default it is standard output.
-
-**O**: (default: `" "`) Location (on HDFS) to write certain summary statistics
-described in [**Table 9**](algorithms-regression.html#table9), by default it is standard
-output.
-
-**link**: (default: `2`) Link function code to determine the link
-function $\eta = g(\mu)$, see [**Table 11**](algorithms-regression.html#table11); currently the
-following link functions are supported:
-
-  * 1 = log
-  * 2 = logit
-  * 3 = probit
-  * 4 = cloglog
-
-**yneg**: (default: `0.0`) Response value for Bernoulli "No" label, usually 0.0 or -1.0
-
-**icpt**: (default: `0`) Intercept and shifting/rescaling of the features in $X$:
-
-  * 0 = no intercept (hence no $\beta_0$), no
-shifting/rescaling of the features
-  * 1 = add intercept, but do not shift/rescale the features
-in $X$
-  * 2 = add intercept, shift/rescale the features in $X$ to
-mean 0, variance 1
-
-**tol**: (default: `0.000001`) Tolerance ($\epsilon$) used in the convergence criterion: we
-terminate the outer iterations when the deviance changes by less than
-this factor; see below for details.
-
-**disp**: (default: `0.0`) Dispersion parameter, or `0.0` to estimate it from
-data
-
-**moi**: (default: `200`) Maximum number of outer (Fisher scoring) iterations
-
-**mii**: (default: `0`) Maximum number of inner (conjugate gradient) iterations, or 0
-if no maximum limit provided
-
-**thr**: (default: `0.01`) Threshold to stop the algorithm: if the decrease in the value
-of the AIC falls below `thr` no further features are being
-checked and the algorithm stops.
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-
-### Examples
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f StepGLM.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    B=/user/ml/B.mtx
-                                    S=/user/ml/selected.csv
-                                    O=/user/ml/stats.csv
-                                    link=2
-                                    yneg=-1.0
-                                    icpt=2
-                                    tol=0.000001
-                                    moi=100
-                                    mii=10
-                                    thr=0.05
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f StepGLM.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         B=/user/ml/B.mtx
-                                         S=/user/ml/selected.csv
-                                         O=/user/ml/stats.csv
-                                         link=2
-                                         yneg=-1.0
-                                         icpt=2
-                                         tol=0.000001
-                                         moi=100
-                                         mii=10
-                                         thr=0.05
-                                         fmt=csv
-</div>
-</div>
-
-
-### Details
+### SGLR Details
 
 Similar to `StepLinearRegDS.dml` our stepwise GLM script
 builds a model by iteratively selecting predictive variables using a
@@ -1365,8 +654,7 @@ currently only the Bernoulli distribution family (`fam=2` in
 are supported: `log`, `logit`, `probit`, and `cloglog` (link
 $$\in\{1,2,3,4\}$$ in [**Table 11**](algorithms-regression.html#table11)).
 
-
-### Returns
+### SGLR Returns
 
 Similar to the outputs from `GLM.dml` the stepwise GLM script
 computes the estimated regression coefficients and stores them in matrix
@@ -1382,12 +670,9 @@ printed out or stored in a file on HDFS (if requested); these statistics
 will be provided only if the selected model is nonempty, i.e., contains
 at least one variable.
 
+## Regression Scoring & Prediction
 
-* * *
-
-## 4.5. Regression Scoring and Prediction
-
-### Description
+### Reg Scoring & Predict Description
 
 Script `GLM-predict.dml` is intended to cover all linear
 model based regressions, including linear regression, binomial and
@@ -1429,7 +714,7 @@ specified GLM family distribution
 $Prob[y\mid \mu_i]$
 with mean(s) $\mu_i$:
 
-$$x_i \,\,\,\,\mapsto\,\,\,\, \eta_i = \beta_0 + \sum\nolimits_{j=1}^m \beta_j x_{i,j} 
+$$x_i \,\,\,\,\mapsto\,\,\,\, \eta_i = \beta_0 + \sum\nolimits_{j=1}^m \beta_j x_{i,j}
 \,\,\,\,\mapsto\,\,\,\, \mu_i \,\,\,\,\mapsto \,\,\,\, y_i \sim Prob[y\mid \mu_i]$$
 
 If $y_i$ is numerical, the predicted mean $\mu_i$ is a real number. Then
@@ -1458,402 +743,12 @@ lowest-probability label might be right if, say, it represents a
 diagnosis of cancer or another rare and serious outcome. Hence, we keep
 this step outside the scope of `GLM-predict.dml` for now.
 
-
-### Usage
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM-predict.dml
-                            -nvargs X=<file>
-                                    Y=[file]
-                                    B=<file>
-                                    M=[file]
-                                    O=[file]
-                                    dfam=[int]
-                                    vpow=[double]
-                                    link=[int]
-                                    lpow=[double]
-                                    disp=[double]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=[file]
-                                         B=<file>
-                                         M=[file]
-                                         O=[file]
-                                         dfam=[int]
-                                         vpow=[double]
-                                         link=[int]
-                                         lpow=[double]
-                                         disp=[double]
-                                         fmt=[format]
-</div>
-</div>
-
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the $n\,{\times}\,m$-matrix $X$ of feature
-vectors, each row constitutes one feature vector (one record)
-
-**Y**: (default: `" "`) Location to read the response matrix $Y$ needed for scoring
-(but optional for prediction), with the following dimensions:
-
-  * $n {\times} 1$: acceptable for all distributions
-(`dfam=1` or `2` or `3`)
-  * $n {\times} 2$: for binomial (`dfam=2`) if given by
-(\#pos, \#neg) counts
-  * $n {\times} k\,{+}\,1$: for multinomial (`dfam=3`) if
-given by category counts
-
-**M**: (default: `" "`) Location to write, if requested, the matrix of predicted
-response means (for `dfam=1`) or probabilities (for
-`dfam=2` or `3`):
-
-  * $n {\times} 1$: for power-type distributions (`dfam=1`)
-  * $n {\times} 2$: for binomial distribution (`dfam=2`),
-col\# 2 is the "No" probability
-  * $n {\times} k\,{+}\,1$: for multinomial logit (`dfam=3`),
-col\# $k\,{+}\,1$ is for the baseline
-
-**B**: Location to read matrix $B$ of the betas, i.e. estimated GLM regression
-parameters, with the intercept at row\# $m\,{+}\,1$ if available:
-
-  * $\dim(B) \,=\, m {\times} k$: do not add intercept
-  * $\dim(B) \,=\, m\,{+}\,1 {\times} k$: add intercept as given by the
-last $B$-row
-  * if $k > 1$, use only $B[, 1]$ unless it is Multinomial Logit
-(`dfam=3`)
-
-**O**: (default: `" "`) Location to store the CSV-file with goodness-of-fit
-statistics defined in [**Table 13**](algorithms-regression.html#table13), 
-the default is to
-print them to the standard output
-
-**dfam**: (default: `1`) GLM distribution family code to specify the type of
-distribution
-$Prob[y\,|\,\mu]$
-that we assume:
-
-  * 1 = power distributions with
-$Var(y) = \mu^{\alpha}$, see
-[**Table 11**](algorithms-regression.html#table11)
-  * 2 = binomial
-  * 3 = multinomial logit
-
-**vpow**: (default: `0.0`) Power for variance defined as (mean)$^{\textrm{power}}$
-(ignored if `dfam`$\,{\neq}\,1$): when `dfam=1`,
-this provides the $q$ in
-$Var(y) = a\mu^q$, the power
-dependence of the variance of $y$ on its mean. In particular, use:
-
-  * 0.0 = Gaussian
-  * 1.0 = Poisson
-  * 2.0 = Gamma
-  * 3.0 = inverse Gaussian
-
-**link**: (default: `0`) Link function code to determine the link
-function $\eta = g(\mu)$, ignored for multinomial logit
-(`dfam=3`):
-
-  * 0 = canonical link (depends on the distribution family),
-see [**Table 11**](algorithms-regression.html#table11)
-  * 1 = power functions
-  * 2 = logit
-  * 3 = probit
-  * 4 = cloglog
-  * 5 = cauchit
-
-**lpow**: (default: `1.0`) Power for link function defined as
-(mean)$^{\textrm{power}}$ (ignored if `link`$\,{\neq}\,1$):
-when `link=1`, this provides the $s$ in $\eta = \mu^s$, the
-power link function; `lpow=0.0` gives the log link
-$\eta = \log\mu$. Common power links:
-
-  * -2.0 = $1/\mu^2$ 
-  * -1.0 = reciprocal
-  * 0.0 = log 
-  * 0.5 = sqrt 
-  * 1.0 = identity
-
-**disp**: (default: `1.0`) Dispersion value, when available; must be positive
-
-**fmt**: (default: `"text"`) Matrix M file output format, such as
-`text`, `mm`, or `csv`; see read/write
-functions in SystemDS Language Reference for details.
-
-
-### Examples
-
-Note that in the examples below the value for the `disp` input
-argument is set arbitrarily. The correct dispersion value should be
-computed from the training data during model estimation, or omitted if
-unknown (which sets it to `1.0`).
-
-**Linear regression example**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM-predict.dml
-                            -nvargs dfam=1
-                                    vpow=0.0
-                                    link=1
-                                    lpow=1.0
-                                    disp=5.67
-                                    X=/user/ml/X.mtx
-                                    B=/user/ml/B.mtx
-                                    M=/user/ml/Means.mtx
-                                    fmt=csv
-                                    Y=/user/ml/Y.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs dfam=1
-                                         vpow=0.0
-                                         link=1
-                                         lpow=1.0
-                                         disp=5.67
-                                         X=/user/ml/X.mtx
-                                         B=/user/ml/B.mtx
-                                         M=/user/ml/Means.mtx
-                                         fmt=csv
-                                         Y=/user/ml/Y.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
-**Linear regression example, prediction only (no Y given)**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM-predict.dml
-                            -nvargs dfam=1
-                                    vpow=0.0
-                                    link=1
-                                    lpow=1.0
-                                    X=/user/ml/X.mtx
-                                    B=/user/ml/B.mtx
-                                    M=/user/ml/Means.mtx
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs dfam=1
-                                         vpow=0.0
-                                         link=1
-                                         lpow=1.0
-                                         X=/user/ml/X.mtx
-                                         B=/user/ml/B.mtx
-                                         M=/user/ml/Means.mtx
-                                         fmt=csv
-</div>
-</div>
-
-**Binomial logistic regression example**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM-predict.dml
-                            -nvargs dfam=2
-                                    link=2
-                                    disp=3.0004464
-                                    X=/user/ml/X.mtx
-                                    B=/user/ml/B.mtx
-                                    M=/user/ml/Probabilities.mtx
-                                    fmt=csv
-                                    Y=/user/ml/Y.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs dfam=2
-                                         link=2
-                                         disp=3.0004464
-                                         X=/user/ml/X.mtx
-                                         B=/user/ml/B.mtx
-                                         M=/user/ml/Probabilities.mtx
-                                         fmt=csv
-                                         Y=/user/ml/Y.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
-**Binomial probit regression example**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM-predict.dml
-                            -nvargs dfam=2
-                                    link=3
-                                    disp=3.0004464
-                                    X=/user/ml/X.mtx
-                                    B=/user/ml/B.mtx
-                                    M=/user/ml/Probabilities.mtx
-                                    fmt=csv
-                                    Y=/user/ml/Y.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs dfam=2
-                                         link=3
-                                         disp=3.0004464
-                                         X=/user/ml/X.mtx
-                                         B=/user/ml/B.mtx
-                                         M=/user/ml/Probabilities.mtx
-                                         fmt=csv
-                                         Y=/user/ml/Y.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
-**Multinomial logistic regression example**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM-predict.dml
-                            -nvargs dfam=3 
-                                    X=/user/ml/X.mtx
-                                    B=/user/ml/B.mtx
-                                    M=/user/ml/Probabilities.mtx
-                                    fmt=csv
-                                    Y=/user/ml/Y.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs dfam=3
-                                         X=/user/ml/X.mtx
-                                         B=/user/ml/B.mtx
-                                         M=/user/ml/Probabilities.mtx
-                                         fmt=csv
-                                         Y=/user/ml/Y.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
-**Poisson regression with the log link example**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM-predict.dml
-                            -nvargs dfam=1
-                                    vpow=1.0
-                                    link=1
-                                    lpow=0.0
-                                    disp=3.45
-                                    X=/user/ml/X.mtx
-                                    B=/user/ml/B.mtx
-                                    M=/user/ml/Means.mtx
-                                    fmt=csv
-                                    Y=/user/ml/Y.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs dfam=1
-                                         vpow=1.0
-                                         link=1
-                                         lpow=0.0
-                                         disp=3.45
-                                         X=/user/ml/X.mtx
-                                         B=/user/ml/B.mtx
-                                         M=/user/ml/Means.mtx
-                                         fmt=csv
-                                         Y=/user/ml/Y.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
-**Gamma regression with the inverse (reciprocal) link example**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f GLM-predict.dml
-                            -nvargs dfam=1
-                                    vpow=2.0
-                                    link=1
-                                    lpow=-1.0
-                                    disp=1.99118
-                                    X=/user/ml/X.mtx
-                                    B=/user/ml/B.mtx
-                                    M=/user/ml/Means.mtx
-                                    fmt=csv
-                                    Y=/user/ml/Y.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f GLM-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs dfam=1
-                                         vpow=2.0
-                                         link=1
-                                         lpow=-1.0
-                                         disp=1.99118
-                                         X=/user/ml/X.mtx
-                                         B=/user/ml/B.mtx
-                                         M=/user/ml/Means.mtx
-                                         fmt=csv
-                                         Y=/user/ml/Y.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
 * * *
 
-<a name="table13" />
-**Table 13**: The goodness-of-fit statistics are provided in CSV format, one per each line, with four
-columns: (Name, CID, Disp?, Value).  The columns are: 
+#### Table 13
+
+The goodness-of-fit statistics are provided in CSV format, one per each line, with four
+columns: (Name, CID, Disp?, Value).  The columns are:
 "Name" is the string identifier for the statistic;
 "CID" is an optional integer value that specifies the $Y$-column index for per-column statistics
 (note that a bi/multinomial one-column Y-input is converted into multi-column);
@@ -1884,8 +779,7 @@ statistic;
 
 * * *
 
-
-### Details
+### Reg Scoring & Predict Details
 
 The output matrix $M$ of predicted means (or probabilities) is computed
 by matrix-multiplying $X$ with the first column of $B$ or with the
@@ -1901,7 +795,7 @@ of each category label for each record.
 
 When the "actual" response values $Y$ are available, the summary
 statistics are computed and written out as described in
-[**Table 13**](algorithms-regression.html#table13). Below we discuss each of these statistics
+[**Table 13**](table-13). Below we discuss each of these statistics
 in detail. Note that in the categorical case (binomial and multinomial)
 $Y$ is internally represented as the matrix of observation counts for
 each label in each record, rather than just the label ID for each
@@ -1928,32 +822,31 @@ Pearson’s $X^2$ and deviance $G^2$ often perform poorly with bi- and
 multinomial distributions due to low cell counts, hence we need this
 extra goodness-of-fit measure. To compute these statistics, we use:
 
-  * the $n\times (k\,{+}\,1)$-matrix $Y$ of multi-label response counts, in
+- the $n\times (k\,{+}\,1)$-matrix $Y$ of multi-label response counts, in
 which $y_{i,j}$ is the number of times label $j$ was observed in
 record $i$
-  * the model-estimated probability matrix $P$ of the same dimensions that
+- the model-estimated probability matrix $P$ of the same dimensions that
 satisfies $$\sum_{j=1}^{k+1} p_{i,j} = 1$$ for all $i=1,\ldots,n$ and
 where $p_{i,j}$ is the model probability of observing label $j$ in
 record $i$
-  * the $n\,{\times}\,1$-vector $N$ where $N_i$ is the aggregated count of
+- the $n\,{\times}\,1$-vector $N$ where $N_i$ is the aggregated count of
 observations in record $i$ (all $N_i = 1$ if each record has only one
 response label)
 
 We start by computing the multinomial log-likelihood of $Y$ given $P$
 and $N$, as well as the expected log-likelihood given a random $Y$ and
 the variance of this log-likelihood if $Y$ indeed follows the proposed
-distribution: 
+distribution:
 
 $$
 \begin{aligned}
 \ell (Y) \,\,&=\,\, \log Prob[Y \,|\, P, N] \,\,=\,\, \sum_{i=1}^{n} \,\sum_{j=1}^{k+1}  \,y_{i,j}\log p_{i,j} \\
-E_Y \ell (Y)  \,\,&=\,\, \sum_{i=1}^{n}\, \sum_{j=1}^{k+1} \,\mu_{i,j} \log p_{i,j} 
+E_Y \ell (Y)  \,\,&=\,\, \sum_{i=1}^{n}\, \sum_{j=1}^{k+1} \,\mu_{i,j} \log p_{i,j}
     \,\,=\,\, \sum_{i=1}^{n}\, N_i \,\sum_{j=1}^{k+1} \,p_{i,j} \log p_{i,j} \\
 Var_Y \ell (Y) \,&=\, \sum_{i=1}^{n} \,N_i \left(\sum_{j=1}^{k+1} \,p_{i,j} \big(\log p_{i,j}\big)^2
     - \Bigg( \sum_{j=1}^{k+1} \,p_{i,j} \log p_{i,j}\Bigg) ^ {\!\!2\,} \right)
 \end{aligned}
 $$
-
 
 Then we compute the $Z$-score as the difference between the actual and
 the expected log-likelihood $\ell(Y)$ divided by its expected standard
@@ -1979,7 +872,7 @@ $Var_Y \ell(Y)$ by the same
 by the square root of the dispersion:
 
 $$Z_{\texttt{disp}}  \,=\, \big(\ell(Y) \,-\, E_Y \ell(Y)\big) \,\big/\, \sqrt{\texttt{disp}\cdot Var_Y \ell(Y)}
-\,=\, Z / \sqrt{\texttt{disp}}$$ 
+\,=\, Z / \sqrt{\texttt{disp}}$$
 
 Finally, we recalculate the p-value
 with this new $Z$-score.
@@ -1999,8 +892,8 @@ multinomial) than it is for numerical data, since $y_i$ has multiple
 correlated dimensions [[McCullagh1989]](algorithms-bibliography.html):
 
 $$X^2\,\textrm{(numer.)} \,=\,  \sum_{i=1}^{n}\, \frac{(y_i - \mu_i)^2}{v_i};\quad
-X^2\,\textrm{(categ.)} \,=\,  \sum_{i=1}^{n}\, \sum_{j=1}^{k+1} \,\frac{(y_{i,j} - N_i 
-\hspace{0.5pt} p_{i,j})^2}{N_i \hspace{0.5pt} p_{i,j}}$$ 
+X^2\,\textrm{(categ.)} \,=\,  \sum_{i=1}^{n}\, \sum_{j=1}^{k+1} \,\frac{(y_{i,j} - N_i
+\hspace{0.5pt} p_{i,j})^2}{N_i \hspace{0.5pt} p_{i,j}}$$
 
 The number of
 degrees of freedom \#d.f. for the $\chi^2$ distribution is $n - m$ for
@@ -2051,7 +944,6 @@ p-value of $G^2$ [[McCullagh1989]](algorithms-bibliography.html). The number of 
 freedom \#d.f. and the treatment of dispersion are the same as for
 Pearson’s $X^2$, see above.
 
-
 ### Column-Wise Statistics
 
 The rest of the statistics are computed separately for each column
@@ -2075,15 +967,15 @@ for individual observations $$y_{i,j,l}$$ is estimated from the total
 variance for response values $$y_{i,j}$$ using independence assumption:
 $$Var \,y_{i,j} = Var \sum_{l=1}^{N_i} y_{i,j,l} = \sum_{l=1}^{N_i} Var y_{i,j,l}$$.
 This allows us to estimate the sum of squares for $y_{i,j,l}$ via the
-sum of squares for $$y_{i,j}$$: 
+sum of squares for $$y_{i,j}$$:
 
-$$\texttt{STDEV_TOT_Y}_j \,=\, 
+$$\texttt{STDEV_TOT_Y}_j \,=\,
 \Bigg[\frac{1}{N-1} \sum_{i=1}^n  \Big( y_{i,j} -  \frac{N_i}{N} \sum_{i'=1}^n  y_{i'\!,j}\Big)^2\Bigg]^{1/2}$$
 
 Analogously, we estimate the standard deviation of the residual
-$$y_{i,j,l} - \mu_{i,j,l}$$: 
+$$y_{i,j,l} - \mu_{i,j,l}$$:
 
-$$\texttt{STDEV_RES_Y}_j \,=\, 
+$$\texttt{STDEV_RES_Y}_j \,=\,
 \Bigg[\frac{1}{N-m'} \,\sum_{i=1}^n  \Big( y_{i,j} - \mu_{i,j} -  \frac{N_i}{N} \sum_{i'=1}^n  (y_{i'\!,j} - \mu_{i'\!,j})\Big)^2\Bigg]^{1/2}$$
 
 Here $m'=m$ if $m$ includes the intercept as a feature and $m'=m+1$ if
@@ -2094,7 +986,7 @@ means by the GLM variance formula and scaled by the dispersion:
 $$\texttt{PRED_STDEV_RES}_j \,=\, \Big[\frac{\texttt{disp}}{N} \, \sum_{i=1}^n \, v(\mu_{i,j})\Big]^{1/2}$$
 
 We also compute the $R^2$ statistics for each column of $Y$, see
-[**Table 14**](algorithms-regression.html#table14) and [**Table 15**](algorithms-regression.html#table15) for details. We compute two versions
+[**Table 14**](table-14) and [**Table 15**](table-15) for details. We compute two versions
 of $R^2$: in one version the residual sum-of-squares (RSS) includes any
 bias in the residual that might be present (due to the lack of, or
 inaccuracy in, the intercept); in the other version of RSS the bias is
@@ -2102,43 +994,39 @@ subtracted by "centering" the residual. In both cases we subtract the
 bias in the total sum-of-squares (in the denominator), and $m'$ equals
 $m$ with the intercept or $m+1$ without the intercept.
 
-
 * * *
 
-<a name="table14" />
-**Table 14**: $R^2$ where the residual sum-of-squares includes the bias contribution.
+#### Table 14
+
+$R^2$ where the residual sum-of-squares includes the bias contribution.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
 | $\texttt{R2}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
 | $\texttt{ADJUSTED_R2}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m}}  \, \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
- 
 
 * * *
 
-<a name="table15" />
-**Table 15**: $R^2$ where the residual sum-of-squares is centered so that the bias is subtracted.
+#### Table 15
+
+$R^2$ where the residual sum-of-squares is centered so that the bias is subtracted.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
 | $\texttt{R2_NOBIAS}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 | $\texttt{ADJUSTED_R2_NOBIAS}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m'}} \, \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 
-
 * * *
 
-
-### Returns
+### Reg Scoring & Predict Returns
 
 The matrix of predicted means (if the response is numerical) or
 probabilities (if the response is categorical), see Description
 subsection above for more information. Given `Y`, we return
 some statistics in CSV format as described in
-[**Table 13**](algorithms-regression.html#table13) and in the above text.
-
+[**Table 13**](table-13) and in the above text.
 
 * * *
-
 
 [^1]: Smaller likelihood difference between two models suggests less
     statistical evidence to pick one model over the other.

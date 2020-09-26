@@ -21,9 +21,9 @@ limitations under the License.
 {% endcomment %}
 -->
 
-## 6.1. Kaplan-Meier Survival Analysis
+## Kaplan-Meier Survival Analysis
 
-### Description
+### KMSA Description
 
 Survival analysis examines the time needed for a particular event of
 interest to occur. In medical research, for example, the prototypical
@@ -34,182 +34,7 @@ engineering. Kaplan-Meier or (product limit) method is a simple
 non-parametric approach for estimating survival probabilities from both
 censored and uncensored survival times.
 
-
-### Usage
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f KM.dml
-                            -nvargs X=<file>
-                                    TE=<file>
-                                    GI=<file>
-                                    SI=<file>
-                                    O=<file>
-                                    M=<file>
-                                    T=<file>
-                                    alpha=[double]
-                                    etype=[greenwood|peto]
-                                    ctype=[plain|log|log-log]
-                                    ttype=[none|log-rank|wilcoxon]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f KM.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         TE=<file>
-                                         GI=<file>
-                                         SI=<file>
-                                         O=<file>
-                                         M=<file>
-                                         T=<file>
-                                         alpha=[double]
-                                         etype=[greenwood|peto]
-                                         ctype=[plain|log|log-log]
-                                         ttype=[none|log-rank|wilcoxon]
-                                         fmt=[format]
-</div>
-</div>
-
-
-### Arguments
-
-**X**: Location (on HDFS) to read the input matrix of the survival data
-containing:
-
-  * timestamps
-  * whether event occurred (1) or data is censored (0)
-  * a number of factors (i.e., categorical features) for grouping and/or
-stratifying
-
-**TE**: Location (on HDFS) to read the 1-column matrix $TE$ that contains the
-column indices of the input matrix $X$ corresponding to timestamps
-(first entry) and event information (second entry)
-
-**GI**: Location (on HDFS) to read the 1-column matrix $GI$ that contains the
-column indices of the input matrix $X$ corresponding to the factors
-(i.e., categorical features) to be used for grouping
-
-**SI**: Location (on HDFS) to read the 1-column matrix $SI$ that contains the
-column indices of the input matrix $X$ corresponding to the factors
-(i.e., categorical features) to be used for grouping
-
-**O**: Location (on HDFS) to write the matrix containing the results of the
-Kaplan-Meier analysis $KM$
-
-**M**: Location (on HDFS) to write Matrix $M$ containing the following
-statistics: total number of events, median and its confidence intervals;
-if survival data for multiple groups and strata are provided each row of
-$M$ contains the above statistics per group and stratum.
-
-**T**: If survival data from multiple groups is available and
-`ttype=log-rank` or `ttype=wilcoxon`, location (on
-HDFS) to write the two matrices that contains the result of the
-(stratified) test for comparing these groups; see below for details.
-
-**alpha**: (default: `0.05`) Parameter to compute $100(1-\alpha)\%$ confidence intervals
-for the survivor function and its median
-
-**etype**: (default: `"greenwood"`) Parameter to specify the error type according to `greenwood`
-or `peto`
-
-**ctype**: (default: `"log"`) Parameter to modify the confidence interval; `plain` keeps
-the lower and upper bound of the confidence interval unmodified, `log`
-corresponds to logistic transformation and `log-log` corresponds to the
-complementary log-log transformation
-
-**ttype**: (default: `"none"`) If survival data for multiple groups is available specifies
-which test to perform for comparing survival data across multiple
-groups: `none`, `log-rank` or `wilcoxon` test
-
-**fmt**: (default:`"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-
-### Examples
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f KM.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    TE=/user/ml/TE
-                                    GI=/user/ml/GI
-                                    SI=/user/ml/SI
-                                    O=/user/ml/kaplan-meier.csv
-                                    M=/user/ml/model.csv
-                                    alpha=0.01
-                                    etype=greenwood
-                                    ctype=plain
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f KM.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         TE=/user/ml/TE
-                                         GI=/user/ml/GI
-                                         SI=/user/ml/SI
-                                         O=/user/ml/kaplan-meier.csv
-                                         M=/user/ml/model.csv
-                                         alpha=0.01
-                                         etype=greenwood
-                                         ctype=plain
-                                         fmt=csv
-</div>
-</div>
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f KM.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    TE=/user/ml/TE
-                                    GI=/user/ml/GI
-                                    SI=/user/ml/SI
-                                    O=/user/ml/kaplan-meier.csv
-                                    M=/user/ml/model.csv
-                                    T=/user/ml/test.csv
-                                    alpha=0.01
-                                    etype=peto
-                                    ctype=log
-                                    ttype=log-rank
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f KM.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         TE=/user/ml/TE
-                                         GI=/user/ml/GI
-                                         SI=/user/ml/SI
-                                         O=/user/ml/kaplan-meier.csv
-                                         M=/user/ml/model.csv
-                                         T=/user/ml/test.csv
-                                         alpha=0.01
-                                         etype=peto
-                                         ctype=log
-                                         ttype=log-rank
-                                         fmt=csv
-</div>
-</div>
-
-
-### Details
+### KMSA Details
 
 The Kaplan-Meier estimate is a non-parametric maximum likelihood
 estimate (MLE) of the survival function $S(t)$, i.e., the probability of
@@ -319,7 +144,7 @@ $$V_{Lkk'}=\sum_{j=1}^{r} \frac{n_{kj}d_j(n_j-d_j)}{n_j(n_j-1)} \left( \delta_{k
 
 for $k,k'=1,2,\ldots,g-1$, with
 
-$$\delta_{kk'} = 
+$$\delta_{kk'} =
 \begin{cases}
 1 & \text{if } k=k'\\
 0 & \text{otherwise}
@@ -342,21 +167,20 @@ test if requested. In this case, the values of the $U$- and $V$-
 statistics are computed for each stratum and then combined over all
 strata.
 
-### Returns
-
+### KMSA Returns
 
 Below we list the results of the survival analysis computed by
 `KM.dml`. The calculated statistics are stored in matrix $KM$
 with the following schema:
 
-  * Column 1: timestamps
-  * Column 2: number of individuals at risk
-  * Column 3: number of events
-  * Column 4: Kaplan-Meier estimate of the survivor function $\hat{S}$
-  * Column 5: standard error of $\hat{S}$
-  * Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for
+- Column 1: timestamps
+- Column 2: number of individuals at risk
+- Column 3: number of events
+- Column 4: Kaplan-Meier estimate of the survivor function $\hat{S}$
+- Column 5: standard error of $\hat{S}$
+- Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for
     $\hat{S}$
-  * Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for
+- Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for
     $\hat{S}$
 
 Note that if survival data for multiple groups and/or strata is
@@ -371,27 +195,27 @@ Additionally, `KM.dml` stores the following statistics in the
 factors used for grouping and $l$ denotes the number of factors used for
 stratifying.
 
-  * Columns 1 to $k$: unique combination of values in the $k$ factors
+- Columns 1 to $k$: unique combination of values in the $k$ factors
     used for grouping
-  * Columns $k+1$ to $k+l$: unique combination of values in the $l$
+- Columns $k+1$ to $k+l$: unique combination of values in the $l$
     factors used for stratifying
-  * Column $k+l+1$: total number of records
-  * Column $k+l+2$: total number of events
-  * Column $k+l+3$: median of $\hat{S}$
-  * Column $k+l+4$: lower bound of $100(1-\alpha)\%$ confidence interval
+- Column $k+l+1$: total number of records
+- Column $k+l+2$: total number of events
+- Column $k+l+3$: median of $\hat{S}$
+- Column $k+l+4$: lower bound of $100(1-\alpha)\%$ confidence interval
     for the median of $\hat{S}$
-  * Column $k+l+5$: upper bound of $100(1-\alpha)\%$ confidence interval
+- Column $k+l+5$: upper bound of $100(1-\alpha)\%$ confidence interval
     for the median of $\hat{S}$.
 
 If there is only 1 group and 1 stratum available $M$ will be a 1-row
 matrix with 5 columns where
 
-  * Column 1: total number of records
-  * Column 2: total number of events
-  * Column 3: median of $\hat{S}$
-  * Column 4: lower bound of $100(1-\alpha)\%$ confidence interval for
+- Column 1: total number of records
+- Column 2: total number of events
+- Column 3: median of $\hat{S}$
+- Column 4: lower bound of $100(1-\alpha)\%$ confidence interval for
     the median of $\hat{S}$
-  * Column 5: upper bound of $100(1-\alpha)\%$ confidence interval for
+- Column 5: upper bound of $100(1-\alpha)\%$ confidence interval for
     the median of $\hat{S}$.
 
 If a comparison of the survival data across multiple groups needs to be
@@ -399,27 +223,24 @@ performed, `KM.dml` computes two matrices $T$ and
 $$T\_GROUPS\_OE$$ that contain a summary of the test. The 1-row matrix $T$
 stores the following statistics:
 
-  * Column 1: number of groups in the survival data
-  * Column 2: degree of freedom for Chi-squared distributed test
+- Column 1: number of groups in the survival data
+- Column 2: degree of freedom for Chi-squared distributed test
     statistic
-  * Column 3: value of test statistic
-  * Column 4: $P$-value.
+- Column 3: value of test statistic
+- Column 4: $P$-value.
 
 Matrix $$T\_GROUPS\_OE$$ contains the following statistics for each of $g$
 groups:
 
-  * Column 1: number of events
-  * Column 2: number of observed death times ($O$)
-  * Column 3: number of expected death times ($E$)
-  * Column 4: $(O-E)^2/E$
-  * Column 5: $(O-E)^2/V$.
+- Column 1: number of events
+- Column 2: number of observed death times ($O$)
+- Column 3: number of expected death times ($E$)
+- Column 4: $(O-E)^2/E$
+- Column 5: $(O-E)^2/V$.
 
+## Cox Proportional Hazard Regression Model
 
-* * *
-
-## 6.2. Cox Proportional Hazard Regression Model
-
-### Description
+### CPHRM Description
 
 The Cox (proportional hazard or PH) is a semi-parametric statistical
 approach commonly used for analyzing survival data. Unlike
@@ -432,282 +253,7 @@ each individual at the time origin. Our focus is on covariates that do
 not change value over time, i.e., time-independent covariates, and that
 may be categorical (ordinal or nominal) as well as continuous-valued.
 
-
-### Usage
-
-**Cox**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Cox.dml
-                            -nvargs X=<file>
-                                    TE=<file>
-                                    F=<file>
-                                    R=[file]
-                                    M=<file>
-                                    S=[file]
-                                    T=[file]
-                                    COV=<file>
-                                    RT=<file>
-                                    XO=<file>
-                                    MF=<file>
-                                    alpha=[double]
-                                    tol=[double]
-                                    moi=[int]
-                                    mii=[int]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Cox.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         TE=<file>
-                                         F=<file>
-                                         R=[file]
-                                         M=<file>
-                                         S=[file]
-                                         T=[file]
-                                         COV=<file>
-                                         RT=<file>
-                                         XO=<file>
-                                         MF=<file>
-                                         alpha=[double]
-                                         tol=[double]
-                                         moi=[int]
-                                         mii=[int]
-                                         fmt=[format]
-</div>
-</div>
-
-
-**Cox Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Cox-predict.dml
-                            -nvargs X=<file>
-                                    RT=<file>
-                                    M=<file>
-                                    Y=<file>
-                                    COV=<file>
-                                    MF=<file>
-                                    P=<file>
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Cox-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         RT=<file>
-                                         M=<file>
-                                         Y=<file>
-                                         COV=<file>
-                                         MF=<file>
-                                         P=<file>
-                                         fmt=[format]
-</div>
-</div>
-
-
-### Arguments - Cox Model Fitting/Prediction
-
-**X**: Location (on HDFS) to read the input matrix of the survival data
-containing:
-
-  * timestamps
-  * whether event occurred (1) or data is censored (0)
-  * feature vectors
-
-**Y**: Location (on HDFS) to the read matrix used for prediction
-
-**TE**: Location (on HDFS) to read the 1-column matrix $TE$ that contains the
-column indices of the input matrix $X$ corresponding to timestamps
-(first entry) and event information (second entry)
-
-**F**: Location (on HDFS) to read the 1-column matrix $F$ that contains the
-column indices of the input matrix $X$ corresponding to the features to
-be used for fitting the Cox model
-
-**R**: (default: `" "`) If factors (i.e., categorical features) are available in the
-input matrix $X$, location (on HDFS) to read matrix $R$ containing the
-start (first column) and end (second column) indices of each factor in
-$X$; alternatively, user can specify the indices of the baseline level
-of each factor which needs to be removed from $X$. If $R$ is not
-provided by default all variables are considered to be
-continuous-valued.
-
-**M**: Location (on HDFS) to store the results of Cox regression analysis
-including regression coefficients $\beta_j$s, their standard errors,
-confidence intervals, and $P$-values
-
-**S**: (default: `" "`) Location (on HDFS) to store a summary of some statistics of
-the fitted model including number of records, number of events,
-log-likelihood, AIC, Rsquare (Cox & Snell), and maximum possible Rsquare
-
-**T**: (default: `" "`) Location (on HDFS) to store the results of Likelihood ratio
-test, Wald test, and Score (log-rank) test of the fitted model
-
-**COV**: Location (on HDFS) to store the variance-covariance matrix of
-$\beta_j$s; note that parameter `COV` needs to be provided as
-input to prediction.
-
-**RT**: Location (on HDFS) to store matrix $RT$ containing the order-preserving
-recoded timestamps from $X$; note that parameter `RT` needs
-to be provided as input for prediction.
-
-**XO**: Location (on HDFS) to store the input matrix $X$ ordered by the
-timestamps; note that parameter `XO` needs to be provided as
-input for prediction.
-
-**MF**: Location (on HDFS) to store column indices of $X$ excluding the baseline
-factors if available; note that parameter `MF` needs to be
-provided as input for prediction.
-
-**P**: Location (on HDFS) to store matrix $P$ containing the results of
-prediction
-
-**alpha**: (default: `0.05`) Parameter to compute a $100(1-\alpha)\%$ confidence interval
-for $\beta_j$s
-
-**tol**: (default: `0.000001`) Tolerance ($\epsilon$) used in the convergence criterion
-
-**moi**: (default: `100`) Maximum number of outer (Fisher scoring) iterations
-
-**mii**: (default: `0`) Maximum number of inner (conjugate gradient) iterations, or 0
-if no maximum limit provided
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-
-### Examples
-
-**Cox**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Cox.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    TE=/user/ml/TE
-                                    F=/user/ml/F
-                                    R=/user/ml/R
-                                    M=/user/ml/model.csv
-                                    T=/user/ml/test.csv
-                                    COV=/user/ml/var-covar.csv
-                                    XO=/user/ml/X-sorted.mtx
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Cox.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         TE=/user/ml/TE
-                                         F=/user/ml/F
-                                         R=/user/ml/R
-                                         M=/user/ml/model.csv
-                                         T=/user/ml/test.csv
-                                         COV=/user/ml/var-covar.csv
-                                         XO=/user/ml/X-sorted.mtx
-                                         fmt=csv
-</div>
-</div>
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Cox.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    TE=/user/ml/TE
-                                    F=/user/ml/F
-                                    R=/user/ml/R
-                                    M=/user/ml/model.csv
-                                    T=/user/ml/test.csv
-                                    COV=/user/ml/var-covar.csv
-                                    RT=/user/ml/recoded-timestamps.csv
-                                    XO=/user/ml/X-sorted.csv
-                                    MF=/user/ml/baseline.csv
-                                    alpha=0.01
-                                    tol=0.000001
-                                    moi=100
-                                    mii=20
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Cox.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         TE=/user/ml/TE
-                                         F=/user/ml/F
-                                         R=/user/ml/R
-                                         M=/user/ml/model.csv
-                                         T=/user/ml/test.csv
-                                         COV=/user/ml/var-covar.csv
-                                         RT=/user/ml/recoded-timestamps.csv
-                                         XO=/user/ml/X-sorted.csv
-                                         MF=/user/ml/baseline.csv
-                                         alpha=0.01
-                                         tol=0.000001
-                                         moi=100
-                                         mii=20
-                                         fmt=csv
-</div>
-</div>
-
-**Cox Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Cox-predict.dml
-                            -nvargs X=/user/ml/X-sorted.mtx
-                                    RT=/user/ml/recoded-timestamps.csv
-                                    M=/user/ml/model.csv
-                                    Y=/user/ml/Y.mtx
-                                    COV=/user/ml/var-covar.csv
-                                    MF=/user/ml/baseline.csv
-                                    P=/user/ml/predictions.csv
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Cox-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X-sorted.mtx
-                                         RT=/user/ml/recoded-timestamps.csv
-                                         M=/user/ml/model.csv
-                                         Y=/user/ml/Y.mtx
-                                         COV=/user/ml/var-covar.csv
-                                         MF=/user/ml/baseline.csv
-                                         P=/user/ml/predictions.csv
-                                         fmt=csv
-</div>
-</div>
-
-
-### Details
+### CPHRM Details
 
 In the Cox PH regression model, the relationship between the hazard
 function — i.e., the probability of event occurrence at a given time — and
@@ -734,7 +280,7 @@ $$\log\biggl\{ \frac{h_i(t)}{h_0(t)} \biggr\} = \sum_{j=1}^{p} \beta_jx_{ij}$$
 Thus, the Cox PH model is essentially a linear model for the logarithm
 of the hazard ratio and the hazard of event for any individual is a
 constant multiple of the hazard of any other. We follow similar notation
-and methodology as in Section 3 of 
+and methodology as in Section 3 of
 [[Collett2003]](algorithms-bibliography.html). For
 completeness we briefly discuss the equations used in our
 implementation.
@@ -806,9 +352,9 @@ distribution on $p$ degrees of freedom.
 **Prediction.** Once the parameters of the model are fitted, we compute
 the following predictions together with their standard errors
 
-  * linear predictors
-  * risk
-  * estimated cumulative hazard
+- linear predictors
+- risk
+- estimated cumulative hazard
 
 Given feature vector $$X_i$$ for individual $$i$$, we obtain the above
 predictions at time $$t$$ as follows. The linear predictors (denoted as
@@ -849,22 +395,21 @@ $$J_i(t) = \sum_{j-1}^{k} d_j \frac{\sum_{l\in R(t_{(j)})} (X_l-X_i)\exp \{ (X_l
 
 for $$t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1$$.
 
-
-### Returns
+### CPHRM Returns
 
 Below we list the results of fitting a Cox regression model stored in
 matrix $M$ with the following schema:
 
-  * Column 1: estimated regression coefficients $\hat{\beta}$
-  * Column 2: $\exp(\hat{\beta})$
-  * Column 3: standard error of the estimated coefficients
+- Column 1: estimated regression coefficients $\hat{\beta}$
+- Column 2: $\exp(\hat{\beta})$
+- Column 3: standard error of the estimated coefficients
     $se\{\hat{\beta}\}$
-  * Column 4: ratio of $\hat{\beta}$ to $se\{\hat{\beta}\}$ denoted by
+- Column 4: ratio of $\hat{\beta}$ to $se\{\hat{\beta}\}$ denoted by
     $Z$
-  * Column 5: $P$-value of $Z$
-  * Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for
+- Column 5: $P$-value of $Z$
+- Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for
     $\hat{\beta}$
-  * Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for
+- Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for
     $\hat{\beta}$.
 
 Note that above $Z$ is the Wald test statistic which is asymptotically
@@ -874,12 +419,12 @@ Moreover, `Cox.dml` outputs two log files `S` and
 `T` containing a summary statistics of the fitted model as
 follows. File `S` stores the following information
 
-  * Line 1: total number of observations
-  * Line 2: total number of events
-  * Line 3: log-likelihood (of the fitted model)
-  * Line 4: AIC
-  * Line 5: Cox & Snell Rsquare
-  * Line 6: maximum possible Rsquare.
+- Line 1: total number of observations
+- Line 2: total number of events
+- Line 3: log-likelihood (of the fitted model)
+- Line 4: AIC
+- Line 5: Cox & Snell Rsquare
+- Line 6: maximum possible Rsquare.
 
 Above, the AIC is computed as in [Stepwise Linear Regression](algorithms-regression.html#stepwise-linear-regression), the Cox & Snell Rsquare
 is equal to $$1-\exp\{ -l/n \}$$, where $l$ is the log-rank test statistic
@@ -889,31 +434,29 @@ where $L(\textbf{0})$ denotes the initial likelihood.
 
 File `T` contains the following information
 
-  * Line 1: Likelihood ratio test statistic, degree of freedom of the
+- Line 1: Likelihood ratio test statistic, degree of freedom of the
     corresponding Chi-squared distribution, $P$-value
-  * Line 2: Wald test statistic, degree of freedom of the corresponding
+- Line 2: Wald test statistic, degree of freedom of the corresponding
     Chi-squared distribution, $P$-value
-  * Line 3: Score (log-rank) test statistic, degree of freedom of the
+- Line 3: Score (log-rank) test statistic, degree of freedom of the
     corresponding Chi-squared distribution, $P$-value.
 
 Additionally, the following matrices will be stored. Note that these
 matrices are required for prediction.
 
-  * Order-preserving recoded timestamps $RT$, i.e., contiguously
+- Order-preserving recoded timestamps $RT$, i.e., contiguously
     numbered from 1 $\ldots$ \#timestamps
-  * Feature matrix ordered by the timestamps $XO$
-  * Variance-covariance matrix of the coefficients $COV$
-  * Column indices of the feature matrix with baseline factors removed
+- Feature matrix ordered by the timestamps $XO$
+- Variance-covariance matrix of the coefficients $COV$
+- Column indices of the feature matrix with baseline factors removed
     (if available) $MF$.
 
 **Prediction.** Finally, the results of prediction is stored in Matrix
 $P$ with the following schema
 
-  * Column 1: linear predictors
-  * Column 2: standard error of the linear predictors
-  * Column 3: risk
-  * Column 4: standard error of the risk
-  * Column 5: estimated cumulative hazard
-  * Column 6: standard error of the estimated cumulative hazard.
-
-
+- Column 1: linear predictors
+- Column 2: standard error of the linear predictors
+- Column 3: risk
+- Column 4: standard error of the risk
+- Column 5: estimated cumulative hazard
+- Column 6: standard error of the estimated cumulative hazard.

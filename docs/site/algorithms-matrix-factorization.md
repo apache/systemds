@@ -143,8 +143,6 @@ subsequent step. Our implementation of the ALS algorithm supports the
 loss functions summarized in [**Table 16**](algorithms-matrix-factorization.html#table16)
 commonly used for matrix completion [[ZhouWSP08]](algorithms-bibliography.html).
 
-* * *
-
 #### Table 16
 
 Popular loss functions supported by our ALS implementation; $$N_{i*}$$

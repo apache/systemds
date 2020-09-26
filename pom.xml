@@ -24,7 +24,7 @@
 		<artifactId>apache</artifactId>
 		<version>18</version>
 	</parent>
-	<groupId>org.apache.sysds</groupId>
+	<groupId>org.apache.systemds</groupId>
 	<version>2.1.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>

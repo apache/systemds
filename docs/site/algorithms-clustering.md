@@ -21,9 +21,9 @@ limitations under the License.
 {% endcomment %}
 -->
 
-## 3.1. K-Means Clustering
+## K-Means Clustering
 
-### Description
+### K-Means Description
 
 Given a collection of $n$ records with a pairwise similarity measure,
 the goal of clustering is to assign a category label to each record so
@@ -41,7 +41,7 @@ $$
 \begin{equation}
 \textrm{WCSS}\,\,=\,\, \sum_{i=1}^n \,\big\|x_i - mean(S_j: x_i\in S_j)\big\|_2^2 \,\,\to\,\,\min
 \end{equation}
-$$ 
+$$
 
 The aggregated distance measure in (1) is
 called the *within-cluster sum of squares* (WCSS). It can be viewed as a
@@ -69,7 +69,7 @@ different from the cluster means, so we can compute another
 "within-cluster sum of squares" based on the centroids:
 
 $$\textrm{WCSS_C}\,\,=\,\, \sum_{i=1}^n \,\big\|x_i - \mathop{\textrm{centroid}}(S_j: x_i\in S_j)\big\|_2^2
-\label{eqn:WCSS:C}$$ 
+\label{eqn:WCSS:C}$$
 
 This WCSS\_C after Step 1
 is less than the means-based WCSS before Step 1
@@ -104,284 +104,11 @@ cluster is viewed as a "true positive," a different-category pair
 clustered together is a "false positive," a same-category pair clustered
 apart is a "false negative" etc.
 
-
-### Usage
-
-**K-Means**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Kmeans.dml
-                            -nvargs X=<file>
-                                    C=[file]
-                                    k=<int>
-                                    runs=[int]
-                                    maxi=[int]
-                                    tol=[double]
-                                    samp=[int]
-                                    isY=[boolean]
-                                    Y=[file]
-                                    fmt=[format]
-                                    verb=[boolean]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Kmeans.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         C=[file]
-                                         k=<int>
-                                         runs=[int]
-                                         maxi=[int]
-                                         tol=[double]
-                                         samp=[int]
-                                         isY=[boolean]
-                                         Y=[file]
-                                         fmt=[format]
-                                         verb=[boolean]
-</div>
-</div>
-
-**K-Means Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Kmeans-predict.dml
-                            -nvargs X=[file]
-                                    C=[file]
-                                    spY=[file]
-                                    prY=[file]
-                                    fmt=[format]
-                                    O=[file]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Kmeans-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=[file]
-                                         C=[file]
-                                         spY=[file]
-                                         prY=[file]
-                                         fmt=[format]
-                                         O=[file]
-</div>
-</div>
-
-
-### Arguments - K-Means
-
-**X**: Location to read matrix $X$ with the input data records as rows
-
-**C**: (default: `"C.mtx"`) Location to store the output matrix with the best available
-cluster centroids as rows
-
-**k**: Number of clusters (and centroids)
-
-**runs**: (default: `10`) Number of parallel runs, each run with different initial
-centroids
-
-**maxi**: (default: `1000`) Maximum number of iterations per run
-
-**tol**: (default: `0.000001`) Tolerance (epsilon) for single-iteration WCSS\_C change ratio
-
-**samp**: (default: `50`) Average number of records per centroid in data samples used
-in the centroid initialization procedure
-
-**Y**: (default: `"Y.mtx"`) Location to store the one-column matrix $Y$ with the best
-available mapping of records to clusters (defined by the output
-centroids)
-
-**isY**: (default: `FALSE`) Do not write matrix $Y$
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-**verb**: (default: `FALSE`) Do not print per-iteration statistics for
-each run
-
-
-### Arguments - K-Means Prediction
-
-**X**: (default: `" "`) Location to read matrix $X$ with the input data records as
-rows, optional when `prY` input is provided
-
-**C**: (default: `" "`) Location to read matrix $C$ with cluster centroids as rows,
-optional when `prY` input is provided; NOTE: if both
-X and C are provided, `prY` is an
-output, not input
-
-**spY**: (default: `" "`) Location to read a one-column matrix with the externally
-specified "true" assignment of records (rows) to categories, optional
-for prediction without scoring
-
-**prY**: (default: `" "`) Location to read (or write, if X and
-C are present) a column-vector with the predicted
-assignment of rows to clusters; NOTE: No prior correspondence is assumed
-between the predicted cluster labels and the externally specified
-categories
-
-**fmt**: (default: `"text"`) Matrix file output format for `prY`, such as
-`text`, `mm`, or `csv`; see read/write
-functions in SystemDS Language Reference for details.
-
-**0**: (default: `" "`) Location to write the output statistics defined in
-[**Table 6**](algorithms-clustering.html#table6), by default print them to the
-standard output
-
-
-### Examples
-
-**K-Means**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Kmeans.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    k=5
-                                    C=/user/ml/centroids.mtx
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Kmeans.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         k=5
-                                         C=/user/ml/centroids.mtx
-                                         fmt=csv
-</div>
-</div>
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Kmeans.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    k=5
-                                    runs=100
-                                    maxi=5000
-                                    tol=0.00000001
-                                    samp=20
-                                    C=/user/ml/centroids.mtx
-                                    isY=1
-                                    Y=/user/ml/Yout.mtx
-                                    verb=1
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Kmeans.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         k=5
-                                         runs=100
-                                         maxi=5000
-                                         tol=0.00000001
-                                         samp=20
-                                         C=/user/ml/centroids.mtx
-                                         isY=1
-                                         Y=/user/ml/Yout.mtx
-                                         verb=1
-</div>
-</div>
-
-**K-Means Prediction**:
-
-To predict Y given X and C:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Kmeans-predict.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    C=/user/ml/C.mtx
-                                    prY=/user/ml/PredY.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Kmeans-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         C=/user/ml/C.mtx
-                                         prY=/user/ml/PredY.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
-To compare "actual" labels `spY` with "predicted" labels
-given X and C:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Kmeans-predict.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    C=/user/ml/C.mtx
-                                    spY=/user/ml/Y.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Kmeans-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         C=/user/ml/C.mtx
-                                         spY=/user/ml/Y.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
-To compare "actual" labels `spY` with given "predicted"
-labels prY:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f Kmeans-predict.dml
-                            -nvargs spY=/user/ml/Y.mtx
-                                    prY=/user/ml/PredY.mtx
-                                    O=/user/ml/stats.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f Kmeans-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs spY=/user/ml/Y.mtx
-                                         prY=/user/ml/PredY.mtx
-                                         O=/user/ml/stats.csv
-</div>
-</div>
-
-
 * * *
 
-<a name="table6" />
-**Table 6**: The O-file for Kmeans-predict provides the
+#### Table 6
+
+The O-file for Kmeans-predict provides the
 output statistics in CSV format, one per line, in the following
 format: (NAME, \[CID\], VALUE). Note: the 1st group statistics are
 given if X input is available; the 2nd group statistics
@@ -535,8 +262,7 @@ or the predicted cluster label.
 
 * * *
 
-
-### Details
+### K-Means Details
 
 Our clustering script proceeds in 3 stages: centroid initialization,
 parallel $k$-means iterations, and the best-available output generation.
@@ -549,21 +275,18 @@ and run the `k-means++` heuristic over this sample. Here is,
 conceptually, our centroid initialization algorithm for one clustering
 run:
 
-  <ol>
-    <li>Sample the rows of $X$ uniformly at random, picking each row with
+1. Sample the rows of $X$ uniformly at random, picking each row with
 probability $p = ks / n$ where
-    <ul>
-      <li>$k$ is the number of centroids</li>
-      <li>$n$ is the number of records</li>
-      <li>$s$ is the samp input parameter</li>
-    </ul>
-     If $ks \geq n$, the entire $X$ is used in place of its sample.
-     </li>
-     <li>Choose the first centroid uniformly at random from the sampled rows.</li>
-     <li>Choose each subsequent centroid from the sampled rows, at random, with
+   - $k$ is the number of centroids
+   - $n$ is the number of records
+   - $s$ is the samp input parameter
+
+   If $ks \geq n$, the entire $X$ is used in place of its sample.
+
+2. Choose the first centroid uniformly at random from the sampled rows.
+3. Choose each subsequent centroid from the sampled rows, at random, with
 probability proportional to the squared Euclidean distance between the
-row and the nearest already-chosen centroid.</li>
-  </ol>
+row and the nearest already-chosen centroid.
 
 The sampling of $X$ and the selection of centroids are performed
 independently and in parallel for each run of the $k$-means algorithm.
@@ -583,22 +306,23 @@ iterations independently in parallel for all clustering runs. The number
 of clustering runs is given as the runs input parameter.
 Each iteration of each clustering run performs the following steps:
 
-  * Compute the centroid-dependent part of squared Euclidean distances from
+- Compute the centroid-dependent part of squared Euclidean distances from
 all records (rows of $X$) to each of the $k$ centroids using matrix
 product.
-  * Take the minimum of the above for each record.
-  * Update the current within-cluster sum of squares (WCSS) value, with
+- Take the minimum of the above for each record.
+- Update the current within-cluster sum of squares (WCSS) value, with
 centroids substituted instead of the means for efficiency.
-  * Check the convergence
-criterion:
-$$\textrm{WCSS}_{\mathrm{old}} - \textrm{WCSS}_{\mathrm{new}} < {\varepsilon}\cdot\textrm{WCSS}_{\mathrm{new}}$$
-as
-well as the number of iterations limit.
-  * Find the closest centroid for each record, sharing equally any records
-with multiple closest centroids.
-  * Compute the number of records closest to each centroid, checking for
+- Check the convergence
+
+   criterion:
+
+   $$\textrm{WCSS}_{\mathrm{old}} - \textrm{WCSS}_{\mathrm{new}} < {\varepsilon}\cdot\textrm{WCSS}_{\mathrm{new}}$$
+
+   as well as the number of iterations limit.
+- Find the closest centroid for each record, sharing equally any records with multiple closest centroids.
+- Compute the number of records closest to each centroid, checking for
 "runaway" centroids with no records left (in which case the run fails).
-  * Compute the new centroids by averaging the records in their clusters.
+- Compute the new centroids by averaging the records in their clusters.
 
 When a termination condition is satisfied, we store the centroids and
 the WCSS value and exit this run. A run has to satisfy the WCSS
@@ -609,7 +333,6 @@ the cluster assignment of all records in $X$, using integers from 1
 to $k$ as the cluster labels. The scoring script can then be used to
 compare the cluster assignment with an externally specified category
 assignment.
-
 
 ### Returns
 
@@ -625,6 +348,4 @@ best WCSS value, as well as some information about the performance of
 the other runs, is printed during the script execution. The scoring
 script `Kmeans-predict.dml` prints all its results in a
 self-explanatory manner, as defined in
-[**Table 6**](algorithms-clustering.html#table6).
-
-
+[**Table 6**](table-6).

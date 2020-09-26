@@ -21,7 +21,7 @@ limitations under the License.
 {% endcomment %}
 -->
 
-## 2.1. Multinomial Logistic Regression
+## Multinomial Logistic Regression
 
 ### Description
 
@@ -52,10 +52,10 @@ and 1, so a link function is applied to connect it to
 $\beta_0 + x_i\beta_{1:m}$. If there are just two possible category
 labels, for example 0 and 1, the logistic link looks as follows:
 
-$$Prob[y_i\,{=}\,1\mid x_i; \beta] \,=\, 
+$$Prob[y_i\,{=}\,1\mid x_i; \beta] \,=\,
 \frac{e^{\,\beta_0 + x_i\beta_{1:m}}}{1 + e^{\,\beta_0 + x_i\beta_{1:m}}};
 \quad
-Prob[y_i\,{=}\,0\mid x_i; \beta] \,=\, 
+Prob[y_i\,{=}\,0\mid x_i; \beta] \,=\,
 \frac{1}{1 + e^{\,\beta_0 + x_i\beta_{1:m}}}$$
 
 Here category label 0
@@ -81,7 +81,7 @@ parameters with the intercept, making up a matrix $B$ of size
 $(m\,{+}\,1)\times(k\,{-}\,1)$. The predicted odds of seeing
 non-baseline category $l$ versus the baseline $k$ are
 $$\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)$$
-to 1, and the predicted probabilities are: 
+to 1, and the predicted probabilities are:
 
 $$
 \begin{equation}
@@ -119,244 +119,15 @@ are accurately estimated, we can make predictions about the category
 label $y$ for a new feature vector $x$ using
 Eqs. (1) and (2).
 
-
-### Usage
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-from systemml.mllearn import LogisticRegression
-# C = 1/reg
-logistic = LogisticRegression(spark, fit_intercept=True, max_iter=100, max_inner_iter=0, tol=0.000001, C=1.0)
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
-y_test = logistic.fit(X_train, y_train).predict(X_test)
-# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
-y_test = logistic.fit(df_train).transform(df_test)
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-import org.apache.sysml.api.ml.LogisticRegression
-val lr = new LogisticRegression("logReg", sc).setIcpt(0).setMaxOuterIter(100).setMaxInnerIter(0).setRegParam(0.000001).setTol(0.000001)
-val model = lr.fit(X_train_df)
-val prediction = model.transform(X_test_df)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f MultiLogReg.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    B=<file>
-                                    Log=[file]
-                                    icpt=[int]
-                                    reg=[double]
-                                    tol=[double]
-                                    moi=[int]
-                                    mii=[int]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f MultiLogReg.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         B=<file>
-                                         Log=[file]
-                                         icpt=[int]
-                                         reg=[double]
-                                         tol=[double]
-                                         moi=[int]
-                                         mii=[int]
-                                         fmt=[format]
-</div>
-</div>
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the input matrix of feature vectors; each row
-constitutes one feature vector.
-
-**Y**: Location to read the input one-column matrix of category labels that
-correspond to feature vectors in X. Note the following:
-
-  * Each non-baseline category label must be a positive integer.
-  * If all labels are positive, the largest represents the baseline
-category.
-  * If non-positive labels such as $-1$ or $0$ are present, then they
-represent the (same) baseline category and are converted to label
-$\max(\texttt{Y})\,{+}\,1$.
-
-**B**: Location to store the matrix of estimated regression parameters (the
-$$\beta_{j, l}$$’s), with the intercept parameters $\beta_{0, l}$ at
-position B\[$m\,{+}\,1$, $l$\] if available.
-The size of B is $(m\,{+}\,1)\times (k\,{-}\,1)$ with the
-intercepts or $m \times (k\,{-}\,1)$ without the intercepts, one column
-per non-baseline category and one row per feature.
-
-**Log**: (default: `" "`) Location to store iteration-specific variables for monitoring
-and debugging purposes, see 
-[**Table 5**](algorithms-classification.html#table5)
-for details.
-
-**icpt**: (default: `0`) Intercept and shifting/rescaling of the features in $X$:
-
-  * 0 = no intercept (hence no $\beta_0$), no
-shifting/rescaling of the features;
-  * 1 = add intercept, but do not shift/rescale the features
-in $X$;
-  * 2 = add intercept, shift/rescale the features in $X$ to
-mean 0, variance 1
-
-**reg**: (default: `0.0`) L2-regularization parameter (lambda)
-
-**tol**: (default: `0.000001`) Tolerance ($\epsilon$) used in the convergence criterion
-
-**moi**: (default: `100`) Maximum number of outer (Fisher scoring) iterations
-
-**mii**: (default: `0`) Maximum number of inner (conjugate gradient) iterations, or 0
-if no maximum limit provided
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
-more details on the Python API. 
-
-### Examples
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-# Scikit-learn way
-from sklearn import datasets, neighbors
-from systemml.mllearn import LogisticRegression
-from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
-digits = datasets.load_digits()
-X_digits = digits.data
-y_digits = digits.target + 1
-n_samples = len(X_digits)
-X_train = X_digits[:.9 * n_samples]
-y_train = y_digits[:.9 * n_samples]
-X_test = X_digits[.9 * n_samples:]
-y_test = y_digits[.9 * n_samples:]
-logistic = LogisticRegression(sqlCtx)
-print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
-
-# MLPipeline way
-from pyspark.ml import Pipeline
-from systemml.mllearn import LogisticRegression
-from pyspark.ml.feature import HashingTF, Tokenizer
-training = spark.createDataFrame([
-    (0L, "a b c d e spark", 1.0),
-    (1L, "b d", 2.0),
-    (2L, "spark f g h", 1.0),
-    (3L, "hadoop mapreduce", 2.0),
-    (4L, "b spark who", 1.0),
-    (5L, "g d a y", 2.0),
-    (6L, "spark fly", 1.0),
-    (7L, "was mapreduce", 2.0),
-    (8L, "e spark program", 1.0),
-    (9L, "a e c l", 2.0),
-    (10L, "spark compile", 1.0),
-    (11L, "hadoop software", 2.0)
-], ["id", "text", "label"])
-tokenizer = Tokenizer(inputCol="text", outputCol="words")
-hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-lr = LogisticRegression(spark)
-pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
-model = pipeline.fit(training)
-test = spark.createDataFrame([
-    (12L, "spark i j k"),
-    (13L, "l m n"),
-    (14L, "mapreduce spark"),
-    (15L, "apache hadoop")], ["id", "text"])
-prediction = model.transform(test)
-prediction.show()
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
-import org.apache.sysml.api.ml.LogisticRegression
-import org.apache.spark.ml.Pipeline
-val training = spark.createDataFrame(Seq(
-    ("a b c d e spark", 1.0),
-    ("b d", 2.0),
-    ("spark f g h", 1.0),
-    ("hadoop mapreduce", 2.0),
-    ("b spark who", 1.0),
-    ("g d a y", 2.0),
-    ("spark fly", 1.0),
-    ("was mapreduce", 2.0),
-    ("e spark program", 1.0),
-    ("a e c l", 2.0),
-    ("spark compile", 1.0),
-    ("hadoop software", 2.0))).toDF("text", "label")
-val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
-val hashingTF = new HashingTF().setNumFeatures(20).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
-val lr = new LogisticRegression("logReg", sc)
-val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, lr))
-val model = pipeline.fit(training)
-val test = spark.createDataFrame(Seq(
-    ("spark i j k", 1.0),
-    ("l m n", 2.0),
-    ("mapreduce spark", 1.0),
-    ("apache hadoop", 2.0))).toDF("text", "trueLabel")
-val prediction = model.transform(test)
-prediction.show()
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f MultiLogReg.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    B=/user/ml/B.mtx
-                                    fmt=csv
-                                    icpt=2
-                                    reg=1.0
-                                    tol=0.0001
-                                    moi=100
-                                    mii=10
-                                    Log=/user/ml/log.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f MultiLogReg.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         B=/user/ml/B.mtx
-                                         fmt=csv
-                                         icpt=2
-                                         reg=1.0
-                                         tol=0.0001
-                                         moi=100
-                                         mii=10
-                                         Log=/user/ml/log.csv
-</div>
-</div>
-
-
 * * *
 
-<a name="table5" />
-**Table 5**: The `Log` file for multinomial logistic regression
+#### Table 5
+
+: The `Log` file for multinomial logistic regression
 contains the following iteration variables in `CSV` format, each line
 containing triple (`Name`, `Iteration#`, `Value`) with `Iteration#` being 0
 for initial values.
   
-
 | Name                | Meaning          |
 | ------------------- | -------------------------- |
 | LINEAR\_TERM\_MIN   | The minimum value of $X$ %*% $B$, used to check for overflows |
@@ -372,7 +143,6 @@ for initial values.
 | GRADIENT\_NORM      | L2-norm of the loss function gradient (omitted if point is rejected) |
 | RUST\_DELTA         | Updated trust region size, the "delta" |
 
-
 * * *
 
 ### Details
@@ -383,15 +153,15 @@ optimization method used in the script closely follows the trust region
 Newton method for logistic regression described in [[Lin2008]](algorithms-bibliography.html).
 For convenience, let us make some changes in notation:
 
-  * Convert the input vector of observed category labels into an indicator
+- Convert the input vector of observed category labels into an indicator
 matrix $Y$ of size $n \times k$ such that $$Y_{i, l} = 1$$ if the $i$-th
 category label is $l$ and $Y_{i, l} = 0$ otherwise.
-  * Append an extra column of all ones, i.e. $(1, 1, \ldots, 1)^T$, as the
+- Append an extra column of all ones, i.e. $(1, 1, \ldots, 1)^T$, as the
 $m\,{+}\,1$-st column to the feature matrix $X$ to represent the
 intercept.
-  * Append an all-zero column as the $k$-th column to $B$, the matrix of
+- Append an all-zero column as the $k$-th column to $B$, the matrix of
 regression parameters, to represent the baseline category.
-  * Convert the regularization constant $\lambda$ into matrix $\Lambda$ of
+- Convert the regularization constant $\lambda$ into matrix $\Lambda$ of
 the same size as $B$, placing 0’s into the $m\,{+}\,1$-st row to disable
 intercept regularization, and placing $\lambda$’s everywhere else.
 
@@ -430,7 +200,7 @@ formula
 
 $$\varDelta f(S; B) \,\,\,\approx\,\,\, (1/2)\,\,{\textstyle\sum}\,\,S \cdot \mathcal{H}S
  \,+\, {\textstyle\sum}\,\,S\cdot \nabla f$$
- 
+
 This approximation is then
 minimized by trust-region conjugate gradient iterations (the *inner*
 iterations) subject to the constraint
@@ -448,7 +218,6 @@ $$\|\nabla f\|_2 < \varepsilon \|\nabla f_{B=0} \|_2$$
 , where ${\varepsilon}> 0$ is a tolerance supplied by the user via input
 parameter `tol`.
 
-
 ### Returns
 
 The estimated regression parameters (the
@@ -456,258 +225,36 @@ $$\hat{\beta}_{j, l}$$)
 are
 populated into a matrix and written to an HDFS file whose path/name was
 provided as the `B` input argument. Only the non-baseline
-categories ($1\leq l \leq k\,{-}\,1$) have their 
+categories ($1\leq l \leq k\,{-}\,1$) have their
 $$\hat{\beta}_{j, l}$$
 in the output; to add the baseline category, just append a column of zeros.
 If `icpt=0` in the input command line, no intercepts are used
-and `B` has size 
+and `B` has size
 $m\times (k\,{-}\,1)$; otherwise
-`B` has size 
+`B` has size
 $(m\,{+}\,1)\times (k\,{-}\,1)$
 and the
-intercepts are in the 
+intercepts are in the
 $m\,{+}\,1$-st row. If icpt=2, then
 initially the feature columns in $X$ are shifted to mean${} = 0$ and
 rescaled to variance${} = 1$. After the iterations converge, the
 $\hat{\beta}_{j, l}$’s are rescaled and shifted to work with the
 original features.
 
-
 * * *
 
-## 2.2 Support Vector Machines
+## Support Vector Machines
 
-### 2.2.1 Binary-Class Support Vector Machines
+### Binary-Class Support Vector Machines
 
-#### Description
+#### Binary SVM Description
 
 Support Vector Machines are used to model the relationship between a
 categorical dependent variable `y` and one or more explanatory variables
 denoted `X`. This implementation learns (and predicts with) a binary class
 support vector machine (`y` with domain size `2`).
 
-
-#### Usage
-
-**Binary-Class Support Vector Machines**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-from systemml.mllearn import SVM
-# C = 1/reg
-svm = SVM(spark, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=False)
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
-y_test = svm.fit(X_train, y_train)
-# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
-y_test = svm.fit(df_train)
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-import org.apache.sysml.api.ml.SVM
-val svm = new SVM("svm", sc, isMultiClass=false).setIcpt(0).setMaxIter(100).setRegParam(0.000001).setTol(0.000001)
-val model = svm.fit(X_train_df)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f l2-svm.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    icpt=[int]
-                                    tol=[double]
-                                    reg=[double]
-                                    maxiter=[int]
-                                    model=<file>
-                                    Log=<file>
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f l2-svm.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         icpt=[int]
-                                         tol=[double]
-                                         reg=[double]
-                                         maxiter=[int]
-                                         model=<file>
-                                         Log=<file>
-                                         fmt=[format]
-</div>
-</div>
-
-**Binary-Class Support Vector Machines Prediction**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-# X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
-y_test = svm.predict(X_test)
-# df_test is a DataFrame that contains the column "features" of type Vector
-y_test = svm.transform(df_test)
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-val prediction = model.transform(X_test_df)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f l2-svm-predict.dml
-                            -nvargs X=<file>
-                                    Y=[file]
-                                    icpt=[int]
-                                    model=<file>
-                                    scores=[file]
-                                    accuracy=[file]
-                                    confusion=[file]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f l2-svm-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=[file]
-                                         icpt=[int]
-                                         model=<file>
-                                         scores=[file]
-                                         accuracy=[file]
-                                         confusion=[file]
-                                         fmt=[format]
-</div>
-</div>
-
-#### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the matrix of feature vectors; each
-row constitutes one feature vector.
-
-**Y**: Location to read the one-column matrix of (categorical) labels
-that correspond to feature vectors in `X`. Binary class labels can be
-expressed in one of two choices: $\pm 1$ or $1/2$. Note that this
-argument is optional for prediction.
-
-**icpt**: (default: `0`) If set to `1` then a constant bias
-column is added to `X`.
-
-**tol**: (default: `0.001`) Procedure terminates early if the
-reduction in objective function value is less than tolerance times
-the initial objective function value.
-
-**reg**: (default: `1`) Regularization constant. See details
-to find out where lambda appears in the objective function. If one
-were interested in drawing an analogy with the `C` parameter in C-SVM,
-then `C = 2/lambda`. Usually, cross validation is employed to
-determine the optimum value of lambda.
-
-**maxiter**: (default: `100`) The maximum number
-of iterations.
-
-**model**: Location (on HDFS) that contains the learnt weights.
-
-**Log**: Location (on HDFS) to collect various metrics (e.g., objective
-function value etc.) that depict progress across iterations
-while training.
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-**scores**: Location (on HDFS) to store scores for a held-out test set.
-Note that this is an optional argument.
-
-**accuracy**: Location (on HDFS) to store the accuracy computed on a
-held-out test set. Note that this is an optional argument.
-
-**confusion**: Location (on HDFS) to store the confusion matrix computed
-using a held-out test set. Note that this is an optional argument.
-
-Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
-more details on the Python API. 
-
-#### Examples
-
-**Binary-Class Support Vector Machines**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f l2-svm.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/y.mtx
-                                    icpt=0
-                                    tol=0.001
-                                    fmt=csv
-                                    reg=1.0
-                                    maxiter=100
-                                    model=/user/ml/weights.csv
-                                    Log=/user/ml/Log.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f l2-svm.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/y.mtx
-                                         icpt=0
-                                         tol=0.001
-                                         fmt=csv
-                                         reg=1.0
-                                         maxiter=100
-                                         model=/user/ml/weights.csv
-                                         Log=/user/ml/Log.csv
-</div>
-</div>
-
-**Binary-Class Support Vector Machines Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f l2-svm-predict.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/y.mtx
-                                    icpt=0
-                                    fmt=csv
-                                    model=/user/ml/weights.csv
-                                    scores=/user/ml/scores.csv
-                                    accuracy=/user/ml/accuracy.csv
-                                    confusion=/user/ml/confusion.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f l2-svm-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/y.mtx
-                                         icpt=0
-                                         fmt=csv
-                                         model=/user/ml/weights.csv
-                                         scores=/user/ml/scores.csv
-                                         accuracy=/user/ml/accuracy.csv
-                                         confusion=/user/ml/confusion.csv
-</div>
-</div>
-
-
-#### Details
+#### Binary SVM Details
 
 Support vector machines learn a classification function by solving the
 following optimization problem ($L_2$-SVM):
@@ -730,8 +277,7 @@ uses nonlinear conjugate gradient descent to minimize the objective
 function coupled with choosing step-sizes by performing one-dimensional
 Newton minimization in the direction of the gradient.
 
-
-#### Returns
+#### Binary SVM Returns
 
 The learnt weights produced by `l2-svm.dml` are populated into a single
 column matrix and written to file on HDFS (see model in section
@@ -742,13 +288,11 @@ provided during invocation, `l2-svm-predict.dml` may compute one or more
 of scores, accuracy and confusion matrix in the output format
 specified.
 
-
 * * *
-
 
 ### 2.2.2 Multi-Class Support Vector Machines
 
-#### Description
+#### Multi SVM Description
 
 Support Vector Machines are used to model the relationship between a
 categorical dependent variable `y` and one or more explanatory variables
@@ -756,309 +300,7 @@ denoted `X`. This implementation supports dependent variables that have
 domain size greater or equal to `2` and hence is not restricted to binary
 class labels.
 
-
-#### Usage
-
-**Multi-Class Support Vector Machines**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-from systemml.mllearn import SVM
-# C = 1/reg
-svm = SVM(spark, fit_intercept=True, max_iter=100, tol=0.000001, C=1.0, is_multi_class=True)
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
-y_test = svm.fit(X_train, y_train)
-# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
-y_test = svm.fit(df_train)
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-import org.apache.sysml.api.ml.SVM
-val svm = new SVM("svm", sc, isMultiClass=true).setIcpt(0).setMaxIter(100).setRegParam(0.000001).setTol(0.000001)
-val model = svm.fit(X_train_df)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f m-svm.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    icpt=[int]
-                                    tol=[double]
-                                    reg=[double]
-                                    maxiter=[int]
-                                    model=<file>
-                                    Log=<file>
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f m-svm.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         icpt=[int]
-                                         tol=[double]
-                                         reg=[double]
-                                         maxiter=[int]
-                                         model=<file>
-                                         Log=<file>
-                                         fmt=[format]
-</div>
-</div>
-
-**Multi-Class Support Vector Machines Prediction**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-# X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
-y_test = svm.predict(X_test)
-# df_test is a DataFrame that contains the column "features" of type Vector
-y_test = svm.transform(df_test)
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-val prediction = model.transform(X_test_df)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f m-svm-predict.dml
-                            -nvargs X=<file>
-                                    Y=[file]
-                                    icpt=[int]
-                                    model=<file>
-                                    scores=[file]
-                                    accuracy=[file]
-                                    confusion=[file]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f m-svm-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=[file]
-                                         icpt=[int]
-                                         model=<file>
-                                         scores=[file]
-                                         accuracy=[file]
-                                         confusion=[file]
-                                         fmt=[format]
-</div>
-</div>
-
-
-#### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) containing the explanatory variables in
-    a matrix. Each row constitutes an example.
-
-**Y**: Location (on HDFS) containing a 1-column matrix specifying the
-    categorical dependent variable (label). Labels are assumed to be
-    contiguously numbered from 1 $\ldots$ \#classes. Note that this
-    argument is optional for prediction.
-
-**icpt**: (default: `0`) If set to `1` then a constant bias
-    column is added to `X`.
-
-**tol**: (default: `0.001`) Procedure terminates early if the
-    reduction in objective function value is less than tolerance times
-    the initial objective function value.
-
-**reg**: (default: `1`) Regularization constant. See details
-    to find out where `lambda` appears in the objective function. If one
-    were interested in drawing an analogy with C-SVM, then `C = 2/lambda`.
-    Usually, cross validation is employed to determine the optimum value
-    of `lambda`.
-
-**maxiter**: (default: `100`) The maximum number
-    of iterations.
-
-**model**: Location (on HDFS) that contains the learnt weights.
-
-**Log**: Location (on HDFS) to collect various metrics (e.g., objective
-    function value etc.) that depict progress across iterations
-    while training.
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-**scores**: Location (on HDFS) to store scores for a held-out test set.
-    Note that this is an optional argument.
-
-**accuracy**: Location (on HDFS) to store the accuracy computed on a
-    held-out test set. Note that this is an optional argument.
-
-**confusion**: Location (on HDFS) to store the confusion matrix computed
-    using a held-out test set. Note that this is an optional argument.
-
-Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
-more details on the Python API. 
-
-#### Examples
-
-**Multi-Class Support Vector Machines**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-# Scikit-learn way
-from sklearn import datasets, neighbors
-from systemml.mllearn import SVM
-digits = datasets.load_digits()
-X_digits = digits.data
-y_digits = digits.target 
-n_samples = len(X_digits)
-X_train = X_digits[:int(.9 * n_samples)]
-y_train = y_digits[:int(.9 * n_samples)]
-X_test = X_digits[int(.9 * n_samples):]
-y_test = y_digits[int(.9 * n_samples):]
-svm = SVM(spark, is_multi_class=True)
-print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y_test))
-
-# MLPipeline way
-from pyspark.ml import Pipeline
-from systemml.mllearn import SVM
-from pyspark.ml.feature import HashingTF, Tokenizer
-training = sqlCtx.createDataFrame([
-    (0L, "a b c d e spark", 1.0),
-    (1L, "b d", 2.0),
-    (2L, "spark f g h", 1.0),
-    (3L, "hadoop mapreduce", 2.0),
-    (4L, "b spark who", 1.0),
-    (5L, "g d a y", 2.0),
-    (6L, "spark fly", 1.0),
-    (7L, "was mapreduce", 2.0),
-    (8L, "e spark program", 1.0),
-    (9L, "a e c l", 2.0),
-    (10L, "spark compile", 1.0),
-    (11L, "hadoop software", 2.0)
-], ["id", "text", "label"])
-tokenizer = Tokenizer(inputCol="text", outputCol="words")
-hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-svm = SVM(spark, is_multi_class=True)
-pipeline = Pipeline(stages=[tokenizer, hashingTF, svm])
-model = pipeline.fit(training)
-test = sqlCtx.createDataFrame([
-    (12L, "spark i j k"),
-    (13L, "l m n"),
-    (14L, "mapreduce spark"),
-    (15L, "apache hadoop")], ["id", "text"])
-prediction = model.transform(test)
-prediction.show()
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
-import org.apache.sysml.api.ml.SVM
-import org.apache.spark.ml.Pipeline
-val training = spark.createDataFrame(Seq(
-    ("a b c d e spark", 1.0),
-    ("b d", 2.0),
-    ("spark f g h", 1.0),
-    ("hadoop mapreduce", 2.0),
-    ("b spark who", 1.0),
-    ("g d a y", 2.0),
-    ("spark fly", 1.0),
-    ("was mapreduce", 2.0),
-    ("e spark program", 1.0),
-    ("a e c l", 2.0),
-    ("spark compile", 1.0),
-    ("hadoop software", 2.0))).toDF("text", "label")
-val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
-val hashingTF = new HashingTF().setNumFeatures(20).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
-val svm = new SVM("svm", sc, isMultiClass=true)
-val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, svm))
-val model = pipeline.fit(training)
-val test = spark.createDataFrame(Seq(
-    ("spark i j k", 1.0),
-    ("l m n", 2.0),
-    ("mapreduce spark", 1.0),
-    ("apache hadoop", 2.0))).toDF("text", "trueLabel")
-val prediction = model.transform(test)
-prediction.show()
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f m-svm.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/y.mtx
-                                    icpt=0
-                                    tol=0.001
-                                    reg=1.0
-                                    maxiter=100
-                                    fmt=csv
-                                    model=/user/ml/weights.csv
-                                    Log=/user/ml/Log.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f m-svm.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/y.mtx
-                                         icpt=0
-                                         tol=0.001
-                                         reg=1.0
-                                         maxiter=100
-                                         fmt=csv
-                                         model=/user/ml/weights.csv
-                                         Log=/user/ml/Log.csv
-</div>
-</div>
-
-**Multi-Class Support Vector Machines Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f m-svm-predict.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/y.mtx
-                                    icpt=0
-                                    fmt=csv
-                                    model=/user/ml/weights.csv
-                                    scores=/user/ml/scores.csv
-                                    accuracy=/user/ml/accuracy.csv
-                                    confusion=/user/ml/confusion.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f m-svm-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/y.mtx
-                                         icpt=0
-                                         fmt=csv
-                                         model=/user/ml/weights.csv
-                                         scores=/user/ml/scores.csv
-                                         accuracy=/user/ml/accuracy.csv
-                                         confusion=/user/ml/confusion.csv
-</div>
-</div>
-
-
-#### Details
+#### Multi SVM Details
 
 Support vector machines learn a classification function by solving the
 following optimization problem ($L_2$-SVM):
@@ -1074,7 +316,7 @@ regularization constant specified by the user.
 To extend the above formulation (binary class SVM) to the multiclass
 setting, one standard approach is to learn one binary class SVM per
 class that separates data belonging to that class from the rest of the
-training data (one-against-the-rest SVM, see 
+training data (one-against-the-rest SVM, see
 [[Scholkopf1995]](algorithms-bibliography.html)).
 
 To account for the missing bias term, one may augment the data with a
@@ -1087,8 +329,7 @@ uses nonlinear conjugate gradient descent to minimize the objective
 function coupled with choosing step-sizes by performing one-dimensional
 Newton minimization in the direction of the gradient.
 
-
-#### Returns
+#### Multi SVM Returns
 
 The learnt weights produced by `m-svm.dml` are populated into a matrix
 that has as many columns as there are classes in the training data, and
@@ -1099,239 +340,17 @@ are placed in the last row. Depending on what arguments are provided
 during invocation, `m-svm-predict.dml` may compute one or more of scores,
 accuracy and confusion matrix in the output format specified.
 
-
 * * *
 
-## 2.3 Naive Bayes
+## Naive Bayes
 
-### Description
+### Naive Bayes Description
 
 Naive Bayes is very simple generative model used for classifying data.
 This implementation learns a multinomial naive Bayes classifier which is
 applicable when all features are counts of categorical values.
 
-
-#### Usage
-
-**Naive Bayes**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-from systemml.mllearn import NaiveBayes
-nb = NaiveBayes(spark, laplace=1.0)
-# X_train, y_train and X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
-y_test = nb.fit(X_train, y_train)
-# df_train is DataFrame that contains two columns: "features" (of type Vector) and "label". df_test is a DataFrame that contains the column "features"
-y_test = nb.fit(df_train)
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-import org.apache.sysml.api.ml.NaiveBayes
-val nb = new NaiveBayes("naiveBayes", sc, isMultiClass=true).setLaplace(1.0)
-val model = nb.fit(X_train_df)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f naive-bayes.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    laplace=[double]
-                                    prior=<file>
-                                    conditionals=<file>
-                                    accuracy=<file>
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f naive-bayes.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         laplace=[double]
-                                         prior=<file>
-                                         conditionals=<file>
-                                         accuracy=<file>
-                                         fmt=[format]
-</div>
-</div>
-
-**Naive Bayes Prediction**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-# X_test can be NumPy matrices or Pandas DataFrame or SciPy Sparse Matrix
-y_test = nb.predict(X_test)
-# df_test is a DataFrame that contains the column "features" of type Vector
-y_test = nb.transform(df_test)
-{% endhighlight %}
-</div>
-<div data-lang="Scala" markdown="1">
-{% highlight scala %}
-val prediction = model.transform(X_test_df)
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f naive-bayes-predict.dml
-                            -nvargs X=<file>
-                                    Y=[file]
-                                    prior=<file>
-                                    conditionals=<file>
-                                    fmt=[format]
-                                    accuracy=[file]
-                                    confusion=[file]
-                                    probabilities=[file]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f naive-bayes-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=[file]
-                                         prior=<file>
-                                         conditionals=<file>
-                                         fmt=[format]
-                                         accuracy=[file]
-                                         confusion=[file]
-                                         probabilities=[file]
-</div>
-</div>
-
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the matrix of feature vectors; each
-    row constitutes one feature vector.
-
-**Y**: Location (on HDFS) to read the one-column matrix of (categorical)
-    labels that correspond to feature vectors in `X`. Classes are assumed
-    to be contiguously labeled beginning from `1`. Note that this
-    argument is optional for prediction.
-
-**laplace**: (default: `1`) Laplace smoothing specified by
-    the user to avoid creation of `0` probabilities.
-
-**prior**: Location (on HDFS) that contains the class
-    prior probabilites.
-
-**conditionals**: Location (on HDFS) that contains the class conditional
-    feature distributions.
-
-**fmt** (default: `"text"`): Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-**probabilities**: Location (on HDFS) to store class membership
-    probabilities for a held-out test set.
-
-**accuracy**: Location (on HDFS) to store the training accuracy during
-    learning and testing accuracy from a held-out test set
-    during prediction. Note that this is an optional argument
-    for prediction.
-
-**confusion**: Location (on HDFS) to store the confusion matrix computed
-    using a held-out test set. Note that this is an optional argument.
-
-Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
-more details on the Python API. 
-
-### Examples
-
-**Naive Bayes**:
-
-<div class="codetabs">
-<div data-lang="Python" markdown="1">
-{% highlight python %}
-from sklearn.datasets import fetch_20newsgroups
-from sklearn.feature_extraction.text import TfidfVectorizer
-from systemml.mllearn import NaiveBayes
-from sklearn import metrics
-categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
-newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
-newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
-vectorizer = TfidfVectorizer()
-# Both vectors and vectors_test are SciPy CSR matrix
-vectors = vectorizer.fit_transform(newsgroups_train.data)
-vectors_test = vectorizer.transform(newsgroups_test.data)
-nb = NaiveBayes(spark)
-nb.fit(vectors, newsgroups_train.target)
-pred = nb.predict(vectors_test)
-metrics.f1_score(newsgroups_test.target, pred, average='weighted')
-{% endhighlight %}
-</div>
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f naive-bayes.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/y.mtx
-                                    laplace=1
-                                    fmt=csv
-                                    prior=/user/ml/prior.csv
-                                    conditionals=/user/ml/conditionals.csv
-                                    accuracy=/user/ml/accuracy.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f naive-bayes.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/y.mtx
-                                         laplace=1
-                                         fmt=csv
-                                         prior=/user/ml/prior.csv
-                                         conditionals=/user/ml/conditionals.csv
-                                         accuracy=/user/ml/accuracy.csv
-</div>
-</div>
-
-**Naive Bayes Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f naive-bayes-predict.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/y.mtx
-                                    prior=/user/ml/prior.csv
-                                    conditionals=/user/ml/conditionals.csv
-                                    fmt=csv
-                                    accuracy=/user/ml/accuracy.csv
-                                    probabilities=/user/ml/probabilities.csv
-                                    confusion=/user/ml/confusion.csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f naive-bayes-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/y.mtx
-                                         prior=/user/ml/prior.csv
-                                         conditionals=/user/ml/conditionals.csv
-                                         fmt=csv
-                                         accuracy=/user/ml/accuracy.csv
-                                         probabilities=/user/ml/probabilities.csv
-                                         confusion=/user/ml/confusion.csv
-</div>
-</div>
-
-
-### Details
+### Naive Bayes Details
 
 Naive Bayes is a very simple generative classification model. It posits
 that given the class label, features can be generated independently of
@@ -1339,7 +358,7 @@ each other. More precisely, the (multinomial) naive Bayes model uses the
 following equation to estimate the joint probability of a feature vector
 $x$ belonging to class $y$:
 
-$$\text{Prob}(y, x) = \pi_y \prod_{i \in x} \theta_{iy}^{n(i,x)}$$ 
+$$\text{Prob}(y, x) = \pi_y \prod_{i \in x} \theta_{iy}^{n(i,x)}$$
 
 where $\pi_y$ denotes the prior probability of class $y$, $i$ denotes a
 feature present in $x$ with $n(i,x)$ denoting its count and
@@ -1364,8 +383,7 @@ required.
 This implementation is sometimes referred to as *multinomial* naive
 Bayes. Other flavours of naive Bayes are also popular.
 
-
-### Returns
+### Naive Bayes Returns
 
 The learnt model produced by `naive-bayes.dml` is stored in two separate
 files. The first file stores the class prior (a single-column matrix).
@@ -1376,234 +394,18 @@ during invocation, `naive-bayes-predict.dml` may compute one or more of
 probabilities, accuracy and confusion matrix in the output format
 specified.
 
-
 * * *
 
-## 2.4. Decision Trees
+## Decision Trees
 
-### Description
+### Decision Trees Description
 
 Decision tree (for classification) is a classifier that is considered
 more interpretable than other statistical classifiers. This
 implementation is well-suited to handle large-scale data and builds a
 (binary) decision tree in parallel.
 
-
-### Usage
-
-**Decision Tree**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f decision-tree.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    R=[file]
-                                    M=<file>
-                                    bins=[int]
-                                    depth=[int]
-                                    num_leaf=[int]
-                                    num_samples=[int]
-                                    impurity=[Gini|entropy]
-                                    O=[file]
-                                    S_map=[file]
-                                    C_map=[file]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f decision-tree.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         R=[file]
-                                         M=<file>
-                                         bins=[int]
-                                         depth=[int]
-                                         num_leaf=[int]
-                                         num_samples=[int]
-                                         impurity=[Gini|entropy]
-                                         O=[file]
-                                         S_map=[file]
-                                         C_map=[file]
-                                         fmt=[format]
-</div>
-</div>
-
-**Decision Tree Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f decision-tree-predict.dml
-                            -nvargs X=<file>
-                                    Y=[file]
-                                    R=[file]
-                                    M=<file>
-                                    P=<file>
-                                    A=[file]
-                                    CM=[file]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f decision-tree-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=[file]
-                                         R=[file]
-                                         M=<file>
-                                         P=<file>
-                                         A=[file]
-                                         CM=[file]
-                                         fmt=[format]
-</div>
-</div>
-
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the matrix of feature vectors; each row
-constitutes one feature vector. Note that categorical features in $X$
-need to be both recoded and dummy coded.
-
-**Y**: Location (on HDFS) to read the matrix of (categorical) labels that
-correspond to feature vectors in $X$. Note that class labels are assumed
-to be both recoded and dummy coded. This argument is optional for
-prediction.
-
-**R**: (default: `" "`) Location (on HDFS) to read matrix $R$ which for each feature
-in $X$ contains column-ids (first column), start indices (second
-column), and end indices (third column). If $R$ is not provided by
-default all features are assumed to be continuous-valued.
-
-**M**: Location (on HDFS) to write matrix $M$ containing the learned decision
-tree (see below for the schema)
-
-**bins**: (default: `20`) Number of thresholds to choose for each continuous-valued
-feature (determined by equi-height binning).
-
-**depth**: (default: `25`) Maximum depth of the learned tree
-
-**num_leaf**: (default: `10`) Parameter that controls pruning. The tree is not expanded if
-a node receives less than `num_leaf` training examples.
-
-**num_samples**: (default: `3000`) Parameter that decides when to switch to in-memory building
-of subtrees. If a node $v$ receives less than `num_samples`
-training examples then this implementation switches to an in-memory
-subtree building procedure to build the subtree under $v$ in its
-entirety.
-
-**impurity**: (default: `"Gini"`) Impurity measure used at internal nodes of the tree for
-selecting which features to split on. Possible value are `entropy` or
-`Gini`.
-
-**O**: (default: `" "`) Location (on HDFS) to store the training accuracy (%). Note
-that this argument is optional.
-
-**A**: (default: `" "`) Location (on HDFS) to store the testing accuracy (%) from a
-held-out test set during prediction. Note that this argument is
-optional.
-
-**P**: Location (on HDFS) to store predictions for a held-out test set
-
-**CM**: (default: `" "`) Location (on HDFS) to store the confusion matrix computed
-using a held-out test set. Note that this argument is optional.
-
-**S_map**: (default: `" "`) Location (on HDFS) to write the mappings from the
-continuous-valued feature-ids to the global feature-ids in $X$ (see
-below for details). Note that this argument is optional.
-
-**C_map**: (default: `" "`) Location (on HDFS) to write the mappings from the categorical
-feature-ids to the global feature-ids in $X$ (see below for details).
-Note that this argument is optional.
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-
-### Examples
-
-**Decision Tree**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f decision-tree.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    R=/user/ml/R.csv
-                                    M=/user/ml/model.csv
-                                    bins=20
-                                    depth=25
-                                    num_leaf=10
-                                    num_samples=3000
-                                    impurity=Gini
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f decision-tree.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         R=/user/ml/R.csv
-                                         M=/user/ml/model.csv
-                                         bins=20
-                                         depth=25
-                                         num_leaf=10
-                                         num_samples=3000
-                                         impurity=Gini
-                                         fmt=csv
-</div>
-</div>
-
-**Decision Tree Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f decision-tree-predict.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    R=/user/ml/R.csv
-                                    M=/user/ml/model.csv
-                                    P=/user/ml/predictions.csv
-                                    A=/user/ml/accuracy.csv
-                                    CM=/user/ml/confusion.csv
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f decision-tree-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         R=/user/ml/R.csv
-                                         M=/user/ml/model.csv
-                                         P=/user/ml/predictions.csv
-                                         A=/user/ml/accuracy.csv
-                                         CM=/user/ml/confusion.csv
-                                         fmt=csv
-</div>
-</div>
-
-
-### Details
+### Decision Trees Details
 
 Decision trees [[BreimanFOS1984]](algorithms-bibliography.html) are simple models of classification
 that, due to their structure, are easy to interpret. Given an example
@@ -1670,10 +472,10 @@ the subtree under it is built in its entirety in one shot.
 **Stopping rule and pruning.** The splitting of data at the internal
 nodes stops when at least one the following criteria is satisfied:
 
-  * the depth of the internal node reaches the input parameter
+- the depth of the internal node reaches the input parameter
     `depth` controlling the maximum depth of the learned
     tree, or
-  * no candidate split achieves information gain.
+- no candidate split achieves information gain.
 
 This implementation also allows for some automated pruning via the
 argument `num_leaf`. If a node receives $\leq$
@@ -1711,26 +513,26 @@ Moreover, we refer to an internal node as a continuous-valued
 continuous-valued (categorical). Below is a description of what each row
 in the matrix contains.
 
-  * Row 1: stores the node-ids. These ids correspond to the node-ids in
+- Row 1: stores the node-ids. These ids correspond to the node-ids in
     a complete binary tree.
-  * Row 2: for internal nodes stores the offsets (the number of columns)
+- Row 2: for internal nodes stores the offsets (the number of columns)
     in $M$ to the left child, and otherwise `0`.
-  * Row 3: stores the feature index of the feature (id of a
+- Row 3: stores the feature index of the feature (id of a
     continuous-valued feature in $$X_\text{cont}$$ if the feature is
     continuous-valued or id of a categorical feature in $$X_\text{cat}$$
     if the feature is categorical) that this node looks at if the node
     is an internal node, otherwise `0`.
-  * Row 4: store the type of the feature that this node looks at if the
+- Row 4: store the type of the feature that this node looks at if the
     node is an internal node: `1` for continuous-valued and `2` for
     categorical features, otherwise the label this leaf node is supposed
     to predict.
-  * Row 5: for the internal nodes contains `1` if the feature chosen for
+- Row 5: for the internal nodes contains `1` if the feature chosen for
     the node is continuous-valued, or the size of the subset of values
     used for splitting at the node stored in rows 6,7,$\ldots$ if the
     feature chosen for the node is categorical. For the leaf nodes, Row
     5 contains the number of misclassified training examples reaching at
     this node.
-  * Row 6,7,$\ldots$: for the internal nodes, row 6 stores the threshold
+- Row 6,7,$\ldots$: for the internal nodes, row 6 stores the threshold
     to which the example’s feature value is compared if the feature
     chosen for this node is continuous-valued, otherwise if the feature
     chosen for this node is categorical rows 6,7,$\ldots$ store the
@@ -1738,16 +540,16 @@ in the matrix contains.
     `1` if the node is impure and the number of training examples at the
     node is greater than `num_leaf`, otherwise `0`.
 
-As an example, [**Figure 2**](algorithms-classification.html#figure2) shows a decision tree with $5$ nodes and
+As an example, [**Figure 2**](figure-2) shows a decision tree with $5$ nodes and
 its matrix representation.
 
 * * *
 
-<a name="figure2" />
+#### Figure 2
 
 **Figure 2**: (a) An example tree and its (b) matrix representation. $x$ denotes an example and $x_j$ is the value of the $j$th continuous-valued (resp. categorical) feature in $$X_\text{cont}$$ (resp. $$X_\text{cat}$$). In this example all leaf nodes are pure and no training example is misclassified.
 
-(a) ![Figure 2](img/algorithms-reference/example-tree.png "Figure 2")
+(a) ![Figure 2](../img/algorithms-reference/example-tree.png "Figure 2")
 
 (b)
 
@@ -1759,12 +561,11 @@ its matrix representation.
 | Row 4 |   1   |   1   |   2   |   2   |   1
 | Row 5 |   1   |   0   |   2   |   0   |   0
 | Row 6 | 0.45  |   0   |   2   |   0   |   0
-| Row 7 |       |       |   3   |       |    
-
+| Row 7 |       |       |   3   |       |
 
 * * *
 
-### Returns
+### Decision Trees Returns
 
 The matrix corresponding to the learned model as well as the training
 accuracy (if requested) is written to a file in the format specified.
@@ -1779,13 +580,9 @@ Depending on what arguments are provided during invocation, the
 predictions, accuracy and confusion matrix in the requested output
 format.
 
+## Random Forests
 
-* * *
-
-
-## 2.5. Random Forests
-
-### Description
+### Random Forests Description
 
 Random forest is one of the most successful machine learning methods for
 classification and regression. It is an ensemble learning method that
@@ -1793,256 +590,7 @@ creates a model composed of a set of tree models. This implementation is
 well-suited to handle large-scale data and builds a random forest model
 for classification in parallel.
 
-
-### Usage
-
-**Random Forest**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f random-forest.dml
-                            -nvargs X=<file>
-                                    Y=<file>
-                                    R=[file]
-                                    M=<file>
-                                    bins=[int]
-                                    depth=[int]
-                                    num_leaf=[int]
-                                    num_samples=[int]
-                                    num_trees=[int]
-                                    subsamp_rate=[double]
-                                    feature_subset=[double]
-                                    impurity=[Gini|entropy]
-                                    C=[file]
-                                    S_map=[file]
-                                    C_map=[file]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f random-forest.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=<file>
-                                         R=[file]
-                                         M=<file>
-                                         bins=[int]
-                                         depth=[int]
-                                         num_leaf=[int]
-                                         num_samples=[int]
-                                         num_trees=[int]
-                                         subsamp_rate=[double]
-                                         feature_subset=[double]
-                                         impurity=[Gini|entropy]
-                                         C=[file]
-                                         S_map=[file]
-                                         C_map=[file]
-                                         fmt=[format]
-</div>
-</div>
-
-**Random Forest Prediction**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f random-forest-predict.dml
-                            -nvargs X=<file>
-                                    Y=[file]
-                                    R=[file]
-                                    M=<file>
-                                    C=[file]
-                                    P=<file>
-                                    A=[file]
-                                    OOB=[file]
-                                    CM=[file]
-                                    fmt=[format]
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f random-forest-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=<file>
-                                         Y=[file]
-                                         R=[file]
-                                         M=<file>
-                                         C=[file]
-                                         P=<file>
-                                         A=[file]
-                                         OOB=[file]
-                                         CM=[file]
-                                         fmt=[format]
-</div>
-</div>
-
-
-### Arguments for Spark and Hadoop invocation
-
-**X**: Location (on HDFS) to read the matrix of feature vectors; each row
-constitutes one feature vector. Note that categorical features in $X$
-need to be both recoded and dummy coded.
-
-**Y**: Location (on HDFS) to read the matrix of (categorical) labels that
-correspond to feature vectors in $X$. Note that classes are assumed to
-be both recoded and dummy coded. This argument is optional for
-prediction.
-
-**R**: (default: `" "`) Location (on HDFS) to read matrix $R$ which for each feature
-in $X$ contains column-ids (first column), start indices (second
-column), and end indices (third column). If $R$ is not provided by
-default all features are assumed to be continuous-valued.
-
-**M**: Location (on HDFS) to write matrix $M$ containing the learned random
-forest (see [Decision Trees](algorithms-classification.html#decision-trees) and below for the schema)
-
-**bins**: (default: `20`) Number of thresholds to choose for each continuous-valued
-feature (determined by equi-height binning).
-
-**depth**: (default: `25`) Maximum depth of the learned trees in the random forest model
-
-**num_leaf**: (default: `10`) Parameter that controls pruning. The tree is not expanded if
-a node receives less than `num_leaf` training examples.
-
-**num_samples**: (default: `3000`) Parameter that decides when to switch to in-memory building
-of the subtrees in each tree of the random forest model. If a node $v$
-receives less than `num_samples` training examples then this
-implementation switches to an in-memory subtree building procedure to
-build the subtree under $v$ in its entirety.
-
-**num_trees**: (default: `10`) Number of trees to be learned in the random forest model
-
-**subsamp_rate**: (default: `1.0`) Parameter controlling the size of each tree in the random
-forest model; samples are selected from a Poisson distribution with
-parameter `subsamp_rate`.
-
-**feature_subset**: (default: `0.5`) Parameter that controls the number of feature used as
-candidates for splitting at each tree node as a power of the number of
-features in the data, i.e., assuming the training set has $D$ features
-$$D^{\tt feature\_subset}$$ are used at each tree node.
-
-**impurity**: (default: `"Gini"`) Impurity measure used at internal nodes of the trees in the
-random forest model for selecting which features to split on. Possible
-value are `entropy` or `Gini`.
-
-**C**: (default: `" "`) Location (on HDFS) to store the number of counts (generated
-according to a Poisson distribution with parameter
-`subsamp_rate`) for each feature vector. Note that this
-argument is optional. If Out-Of-Bag (`OOB`) error estimate needs to be
-computed this parameter is passed as input to
-`random-forest-predict.dml`.
-
-**A**: (default: `" "`) Location (on HDFS) to store the testing accuracy (%) from a
-held-out test set during prediction. Note that this argument is
-optional.
-
-**OOB**: (default: `" "`) Location (on HDFS) to store the Out-Of-Bag (`OOB`) error
-estimate of the training set. Note that the matrix of sample counts
-(stored at `C`) needs to be provided for computing `OOB` error
-estimate. Note that this argument is optional.
-
-**P**: Location (on HDFS) to store predictions for a held-out test set
-
-**CM**: (default: `" "`) Location (on HDFS) to store the confusion matrix computed
-using a held-out test set. Note that this argument is optional.
-
-**S_map**: (default: `" "`) Location (on HDFS) to write the mappings from the
-continuous-valued feature-ids to the global feature-ids in $X$ (see
-below for details). Note that this argument is optional.
-
-**C_map**: (default: `" "`) Location (on HDFS) to write the mappings from the categorical
-feature-ids to the global feature-ids in $X$ (see below for details).
-Note that this argument is optional.
-
-**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
-`mm`, or `csv`; see read/write functions in
-SystemDS Language Reference for details.
-
-
-### Examples
-
-**Random Forest**:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f random-forest.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    R=/user/ml/R.csv
-                                    M=/user/ml/model.csv
-                                    bins=20
-                                    depth=25
-                                    num_leaf=10
-                                    num_samples=3000
-                                    num_trees=10
-                                    impurity=Gini
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f random-forest.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         R=/user/ml/R.csv
-                                         M=/user/ml/model.csv
-                                         bins=20
-                                         depth=25
-                                         num_leaf=10
-                                         num_samples=3000
-                                         num_trees=10
-                                         impurity=Gini
-                                         fmt=csv
-</div>
-</div>
-
-**Random Forest Prediction**:
-
-To compute predictions:
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f random-forest-predict.dml
-                            -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/Y.mtx
-                                    R=/user/ml/R.csv
-                                    M=/user/ml/model.csv
-                                    P=/user/ml/predictions.csv
-                                    A=/user/ml/accuracy.csv
-                                    CM=/user/ml/confusion.csv
-                                    fmt=csv
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f random-forest-predict.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-                                 -nvargs X=/user/ml/X.mtx
-                                         Y=/user/ml/Y.mtx
-                                         R=/user/ml/R.csv
-                                         M=/user/ml/model.csv
-                                         P=/user/ml/predictions.csv
-                                         A=/user/ml/accuracy.csv
-                                         CM=/user/ml/confusion.csv
-                                         fmt=csv
-</div>
-</div>
-
-
-### Details
+### Random Forests Details
 
 Random forests [[Breiman2001]](algorithms-bibliography.html)
 are learning algorithms for ensembles
@@ -2093,7 +641,6 @@ with the difference that the tree-ids are stored in the second row and
 rows $2,3,\ldots$ from the decision tree model are shifted by one. See
 [Decision Trees](algorithms-classification.html#decision-trees) for a description of the model.
 
-
 ### Returns
 
 The matrix corresponding to the learned model is written to a file in
@@ -2107,4 +654,3 @@ categorical feature-ids in $$X_\text{cat}$$ (stored at
 The `random-forest-predict.dml` script may compute one or
 more of predictions, accuracy, confusion matrix, and `OOB` error estimate
 in the requested output format depending on the input arguments used.
-

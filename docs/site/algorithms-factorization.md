@@ -21,7 +21,7 @@ limitations under the License.
 {% endcomment %}
 -->
 
-### Description
+### Factorization Description
 
 The Factorization Machine (FM), is a general predictor like SVMs but is also
 able to estimate reliable parameters under very high sparsity. The factorization machine
@@ -30,7 +30,7 @@ uses a factorized parameterization instead of a dense parameterisation like in S
 
 ## Core Model
 
-### 1. Model Equation:
+### Model Equation
 
 $$ \hat{y}(x) =
 w_0 +
@@ -57,26 +57,30 @@ is the dot product of two vectors of size $$k$$:
 A row $$ v_i $$ with in $$ V $$describes the $$i$$th variable with $$k \in N_0^+$$ factors. $$k$$ is a hyperparameter, that
 defines the dimensionality of factorization.
 
- * $$ w_0 $$ : global bias
- * $$ w_j $$ : models the strength of the ith variable
- * $$ w_{i,j} = \left <v_i, v_j \right> $$ : models the interaction between the $$i$$th & $$j$$th variable.
+- $$ w_0 $$ : global bias
+- $$ w_j $$ : models the strength of the ith variable
+- $$ w_{i,j} = \left <v_i, v_j \right> $$ : models the interaction between the $$i$$th & $$j$$th variable.
 
-Instead of using an own model parameter $$ w_{i,j} \in R $$ for each interaction, the FM
+Instead of using an own model parameter
+
+$$ w_{i,j} \in R $$
+
+for each interaction, the FM
 models the interaction by factorizing it.
 
-### 2. Expressiveness:
+### Expressiveness
 
 It is well known that for any positive definite matrix $$W$$, there exists a matrix $$V$$ such that
 $$W = V \cdot V^t$$ provided that $$k$$ is sufficiently large. This shows that an FM can express  any
 interaction matrix $$W$$ if $$k$$ is chosen large enough.
 
-### 3. Parameter Estimation Under Sparsity:
+### Parameter Estimation Under Sparsity
 
 In sparse settings, there is usually not enough data to estimate interaction between variables
 directly & independently. FMs can estimate interactions even in these settings well because
 they break the independence of the interaction parameters by factorizing them.
 
-### 4. Computation:
+### Computation
 
 Due to factorization of pairwise interactions, there is not model parameter that directly depends
 on two variables ( e.g., a parameter with an index $$(i,j)$$ ). So, the pairwise interactions can be
@@ -102,8 +106,10 @@ $$
 {1 \over 2} \sum_{f=1}^k \left ( \left ( \sum_{i=1}^n v_{i,f} x_i \right )^2 - \sum_{i=1}^n v_{i,f}^2 x_i^2 \right )
 $$
 
-### 5. Learning Factorization Machines
+### Learning Factorization Machines
+
 The gradient vector taken for each of the weights, is
+
 $$
 % <![CDATA[
 { \delta \over \delta \theta } \hat{y}(x) =
@@ -114,15 +120,18 @@ x_i \sum_{j=1}^{n} v_{j,f} \cdot x_j - v_{i,f} \cdot x_i^2 & \text{if } \theta \
 \end{cases} %]]>
 $$
 
-### 6. Factorization Models as Predictors:
+### Factorization Models as Predictors
 
-### 6.1. Regression:
+### Regression
+
  $$\hat{y}(x)$$ can be used directly as the predictor and the optimization criterion is the minimal
 least square error on $$D$$.
 
-### Usage:
+### Usage
+
 The `train()` function in the [fm-regression.dml](https://github.com/apache/systemml/blob/master/scripts/staging/fm-regression.dml) script, takes in the input variable matrix and the corresponding target vector with some input kept for validation during training.
-```
+
+``` java
 train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matrix[double] y_val)
     return (matrix[double] w0, matrix[double] W, matrix[double] V) {
   /*
@@ -142,7 +151,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
    * X --> [model] --> out --> l2_loss::backward(out, y) --> dout
    *
    */
-   
+
    ...
    # 7.Call adam::update for all parameters
    [w0,mw0,vw0] = adam::update(w0, dw0, lr, beta1, beta2, epsilon, t, mw0, vw0);
@@ -151,9 +160,10 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
 
 }
 ```
-Once the `train` function returns the  weights for the `fm` model, these are passed to the `predict` function. 
 
-```
+Once the `train` function returns the  weights for the `fm` model, these are passed to the `predict` function.
+
+``` java
 predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix[double] V)
     return (matrix[double] out) {
   /*
@@ -172,52 +182,10 @@ predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix
 }
 ```
 
-#### running with dummy data:
- The [fm-regression-dummy-data.dml](https://github.com/apache/systemml/blob/master/scripts/nn/examples/fm-regression-dummy-data.dml) file can be a nice template, to extend.
+### Binary Classification
 
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f ./scripts/nn/examples/fm-regression-dummy-data.dml
+The sign of $$\hat{y}(x)$$ is used & the parameters are optimized for the hinge loss or logit loss.
 
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f ./scripts/nn/examples/fm-regression-dummy-data.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-</div>
-</div>
+### Usage
 
-### 6.2. Binary Classification:
- The sign of $$\hat{y}(x)$$ is used & the parameters are optimized for the hinge loss or logit loss.
-
-### Usage: 
- The `train` function in the [fm-binclass.dml](https://github.com/apache/systemml/blob/master/scripts/staging/fm-binclass.dml) script, takes in the input variable matrix and the corresponding target vector with some input kept for validation during training. This script also contain `train()` and `predict()` function as in the case of regression.
-
-### running with dummy data:
- The [fm-regression-dummy-data.dml](https://github.com/apache/systemml/blob/master/scripts/nn/examples/fm-regression-dummy-data.dml) file can be a nice template, to extend.
-
-<div class="codetabs">
-<div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemDS.jar -f ./scripts/nn/examples/fm-binclass-dummy-data.dml
-
-</div>
-<div data-lang="Spark" markdown="1">
-    $SPARK_HOME/bin/spark-submit --master yarn
-                                 --deploy-mode cluster
-                                 --conf spark.driver.maxResultSize=0
-                                 SystemDS.jar
-                                 -f ./scripts/nn/examples/fm-binclass-dummy-data.dml
-                                 -config SystemDS-config.xml
-                                 -exec hybrid_spark
-</div>
-</div>
-### 6.3. Ranking: 
-The vectors are ordered by score of $$\hat{y}(x)$$ and the optimization is done over pass of an instance
-vectors $$ (x(a), x(b)) \in D $$ with a pairwise classification loss.
-
-Regularization terms like $$L2$$ are usually applied to the optimization objective to prevent overfitting.
-
+The `train` function in the [fm-binclass.dml](https://github.com/apache/systemml/blob/master/scripts/staging/fm-binclass.dml) script, takes in the input variable matrix and the corresponding target vector with some input kept for validation during training. This script also contain `train()` and `predict()` function as in the case of regression.

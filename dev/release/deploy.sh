@@ -58,7 +58,8 @@ function checkout_code {
 checkout_code
 # Remove SNAPSHOT from the version in pom
 eval cd $RELEASE_WORK_DIR/systemds
-sed -i "s/<version>$RELEASE_VERSION-SNAPSHOT<\/version>/<version>$RELEASE_VERSION<\/version>/" pom.xml
+#sed -i "s/<version>$RELEASE_VERSION-SNAPSHOT<\/version>/<version>$RELEASE_VERSION<\/version>/" pom.xml
+sed -i "s/<version>$DEVELOPMENT_VERSION<\/version>/<version>$RELEASE_VERSION<\/version>/" pom.xml
 GPG_OPTS="-Dgpg.keyname=$GPG_KEYID -Dgpg.passphrase=$GPG_PASSPHRASE"
 # Deploy to /target folder for the next job to pick the artifacts up for there
 CMD="$MVN $PUBLISH_PROFILES deploy \

@@ -21,69 +21,77 @@ limitations under the License.
 
 ## Overview
 
- SystemDS is a versatile system for the end-to-end data science lifecycle from data integration, cleaning, and feature engineering, over efficient, local and distributed ML model training, to deployment and serving. To this end, we aim to provide a stack of declarative languages with R-like syntax for (1) the different tasks of the data-science lifecycle, and (2) users with different expertise. These high-level scripts are compiled into hybrid execution plans of local, in-memory CPU and GPU operations, as well as distributed operations on Apache Spark. In contrast to existing systems - that either provide homogeneous tensors or 2D Datasets - and in order to serve the entire data science lifecycle, the underlying data model are DataTensors, i.e., tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.
+SystemDS is a versatile system for the end-to-end data science lifecycle from data integration, cleaning, and feature engineering, over efficient, local and distributed ML model training, to deployment and serving. To this end, we aim to provide a stack of declarative languages with R-like syntax for (1) the different tasks of the data-science lifecycle, and (2) users with different expertise. These high-level scripts are compiled into hybrid execution plans of local, in-memory CPU and GPU operations, as well as distributed operations on Apache Spark. In contrast to existing systems - that either provide homogeneous tensors or 2D Datasets - and in order to serve the entire data science lifecycle, the underlying data model are DataTensors, i.e., tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.
 
 **Documentation:** [SystemDS Documentation](https://github.com/apache/systemds/tree/master/docs)
 
 ## Getting started
 
-Requirements for running SystemDS are a bash shell and OpenJDK 8 or a Spark 2 cluster installation (to run distributed jobs). 
-These requirements should be available via standard system packages in all major Linux distributions 
+Requirements for running SystemDS are a bash shell and OpenJDK 8 or a Spark 2 cluster installation (to run distributed jobs).
+These requirements should be available via standard system packages in all major Linux distributions
 (make sure to have the right JDK version enabled, if you have multiple versions in your system).
-For Windows, a bash comes with [git for windows](http://git-scm.com) and OpenJDK builds can be obtained at http://adoptopenjdk.net
+For Windows, a bash comes with [git for windows](http://git-scm.com) and OpenJDK builds can be obtained at <http://adoptopenjdk.net>
 (tested version [jdk8u232-b09](https://adoptopenjdk.net/archive.html))  
 
 To start out with an example after having installed the requirements mentioned above, create a text file  
-`hello.dml` in your unzipped SystemDS directory containing the following content: 
- ```shell script
+`hello.dml` in your unzipped SystemDS directory containing the following content:
+
+```shell script
 X = rand(rows=$1, cols=$2, min=0, max=10, sparsity=$3)
 Y = rand(rows=$2, cols=$1, min=0, max=10, sparsity=$3)
 Z = X %*% Y
 print("Your hello world matrix contains:")
 print(toString(Z))
 write(Z, "Z")
-``` 
+```
 
-**Explaination:** The script takes three parameters for the creation of your matrices X and Y: rows, columns and degree 
+**Explanation:** The script takes three parameters for the creation of your matrices X and Y: rows, columns and degree
 of sparsity. As you can see, DML can access these parameters by specifying $1, $2, ... etc
-
 
 **Execution:** Now run that first script you created by running one of the following commands depending on your operating system:
 
-#### Running a script locally 
+### Running a script locally
 
-```shell script
-$ ./systemds hello.dml -args 10 10 1.0
+``` bash
+./bin/systemds hello.dml -args 10 10 1.0
 ```
 
-#### Running a script locally, providing your own SystemDS.jar file
- 
-If you compiled SystemDS from source, you can of course use the created JAR file with the run script. 
+### Running a script locally, providing your own SystemDS.jar file
 
-```shell script
-$ ./systemds path/to/the/SystemDS.jar hello.dml -args 10 10 1.0
+If you compiled SystemDS from source, you can of course use the created JAR file with the run script.
+
+``` bash
+./bin/systemds path/to/the/SystemDS.jar hello.dml -args 10 10 1.0
 ```
 
-#### Running a script locally, in your SystemDS source environment
+### Running a script locally, in your SystemDS source environment
+
 If you have cloned the SystemDS source repository and want to run your DML script with that, you can point the
 shell script to the source directory by setting the `SYSTEMDS_ROOT` environment variable.
-```shell script
-$ SYSTEMDS_ROOT=../../code/my-systemds/source  ./systemds hello.dml -args 10 10 1.0
+
+``` bash
+SYSTEMDS_ROOT=../../code/my-systemds/source
+./bin/systemds hello.dml -args 10 10 1.0
 ```
 
-#### Running a script distributed on a Spark cluster 
+More about the environment setup can be found on : [running Systemds](http://apache.github.io/systemds/site/run).
+
+### Running a script distributed on a Spark cluster
+
 For running on a Spark cluster, the env variable SYSDS_DISTRIBUTED needs to be set (to something other than 0).
 Per default, SystemDS will run in hybrid mode, pushing some instructions to the cluster and running others locally.
 To force cluster mode in this little test, we will increase the matrix size to give the worker nodes in the cluster
 something to do and force SystemDS to only generate Spark instructions by adding -exec spark to the command line
 parameters:
-```shell script
-$ SYSDS_DISTRIBUTED=1 ./systemds hello.dml -args 10000 10000 1.0 -exec spark
+
+``` bash
+SYSDS_DISTRIBUTED=1
+./bin/systemds hello.dml -args 10000 10000 1.0 -exec spark
 ```
 
 The output should read something similar to this (the warning can be safely ignored):
 
-```shell script
+``` bash
 20/03/09 16:40:29 INFO api.DMLScript: BEGIN DML run 03/09/2020 16:40:29
 20/03/09 16:40:30 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
 Your hello world matrix contains:
@@ -104,6 +112,6 @@ Total execution time:           0,122 sec.
 20/03/09 16:40:30 INFO api.DMLScript: END DML run 03/09/2020 16:40:30
 ```
 
-## Further reading 
+## Further reading
 
-More documentation is available in the [docs directory of our github repository](https://github.com/apache/systemds/tree/master/docs) 
+More documentation is available in the [SystemDS Homepage](https://systemds.apache.org/documentation)

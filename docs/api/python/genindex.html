@@ -99,7 +99,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api/operator/algorithms.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/context/systemds_context.html">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api/matrix/data_gen.html">Data Generators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/matrix/matrix.html">Matrix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/matrix/federated.html">Federated</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/operator/operation_node.html">Operation Node</a></li>
@@ -200,6 +199,7 @@
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -249,7 +249,7 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.cholesky">cholesky() (systemds.matrix.Matrix method)</a>
+      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.cholesky">cholesky() (systemds.operator.OperationNode method)</a>
 </li>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.close">close() (systemds.context.SystemDSContext method)</a>
 </li>
@@ -311,7 +311,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/data_gen.html#systemds.matrix.data_gen.full">full() (in module systemds.matrix.data_gen)</a>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.full">full() (systemds.context.SystemDSContext method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -393,8 +393,6 @@
     module
 
       <ul>
-        <li><a href="api/matrix/data_gen.html#module-systemds.matrix.data_gen">systemds.matrix.data_gen</a>
-</li>
         <li><a href="api/onnx_systemds/convert.html#module-systemds.onnx_systemds.convert">systemds.onnx_systemds.convert</a>
 </li>
         <li><a href="api/onnx_systemds/onnx_helper.html#module-systemds.onnx_systemds.onnx_helper">systemds.onnx_systemds.onnx_helper</a>
@@ -446,7 +444,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.order">order() (systemds.matrix.Matrix method)</a>
+      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.order">order() (systemds.operator.OperationNode method)</a>
 </li>
       <li><a href="api/script_building/dag.html#systemds.script_building.dag.OutputType">OutputType (class in systemds.script_building.dag)</a>
 </li>
@@ -470,13 +468,17 @@
 </li>
       <li><a href="api/onnx_systemds/onnx_helper.html#systemds.onnx_systemds.onnx_helper.PreparedValue">PreparedValue (class in systemds.onnx_systemds.onnx_helper)</a>
 </li>
+      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.print">print() (systemds.operator.OperationNode method)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/data_gen.html#systemds.matrix.data_gen.rand">rand() (in module systemds.matrix.data_gen)</a>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.rand">rand() (systemds.context.SystemDSContext method)</a>
+</li>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.read">read() (systemds.context.SystemDSContext method)</a>
 </li>
       <li><a href="api/onnx_systemds/onnx_helper.html#systemds.onnx_systemds.onnx_helper.NodeTree.remove_end_node">remove_end_node() (systemds.onnx_systemds.onnx_helper.NodeTree method)</a>
 </li>
@@ -486,7 +488,7 @@
 </li>
       <li><a href="api/onnx_systemds/util.html#systemds.onnx_systemds.util.resolve_systemds_root">resolve_systemds_root() (in module systemds.onnx_systemds.util)</a>
 </li>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.rev">rev() (systemds.matrix.Matrix method)</a>
+      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.rev">rev() (systemds.operator.OperationNode method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -494,7 +496,9 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/data_gen.html#systemds.matrix.data_gen.seq">seq() (in module systemds.matrix.data_gen)</a>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.scalar">scalar() (systemds.context.SystemDSContext method)</a>
+</li>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.seq">seq() (systemds.context.SystemDSContext method)</a>
 </li>
       <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.sin">sin() (systemds.operator.OperationNode method)</a>
 </li>
@@ -502,13 +506,6 @@
 </li>
       <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.sum">sum() (systemds.operator.OperationNode method)</a>
 </li>
-      <li>
-    systemds.matrix.data_gen
-
-      <ul>
-        <li><a href="api/matrix/data_gen.html#module-systemds.matrix.data_gen">module</a>
-</li>
-      </ul></li>
       <li>
     systemds.onnx_systemds.convert
 
@@ -589,7 +586,7 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.t">t() (systemds.matrix.Matrix method)</a>
+      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.t">t() (systemds.operator.OperationNode method)</a>
 </li>
       <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.tan">tan() (systemds.operator.OperationNode method)</a>
 </li>
@@ -597,7 +594,9 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.tanh">tanh() (systemds.operator.OperationNode method)</a>
 </li>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.to_one_hot">to_one_hot() (systemds.matrix.Matrix method)</a>
+      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.to_one_hot">to_one_hot() (systemds.operator.OperationNode method)</a>
+</li>
+      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.to_string">to_string() (systemds.operator.OperationNode method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -606,6 +605,14 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.var">var() (systemds.operator.OperationNode method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.write">write() (systemds.operator.OperationNode method)</a>
 </li>
   </ul></td>
 </tr></table>

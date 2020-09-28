@@ -310,8 +310,6 @@ public class PrivacyPropagator
 					Propagator propagator = new ListAppendPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
 					inst.output.setPrivacyConstraint(propagator.propagate());
 				}
-				ec.releaseCacheableData(inst.input1.getName());
-				ec.releaseCacheableData(inst.input2.getName());
 			}
 			else {
 				MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
@@ -645,6 +643,8 @@ public class PrivacyPropagator
 			return getSingletonList(((VariableCPInstruction) inst).getOutput());
 		else if ( inst instanceof SqlCPInstruction )
 			return getSingletonList(((SqlCPInstruction) inst).getOutput());
+		else if ( inst instanceof BuiltinNaryCPInstruction )
+			return getSingletonList(((BuiltinNaryCPInstruction)inst).getOutput());
 		return new ArrayList<>();
 	}
 

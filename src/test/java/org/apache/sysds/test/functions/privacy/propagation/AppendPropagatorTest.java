@@ -38,6 +38,7 @@ import org.apache.sysds.test.functions.federated.primitives.FederatedRCBindTest;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -52,12 +53,16 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/privacy/";
 	private final static String TEST_NAME_RBIND = "RBindTest";
 	private final static String TEST_NAME_CBIND = "CBindTest";
+	private final static String TEST_NAME_STRING = "StringAppendTest";
+	private final static String TEST_NAME_LIST = "ListAppendTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AppendPropagatorTest.class.getSimpleName() + "/";
 
 	@Override public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME_RBIND, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_RBIND, new String[] {"C"}));
 		addTestConfiguration(TEST_NAME_CBIND, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_CBIND, new String[] {"C"}));
+		addTestConfiguration(TEST_NAME_STRING, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_STRING, new String[] {"C"}));
+		addTestConfiguration(TEST_NAME_LIST, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_LIST, new String[] {"C"}));
 	}
 
 	@Test
@@ -741,6 +746,252 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		double[][] B = getRandomMatrix(rows2, cols, -10, 10, 0.5, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows1, cols),  privacyConstraint1);
 		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows2, cols),  privacyConstraint2);
+
+		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
+		runTest(true,false,null,-1);
+
+		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
+		Assert.assertEquals(expectedOutput, outputConstraint);
+	}
+
+	@Test
+	public void integrationCBindTestNoneNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pcExpected = new PrivacyConstraint(PrivacyLevel.None);
+		integrationCBindTest(pc1, pc2, pcExpected);
+	}
+
+	@Test
+	public void integrationCBindTestPrivateNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.Private);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0}, new long[]{9,19}), PrivacyLevel.Private);
+		integrationCBindTest(pc1, pc2, pcExpected);
+	}
+
+	@Test
+	public void integrationCBindTestPrivateAggregateNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0}, new long[]{9,19}), PrivacyLevel.PrivateAggregation);
+		integrationCBindTest(pc1, pc2, pcExpected);
+	}
+
+	@Test
+	public void integrationCBindTestNonePrivateAggregate(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,20}, new long[]{9, 49}), PrivacyLevel.PrivateAggregation);
+		integrationCBindTest(pc1, pc2, pcExpected);
+	}
+
+	@Test
+	public void integrationCBindTestNonePrivate(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.Private);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,20}, new long[]{9, 49}), PrivacyLevel.Private);
+		integrationCBindTest(pc1, pc2, pcExpected);
+	}
+
+	@Test
+	public void integrationFinegrainedCBindPrivate1(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		integrationCBindTest(constraint1, constraint2, constraint1);
+	}
+
+	@Test
+	public void integrationFinegrainedCBindPrivateAndPrivateAggregate1(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{2,0},new long[]{3,1}), PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		integrationCBindTest(constraint1, constraint2, constraint1);
+	}
+
+	@Test
+	public void integrationFinegrainedCBindPrivate2(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		PrivacyConstraint pcExcepted = new PrivacyConstraint();
+		pcExcepted.getFineGrainedPrivacy().put(new DataRange(new long[]{1,20}, new long[]{1,21}), PrivacyLevel.Private);
+		integrationCBindTest(constraint1, constraint2, pcExcepted);
+	}
+
+	@Test
+	public void integrationFinegrainedCBindPrivateAndPrivateAggregate2(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{2,0},new long[]{3,1}), PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint pcExcepted = new PrivacyConstraint();
+		pcExcepted.getFineGrainedPrivacy().put(new DataRange(new long[]{1,20},new long[]{1,21}), PrivacyLevel.Private);
+		pcExcepted.getFineGrainedPrivacy().put(new DataRange(new long[]{2,20}, new long[]{3,21}), PrivacyLevel.PrivateAggregation);
+		integrationCBindTest(constraint1, constraint2, pcExcepted);
+	}
+
+	@Test
+	public void integrationFinegrainedCBindPrivate12(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{1,20},new long[]{1,21}), PrivacyLevel.Private);
+		integrationCBindTest(constraint1, constraint2, pcExpected);
+	}
+
+	@Test
+	public void integrationFinegrainedCBindPrivateAndPrivateAggregate12(){
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0},new long[]{0,1}), PrivacyLevel.Private);
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{2,0},new long[]{3,1}), PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0},new long[]{0,1}), PrivacyLevel.Private);
+		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{2,0}), PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0},new long[]{0,1}), PrivacyLevel.Private);
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,20},new long[]{0,21}), PrivacyLevel.Private);
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{2,0}, new long[]{3,1}), PrivacyLevel.PrivateAggregation);
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{1,20}, new long[]{2,20}), PrivacyLevel.PrivateAggregation);
+		integrationCBindTest(constraint1, constraint2, pcExpected);
+	}
+
+	private void integrationCBindTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
+		PrivacyConstraint expectedOutput){
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_CBIND);
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
+
+		int cols1 = 20;
+		int cols2 = 30;
+		int rows = 10;
+		double[][] A = getRandomMatrix(rows, cols1, -10, 10, 0.5, 1);
+		double[][] B = getRandomMatrix(rows, cols2, -10, 10, 0.5, 1);
+		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols1),  privacyConstraint1);
+		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols2),  privacyConstraint2);
+
+		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
+		runTest(true,false,null,-1);
+
+		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
+		Assert.assertEquals(expectedOutput, outputConstraint);
+	}
+
+	@Test
+	public void integrationStringAppendTestNoneNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		integrationStringAppendTest(pc1, pc2, pc1);
+	}
+
+	@Test
+	public void integrationStringAppendTestPrivateNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.Private);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		integrationStringAppendTest(pc1, pc2, pc1);
+	}
+
+	@Test
+	public void integrationStringAppendTestPrivateAggregateNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		integrationStringAppendTest(pc1, pc2, pc1);
+	}
+
+	@Test
+	public void integrationStringAppendTestNonePrivateAggregate(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		integrationStringAppendTest(pc1, pc2, pc2);
+	}
+
+	@Test
+	public void integrationStringAppendTestNonePrivate(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.Private);
+		integrationStringAppendTest(pc1, pc2, pc2);
+	}
+
+	private void integrationStringAppendTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
+		PrivacyConstraint expectedOutput){
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_STRING);
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
+
+		int cols = 1;
+		int rows = 1;
+		double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.5, 1);
+		double[][] B = getRandomMatrix(rows, cols, -10, 10, 0.5, 1);
+		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols),  privacyConstraint1);
+		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols),  privacyConstraint2);
+
+		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
+		runTest(true,false,null,-1);
+
+		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
+		Assert.assertEquals(expectedOutput, outputConstraint);
+	}
+
+	@Ignore
+	@Test
+	public void integrationListAppendTestNoneNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		integrationListAppendTest(pc1, pc2, pc1);
+	}
+
+	@Ignore
+	@Test
+	public void integrationListAppendTestPrivateNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.Private);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0}, new long[]{0}), PrivacyLevel.Private);
+		integrationListAppendTest(pc1, pc2, pcExpected);
+	}
+
+	@Ignore
+	@Test
+	public void integrationListAppendTestPrivateAggregateNone(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
+		integrationListAppendTest(pc1, pc2, pc1);
+	}
+
+	@Ignore
+	@Test
+	public void integrationListAppendTestNonePrivateAggregate(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		integrationListAppendTest(pc1, pc2, pc2);
+	}
+
+	@Ignore
+	@Test
+	public void integrationListAppendTestNonePrivate(){
+		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
+		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.Private);
+		integrationListAppendTest(pc1, pc2, pc2);
+	}
+
+	private void integrationListAppendTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
+		PrivacyConstraint expectedOutput){
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_LIST);
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
+
+		int cols = 1;
+		int rows = 5;
+		double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.5, 1);
+		double[][] B = getRandomMatrix(rows, cols, -10, 10, 0.5, 1);
+		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols),  privacyConstraint1);
+		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols),  privacyConstraint2);
 
 		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
 		runTest(true,false,null,-1);

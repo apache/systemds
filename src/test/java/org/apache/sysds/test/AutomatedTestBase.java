@@ -786,15 +786,17 @@ public abstract class AutomatedTestBase {
 		PrivacyConstraint outputPrivacyConstraint = new PrivacyConstraint();
 		try {
 			JSONObject metadata = getMetaDataJSON(fileName, dir);
-			if ( metadata.containsKey(DataExpression.PRIVACY) ){
-				PrivacyLevel readPrivacyLevel = PrivacyLevel.valueOf(metadata.get(DataExpression.PRIVACY).toString());
-				outputPrivacyConstraint.setPrivacyLevel(readPrivacyLevel);
-			} else {
-				outputPrivacyConstraint.setPrivacyLevel(PrivacyLevel.None);
-			}
-			if ( metadata.containsKey(DataExpression.FINE_GRAINED_PRIVACY)){
-				JSONObject fineGrainedJSON = (JSONObject) metadata.get(DataExpression.FINE_GRAINED_PRIVACY);
-				PrivacyUtils.putFineGrainedConstraintsFromString(outputPrivacyConstraint.getFineGrainedPrivacy(), fineGrainedJSON.toString());
+			if ( metadata != null ){
+				if ( metadata.containsKey(DataExpression.PRIVACY) ){
+					PrivacyLevel readPrivacyLevel = PrivacyLevel.valueOf(metadata.get(DataExpression.PRIVACY).toString());
+					outputPrivacyConstraint.setPrivacyLevel(readPrivacyLevel);
+				} else {
+					outputPrivacyConstraint.setPrivacyLevel(PrivacyLevel.None);
+				}
+				if ( metadata.containsKey(DataExpression.FINE_GRAINED_PRIVACY)){
+					JSONObject fineGrainedJSON = (JSONObject) metadata.get(DataExpression.FINE_GRAINED_PRIVACY);
+					PrivacyUtils.putFineGrainedConstraintsFromString(outputPrivacyConstraint.getFineGrainedPrivacy(), fineGrainedJSON.toString());
+				}
 			}
 		} catch (JSONException e){
 			throw new DMLRuntimeException("Exception when reading from meta data file", e);

@@ -277,6 +277,7 @@ public class PrivacyPropagator
 				MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
 				Propagator propagator = new MatrixMultiplicationPropagatorPrivateFirst(input1, privacyConstraints[0], input2, privacyConstraints[1]);
 				mergedPrivacyConstraint = propagator.propagate();
+				ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
 			}
 			else {
 				mergedPrivacyConstraint = mergeNary(privacyConstraints, OperatorType.NonAggregate);
@@ -309,6 +310,8 @@ public class PrivacyPropagator
 					Propagator propagator = new ListAppendPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
 					inst.output.setPrivacyConstraint(propagator.propagate());
 				}
+				ec.releaseCacheableData(inst.input1.getName());
+				ec.releaseCacheableData(inst.input2.getName());
 			}
 			else {
 				MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
@@ -321,6 +324,7 @@ public class PrivacyPropagator
 				else throw new DMLPrivacyException("Instruction " + inst.getCPInstructionType() + " with append type " +
 						inst.getAppendType() + " is not supported by the privacy propagator");
 				inst.output.setPrivacyConstraint(propagator.propagate());
+				ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
 			}
 		}
 		return inst;

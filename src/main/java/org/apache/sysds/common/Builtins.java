@@ -116,6 +116,7 @@ public enum Builtins {
 	ISINF("is.infinite", false),
 	KMEANS("kmeans", true),
 	L2SVM("l2svm", true),
+	LASSO("lasso", true),
 	LENGTH("length", false),
 	LINEAGE("lineage", false),
 	LIST("list", false),  //note: builtin and parbuiltin
@@ -152,6 +153,7 @@ public enum Builtins {
 	PCA("pca", true),
 	PNMF("pnmf", true),
 	PPRED("ppred", false),
+	PPCA("ppca", true),
 	PROD("prod", false),
 	QR("qr", false, ReturnType.MULTI_RETURN),
 	QUANTILE("quantile", false),

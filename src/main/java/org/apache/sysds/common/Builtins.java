@@ -40,6 +40,8 @@ public enum Builtins {
 	//builtin functions
 	ABS("abs", false),
 	ACOS("acos", false),
+	ALS_CG("als_cg", true),
+	ALS_DS("als_ds", true),
 	ASIN("asin", false),
 	ATAN("atan", false),
 	AVG_POOL("avg_pool", false),

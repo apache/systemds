@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.sysds.runtime.privacy.finegrained.DataRange;
+import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
 import org.apache.sysds.runtime.privacy.propagation.*;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -621,35 +622,44 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 	public void integrationRBindTestNoneNone(){
 		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
 		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
-		integrationRBindTest(pc1, pc2);
+		PrivacyConstraint pcExpected = new PrivacyConstraint(PrivacyLevel.None);
+		integrationRBindTest(pc1, pc2, pcExpected);
 	}
 
 	@Test
 	public void integrationRBindTestPrivateNone(){
 		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.Private);
 		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
-		integrationRBindTest(pc1, pc2);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0}, new long[]{19,9}), PrivacyLevel.Private);
+		integrationRBindTest(pc1, pc2, pcExpected);
 	}
 
 	@Test
 	public void integrationRBindTestPrivateAggregateNone(){
 		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
 		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.None);
-		integrationRBindTest(pc1, pc2);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0}, new long[]{19,9}), PrivacyLevel.PrivateAggregation);
+		integrationRBindTest(pc1, pc2, pcExpected);
 	}
 
 	@Test
 	public void integrationRBindTestNonePrivateAggregate(){
 		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
 		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
-		integrationRBindTest(pc1, pc2);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{20,0}, new long[]{49, 9}), PrivacyLevel.PrivateAggregation);
+		integrationRBindTest(pc1, pc2, pcExpected);
 	}
 
 	@Test
 	public void integrationRBindTestNonePrivate(){
 		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
 		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.Private);
-		integrationRBindTest(pc1, pc2);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{20,0}, new long[]{49, 9}), PrivacyLevel.Private);
+		integrationRBindTest(pc1, pc2, pcExpected);
 	}
 
 	@Test
@@ -657,7 +667,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		PrivacyConstraint constraint1 = new PrivacyConstraint();
 		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
 		PrivacyConstraint constraint2 = new PrivacyConstraint();
-		integrationRBindTest(constraint1, constraint2);
+		integrationRBindTest(constraint1, constraint2, constraint1);
 	}
 
 	@Test
@@ -666,7 +676,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
 		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{2,0},new long[]{3,1}), PrivacyLevel.PrivateAggregation);
 		PrivacyConstraint constraint2 = new PrivacyConstraint();
-		integrationRBindTest(constraint1, constraint2);
+		integrationRBindTest(constraint1, constraint2, constraint1);
 	}
 
 	@Test
@@ -674,7 +684,9 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		PrivacyConstraint constraint1 = new PrivacyConstraint();
 		PrivacyConstraint constraint2 = new PrivacyConstraint();
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
-		integrationRBindTest(constraint1, constraint2);
+		PrivacyConstraint pcExcepted = new PrivacyConstraint();
+		pcExcepted.getFineGrainedPrivacy().put(new DataRange(new long[]{21,0}, new long[]{21,1}), PrivacyLevel.Private);
+		integrationRBindTest(constraint1, constraint2, pcExcepted);
 	}
 
 	@Test
@@ -683,7 +695,10 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		PrivacyConstraint constraint2 = new PrivacyConstraint();
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{2,0},new long[]{3,1}), PrivacyLevel.PrivateAggregation);
-		integrationRBindTest(constraint1, constraint2);
+		PrivacyConstraint pcExcepted = new PrivacyConstraint();
+		pcExcepted.getFineGrainedPrivacy().put(new DataRange(new long[]{21,0},new long[]{21,1}), PrivacyLevel.Private);
+		pcExcepted.getFineGrainedPrivacy().put(new DataRange(new long[]{22,0}, new long[]{23,1}), PrivacyLevel.PrivateAggregation);
+		integrationRBindTest(constraint1, constraint2, pcExcepted);
 	}
 
 	@Test
@@ -692,7 +707,10 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
 		PrivacyConstraint constraint2 = new PrivacyConstraint();
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
-		integrationRBindTest(constraint1, constraint2);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{21,0},new long[]{21,1}), PrivacyLevel.Private);
+		integrationRBindTest(constraint1, constraint2, pcExpected);
 	}
 
 	@Test
@@ -703,10 +721,16 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		PrivacyConstraint constraint2 = new PrivacyConstraint();
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0},new long[]{0,1}), PrivacyLevel.Private);
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{2,0}), PrivacyLevel.PrivateAggregation);
-		integrationRBindTest(constraint1, constraint2);
+		PrivacyConstraint pcExpected = new PrivacyConstraint();
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0},new long[]{0,1}), PrivacyLevel.Private);
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{20,0},new long[]{20,1}), PrivacyLevel.Private);
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{2,0}, new long[]{3,1}), PrivacyLevel.PrivateAggregation);
+		pcExpected.getFineGrainedPrivacy().put(new DataRange(new long[]{21,0}, new long[]{22,0}), PrivacyLevel.PrivateAggregation);
+		integrationRBindTest(constraint1, constraint2, pcExpected);
 	}
 
-	private void integrationRBindTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2){
+	private void integrationRBindTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
+		PrivacyConstraint expectedOutput){
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_RBIND);
 		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
 
@@ -720,24 +744,8 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 
 		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
 		runTest(true,false,null,-1);
-		try{
-			JSONObject metadataOutput = getMetaDataJSON("C", OUTPUT_DIR);
-			Assert.assertNotNull(metadataOutput);
-			if (PrivacyUtils.someConstraintSetBinary(privacyConstraint1, privacyConstraint2)){
-				if ( PrivacyUtils.privacyConstraintActivated(privacyConstraint1) || PrivacyUtils.privacyConstraintActivated(privacyConstraint2)){
-					Assert.assertTrue(metadataOutput.containsKey(DataExpression.PRIVACY));
-					JSONObject outputPrivacyJSON = (JSONObject) getMetaDataJSON("C", OUTPUT_DIR).get(DataExpression.PRIVACY);
-					// TODO: Check general privacy constraints
-				}
-				if ( PrivacyUtils.privacyConstraintFineGrainedActivated(privacyConstraint1) || PrivacyUtils.privacyConstraintFineGrainedActivated(privacyConstraint2)){
-					Assert.assertTrue(metadataOutput.containsKey(DataExpression.FINE_GRAINED_PRIVACY));
-					JSONObject outputPrivacyFineGrainedJSON = (JSONObject) getMetaDataJSON("C", OUTPUT_DIR).get(DataExpression.FINE_GRAINED_PRIVACY);
-					// TODO: Check fine-grained privacy constraints
-				}
 
-			}
-		} catch (JSONException e){
-			e.printStackTrace();
-		}
+		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
+		Assert.assertEquals(expectedOutput, outputConstraint);
 	}
 }

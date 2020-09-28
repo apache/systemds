@@ -67,6 +67,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
+import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.ParameterBuilder;
@@ -773,6 +774,36 @@ public abstract class AutomatedTestBase {
 	public static JSONObject getMetaDataJSON(String fileName, String outputDir) {
 		String fname = baseDirectory + outputDir + fileName + ".mtd";
 		return new DataExpression().readMetadataFile(fname, false);
+	}
+
+	/**
+	 * Returns the privacy constraint as read from metadata file.
+	 * @param fileName name of file
+	 * @return loaded privacy constraint
+	 * @throws DMLRuntimeException in case of problems with reading the metadata file
+	 */
+	public static PrivacyConstraint getPrivacyConstraintFromMetaData(String fileName, String dir) throws DMLRuntimeException {
+		PrivacyConstraint outputPrivacyConstraint = new PrivacyConstraint();
+		try {
+			JSONObject metadata = getMetaDataJSON(fileName, dir);
+			if ( metadata.containsKey(DataExpression.PRIVACY) ){
+				PrivacyLevel readPrivacyLevel = PrivacyLevel.valueOf(metadata.get(DataExpression.PRIVACY).toString());
+				outputPrivacyConstraint.setPrivacyLevel(readPrivacyLevel);
+			} else {
+				outputPrivacyConstraint.setPrivacyLevel(PrivacyLevel.None);
+			}
+			if ( metadata.containsKey(DataExpression.FINE_GRAINED_PRIVACY)){
+				JSONObject fineGrainedJSON = (JSONObject) metadata.get(DataExpression.FINE_GRAINED_PRIVACY);
+				PrivacyUtils.putFineGrainedConstraintsFromString(outputPrivacyConstraint.getFineGrainedPrivacy(), fineGrainedJSON.toString());
+			}
+		} catch (JSONException e){
+			throw new DMLRuntimeException("Exception when reading from meta data file", e);
+		}
+		return outputPrivacyConstraint;
+	}
+
+	public static PrivacyConstraint getPrivacyConstraintFromMetaData(String fileName) throws DMLRuntimeException {
+		return getPrivacyConstraintFromMetaData(fileName, OUTPUT_DIR);
 	}
 
 	public static String readDMLMetaDataValue(String fileName, String outputDir, String key) throws JSONException {

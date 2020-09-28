@@ -101,7 +101,7 @@ public class PrivacyUtils {
 		privacyConstraint.setFineGrainedPrivacyConstraints(fineGrainedPrivacy);
 	}
 
-	private static void putFineGrainedConstraintsFromString(FineGrainedPrivacy fineGrainedPrivacy, String fgPrivacyValue)
+	public static void putFineGrainedConstraintsFromString(FineGrainedPrivacy fineGrainedPrivacy, String fgPrivacyValue)
 		throws JSONException {
 		JSONArtifact fgPrivacyJson = JSON.parse(fgPrivacyValue);
 		JSONObject fgPrivacyObject = (JSONObject)fgPrivacyJson;

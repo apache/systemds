@@ -72,7 +72,7 @@ efficient when the number of features $m$ is relatively small
 
 * * *
 
-#### table 7
+#### Table 7
 
 Besides $\beta$, linear regression scripts compute a few summary statistics
 listed below.  The statistics are provided in CSV format, one comma-separated name-value
@@ -98,7 +98,7 @@ pair per each line.
 
 #### Table 8
 
-**Table 8**: The `Log` file for the `LinearRegCG.dml` script
+The `Log` file for the `LinearRegCG.dml` script
 contains the above iteration variables in CSV format, each line
 containing a triple (Name, Iteration\#, Value) with Iteration\# being 0
 for initial values.
@@ -258,9 +258,9 @@ obtained from $B[\cdot, 2]$ by complementary shifting and rescaling.
 
 The estimated summary statistics, including residual standard
 deviation $\sigma$ and the $R^2$, are printed out or sent into a file
-(if specified) in CSV format as defined in [**Table 7**](table-7).
+(if specified) in CSV format as defined in [**Table 7**](#table-7).
 For conjugate gradient iterations, a log file with monitoring variables
-can also be made available, see [**Table 8**](table-8).
+can also be made available, see [**Table 8**](#table-8).
 
 * * *
 
@@ -308,13 +308,13 @@ order they have been selected by the algorithm, i.e., $i$th entry in
 matrix $S$ corresponds to the variable which improves the AIC the most
 in $i$th iteration. If the model with the lowest AIC includes no
 variables matrix $S$ will be empty (contains one 0). Moreover, the
-estimated summary statistics as defined in [**Table 7**](table-7)
+estimated summary statistics as defined in [**Table 7**](#table-7)
 are printed out or stored in a file (if requested). In the case where an
 empty model achieves the best AIC these statistics will not be produced.
 
 * * *
 
-## 4.3. Generalized Linear Models
+## Generalized Linear Models
 
 ### GLM Description
 
@@ -795,7 +795,7 @@ of each category label for each record.
 
 When the "actual" response values $Y$ are available, the summary
 statistics are computed and written out as described in
-[**Table 13**](table-13). Below we discuss each of these statistics
+[**Table 13**](#table-13). Below we discuss each of these statistics
 in detail. Note that in the categorical case (binomial and multinomial)
 $Y$ is internally represented as the matrix of observation counts for
 each label in each record, rather than just the label ID for each
@@ -1024,7 +1024,7 @@ The matrix of predicted means (if the response is numerical) or
 probabilities (if the response is categorical), see Description
 subsection above for more information. Given `Y`, we return
 some statistics in CSV format as described in
-[**Table 13**](table-13) and in the above text.
+[**Table 13**](#table-13) and in the above text.
 
 * * *
 

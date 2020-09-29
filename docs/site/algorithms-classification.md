@@ -46,7 +46,7 @@ Just as linear regression estimates the mean value $\mu_i$ of a
 numerical response variable, logistic regression does the same for
 category label probabilities. In linear regression, the mean of $y_i$ is
 estimated as a linear combination of the features:
-$$\mu_i = \beta_0 + \beta_1 x_{i,1} + \ldots + \beta_m x_{i,m} = \beta_0 + x_i\beta_{1:m}$$.
+$\mu_i = \beta_0 + \beta_1 x_{i,1} + \ldots + \beta_m x_{i,m} = \beta_0 + x_i\beta_{1:m}$.
 In logistic regression, the label probability has to lie between 0
 and 1, so a link function is applied to connect it to
 $\beta_0 + x_i\beta_{1:m}$. If there are just two possible category
@@ -59,10 +59,10 @@ Prob[y_i\,{=}\,0\mid x_i; \beta] \,=\,
 \frac{1}{1 + e^{\,\beta_0 + x_i\beta_{1:m}}}$$
 
 Here category label 0
-serves as the *baseline*, and function $$\exp(\beta_0 + x_i\beta_{1:m})$$
+serves as the *baseline*, and function $\exp(\beta_0 + x_i\beta_{1:m})$
 shows how likely we expect to see "$y_i = 1$" in comparison to the
 baseline. Like in a loaded coin, the predicted odds of seeing 1 versus 0
-are $$\exp(\beta_0 + x_i\beta_{1:m})$$ to 1, with each feature $$x_{i,j}$$
+are $\exp(\beta_0 + x_i\beta_{1:m})$ to 1, with each feature $x_{i,j}$
 multiplying its own factor $\exp(\beta_j x_{i,j})$ to the odds. Given a
 large collection of pairs $(x_i, y_i)$, $i=1\ldots n$, logistic
 regression seeks to find the $\beta_j$’s that maximize the product of
@@ -76,11 +76,11 @@ $k \geq 3$ possible categories. Again we identify one category as the
 baseline, for example the $k$-th category. Instead of a coin, here we
 have a loaded multisided die, one side per category. Each non-baseline
 category $l = 1\ldots k\,{-}\,1$ has its own vector
-$$(\beta_{0,l}, \beta_{1,l}, \ldots, \beta_{m,l})$$ of regression
+$(\beta_{0,l}, \beta_{1,l}, \ldots, \beta_{m,l})$ of regression
 parameters with the intercept, making up a matrix $B$ of size
 $(m\,{+}\,1)\times(k\,{-}\,1)$. The predicted odds of seeing
 non-baseline category $l$ versus the baseline $k$ are
-$$\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)$$
+$\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)$
 to 1, and the predicted probabilities are:
 
 $$
@@ -99,7 +99,7 @@ $$
 
 The goal of the regression
 is to estimate the parameter matrix $B$ from the provided dataset
-$(X, Y) = (x_i, y_i)_{i=1}^n$ by maximizing the product of $$Prob[y_i\mid x_i; B]$$ over the
+$(X, Y) = (x_i, y_i)_{i=1}^n$ by maximizing the product of $Prob[y_i\mid x_i; B]$ over the
 observed labels $y_i$. Taking its logarithm, negating, and adding a
 regularization term gives us a minimization objective:
 
@@ -114,7 +114,7 @@ $$
 
 The optional regularization term is added to
 mitigate overfitting and degeneracy in the data; to reduce bias, the
-intercepts $$\beta_{0,l}$$ are not regularized. Once the $\beta_{j,l}$’s
+intercepts $\beta_{0,l}$ are not regularized. Once the $\beta_{j,l}$’s
 are accurately estimated, we can make predictions about the category
 label $y$ for a new feature vector $x$ using
 Eqs. (1) and (2).
@@ -154,7 +154,7 @@ Newton method for logistic regression described in [[Lin2008]](algorithms-biblio
 For convenience, let us make some changes in notation:
 
 - Convert the input vector of observed category labels into an indicator
-matrix $Y$ of size $n \times k$ such that $$Y_{i, l} = 1$$ if the $i$-th
+matrix $Y$ of size $n \times k$ such that $Y_{i, l} = 1$ if the $i$-th
 category label is $l$ and $Y_{i, l} = 0$ otherwise.
 - Append an extra column of all ones, i.e. $(1, 1, \ldots, 1)^T$, as the
 $m\,{+}\,1$-st column to the feature matrix $X$ to represent the
@@ -203,30 +203,28 @@ $$\varDelta f(S; B) \,\,\,\approx\,\,\, (1/2)\,\,{\textstyle\sum}\,\,S \cdot \ma
 
 This approximation is then
 minimized by trust-region conjugate gradient iterations (the *inner*
-iterations) subject to the constraint
-$\|S\|_2 \leq \delta$
-. The trust
-region size $\delta$ is initialized as
-$0.5\sqrt{m}\,/ \max_i \|x_i\|_2$
-and updated as described
-in [[Lin2008]](algorithms-bibliography.html).
+iterations) subject to the constraint 
+
+$$\|S\|_2 \leq \delta$$
+
+The trust
+region size $\delta$ is initialized as $0.5\sqrt{m}\,/ \max_i \|x_i\|_2$
+and updated as described in [[Lin2008]](algorithms-bibliography.html).
 Users can specify the maximum number of the outer
 and the inner iterations with input parameters `moi` and
 `mii`, respectively. The iterative minimizer terminates
-successfully if
+successfully if 
+
 $$\|\nabla f\|_2 < \varepsilon \|\nabla f_{B=0} \|_2$$
-, where ${\varepsilon}> 0$ is a tolerance supplied by the user via input
-parameter `tol`.
+
+, where ${\varepsilon}> 0$ is a tolerance supplied by the user via input parameter `tol`.
 
 ### Returns
 
-The estimated regression parameters (the
-$$\hat{\beta}_{j, l}$$)
-are
+The estimated regression parameters (the $$.\hat{\beta}_{j, l}$$ ) are
 populated into a matrix and written to an HDFS file whose path/name was
 provided as the `B` input argument. Only the non-baseline
-categories ($1\leq l \leq k\,{-}\,1$) have their
-$$\hat{\beta}_{j, l}$$
+categories ($1\leq l \leq k\,{-}\,1$) have their $ \hat{\beta}_{j, l}$
 in the output; to add the baseline category, just append a column of zeros.
 If `icpt=0` in the input command line, no intercepts are used
 and `B` has size
@@ -290,7 +288,7 @@ specified.
 
 * * *
 
-### 2.2.2 Multi-Class Support Vector Machines
+### Multi-Class Support Vector Machines
 
 #### Multi SVM Description
 
@@ -429,19 +427,20 @@ determine which test to include, is to compare impurities of the tree
 nodes induced by the test. The *node impurity* measures the
 homogeneity of the labels at the node. This implementation supports two
 commonly used impurity measures (denoted by $\mathcal{I}$):
-*Entropy* $$\mathcal{E}=\sum_{i=1}^{C}-f_i \log f_i$$, as
+*Entropy* 
+$\mathcal{E}=\sum_{i=1}^{C}-f_i \log f_i$, as
 well as *Gini impurity*
-$$\mathcal{G}=\sum_{i=1}^{C}f_i (1-f_i)$$, where $C$ denotes the number of
+$\mathcal{G}=\sum_{i=1}^{C}f_i (1-f_i)$, where $C$ denotes the number of
 unique labels and $f_i$ is the frequency of label $i$. Once the impurity
 at the tree nodes has been obtained, the *best split* is
 chosen from a set of possible splits that maximizes the
 *information gain* at the node, i.e.,
-$$\arg\max_{s}\mathcal{IG}(X,s)$$, where $\mathcal{IG}(X,s)$ denotes the
+$\arg\max_{s}\mathcal{IG}(X,s)$, where $\mathcal{IG}(X,s)$ denotes the
 information gain when the splitting test $s$ partitions the feature
 matrix $X$. Assuming that $s$ partitions $X$ that contains $N$ feature
-vectors into $$X_\text{left}$$ and $$X_\text{right}$$ each including
-$$N_\text{left}$$ and $$N_\text{right}$$ feature vectors, respectively,
-$$\mathcal{IG}(X,s)$$ is given by
+vectors into $X_\text{left}$ and $X_\text{right}$ each including
+$N_\text{left}$ and $N_\text{right}$ feature vectors, respectively,
+$\mathcal{IG}(X,s)$ is given by
 
 $$\mathcal{IG}(X,s)=\mathcal{I}(X)-\frac{N_\text{left}}{N}\mathcal{I}(X_\text{left})-\frac{N_\text{right}}{N}\mathcal{I}(X_\text{right})$$
 
@@ -504,10 +503,10 @@ which results in the maximum information gain is then selected.
 in a matrix $M$ that contains at least 6 rows. Each column in the matrix
 contains the parameters relevant to a single node in the tree. Note that
 for building the tree model, our implementation splits the feature
-matrix $X$ into $$X_\text{cont}$$ containing continuous-valued features
-and $$X_\text{cat}$$ containing categorical features. In the following,
+matrix $X$ into $X_\text{cont}$ containing continuous-valued features
+and $X_\text{cat}$ containing categorical features. In the following,
 the continuous-valued (resp. categorical) feature-ids correspond to the
-indices of the features in $$X_\text{cont}$$ (resp. $$X_\text{cat}$$).
+indices of the features in $X_\text{cont}$ (resp. $X_\text{cat}$).
 Moreover, we refer to an internal node as a continuous-valued
 (categorical) node if the feature that this nodes looks at is
 continuous-valued (categorical). Below is a description of what each row
@@ -518,8 +517,8 @@ in the matrix contains.
 - Row 2: for internal nodes stores the offsets (the number of columns)
     in $M$ to the left child, and otherwise `0`.
 - Row 3: stores the feature index of the feature (id of a
-    continuous-valued feature in $$X_\text{cont}$$ if the feature is
-    continuous-valued or id of a categorical feature in $$X_\text{cat}$$
+    continuous-valued feature in $X_\text{cont}$ if the feature is
+    continuous-valued or id of a categorical feature in $X_\text{cat}$
     if the feature is categorical) that this node looks at if the node
     is an internal node, otherwise `0`.
 - Row 4: store the type of the feature that this node looks at if the
@@ -547,7 +546,7 @@ its matrix representation.
 
 #### Figure 2
 
-**Figure 2**: (a) An example tree and its (b) matrix representation. $x$ denotes an example and $x_j$ is the value of the $j$th continuous-valued (resp. categorical) feature in $$X_\text{cont}$$ (resp. $$X_\text{cat}$$). In this example all leaf nodes are pure and no training example is misclassified.
+**Figure 2**: (a) An example tree and its (b) matrix representation. $x$ denotes an example and $x_j$ is the value of the $j$th continuous-valued (resp. categorical) feature in $X_\text{cont}$ (resp. $X_\text{cat}$). In this example all leaf nodes are pure and no training example is misclassified.
 
 (a) ![Figure 2](../img/algorithms-reference/example-tree.png "Figure 2")
 
@@ -570,10 +569,10 @@ its matrix representation.
 The matrix corresponding to the learned model as well as the training
 accuracy (if requested) is written to a file in the format specified.
 See details where the structure of the model matrix is described. Recall
-that in our implementation $X$ is split into $$X_\text{cont}$$ and
-$$X_\text{cat}$$. If requested, the mappings of the continuous-valued
-feature-ids in $$X_\text{cont}$$ (stored at `S_map`) and the
-categorical feature-ids in $$X_\text{cat}$$ (stored at
+that in our implementation $X$ is split into $X_\text{cont}$ and
+$X_\text{cat}$. If requested, the mappings of the continuous-valued
+feature-ids in $X_\text{cont}$ (stored at `S_map`) and the
+categorical feature-ids in $X_\text{cat}$ (stored at
 `C_map`) to the global feature-ids in $X$ will be provided.
 Depending on what arguments are provided during invocation, the
 `decision-tree-predict.dml` script may compute one or more of
@@ -641,15 +640,15 @@ with the difference that the tree-ids are stored in the second row and
 rows $2,3,\ldots$ from the decision tree model are shifted by one. See
 [Decision Trees](algorithms-classification.html#decision-trees) for a description of the model.
 
-### Returns
+### Random Forests Returns
 
 The matrix corresponding to the learned model is written to a file in
 the format specified. See [Decision Trees](algorithms-classification.html#decision-trees) where the
 details about the structure of the model matrix is described. Similar to
-`decision-tree.dml`, $X$ is split into $$X_\text{cont}$$ and
-$$X_\text{cat}$$. If requested, the mappings of the continuous feature-ids
-in $$X_\text{cont}$$ (stored at `S_map`) as well as the
-categorical feature-ids in $$X_\text{cat}$$ (stored at
+`decision-tree.dml`, $X$ is split into $X_\text{cont}$ and
+$X_\text{cat}$. If requested, the mappings of the continuous feature-ids
+in $X_\text{cont}$ (stored at `S_map`) as well as the
+categorical feature-ids in $X_\text{cat}$ (stored at
 `C_map`) to the global feature-ids in $X$ will be provided.
 The `random-forest-predict.dml` script may compute one or
 more of predictions, accuracy, confusion matrix, and `OOB` error estimate

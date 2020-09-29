@@ -35,10 +35,37 @@ limitations under the License.
         </div>
         <nav class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-right">
-                <li><a href=".{% if page.path contains 'site' %}/..{% endif %}/">Overview</a></li>
-                <li><a href="https://github.com/apache/systemds">GitHub</a></li>
                 <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Running SystemDS:</b></li>
+                        <!--<li><a href="spark-mlcontext-programming-guide">Spark MLContext</a></li>-->
+                        <!--<li><a href="site/spark-batch-mode">Spark Batch Mode</a>
+                        <li><a href="site/hadoop-batch-mode">Hadoop Batch Mode</a>-->
+                        <li><a href="site/run">Standalone Guide</a></li>
+                        <!--<li><a href="site/jmlc">Java Machine Learning Connector (JMLC)</a>-->
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>ML Algorithms:</b></li>
+                        <li><a href="site/algorithms-reference.html">Algorithms Reference</a></li>
+                        <!--<li class="divider"></li>
+                        <li><b>Tools:</b></li>
+                        <li><a href="site/debugger-guide.html">Debugger Guide</a></li>
+                        <li><a href="site/developer-tools-systemds.html">IDE Guide</a></li>-->
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                        <!--
+                        <li><a href="site/engine-dev-guide.html">Engine Developer Guide</a></li>
+                        <li><a href="site/troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                        <li><a href="site/release-process.html">Release Process</a></li> -->
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
                     <ul class="dropdown-menu" role="menu">
                         <li><a href=".{% if page.path contains 'site' %}/..{% endif %}/api/java/">Java</a></li>
                         <li><a href=".{% if page.path contains 'site' %}/..{% endif %}/api/python/">Python</a></li>

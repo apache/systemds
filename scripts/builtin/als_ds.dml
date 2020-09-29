@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 #
-# ALS algorithm using a direct solve method for individual least squares problems. This script
+# Alternating-Least-Squares (ALS) algorithm using a direct solve method for individual least squares problems. This script
 # computes an approximate factorization of a low-rank matrix V into two matrices L and R.
 # Matrices L and R are computed by minimizing a loss function (with regularization).
 #

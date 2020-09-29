@@ -45,9 +45,6 @@ public class BuiltinALSDSTest extends AutomatedTestBase {
 
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
-
-
-
     }
 
 }

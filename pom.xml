@@ -53,6 +53,7 @@
 		<jacoco.skip>true</jacoco.skip>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
 		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
+		<enableStats>false</enableStats>
 	</properties>
 
 	<repositories>

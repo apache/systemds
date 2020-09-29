@@ -99,7 +99,7 @@ public abstract class AutomatedTestBase {
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
 
 	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite
-	public static final boolean TEST_GPU = false;
+	public static boolean TEST_GPU = false;
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	public static final int FED_WORKER_WAIT = 1000; // in ms
@@ -170,6 +170,8 @@ public abstract class AutomatedTestBase {
 
 	protected static final boolean DEBUG = false;
 
+	public static boolean VERBOSE_STATS = false;
+
 	protected String fullDMLScriptName; // utilize for both DML and PyDML, should probably be renamed.
 	// protected String fullPYDMLScriptName;
 	protected String fullRScriptName;
@@ -209,6 +211,8 @@ public abstract class AutomatedTestBase {
 			e.printStackTrace();
 		}
 		outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
+		TEST_GPU = Boolean.parseBoolean(properties.getProperty("enableGPU"));
+		VERBOSE_STATS = Boolean.parseBoolean(properties.getProperty("enableStats"));
 	}
 
 	// Timestamp before test start.
@@ -1292,6 +1296,8 @@ public abstract class AutomatedTestBase {
 
 		if(TEST_GPU)
 			args.add("-gpu");
+		if(VERBOSE_STATS)
+			args.add("-stats");
 	}
 
 	public static int getRandomAvailablePort() {

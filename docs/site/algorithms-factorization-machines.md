@@ -39,6 +39,7 @@ w_0 +
 $$
 
  where the model parameters that have to be estimated are:
+
  $$
  w_0 \in R,
  W   \in R^n,
@@ -46,45 +47,51 @@ $$
  $$
 
 and
+
  $$
    \left <\cdot, \cdot \right >
  $$
-is the dot product of two vectors of size $$k$$:
+
+is the dot product of two vectors of size $k$:
+
  $$
  \left <v_i, v_j \right > = \sum_{f=1}^{k} v_{i,f} \cdot v_{j,f}
  $$
 
-A row $$ v_i $$ with in $$ V $$describes the $$i$$th variable with $$k \in N_0^+$$ factors. $$k$$ is a hyperparameter, that
-defines the dimensionality of factorization.
+A row $v_i$ with in $V$ describes the $i$th variable with $k \in N_0^+$ 
+factors. $k$ is a hyperparameter, that defines the dimensionality of
+factorization.
 
-- $$ w_0 $$ : global bias
-- $$ w_j $$ : models the strength of the ith variable
-- $$ w_{i,j} = \left <v_i, v_j \right> $$ : models the interaction between the $$i$$th & $$j$$th variable.
+- $ w_0 $ : global bias
+- $ w_j $ : models the strength of the ith variable
+- $ w_{i,j} = \left <v_i, v_j \right> $ : models the interaction between
+the $i$th & $j$th variable.
 
 Instead of using an own model parameter
 
 $$ w_{i,j} \in R $$
 
-for each interaction, the FM
-models the interaction by factorizing it.
+for each interaction, the FM models the interaction by factorizing it.
 
 ### Expressiveness
 
-It is well known that for any positive definite matrix $$W$$, there exists a matrix $$V$$ such that
-$$W = V \cdot V^t$$ provided that $$k$$ is sufficiently large. This shows that an FM can express  any
-interaction matrix $$W$$ if $$k$$ is chosen large enough.
+It is well known that for any positive definite matrix $W$, there exists a 
+matrix $V$ such that $W = V \cdot V^t$ provided that $k$ is sufficiently
+large. This shows that an FM can express any interaction matrix $W$ if $k$
+is chosen large enough.
 
 ### Parameter Estimation Under Sparsity
 
-In sparse settings, there is usually not enough data to estimate interaction between variables
-directly & independently. FMs can estimate interactions even in these settings well because
-they break the independence of the interaction parameters by factorizing them.
+In sparse settings, there is usually not enough data to estimate interaction
+between variables directly & independently. FMs can estimate interactions even
+in these settings well because they break the independence of the interaction
+parameters by factorizing them.
 
 ### Computation
 
-Due to factorization of pairwise interactions, there is not model parameter that directly depends
-on two variables ( e.g., a parameter with an index $$(i,j)$$ ). So, the pairwise interactions can be
-reformulated as shown below.
+Due to factorization of pairwise interactions, there is not model parameter
+that directly depends on two variables ( e.g., a parameter with an index 
+$(i,j)$ ). So, the pairwise interactions can be reformulated as shown below.
 
 $$
 \sum_{i=1}^n \sum_{j=i+1}^n \left <v_i, v_j \right > x_i x_j
@@ -124,8 +131,8 @@ $$
 
 ### Regression
 
- $$\hat{y}(x)$$ can be used directly as the predictor and the optimization criterion is the minimal
-least square error on $$D$$.
+$\hat{y}(x)$ can be used directly as the predictor and the optimization
+criterion is the minimal least square error on $D$.
 
 ### Usage
 
@@ -184,8 +191,12 @@ predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix
 
 ### Binary Classification
 
-The sign of $$\hat{y}(x)$$ is used & the parameters are optimized for the hinge loss or logit loss.
+The sign of $\hat{y}(x)$ is used & the parameters are optimized for the hinge
+loss or logit loss.
 
 ### Usage
 
-The `train` function in the [fm-binclass.dml](https://github.com/apache/systemml/blob/master/scripts/staging/fm-binclass.dml) script, takes in the input variable matrix and the corresponding target vector with some input kept for validation during training. This script also contain `train()` and `predict()` function as in the case of regression.
+The `train` function in the [fm-binclass.dml](https://github.com/apache/systemml/blob/master/scripts/staging/fm-binclass.dml)
+script, takes in the input variable matrix and the corresponding target vector
+with some input kept for validation during training. This script also contain
+`train()` and `predict()` function as in the case of regression.

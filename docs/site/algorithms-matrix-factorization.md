@@ -21,7 +21,7 @@ limitations under the License.
 {% endcomment %}
 -->
 
-## 5.1 Principal Component Analysis
+## Principal Component Analysis
 
 ### PCA Description
 
@@ -128,9 +128,8 @@ is computed only based on the nonzero entries in $V$, i.e.,
 $$%\label{eq:loss}
  \mathcal{L}=\sum_{(i,j)\in\Omega}l(V_{ij},L_{i*},R_{*j})$$
 
-where
-$$L_{i*}$$ and $$R_{*j}$$, respectively, denote the $i$th row of $L$ and the
-$j$th column of $R$, $$\Omega=\{\omega_1,\dots,\omega_N\}$$ denotes the
+where $L_{i\*}$ and $R_{\*j}$, respectively, denote the $i$th row of $L$ and the
+$j$th column of $R$, $\Omega=\{\omega_1,\dots,\omega_N\}$ denotes the
 training set containing the observed (nonzero) entries in $V$, and $l$
 is some local loss function.
 
@@ -140,26 +139,26 @@ algorithm repeatedly keeps one of the unknown matrices ($L$ or $R$)
 fixed and optimizes the other one. In particular, ALS alternates between
 recomputing the rows of $L$ in one step and the columns of $R$ in the
 subsequent step. Our implementation of the ALS algorithm supports the
-loss functions summarized in [**Table 16**](algorithms-matrix-factorization.html#table16)
+loss functions summarized in [**Table 16**](#table16)
 commonly used for matrix completion [[ZhouWSP08]](algorithms-bibliography.html).
 
 #### Table 16
 
-Popular loss functions supported by our ALS implementation; $$N_{i*}$$
-and $$N_{*j}$$, respectively, denote the number of nonzero entries in
+Popular loss functions supported by our ALS implementation; $N_{i\*}$
+and $N_{\*j}$, respectively, denote the number of nonzero entries in
 row $i$ and column $j$ of $V$.
 
 | Loss                  | Definition |
 | --------------------- | ---------- |
-| $$\mathcal{L}_\text{Nzsl}$$     | $$\sum_{i,j:V_{ij}\neq 0} (V_{ij} - [LR]_{ij})^2$$
-| $$\mathcal{L}_\text{Nzsl+L2}$$  | $$\mathcal{L}_\text{Nzsl} + \lambda \Bigl( \sum_{ik} L_{ik}^2 + \sum_{kj} R_{kj}^2 \Bigr)$$
-| $$\mathcal{L}_\text{Nzsl+wL2}$$ | $$\mathcal{L}_\text{Nzsl} + \lambda \Bigl(\sum_{ik}N_{i*} L_{ik}^2 + \sum_{kj}N_{*j} R_{kj}^2 \Bigr)$$
+| $\mathcal{L}_\text{Nzsl}$     | $\sum_{i,j:V_{ij}\neq 0} (V_{ij} - [LR]_{ij})^2$
+| $\mathcal{L}_\text{Nzsl+L2}$  | $\mathcal{L}_\text{Nzsl} + \lambda \Bigl( \sum_{ik} L_{ik}^2 + \sum_{kj} R_{kj}^2 \Bigr)$
+| $\mathcal{L}_\text{Nzsl+wL2}$ | $\mathcal{L}_\text{Nzsl} + \lambda \Bigl(\sum_{ik}N_{i*} L_{ik}^2 + \sum_{kj}N_{*j} R_{kj}^2 \Bigr)$
 
 * * *
 
 Note that the matrix completion problem as defined in (1)
 is a non-convex problem for all loss functions from
-[**Table 16**](table-16). However, when fixing one of the matrices
+[**Table 16**](#table-16). However, when fixing one of the matrices
 $L$ or $R$, we get a least-squares problem with a globally optimal
 solution. For example, for the case of $$\mathcal{L}_\text{Nzsl+wL2}$$ we
 have the following closed form solutions
@@ -170,13 +169,13 @@ $$\begin{aligned}
   \end{aligned}
 $$
 
-where $$L_{n+1,i*}$$ (resp. $$R_{n+1,*j}$$) denotes the
-$i$th row of $$L_{n+1}$$ (resp. $j$th column of $$R_{n+1}$$), $\lambda$
+where $L_{n+1,i\*}$ (resp. $R_{n+1,\*j}$) denotes the
+$i$th row of $L_{n+1}$ (resp. $j$th column of $R_{n+1}$), $\lambda$
 denotes the regularization parameter, $I$ is the identity matrix of
-appropriate dimensionality, $$V_{i*}$$ (resp. $$V_{*j}$$) denotes the
-revealed entries in row $i$ (column $j$), $$R^{(i)}_n$$ (resp.
-$$L^{(j)}_{n+1}$$) refers to the corresponding columns of $R_n$ (rows of
-$$L_{n+1}$$), and $N_1$ (resp. $N_2$) denotes a diagonal matrix that
+appropriate dimensionality, $V_{i*}$ (resp. $V_{\*j}$) denotes the
+revealed entries in row $i$ (column $j$), $R^{\(i\)}_n$ ( resp. 
+$L^{(j)}_{n+1}$ ) refers to the corresponding columns of $R_n$ (rows of
+$L_{n+1}$), and $N_1$ (resp. $N_2$) denotes a diagonal matrix that
 contains the number of nonzero entries in row $i$ (column $j$) of $V$.
 
 **Prediction.** Based on the factor matrices computed by ALS we provide

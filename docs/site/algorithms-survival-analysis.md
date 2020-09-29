@@ -41,7 +41,7 @@ estimate (MLE) of the survival function $S(t)$, i.e., the probability of
 survival from the time origin to a given future time. As an illustration
 suppose that there are $n$ individuals with observed survival times
 $t_1,t_2,\ldots t_n$ out of which there are $r\leq n$ distinct death
-times $$t_{(1)}\leq t_{(2)}\leq t_{(r)}$$—since some of the observations
+times $t_{(1)}\leq t_{(2)}\leq t_{(r)}$—since some of the observations
 may be censored, in the sense that the end-point of interest has not
 been observed for those individuals, and there may be more than one
 individual with the same survival time. Let $S(t_j)$ denote the
@@ -49,13 +49,13 @@ probability of survival until time $t_j$, $d_j$ be the number of events
 at time $t_j$, and $n_j$ denote the number of individual at risk (i.e.,
 those who die at time $t_j$ or later). Assuming that the events occur
 independently, in Kaplan-Meier method the probability of surviving from
-$t_j$ to $$t_{j+1}$$ is estimated from $S(t_j)$ and given by
+$t_j$ to $t_{j+1}$ is estimated from $S(t_j)$ and given by
 
 $$\hat{S}(t) = \prod_{j=1}^{k} \left( \frac{n_j-d_j}{n_j} \right)$$
 
 for
-$$t_k\leq t<t_{k+1}$$, $$k=1,2,\ldots r$$, $$\hat{S}(t)=1$$ for $$t<t_{(1)}$$,
-and $$t_{(r+1)}=\infty$$. Note that the value of $\hat{S}(t)$ is constant
+$t_k\leq t<t_{k+1}$, $k=1,2,\ldots r$, $\hat{S}(t)=1$ for $t<t_{(1)}$,
+and $t_{(r+1)}=\infty$. Note that the value of $\hat{S}(t)$ is constant
 between times of event and therefore the estimate is a step function
 with jumps at observed event times. If there are no censored data this
 estimator would simply reduce to the empirical survivor function defined
@@ -73,13 +73,13 @@ can be calculated as
 
 $$\text{se} \{\hat{S}(t)\} \approx \hat{S}(t) {\bigg\{ \sum_{j=1}^{k} \frac{d_j}{n_j(n_j -   d_j)}\biggr\}}^2$$
 
-for $$t_{(k)}\leq t<t_{(k+1)}$$. This equation is known as the
+for $t_{(k)}\leq t<t_{(k+1)}$. This equation is known as the
 *Greenwood’s* formula. An alternative approach is to apply
 the *Petos’s* expression
 
 $$\text{se}\{\hat{S}(t)\}=\frac{\hat{S}(t)\sqrt{1-\hat{S}(t)}}{\sqrt{n_k}}$$
 
-for $$t_{(k)}\leq t<t_{(k+1)}$$. Once the standard error of $\hat{S}$ has
+for $t_{(k)}\leq t<t_{(k+1)}$. Once the standard error of $\hat{S}$ has
 been found we compute the following types of confidence intervals
 (controlled by parameter `cctype`): The `plain`
 $100(1-\alpha)\%$ confidence interval for $S(t)$ is computed using
@@ -97,23 +97,27 @@ or the `log-log` transformation using
 $$\hat{S}(t)^{\exp [\pm z_{\alpha/2} \text{se} \{\log [-\log \hat{S}(t)]\}]}$$
 
 **Median, its standard error and confidence interval.** Denote by
-$$\hat{t}(50)$$ the estimated median of $$\hat{S}$$, i.e.,
-$$\hat{t}(50)=\min \{ t_i \mid \hat{S}(t_i) < 0.5\}$$, where $$t_i$$ is the
+$\hat{t}(50)$ the estimated median of $\hat{S}$, i.e.,
+$\hat{t}(50)=\min \{ t_i \mid \hat{S}(t_i) < 0.5\}$, where $t_i$ is the
 observed survival time for individual $$i$$. The standard error of
-$$\hat{t}(50)$$ is given by
+$\hat{t}(50)$ is given by
 
 $$\text{se}\{ \hat{t}(50) \} = \frac{1}{\hat{f}\{\hat{t}(50)\}} \text{se}[\hat{S}\{ \hat{t}(50) \}]$$
 
-where $$\hat{f}\{ \hat{t}(50) \}$$ can be found from
+where $\hat{f}\{ \hat{t}(50) \}$ can be found from
 
 $$\hat{f}\{ \hat{t}(50) \} = \frac{\hat{S}\{ \hat{u}(50) \} -\hat{S}\{ \hat{l}(50) \} }{\hat{l}(50) - \hat{u}(50)}$$
 
 Above, $\hat{u}(50)$ is the largest survival time for which $\hat{S}$
 exceeds $0.5+\epsilon$, i.e.,
-$$\hat{u}(50)=\max \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \geq 0.5+\epsilon \bigr\}$$,
+
+$$\hat{u}(50)=\max \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \geq 0.5+\epsilon \bigr\}$$
+
 and $\hat{l}(50)$ is the smallest survivor time for which $\hat{S}$ is
 less than $0.5-\epsilon$, i.e.,
-$$\hat{l}(50)=\min \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \leq 0.5+\epsilon \bigr\}$$,
+
+$$\hat{l}(50)=\min \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \leq 0.5+\epsilon \bigr\}$$
+
 for small $\epsilon$.
 
 **Log-rank test and Wilcoxon test.** Our implementation supports
@@ -126,19 +130,20 @@ the *null hypothesis* that there is no difference in the
 survival times of the individuals in different groups. One way to
 examine the null hypothesis is to consider the difference between the
 observed number of deaths with the numbers expected under the null
-hypothesis. In both tests we define the $U$-statistics ($$U_{L}$$ for the
-log-rank test and $$U_{W}$$ for the Wilcoxon test) to compare the observed
+hypothesis. In both tests we define the $U$-statistics ($U_{L}$ for the
+log-rank test and $U_{W}$ for the Wilcoxon test) to compare the observed
 and the expected number of deaths in $1,2,\ldots,g-1$ groups as follows:
 
 $$\begin{aligned}
 U_{Lk} &= \sum_{j=1}^{r}\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right) \\
-U_{Wk} &= \sum_{j=1}^{r}n_j\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right)\end{aligned}$$
+U_{Wk} &= \sum_{j=1}^{r}n_j\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right) \\
+\end{aligned}$$
 
-where $$d_{kj}$$ is the of number deaths at time $$t_{(j)}$$ in group $k$,
-$$n_{kj}$$ is the number of individuals at risk at time $$t_{(j)}$$ in group
+where $d_{kj}$ is the of number deaths at time $t_{(j)}$ in group $k$,
+$n_{kj}$ is the number of individuals at risk at time $t_{(j)}$ in group
 $k$, and $k=1,2,\ldots,g-1$ to form the vectors $U_L$ and $U_W$ with
-$(g-1)$ components. The covariance (variance) between $$U_{Lk}$$ and
-$$U_{Lk'}$$ (when $k=k'$) is computed as
+$(g-1)$ components. The covariance (variance) between $U_{Lk}$ and
+$U_{Lk'}$ (when $k=k'$) is computed as
 
 $$V_{Lkk'}=\sum_{j=1}^{r} \frac{n_{kj}d_j(n_j-d_j)}{n_j(n_j-1)} \left( \delta_{kk'}-\frac{n_{k'j}}{n_j} \right)$$
 
@@ -220,7 +225,7 @@ matrix with 5 columns where
 
 If a comparison of the survival data across multiple groups needs to be
 performed, `KM.dml` computes two matrices $T$ and
-$$T\_GROUPS\_OE$$ that contain a summary of the test. The 1-row matrix $T$
+$T\_GROUPS\_OE$ that contain a summary of the test. The 1-row matrix $T$
 stores the following statistics:
 
 - Column 1: number of groups in the survival data
@@ -229,7 +234,7 @@ stores the following statistics:
 - Column 3: value of test statistic
 - Column 4: $P$-value.
 
-Matrix $$T\_GROUPS\_OE$$ contains the following statistics for each of $g$
+Matrix $T\_GROUPS\_OE$ contains the following statistics for each of $g$
 groups:
 
 - Column 1: number of events
@@ -266,10 +271,10 @@ h_i(t)=h_0(t)\exp\Bigl\{ \sum_{j=1}^{p} \beta_jx_{ij} \Bigr\}
 $$
 
 where the hazard function for the $i$th individual
-($$i\in\{1,2,\ldots,n\}$$) depends on a set of $p$ covariates
-$$x_i=(x_{i1},x_{i2},\ldots,x_{ip})$$, whose importance is measured by the
+($i\in\{1,2,\ldots,n\}$) depends on a set of $p$ covariates
+$x_i=(x_{i1},x_{i2},\ldots,x_{ip})$, whose importance is measured by the
 magnitude of the corresponding coefficients
-$$\beta=(\beta_1,\beta_2,\ldots,\beta_p)$$. The term $$h_0(t)$$ is the
+$\beta=(\beta_1,\beta_2,\ldots,\beta_p)$. The term $h_0(t)$ is the
 baseline hazard and is related to a hazard value if all covariates equal
 0. In the Cox PH model the hazard function for the individuals may vary
 over time, however the baseline hazard is estimated non-parametrically
@@ -289,7 +294,7 @@ implementation.
 factors they need to *dummy code* as follows. Let $\alpha$
 be such a variable (i.e., a factor) with $a$ levels. We introduce $a-1$
 indicator (or dummy coded) variables $X_2,X_3\ldots,X_a$ with $X_j=1$ if
-$\alpha=j$ and 0 otherwise, for $$j\in\{ 2,3,\ldots,a\}$$. In particular,
+$\alpha=j$ and 0 otherwise, for $j\in\{ 2,3,\ldots,a\}$. In particular,
 one of $a$ levels of $\alpha$ will be considered as the baseline and is
 not included in the model. In our implementation, user can specify a
 baseline level for each of the factor (as selecting the baseline level
@@ -311,10 +316,10 @@ $$\mathcal{L}=\prod_{j=1}^{r} \frac{\exp(\beta^\top s_j)}{\biggl\{ \sum_{l\in R(
 where $d_j$ is number individuals who die at time $t_j$ and $s_j$
 denotes the element-wise sum of the covariates for those individuals who
 die at time $t_j$, $j=1,2,\ldots,r$, i.e., the $h$th element of $s_j$ is
-given by $$s_{hj}=\sum_{k=1}^{d_j}x_{hjk}$$, where $x_{hjk}$ is the value
-of $h$th variable ($$h\in \{1,2,\ldots,p\}$$) for the $k$th of the $d_j$
-individuals ($$k\in\{ 1,2,\ldots,d_j \}$$) who die at the $j$th death time
-($$j\in\{ 1,2,\ldots,r \}$$).
+given by $s_{hj}=\sum_{k=1}^{d_j}x_{hjk}$, where $x_{hjk}$ is the value
+of $h$th variable ($h\in \{1,2,\ldots,p\}$) for the $k$th of the $d_j$
+individuals ($k\in\{ 1,2,\ldots,d_j \}$) who die at the $j$th death time
+($j\in\{ 1,2,\ldots,r \}$).
 
 **Standard error and confidence interval for coefficients.** Note that
 the variance-covariance matrix of the estimated coefficients
@@ -323,7 +328,7 @@ evaluated at $\hat{\beta}$. The square root of the diagonal elements of
 this matrix are the standard errors of estimated coefficients. Once the
 standard errors of the coefficients $se(\hat{\beta})$ is obtained we can
 compute a $100(1-\alpha)\%$ confidence interval using
-$$\hat{\beta}\pm z_{\alpha/2}se(\hat{\beta})$$, where $z_{\alpha/2}$ is
+$\hat{\beta}\pm z_{\alpha/2}se(\hat{\beta})$, where $z_{\alpha/2}$ is
 the upper $\alpha/2$-point of the standard normal distribution. In
 `Cox.dml`, we utilize the built-in function
 `inv()` to compute the inverse of the Hessian. Note that this
@@ -339,7 +344,7 @@ test*). Let $p$ be the number of coefficients. The Wald test is
 based on the test statistic ${\hat{\beta}}^2/{se(\hat{\beta})}^2$, which
 is compared to percentage points of the Chi-squared distribution to
 obtain the $P$-value. The likelihood ratio test relies on the test
-statistic $$-2\log\{ {L}(\textbf{0})/{L}(\hat{\beta}) \}$$ ($\textbf{0}$
+statistic $-2\log\{ {L}(\textbf{0})/{L}(\hat{\beta}) \}$ ($\textbf{0}$
 denotes a zero vector of size $p$ ) which has an approximate Chi-squared
 distribution with $p$ degrees of freedom under the null hypothesis that
 all $\beta_j$s are 0. The Log-rank test is based on the test statistic
@@ -356,44 +361,45 @@ the following predictions together with their standard errors
 - risk
 - estimated cumulative hazard
 
-Given feature vector $$X_i$$ for individual $$i$$, we obtain the above
-predictions at time $$t$$ as follows. The linear predictors (denoted as
-$$\mathcal{LP}$$) as well as the risk (denoted as $\mathcal{R}$) are
+Given feature vector $X_i$ for individual $i$, we obtain the above
+predictions at time $t$ as follows. The linear predictors (denoted as
+$\mathcal{LP}$) as well as the risk (denoted as $\mathcal{R}$) are
 computed relative to a baseline whose feature values are the mean of the
-values in the corresponding features. Let $$X_i^\text{rel} = X_i - \mu$$,
-where $$\mu$$ is a row vector that contains the mean values for each
-feature. We have $$\mathcal{LP}=X_i^\text{rel} \hat{\beta}$$ and
-$$\mathcal{R}=\exp\{ X_i^\text{rel}\hat{\beta} \}$$. The standard errors
-of the linear predictors $$se\{\mathcal{LP} \}$$ are computed as the
-square root of $${(X_i^\text{rel})}^\top V(\hat{\beta}) X_i^\text{rel}$$
-and the standard error of the risk $$se\{ \mathcal{R} \}$$ are given by
+values in the corresponding features. Let $X_i^\text{rel} = X_i - \mu$,
+where $\mu$ is a row vector that contains the mean values for each
+feature. We have $\mathcal{LP}=X_i^\text{rel} \hat{\beta}$ and
+$\mathcal{R}=\exp\{ X_i^\text{rel}\hat{\beta} \}$. The standard errors
+of the linear predictors $se\{\mathcal{LP} \}$ are computed as the
+square root of ${(X_i^\text{rel})}^\top V(\hat{\beta}) X_i^\text{rel}$
+and the standard error of the risk $se\{ \mathcal{R} \}$ are given by
 the square root of
-$${(X_i^\text{rel} \odot \mathcal{R})}^\top V(\hat{\beta}) (X_i^\text{rel} \odot \mathcal{R})$$,
-where $$V(\hat{\beta})$$ is the variance-covariance matrix of the
-coefficients and $$\odot$$ is the element-wise multiplication.
+${(X_i^\text{rel} \odot \mathcal{R})}^\top V(\hat{\beta}) (X_i^\text{rel} \odot \mathcal{R})$,
+where $V(\hat{\beta})$ is the variance-covariance matrix of the
+coefficients and $\odot$ is the element-wise multiplication.
 
 We estimate the cumulative hazard function for individual $i$ by
 
 $$\hat{H}_i(t) = \exp(\hat{\beta}^\top X_i) \hat{H}_0(t)$$
 
 where
-$$\hat{H}_0(t)$$ is the *Breslow estimate* of the cumulative baseline
+$\hat{H}_0(t)$ is the *Breslow estimate* of the cumulative baseline
 hazard given by
 
 $$\hat{H}_0(t) = \sum_{j=1}^{k} \frac{d_j}{\sum_{l\in R(t_{(j)})} \exp(\hat{\beta}^\top X_l)}$$
 
 In the equation above, as before, $d_j$ is the number of deaths, and
-$$R(t_{(j)})$$ is the risk set at time $$t_{(j)}$$, for
-$$t_{(k)} \leq t \leq t_{(k+1)}$$, $$k=1,2,\ldots,r-1$$. The standard error
-of $$\hat{H}_i(t)$$ is obtained using the estimation
+$R(t_{(j)})$ is the risk set at time $t_{(j)}$, for
+$t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1$. The standard error
+of $\hat{H}_i(t)$ is obtained using the estimation
 
-$$se\{ \hat{H}_i(t) \} = \sum_{j=1}^{k} \frac{d_j}{ {\left[ \sum_{l\in R(t_{(j)})} \exp(X_l\hat{\beta}) \right]}^2 } + J_i^\top(t) V(\hat{\beta}) J_i(t)\$$
+
+$$ se\{ \hat{H}_i(t) \} = \sum_{j=1}^{k} \frac{d_j}{ {\left[ \sum_{l\in R(t_{(j)})} \exp(X_l\hat{\beta}) \right]}^2 } + J_i^\top(t) V(\hat{\beta}) J_i(t) $$
 
 where
 
 $$J_i(t) = \sum_{j-1}^{k} d_j \frac{\sum_{l\in R(t_{(j)})} (X_l-X_i)\exp \{ (X_l-X_i)\hat{\beta} \}}{ {\left[ \sum_{l\in R(t_{(j)})} \exp\{(X_l-X_i)\hat{\beta}\} \right]}^2  }$$
 
-for $$t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1$$.
+for $t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1$.
 
 ### CPHRM Returns
 
@@ -427,9 +433,9 @@ follows. File `S` stores the following information
 - Line 6: maximum possible Rsquare.
 
 Above, the AIC is computed as in [Stepwise Linear Regression](algorithms-regression.html#stepwise-linear-regression), the Cox & Snell Rsquare
-is equal to $$1-\exp\{ -l/n \}$$, where $l$ is the log-rank test statistic
+is equal to $1-\exp\{ -l/n \}$, where $l$ is the log-rank test statistic
 as discussed above and $n$ is total number of observations, and the
-maximum possible Rsquare computed as $$1-\exp\{ -2 L(\textbf{0})/n \}$$,
+maximum possible Rsquare computed as $1-\exp\{ -2 L(\textbf{0})/n \}$,
 where $L(\textbf{0})$ denotes the initial likelihood.
 
 File `T` contains the following information

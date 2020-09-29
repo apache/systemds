@@ -1,6 +1,6 @@
 ---
 layout: site
-title: SystemDS Algorithms Reference Clustering
+title: Algorithms Reference Clustering
 ---
 <!--
 {% comment %}
@@ -348,4 +348,4 @@ best WCSS value, as well as some information about the performance of
 the other runs, is printed during the script execution. The scoring
 script `Kmeans-predict.dml` prints all its results in a
 self-explanatory manner, as defined in
-[**Table 6**](table-6).
+[**Table 6**](#table-6).

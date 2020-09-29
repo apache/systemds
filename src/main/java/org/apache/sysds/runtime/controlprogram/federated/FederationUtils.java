@@ -19,12 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
-
 import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
@@ -47,9 +41,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Future;
 
 public class FederationUtils {

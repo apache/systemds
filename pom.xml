@@ -323,7 +323,7 @@
 						<phase>package</phase>
 						<configuration>
 							<target name="copy and rename JAR">
-								<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/${project.artifactId}.jar" />
+								<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/SystemDS.jar" />
 							</target>
 						</configuration>
 						<goals>

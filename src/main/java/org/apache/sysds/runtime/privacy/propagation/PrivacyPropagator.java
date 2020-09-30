@@ -150,6 +150,13 @@ public class PrivacyPropagator
 		return mergedPrivacyConstraint;
 	}
 
+	/**
+	 * Propagate privacy constraints from input to output CPOperands
+	 * in case the privacy constraints of the input are activated.
+	 * @param inst instruction for which the privacy constraints are propagated
+	 * @param ec execution context
+	 * @return instruction with propagated privacy constraints (usually the same instance as the input inst)
+	 */
 	public static Instruction preprocessInstruction(Instruction inst, ExecutionContext ec){
 		switch ( inst.getType() ){
 			case CONTROL_PROGRAM:
@@ -562,6 +569,13 @@ public class PrivacyPropagator
 		}
 	}
 
+	/**
+	 * Propagate privacy constraints to output variables
+	 * based on privacy constraint of CPOperand output in instruction
+	 * which has been set during privacy propagation preprocessing.
+	 * @param inst instruction for which privacy constraints are propagated
+	 * @param ec execution context
+	 */
 	public static void postProcessInstruction(Instruction inst, ExecutionContext ec){
 		// if inst has output
 		List<CPOperand> instOutputs = getOutputOperands(inst);

@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
@@ -246,6 +247,9 @@ public abstract class ProgramBlock implements ParseInfo
 				
 				// process actual instruction
 				tmp.processInstruction(ec);
+
+				// propagate input privacy constraints to output
+				PrivacyPropagator.postProcessInstruction(tmp, ec);
 				
 				// cache result
 				LineageCache.putValue(tmp, ec, et0);

@@ -251,7 +251,5 @@ public abstract class Instruction
 	 * 
 	 * @param ec execution context
 	 */
-	public void postprocessInstruction(ExecutionContext ec) {
-		PrivacyPropagator.postProcessInstruction(this, ec);
-	}
+	public void postprocessInstruction(ExecutionContext ec) {}
 }

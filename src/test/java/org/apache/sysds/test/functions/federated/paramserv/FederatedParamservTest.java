@@ -2,7 +2,6 @@ package org.apache.sysds.test.functions.federated.paramserv;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;

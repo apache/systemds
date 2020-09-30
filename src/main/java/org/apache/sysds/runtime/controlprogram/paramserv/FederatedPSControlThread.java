@@ -181,8 +181,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	/**
 	 * Entry point of the functionality
 	 *
-	 * @return
-	 * @throws Exception
+	 * @return void
+	 * @throws Exception incase the execution fails
 	 */
 	@Override
 	public Void call() throws Exception {

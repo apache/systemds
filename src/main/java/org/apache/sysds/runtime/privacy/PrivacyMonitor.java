@@ -43,12 +43,28 @@ public class PrivacyMonitor
 	}
 
 	private static void incrementCheckedConstraints(PrivacyLevel privacyLevel){
+		if ( privacyLevel == null )
+			throw new NullPointerException("Cannot increment checked constraints log: Privacy level is null.");
+		checkedConstraints.get(privacyLevel).increment();
+	}
+
+	/**
+	 * Update checked constraints log if checkPrivacy is activated.
+	 * The checked constraints log is updated with both the general privacy constraint and the fine-grained constraints.
+	 * @param privacyConstraint used for updating log
+	 */
+	private static void updateCheckedConstraintsLog(PrivacyConstraint privacyConstraint){
 		if ( checkPrivacy ){
-			if ( privacyLevel == null )
-				throw new NullPointerException("Cannot increment checked constraints log: Privacy level is null.");
-			checkedConstraints.get(privacyLevel).increment();
+			if ( privacyConstraint.privacyLevel != PrivacyLevel.None){
+				incrementCheckedConstraints(privacyConstraint.privacyLevel);
+			}
+			if ( PrivacyUtils.privacyConstraintFineGrainedActivated(privacyConstraint) ){
+				int privateNum = privacyConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.Private).length;
+				int aggregateNum = privacyConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation).length;
+				checkedConstraints.get(PrivacyLevel.Private).add(privateNum);
+				checkedConstraints.get(PrivacyLevel.PrivateAggregation).add(aggregateNum);
+			}
 		}
-			
 	}
 
 	public static void clearCheckedConstraints(){
@@ -61,6 +77,7 @@ public class PrivacyMonitor
 
 	/**
 	 * Throws DMLPrivacyException if privacy constraint is set to private or private aggregation.
+	 * The checked constraints log will be updated before throwing exception.
 	 * @param dataObject input data object
 	 * @return data object or data object with privacy constraint removed in case the privacy level was none. 
 	 */
@@ -68,51 +85,12 @@ public class PrivacyMonitor
 		if(dataObject == null)
 			return null;
 		PrivacyConstraint privacyConstraint = dataObject.getPrivacyConstraint();
-		if (privacyConstraint != null){
-			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
-			incrementCheckedConstraints(privacyLevel);
-			switch(privacyLevel){
-				case None:
-					dataObject.setPrivacyConstraints(null);
-					break;
-				case Private:
-				case PrivateAggregation:
-					throw new DMLPrivacyException("Cannot share variable, since the privacy constraint "
-						+ "of the requested variable is set to " + privacyLevel.name());
-				default: {
-					throw new DMLPrivacyException("Privacy level " 
-						+ privacyLevel.name() + " of variable not recognized");
-				}
-			}
-		}
-		return dataObject;
-	}
 
-	/**
-	 * Throws DMLPrivacyException if privacy constraint of data object has level privacy.
-	 * @param dataObject input matrix object
-	 * @return data object or data object with privacy constraint removed in case the privacy level was none.
-	 */
-	public static Data handlePrivacyAllowAggregation(Data dataObject){
-		PrivacyConstraint privacyConstraint = dataObject.getPrivacyConstraint();
-		if (privacyConstraint != null){
-			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
-			incrementCheckedConstraints(privacyLevel);
-			switch(privacyLevel){
-				case None:
-					dataObject.setPrivacyConstraints(null);
-					break;
-				case Private:
-					throw new DMLPrivacyException("Cannot share variable, since the privacy constraint "
-						+ "of the requested variable is set to " + privacyLevel.name());
-				case PrivateAggregation:
-					break; 
-				default: {
-					throw new DMLPrivacyException("Privacy level " 
-						+ privacyLevel.name() + " of variable not recognized");
-				}
-			}
-		}
+		if ( PrivacyUtils.someConstraintSetUnary(privacyConstraint) ){
+			updateCheckedConstraintsLog(privacyConstraint);
+			throw new DMLPrivacyException("Cannot share variable, since the privacy constraint "
+				+ "of the requested variable is activated");
+		} else dataObject.setPrivacyConstraints(null);
 		return dataObject;
 	}
 }

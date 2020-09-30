@@ -116,6 +116,10 @@
 			<outputDirectory>./lib/</outputDirectory>
 		</file>
 		<file>
+			<source>target/${artifactId}-${project.version}.jar</source>
+			<outputDirectory>.</outputDirectory>
+		</file>
+		<file>
 			<source>${basedir}/conf/log4j.properties.template</source>
 			<outputDirectory>./conf/</outputDirectory>
 			<destName>log4j.properties</destName>

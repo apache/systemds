@@ -51,6 +51,7 @@
 				<exclude>./src/test/config/hadoop_bin_windows/**</exclude>
 				<exclude>./src/main/cpp/lib/**</exclude>
 				<exclude>pom.xml.versionsBackup</exclude>
+				<exclude>./dev/Tasks-obsolete.txt</exclude>
 			</excludes>
 		</fileSet>
 

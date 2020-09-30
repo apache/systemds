@@ -114,8 +114,8 @@
 			<source>target/${artifactId}-${project.version}-extra.jar</source>
 			<outputDirectory>./lib/</outputDirectory>
 		</file>
-  	<file>
-      <source>target/${artifactId}.jar</source>
+		<file>
+			<source>target/${artifactId}.jar</source>
 			<outputDirectory>.</outputDirectory>
 		</file>
 		<file>

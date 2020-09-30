@@ -116,7 +116,7 @@
 			<outputDirectory>./lib/</outputDirectory>
 		</file>
 		<file>
-			<source>target/${artifactId}.jar</source>
+			<source>target/${artifactId}-${project.version}.jar</source>
 			<outputDirectory>.</outputDirectory>
 		</file>
 		<file>

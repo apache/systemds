@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -135,7 +134,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		catch(Exception e) {
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute Setup UDF" + e.getMessage());
 		}
-		System.out.println("[+] Setup of federated worker successful");
 	}
 
 	/**
@@ -188,6 +186,52 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	/**
+	 * cleans up the execution context of the federated worker
+	 */
+	public void teardown() {
+		// write program and meta data to worker
+		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
+				_featuresData.getVarID(),
+				new teardownFederatedWorker()
+		));
+
+		try {
+			FederatedResponse response = udfResponse.get();
+			if(!response.isSuccessful())
+				throw new DMLRuntimeException("FederatedLocalPSThread: Teardown UDF failed");
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute Teardown UDF" + e.getMessage());
+		}
+	}
+
+	/**
+	 * Teardown UDF executed on the federated worker
+	 */
+	private static class teardownFederatedWorker extends FederatedUDF {
+		protected teardownFederatedWorker() {
+			super(new long[]{});
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			// remove variables from ec
+			ec.removeVariable(Statement.PS_FED_BATCH_SIZE);
+			ec.removeVariable(Statement.PS_FED_DATA_SIZE);
+			ec.removeVariable(Statement.PS_FED_NUM_BATCHES);
+			ec.removeVariable(Statement.PS_FED_NAMESPACE);
+			ec.removeVariable(Statement.PS_FED_GRADIENTS_FNAME);
+			ec.removeVariable(Statement.PS_FED_AGGREGATION_FNAME);
+			ec.removeVariable(Statement.PS_FED_BATCHCOUNTER_VARID);
+			ec.removeVariable(Statement.PS_FED_MODEL_VARID);
+			ParamservUtils.cleanupListObject(ec, Statement.PS_HYPER_PARAMS);
+			ParamservUtils.cleanupListObject(ec, Statement.PS_GRADIENTS);
+			
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
+		}
+	}
+
+	/**
 	 * Entry point of the functionality
 	 *
 	 * @return void
@@ -209,6 +253,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		} catch (Exception e) {
 			throw new DMLRuntimeException(String.format("%s failed", getWorkerName()), e);
 		}
+		teardown();
 		return null;
 	}
 
@@ -324,9 +369,14 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			gradientsInstruction.processInstruction(ec);
 			ListObject gradients = ec.getListObject(gradientsOutput.getName());
 
-			// clean up
-			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
+			// clean up sliced batch
 			ec.removeVariable(ec.getVariable(Statement.PS_FED_BATCHCOUNTER_VARID).toString());
+			ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
+			ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
+
+			// model clean up - doing this twice is not an issue
+			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
+			ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL);
 
 			// return
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, gradients);
@@ -451,19 +501,25 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 				// Update the local model with gradients
 				if(localUpdate) {
-					// Set gradients in execution Context
-					ec.setVariable(Statement.PS_GRADIENTS, gradients);
 					// Invoke the aggregate function
 					aggregationInstruction.processInstruction(ec);
 					// Get the new model
 					model = ec.getListObject(aggregationOutput.getName());
 					// Set new model in execution context
 					ec.setVariable(Statement.PS_MODEL, model);
+					// clean up gradients and result
+					ParamservUtils.cleanupListObject(ec, Statement.PS_GRADIENTS);
+					ParamservUtils.cleanupListObject(ec, aggregationOutput.getName());
 				}
+
+				// clean up sliced batch
+				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
+				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
 			}
 
-			// clean up
+			// model clean up - doing this twice is not an issue
 			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
+			ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL);
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, accGradients);
 		}

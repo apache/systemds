@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -120,7 +121,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 						_inst.getNamespace(),
 						_inst.getFunctionName(),
 						_ps.getAggInst().getFunctionName(),
-						_ec.getListObject("hyperparams")
+						_ec.getListObject("hyperparams"),
+						_batchCounterVarID,
+						_modelVarID
 				)
 		));
 
@@ -147,8 +150,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		String _gradientsFunctionName;
 		String _aggregationFunctionName;
 		ListObject _hyperParams;
+		long _batchCounterVarID;
+		long _modelVarID;
 
-		protected setupFederatedWorker(long batchSize, long dataSize, long numBatches, String programString, String namespace, String gradientsFunctionName, String aggregationFunctionName, ListObject hyperParams) {
+		protected setupFederatedWorker(long batchSize, long dataSize, long numBatches, String programString, String namespace, String gradientsFunctionName, String aggregationFunctionName, ListObject hyperParams, long batchCounterVarID, long modelVarID) {
 			super(new long[]{});
 			_batchSize = batchSize;
 			_dataSize = dataSize;
@@ -158,6 +163,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			_gradientsFunctionName = gradientsFunctionName;
 			_aggregationFunctionName = aggregationFunctionName;
 			_hyperParams = hyperParams;
+			_batchCounterVarID = batchCounterVarID;
+			_modelVarID = modelVarID;
 		}
 
 		@Override
@@ -173,6 +180,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable(Statement.PS_FED_GRADIENTS_FNAME, new StringObject(_gradientsFunctionName));
 			ec.setVariable(Statement.PS_FED_AGGREGATION_FNAME, new StringObject(_aggregationFunctionName));
 			ec.setVariable(Statement.PS_HYPER_PARAMS, _hyperParams);
+			ec.setVariable(Statement.PS_FED_BATCHCOUNTER_VARID, new IntObject(_batchCounterVarID));
+			ec.setVariable(Statement.PS_FED_MODEL_VARID, new IntObject(_modelVarID));
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
@@ -311,9 +320,15 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					func.getInputParamNames(), outputNames, "gradient function");
 			DataIdentifier gradientsOutput = outputs.get(0);
 
-			// calculate and return gradients
+			// calculate and gradients
 			gradientsInstruction.processInstruction(ec);
 			ListObject gradients = ec.getListObject(gradientsOutput.getName());
+
+			// clean up
+			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
+			ec.removeVariable(ec.getVariable(Statement.PS_FED_BATCHCOUNTER_VARID).toString());
+
+			// return
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, gradients);
 		}
 	}
@@ -360,7 +375,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		catch(Exception e) {
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage());
 		}
-
 	}
 
 	/**
@@ -447,6 +461,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					ec.setVariable(Statement.PS_MODEL, model);
 				}
 			}
+
+			// clean up
+			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, accGradients);
 		}

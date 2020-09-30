@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -241,10 +242,18 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		if( ec.containsVariable(varname) ) {
 			return new FederatedResponse(ResponseType.ERROR,
 				"Variable "+request.getID()+" already existing.");
+
+			// clean up and overwrite
+			/*if(ec.getVariable(varname) instanceof CacheableData<?>)
+				ParamservUtils.cleanupData(ec, ec.getCacheableData(varname));
+			else if(ec.getVariable(varname) instanceof ListObject)
+				ParamservUtils.cleanupListObject(ec, varname);
+			else
+				ec.removeVariable(varname);*/
 		}
 		
 		//wrap transferred cache block into cacheable data
-		Data data = null;
+		Data data;
 		if( request.getParam(0) instanceof CacheBlock )
 			data = ExecutionContext.createCacheableData((CacheBlock) request.getParam(0));
 		else if( request.getParam(0) instanceof ScalarObject )

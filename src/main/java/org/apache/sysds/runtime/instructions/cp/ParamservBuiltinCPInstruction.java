@@ -141,6 +141,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
 		// Level of par is 1 because one worker will be launched per task
+		// TODO: Fix recompilation
 		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, 1, false);
 		// Create workers' execution context
 		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);

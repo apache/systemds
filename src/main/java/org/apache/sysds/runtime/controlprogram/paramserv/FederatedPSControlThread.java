@@ -54,17 +54,22 @@ import static org.apache.sysds.runtime.util.ProgramConverter.*;
 public class FederatedPSControlThread extends PSWorker implements Callable<Void> {
 	FederatedData _featuresData;
 	FederatedData _labelsData;
+	final long _batchCounterVarID;
+	final long _modelVarID;
 	int _totalNumBatches;
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
+		
+		// generate the IDs for model and batch counter. These get overwritten on the federated worker each time
+		_batchCounterVarID = FederationUtils.getNextFedDataID();
+		_modelVarID = FederationUtils.getNextFedDataID();
 	}
 
 	/**
 	 * Sets up the federated worker and control thread
 	 */
 	public void setup() {
-		System.out.println("[+] Control thread setting up");
 		// prepare features and labels
 		_features.getFedMapping().forEachParallel((range, data) -> {
 			_featuresData = data;
@@ -80,8 +85,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		_totalNumBatches = (int) Math.ceil((double) dataSize / _batchSize);
 
 		// serialize program
-		// Create program blocks for the instruction filtering
-		String programSerialized = "";
+		// create program blocks for the instruction filtering
+		String programSerialized;
 		ArrayList<ProgramBlock> programBlocks = new ArrayList<>();
 
 		BasicProgramBlock gradientProgramBlock = new BasicProgramBlock(_ec.getProgram());
@@ -131,7 +136,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	/**
-	 * Setup UDF
+	 * Setup UDF executed on the federated worker
 	 */
 	private static class setupFederatedWorker extends FederatedUDF {
 		long _batchSize;
@@ -173,7 +178,12 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		}
 	}
 
-	// Entry point
+	/**
+	 * Entry point of the functionality
+	 *
+	 * @return
+	 * @throws Exception
+	 */
 	@Override
 	public Void call() throws Exception {
 		try {
@@ -204,9 +214,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		_ps.push(_workerID, gradients);
 	}
 
-
-
-	// Batch computation logic for federated worker
+	/**
+	 * Computes all epochs and synchronizes after each batch
+	 *
+	 * @param numBatches the number of batches per epoch
+	 */
 	protected void computeBatch(int numBatches) {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
@@ -216,14 +228,19 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		}
 	}
 
+	/**
+	 * Computes a single specified batch on the federated worker
+	 *
+	 * @param model the current model from the parameter server
+	 * @param batchCounter the current batch number needed for slicing the features and labels
+	 * @return the gradient vector
+	 */
 	protected ListObject computeBatchGradients(ListObject model, int batchCounter) {
 		// put batch counter on federated worker
-		long batchCounterVarID = FederationUtils.getNextFedDataID();
-		Future<FederatedResponse> putBatchCounterResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, batchCounterVarID, new IntObject(batchCounter)));
+		Future<FederatedResponse> putBatchCounterResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, _batchCounterVarID, new IntObject(batchCounter)));
 
 		// put current model on federated worker
-		long modelVarID = FederationUtils.getNextFedDataID();
-		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, modelVarID, model));
+		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, _modelVarID, model));
 
 		try {
 			if(!putParamsResponse.get().isSuccessful() || !putBatchCounterResponse.get().isSuccessful())
@@ -236,7 +253,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// create and execute the udf on the remote worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
 				_featuresData.getVarID(),
-				new federatedComputeBatchGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID(), batchCounterVarID, modelVarID})
+				new federatedComputeBatchGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID(), _batchCounterVarID, _modelVarID})
 		));
 
 		try {
@@ -248,6 +265,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		}
 	}
 
+	/**
+	 * This is the code that will be executed on the federated Worker when computing a single batch
+	 */
 	private static class federatedComputeBatchGradients extends FederatedUDF {
 		protected federatedComputeBatchGradients(long[] inIDs) {
 			super(inIDs);
@@ -298,9 +318,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		}
 	}
 
-
-
-	// Epoch computation logic for federated worker
+	/**
+	 * Computes all epochs and synchronizes after each one
+	 */
 	protected void computeEpoch() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			// Pull the global parameters from ps
@@ -309,10 +329,15 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		}
 	}
 
+	/**
+	 * Computes one epoch on the federated worker and updates the model local
+	 *
+	 * @param model the current model from the parameter server
+	 * @return the gradient vector
+	 */
 	protected ListObject computeEpochGradients(ListObject model) {
 		// put current model on federated worker
-		long modelVarID = FederationUtils.getNextFedDataID();
-		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, modelVarID, model));
+		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, _modelVarID, model));
 
 		try {
 			if(!putParamsResponse.get().isSuccessful())
@@ -325,7 +350,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// create and execute the udf on the remote worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
 				_featuresData.getVarID(),
-				new federatedComputeEpochGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID(), modelVarID})
+				new federatedComputeEpochGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID(), _modelVarID})
 		));
 
 		try {
@@ -338,6 +363,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	}
 
+	/**
+	 * This is the code that will be executed on the federated Worker when computing one epoch
+	 */
 	private static class federatedComputeEpochGradients extends FederatedUDF {
 		protected federatedComputeEpochGradients(long[] inIDs) {
 			super(inIDs);

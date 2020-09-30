@@ -22,5 +22,5 @@
 X = read($1)
 PC = ppca(X = X)
 write(PC, $2)
-write(V. $3)
+write(V, $3)
 

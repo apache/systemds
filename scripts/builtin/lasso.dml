@@ -45,13 +45,6 @@ m_lasso = function(Matrix[Double] X, Matrix[Double] y, double tol = 10^(-15), in
   n = nrow(X)
   m = ncol(X)
 
-
-  #params
-  # tol = 10^(-15)
-  # M = 5
-  # tau = 1
-  # maxiter = 1000
-
   #constants
   eta = 2
   sigma = 0.01

@@ -36,11 +36,8 @@ heterogeneous and nested schema.
 
 **Issue Tracker** [Jira Dashboard](https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852)
 
-**Status and Build:** SystemDS is still in pre-alpha status. The original code base was forked from Apache SystemML 1.2 in 
-September 2018. We will continue to support linear algebra  programs over matrices, while replacing the underlying data model 
-and compiler, as well as substantially extending the  supported functionalities. Until the first release, you can build your own 
-snapshot via Apache Maven:
- `mvn clean package -P distribution`.
+**Status and Build:** SystemDS is renamed from SystemML which is an **Apache Top Level Project**. 
+To build from source visit [SystemDS Install from source](http://apache.github.io/systemds/site/install.html)
   
 [![Build](https://github.com/apache/systemds/workflows/Build/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Build%22+branch%3Amaster+event%3Apush)
 [![Documentation](https://github.com/apache/systemds/workflows/Documentation/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3ADocumentation+branch%3Amaster+event%3Apush)

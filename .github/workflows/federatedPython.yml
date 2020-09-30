@@ -57,7 +57,7 @@ jobs:
           ${{ runner.os }}-maven-
   
     - name: Maven clean & package
-      run: mvn clean package -P distribution
+      run: mvn -ntp clean package -P distribution
 
     - name: Setup Python
       uses: actions/setup-python@v1

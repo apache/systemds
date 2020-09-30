@@ -56,7 +56,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
+	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 	{
 		//step 1: propagate final literals across main program
 		rReplaceLiterals(prog.getStatementBlocks(), prog, fgraph, fcallSizes);
@@ -93,6 +93,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 				rReplaceLiterals(fstmt.getBody(), prog, fgraph, fcallSizes);
 			}
 		}
+		return false;
 	}
 	
 	private void rReplaceLiterals(List<StatementBlock> sbs, DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) {

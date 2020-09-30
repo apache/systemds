@@ -42,5 +42,5 @@ def resolve_systemds_root() -> str:
         systemds_root_path = os.environ['SYSTEMDS_ROOT']
         return systemds_root_path
     except KeyError as error:
-        print("ERROR environment variable SYSTEMDS_ROOT_PATH not set could not resolve path to module")
-        exit(-1)
+        raise KeyError("ERROR environment variable SYSTEMDS_ROOT not set could not resolve path to module")
+        

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -179,31 +179,26 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html#processDedupItem-org.apache.sysds.runtime.lineage.LineageMap-java.lang.Long-">processDedupItem</a></span>(<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&nbsp;lm,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;path)</code>&nbsp;</td>
-</tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html#processDedupItem-org.apache.sysds.runtime.lineage.LineageMap-java.lang.Long-org.apache.sysds.runtime.lineage.LineageItem:A-java.lang.String-">processDedupItem</a></span>(<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&nbsp;lm,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;path,
                 <a href="../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>[]&nbsp;liinputs,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html#resetLineageMaps--">resetLineageMaps</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html#set-java.lang.String-org.apache.sysds.runtime.lineage.LineageItem-">set</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
    <a href="../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html#setLiteral-java.lang.String-org.apache.sysds.runtime.lineage.LineageItem-">setLiteral</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
           <a href="../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html#trace-org.apache.sysds.runtime.instructions.Instruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">trace</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;inst,
      <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
@@ -264,16 +259,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>trace</h4>
 <pre>public&nbsp;void&nbsp;trace(<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;inst,
                   <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
-</li>
-</ul>
-<a name="processDedupItem-org.apache.sysds.runtime.lineage.LineageMap-java.lang.Long-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>processDedupItem</h4>
-<pre>public&nbsp;void&nbsp;processDedupItem(<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&nbsp;lm,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;path)</pre>
 </li>
 </ul>
 <a name="processDedupItem-org.apache.sysds.runtime.lineage.LineageMap-java.lang.Long-org.apache.sysds.runtime.lineage.LineageItem:A-java.lang.String-">

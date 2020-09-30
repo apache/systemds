@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.tugraz.sysds.test.integration.functions.binary.matrix.MatrixMultiplicationTest.java
-
 A = read($a, rows=$m, cols=$n, format="text");
 B = read($b, rows=$n, cols=$k, format="text");
 C = A %*% B;

@@ -92,8 +92,8 @@ bin/systemds Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv 
 
 ## Using Intel MKL native instructions
 
-To use the MKL acceleration download and install the latest MKL library from [1],
-set the environment variables with the MKL-provided script `$ compilervars.sh intel64` and set
-the option `sysds.native.blas` in `SystemDS-config.xml`.
+To use the MKL acceleration download and install the latest supported MKL library (<=2019.5) from [1],
+set the environment variables with the MKL-provided script `. /opt/intel/bin/compilervars.sh intel64` (note the dot and 
+the default install location) and set the option `sysds.native.blas` in `SystemDS-config.xml` to mkl.
 
 [1]: https://software.intel.com/mkl "Intel Math Kernel Library"

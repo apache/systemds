@@ -165,8 +165,10 @@ public class FullSignTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check generated opcode
-			if( instType == ExecType.CP )
-				Assert.assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains("sign"));
+			if( instType == ExecType.CP ) {
+				Assert.assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains("sign") ||
+						Statistics.getCPHeavyHitterOpCodes().contains("gpu_sign") );
+			}
 			else if ( instType == ExecType.SPARK )
 				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"sign", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"sign"));	
 		}

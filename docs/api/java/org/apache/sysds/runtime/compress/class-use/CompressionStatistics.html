@@ -96,15 +96,33 @@
 </a>
 <h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a> in <a href="../../../../../../org/apache/sysds/runtime/compress/package-summary.html">org.apache.sysds.runtime.compress</a></h3>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/compress/package-summary.html">org.apache.sysds.runtime.compress</a> that return <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a></span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/compress/package-summary.html">org.apache.sysds.runtime.compress</a> that return types with arguments of type <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#getCompressionStatistics--">getCompressionStatistics</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.compress.CompressionSettings-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;customSettings)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+        int&nbsp;k)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-org.apache.sysds.runtime.compress.CompressionSettings-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+        int&nbsp;k,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>
+<div class="block">The main method for compressing the input matrix.</div>
+</td>
 </tr>
 </tbody>
 </table>

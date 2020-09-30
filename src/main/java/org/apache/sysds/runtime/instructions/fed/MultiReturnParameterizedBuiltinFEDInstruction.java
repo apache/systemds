@@ -41,7 +41,6 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderBin;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
@@ -190,7 +189,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
+			FrameObject fo = (FrameObject) data[0];
 			FrameBlock fb = fo.acquireRead();
 			String[] colNames = fb.getColumnNames();
 
@@ -220,8 +219,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
-			FrameBlock fb = fo.acquireReadAndRelease();
+			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
 
 			// apply transformation
 			MatrixBlock mbout = _encoder.apply(fb,

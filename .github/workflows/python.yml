@@ -60,6 +60,12 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}
 
+    - name: Cache MNIST
+      uses: actions/cache@v1
+      with:
+        path: src/main/python/systemds/examples/tutorials/mnist
+        key: ${{ runner.os }}-mnist-${{ hashFiles('src/main/python/systemds/examples/tutorials/mnist.py') }}
+
     - name: Cache Deb Dependencies
       uses: actions/cache@v1
       with:
@@ -67,7 +73,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
 
     - name: Maven clean & package
-      run: mvn clean package -P distribution
+      run: mvn -ntp clean package -P distribution
 
     - name: Setup Python
       uses: actions/setup-python@v1
@@ -79,7 +85,7 @@ jobs:
       run: sudo apt-get install protobuf-compiler libprotoc-dev 
   
     - name: Install pip Dependencies
-      run: pip install numpy py4j wheel scipy sklearn jinja2 onnx
+      run: pip install numpy py4j wheel scipy sklearn jinja2 onnx requests
 
     - name: Build Python Package
       run: |
@@ -91,6 +97,13 @@ jobs:
         export SYSTEMDS_ROOT=$(pwd)
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         export SYSDS_QUIET=1
+        cd src/main/python
+        python tests/onnx_systemds/test_models/model_generate.py
+        python -m unittest discover -s tests -p 'test_*.py'
+        echo "Exit Status: " $?
+    
+    - name: Run all python tests no environment
+      run: |
         cd src/main/python
         python tests/onnx_systemds/test_models/model_generate.py
         python -m unittest discover -s tests -p 'test_*.py'

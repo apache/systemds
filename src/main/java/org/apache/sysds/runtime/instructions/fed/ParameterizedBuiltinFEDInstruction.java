@@ -51,7 +51,6 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
-import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
 import org.apache.sysds.runtime.transform.encode.Encoder;
@@ -299,7 +298,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		}
 
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			MatrixObject mo = (MatrixObject) PrivacyMonitor.handlePrivacy(data[0]);
+			MatrixObject mo = (MatrixObject) data[0];
 			MatrixBlock mb = mo.acquireRead();
 			String[] colNames = _meta.getColumnNames();
 
@@ -331,8 +330,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
-			FrameBlock fb = fo.acquireReadAndRelease();
+			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
 			// return column names
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {fb.getColumnNames()});
 		}
@@ -350,8 +348,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
-			FrameBlock fb = fo.acquireReadAndRelease();
+			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
 			_encoder.build(fb);
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {_encoder});
 		}

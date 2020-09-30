@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
@@ -296,17 +297,9 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru) {
-		double[] b = ColGroupConverter.getDenseVector(vector);
+	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
 		final int numVals = getNumValues();
-
-		// prepare reduced rhs w/ relevant values
-		double[] sb = new double[numCols];
-		for(int j = 0; j < numCols; j++) {
-			sb[j] = b[_colIndexes[j]];
-		}
 
 		if(numVals > 1 && _numRows > blksz) {
 			// since single segment scans already exceed typical L2 cache sizes
@@ -315,17 +308,13 @@ public class ColGroupOLE extends ColGroupOffset {
 			// x=4 leads to a good yet slightly conservative compromise for single-/
 			// multi-threaded and typical number of cores and L3 cache sizes
 			final int blksz2 = CompressionSettings.BITMAP_BLOCK_SZ * 2;
-
-			// step 1: prepare position and value arrays
 			int[] apos = skipScan(numVals, rl);
-			double[] aval = preaggValues(numVals, sb);
+			double[] aval = preaggValues(numVals, b, dictVals);
 
-			// LOG.error(Arrays.toString(apos));
-			// LOG.error(rl + " - " + ru);
 			// step 2: cache conscious matrix-vector via horizontal scans
-			for(int bi = rl; bi < ru; bi += blksz) {
+			for(int bi = rl; bi < ru; bi += blksz2) {
 				int bimax = Math.min(bi + blksz2, ru);
-				
+
 				// horizontal segment scan, incl pos maintenance
 				for(int k = 0; k < numVals; k++) {
 					int boff = _ptr[k];
@@ -333,11 +322,11 @@ public class ColGroupOLE extends ColGroupOffset {
 					double val = aval[k];
 					int bix = apos[k];
 
-					int len = _data[boff + bix];
-					int pos = boff + bix + 1;
-					// LOG.error("Len: "+pos +  " pos: "+bi + " ii " + len);
 					for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
 						// prepare length, start, and end pos
+						int len = _data[boff + bix];
+						int pos = boff + bix + 1;
+
 						// compute partial results
 						LinearAlgebraUtils.vectAdd(val, c, _data, pos, ii, Math.min(len, ru));
 						bix += len + 1;
@@ -353,7 +342,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				// prepare value-to-add for entire value bitmap
 				int boff = _ptr[k];
 				int blen = len(k);
-				double val = sumValues(k, sb, _dict.getValues());
+				double val = sumValues(k, b, dictVals);
 
 				// iterate over bitmap blocks and add values
 				if(val != 0) {
@@ -378,6 +367,12 @@ public class ColGroupOLE extends ColGroupOffset {
 				}
 			}
 		}
+	}
+
+	@Override
+	public void rightMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int rl, int ru,
+		int vOff) {
+		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
@@ -468,7 +463,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			int[] apos = allocIVector(numVals, true);
 			double[] cvals = allocDVector(numVals, true);
 
-			for(int i = rl, off = voff* _numRows; i < ru; i++, off += _numRows) {
+			for(int i = rl, off = voff * _numRows; i < ru; i++, off += _numRows) {
 				// step 2: cache conscious matrix-vector via horizontal scans
 				for(int ai = 0; ai < _numRows; ai += blksz2) {
 					int aimax = Math.min(ai + blksz2, _numRows);
@@ -505,7 +500,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		}
 		else {
 
-			for(int i = rl, offR = voff* _numRows; i < ru; i++, offR += _numRows) {
+			for(int i = rl, offR = voff * _numRows; i < ru; i++, offR += _numRows) {
 				for(int k = 0, valOff = 0; k < numVals; k++, valOff += thisNumCols) {
 					int boff = _ptr[k];
 					int blen = len(k);
@@ -718,7 +713,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		int[] ret = allocIVector(numVals, rl == 0);
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 
-		if(rl > 0 && _skipList != null) { // rl aligned with blksz
+		if(rl > 0) { // rl aligned with blksz
 			int rskip = (_numRows / 2 / blksz) * blksz;
 
 			for(int k = 0; k < numVals; k++) {

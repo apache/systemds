@@ -34,7 +34,7 @@ To facilitate this, bindings from different languages and different system abstr
 
 These high-level scripts are compiled into hybrid execution plans of local, in-memory CPU and GPU operations,
 as well as distributed operations on Apache Spark. In contrast to existing systems - that either
-provide homogeneous tensors or 2D Datasets - and in order to serve the entire
+provide homogeneous tensors or 2D datasets - and in order to serve the entire
 data science lifecycle, the underlying data model are DataTensors, i.e.,
 tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.
 
@@ -52,7 +52,7 @@ tensors (multi-dimensional arrays) whose first dimension may have a heterogeneou
    :caption: Guides
 
    guide/federated.rst
-   guide/algorithms.rst
+   guide/algorithms_basics.rst
 
 .. toctree::
    :maxdepth: 1
@@ -69,7 +69,6 @@ tensors (multi-dimensional arrays) whose first dimension may have a heterogeneou
 
    api/operator/algorithms.rst
    api/context/systemds_context.rst
-   api/matrix/data_gen.rst
    api/matrix/matrix.rst
    api/matrix/federated.rst
    api/operator/operation_node.rst

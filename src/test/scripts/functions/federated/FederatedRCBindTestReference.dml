@@ -19,8 +19,15 @@
 #
 #-------------------------------------------------------------
 
-A = read($1)
-R = rbind(A, A)
-C = cbind(A, A)
-write(R, $2)
-write(C, $3)
+A = read($in1)
+B = read($in2)
+R = rbind(A, B)
+C = cbind(A, B)
+R_LF = rbind(B, A)
+C_LF = cbind(B, A)
+write(R, $out_R_FF)
+write(R, $out_R_FL)
+write(R_LF, $out_R_LF)
+write(C, $out_C_FF)
+write(C, $out_C_FL)
+write(C_LF, $out_C_LF)

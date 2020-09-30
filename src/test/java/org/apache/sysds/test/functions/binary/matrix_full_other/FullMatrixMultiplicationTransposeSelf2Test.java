@@ -162,7 +162,7 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 			writeInputMatrix("A", A, true);
 	
 			//run dml and R scripts
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			

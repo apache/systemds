@@ -95,11 +95,19 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.federated">org.apache.sysds.runtime.controlprogram.federated</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -185,6 +193,24 @@
 <div class="block">NOTE: for reading matrix partitions, we could cache (in its real sense) the read block
  with soft references (no need for eviction, as partitioning only applied for read-only matrices).</div>
 </td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.federated">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a> in <a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> that return <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a></code></td>
+<td class="colLast"><span class="typeNameLabel">FederatedRange.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html#asIndexRange--">asIndexRange</a></span>()</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -422,6 +448,58 @@
 <td class="colLast"><span class="typeNameLabel">CM_N_COVCell.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/CM_N_COVCell.html#zeroOutOperations-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.util.IndexRange-boolean-">zeroOutOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                  <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
                  boolean&nbsp;complementary)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a> in <a href="../../../../../../org/apache/sysds/runtime/transform/encode/package-summary.html">org.apache.sysds.runtime.transform.encode</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/transform/encode/package-summary.html">org.apache.sysds.runtime.transform.encode</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderRecode.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderRecode.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderComposite.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderComposite.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderMVImpute.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderOmit.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">Encoder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>
+<div class="block">Returns a new Encoder that only handles a sub range of columns.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderDummycode.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderPassThrough.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderPassThrough.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderBin.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderBin.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderFeatureHash.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderFeatureHash.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

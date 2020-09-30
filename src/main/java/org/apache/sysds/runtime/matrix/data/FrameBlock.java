@@ -1996,7 +1996,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 				type = "INT";
 			} else if (schemaCol.contains("STRING")){
 				// In case of String columns, don't do any verification or replacements.
-				break;
+				continue;
 			} else{
 				type = schemaCol;
 			}

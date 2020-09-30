@@ -21,3 +21,9 @@
 
 sphinx
 sphinx_rtd_theme
+numpy
+py4j
+scipy
+jinja2
+onnx
+requests

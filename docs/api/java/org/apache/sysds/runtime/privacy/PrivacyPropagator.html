@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyMonitor.html" title="class in org.apache.sysds.runtime.privacy"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li>Next&nbsp;Class</li>
+<li><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyUtils.html" title="class in org.apache.sysds.runtime.privacy"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../index.html?org/apache/sysds/runtime/privacy/PrivacyPropagator.html" target="_top">Frames</a></li>
@@ -100,7 +100,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li>org.apache.sysds.runtime.privacy.PrivacyPropagator</li>
+<li>org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator</li>
 </ul>
 </li>
 </ul>
@@ -150,81 +150,90 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeBinary-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">mergeBinary</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
-           <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#matrixMultiplicationPropagation-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.privacy.PrivacyConstraint-">matrixMultiplicationPropagation</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;input1,
+                               <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
+                               <a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;input2,
+                               <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>
+<div class="block">Return the merged fine-grained privacy constraint of a matrix multiplication with the given privacy constraints.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-">mergeNary</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeBinary-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">mergeBinary</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
+           <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-">mergeNary</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints)</code>&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#parseAndSetPrivacyConstraint-org.apache.sysds.runtime.instructions.cp.Data-org.apache.wink.json4j.JSONObject-">parseAndSetPrivacyConstraint</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;cd,
                             org.apache.wink.json4j.JSONObject&nbsp;mtd)</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#postProcessInstruction-org.apache.sysds.runtime.instructions.Instruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">postProcessInstruction</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;inst,
                       <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessBinaryCPInstruction-org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessBinaryCPInstruction</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/BinaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryCPInstruction</a>&nbsp;inst,
                              <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessBuiltinNary-org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessBuiltinNary</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/BuiltinNaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BuiltinNaryCPInstruction</a>&nbsp;inst,
                      <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessCPInstruction-org.apache.sysds.runtime.instructions.cp.CPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessCPInstruction</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">CPInstruction</a>&nbsp;inst,
-                       <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
-</tr>
 <tr id="i7" class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessCPInstructionFineGrained-org.apache.sysds.runtime.instructions.cp.CPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessCPInstructionFineGrained</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">CPInstruction</a>&nbsp;inst,
+                                  <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessExternal-org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessExternal</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/FunctionCallCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">FunctionCallCPInstruction</a>&nbsp;inst,
                   <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessInstruction-org.apache.sysds.runtime.instructions.Instruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstruction</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;inst,
                      <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessInstructionSimple-org.apache.sysds.runtime.instructions.Instruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstructionSimple</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;inst,
                            <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
 <div class="block">Throw exception if privacy constraints are activated or return instruction if privacy is not activated</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessMultiReturn-org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessMultiReturn</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ComputationCPInstruction</a>&nbsp;inst,
                      <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessParameterizedBuiltin-org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessParameterizedBuiltin</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ParameterizedBuiltinCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ParameterizedBuiltinCPInstruction</a>&nbsp;inst,
                               <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessQuaternary-org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessQuaternary</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a>&nbsp;inst,
                     <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessTernaryCPInstruction-org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessTernaryCPInstruction</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ComputationCPInstruction</a>&nbsp;inst,
                               <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessUnaryCPInstruction-org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessUnaryCPInstruction</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/UnaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">UnaryCPInstruction</a>&nbsp;inst,
                             <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#preprocessVariableCPInstruction-org.apache.sysds.runtime.instructions.cp.VariableCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessVariableCPInstruction</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/VariableCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">VariableCPInstruction</a>&nbsp;inst,
                                <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
@@ -312,14 +321,48 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                                 <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
 </li>
 </ul>
-<a name="preprocessCPInstruction-org.apache.sysds.runtime.instructions.cp.CPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
+<a name="preprocessCPInstructionFineGrained-org.apache.sysds.runtime.instructions.cp.CPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>preprocessCPInstruction</h4>
-<pre>public static&nbsp;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;preprocessCPInstruction(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">CPInstruction</a>&nbsp;inst,
-                                                  <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
+<h4>preprocessCPInstructionFineGrained</h4>
+<pre>public static&nbsp;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;preprocessCPInstructionFineGrained(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">CPInstruction</a>&nbsp;inst,
+                                                             <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
+</li>
+</ul>
+<a name="preprocessBinaryCPInstruction-org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>preprocessBinaryCPInstruction</h4>
+<pre>public static&nbsp;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;preprocessBinaryCPInstruction(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/BinaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryCPInstruction</a>&nbsp;inst,
+                                                        <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
+</li>
+</ul>
+<a name="matrixMultiplicationPropagation-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.privacy.PrivacyConstraint-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>matrixMultiplicationPropagation</h4>
+<pre>public static&nbsp;<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;matrixMultiplicationPropagation(<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;input1,
+                                                                <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
+                                                                <a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;input2,
+                                                                <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</pre>
+<div class="block">Return the merged fine-grained privacy constraint of a matrix multiplication with the given privacy constraints.
+ The current implementation has a tendency to create small ranges of privacy level private. These ranges could be merged
+ to create fewer ranges spanning the same elements.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>input1</code> - first input matrix block</dd>
+<dd><code>privacyConstraint1</code> - privacy constraint of the first matrix</dd>
+<dd><code>input2</code> - second input matrix block</dd>
+<dd><code>privacyConstraint2</code> - privacy constraint of the second matrix</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>merged privacy constraint</dd>
+</dl>
 </li>
 </ul>
 <a name="preprocessInstructionSimple-org.apache.sysds.runtime.instructions.Instruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
@@ -400,16 +443,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                                          <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
 </li>
 </ul>
-<a name="preprocessBinaryCPInstruction-org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>preprocessBinaryCPInstruction</h4>
-<pre>public static&nbsp;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;preprocessBinaryCPInstruction(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/BinaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryCPInstruction</a>&nbsp;inst,
-                                                        <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
-</li>
-</ul>
 <a name="preprocessUnaryCPInstruction-org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
 <!--   -->
 </a>
@@ -469,7 +502,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyMonitor.html" title="class in org.apache.sysds.runtime.privacy"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li>Next&nbsp;Class</li>
+<li><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyUtils.html" title="class in org.apache.sysds.runtime.privacy"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../index.html?org/apache/sysds/runtime/privacy/PrivacyPropagator.html" target="_top">Frames</a></li>

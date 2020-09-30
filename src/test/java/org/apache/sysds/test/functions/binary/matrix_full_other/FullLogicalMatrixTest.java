@@ -421,7 +421,7 @@ public class FullLogicalMatrixTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("B", B, true);
 
 			//run tests
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1);
 			runRScript(true);
 

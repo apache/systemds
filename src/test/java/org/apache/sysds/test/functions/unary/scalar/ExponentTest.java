@@ -205,7 +205,7 @@ public class ExponentTest extends AutomatedTestBase
 		
 		createHelperMatrix();
 		
-		runTest(true, LanguageException.class);
+		runTest(EXCEPTION_EXPECTED, LanguageException.class);
 	}
 	
 }

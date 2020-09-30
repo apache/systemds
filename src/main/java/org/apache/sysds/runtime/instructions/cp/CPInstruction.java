@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.privacy.PrivacyPropagator;
+import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
 public abstract class CPInstruction extends Instruction 
 {
@@ -43,7 +43,6 @@ public abstract class CPInstruction extends Instruction
 		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql }
 
 	protected final CPType _cptype;
-	protected final Operator _optr;
 	protected final boolean _requiresLabelUpdate;
 
 	protected CPInstruction(CPType type, String opcode, String istr) {
@@ -51,8 +50,8 @@ public abstract class CPInstruction extends Instruction
 	}
 
 	protected CPInstruction(CPType type, Operator op, String opcode, String istr) {
+		super(op);
 		_cptype = type;
-		_optr = op;
 		instString = istr;
 
 		// prepare opcode and update requirement for repeated usage

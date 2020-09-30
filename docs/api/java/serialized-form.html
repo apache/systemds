@@ -398,7 +398,7 @@
 <pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;is)
                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
 <div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
- efficient broadcast/rdd deserialization.</div>
+ efficient broadcast/rdd de-serialization.</div>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
@@ -442,14 +442,20 @@
 <div class="block">The ColGroup Indexes 0 offset, contained in the ColGroup</div>
 </li>
 <li class="blockList">
-<h4>_zeros</h4>
-<pre>boolean _zeros</pre>
-<div class="block">ColGroup Implementation Contains zero values</div>
-</li>
-<li class="blockListLast">
 <h4>_numRows</h4>
 <pre>int _numRows</pre>
 <div class="block">Number of rows in the matrix, for use by child classes.</div>
+</li>
+<li class="blockList">
+<h4>_zeros</h4>
+<pre>boolean _zeros</pre>
+<div class="block">ColGroup Implementation Contains zero row. Note this is not if it contains a zero value. If false then the stored
+ values are filling the ColGroup making it a dense representation, that can be leveraged in operations.</div>
+</li>
+<li class="blockListLast">
+<h4>_lossy</h4>
+<pre>boolean _lossy</pre>
+<div class="block">boolean specifying if the column group is encoded lossy</div>
 </li>
 </ul>
 </li>
@@ -524,6 +530,7 @@
 <li class="blockListLast">
 <h4>_data</h4>
 <pre>char[] _data</pre>
+<div class="block">Linearized bitmaps (variable lengths)</div>
 </li>
 </ul>
 </li>
@@ -542,8 +549,8 @@
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockListLast">
-<h4>_skiplist</h4>
-<pre>int[] _skiplist</pre>
+<h4>_skipList</h4>
+<pre>int[] _skipList</pre>
 </li>
 </ul>
 </li>
@@ -594,8 +601,8 @@
 <ul class="blockList">
 <li class="blockListLast">
 <h4>_dict</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a> _dict</pre>
-<div class="block">Distinct values associated with individual bitmaps.</div>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a> _dict</pre>
+<div class="block">Distinct value tuples associated with individual bitmaps.</div>
 </li>
 </ul>
 </li>
@@ -3163,13 +3170,9 @@
 <h4>_meta</h4>
 <pre><a href="org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a> _meta</pre>
 </li>
-<li class="blockList">
-<h4>_spec</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> _spec</pre>
-</li>
 <li class="blockListLast">
-<h4>_globalOffset</h4>
-<pre>int _globalOffset</pre>
+<h4>_decoder</h4>
+<pre><a href="org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a> _decoder</pre>
 </li>
 </ul>
 </li>
@@ -5721,9 +5724,13 @@
 <h4>fn</h4>
 <pre><a href="org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a> fn</pre>
 </li>
-<li class="blockListLast">
+<li class="blockList">
 <h4>_constant</h4>
 <pre>double _constant</pre>
+</li>
+<li class="blockListLast">
+<h4>k</h4>
+<pre>int k</pre>
 </li>
 </ul>
 </li>
@@ -5891,6 +5898,36 @@
 <dt>serialVersionUID:</dt>
 <dd>1L</dd>
 </dl>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.privacy.PrivacyConstraint">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">org.apache.sysds.runtime.privacy.PrivacyConstraint</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialization Methods</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;is)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+</dl>
+</li>
+<li class="blockListLast">
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;objectOutput)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
 </li>
 </ul>
 </li>
@@ -6204,18 +6241,6 @@
 <pre><a href="org/apache/sysds/runtime/transform/encode/EncoderMVImpute.MVMethod.html" title="enum in org.apache.sysds.runtime.transform.encode">EncoderMVImpute.MVMethod</a>[] _mvMethodList</pre>
 </li>
 <li class="blockList">
-<h4>_mvscMethodList</h4>
-<pre><a href="org/apache/sysds/runtime/transform/encode/EncoderMVImpute.MVMethod.html" title="enum in org.apache.sysds.runtime.transform.encode">EncoderMVImpute.MVMethod</a>[] _mvscMethodList</pre>
-</li>
-<li class="blockList">
-<h4>_isMVScaled</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a> _isMVScaled</pre>
-</li>
-<li class="blockList">
-<h4>_varFn</h4>
-<pre><a href="org/apache/sysds/runtime/functionobjects/CM.html" title="class in org.apache.sysds.runtime.functionobjects">CM</a> _varFn</pre>
-</li>
-<li class="blockList">
 <h4>_meanFn</h4>
 <pre><a href="org/apache/sysds/runtime/functionobjects/Mean.html" title="class in org.apache.sysds.runtime.functionobjects">Mean</a> _meanFn</pre>
 </li>
@@ -6228,36 +6253,8 @@
 <pre>long[] _countList</pre>
 </li>
 <li class="blockList">
-<h4>_varList</h4>
-<pre><a href="org/apache/sysds/runtime/instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>[] _varList</pre>
-</li>
-<li class="blockList">
-<h4>_scnomvList</h4>
-<pre>int[] _scnomvList</pre>
-</li>
-<li class="blockList">
-<h4>_scnomvMethodList</h4>
-<pre><a href="org/apache/sysds/runtime/transform/encode/EncoderMVImpute.MVMethod.html" title="enum in org.apache.sysds.runtime.transform.encode">EncoderMVImpute.MVMethod</a>[] _scnomvMethodList</pre>
-</li>
-<li class="blockList">
-<h4>_scnomvMeanList</h4>
-<pre><a href="org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>[] _scnomvMeanList</pre>
-</li>
-<li class="blockList">
-<h4>_scnomvCountList</h4>
-<pre>long[] _scnomvCountList</pre>
-</li>
-<li class="blockList">
-<h4>_scnomvVarList</h4>
-<pre><a href="org/apache/sysds/runtime/instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>[] _scnomvVarList</pre>
-</li>
-<li class="blockList">
 <h4>_replacementList</h4>
 <pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[] _replacementList</pre>
-</li>
-<li class="blockList">
-<h4>_NAstrings</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[] _NAstrings</pre>
 </li>
 <li class="blockList">
 <h4>_rcList</h4>
@@ -6283,9 +6280,13 @@
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
+<li class="blockList">
+<h4>_federated</h4>
+<pre>boolean _federated</pre>
+</li>
 <li class="blockListLast">
 <h4>_rmRows</h4>
-<pre>int _rmRows</pre>
+<pre>boolean[] _rmRows</pre>
 </li>
 </ul>
 </li>

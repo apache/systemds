@@ -94,7 +94,7 @@
 <p class="caption"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../guide/federated.html">Federated Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guide/algorithms.html">Built-in Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
 <ul>
@@ -105,7 +105,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/algorithms.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/context/systemds_context.html">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/matrix/data_gen.html">Data Generators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/matrix/matrix.html">Matrix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/matrix/federated.html">Federated</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/operation_node.html">Operation Node</a></li>
@@ -219,14 +218,14 @@ please make sure this is the case.</p>
 <p>Once installed you please verify your version numbers.
 Additionally you have to install a few python packages.
 Note depending on your installation you might need to use pip3 instead of pip:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">numpy</span> <span class="n">py4j</span> <span class="n">wheel</span> <span class="n">jinja2</span> <span class="n">onnx</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">numpy</span> <span class="n">py4j</span> <span class="n">wheel</span> <span class="n">jinja2</span> <span class="n">onnx</span> <span class="n">requests</span>
 </pre></div>
 </div>
 <p>Then to build the system you do the following</p>
 <ul class="simple">
 <li><p>Clone the Git Repository: <a class="reference external" href="https://github.com/apache/systemds.git">https://github.com/apache/systemds.git</a></p></li>
 <li><p>Open an terminal at the root of the repository.</p></li>
-<li><p>Package the Java code using the <code class="docutils literal notranslate"><span class="pre">mvn</span> <span class="pre">package</span> <span class="pre">-P</span> <span class="pre">distribution</span></code> command</p></li>
+<li><p>Package the Java code using the <code class="docutils literal notranslate"><span class="pre">mvn</span> <span class="pre">clean</span> <span class="pre">package</span> <span class="pre">-P</span> <span class="pre">distribution</span></code> command</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">src/main/python</span></code> to point at the root of the SystemDS Python library.</p></li>
 <li><p>Copy <cite>jars</cite> with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">pre_setup.py</span></code></p></li>
 <li><p>Install with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">.</span></code></p></li>

@@ -94,7 +94,7 @@
 <p class="caption"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../guide/federated.html">Federated Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guide/algorithms.html">Built-in Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
 <ul>
@@ -105,7 +105,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/algorithms.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/context/systemds_context.html">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/matrix/data_gen.html">Data Generators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/matrix/matrix.html">Matrix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/matrix/federated.html">Federated</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/operation_node.html">Operation Node</a></li>
@@ -194,13 +193,12 @@
 <p>Making use of SystemDS, let us multiply an Matrix with an scalar:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
-<span class="kn">from</span> <span class="nn">systemds.matrix.data_gen</span> <span class="kn">import</span> <span class="n">full</span>
 <span class="c1"># Create a context and if necessary (no SystemDS py4j instance running)</span>
 <span class="c1"># it starts a subprocess which does the execution in SystemDS</span>
 <span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
     <span class="c1"># Full generates a matrix completely filled with one number.</span>
     <span class="c1"># Generate a 5x10 matrix filled with 4.2</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="n">sds</span><span class="p">,(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="mf">4.20</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="mf">4.20</span><span class="p">)</span>
     <span class="c1"># multiply with scalar. Nothing is executed yet!</span>
     <span class="n">m_res</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="mf">3.1</span>
     <span class="c1"># Do the calculation in SystemDS by calling compute().</span>

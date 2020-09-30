@@ -83,10 +83,14 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.transform.decode">org.apache.sysds.runtime.transform.decode</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -95,6 +99,25 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a> in <a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
+<caption><span>Constructors in <a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/ParameterizedBuiltinFEDInstruction.DecodeMatrix.html#DecodeMatrix-long-long-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.transform.decode.Decoder-">DecodeMatrix</a></span>(long&nbsp;input,
+            long&nbsp;outputID,
+            <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta,
+            <a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a>&nbsp;decoder)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.instructions.spark">
 <!--   -->
 </a>
@@ -126,7 +149,7 @@
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/DecoderComposite.html" title="class in org.apache.sysds.runtime.transform.decode">DecoderComposite</a></span></code>
-<div class="block">Simple composite decoder that applies a list of decoders 
+<div class="block">Simple composite decoder that applies a list of decoders
  in specified order.</div>
 </td>
 </tr>
@@ -190,6 +213,38 @@
              int&nbsp;clen,
              int&nbsp;minCol,
              int&nbsp;maxCol)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">Decoder.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#subRangeDecoder-int-int-int-">subRangeDecoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd,
+               int&nbsp;dummycodedOffset)</code>
+<div class="block">Returns a new Decoder that only handles a sub range of columns.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">DecoderComposite.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/DecoderComposite.html#subRangeDecoder-int-int-int-">subRangeDecoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd,
+               int&nbsp;dummycodedOffset)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">DecoderPassThrough.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/DecoderPassThrough.html#subRangeDecoder-int-int-int-">subRangeDecoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd,
+               int&nbsp;dummycodedOffset)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">DecoderDummycode.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/DecoderDummycode.html#subRangeDecoder-int-int-int-">subRangeDecoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd,
+               int&nbsp;dummycodedOffset)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">DecoderRecode.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/decode/DecoderRecode.html#subRangeDecoder-int-int-int-">subRangeDecoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd,
+               int&nbsp;dummycodedOffset)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

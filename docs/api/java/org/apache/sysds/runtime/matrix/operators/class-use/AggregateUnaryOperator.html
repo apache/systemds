@@ -169,28 +169,50 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-org.apache.sysds.runtime.matrix.data.MatrixBlock-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
-                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code>
+<td class="colLast"><span class="typeNameLabel">ColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                        double[]&nbsp;c)</code>
 <div class="block">Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
  matrix.</div>
 </td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-org.apache.sysds.runtime.matrix.data.MatrixBlock-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
-                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                        double[]&nbsp;ret)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-org.apache.sysds.runtime.matrix.data.MatrixBlock-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
-                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                        double[]&nbsp;c)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-int-int-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                        double[]&nbsp;c,
+                        int&nbsp;rl,
+                        int&nbsp;ru)</code>
+<div class="block">Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
+ matrix.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-int-int-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                        double[]&nbsp;result,
+                        int&nbsp;rl,
+                        int&nbsp;ru)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
-                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-int-int-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                        double[]&nbsp;c,
                         int&nbsp;rl,
                         int&nbsp;ru)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-org.apache.sysds.runtime.matrix.data.MatrixBlock-">unaryAggregateOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

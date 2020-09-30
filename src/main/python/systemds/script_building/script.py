@@ -24,7 +24,7 @@ from typing import Any, Collection, KeysView, Tuple, Union, Optional, Dict, TYPE
 from py4j.java_collections import JavaArray
 from py4j.java_gateway import JavaObject, JavaGateway
 
-from systemds.script_building.dag import DAGNode
+from systemds.script_building.dag import DAGNode, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
@@ -89,12 +89,15 @@ class DMLScript:
                 _list_to_java_array(gateway, self.out_var_name))
             for (name, input_node) in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(
-                    gateway.jvm, name, self.prepared_script)
+                    self.sds_context, name, self.prepared_script)
 
             if lineage:
                 connection.setLineage(True)
+        try:
+            ret = self.prepared_script.executeScript()
+        except Exception as e:
+            self.sds_context.exception_and_close(e)
 
-        ret = self.prepared_script.executeScript()
         if lineage:
             if len(self.out_var_name) == 1:
                 return ret, self.prepared_script.getLineageTrace(self.out_var_name[0])
@@ -130,7 +133,6 @@ class DMLScript:
             for output in self.out_var_name:
                 traces.append(self.prepared_script.getLineageTrace(output))
             return traces
-        
 
     def build_code(self, dag_root: DAGNode) -> None:
         """Builds code from our DAG
@@ -138,14 +140,17 @@ class DMLScript:
         :param dag_root: the topmost operation of our DAG, result of operation will be output
         """
         baseOutVarString = self._dfs_dag_nodes(dag_root)
-        if(dag_root.number_of_outputs > 1):
-            self.out_var_name = []
-            for idx in range(dag_root.number_of_outputs):
-                self.add_code(f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
-                self.out_var_name.append(f'{baseOutVarString}_{idx}')
-        else:
-            self.out_var_name.append(baseOutVarString)
-            self.add_code(f'write({baseOutVarString}, \'./tmp\');')
+        if(dag_root.output_type != OutputType.NONE):
+            if(dag_root.number_of_outputs > 1):
+                self.out_var_name = []
+                for idx in range(dag_root.number_of_outputs):
+                    self.add_code(
+                        f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
+                    self.out_var_name.append(f'{baseOutVarString}_{idx}')
+            else:
+                self.out_var_name.append(baseOutVarString)
+                self.add_code(f'write({baseOutVarString}, \'./tmp\');')
+
 
     def _dfs_dag_nodes(self, dag_node: VALID_INPUT_TYPES) -> str:
         """Uses Depth-First-Search to create code from DAG

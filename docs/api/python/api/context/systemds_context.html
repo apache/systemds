@@ -36,7 +36,7 @@
     
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Data Generators" href="../matrix/data_gen.html" />
+    <link rel="next" title="Matrix" href="../matrix/matrix.html" />
     <link rel="prev" title="Algorithms" href="../operator/algorithms.html" /> 
 </head>
 
@@ -90,7 +90,7 @@
 <p class="caption"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms.html">Built-in Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
 <ul>
@@ -101,7 +101,6 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../operator/algorithms.html">Algorithms</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../matrix/data_gen.html">Data Generators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../matrix/matrix.html">Matrix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../matrix/federated.html">Federated</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../operator/operation_node.html">Operation Node</a></li>
@@ -229,6 +228,30 @@ that can be read from to get the printed statements from the JVM.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="systemds.context.SystemDSContext.exception_and_close">
+<code class="sig-name descname">exception_and_close</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">e</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.context.SystemDSContext.exception_and_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for printing exception, printing stdout and error, while also closing the context correctly.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.context.SystemDSContext.full">
+<code class="sig-name descname">full</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">shape</span><span class="p">:</span> <span class="n">Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">value</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.context.SystemDSContext.full" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a matrix completely filled with a value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sds_context</strong> – SystemDS context</p></li>
+<li><p><strong>shape</strong> – shape (rows and cols) of the matrix TODO tensor</p></li>
+<li><p><strong>value</strong> – the value to fill all cells with</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the OperationNode representing this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="systemds.context.SystemDSContext.get_stderr">
 <code class="sig-name descname">get_stderr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lines</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.context.SystemDSContext.get_stderr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Getter for the stderr of the java subprocess
@@ -246,6 +269,67 @@ The output is taken from the stdout queue and returned in a new list.
 default -1 prints all current lines in the queue.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt id="systemds.context.SystemDSContext.rand">
+<code class="sig-name descname">rand</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rows</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">cols</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">min</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'uniform'</span></em>, <em class="sig-param"><span class="n">sparsity</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">seed</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">lambd</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.context.SystemDSContext.rand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a matrix filled with random values</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sds_context</strong> – SystemDS context</p></li>
+<li><p><strong>rows</strong> – number of rows</p></li>
+<li><p><strong>cols</strong> – number of cols</p></li>
+<li><p><strong>min</strong> – min value for cells</p></li>
+<li><p><strong>max</strong> – max value for cells</p></li>
+<li><p><strong>pdf</strong> – “uniform”/”normal”/”poison” distribution</p></li>
+<li><p><strong>sparsity</strong> – fraction of non-zero cells</p></li>
+<li><p><strong>seed</strong> – random seed</p></li>
+<li><p><strong>lambd</strong> – lamda value for “poison” distribution</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.context.SystemDSContext.read">
+<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">os.PathLike</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; OperationNode<a class="headerlink" href="#systemds.context.SystemDSContext.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an file from disk. Supportted types include:
+CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binay
+See: <a class="reference external" href="http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions">http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions</a> for more details
+:return: an Operation Node, containing the read data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.context.SystemDSContext.scalar">
+<code class="sig-name descname">scalar</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; OperationNode<a class="headerlink" href="#systemds.context.SystemDSContext.scalar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct an scalar value, this can contain str, float, double, integers and booleans.
+:return: An <cite>OperationNode</cite> containing the scalar value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.context.SystemDSContext.seq">
+<code class="sig-name descname">seq</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">stop</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">step</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.context.SystemDSContext.seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a single column vector with values from <cite>start</cite> to <cite>stop</cite> and an increment of <cite>step</cite>.
+If no stop is defined and only one parameter is given, then start will be 0 and the parameter will be interpreted as
+stop.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sds_context</strong> – SystemDS context</p></li>
+<li><p><strong>start</strong> – the starting value</p></li>
+<li><p><strong>stop</strong> – the maximum value</p></li>
+<li><p><strong>step</strong> – the step size</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the OperationNode representing this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -258,7 +342,7 @@ default -1 prints all current lines in the queue.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../matrix/data_gen.html" class="btn btn-neutral float-right" title="Data Generators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../matrix/matrix.html" class="btn btn-neutral float-right" title="Matrix" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="../operator/algorithms.html" class="btn btn-neutral float-left" title="Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

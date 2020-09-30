@@ -90,7 +90,7 @@
 <p class="caption"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms.html">Built-in Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
 <ul>
@@ -101,7 +101,6 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../context/systemds_context.html">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../matrix/data_gen.html">Data Generators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../matrix/matrix.html">Matrix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../matrix/federated.html">Federated</a></li>
 <li class="toctree-l1"><a class="reference internal" href="operation_node.html">Operation Node</a></li>
@@ -225,7 +224,7 @@
 </div>
 <span class="target" id="module-systemds.operator.algorithm"></span><dl class="py function">
 <dt id="systemds.operator.algorithm.kmeans">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">kmeans</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.kmeans" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">kmeans</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.kmeans" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs KMeans on matrix input.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -247,7 +246,7 @@
 
 <dl class="py function">
 <dt id="systemds.operator.algorithm.l2svm">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">l2svm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.l2svm" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">l2svm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.l2svm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform L2SVM on matrix with labels given.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -265,7 +264,7 @@
 
 <dl class="py function">
 <dt id="systemds.operator.algorithm.lm">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">lm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.lm" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">lm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.lm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs LM on matrix with labels given.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -282,8 +281,55 @@
 </dd></dl>
 
 <dl class="py function">
+<dt id="systemds.operator.algorithm.multiLogReg">
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">multiLogReg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.multiLogReg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs Multiclass Logistic Regression on the matrix input
+using Trust Region method.</p>
+<p>See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Input dataset to perform logstic regression on</p></li>
+<li><p><strong>y</strong> – Labels rowaligned with the input dataset</p></li>
+<li><p><strong>icpt</strong> – Intercept, default 2, Intercept presence, shifting and rescaling X columns:
+0 = no intercept, no shifting, no rescaling;
+1 = add intercept, but neither shift nor rescale X;
+2 = add intercept, shift &amp; rescale X columns to mean = 0, variance = 1</p></li>
+<li><p><strong>tol</strong> – float tolerance for the algorithm.</p></li>
+<li><p><strong>reg</strong> – Regularization parameter (lambda = 1/C); intercept settings are not regularized.</p></li>
+<li><p><strong>maxi</strong> – Maximum outer iterations of the algorithm</p></li>
+<li><p><strong>maxii</strong> – Maximum inner iterations of the algorithm
+:return: <cite>OperationNode</cite> of a matrix containing the regression parameters trained.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="systemds.operator.algorithm.multiLogRegPredict">
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">multiLogRegPredict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="n">b</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.multiLogRegPredict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs prediction on input data x using the model trained, b.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – The data to perform classification on.</p></li>
+<li><p><strong>b</strong> – The regression parameters trained from multiLogReg.</p></li>
+<li><p><strong>y</strong> – The Labels expected to be contained in the X dataset, to calculate accuracy.</p></li>
+<li><p><strong>verbose</strong> – Boolean specifying if the prediction should be verbose.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><cite>OperationNode</cite> List containing three outputs. 
+1. The predicted means / probabilities
+2. The predicted response vector
+3. The scalar value of accuracy</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="systemds.operator.algorithm.pca">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">pca</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.pca" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">pca</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">systemds.operator.operation_node.OperationNode</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.pca" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs PCA on the matrix input</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

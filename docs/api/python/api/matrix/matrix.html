@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Federated" href="federated.html" />
-    <link rel="prev" title="Data Generators" href="data_gen.html" /> 
+    <link rel="prev" title="SystemDSContext" href="../context/systemds_context.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -90,7 +90,7 @@
 <p class="caption"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms.html">Built-in Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
 <ul>
@@ -101,7 +101,6 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../operator/algorithms.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../context/systemds_context.html">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_gen.html">Data Generators</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Matrix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="federated.html">Federated</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../operator/operation_node.html">Operation Node</a></li>
@@ -191,34 +190,19 @@ An Matrix can be recognized it by checking the <code class="docutils literal not
 the recommended way is to use the methods defined on <code class="docutils literal notranslate"><span class="pre">SystemDSContext</span></code>.</p>
 <dl class="py class">
 <dt id="systemds.matrix.Matrix">
-<em class="property">class </em><code class="sig-prename descclassname">systemds.matrix.</code><code class="sig-name descname">Matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds_context</span><span class="p">:</span> <span class="n">SystemDSContext</span></em>, <em class="sig-param"><span class="n">mat</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>numpy.array<span class="p">, </span>os.PathLike<span class="p">]</span></span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.matrix.Matrix" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">systemds.matrix.</code><code class="sig-name descname">Matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds_context</span><span class="p">:</span> <span class="n">SystemDSContext</span></em>, <em class="sig-param"><span class="n">mat</span><span class="p">:</span> <span class="n">numpy.array</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.matrix.Matrix" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt id="systemds.matrix.Matrix.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds_context</span><span class="p">:</span> <span class="n">SystemDSContext</span></em>, <em class="sig-param"><span class="n">mat</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>numpy.array<span class="p">, </span>os.PathLike<span class="p">]</span></span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.matrix.Matrix.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate DAGNode representing matrix with data either given by a numpy array, which will be sent to SystemDS
-on need, or a path pointing to a matrix.</p>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds_context</span><span class="p">:</span> <span class="n">SystemDSContext</span></em>, <em class="sig-param"><span class="n">mat</span><span class="p">:</span> <span class="n">numpy.array</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.matrix.Matrix.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate DAGNode representing matrix with data given by a numpy array, which will be sent to SystemDS
+on need.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mat</strong> – the numpy array or path to matrix file</p></li>
+<li><p><strong>mat</strong> – the numpy array</p></li>
 <li><p><strong>args</strong> – unnamed parameters</p></li>
 <li><p><strong>kwargs</strong> – named parameters</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.matrix.Matrix.cholesky">
-<code class="sig-name descname">cholesky</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">safe</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.cholesky" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes the Cholesky decomposition of a symmetric, positive definite matrix</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>safe</strong> – default value is False, if flag is True additional checks to ensure
-that the matrix is symmetric positive definite are applied, if False, checks will be skipped</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the OperationNode representing this operation</p>
 </dd>
 </dl>
 </dd></dl>
@@ -260,26 +244,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.matrix.Matrix.order">
-<code class="sig-name descname">order</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">by</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">decreasing</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">index_return</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.order" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>by</strong> – sort matrix by this column number</p></li>
-<li><p><strong>decreasing</strong> – If true the matrix will be sorted in decreasing order</p></li>
-<li><p><strong>index_return</strong> – If true, the index numbers will be returned</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the OperationNode representing this operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt id="systemds.matrix.Matrix.pass_python_data_to_prepared_script">
-<code class="sig-name descname">pass_python_data_to_prepared_script</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">jvm</span><span class="p">:</span> <span class="n">py4j.java_gateway.JVMView</span></em>, <em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prepared_script</span><span class="p">:</span> <span class="n">py4j.java_gateway.JavaObject</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.matrix.Matrix.pass_python_data_to_prepared_script" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">pass_python_data_to_prepared_script</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds</span></em>, <em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prepared_script</span><span class="p">:</span> <span class="n">py4j.java_gateway.JavaObject</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.matrix.Matrix.pass_python_data_to_prepared_script" title="Permalink to this definition">¶</a></dt>
 <dd><p>Passes data from python to the prepared script object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -288,28 +254,6 @@ all operations are only building the DAG without actually executing (lazy evalua
 <li><p><strong>var_name</strong> – the variable name the data should get in java</p></li>
 <li><p><strong>prepared_script</strong> – the prepared script</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.matrix.Matrix.rev">
-<code class="sig-name descname">rev</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.rev" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reverses the rows in a matrix</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>the OperationNode representing this operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.matrix.Matrix.t">
-<code class="sig-name descname">t</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.t" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transposes the input matrix</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>the OperationNode representing this operation</p>
 </dd>
 </dl>
 </dd></dl>
@@ -329,7 +273,7 @@ all operations are only building the DAG without actually executing (lazy evalua
         <a href="federated.html" class="btn btn-neutral float-right" title="Federated" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="data_gen.html" class="btn btn-neutral float-left" title="Data Generators" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../context/systemds_context.html" class="btn btn-neutral float-left" title="SystemDSContext" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

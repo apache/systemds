@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -51,7 +52,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
-import org.apache.sysds.runtime.privacy.PrivacyPropagator;
+import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.sysds.utils.Statistics;
 import org.apache.wink.json4j.JSONObject;
@@ -75,6 +76,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
+		ctx.writeAndFlush(createResponse(msg)).addListener(new CloseListener());
+	}
+
+	public FederatedResponse createResponse(Object msg) {
 		if( log.isDebugEnabled() ){
 			log.debug("Received: " + msg.getClass().getSimpleName());
 		}
@@ -93,7 +98,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 			PrivacyMonitor.clearCheckedConstraints();
-	
+			
 			//execute command and handle privacy constraints
 			FederatedResponse tmp = executeCommand(request);
 			conditionalAddCheckedConstraints(request, tmp);
@@ -101,9 +106,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			//select the response for the entire batch of requests
 			if (!tmp.isSuccessful()) {
 				log.error("Command " + request.getType() + " failed: "
-					+ tmp.getErrorMessage() + "full command: \n" + request.toString());
+						+ tmp.getErrorMessage() + "full command: \n" + request.toString());
 				response = (response == null || response.isSuccessful())
-					? tmp : response; //return first error
+						? tmp : response; //return first error
 			}
 			else if( request.getType() == RequestType.GET_VAR ) {
 				if( response != null && response.isSuccessful() )
@@ -113,13 +118,13 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			else if( response == null && i == requests.length-1 ) {
 				response = tmp; //return last
 			}
-
+			
 			if (DMLScript.STATISTICS && request.getType() == RequestType.CLEAR && Statistics.allowWorkerStatistics){
 				System.out.println("Federated Worker " + Statistics.display());
 				Statistics.reset();
 			}
 		}
-		ctx.writeAndFlush(response).addListener(new CloseListener());
+		return response;
 	}
 
 	private static void conditionalAddCheckedConstraints(FederatedRequest request, FederatedResponse response){
@@ -284,8 +289,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		ExecutionContext ec = _ecm.get(request.getTID());
 		BasicProgramBlock pb = new BasicProgramBlock(null);
 		pb.getInstructions().clear();
-		pb.getInstructions().add(InstructionParser
-			.parseSingleInstruction((String)request.getParam(0)));
+		Instruction receivedInstruction = InstructionParser
+			.parseSingleInstruction((String)request.getParam(0));
+		pb.getInstructions().add(receivedInstruction);
 		try {
 			pb.execute(ec); //execute single instruction
 		}
@@ -304,6 +310,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedUDF udf = (FederatedUDF) request.getParam(0);
 		Data[] inputs = Arrays.stream(udf.getInputIDs())
 			.mapToObj(id -> ec.getVariable(String.valueOf(id)))
+			.map(PrivacyMonitor::handlePrivacy)
 			.toArray(Data[]::new);
 		
 		//execute user-defined function

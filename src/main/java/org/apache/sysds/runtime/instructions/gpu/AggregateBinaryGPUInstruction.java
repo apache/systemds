@@ -57,12 +57,12 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 		String opcode = parts[0];
 		if ( !opcode.equalsIgnoreCase("ba+*"))
  			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
-		InstructionUtils.checkNumFields( parts, 5 );
+		InstructionUtils.checkNumFields( parts, 6 );
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
-		boolean isLeftTransposed = Boolean.parseBoolean(parts[4]);
-		boolean isRightTransposed = Boolean.parseBoolean(parts[5]);
+		boolean isLeftTransposed = Boolean.parseBoolean(parts[5]);
+		boolean isRightTransposed = Boolean.parseBoolean(parts[6]);
 		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
 		return new AggregateBinaryGPUInstruction(aggbin, in1, in2, out, opcode, str, isLeftTransposed, isRightTransposed);	
 	}

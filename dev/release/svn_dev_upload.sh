@@ -24,12 +24,12 @@ MVN=mvn
 PUBLISH_PROFILES="-Pdistribution,rat"
 DRY_RUN=-DdryRun=true
 GPG_PASSPHRASE=$1
-DEVELOPMENT_VERSION=2.0-SNAPSHOT
+DEVELOPMENT_VERSION=2.1.0-SNAPSHOT
 RELEASE_TAG=v2.0
 RELEASE_STAGING_LOCATION="/c/virtual\ D/SystemDS/systemds/temp"
 BASE_DIR="/c/virtual\ D/SystemDS/systemds"
 RELEASE_WORK_DIR="/c/virtual\ D/SystemDS/systemds/target/release2"
-RELEASE_VERSION=2.0
+RELEASE_VERSION=2.0.0
 RELEASE_RC=rc1
 GIT_REF=-master
 #export GNUPGHOME="/c/virtual\ D/SystemDS/systemds/target/.gnupg_copy"

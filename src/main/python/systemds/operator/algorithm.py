@@ -22,13 +22,13 @@
 from typing import Dict
 
 from systemds.operator import OperationNode
-from systemds.script_building.dag import DAGNode, OutputType
+from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-__all__ = ['l2svm', 'lm', 'kmeans', 'pca']
+__all__ = ['l2svm', 'lm', 'kmeans', 'pca', 'multiLogReg', 'multiLogRegPredict']
 
 
-def l2svm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def l2svm(x: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Perform L2SVM on matrix with labels given.
 
@@ -43,7 +43,7 @@ def l2svm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Ope
     return OperationNode(x.sds_context, 'l2svm', named_input_nodes=params_dict)
 
 
-def lm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def lm(x: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Performs LM on matrix with labels given.
 
@@ -53,20 +53,19 @@ def lm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Operat
     :return: `OperationNode` containing the model fit.
     """
 
-    x._check_matrix_op()
-    if x._np_array.size == 0:
+    if x.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=x._np_array.shape))
-    if y._np_array.size == 0:
+                         .format(s=x.shape))
+    if y.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=y._np_array.shape))
+                         .format(s=y.shape))
 
     params_dict = {'X': x, 'y': y}
     params_dict.update(kwargs)
     return OperationNode(x.sds_context, 'lm', named_input_nodes=params_dict)
 
 
-def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def kmeans(x: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Performs KMeans on matrix input.
 
@@ -81,9 +80,9 @@ def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
 
     x._check_matrix_op()
-    if x._np_array.size == 0:
+    if x.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=x._np_array.shape))
+                         .format(s=x.shape))
 
     if 'k' in kwargs.keys() and kwargs.get('k') < 1:
         raise ValueError(
@@ -94,7 +93,7 @@ def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     return OperationNode(x.sds_context, 'kmeans', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2)
 
 
-def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def pca(x: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Performs PCA on the matrix input
 
@@ -106,9 +105,9 @@ def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
 
     x._check_matrix_op()
-    if x._np_array.size == 0:
+    if x.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=x._np_array.shape))
+                         .format(s=x.shape))
 
     if 'K' in kwargs.keys() and kwargs.get('K') < 1:
         raise ValueError(
@@ -131,7 +130,7 @@ def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     return OperationNode(x.sds_context, 'pca', named_input_nodes=params_dict,  output_type=OutputType.LIST, number_of_outputs=2)
 
 
-def multiLogReg(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def multiLogReg(x: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Performs Multiclass Logistic Regression on the matrix input
     using Trust Region method.
@@ -150,21 +149,24 @@ def multiLogReg(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) 
     :param maxii: Maximum inner iterations of the algorithm
      :return: `OperationNode` of a matrix containing the regression parameters trained.
     """
-
-    x._check_matrix_op()
-    if x._np_array.size == 0:
+    
+    if x.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=x._np_array.shape))
-    if y._np_array.size == 0:
+                         .format(s=x.shape))
+    if y.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=y._np_array.shape))
-
+                         .format(s=y.shape))
+    if -1 in x.shape:
+        output_shape = (-1,)
+    else:
+        output_shape = (x.shape[1],)
+        
     params_dict = {'X': x, 'Y': y}
     params_dict.update(kwargs)
-    return OperationNode(x.sds_context, 'multiLogReg', named_input_nodes=params_dict)
+    return OperationNode(x.sds_context, 'multiLogReg', named_input_nodes=params_dict, shape = output_shape)
 
 
-def multiLogRegPredict(x: DAGNode, b: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def multiLogRegPredict(x: OperationNode, b: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Performs prediction on input data x using the model trained, b.
 
@@ -178,18 +180,15 @@ def multiLogRegPredict(x: DAGNode, b: DAGNode, y: DAGNode, **kwargs: Dict[str, V
         3. The scalar value of accuracy
     """
 
-    x._check_matrix_op()
-    b._check_matrix_op()
-    y._check_matrix_op()
-    if x._np_array.size == 0:
+    if x.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=x._np_array.shape))
-    if b._np_array.size == 0:
+                         .format(s=x.shape))
+    if b.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=y._np_array.shape))
-    if y._np_array.size == 0:
+                         .format(s=y.shape))
+    if y.shape[0] == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                         .format(s=y._np_array.shape))
+                         .format(s=y.shape))
 
     params_dict = {'X': x, 'B': b, 'Y': y}
     params_dict.update(kwargs)

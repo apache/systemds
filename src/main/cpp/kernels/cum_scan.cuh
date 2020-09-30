@@ -23,7 +23,8 @@
 #pragma once
 
 /**
- * Cumulative Scan - Applies <scanOp> to accumulate values over columns of an input matrix
+ * Cumulative Scan - Applies <scanOp> to accumulate values over columns of an input matrix.
+ *                   Up sweep writes per block accumulation results to offset buffer once
  * @param scanOp - Type of the functor object that implements the scan operation
  */
 // --------------------------------------------------------
@@ -35,8 +36,8 @@ __device__ void cumulative_scan_up_sweep(T *g_idata, T *g_tdata, uint rows, uint
 	if (blockIdx.x * blockDim.x + threadIdx.x > cols - 1)
 		return;
 
-	uint offset = blockIdx.y * cols * block_height + blockIdx.x * blockDim.x;
-	uint idx = offset + threadIdx.x;
+	uint block_offset = blockIdx.y * cols * block_height + blockIdx.x * blockDim.x;
+	uint idx = block_offset + threadIdx.x;
 
 	// initial accumulator value
 	T acc = g_idata[idx];
@@ -49,14 +50,15 @@ __device__ void cumulative_scan_up_sweep(T *g_idata, T *g_tdata, uint rows, uint
 		acc = scan_op(acc, g_idata[i]);
 
 	// write out accumulated block offset
-	if (block_height < rows)
-	{
-		g_tdata[blockIdx.y * cols + blockIdx.x * blockDim.x + threadIdx.x] = acc;
-		// if(threadIdx.x == 0)
-		// 	printf("blockIdx.y=%d, acc=%f\n", blockIdx.y, acc);
-	}
+	g_tdata[blockIdx.y * cols + blockIdx.x * blockDim.x + threadIdx.x] = acc;
 }
 
+// --------------------------------------------------------
+/**
+ * Cumulative Scan - Applies <scanOp> to accumulate values over columns of an input matrix.
+ *                   Down sweep writes accumulated values to result buffer
+ * @param scanOp - Type of the functor object that implements the scan operation
+ */
 // --------------------------------------------------------
 template<typename scanOp, typename NeutralElement, typename T>
 __device__ void cumulative_scan_down_sweep(T *g_idata, T *g_odata, T *g_tdata, uint rows, uint cols, uint block_height, 
@@ -67,19 +69,13 @@ __device__ void cumulative_scan_down_sweep(T *g_idata, T *g_odata, T *g_tdata, u
 		return;
 
 	uint idx = blockIdx.y * cols * block_height + blockIdx.x * blockDim.x + threadIdx.x;
-	int offset_idx = blockIdx.y * cols + blockIdx.x * blockDim.x + threadIdx.x;
-	
-	// initial accumulator value
-	T acc = (gridDim.y > 1) ? ((blockIdx.y > 0) ? g_tdata[offset_idx-1] : NeutralElement::get()) : NeutralElement::get();
 
-	// if(threadIdx.x == 0)
-	// {
-	// 	printf("gridDim.y=%d, blockIdx.y=%d, down sweep acc=%f\n", gridDim.y, blockIdx.y, acc);
-	// 	printf("gridDim.y=%d, blockIdx.y=%d, g_tdata[%d]=%f\n", gridDim.y, blockIdx.y, idx, g_tdata[offset_idx]);
-	// }
+	// initial accumulator value: all but first row fetch from offset buffer
+	T acc = (blockIdx.y > 0) ? g_tdata[(blockIdx.y -1) * cols + blockIdx.x * blockDim.x + threadIdx.x]
+						     : NeutralElement::get();
 
 	g_odata[idx] = acc = scan_op(acc, g_idata[idx]);
-	
+
 	// loop through <block_height> number of items colwise
 	uint last_idx = min(idx + block_height * cols, rows * cols);
 

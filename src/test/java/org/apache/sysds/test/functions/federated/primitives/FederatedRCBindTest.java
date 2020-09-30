@@ -28,7 +28,6 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -55,7 +54,11 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R", "C"}));
+		// we generate 3 datasets, both with rbind and cbind (F...Federated, L...Local):
+		// F-F, F-L, L-F
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,
+				new String[] {"R_FF", "R_FL", "R_LF", "C_FF", "C_FL", "C_LF"}));
 	}
 
 	@Test
@@ -77,15 +80,21 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 
 		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+		double[][] B = getRandomMatrix(rows, cols, -10, 10, 1, 2);
+		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
 
-		int port = getRandomAvailablePort();
-		Thread t = startLocalFedWorkerThread(port);
+		int port1 = getRandomAvailablePort();
+		Thread t1 = startLocalFedWorkerThread(port1);
+		int port2 = getRandomAvailablePort();
+		Thread t2 = startLocalFedWorkerThread(port2);
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
 		// Run reference dml script with normal matrix for Row/Col sum
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-args", input("A"), expected("R"), expected("C")};
+		programArgs = new String[] {"-nvargs", "in1=" + input("A"), "in2=" + input("B"), "out_R_FF=" + expected("R_FF"),
+			"out_R_FL=" + expected("R_FL"), "out_R_LF=" + expected("R_LF"), "out_C_FF=" + expected("C_FF"),
+			"out_C_FL=" + expected("C_FL"), "out_C_LF=" + expected("C_LF")};
 		runTest(true, false, null, -1);
 
 		// reference file should not be written to hdfs, so we set platform here
@@ -96,16 +105,18 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs",
-			"in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
-			"cols=" + cols, "out_R=" + output("R"), "out_C=" + output("C")};
+		programArgs = new String[] {"-nvargs", "in1=" + TestUtils.federatedAddress(port1, input("A")),
+			"in2=" + TestUtils.federatedAddress(port2, input("B")), "in2_local=" + input("B"), "rows=" + rows,
+			"cols=" + cols, "out_R_FF=" + output("R_FF"), "out_R_FL=" + output("R_FL"),
+			"out_R_LF=" + output("R_LF"), "out_C_FF=" + output("C_FF"), "out_C_FL=" + output("C_FL"),
+			"out_C_LF=" + output("C_LF")};
 
 		runTest(true, false, null, -1);
 
 		// compare all sums via files
 		compareResults(1e-11);
 
-		TestUtils.shutdownThread(t);
+		TestUtils.shutdownThreads(t1, t2);
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}

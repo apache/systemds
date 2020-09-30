@@ -171,10 +171,11 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.html#findCocodesByPartitioning-org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-int-int-">findCocodesByPartitioning</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;sizeEstimator,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.html#findCoCodesByPartitioning-org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-int-int-org.apache.sysds.runtime.compress.CompressionSettings-">findCoCodesByPartitioning</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;sizeEstimator,
                          <a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;colInfos,
                          int&nbsp;numRows,
-                         int&nbsp;k)</code>
+                         int&nbsp;k,
+                         <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>
 <div class="block">Main entry point of CoCode.</div>
 </td>
 </tr>
@@ -217,16 +218,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="findCocodesByPartitioning-org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-int-int-">
+<a name="findCoCodesByPartitioning-org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-int-int-org.apache.sysds.runtime.compress.CompressionSettings-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>findCocodesByPartitioning</h4>
-<pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;&nbsp;findCocodesByPartitioning(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;sizeEstimator,
+<h4>findCoCodesByPartitioning</h4>
+<pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;&nbsp;findCoCodesByPartitioning(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;sizeEstimator,
                                                     <a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;colInfos,
                                                     int&nbsp;numRows,
-                                                    int&nbsp;k)</pre>
+                                                    int&nbsp;k,
+                                                    <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</pre>
 <div class="block">Main entry point of CoCode.
  
  This package groups together ColGroups across columns, to improve compression further,</div>
@@ -236,6 +238,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dd><code>colInfos</code> - The information already gathered on the individual ColGroups of columns.</dd>
 <dd><code>numRows</code> - The number of rows in the input matrix.</dd>
 <dd><code>k</code> - The concurrency degree allowed for this operation.</dd>
+<dd><code>cs</code> - The Compression Settings used in the compression.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The Estimated (hopefully) best groups of ColGroups.</dd>
 </dl>

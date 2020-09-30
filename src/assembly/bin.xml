@@ -57,9 +57,9 @@
 		<fileSet>
 			<directory>${basedir}/bin</directory>
 			<includes>
-				<include>*.sh</include>
+				<include>systemds</include>
 			</includes>
-			<outputDirectory>.</outputDirectory>
+      <outputDirectory>bin</outputDirectory>
 			<fileMode>0755</fileMode>
 		</fileSet>
 

@@ -20,7 +20,9 @@
 #-------------------------------------------------------------
 
 X = read($1);
-w = read($2);
-y = read($3)
-ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
-write(ress, $4);
+e = read($2);
+
+# call slice finding
+[TS,TR] = slicefinder(X=X, e=e, k=$3, alpha=0.95, minSup=4, tpEval=$4, verbose=$5);
+
+write(TR, $6)

@@ -140,8 +140,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
-		// Level of par is 1 in spark backend because one worker will be launched per task
-		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, 1, true);
+		// Level of par is 1 because one worker will be launched per task
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, 1, false);
 		// Create workers' execution context
 		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
 		// Create the agg service's execution context

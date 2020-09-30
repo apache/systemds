@@ -32,8 +32,6 @@
 # tolobj 	Int    0.00001  objective function tolerance value to stop ppca algorithm
 # tolrecerr	Int    0.02     reconstruction error tolerance value to stop the algorithm
 # iter   	Int    10       maximum number of iterations
-# fmt    	String 'text'   output format of results PPCA such as "text" or "csv"
-# hadoop jar SystemDS.jar -f PPCA.dml -nvargs X=/INPUT_DIR/X  C=/OUTPUT_DIR/C V=/OUTPUT_DIR/V k=2 tol=0.2 iter=100
 # ---------------------------------------------------------------------------------------------
 # OUTPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -44,111 +42,110 @@
 #
 
 
-m_pcaa = function(Matrix[Double] X, int iter = 10, double tolobj = 0.00001, double tolrecerr = 0.02, String fmt0 = "text") return(Matrix[Double] PC, Matrix[Double] V)
-    {
-    k = ncol(X)
-    n = nrow(X);
-    m = ncol(X);
+m_pcaa = function(Matrix[Double] X, int iter = 10, double tolobj = 0.00001, double tolrecerr = 0.02, Boolean verbose = FALSE)
+  return(Matrix[Double] PC, Matrix[Double] V)
+{
 
-    #initializing principal components matrix
-    C =  rand(rows=m, cols=k, pdf="normal");
-    ss = rand(rows=1, cols=1, pdf="normal");
-    ss = as.scalar(ss);
-    ssPrev = ss;
+  k = ncol(X)
+  n = nrow(X);
+  m = ncol(X);
 
-    # best selected principle components - with the lowest reconstruction error
-    PC = C;
+  #initializing principal components matrix
+  C =  rand(rows=m, cols=k, pdf="normal");
+  ss = rand(rows=1, cols=1, pdf="normal");
+  ss = as.scalar(ss);
+  ssPrev = ss;
 
-    # initilizing reconstruction error
-    RE = tolrecerr+1;
-    REBest = RE;
+  # best selected principle components - with the lowest reconstruction error
+  PC = C;
 
-    Z = matrix(0,rows=1,cols=1);
+  # initilizing reconstruction error
+  RE = tolrecerr+1;
+  REBest = RE;
 
-    #Objective function value
-    ObjRelChng = tolobj+1;
+  Z = matrix(0,rows=1,cols=1);
 
-    # mean centered input matrix - dim -> [n,m]
-    Xm = X - colMeans(X);
+  #Objective function value
+  ObjRelChng = tolobj+1;
 
-    #I -> k x k
-    ITMP = matrix(1,rows=k,cols=1);
-    I = diag(ITMP);
+  # mean centered input matrix - dim -> [n,m]
+  Xm = X - colMeans(X);
 
-    i = 0;
-    while (i < iter & ObjRelChng > tolobj & RE > tolrecerr){
-        #Estimation step - Covariance matrix
-        #M -> k x k
-        M = t(C) %*% C + I*ss;
+  #I -> k x k
+  ITMP = matrix(1,rows=k,cols=1);
+  I = diag(ITMP);
 
-        #Auxilary matrix with n latent variables
-        # Z -> n x k
-        Z = Xm %*% (C %*% inv(M));
+  i = 0;
+  while (i < iter & ObjRelChng > tolobj & RE > tolrecerr){
+      #Estimation step - Covariance matrix
+      #M -> k x k
+      M = t(C) %*% C + I*ss;
 
-        #ZtZ -> k x k
-        ZtZ = t(Z) %*% Z + inv(M)*ss;
+      #Auxilary matrix with n latent variables
+      # Z -> n x k
+      Z = Xm %*% (C %*% inv(M));
 
-        #XtZ -> m x k
-        XtZ = t(Xm) %*% Z;
+      #ZtZ -> k x k
+      ZtZ = t(Z) %*% Z + inv(M)*ss;
 
-        #Maximization step
-        #C ->  m x k
-        ZtZ_sum = sum(ZtZ); #+n*inv(M));
-        C = XtZ/ZtZ_sum;
+      #XtZ -> m x k
+      XtZ = t(Xm) %*% Z;
 
-        #ss2 -> 1 x 1
-        ss2 = trace(ZtZ * (t(C) %*% C));
+      #Maximization step
+      #C ->  m x k
+      ZtZ_sum = sum(ZtZ); #+n*inv(M));
+      C = XtZ/ZtZ_sum;
 
-        #ss3 -> 1 x 1
-        ss3 = sum((Z %*% t(C)) %*% t(Xm));
+      #ss2 -> 1 x 1
+      ss2 = trace(ZtZ * (t(C) %*% C));
 
-        #Frobenius norm of reconstruction error -> Euclidean norm
-        #Fn -> 1 x 1
-        Fn = sum(Xm*Xm);
+      #ss3 -> 1 x 1
+      ss3 = sum((Z %*% t(C)) %*% t(Xm));
 
-        #ss -> 1 x 1
-        ss = (Fn + ss2 - 2*ss3)/(n*m);
+      #Frobenius norm of reconstruction error -> Euclidean norm
+      #Fn -> 1 x 1
+      Fn = sum(Xm*Xm);
 
-       #calculating objective function relative change
-       ObjRelChng = abs(1 - ss/ssPrev);
-       #print("Objective Relative Change: " + ObjRelChng + ", Objective: " + ss);
+      #ss -> 1 x 1
+      ss = (Fn + ss2 - 2*ss3)/(n*m);
 
-        #Reconstruction error
-        R = ((Z %*% t(C)) -  Xm);
+      #calculating objective function relative change
+      ObjRelChng = abs(1 - ss/ssPrev);
+      #print("Objective Relative Change: " + ObjRelChng + ", Objective: " + ss);
 
-        #calculate the error
-        #TODO rethink calculation of reconstruction error ....
-        #1-Norm of reconstruction error - a big dense matrix
-        #RE -> n x m
-        RE = abs(sum(R)/sum(Xm));
-        if (RE < REBest){
-            PC = C;
-            REBest = RE;
-        }
-        #print("ss: " + ss +" = Fn( "+ Fn +" ) + ss2( " + ss2  +" ) - 2*ss3( " + ss3 + " ), Reconstruction Error: " + RE);
+      #Reconstruction error
+      R = ((Z %*% t(C)) -  Xm);
 
-        ssPrev = ss;
-        i = i+1;
-    }
+      #calculate the error
+      #TODO rethink calculation of reconstruction error ....
+      #1-Norm of reconstruction error - a big dense matrix
+      #RE -> n x m
+      RE = abs(sum(R)/sum(Xm));
+      if (RE < REBest){
+          PC = C;
+          REBest = RE;
+      }
+      #print("ss: " + ss +" = Fn( "+ Fn +" ) + ss2( " + ss2  +" ) - 2*ss3( " + ss3 + " ), Reconstruction Error: " + RE);
+
+      ssPrev = ss;
+      i = i+1;
+  }
+  if( verbose )
     print("Objective Relative Change: " + ObjRelChng);
+  if( verbose )
     print ("Number of iterations: " + i + ", Reconstruction Err: " + REBest);
 
-    # reconstructs data
-    # RD -> n x k
-    RD = X %*% PC;
+  # reconstructs data
+  # RD -> n x k
+  RD = X %*% PC;
 
-    # calculate eigenvalues - principle component variance
-    RDMean = colMeans(RD);
-    V = t(colMeans(RD*RD) - (RDMean*RDMean));
+  # calculate eigenvalues - principle component variance
+  RDMean = colMeans(RD);
+  V = t(colMeans(RD*RD) - (RDMean*RDMean));
 
-    # sorting eigenvalues and eigenvectors in decreasing order
-    V_decr_idx = order(target=V,by=1,decreasing=TRUE,index.return=TRUE);
-    VF_decr = table(seq(1,nrow(V)),V_decr_idx);
-    V = VF_decr %*% V;
-    PC = PC %*% VF_decr;
-
-    # writing principal components
-    # write(PC, fileC, format=fmt0);
-    # writing eigen values/pc variance
-    # write(V, fileV, format=fmt0);
-    }
+  # sorting eigenvalues and eigenvectors in decreasing order
+  V_decr_idx = order(target=V,by=1,decreasing=TRUE,index.return=TRUE);
+  VF_decr = table(seq(1,nrow(V)),V_decr_idx);
+  V = VF_decr %*% V;
+  PC = PC %*% VF_decr;
+}

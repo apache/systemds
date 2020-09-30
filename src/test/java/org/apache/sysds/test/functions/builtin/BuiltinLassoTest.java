@@ -33,9 +33,6 @@ public class BuiltinLassoTest extends AutomatedTestBase{
         fullDMLScriptName = HOME + TEST_NAME + ".dml";
         List<String> proArgs = new ArrayList<>();
 
-
-        proArgs.add("-explain");
-        proArgs.add("-stats");
         proArgs.add("-args");
         proArgs.add(input("X"));
         proArgs.add(input("y"));

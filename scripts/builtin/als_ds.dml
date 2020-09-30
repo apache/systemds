@@ -48,113 +48,123 @@
 # 2- An r x n matrix R
 #
 
-m_als_ds = function(Matrix[Double] V, Integer rank = 10, String reg = "L2", Double lambda = 0.000001, Integer maxi = 50, Boolean check = FALSE, Double thr = 0.0001, String fmt = "text")
+m_als_ds = function(Matrix[Double] V, Integer rank = 10, String reg = "L2", Double lambda = 0.000001, Integer maxi = 50, Boolean check = FALSE, Double thr = 0.0001, String fmt = "text", Boolean verbose = TRUE)
     return (Matrix[Double] L, Matrix[Double] R)
-    {
+{
 
-    r = rank;
-    max_iter = maxi;
-    fmt0 = fmt;
+  r = rank;
+  max_iter = maxi;
+  fmt0 = fmt;
 
-    # check the input matrix V, if some rows or columns contain only zeros remove them from V
+  # check the input matrix V, if some rows or columns contain only zeros remove them from V
+  V_nonzero_ind = V != 0;
+  row_nonzeros = rowSums (V_nonzero_ind);
+  col_nonzeros = t (colSums (V_nonzero_ind));
+  orig_nonzero_rows_ind = row_nonzeros != 0;
+  orig_nonzero_cols_ind = col_nonzeros != 0;
+  num_zero_rows = nrow (V) - sum (orig_nonzero_rows_ind);
+  num_zero_cols = ncol (V) - sum (orig_nonzero_cols_ind);
+  if (num_zero_rows > 0) {
+    if( verbose )
+      print ("Matrix V contains empty rows! These rows will be removed.");
+    V = removeEmpty (target = V, margin = "rows");
+  }
+  if (num_zero_cols > 0) {
+    if( verbose )
+      print ("Matrix V contains empty columns! These columns will be removed.");
+    V = removeEmpty (target = V, margin = "cols");
+  }
+  if (num_zero_rows > 0 | num_zero_cols > 0) {
+    if( verbose )
+      print ("Recomputing nonzero rows and columns!");
     V_nonzero_ind = V != 0;
     row_nonzeros = rowSums (V_nonzero_ind);
     col_nonzeros = t (colSums (V_nonzero_ind));
-    orig_nonzero_rows_ind = row_nonzeros != 0;
-    orig_nonzero_cols_ind = col_nonzeros != 0;
-    num_zero_rows = nrow (V) - sum (orig_nonzero_rows_ind);
-    num_zero_cols = ncol (V) - sum (orig_nonzero_cols_ind);
-    if (num_zero_rows > 0) {
-      print ("Matrix V contains empty rows! These rows will be removed.");
-      V = removeEmpty (target = V, margin = "rows");
-    }
-    if (num_zero_cols > 0) {
-      print ("Matrix V contains empty columns! These columns will be removed.");
-      V = removeEmpty (target = V, margin = "cols");
-    }
-    if (num_zero_rows > 0 | num_zero_cols > 0) {
-      print ("Recomputing nonzero rows and columns!");
-      V_nonzero_ind = V != 0;
-      row_nonzeros = rowSums (V_nonzero_ind);
-      col_nonzeros = t (colSums (V_nonzero_ind));
-    }
+  }
 
-    ###### MAIN PART ######
-    m = nrow (V);
-    n = ncol (V);
+  ###### MAIN PART ######
+  m = nrow (V);
+  n = ncol (V);
 
-    # initializing factor matrices
-    L = rand (rows = m, cols = r, min = -0.5, max = 0.5);
-    R = rand (rows = n, cols = r, min = -0.5, max = 0.5);
+  # initializing factor matrices
+  L = rand (rows = m, cols = r, min = -0.5, max = 0.5);
+  R = rand (rows = n, cols = r, min = -0.5, max = 0.5);
 
-    # initializing transformed matrices
-    Vt = t(V);
+  # initializing transformed matrices
+  Vt = t(V);
 
-    # check for regularization
-    if (reg == "L2") {
+  # check for regularization
+  if (reg == "L2") {
+    if( verbose )
       print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
-    } else if (reg == "wL2") {
+  } else if (reg == "wL2") {
+    if( verbose )
       print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 WITH LAMBDA - " + lambda);
-    } else {
-      stop ("wrong regularization! " + reg);
-    }
+  } else {
+    stop ("wrong regularization! " + reg);
+  }
 
-    loss_init = 0.0; # only used if check is TRUE
-    if (check) {
-      loss_init = sum (V_nonzero_ind * (V - (L %*% t(R)))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+  loss_init = 0.0; # only used if check is TRUE
+  if (check) {
+    loss_init = sum (V_nonzero_ind * (V - (L %*% t(R)))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+    if( verbose )
       print ("----- Initial train loss: " + loss_init + " -----");
+  }
+
+  lambda_I = diag (matrix (lambda, rows = r, cols = 1));
+  it = 0;
+  converged = FALSE;
+  while ((it < max_iter) & (!converged)) {
+    it = it + 1;
+    # keep R fixed and update L
+    parfor (i in 1:m) {
+      R_nonzero_ind = t(V[i,] != 0);
+      R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="rows");
+      A1 = (t(R_nonzero) %*% R_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I); # coefficient matrix
+      L[i,] = t(solve (A1, t(V[i,] %*% R)));
     }
 
-    lambda_I = diag (matrix (lambda, rows = r, cols = 1));
-    it = 0;
-    converged = FALSE;
-    while ((it < max_iter) & (!converged)) {
-      it = it + 1;
-      # keep R fixed and update L
-      parfor (i in 1:m) {
-        R_nonzero_ind = t(V[i,] != 0);
-        R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="rows");
-        A1 = (t(R_nonzero) %*% R_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I); # coefficient matrix
-        L[i,] = t(solve (A1, t(V[i,] %*% R)));
-      }
+    # keep L fixed and update R
+    parfor (j in 1:n) {
+      L_nonzero_ind = t(Vt[j,] != 0)
+      L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
+      A2 = (t(L_nonzero) %*% L_nonzero) + (as.scalar(col_nonzeros[j,1]) * lambda_I); # coefficient matrix
+      R[j,] = t(solve (A2, t(Vt[j,] %*% L)));
+    }
 
-      # keep L fixed and update R
-      parfor (j in 1:n) {
-        L_nonzero_ind = t(Vt[j,] != 0)
-        L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
-        A2 = (t(L_nonzero) %*% L_nonzero) + (as.scalar(col_nonzeros[j,1]) * lambda_I); # coefficient matrix
-        R[j,] = t(solve (A2, t(Vt[j,] %*% L)));
-      }
-
-      # check for convergence
-      if (check) {
-        loss_cur = sum (V_nonzero_ind * (V - (L %*% t(R)))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
-        loss_dec = (loss_init - loss_cur) / loss_init;
-        print ("Train loss at iteration (R) " + it + ": " + loss_cur + " loss-dec " + loss_dec);
-        if (loss_dec >= 0 & loss_dec < thr | loss_init == 0) {
-          print ("----- ALS converged after " + it + " iterations!");
-          converged = TRUE;
-        }
-        loss_init = loss_cur;
-      }
-    } # end of while loop
-
+    # check for convergence
     if (check) {
+      loss_cur = sum (V_nonzero_ind * (V - (L %*% t(R)))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+      loss_dec = (loss_init - loss_cur) / loss_init;
+      if( verbose )
+        print ("Train loss at iteration (R) " + it + ": " + loss_cur + " loss-dec " + loss_dec);
+      if (loss_dec >= 0 & loss_dec < thr | loss_init == 0) {
+        if( verbose )
+          print ("----- ALS converged after " + it + " iterations!");
+        converged = TRUE;
+      }
+      loss_init = loss_cur;
+    }
+  } # end of while loop
+
+  if (check) {
+    if( verbose )
       print ("----- Final train loss: " + loss_init + " -----");
-    }
+  }
 
-    if (!converged) {
+  if (!converged) {
+    if( verbose )
       print ("Max iteration achieved but not converged!");
-    }
+  }
 
-    # inject 0s in L if original V had empty rows
-    if (num_zero_rows > 0) {
-      L = removeEmpty (target = diag (orig_nonzero_rows_ind), margin = "cols") %*% L;
-    }
-    # inject 0s in R if original V had empty rows
-    if (num_zero_cols > 0) {
-      R = removeEmpty (target = diag (orig_nonzero_cols_ind), margin = "cols") %*% R;
-    }
-    Rt = t (R);
+  # inject 0s in L if original V had empty rows
+  if (num_zero_rows > 0) {
+    L = removeEmpty (target = diag (orig_nonzero_rows_ind), margin = "cols") %*% L;
+  }
+  # inject 0s in R if original V had empty rows
+  if (num_zero_cols > 0) {
+    R = removeEmpty (target = diag (orig_nonzero_cols_ind), margin = "cols") %*% R;
+  }
+  Rt = t (R);
 
-    }
+}

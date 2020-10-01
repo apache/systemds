@@ -167,8 +167,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			// parse and set program - WARNING: the parsing writes all functions to optimized
-			ec.setProgram(ProgramConverter.parseProgram(_programString, 0));
+			// parse and set program
+			ec.setProgram(ProgramConverter.parseProgram(_programString, 0, false));
 
 			// set variables to ec
 			ec.setVariable(Statement.PS_FED_BATCH_SIZE, new IntObject(_batchSize));
@@ -353,7 +353,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable(Statement.PS_LABELS, bLabels);
 
 			// recreate gradient instruction and output
-			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(namespace, gradientsFunctionName, true);
+			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(namespace, gradientsFunctionName, false);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 			CPOperand[] boundInputs = inputs.stream()
@@ -361,7 +361,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					.toArray(CPOperand[]::new);
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 					.collect(Collectors.toCollection(ArrayList::new));
-			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunctionName, true, boundInputs,
+			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunctionName, false, boundInputs,
 					func.getInputParamNames(), outputNames, "gradient function");
 			DataIdentifier gradientsOutput = outputs.get(0);
 
@@ -451,7 +451,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			String aggregationFuctionName = ((StringObject) ec.getVariable(Statement.PS_FED_AGGREGATION_FNAME)).getStringValue();
 
 			// recreate gradient instruction and output
-			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(namespace, gradientsFunctionName, true);
+			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(namespace, gradientsFunctionName, false);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 			CPOperand[] boundInputs = inputs.stream()
@@ -459,12 +459,12 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					.toArray(CPOperand[]::new);
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 					.collect(Collectors.toCollection(ArrayList::new));
-			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunctionName, true, boundInputs,
+			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunctionName, false, boundInputs,
 					func.getInputParamNames(), outputNames, "gradient function");
 			DataIdentifier gradientsOutput = outputs.get(0);
 
 			// recreate aggregation instruction and output
-			func = ec.getProgram().getFunctionProgramBlock(namespace, aggregationFuctionName, true);
+			func = ec.getProgram().getFunctionProgramBlock(namespace, aggregationFuctionName, false);
 			inputs = func.getInputParams();
 			outputs = func.getOutputParams();
 			boundInputs = inputs.stream()
@@ -472,7 +472,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					.toArray(CPOperand[]::new);
 			outputNames = outputs.stream().map(DataIdentifier::getName)
 					.collect(Collectors.toCollection(ArrayList::new));
-			Instruction aggregationInstruction = new FunctionCallCPInstruction(namespace, aggregationFuctionName, true, boundInputs,
+			Instruction aggregationInstruction = new FunctionCallCPInstruction(namespace, aggregationFuctionName, false, boundInputs,
 					func.getInputParamNames(), outputNames, "aggregation function");
 			DataIdentifier aggregationOutput = outputs.get(0);
 

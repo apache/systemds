@@ -1337,6 +1337,10 @@ public class ProgramConverter
 	}
 
 	public static Program parseProgram( String in, int id ) {
+		return parseProgram(in, id, true);
+	}
+
+	public static Program parseProgram( String in, int id, boolean opt ) {
 		String lin = in.substring( PROG_BEGIN.length(),in.length()- PROG_END.length()).trim();
 		Program prog = new Program();
 		HashMap<String,FunctionProgramBlock> fc = parseFunctionProgramBlocks(lin, prog, id);
@@ -1344,7 +1348,7 @@ public class ProgramConverter
 			String[] keypart = e.getKey().split( Program.KEY_DELIM );
 			String namespace = keypart[0];
 			String name      = keypart[1];
-			prog.addFunctionProgramBlock(namespace, name, e.getValue());
+			prog.addFunctionProgramBlock(namespace, name, e.getValue(), opt);
 		}
 		return prog;
 	}

@@ -291,6 +291,7 @@ public class PrivacyPropagator
 					MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
 					Propagator propagator = new MatrixMultiplicationPropagatorPrivateFirst(input1, privacyConstraint1, input2, privacyConstraint2);
 					mergedPrivacyConstraint = propagator.propagate();
+					ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
 				}
 				else {
 					mergedPrivacyConstraint = mergeNary(new PrivacyConstraint[]{privacyConstraint1,privacyConstraint2},
@@ -582,7 +583,7 @@ public class PrivacyPropagator
 		if (!instOutputs.isEmpty()){
 			for ( CPOperand output : instOutputs ){
 				PrivacyConstraint outputPrivacyConstraint = output.getPrivacyConstraint();
-				if ( privacyConstraintActivated(outputPrivacyConstraint) )
+				if ( privacyConstraintActivated(outputPrivacyConstraint) || (outputPrivacyConstraint != null && outputPrivacyConstraint.hasFineGrainedConstraints()))
 					setOutputPrivacyConstraint(ec, outputPrivacyConstraint, output.getName());
 			}
 		}

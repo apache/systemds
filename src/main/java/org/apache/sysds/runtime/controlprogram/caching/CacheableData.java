@@ -225,6 +225,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_hdfsFileName = that._hdfsFileName;
 		_hdfsFileExists = that._hdfsFileExists; 
 		_gpuObjects = that._gpuObjects;
+		_privacyConstraint = that._privacyConstraint;
 	}
 
 	

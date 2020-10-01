@@ -247,9 +247,6 @@ public abstract class ProgramBlock implements ParseInfo
 				
 				// process actual instruction
 				tmp.processInstruction(ec);
-
-				// propagate input privacy constraints to output
-				PrivacyPropagator.postProcessInstruction(tmp, ec);
 				
 				// cache result
 				LineageCache.putValue(tmp, ec, et0);
@@ -263,6 +260,9 @@ public abstract class ProgramBlock implements ParseInfo
 						tmp.getExtendedOpcode(), System.nanoTime()-t0);
 				}
 			}
+
+			// propagate input privacy constraints to output
+			PrivacyPropagator.postProcessInstruction(tmp, ec);
 
 			// optional trace information (instruction and runtime)
 			if( LOG.isTraceEnabled() ) {

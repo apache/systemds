@@ -36,7 +36,7 @@ batch_size = $batch_size
 learning_rate = $eta
 utype = $utype
 freq = $freq
-# network_type = $network_type
+network_type = $network_type
 
 # currently ignored parameters
 workers = 1
@@ -48,6 +48,10 @@ channels = $channels
 hin = $hin
 win = $win
 
-model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
-# model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), channels, hin, win, epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+if(network_type == "TwoNN") {
+  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+}
+else {
+  model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), channels, hin, win, epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+}
 print(toString(model))

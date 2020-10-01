@@ -249,6 +249,10 @@ public class ParamservUtils {
 		return newProg;
 	}
 
+	public static void recompileProgramBlocks(int k, List<ProgramBlock> pbs) {
+		recompileProgramBlocks(k, pbs, false);
+	}
+
 	public static void recompileProgramBlocks(int k, List<ProgramBlock> pbs, boolean forceExecTypeCP) {
 		// Reset the visit status from root
 		for (ProgramBlock pb : pbs)

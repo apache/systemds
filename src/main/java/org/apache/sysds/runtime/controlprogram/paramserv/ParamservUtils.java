@@ -215,6 +215,12 @@ public class ParamservUtils {
 	}
 
 	public static ExecutionContext createExecutionContext(ExecutionContext ec,
+	  	LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
+	{
+		return createExecutionContext(ec, varsMap, updFunc, aggFunc, k, false);
+	}
+
+	public static ExecutionContext createExecutionContext(ExecutionContext ec,
 		LocalVariableMap varsMap, String updFunc, String aggFunc, int k, boolean forceExecTypeCP)
 	{
 		Program prog = ec.getProgram();

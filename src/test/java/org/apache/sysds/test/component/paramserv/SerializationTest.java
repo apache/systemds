@@ -27,6 +27,7 @@ import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -82,6 +83,7 @@ public class SerializationTest {
 			loDeserialized = (ListObject) in.readObject();
 		}
 		catch(Exception e){
+			System.out.println("Error while serializing and deserializing to bytes: " + e);
 			assert(false);
 		}
 

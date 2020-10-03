@@ -49,8 +49,7 @@ public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedSchem
 	 * @param fedMatrix the federated input matrix
 	 */
 	private List<MatrixObject> sliceFederatedMatrix(MatrixObject fedMatrix) {
-		if (fedMatrix.isFederated(FederationMap.FType.ROW)
-				|| fedMatrix.isFederated(FederationMap.FType.ROW)) {
+		if (fedMatrix.isFederated(FederationMap.FType.ROW)) {
 
 			List<MatrixObject> slices = Collections.synchronizedList(new ArrayList<>());
 			fedMatrix.getFedMapping().forEachParallel((range, data) -> {

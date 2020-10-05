@@ -55,7 +55,7 @@ return (Matrix[Double] Y) {
   # matrix to keep the index of KNN for each minority sample
   knn_index = matrix(0,k,nrow(X))
   # find nearest neighbour
-  for(i in 1:nrow(X))
+  parfor(i in 1:nrow(X))
   {
     knn = nn(X, X[i, ], k)
     knn_index[, i] = knn
@@ -68,11 +68,8 @@ return (Matrix[Double] Y) {
   synthetic_samples = matrix(0, iterLim*ncol(knn_index), ncol(X))
   
   # shuffle the nn indexes
-  if(k < iterLim)
-    rand_index = sample(k, iterLim, TRUE)
-  else 
-    rand_index = sample(k, iterLim)
-  
+  rand_index =  ifelse(k < iterLim, sample(k, iterLim, TRUE, 42), sample(k, iterLim, 42))
+
   while(iter < iterLim)
   {
     # pick the random NN
@@ -82,7 +79,7 @@ return (Matrix[Double] Y) {
     {
       index = as.scalar(knn_sample[1,i])
       X_diff = X[index,] - X[i, ]
-      gap = as.scalar(Rand(rows=1, cols=1, min=0, max=1, seed = 41))
+      gap = as.scalar(Rand(rows=1, cols=1, min=0, max=1, seed = 42))
       X_sys = X[i, ] + (gap*X_diff)
       synthetic_samples[iter*ncol(knn_index)+i,] = X_sys;
     }

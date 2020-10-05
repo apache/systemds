@@ -48,8 +48,13 @@ public class BuiltinSmoteTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testSmote0CP() {
+		runSmoteTest(100, 1, LopProperties.ExecType.CP);
+	}
+
+	@Test
 	public void testSmote1CP() {
-		runSmoteTest(300, 3, LopProperties.ExecType.CP);
+		runSmoteTest(300, 10, LopProperties.ExecType.CP);
 	}
 
 	@Test

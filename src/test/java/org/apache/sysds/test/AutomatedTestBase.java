@@ -211,8 +211,10 @@ public abstract class AutomatedTestBase {
 			e.printStackTrace();
 		}
 		outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
-		TEST_GPU = Boolean.parseBoolean(properties.getProperty("enableGPU"));
-		VERBOSE_STATS = Boolean.parseBoolean(properties.getProperty("enableStats"));
+		boolean gpu = Boolean.parseBoolean(properties.getProperty("enableGPU"));
+		TEST_GPU = TEST_GPU || gpu;
+		boolean stats = Boolean.parseBoolean(properties.getProperty("enableStats"));
+		VERBOSE_STATS = VERBOSE_STATS || stats;
 	}
 
 	// Timestamp before test start.
@@ -1188,6 +1190,14 @@ public abstract class AutomatedTestBase {
 	 */
 	protected ByteArrayOutputStream runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException,
 		String errMessage, int maxSparkInst) {
+
+		String name = "";
+		final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
+		for(int i=0; i < ste.length; i++) {
+			if(ste[i].getMethodName().equalsIgnoreCase("invoke0"))
+				name = ste[i-1].getClassName() + "." + ste[i-1].getMethodName();
+		}
+		LOG.info("Test method name: " + name);
 
 		String executionFile = sourceDirectory + selectedTest + ".dml";
 

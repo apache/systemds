@@ -20,7 +20,6 @@
 #
 #-------------------------------------------------------------
 
-
 ##############################################################
 # This script is part of the SystemDS binary release. It is
 # meant to work out of the box when unzipping the
@@ -55,7 +54,13 @@ else
   SYSTEMDS_STANDALONE_OPTS="\
       -Xmx4g\
       -Xms4g\
-      -Xmn400m"
+      -Xmn400m "
+fi
+
+if [ -n "$SYSTEMDS_REMOTE_DEBUGGING" ]; then
+	print_out "Overriding SYSTEMDS_REMOTE_DEBUGGING with env var: $SYSTEMDS_REMOTE_DEBUGGING"
+else
+  SYSTEMDS_REMOTE_DEBUGGING=" -agentlib:jdwp=transport=dt_socket,suspend=y,address=8787,server=y "
 fi
 
 if [ -n "${SYSTEMDS_DISTRIBUTED_OPTS}" ]; then
@@ -68,7 +73,7 @@ else
       --driver-memory 96g \
       --num-executors 4 \
       --executor-memory 64g \
-      --executor-cores 16"
+      --executor-cores 16 "
 fi
 
 
@@ -82,51 +87,88 @@ fi
 # some helper functions
 
 # error help print
-printUsageExit()
-{
+PRINT_SYSDS_HELP=0
+function printUsage {
 cat << EOF
-Usage: $0 [SystemDS.jar] [-f] <dml-filename> [arguments] [-help]
 
-    SystemDS.jar - Specify a custom SystemDS.jar file (this will be prepended to the classpath
+Usage: $0 [-r] [SystemDS.jar] [-f] <dml-filename> [arguments] [-help]
+
+    SystemDS.jar : Specify a custom SystemDS.jar file (this will be prepended
+                   to the classpath
                    or fed to spark-submit
-    dml-filename - The script file to run
-    arguments    - The arguments specified after the DML script are passed to SystemDS.
-                   Specify parameters that need to go to java/spark-submit by editing this
-                   run script.
-    -help        - Print this usage message and exit
+    -r           : Spawn a debug server for remote debugging (standalone and
+                   spark driver only atm). Default port is 8787 - change within
+                   this script if necessary. See SystemDS documentation on how
+                   to attach a remote debugger.
+    -f           : Optional prefix to the dml-filename for consistency with
+                   previous behavior dml-filename : The script file to run.
+                   This is mandatory unless running as a federated worker
+                   (see below).
+    arguments    : The arguments specified after the DML script are passed to
+                   SystemDS. Specify parameters that need to go to
+                   java/spark-submit by editing this run script.
+    -help        : Print this usage message and SystemDS parameter info
 
-Worker Usage: $0 WORKER [SystemDS.jar] <portnumber> [arguments] [-help]
+Worker Usage: $0 [-r] WORKER [SystemDS.jar] <portnumber> [arguments] [-help]
 
-    port         - The port to open for the federated worker.
+    port         : The port to open for the federated worker.
 
-Set custom launch configuration by setting/editing SYSTEMDS_STANDALONE_OPTS and/or SYSTEMDS_DISTRIBUTED_OPTS
+Set custom launch configuration by setting/editing SYSTEMDS_STANDALONE_OPTS
+and/or SYSTEMDS_DISTRIBUTED_OPTS.
 
-Set the environment variable SYSDS_DISTRIBUTED=1 to run spark-submit instead of local java
-Set SYSDS_QUIET=1 to omit extra information printed by this run script.
+Set the environment variable SYSDS_DISTRIBUTED=1 to run spark-submit instead of
+local java Set SYSDS_QUIET=1 to omit extra information printed by this run
+script.
+
 EOF
-  exit 1
+if [ ${PRINT_SYSDS_HELP} -eq 0 ]; then
+  exit 0
+fi
 }
 
 # print an error if no argument is supplied.
 if [ -z "$1" ] ; then
-    echo "Wrong Usage.";
-    printUsageExit;
+    echo "Wrong Usage. Add -help for additional parameters.";
+    echo ""
+    printUsage;
 fi
 
-while getopts "h:f:" options; do
+#This loop handles the parameters to the run-script, not the ones passed to SystemDS.
+#To not confuse getopts with SystemDS parameters, only the first two params are considered
+#here. If more run-script params are needed, adjust the next line accordingly
+while getopts ":hr:f:" options "$1$2"; do
   case $options in
-    h ) echo Warning: Help requested. Will exit after usage message;
-        printUsageExit
+    h ) echo "Help requested. Will exit after extended usage message!"
+        PRINT_SYSDS_HELP=1
+        printUsage
+        break
         ;;
-    \? ) echo Warning: Help requested. Will exit after usage message;
-        printUsageExit
+    \? ) echo "Unknown parameter -$OPTARG"
+        printUsage
+        exit
         ;;
     f )
         # silently remove -f (this variant is triggered if there's no
         # jar file or WORKER as first parameter)
-        shift
+        if  echo "$OPTARG" | grep -qi "dml"; then
+          break
+        else
+          print_out "No DML Script found after -f option."
+        fi
         ;;
-    * ) echo Error: Unexpected error while processing options;
+    r )
+        print_out "Spawning server for remote debugging"
+        if [ $SYSDS_DISTRIBUTED == 0 ]; then
+          SYSTEMDS_STANDALONE_OPTS=${SYSTEMDS_STANDALONE_OPTS}${SYSTEMDS_REMOTE_DEBUGGING}
+        else
+          SYSTEMDS_DISTRIBUTED_OPTS=${SYSTEMDS_DISTRIBUTED_OPTS}${SYSTEMDS_REMOTE_DEBUGGING}
+        fi
+        shift # remove -r from positional arguments
+        ;;
+    * )
+      print_out "Error: Unexpected error while processing options;"
+      printUsage
+      exit
   esac
 done
 
@@ -154,7 +196,7 @@ elif echo "$1" | grep -q "WORKER"; then
   re='^[0-9]+$'
   if ! [[ $PORT =~ $re ]] ; then
     echo "error: Port is not a number"
-    printUsageExit
+    printUsage
   fi
   shift
 else
@@ -269,6 +311,13 @@ CLASSPATH="${SYSTEMDS_JAR_FILE}${PATH_SEP} \
           ${SYSTEMDS_ROOT}${DIR_SEP}target${DIR_SEP}lib${DIR_SEP}*"
 # trim whitespace (introduced by the line breaks above)
 CLASSPATH=$(echo "${CLASSPATH}" | tr -d '[:space:]')
+
+if [ $PRINT_SYSDS_HELP == 1 ]; then
+  echo "----------------------------------------------------------------------"
+  echo "Further help on SystemDS arguments:"
+  java -cp $CLASSPATH org.apache.sysds.api.DMLScript -help
+  exit 1
+fi
 
 print_out "###############################################################################"
 print_out "#  SYSTEMDS_ROOT= $SYSTEMDS_ROOT"

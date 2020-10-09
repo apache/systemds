@@ -99,6 +99,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 
 
@@ -1046,12 +1047,12 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param out output matrix
 	 * @param in array of input matrix objects
 	 */
-	private static void cleanWorkerResultVariables(ExecutionContext ec, MatrixObject out, MatrixObject[] in) {
-		for( MatrixObject tmp : in ) {
-			//check for empty inputs (no iterations executed)
-			if( tmp != null && tmp != out )
-				ec.cleanupCacheableData(tmp);
-		}
+	private static void cleanWorkerResultVariables(ExecutionContext ec, MatrixObject out, MatrixObject[] in, boolean parallel) {
+		//check for empty inputs (no iterations executed)
+		Stream<MatrixObject> results = Arrays.stream(in).filter(m -> m!=null && m!=out);
+		//perform cleanup (parallel to mitigate file deletion bottlenecks)
+		(parallel ? results.parallel() : results)
+			.forEach(m -> ec.cleanupCacheableData(m));
 	}
 	
 	/**
@@ -1432,7 +1433,7 @@ public class ParForProgramBlock extends ForProgramBlock
 						ec.cleanupDataObject(exdata);
 					
 					//cleanup of intermediate result variables
-					cleanWorkerResultVariables( ec, out, in );
+					cleanWorkerResultVariables( ec, out, in, true );
 					
 					//set merged result variable
 					ec.setVariable(var._name, outNew);
@@ -1657,13 +1658,12 @@ public class ParForProgramBlock extends ForProgramBlock
 					}
 		
 					//cleanup of intermediate result variables
-					cleanWorkerResultVariables( _ec, out, in );
+					cleanWorkerResultVariables( _ec, out, in, false );
 				}
 				
 				_success = true;
 			}
-			catch(Exception ex)
-			{
+			catch(Exception ex) {
 				LOG.error("Error executing result merge: ", ex);
 			}
 		}

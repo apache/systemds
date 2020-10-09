@@ -19,40 +19,35 @@
 
 package org.apache.sysds.test.usertest.pythonapi;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
 import org.apache.sysds.api.PythonDMLScript;
 import org.junit.Test;
 
 /** Simple tests to verify startup of Python Gateway server happens without crashes */
 public class StartupTest {
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testStartupIncorrect_1() {
-        PythonDMLScript.main(new String[] {});
-    }
+	@Test(expected = IllegalArgumentException.class)
+	public void testStartupIncorrect_1() {
+		PythonDMLScript.main(new String[] {});
+	}
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testStartupIncorrect_2() {
-        PythonDMLScript.main(new String[] {""});
-    }
+	@Test(expected = IllegalArgumentException.class)
+	public void testStartupIncorrect_2() {
+		PythonDMLScript.main(new String[] {""});
+	}
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testStartupIncorrect_3() {
-        PythonDMLScript.main(new String[] {"131", "131"});
-    }
+	@Test(expected = IllegalArgumentException.class)
+	public void testStartupIncorrect_3() {
+		PythonDMLScript.main(new String[] {"131", "131"});
+	}
 
-    @Test(expected = NumberFormatException.class)
-    public void testStartupIncorrect_4() {
-        PythonDMLScript.main(new String[] {"Hello"});
-    }
+	@Test(expected = NumberFormatException.class)
+	public void testStartupIncorrect_4() {
+		PythonDMLScript.main(new String[] {"Hello"});
+	}
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testStartupIncorrect_5() {
-        // Number out of range
-        PythonDMLScript.main(new String[] {"918757"});
-    }
+	@Test(expected = IllegalArgumentException.class)
+	public void testStartupIncorrect_5() {
+		// Number out of range
+		PythonDMLScript.main(new String[] {"918757"});
+	}
 }

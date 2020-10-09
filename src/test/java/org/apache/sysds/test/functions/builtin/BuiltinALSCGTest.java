@@ -19,11 +19,14 @@
 
 package org.apache.sysds.test.functions.builtin;
 
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class BuiltinALSCGTest extends AutomatedTestBase {
@@ -32,8 +35,9 @@ public class BuiltinALSCGTest extends AutomatedTestBase {
     private final static String TEST_DIR = "functions/builtin/";
     private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinALSCGTest.class.getSimpleName() + "/";
 
-    private final static int rows = 300;
-    private final static int cols = 20;
+    private final static double eps = 0.00001;
+    private final static int rows = 6;
+    private final static int cols = 6;
 
     @Override
     public void setUp() {
@@ -60,10 +64,19 @@ public class BuiltinALSCGTest extends AutomatedTestBase {
         proArgs.add(output("V"));
         programArgs = proArgs.toArray(new String[proArgs.size()]);
 
-        double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
+        double[][] X =  {{7,1,1,2,2,1},{7,2,2,3,2,1},{7,3,1,4,1,1},{7,4,2,5,3,1},{7,5,3,6,5,1}, {7,6,5,1,4,1}};
         writeInputMatrixWithMTD("X", X, true);
 
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+
+        //compare expected results
+        HashMap<MatrixValue.CellIndex, Double> matrixV = readDMLMatrixFromHDFS("V");
+        HashMap<MatrixValue.CellIndex, Double> matrixU = readDMLMatrixFromHDFS("U");
+        double[][] doubleV = TestUtils.convertHashMapToDoubleArray(matrixV);
+        double[][] doubleU = TestUtils.convertHashMapToDoubleArray(matrixU);
+        double[][] result = TestUtils.performMatrixMultiplication(doubleU, doubleV);
+
+        TestUtils.compareMatrices(X, result, rows, cols, eps);
 
     }
 }

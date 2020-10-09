@@ -31,8 +31,8 @@
 # S1             Matrix[Integer]    ---      First attribute set {A_11, A_12, ... A_1m}
 # S2             Matrix[Integer]    ---      Second attribute set {A_21, A_22, ... A_2n}
 # T1             Matrix[Integer]    ---      Kind for attributes in S1
-                                            (kind=1 for scale, kind=2 for nominal, kind=3 for ordinal)
-# verbose        Boolean            ---      Print bivr stats
+#                                      (kind=1 for scale, kind=2 for nominal, kind=3 for ordinal)
+# verbose        Boolean            ---      Print bivar stats
 # -------------------------------------------------------------------------------------------------
 # OUTPUT: Four matrices with bivar stats
 #-------------------------------------------------------------

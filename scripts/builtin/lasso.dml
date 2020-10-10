@@ -67,7 +67,7 @@ m_lasso = function(Matrix[Double] X, Matrix[Double] y, Double tol = 10^(-15),
   inactive_set = matrix(1, rows=m, cols=1)
   iter = 0
   continue = TRUE
-  while(iter < maxiter & continue) {
+  while(iter < maxi & continue) {
     dw = matrix(0, rows=m, cols=1)
     dg = matrix(0, rows=m, cols=1)
     relChangeObj = -1.0
@@ -114,9 +114,7 @@ m_lasso = function(Matrix[Double] X, Matrix[Double] y, Double tol = 10^(-15),
     old_inactive_set = inactive_set
     inactive_set = w != 0
     diff = sum(abs(old_inactive_set - inactive_set))
-
-    if(diff == 0 & relChangeObj < tol)
-      continue = FALSE
+    continue = (diff != 0 | relChangeObj >= tol)
 
     num_inactive = sum(w != 0)
     if( verbose )

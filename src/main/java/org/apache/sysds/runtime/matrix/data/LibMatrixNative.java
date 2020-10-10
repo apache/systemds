@@ -106,7 +106,7 @@ public class LibMatrixNative
 					Statistics.nativeLibMatrixMultTime += System.nanoTime() - start;
 					Statistics.numNativeLibMatrixMultCalls.increment();
 				}
-				ret.recomputeNonZeros();
+				ret.setNonZeros(m1.rlen * m1.clen);
 				if(examSparsity)
 					ret.examSparsity();
 				return;

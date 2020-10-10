@@ -84,7 +84,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
 				//execute federated operations and aggregate
 				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
-				MatrixBlock ret = FederationUtils.rbind(tmp);
+				MatrixBlock ret = FederationUtils.bind(tmp, false);
 				ec.setMatrixOutput(output.getName(), ret);
 			}
 			else { //MM

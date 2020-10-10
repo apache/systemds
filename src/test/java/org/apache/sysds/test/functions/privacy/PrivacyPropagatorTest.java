@@ -123,28 +123,6 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		mmGeneralNoFineGrainedGeneralized(constraint1, constraint2, propagator);
 	}
 
-
-	private void mmGeneralNoFineGrainedGeneralized(PrivacyConstraint constraint1, PrivacyConstraint constraint2, MatrixMultiplicationPropagator propagator){
-		MatrixBlock inputMatrix1 = new MatrixBlock(10,20,15);
-		MatrixBlock inputMatrix2 = new MatrixBlock(20,30,12);
-		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
-		assertFalse("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
-	}
-
-	private void mmPropagationPrivateGeneralized(PrivacyLevel fineGrainedPrivacyLevel, MatrixMultiplicationPropagator propagator){
-		MatrixBlock inputMatrix1 = new MatrixBlock(10,20,15);
-		MatrixBlock inputMatrix2 = new MatrixBlock(20,30,12);
-		PrivacyConstraint constraint1 = new PrivacyConstraint(PrivacyLevel.Private);
-		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{3,8},new long[]{2,5}), fineGrainedPrivacyLevel);
-		PrivacyConstraint constraint2 = new PrivacyConstraint();
-		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
-		assertFalse("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
-	}
-
 	@Test
 	public void matrixMultiplicationPropagationTestPrivateGeneral(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirst();
@@ -180,33 +158,7 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
 		mmPropagationPrivateGeneralized(PrivacyLevel.PrivateAggregation, propagator);
 	}
-
-	private void mmPropagationTestPrivateFineGrainedGeneralized(MatrixMultiplicationPropagator propagator){
-		MatrixBlock inputMatrix1 = new MatrixBlock(4,3,2);
-		MatrixBlock inputMatrix2 = new MatrixBlock(3,3,4);
-		PrivacyConstraint constraint1 = new PrivacyConstraint();
-		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
-		PrivacyConstraint constraint2 = new PrivacyConstraint();
-		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
-		assertTrue("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
-		assertTrue("Merged constraint should not contain privacy level PrivateAggregation", mergedConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation).length == 0);
-		Map<DataRange, PrivacyLevel> outputElement1 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,0});
-		Map<DataRange, PrivacyLevel> outputElement2 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,1});
-		Map<DataRange, PrivacyLevel> outputElement3 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,2});
-		assertEquals(1, outputElement1.size());
-		assertEquals(1, outputElement2.size());
-		assertEquals(1, outputElement3.size());
-		assertTrue("Privacy level of element 1 is Private", outputElement1.containsValue(PrivacyLevel.Private));
-		assertTrue("Privacy level of element 2 is Private", outputElement2.containsValue(PrivacyLevel.Private));
-		assertTrue("Privacy level of element 3 is Private", outputElement3.containsValue(PrivacyLevel.Private));
-		Map<DataRange, PrivacyLevel> expectedEmpty = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{2,0}, new long[]{3,2}));
-		assertTrue("Any other index has no privacy constraint", expectedEmpty.isEmpty() ||
-			(!expectedEmpty.containsValue(PrivacyLevel.Private)
-				&& !expectedEmpty.containsValue(PrivacyLevel.PrivateAggregation)));
-	}
-
+	
 	@Test
 	public void matrixMultiplicationPropagationTestPrivateFineGrained(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirst();
@@ -225,25 +177,6 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		mmPropagationTestPrivateFineGrainedGeneralized(propagator);
 	}
 
-	private void mmPropagationTestPrivateFineGrained2Generalized(MatrixMultiplicationPropagator propagator){
-		MatrixBlock inputMatrix1 = new MatrixBlock(4,3,2);
-		MatrixBlock inputMatrix2 = new MatrixBlock(3,3,4);
-		PrivacyConstraint constraint1 = new PrivacyConstraint();
-		PrivacyConstraint constraint2 = new PrivacyConstraint();
-		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
-		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
-		assertTrue("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
-		assertTrue("Merged constraint should not contain privacy level PrivateAggregation", mergedConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation).length == 0);
-		Map<DataRange, PrivacyLevel> outputRange = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,0},new long[]{3,1}));
-		assertTrue("Privacy level is Private", outputRange.containsValue(PrivacyLevel.Private));
-		Map<DataRange, PrivacyLevel> expectedEmpty = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,2}, new long[]{3,2}));
-		assertTrue("Any other index has no privacy constraint", expectedEmpty.isEmpty() ||
-			(!expectedEmpty.containsValue(PrivacyLevel.Private)
-				&& !expectedEmpty.containsValue(PrivacyLevel.PrivateAggregation)));
-	}
-
 	@Test
 	public void matrixMultiplicationPropagationTestPrivateFineGrained2(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirst();
@@ -260,38 +193,6 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 	public void matrixMultiplicationPropagationTestPrivateFineGrained2PrivateFirstOptimized(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
 		mmPropagationTestPrivateFineGrained2Generalized(propagator);
-	}
-
-	private void mmPropagationTestPrivatePrivateAggregationFineGrainedGeneralized(MatrixMultiplicationPropagator propagator){
-		//Build
-		MatrixBlock inputMatrix1 = new MatrixBlock(4,3,2);
-		MatrixBlock inputMatrix2 = new MatrixBlock(3,3,4);
-		PrivacyConstraint constraint1 = new PrivacyConstraint();
-		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
-		PrivacyConstraint constraint2 = new PrivacyConstraint();
-		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.PrivateAggregation);
-
-		//Execute
-		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-
-		//Assert
-		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
-		assertTrue("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
-		assertTrue("Merged constraint should not contain privacy level PrivateAggregation", mergedConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation).length == 0);
-		Map<DataRange, PrivacyLevel> outputElement1 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,0});
-		Map<DataRange, PrivacyLevel> outputElement2 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,1});
-		Map<DataRange, PrivacyLevel> outputElement3 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,2});
-		assertEquals(1, outputElement1.size());
-		assertEquals(1, outputElement2.size());
-		assertEquals(1, outputElement3.size());
-		assertTrue("Privacy level of element 1 is Private", outputElement1.containsValue(PrivacyLevel.Private));
-		assertTrue("Privacy level of element 2 is Private", outputElement2.containsValue(PrivacyLevel.Private));
-		assertTrue("Privacy level of element 3 is Private", outputElement3.containsValue(PrivacyLevel.Private));
-		Map<DataRange, PrivacyLevel> expectedEmpty = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{2,0}, new long[]{3,2}));
-		assertTrue("Any other index has no privacy constraint", expectedEmpty.isEmpty() ||
-			(!expectedEmpty.containsValue(PrivacyLevel.Private)
-				&& !expectedEmpty.containsValue(PrivacyLevel.PrivateAggregation)));
 	}
 
 	@Test
@@ -337,21 +238,6 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		assertEquals("All values except one should be OperatorType.Aggregate", expected, actualArray[nonAggRow]);
 	}
 
-	private void getOperatorTypesRowMultipleNonAggTestGeneralized(MatrixMultiplicationPropagator propagator){
-		int rows = 4;
-		int cols = 2;
-		int nonAggRow = 2;
-		MatrixBlock m1 = getMatrixBlock(rows, cols);
-		// Make two rows NNZ=1
-		m1.getDenseBlock().set(nonAggRow,0,0);
-		m1.getDenseBlock().set(nonAggRow+1,0,0);
-		propagator.setFields(m1, null, null, null);
-		OperatorType[] actualArray = propagator.getOperatorTypesRow();
-		OperatorType expected = OperatorType.NonAggregate;
-		assertEquals("All values except two should be OperatorType.Aggregate", expected, actualArray[nonAggRow]);
-		assertEquals("All values except two should be OperatorType.Aggregate", expected, actualArray[nonAggRow+1]);
-	}
-
 	@Test
 	public void getOperatorTypesRowMultipleNonAggTest(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirst();
@@ -384,35 +270,10 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		assertEquals("All values except one should be OperatorType.Aggregate", expected, actualArray[nonAggCol]);
 	}
 
-	private void getOperatorTypesColMultipleNonAggTestGeneralized(MatrixMultiplicationPropagator propagator){
-		int rows = 2;
-		int cols = 3;
-		int nonAggCol = 1;
-		MatrixBlock m2 = getMatrixBlock(rows, cols);
-		// Make two cols NNZ=1
-		m2.getDenseBlock().set(0,nonAggCol,0);
-		m2.getDenseBlock().set(0,nonAggCol+1,0);
-		propagator.setFields(null, null, m2, null);
-		OperatorType[] actualArray = propagator.getOperatorTypesCol();
-		OperatorType expected = OperatorType.NonAggregate;
-		assertEquals("All values except two should be OperatorType.Aggregate", expected, actualArray[nonAggCol]);
-		assertEquals("All values except two should be OperatorType.Aggregate", expected, actualArray[nonAggCol+1]);
-	}
-
 	@Test
 	public void getOperatorTypesColMultipleNonAggTest(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirst();
 		getOperatorTypesColMultipleNonAggTestGeneralized(propagator);
-	}
-
-	private MatrixBlock getMatrixBlock(int rows, int cols){
-		DenseBlock denseM = new DenseBlockLFP64(new int[]{rows,cols});
-		for ( int r = 0; r < rows; r++ ){
-			for ( int c = 0; c < cols; c++ ){
-				denseM.set(r,c,r+c+1);
-			}
-		}
-		return new MatrixBlock(rows,cols,denseM);
 	}
 
 	@Test
@@ -451,27 +312,6 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		NonAggGeneralizedTest(PrivacyLevel.Private, propagator);
 	}
 
-	private void NonAggGeneralizedTest(PrivacyLevel privacyLevel, MatrixMultiplicationPropagator propagator){
-		int nonAggRow = 2;
-		MatrixBlock m1 = getMatrixBlock(4,2);
-		MatrixBlock m2 = getMatrixBlock(2, 3);
-		m1.getDenseBlock().set(nonAggRow,0,0);
-		PrivacyConstraint constraint1 = new PrivacyConstraint();
-		constraint1.getFineGrainedPrivacy().putRow(nonAggRow,2,privacyLevel);
-		PrivacyConstraint constraint2 = new PrivacyConstraint();
-		propagator.setFields(m1, constraint1, m2, constraint2);
-		PrivacyConstraint mergedPrivacyConstraint = propagator.propagate();
-		Map<DataRange, PrivacyLevel> constraints = mergedPrivacyConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{nonAggRow,0}, new long[]{nonAggRow,1}));
-		assertTrue("Output constraints should contain the privacy level " + privacyLevel.toString(),
-			constraints.containsValue(privacyLevel));
-		if ( privacyLevel == PrivacyLevel.Private)
-			assertFalse("Output constraints should not contain the privacy level PrivateAggregation",
-				constraints.containsValue(PrivacyLevel.PrivateAggregation));
-		else if ( privacyLevel == PrivacyLevel.PrivateAggregation )
-			assertFalse("Output constraints should not contain the privacy level Private",
-				constraints.containsValue(PrivacyLevel.Private));
-	}
-
 	@Test
 	public void matrixMultiplicationPropagationTestNonAgg2(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirst();
@@ -506,27 +346,6 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 	public void matrixMultiplicationPropagationTestNonAggPrivate2PrivateFirstOptimized(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
 		NonAggGeneralizedColTest(PrivacyLevel.Private, propagator);
-	}
-
-	private void NonAggGeneralizedColTest(PrivacyLevel privacyLevel, MatrixMultiplicationPropagator propagator){
-		int nonAggCol = 2;
-		MatrixBlock m1 = getMatrixBlock(4,2);
-		MatrixBlock m2 = getMatrixBlock(2, 3);
-		m2.getDenseBlock().set(0,nonAggCol,0);
-		PrivacyConstraint constraint1 = new PrivacyConstraint();
-		PrivacyConstraint constraint2 = new PrivacyConstraint();
-		constraint2.getFineGrainedPrivacy().putCol(nonAggCol,4,privacyLevel);
-		propagator.setFields(m1, constraint1, m2, constraint2);
-		PrivacyConstraint mergedPrivacyConstraint = propagator.propagate();
-		Map<DataRange, PrivacyLevel> constraints = mergedPrivacyConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,nonAggCol}, new long[]{3,nonAggCol}));
-		assertTrue("Output constraints should contain the privacy level " + privacyLevel.toString(),
-			constraints.containsValue(privacyLevel));
-		if ( privacyLevel == PrivacyLevel.Private)
-			assertFalse("Output constraints should not contain the privacy level PrivateAggregation",
-				constraints.containsValue(PrivacyLevel.PrivateAggregation));
-		else if ( privacyLevel == PrivacyLevel.PrivateAggregation )
-			assertFalse("Output constraints should not contain the privacy level Private",
-				constraints.containsValue(PrivacyLevel.Private));
 	}
 
 	@Test
@@ -564,8 +383,188 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
 		NonAggGeneralizedRowColTest(PrivacyLevel.PrivateAggregation, false, propagator);
 	}
+	
+	private static void mmGeneralNoFineGrainedGeneralized(PrivacyConstraint constraint1, PrivacyConstraint constraint2, MatrixMultiplicationPropagator propagator){
+		MatrixBlock inputMatrix1 = new MatrixBlock(10,20,15);
+		MatrixBlock inputMatrix2 = new MatrixBlock(20,30,12);
+		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
+		assertFalse("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
+	}
 
-	private void NonAggGeneralizedRowColTest(PrivacyLevel privacyLevel, boolean putElement, MatrixMultiplicationPropagator propagator){
+	private static void mmPropagationPrivateGeneralized(PrivacyLevel fineGrainedPrivacyLevel, MatrixMultiplicationPropagator propagator){
+		MatrixBlock inputMatrix1 = new MatrixBlock(10,20,15);
+		MatrixBlock inputMatrix2 = new MatrixBlock(20,30,12);
+		PrivacyConstraint constraint1 = new PrivacyConstraint(PrivacyLevel.Private);
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{3,8},new long[]{2,5}), fineGrainedPrivacyLevel);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
+		assertFalse("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
+	}
+
+	private static void mmPropagationTestPrivateFineGrainedGeneralized(MatrixMultiplicationPropagator propagator){
+		MatrixBlock inputMatrix1 = new MatrixBlock(4,3,2);
+		MatrixBlock inputMatrix2 = new MatrixBlock(3,3,4);
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
+		assertTrue("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
+		assertTrue("Merged constraint should not contain privacy level PrivateAggregation", mergedConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation).length == 0);
+		Map<DataRange, PrivacyLevel> outputElement1 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,0});
+		Map<DataRange, PrivacyLevel> outputElement2 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,1});
+		Map<DataRange, PrivacyLevel> outputElement3 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,2});
+		assertEquals(1, outputElement1.size());
+		assertEquals(1, outputElement2.size());
+		assertEquals(1, outputElement3.size());
+		assertTrue("Privacy level of element 1 is Private", outputElement1.containsValue(PrivacyLevel.Private));
+		assertTrue("Privacy level of element 2 is Private", outputElement2.containsValue(PrivacyLevel.Private));
+		assertTrue("Privacy level of element 3 is Private", outputElement3.containsValue(PrivacyLevel.Private));
+		Map<DataRange, PrivacyLevel> expectedEmpty = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{2,0}, new long[]{3,2}));
+		assertTrue("Any other index has no privacy constraint", expectedEmpty.isEmpty() ||
+			(!expectedEmpty.containsValue(PrivacyLevel.Private)
+				&& !expectedEmpty.containsValue(PrivacyLevel.PrivateAggregation)));
+	}
+
+	private static void mmPropagationTestPrivatePrivateAggregationFineGrainedGeneralized(MatrixMultiplicationPropagator propagator){
+		//Build
+		MatrixBlock inputMatrix1 = new MatrixBlock(4,3,2);
+		MatrixBlock inputMatrix2 = new MatrixBlock(3,3,4);
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.PrivateAggregation);
+
+		//Execute
+		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+
+		//Assert
+		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
+		assertTrue("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
+		assertTrue("Merged constraint should not contain privacy level PrivateAggregation", mergedConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation).length == 0);
+		Map<DataRange, PrivacyLevel> outputElement1 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,0});
+		Map<DataRange, PrivacyLevel> outputElement2 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,1});
+		Map<DataRange, PrivacyLevel> outputElement3 = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevelOfElement(new long[]{1,2});
+		assertEquals(1, outputElement1.size());
+		assertEquals(1, outputElement2.size());
+		assertEquals(1, outputElement3.size());
+		assertTrue("Privacy level of element 1 is Private", outputElement1.containsValue(PrivacyLevel.Private));
+		assertTrue("Privacy level of element 2 is Private", outputElement2.containsValue(PrivacyLevel.Private));
+		assertTrue("Privacy level of element 3 is Private", outputElement3.containsValue(PrivacyLevel.Private));
+		Map<DataRange, PrivacyLevel> expectedEmpty = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{2,0}, new long[]{3,2}));
+		assertTrue("Any other index has no privacy constraint", expectedEmpty.isEmpty() ||
+			(!expectedEmpty.containsValue(PrivacyLevel.Private)
+				&& !expectedEmpty.containsValue(PrivacyLevel.PrivateAggregation)));
+	}
+
+	private static void mmPropagationTestPrivateFineGrained2Generalized(MatrixMultiplicationPropagator propagator){
+		MatrixBlock inputMatrix1 = new MatrixBlock(4,3,2);
+		MatrixBlock inputMatrix2 = new MatrixBlock(3,3,4);
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{1,1}), PrivacyLevel.Private);
+		propagator.setFields(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		assertTrue("Privacy should be set to Private", mergedConstraint.hasPrivateElements());
+		assertTrue("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
+		assertTrue("Merged constraint should not contain privacy level PrivateAggregation", mergedConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation).length == 0);
+		Map<DataRange, PrivacyLevel> outputRange = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,0},new long[]{3,1}));
+		assertTrue("Privacy level is Private", outputRange.containsValue(PrivacyLevel.Private));
+		Map<DataRange, PrivacyLevel> expectedEmpty = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,2}, new long[]{3,2}));
+		assertTrue("Any other index has no privacy constraint", expectedEmpty.isEmpty() ||
+			(!expectedEmpty.containsValue(PrivacyLevel.Private)
+				&& !expectedEmpty.containsValue(PrivacyLevel.PrivateAggregation)));
+	}
+
+	private static void getOperatorTypesRowMultipleNonAggTestGeneralized(MatrixMultiplicationPropagator propagator){
+		int rows = 4;
+		int cols = 2;
+		int nonAggRow = 2;
+		MatrixBlock m1 = getMatrixBlock(rows, cols);
+		// Make two rows NNZ=1
+		m1.getDenseBlock().set(nonAggRow,0,0);
+		m1.getDenseBlock().set(nonAggRow+1,0,0);
+		propagator.setFields(m1, null, null, null);
+		OperatorType[] actualArray = propagator.getOperatorTypesRow();
+		OperatorType expected = OperatorType.NonAggregate;
+		assertEquals("All values except two should be OperatorType.Aggregate", expected, actualArray[nonAggRow]);
+		assertEquals("All values except two should be OperatorType.Aggregate", expected, actualArray[nonAggRow+1]);
+	}
+
+	private static void getOperatorTypesColMultipleNonAggTestGeneralized(MatrixMultiplicationPropagator propagator){
+		int rows = 2;
+		int cols = 3;
+		int nonAggCol = 1;
+		MatrixBlock m2 = getMatrixBlock(rows, cols);
+		// Make two cols NNZ=1
+		m2.getDenseBlock().set(0,nonAggCol,0);
+		m2.getDenseBlock().set(0,nonAggCol+1,0);
+		propagator.setFields(null, null, m2, null);
+		OperatorType[] actualArray = propagator.getOperatorTypesCol();
+		OperatorType expected = OperatorType.NonAggregate;
+		assertEquals("All values except two should be OperatorType.Aggregate", expected, actualArray[nonAggCol]);
+		assertEquals("All values except two should be OperatorType.Aggregate", expected, actualArray[nonAggCol+1]);
+	}
+	
+	private static MatrixBlock getMatrixBlock(int rows, int cols){
+		DenseBlock denseM = new DenseBlockLFP64(new int[]{rows,cols});
+		for ( int r = 0; r < rows; r++ ){
+			for ( int c = 0; c < cols; c++ ){
+				denseM.set(r,c,r+c+1);
+			}
+		}
+		return new MatrixBlock(rows,cols,denseM);
+	}
+
+	private static void NonAggGeneralizedTest(PrivacyLevel privacyLevel, MatrixMultiplicationPropagator propagator){
+		int nonAggRow = 2;
+		MatrixBlock m1 = getMatrixBlock(4,2);
+		MatrixBlock m2 = getMatrixBlock(2, 3);
+		m1.getDenseBlock().set(nonAggRow,0,0);
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		constraint1.getFineGrainedPrivacy().putRow(nonAggRow,2,privacyLevel);
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		propagator.setFields(m1, constraint1, m2, constraint2);
+		PrivacyConstraint mergedPrivacyConstraint = propagator.propagate();
+		Map<DataRange, PrivacyLevel> constraints = mergedPrivacyConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{nonAggRow,0}, new long[]{nonAggRow,1}));
+		assertTrue("Output constraints should contain the privacy level " + privacyLevel.toString(),
+			constraints.containsValue(privacyLevel));
+		if ( privacyLevel == PrivacyLevel.Private)
+			assertFalse("Output constraints should not contain the privacy level PrivateAggregation",
+				constraints.containsValue(PrivacyLevel.PrivateAggregation));
+		else if ( privacyLevel == PrivacyLevel.PrivateAggregation )
+			assertFalse("Output constraints should not contain the privacy level Private",
+				constraints.containsValue(PrivacyLevel.Private));
+	}
+	
+	private static void NonAggGeneralizedColTest(PrivacyLevel privacyLevel, MatrixMultiplicationPropagator propagator){
+		int nonAggCol = 2;
+		MatrixBlock m1 = getMatrixBlock(4,2);
+		MatrixBlock m2 = getMatrixBlock(2, 3);
+		m2.getDenseBlock().set(0,nonAggCol,0);
+		PrivacyConstraint constraint1 = new PrivacyConstraint();
+		PrivacyConstraint constraint2 = new PrivacyConstraint();
+		constraint2.getFineGrainedPrivacy().putCol(nonAggCol,4,privacyLevel);
+		propagator.setFields(m1, constraint1, m2, constraint2);
+		PrivacyConstraint mergedPrivacyConstraint = propagator.propagate();
+		Map<DataRange, PrivacyLevel> constraints = mergedPrivacyConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,nonAggCol}, new long[]{3,nonAggCol}));
+		assertTrue("Output constraints should contain the privacy level " + privacyLevel.toString(),
+			constraints.containsValue(privacyLevel));
+		if ( privacyLevel == PrivacyLevel.Private)
+			assertFalse("Output constraints should not contain the privacy level PrivateAggregation",
+				constraints.containsValue(PrivacyLevel.PrivateAggregation));
+		else if ( privacyLevel == PrivacyLevel.PrivateAggregation )
+			assertFalse("Output constraints should not contain the privacy level Private",
+				constraints.containsValue(PrivacyLevel.Private));
+	}
+	
+	private static void NonAggGeneralizedRowColTest(PrivacyLevel privacyLevel, boolean putElement, MatrixMultiplicationPropagator propagator){
 		int nonAgg = 2;
 		MatrixBlock m1 = getMatrixBlock(4,2);
 		MatrixBlock m2 = getMatrixBlock(2, 3);
@@ -583,7 +582,7 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		int privacyLevelSum = 0;
 		DataRange levelRange = null;
 		PrivacyLevel level = PrivacyLevel.None;
-		for ( Map.Entry constraint : constraints )
+		for ( Map.Entry<DataRange, PrivacyLevel> constraint : constraints )
 			if ( constraint.getValue() == privacyLevel ){
 				privacyLevelSum++;
 				levelRange = (DataRange)constraint.getKey();

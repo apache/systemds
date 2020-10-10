@@ -245,7 +245,8 @@ public class LibTensorAgg {
 				break;
 			}
 			case INT64:
-			case INT32: {
+			case INT32:
+			case UINT8: {
 				DenseBlock a = in.getDenseBlock();
 				long sum = 0;
 				int[] ix = new int[a.numDims()];

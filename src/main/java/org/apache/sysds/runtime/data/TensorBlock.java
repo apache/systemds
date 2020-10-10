@@ -590,6 +590,8 @@ public class TensorBlock implements CacheBlock, Externalizable {
 		long size = 8 + 1;
 		if (!bt.isSparse()) {
 			switch (bt._vt) {
+				case UINT8:
+					size += 1 * getLength(); break;
 				case INT32:
 				case FP32:
 					size += 4 * getLength(); break;

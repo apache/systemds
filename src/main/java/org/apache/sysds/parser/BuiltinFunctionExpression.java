@@ -608,6 +608,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					break;
 				case INT64:
 				case INT32:
+				case UINT8:
 				case BOOLEAN:
 					output.setValueType(ValueType.INT64);
 					break;

@@ -94,5 +94,24 @@ After some time it should return with:
 The first time you package the system it will take longer since maven will download the dependencies.
 But successive compiles should become faster.
 
+## MAC
+
+###JAVA
+
+1 . Download the JAVA 8 from https://www.oracle.com/in/java/technologies/javase/javase-jdk8-downloads.html
+2. Install this package by clicking the open box in the Finder
+3. Set environment variables
+4. Verify installation by typing java -version
+
+###MAVEN
+1 . Download Maven for Mac OS from https://maven.apache.org/download.cgi
+2. Download the "Binary zip archive" file
+3. Extract using thre below command line $ tar -xvf apache-maven-3.6.3-bin.tar.gz
+4. Set environment variables
+5. Verify installation by typing mvn -version
+
+Now everything is setup and ready to go! To execute dml scripts look at Execute SystemDS
+
+
 Now everything is setup and ready to go!
 To execute dml scripts look at [Execute SystemDS](run)

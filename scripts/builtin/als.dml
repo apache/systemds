@@ -1,0 +1,63 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#  
+# This script computes an approximate factorization of a low-rank matrix X into two matrices U and V
+# using different implementations of the Alternating-Least-Squares (ALS) algorithm.
+# Matrices U and V are computed by minimizing a loss function (with regularization).
+#
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X       String   ---      Location to read the input matrix X to be factorized
+# rank    Int      10       Rank of the factorization
+# reg     String   "L2"	    Regularization: 
+#                           "L2" = L2 regularization;
+#                              f (U, V) = 0.5 * sum (W * (U %*% V - X) ^ 2)
+#                                       + 0.5 * lambda * (sum (U ^ 2) + sum (V ^ 2))
+#                           "wL2" = weighted L2 regularization
+#                              f (U, V) = 0.5 * sum (W * (U %*% V - X) ^ 2)
+#                                       + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) 
+#                                       + sum (V ^ 2 * col_nonzeros))
+# lambda  Double   0.000001 Regularization parameter, no regularization if 0.0
+# maxi    Int      50       Maximum number of iterations
+# check   Boolean  TRUE     Check for convergence after every iteration, i.e., updating U and V once
+# thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared 
+#                           if the decrease in loss in any two consecutive iterations falls below this threshold; 
+#                           if check is FALSE thr is ignored
+# ---------------------------------------------------------------------------------------------
+# OUTPUT:
+# 1- An m x r matrix U, where r is the factorization rank 
+# 2- An r x n matrix V
+
+m_als = function(Matrix[Double] X, Integer rank = 10, String reg = "L2", Double lambda = 0.000001,
+  Integer maxi = 50, Boolean check = TRUE, Double thr = 0.0001, Boolean verbose = TRUE)
+  return (Matrix[Double] U, Matrix[Double] V)
+{
+  N = 10000; # for large problems, use scalable alsCG
+  if( reg != "L2" | nrow(X) > N | ncol(X) > N )
+    [U, V] = alsCG(X=X, rank=rank, reg=reg, lambda=lambda,
+                   maxi=maxi, check=check, thr=thr, verbose=verbose);
+  else
+    [U, V] = alsDS(X=X, rank=rank, lambda=lambda, maxi=maxi,
+                   check=check, thr=thr, verbose=verbose);
+}

@@ -2339,14 +2339,15 @@ public class TestUtils
 	 * @return computed result
 	 */
 	public static double[][] performMatrixMultiplication(double[][] a, double[][] b) {
-		int rows = a.length;
-		int cols = b[0].length;
-		double[][] result = new double[rows][cols];
+		int m = a.length;
+		int n = a[0].length;
+		int l = b[0].length;
+		double[][] result = new double[m][l];
 
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < cols; j++) {
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < l; j++) {
 				double value = 0;
-				for (int k = 0; k < a[i].length; k++) {
+				for (int k = 0; k < n; k++) {
 					value += (a[i][k] * b[k][j]);
 				}
 				result[i][j] = value;

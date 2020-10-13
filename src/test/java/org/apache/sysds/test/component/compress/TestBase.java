@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
+import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
@@ -46,13 +47,14 @@ public class TestBase {
 	protected double sparsity;
 
 	protected CompressionSettings compressionSettings;
+	protected OverLapping overlappingType;
 
 	// Input
 	protected double[][] input;
 	protected MatrixBlock mb;
 
 	public TestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
-		CompressionSettings compressionSettings, MatrixTypology MatrixTypology) {
+		CompressionSettings compressionSettings, MatrixTypology MatrixTypology, OverLapping ov) {
 
 		this.sparsity = TestConstants.getSparsityValue(sparType);
 		this.rows = TestConstants.getNumberOfRows(MatrixTypology);
@@ -60,7 +62,7 @@ public class TestBase {
 
 		this.max = TestConstants.getMaxRangeValue(valueRange);
 		this.min = TestConstants.getMinRangeValue(valueRange);
-
+		this.overlappingType = ov;
 		try {
 			switch(valType) {
 				case CONST:
@@ -126,6 +128,7 @@ public class TestBase {
 		builder.append(String.format("%6s%12s", "Min:", min));
 		builder.append(String.format("%6s%12s", "Max:", max));
 		builder.append(String.format("%6s%5s", "Spar:", sparsity));
+		builder.append(String.format("%6s%5s", "OV:", overlappingType));
 		builder.append(String.format("%6s%8s", "CP:", compressionSettings));
 
 		return builder.toString();

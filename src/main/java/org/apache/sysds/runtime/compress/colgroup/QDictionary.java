@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -60,6 +61,7 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public double[] getValues() {
+		// TODO: use a temporary double array for this.
 		double[] res = new double[_values.length];
 		for(int i = 0; i < _values.length; i++) {
 			res[i] = getValue(i);
@@ -139,9 +141,8 @@ public class QDictionary extends ADictionary {
 		}
 		else {
 			double[] temp = new double[_values.length];
-			double max = op.executeScalar(getValue(0));
-			temp[0] = max;
-			for(int i = 1; i < _values.length; i++) {
+			double max = Math.abs(op.executeScalar(getValue(0)));
+			for(int i = 0; i < _values.length; i++) {
 				temp[i] = op.executeScalar(getValue(i));
 				double absTemp = Math.abs(temp[i]);
 				if(absTemp > max) {
@@ -153,14 +154,13 @@ public class QDictionary extends ADictionary {
 				_values[i] = (byte) Math.round(temp[i] / _scale);
 			}
 		}
-
 		return this;
 	}
 
 	@Override
 	public QDictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
 		double[] temp = getValues();
-		double max = newVal;
+		double max = Math.abs(newVal);
 		for(int i = 0; i < _values.length; i++) {
 			temp[i] = op.executeScalar(temp[i]);
 			double absTemp = Math.abs(temp[i]);
@@ -174,6 +174,38 @@ public class QDictionary extends ADictionary {
 			res[i] = (byte) Math.round(temp[i] / scale);
 		}
 		Arrays.fill(res, _values.length, _values.length + numCols, (byte) Math.round(newVal / scale));
+		return new QDictionary(res, scale);
+	}
+
+	@Override
+	public QDictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+		// TODO Use a temporary double array for this.
+		double[] temp = sparseSafe ? new double[_values.length] : new double[_values.length + colIndexes.length];
+		double max = Math.abs(fn.execute(0, v[0]));
+		final int colL = colIndexes.length;
+		int i = 0;
+		for(; i < _values.length; i++) {
+			temp[i] = fn.execute(_values[i] * _scale, v[colIndexes[i % colL]]);
+			double absTemp = Math.abs(temp[i]);
+			if(absTemp > max) {
+				max = absTemp;
+			}
+		}
+		if(!sparseSafe)
+			for(; i < _values.length + colL; i++) {
+				temp[i] = fn.execute(0, v[colIndexes[i % colL]]);
+				double absTemp = Math.abs(temp[i]);
+				if(absTemp > max) {
+					max = absTemp;
+				}
+			}
+
+		double scale = max / (double) (Byte.MAX_VALUE);
+		byte[] res = sparseSafe ? _values : new byte[_values.length + colIndexes.length];
+
+		for(i = 0; i < temp.length; i++) {
+			res[i] = (byte) Math.round(temp[i] / scale);
+		}
 		return new QDictionary(res, scale);
 	}
 
@@ -250,12 +282,11 @@ public class QDictionary extends ADictionary {
 	@Override
 	protected void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus) {
 
-
-		final int rows = c.length/2;
+		final int rows = c.length / 2;
 		if(!(kplus instanceof KahanPlusSq)) {
 			int[] sum = new int[colIndexes.length];
 			int valOff = 0;
-			for(int k = 0; k < _values.length/ colIndexes.length; k++) {
+			for(int k = 0; k < _values.length / colIndexes.length; k++) {
 				int cntk = counts[k];
 				for(int j = 0; j < colIndexes.length; j++) {
 					sum[j] += cntk * getValueByte(valOff++);
@@ -268,7 +299,7 @@ public class QDictionary extends ADictionary {
 		else {
 			KahanObject kbuff = new KahanObject(0, 0);
 			int valOff = 0;
-			for(int k = 0; k < _values.length/ colIndexes.length; k++) {
+			for(int k = 0; k < _values.length / colIndexes.length; k++) {
 				int cntk = counts[k];
 				for(int j = 0; j < colIndexes.length; j++) {
 					kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
@@ -304,5 +335,13 @@ public class QDictionary extends ADictionary {
 			}
 			return kbuff._sum;
 		}
+	}
+
+	public StringBuilder getString(StringBuilder sb, int colIndexes) {
+		for(int i = 0; i < _values.length; i++) {
+			sb.append(_values[i]);
+			sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n" : " ");
+		}
+		return sb;
 	}
 }

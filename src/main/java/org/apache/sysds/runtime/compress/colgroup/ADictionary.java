@@ -25,6 +25,7 @@ import java.io.IOException;
 
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -101,6 +102,8 @@ public abstract class ADictionary {
 	 * @return Another dictionary with modified values.
 	 */
 	public abstract ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols);
+
+	public abstract ADictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes);
 
 	/**
 	 * Returns a deep clone of the dictionary.
@@ -196,4 +199,6 @@ public abstract class ADictionary {
 	protected abstract void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus);
 
 	protected abstract double sum(int[] counts, int ncol,  KahanFunction kplus);
+	
+	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
 }

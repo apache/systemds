@@ -43,7 +43,7 @@ public class ColumnGroupPartitionerCost extends ColumnGroupPartitioner {
 	 * of distinct rows not the total number of values. That value can be calculated by multiplying with the number of
 	 * rows in the coCoded group.
 	 */
-	private static final int largestDistinct = 512;
+	private static final int largestDistinct = 256;
 
 	@Override
 	public List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo,

@@ -109,5 +109,4 @@ public final class BitmapLossy extends ABitmap {
 		sb.append("\nOffsets:" + Arrays.toString(_offsetsLists));
 		return sb.toString();
 	}
-
 }

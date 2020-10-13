@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDist
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
+import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
@@ -55,8 +56,8 @@ import org.openjdk.jol.layouters.Layouter;
 public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	public CompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettings compSettings, MatrixTypology matrixTypology) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, 1);
+		CompressionSettings compSettings, MatrixTypology matrixTypology, OverLapping ov) {
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1);
 	}
 
 	@Test
@@ -67,14 +68,17 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			for(int i = 0; i < rows; i++)
 				for(int j = 0; j < cols; j++) {
-					double ulaVal = input[i][j];
+					double ulaVal = mb.quickGetValue(i, j);
 					double claVal = cmb.getValue(i, j); // calls quickGetValue internally
-					if(compressionSettings.lossy) {
+					if(compressionSettings.lossy)
 						TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false);
-					}
-					else {
+					else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
+						overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
+						overlappingType == OverLapping.COL)
+						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 8192);
+					else
 						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0); // Should be exactly same value
-					}
+
 				}
 		}
 		catch(Exception e) {
@@ -103,12 +107,15 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy) {
+			if(compressionSettings.lossy)
 				TestUtils.compareMatrices(d1, d2, lossyTolerance);
-			}
-			else {
+
+			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
+				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 8192, 128, this.toString());
+			else
 				TestUtils.compareMatricesBitAvgDistance(d1, d2, 0, 1, "Test Append Matrix");
-			}
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -119,13 +126,16 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	@Test
 	public void testCountDistinct() {
 		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
+			// Counting distinct is potentially wrong in cases with overlapping, resulting in a few to many or few
+			// elements.
+			if(!(cmb instanceof CompressedMatrixBlock) || (overlappingType == OverLapping.MATRIX_MULT_NEGATIVE))
 				return; // Input was not compressed then just pass test
 
 			CountDistinctOperator op = new CountDistinctOperator(CountDistinctTypes.COUNT);
 			int ret1 = LibMatrixCountDistinct.estimateDistinctValues(mb, op);
 			int ret2 = LibMatrixCountDistinct.estimateDistinctValues(cmb, op);
-			String base = compressionSettings.toString() + "\n";
+
+			String base = this.toString() + "\n";
 			if(compressionSettings.lossy) {
 				// The number of distinct values should be same or lower in lossy mode.
 				// assertTrue(base + "lossy distinct count " +ret2+ "is less than full " + ret1, ret1 >= ret2);
@@ -174,12 +184,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(mb);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(tmp);
-			if(compressionSettings.lossy) {
-				TestUtils.compareMatrices(d1, d2, lossyTolerance, compressionSettings.toString());
-			}
-			else {
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 0, 0, compressionSettings.toString());
-			}
+			if(compressionSettings.lossy)
+				TestUtils.compareMatrices(d1, d2, lossyTolerance, this.toString());
+			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
+				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 8192, 128, this.toString());
+			else
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 0, 0, this.toString());
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();

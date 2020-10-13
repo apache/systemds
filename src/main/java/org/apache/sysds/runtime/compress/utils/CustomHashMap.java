@@ -22,9 +22,9 @@ package org.apache.sysds.runtime.compress.utils;
  * This class provides a memory-efficient base for Custom HashMaps for restricted use cases.
  */
 public abstract class CustomHashMap {
-	protected static final int INIT_CAPACITY = 8;
+	protected static final int INIT_CAPACITY = 32;
 	protected static final int RESIZE_FACTOR = 2;
-	protected static final float LOAD_FACTOR = 0.75f;
+	protected static final float LOAD_FACTOR = 0.30f;
 
 	protected int _size = -1;
 

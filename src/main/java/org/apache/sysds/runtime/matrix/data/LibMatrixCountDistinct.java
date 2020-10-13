@@ -114,17 +114,27 @@ public class LibMatrixCountDistinct {
 	private static int countDistinctValuesNaive(MatrixBlock in) {
 		Set<Double> distinct = new HashSet<>();
 		double[] data;
-		long nonZeros = in.getNonZeros();
-		if(nonZeros < in.getNumColumns() * in.getNumRows()) {
-			distinct.add(0d);
-		}
-		if(in.sparseBlock == null && in.denseBlock == null) {
-			List<ColGroup> colGroups = ((CompressedMatrixBlock) in).getColGroups();
-			for(ColGroup cg : colGroups) {
-				countDistinctValuesNaive(cg.getValues(), distinct);
+		if(in instanceof CompressedMatrixBlock) {
+			CompressedMatrixBlock inC = (CompressedMatrixBlock) in;
+			if(inC.isOverlapping()) {
+				in = inC.decompress();
+				inC = null;
+			}
+			else {
+				List<ColGroup> colGroups = ((CompressedMatrixBlock) in).getColGroups();
+				for(ColGroup cg : colGroups) {
+					countDistinctValuesNaive(cg.getValues(), distinct);
+				}
 			}
 		}
-		else if(in.sparseBlock != null) {
+
+		long nonZeros = in.getNonZeros();
+
+		if(nonZeros != -1 && nonZeros < in.getNumColumns() * in.getNumRows()) {
+			distinct.add(0d);
+		}
+
+		if(in.sparseBlock != null) {
 			SparseBlock sb = in.sparseBlock;
 
 			if(in.sparseBlock.isContiguous()) {
@@ -140,7 +150,7 @@ public class LibMatrixCountDistinct {
 				}
 			}
 		}
-		else {
+		else if(in.denseBlock != null) {
 			DenseBlock db = in.denseBlock;
 			for(int i = 0; i <= db.numBlocks(); i++) {
 				data = db.valuesAt(i);

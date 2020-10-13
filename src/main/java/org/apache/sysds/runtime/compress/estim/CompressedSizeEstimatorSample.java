@@ -272,5 +272,4 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	private static int[] getSortedUniformSample(int range, int smplSize, long seed) {
 		return UtilFunctions.getSortedSampleIndexes(range, smplSize, seed);
 	}
-
 }

@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.SortUtils;
 
@@ -276,13 +277,13 @@ public class ColGroupUncompressed extends ColGroup {
 
 	public void rightMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 		// Pull out the relevant rows of the vector
-		
+
 		int clen = _colIndexes.length;
 		MatrixBlock subMatrix = new MatrixBlock(clen, matrix.getNumColumns(), false);
 		subMatrix.allocateDenseBlock();
 		double[] b = subMatrix.getDenseBlockValues();
-		
-		for(int colIx = 0; colIx < clen; colIx++){
+
+		for(int colIx = 0; colIx < clen; colIx++) {
 			int row = _colIndexes[colIx];
 			for(int col = 0; col < matrix.getNumColumns(); col++)
 				b[colIx * matrix.getNumColumns() + col] = matrix.quickGetValue(row, col);
@@ -316,7 +317,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] vector, double[] c, int numVals, double[] values, int numRows, int numCols,
+	public void leftMultByMatrix(double[] vector, double[] c, double[] values, int numRows, int numCols,
 		int rl, int ru, int vOff) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
@@ -346,6 +347,11 @@ public class ColGroupUncompressed extends ColGroup {
 		MatrixBlock retContent = _data.scalarOperations(op, new MatrixBlock());
 		// construct new uncompressed column group
 		return new ColGroupUncompressed(getColIndices(), _data.getNumRows(), retContent);
+	}
+
+	@Override
+	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
+		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] ret) {
@@ -504,7 +510,11 @@ public class ColGroupUncompressed extends ColGroup {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append("\n");
-		sb.append(_data.toString());
+		sb.append(_data.getNumColumns() + " ");
+		sb.append(_data.getNumRows() + " ");
+		sb.append(_data.getNonZeros() + " ");
+		sb.append(_data.isInSparseFormat() + " ");
+		// sb.append(_data.toString());
 		return sb.toString();
 	}
 

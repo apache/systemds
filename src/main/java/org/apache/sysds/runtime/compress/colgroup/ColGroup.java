@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,7 +33,10 @@ import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
  * Class that stores information about a column group within a compressed matrix block. There are subclasses specific to
@@ -52,7 +56,7 @@ public abstract class ColGroup implements Serializable {
 	 * DDC for Dense dictionary encoding
 	 */
 	public enum CompressionType {
-		UNCOMPRESSED, RLE, OLE, DDC,
+		UNCOMPRESSED, RLE, OLE, DDC, CONST
 	}
 
 	/**
@@ -61,7 +65,7 @@ public abstract class ColGroup implements Serializable {
 	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
 	protected enum ColGroupType {
-		UNCOMPRESSED, RLE, OLE, DDC1, DDC2,
+		UNCOMPRESSED, RLE, OLE, DDC1, DDC2, CONST
 	}
 
 	/** The ColGroup Indexes 0 offset, contained in the ColGroup */
@@ -122,6 +126,15 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public int getColIndex(int colNum) {
 		return _colIndexes[colNum];
+	}
+
+	/**
+	 * Set the column indexes of the column group.
+	 * 
+	 * @param colIndexes
+	 */
+	protected void setColIndices(int[] colIndexes) {
+		_colIndexes = colIndexes;
 	}
 
 	/**
@@ -186,6 +199,15 @@ public abstract class ColGroup implements Serializable {
 	 * @param colIndexTargets array that maps column indices in the original matrix block to columns of target.
 	 */
 	public abstract void decompressToBlock(MatrixBlock target, int[] colIndexTargets);
+
+	public static void decompressToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups){
+		for(ColGroup g: colGroups){
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if( groupColIndex >= 0){
+				g.decompressToBlock(target, groupColIndex);
+			}
+		}
+	}
 
 	/**
 	 * Decompress to block.
@@ -321,7 +343,6 @@ public abstract class ColGroup implements Serializable {
 	 * 
 	 * @param matrix  matrix to left multiply
 	 * @param result  matrix block result
-	 * @param numVals The Number of values contained in the Column.
 	 * @param values  The materialized list of values contained in the dictionary.
 	 * @param numRows The number of rows in the matrix input
 	 * @param numCols The number of columns in the colGroups parent matrix.
@@ -329,7 +350,7 @@ public abstract class ColGroup implements Serializable {
 	 * @param ru      The row to stop the matrix multiplication at.
 	 * @param vOff    The offset into the first argument matrix to start at.
 	 */
-	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int numRows,
+	public abstract void leftMultByMatrix(double[] matrix, double[] result, double[] values, int numRows,
 		int numCols, int rl, int ru, int vOff);
 
 	/**
@@ -359,6 +380,16 @@ public abstract class ColGroup implements Serializable {
 	 * @return version of this column group with the operation applied
 	 */
 	public abstract ColGroup scalarOperation(ScalarOperator op);
+
+	/**
+	 * Perform a binary row operation.
+	 * 
+	 * @param op         The operation to execute
+	 * @param v          The vector of values to apply, should be same length as dictionary length.
+	 * @param sparseSafe True if the operation return 0 on all instances of values in v -- op(v[?], 0)
+	 * @return A updated column group with the new values.
+	 */
+	public abstract ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe);
 
 	/**
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed

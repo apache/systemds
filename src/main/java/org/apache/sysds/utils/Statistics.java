@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -1034,6 +1035,10 @@ public class Statistics
 				sb.append("Federated Execute (Inst, UDF):\t" +
 					federatedExecuteInstructionCount.longValue() + "/" +
 					federatedExecuteUDFCount.longValue() + ".\n");
+			}
+
+			if( ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).contains("true")){
+				DMLCompressionStatistics.display(sb);
 			}
 
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");

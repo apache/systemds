@@ -40,6 +40,7 @@ public class CompressionSettingsBuilder {
 	private EnumSet<CompressionType> validCompressions;
 	private boolean sortValuesByLength = false;
 	private PartitionerType columnPartitioner = PartitionerType.COST;
+	// private PartitionerType columnPartitioner = PartitionerType.STATIC;
 	private int maxStaticColGroupCoCode = 1;
 
 	public CompressionSettingsBuilder() {

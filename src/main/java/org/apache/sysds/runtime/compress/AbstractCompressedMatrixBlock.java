@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
@@ -35,8 +36,6 @@ import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
-import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
-import org.apache.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -63,10 +62,30 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	protected List<ColGroup> _colGroups;
 
 	/**
+	 * list of lengths of dictionaries, including a longest length in left variable. Note Should not be called directly
+	 * since it is constructed on first use, on calls to : getMaxNumValues()
+	 */
+	protected Pair<Integer, int[]> v = null;
+
+	/**
+	 * Boolean specifying if the colGroups are overlapping each other. This happens after a right matrix multiplication.
+	 */
+	protected boolean overlappingColGroups = false;
+
+	/**
 	 * Constructor for building an empty Compressed Matrix block object.
 	 */
 	public AbstractCompressedMatrixBlock() {
 		super();
+	}
+
+	/**
+	 * Create a potentially overlapping Compressed Matrix Block.
+	 * @param overLapping boolean specifying if the matrix blocks columns are overlapping.
+	 */
+	public AbstractCompressedMatrixBlock(boolean overLapping) {
+		super();
+		overlappingColGroups = overLapping;
 	}
 
 	/**
@@ -134,61 +153,6 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		MatrixBlock tmp = decompress();
 		return tmp.unaryOperations(op, result);
 	}
-
-	@Override
-	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
-
-		MatrixBlock that = getUncompressed(thatValue);
-
-		if(!LibMatrixBincell.isValidDimensionsBinary(this, that)) {
-			throw new RuntimeException("Block sizes are not matched for binary " + "cell operations: " + this.rlen + "x"
-				+ this.clen + " vs " + that.getNumRows() + "x" + that.getNumColumns());
-		}
-
-		MatrixBlock right = getUncompressed(thatValue);
-
-		CompressedMatrixBlock ret = null;
-		if(result == null || !(result instanceof CompressedMatrixBlock))
-			ret = new CompressedMatrixBlock(getNumRows(), getNumColumns(), sparse);
-		else {
-			ret = (CompressedMatrixBlock) result;
-			ret.reset(rlen, clen);
-		}
-
-		// MatrixBlock ret = (MatrixBlock) result;
-		bincellOp(right, ret, op);
-		return ret;
-	}
-
-	/**
-	 * matrix-matrix binary operations, MM, MV
-	 * 
-	 * @param m2  input matrix 2
-	 * @param ret result matrix
-	 * @param op  binary operator
-	 */
-	private void bincellOp(MatrixBlock m2, CompressedMatrixBlock ret, BinaryOperator op) {
-
-
-		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType((MatrixBlock) this, m2);
-		if(atype == BinaryAccessType.MATRIX_COL_VECTOR // MATRIX - VECTOR
-			|| atype == BinaryAccessType.MATRIX_ROW_VECTOR) {
-			binaryMV(m2, ret, op, atype);
-		}
-		else if(atype == BinaryAccessType.OUTER_VECTOR_VECTOR) // VECTOR - VECTOR
-		{
-			binaryVV(m2, ret, op, atype);
-		}
-		else {
-			binaryMM(m2, ret, op);
-		}
-	}
-
-	protected abstract void binaryMV(MatrixBlock m2, CompressedMatrixBlock ret, BinaryOperator op, BinaryAccessType atype );
-
-	protected abstract void binaryVV(MatrixBlock m2, CompressedMatrixBlock ret, BinaryOperator op, BinaryAccessType atype );
-
-	protected abstract void binaryMM(MatrixBlock m2, CompressedMatrixBlock ret, BinaryOperator op);
 
 	@Override
 	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
@@ -542,7 +506,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		return(mb instanceof CompressedMatrixBlock);
 	}
 
-	private static MatrixBlock getUncompressed(MatrixValue mVal) {
+	protected static MatrixBlock getUncompressed(MatrixValue mVal) {
 		return isCompressed((MatrixBlock) mVal) ? ((CompressedMatrixBlock) mVal).decompress() : (MatrixBlock) mVal;
 	}
 

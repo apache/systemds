@@ -29,7 +29,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 
 public class CompressionStatistics {
 
-	private ArrayList<Double> timePhases = new ArrayList<>();
+	private ArrayList<Double> timePhases = new ArrayList<>(5);
 	public double ratio;
 	public long originalSize;
 	public long estimatedSizeColGroups;
@@ -79,7 +79,7 @@ public class CompressionStatistics {
 		return colGroupCounts;
 	}
 
-	public ArrayList<Double> getTimeArrayList() {
+	public List<Double> getTimeArrayList() {
 		return timePhases;
 	}
 

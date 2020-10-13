@@ -149,11 +149,14 @@ public class LinearAlgebraUtils {
 
 	public static void vectListAddDDC(final double[] values, double[] c, byte[] bix, final int rl, final int ru,
 		final int cl, final int cu, final int cut, final int numVals) {
+
 		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
 			int rowIdx = (bix[j] & 0xFF);
 			if(rowIdx < numVals)
-				for(int k = cl, h = rowIdx * (cu - cl); k < cu; k++, h++)
+				for(int k = cl, h = rowIdx * (cu - cl); k < cu; k++, h++) {
+					// LOG.error((off + k) + " \t" + h);
 					c[off + k] += values[h];
+				}
 		}
 	}
 
@@ -268,8 +271,17 @@ public class LinearAlgebraUtils {
 		double[] a = tmp.getDenseBlockValues();
 		DenseBlock c = ret.getDenseBlock();
 		for(int i = 0; i < tmp.getNumColumns(); i++)
-			if(a[i] != 0)
-				c.set((ix < i) ? ix : i, (ix < i) ? i : ix, a[i]);
+			if(a[i] != 0) {
+				int row = (ix < i) ? ix : i;
+				int col = (ix < i) ? i : ix;
+				// if(row == col) {
+					c.set(row, col, a[i]);
+				// }
+				// else {
+					// double v = c.get(row, col);
+					// c.set(row, col, a[i] + v);
+				// }
+			}
 	}
 
 	/**

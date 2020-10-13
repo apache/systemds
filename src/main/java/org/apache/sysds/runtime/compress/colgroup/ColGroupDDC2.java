@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -178,6 +179,12 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		else {
 			return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false);
 		}
+	}
+
+	@Override
+	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
+		sparseSafe = sparseSafe || !_zeros;
+		return new ColGroupDDC2(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe), _data, !sparseSafe);
 	}
 
 	@Override

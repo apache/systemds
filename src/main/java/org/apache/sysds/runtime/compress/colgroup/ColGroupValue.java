@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -50,7 +51,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * Base class for column groups encoded with value dictionary. This include column groups such as DDC OLE and RLE.
  * 
  */
-public abstract class ColGroupValue extends ColGroup {
+public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	private static final long serialVersionUID = 3786247536054353658L;
 
 	/** thread-local pairs of reusable temporary vectors for positions and values */
@@ -63,6 +64,7 @@ public abstract class ColGroupValue extends ColGroup {
 
 	/** Distinct value tuples associated with individual bitmaps. */
 	protected ADictionary _dict;
+	protected int[] counts;
 
 	protected ColGroupValue() {
 		super();
@@ -116,8 +118,12 @@ public abstract class ColGroupValue extends ColGroup {
 		return _dict.getValues();
 	}
 
-	public byte[] getByteValues() {
-		return ((QDictionary) _dict).getValuesByte();
+	public ADictionary getDictionary() {
+		return _dict;
+	}
+
+	protected void setDictionary(ADictionary dict) {
+		_dict = dict;
 	}
 
 	@Override
@@ -133,8 +139,9 @@ public abstract class ColGroupValue extends ColGroup {
 	}
 
 	/**
-	 * Returns the counts of values inside the MatrixBlock returned in getValuesAsBlock Throws an exception if the
-	 * getIfCountsType is false.
+	 * Returns the counts of values inside the dictionary. If already calculated it will return the previous counts.
+	 * This produce an overhead in cases where the count is calculated, but the overhead will be limited to number of
+	 * distinct tuples in the dictionary.
 	 * 
 	 * The returned counts always contains the number of zeros as well if there are some contained, even if they are not
 	 * materialized.
@@ -142,14 +149,20 @@ public abstract class ColGroupValue extends ColGroup {
 	 * @return the count of each value in the MatrixBlock.
 	 */
 	public final int[] getCounts() {
-		int[] tmp;
-		if(_zeros) {
-			tmp = allocIVector(getNumValues() + 1, true);
+		if(counts == null) {
+
+			counts = new int[getNumValues() + 1];
+			// if(_zeros) {
+			// tmp = allocIVector(getNumValues() + 1, true);
+			// }
+			// else {
+			// tmp = allocIVector(getNumValues(), true);
+			// }
+			return getCounts(counts);
 		}
 		else {
-			tmp = allocIVector(getNumValues(), true);
+			return counts;
 		}
-		return getCounts(tmp);
 	}
 
 	/**
@@ -245,14 +258,13 @@ public abstract class ColGroupValue extends ColGroup {
 	 * @param cl       Lower column index to aggregate from
 	 * @param cu       Upper column index to aggregate to
 	 * @param cut      The total number of columns in b.
+	 * @param ret      The double list to return.
 	 * @return The aggregated matrix output. Note this has to be mapped to the output matrix.
 	 */
 	public double[] preaggValues(final int numVals, final double[] b, double[] dictVals, final int cl, final int cu,
-		final int cut) {
+		final int cut, double[] ret) {
 
 		final int retRows = (cu - cl);
-		final int retCols = (numVals);
-		final double[] ret = allocDVector(retCols * retRows, true);
 		for(int k = 0, off = 0; k < numVals * _colIndexes.length; k += _colIndexes.length, off += retRows) {
 			for(int h = 0; h < _colIndexes.length; h++) {
 				int idb = _colIndexes[h] * cut;
@@ -269,12 +281,18 @@ public abstract class ColGroupValue extends ColGroup {
 		return ret;
 	}
 
-	public double[] preaggValues(final int numVals, final SparseBlock b, double[] dictVals, final int cl, final int cu,
+	public double[] preaggValues(final int numVals, final double[] b, double[] dictVals, final int cl, final int cu,
 		final int cut) {
 
+		final double[] ret = allocDVector(numVals * (cu - cl), true);
+
+		return preaggValues(numVals, b, dictVals, cl, cu, cut, ret);
+	}
+
+	public double[] preaggValues(final int numVals, final SparseBlock b, double[] dictVals, final int cl, final int cu,
+		final int cut, final double[] ret) {
+
 		final int retRows = (cu - cl);
-		final int retCols = (numVals);
-		final double[] ret = allocDVector(retCols * retRows, true);
 		for(int h = 0; h < _colIndexes.length; h++) {
 			SparseRow row = b.get(_colIndexes[h]);
 			// SparseRow row = b[_colIndexes[h]];
@@ -288,6 +306,11 @@ public abstract class ColGroupValue extends ColGroup {
 			}
 		}
 		return ret;
+	}
+
+	public double[] preaggValues(final int numVals, final SparseBlock b, double[] dictVals, final int cl, final int cu,
+		final int cut) {
+		return preaggValues(numVals, b, dictVals, cl, cu, cut, allocDVector(numVals * (cu - cl), true));
 	}
 
 	protected final double[] preaggValue(int k, double[] b, double[] dictVals, int cl, int cu, int cut) {
@@ -367,6 +390,19 @@ public abstract class ColGroupValue extends ColGroup {
 	 */
 	protected ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
 		return _dict.applyScalarOp(op, newVal, numCols);
+	}
+
+	/**
+	 * Apply the binary row-wise operator to the dictionary, and copy it appropriately if needed.
+	 * 
+	 * @param fn         The function to apply.
+	 * @param v          The vector to apply on each tuple of the dictionary.
+	 * @param sparseSafe Specify if the operation is sparseSafe. if false then allocate a new tuple.
+	 * @return The new Dictionary with values.
+	 */
+	protected ADictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe) {
+		return sparseSafe ? _dict.clone().applyBinaryRowOp(fn, v, sparseSafe, _colIndexes) : _dict
+			.applyBinaryRowOp(fn, v, sparseSafe, _colIndexes);
 	}
 
 	@Override
@@ -462,7 +498,8 @@ public abstract class ColGroupValue extends ColGroup {
 		sb.append(String.format("\n%15s%5d ", "Columns:", _colIndexes.length));
 		sb.append(Arrays.toString(_colIndexes));
 		sb.append(String.format("\n%15s%5d ", "Values:", _dict.getValues().length));
-		sb.append(Arrays.toString(_dict.getValues()));
+		sb.append("\n");
+		_dict.getString(sb, _colIndexes.length);
 		return sb.toString();
 	}
 
@@ -529,4 +566,36 @@ public abstract class ColGroupValue extends ColGroup {
 
 	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru);
 
+	protected Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
+
+	public ColGroup copyAndSet(int[] colIndexes, double[] newDictionary) {
+		try {
+			ColGroupValue clone = (ColGroupValue) this.clone();
+			clone.setDictionary(new Dictionary(newDictionary));
+			clone.setColIndices(colIndexes);
+			return clone;
+		}
+		catch(CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * shallow copy of the colGroup.
+	 * 
+	 * @return a shallow copy of the colGroup.
+	 */
+	public ColGroup copy() {
+		try {
+			ColGroupValue clone = (ColGroupValue) this.clone();
+			return clone;
+		}
+		catch(CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }

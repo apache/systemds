@@ -25,24 +25,18 @@ import java.util.Arrays;
  * Helper class used for bitmap extraction.
  */
 public class DblArray {
-	private double[] _arr = null;
-	private boolean _zero = false;
+	private double[] _arr;
 
 	public DblArray() {
-		this(null, false);
+		_arr = null;
 	}
 
 	public DblArray(double[] arr) {
-		this(arr, false);
+		_arr = arr;
 	}
 
 	public DblArray(DblArray that) {
-		this(Arrays.copyOf(that._arr, that._arr.length), that._zero);
-	}
-
-	public DblArray(double[] arr, boolean allZeros) {
-		_arr = arr;
-		_zero = allZeros;
+		this(Arrays.copyOf(that._arr, that._arr.length));
 	}
 
 	public double[] getData() {
@@ -51,12 +45,12 @@ public class DblArray {
 
 	@Override
 	public int hashCode() {
-		return _zero ? 0 : Arrays.hashCode(_arr);
+		return _arr == null ? 0 : Arrays.hashCode(_arr);
 	}
 
 	@Override
 	public boolean equals(Object o) {
-		return(o instanceof DblArray && _zero == ((DblArray) o)._zero && Arrays.equals(_arr, ((DblArray) o)._arr));
+		return(o instanceof DblArray && Arrays.equals(_arr, ((DblArray) o)._arr));
 	}
 
 	@Override
@@ -64,14 +58,7 @@ public class DblArray {
 		return Arrays.toString(_arr);
 	}
 
-	public static boolean isZero(double[] ds) {
-		for(int i = 0; i < ds.length; i++)
-			if(ds[i] != 0.0)
-				return false;
-		return true;
-	}
-
 	public static boolean isZero(DblArray val) {
-		return val._zero || isZero(val._arr);
+		return val._arr == null;
 	}
 }

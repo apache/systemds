@@ -37,18 +37,26 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
+	// an empty array to return if the entire row was 0.
+	private DblArray empty = new DblArray();
+
 	// current sparse row positions
 	private SparseRow[] sparseCols = null;
 	private int[] sparsePos = null;
 
+	/**
+	 * Reader of sparse matrix blocks for compression.
+	 * 
+	 * This reader should not be used if the input data is not transposed and sparse
+	 * 
+	 * @param data         The transposed and sparse matrix
+	 * @param colIndexes   The column indexes to combine
+	 * @param compSettings The compression settings.
+	 */
 	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, CompressionSettings compSettings) {
 		super(colIndexes, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), compSettings);
 		reusableArr = new double[colIndexes.length];
-		reusableReturn = null;
-
-		if(!_compSettings.transposeInput) {
-			throw new RuntimeException("SparseColumnSelectionReader should not be used without transposed input.");
-		}
+		reusableReturn = new DblArray(reusableArr);
 
 		sparseCols = new SparseRow[colIndexes.length];
 		sparsePos = new int[colIndexes.length];
@@ -58,13 +66,11 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	}
 
 	protected DblArray getNextRow() {
-		if(_lastRow == _numRows - 1)
-			return null;
-		_lastRow++;
+		if(_lastRow == _numRows - 1) {
 
-		if(!_compSettings.transposeInput) {
-			throw new RuntimeException("SparseColumnSelectionReader should not be used without transposed input.");
+			return null;
 		}
+		_lastRow++;
 
 		// move pos to current row if necessary (for all columns)
 		for(int i = 0; i < _colIndexes.length; i++)
@@ -72,7 +78,6 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 				(sparseCols[i].indexes().length <= sparsePos[i] || sparseCols[i].indexes()[sparsePos[i]] < _lastRow)) {
 				sparsePos[i]++;
 			}
-
 		// extract current values
 		Arrays.fill(reusableArr, 0);
 		boolean zeroResult = true;
@@ -82,7 +87,6 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 				reusableArr[i] = sparseCols[i].values()[sparsePos[i]];
 				zeroResult = false;
 			}
-
-		return zeroResult ? null : reusableReturn;
+		return zeroResult ? empty : reusableReturn;
 	}
 }

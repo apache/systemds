@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -112,6 +113,29 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public Dictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+		final int len = _values.length;
+		final int lenV = colIndexes.length;
+		if(sparseSafe) {
+			for(int i = 0; i < len; i++) {
+				_values[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
+			}
+			return this;
+		}
+		else {
+			double[] values = new double[len + lenV];
+			int i = 0;
+			for(; i < len; i++) {
+				values[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
+			}
+			for(; i < len + lenV; i++) {
+				values[i] = fn.execute(0, v[colIndexes[i % lenV]]);
+			}
+			return new Dictionary(values);
+		}
+	}
+
+	@Override
 	public Dictionary clone() {
 		return new Dictionary(_values.clone());
 	}
@@ -175,7 +199,7 @@ public class Dictionary extends ADictionary {
 	protected void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus) {
 		KahanObject kbuff = new KahanObject(0, 0);
 		int valOff = 0;
-		final int rows = c.length/2;
+		final int rows = c.length / 2;
 		for(int k = 0; k < _values.length / colIndexes.length; k++) {
 			int cntk = counts[k];
 			for(int j = 0; j < colIndexes.length; j++) {
@@ -209,5 +233,13 @@ public class Dictionary extends ADictionary {
 		sb.append("Dictionary: " + hashCode());
 		sb.append("\n " + Arrays.toString(_values));
 		return sb.toString();
+	}
+
+	public StringBuilder getString(StringBuilder sb, int colIndexes){
+		for(int i = 0; i< _values.length; i++){
+			sb.append(_values[i]);
+			sb.append((i) % (colIndexes ) == colIndexes - 1  ? "\n" : " ");
+		}
+		return sb;
 	}
 }

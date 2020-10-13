@@ -155,24 +155,32 @@ public class BitmapEncoder {
 	 */
 	private static Bitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, ReaderColumnSelection rowReader) {
 		// probe map for distinct items (for value or value groups)
-		DblArrayIntListHashMap distinctVals = new DblArrayIntListHashMap();
+		DblArrayIntListHashMap distinctVals;
+		if(colIndices.length > 10) {
+			distinctVals = new DblArrayIntListHashMap(2048);
+		}
+		else {
+			distinctVals = new DblArrayIntListHashMap();
+		}
 
 		// scan rows and probe/build distinct items
 		DblArray cellVals = null;
 
 		int zero = 0;
 		while((cellVals = rowReader.nextRow()) != null) {
-			IntArrayList lstPtr = distinctVals.get(cellVals);
-			if(lstPtr == null) {
-				// create new objects only on demand
-				lstPtr = new IntArrayList();
-				distinctVals.appendValue(new DblArray(cellVals), lstPtr);
+			if(cellVals.getData() == null) {
+				zero += 1;
 			}
-			zero += DblArray.isZero(cellVals) ? 1 : 0;
-
-			lstPtr.appendValue(rowReader.getCurrentRowIndex());
+			else {
+				IntArrayList lstPtr = distinctVals.get(cellVals);
+				if(lstPtr == null) {
+					// create new objects only on demand
+					lstPtr = new IntArrayList();
+					distinctVals.appendValue(new DblArray(cellVals), lstPtr);
+				}
+				lstPtr.appendValue(rowReader.getCurrentRowIndex());
+			}
 		}
-
 		return makeBitmap(distinctVals, colIndices.length, zero);
 	}
 
@@ -488,7 +496,8 @@ public class BitmapEncoder {
 					max = fp[fp.length - 1];
 				if(fp[fp.length - 1] < min)
 					min = fp[fp.length - 1];
-			}else{
+			}
+			else {
 				max = fp[0];
 				min = fp[0];
 				maxDelta = 0;

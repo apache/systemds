@@ -38,6 +38,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
@@ -258,7 +259,9 @@ public class DataConverter {
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		double[][] ret = new double[rows][cols]; //0-initialized
-
+		if(mb instanceof CompressedMatrixBlock){
+			mb = ((CompressedMatrixBlock)mb).decompress();
+		}
 		if( mb.getNonZeros() > 0 ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();

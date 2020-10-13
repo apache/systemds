@@ -26,6 +26,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
@@ -33,9 +34,11 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.utils.DMLCompressionStatistics;
 
 /**
  * Factory pattern to construct a CompressedMatrixBlock.
@@ -110,8 +113,10 @@ public class CompressedMatrixBlockFactory {
 			_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 
 		_stats.setNextTimePhase(time.stop());
-		LOG.debug("Compression statistics:");
-		LOG.debug("--compression phase 1: " + _stats.getLastTimePhase());
+		if(LOG.isDebugEnabled()){
+			LOG.debug("Compression statistics:");
+			LOG.debug("--compression phase 1: " + _stats.getLastTimePhase());
+		}
 
 		if(sizeInfos.colsC.isEmpty()) {
 			LOG.info("Abort block compression because all columns are incompressible.");
@@ -128,8 +133,10 @@ public class CompressedMatrixBlockFactory {
 		if(LOG.isDebugEnabled()) {
 
 			LOG.debug("--compression phase 2: " + _stats.getLastTimePhase());
+			StringBuilder sb = new StringBuilder();
 			for(int[] group : coCodeColGroups)
-				LOG.debug(Arrays.toString(group));
+				sb.append(Arrays.toString(group));
+			LOG.debug(sb.toString());
 		}
 
 		// TODO: Make second estimate of memory usage if the ColGroups are as above?
@@ -151,6 +158,8 @@ public class CompressedMatrixBlockFactory {
 		res.allocateColGroupList(colGroupList);
 		_stats.setNextTimePhase(time.stop());
 		if(LOG.isDebugEnabled()) {
+			LOG.debug("Hash overlap count:" + DblArrayIntListHashMap.hashMissCount);
+			DblArrayIntListHashMap.hashMissCount = 0;
 			LOG.debug("--compression phase 3: " + _stats.getLastTimePhase());
 		}
 		// --------------------------------------------------
@@ -163,7 +172,7 @@ public class CompressedMatrixBlockFactory {
 		// applySharedDDC1Dictionary(colGroupList, dict);
 		// res._sharedDDC1Dict = true;
 		// }
-		// _stats.setNextTimePhase(time.stop());
+		_stats.setNextTimePhase(time.stop());
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("--compression phase 4: " + _stats.getLastTimePhase());
 		}
@@ -206,6 +215,9 @@ public class CompressedMatrixBlockFactory {
 			}
 		}
 
+		if (DMLScript.STATISTICS ){
+			DMLCompressionStatistics.addCompressionTimes(_stats.getTimeArrayList());
+		}
 		return new ImmutablePair<>(res, _stats);
 		// --------------------------------------------------
 	}

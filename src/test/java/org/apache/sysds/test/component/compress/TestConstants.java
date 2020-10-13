@@ -59,6 +59,10 @@ public class TestConstants {
 		SMALL, LARGE, BYTE
 	}
 
+	public enum OverLapping{
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE
+	}
+
 	public static double getSparsityValue(SparsityType sparsityType) {
 		switch(sparsityType) {
 			case DENSE:

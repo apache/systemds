@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /** A group of columns compressed with a single run-length encoded bitmap. */
@@ -91,7 +92,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
 		if(getNumValues() > 1) {
-			final int blksz = 128 * 1024;
+			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
 			final double[] values = getValues();
@@ -112,9 +113,12 @@ public class ColGroupRLE extends ColGroupOffset {
 						start += _data[boff + bix];
 						int len = _data[boff + bix + 1];
 						for(int i = Math.max(rl, start); i < Math.min(start + len, ru); i++)
-							for(int j = 0; j < numCols; j++)
-								if(values[off + j] != 0)
-									target.appendValue(i, _colIndexes[j], values[off + j]);
+							for(int j = 0; j < numCols; j++) {
+								if(values[off + j] != 0) {
+									double v = target.quickGetValue(i, _colIndexes[j]);
+									target.setValue(i, _colIndexes[j], values[off + j] + v);
+								}
+							}
 						start += len;
 					}
 					apos[k] = bix;
@@ -131,7 +135,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colixTargets) {
 		if(getNumValues() > 1) {
-			final int blksz = 128 * 1024;
+			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
 			final double[] values = getValues();
@@ -160,8 +164,11 @@ public class ColGroupRLE extends ColGroupOffset {
 						int len = _data[boff + bix + 1];
 						for(int i = start; i < start + len; i++)
 							for(int j = 0; j < numCols; j++)
-								if(values[off + j] != 0)
-									target.appendValue(i, cix[j], values[off + j]);
+								if(values[off + j] != 0) {
+									double v = target.quickGetValue(i, _colIndexes[j]);
+									target.setValue(i, _colIndexes[j], values[off + j] + v);
+								}
+
 						start += len;
 					}
 					apos[k] = bix;
@@ -177,6 +184,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int colpos) {
+		// LOG.error("Does not work");
 		final int blksz = 128 * 1024;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
@@ -191,7 +199,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		int nnz = 0;
 		for(int bi = 0; bi < _numRows; bi += blksz) {
 			int bimax = Math.min(bi + blksz, _numRows);
-			Arrays.fill(c, bi, bimax, 0);
+			// Arrays.fill(c, bi, bimax, 0);
 			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
 				int boff = _ptr[k];
 				int blen = len(k);
@@ -202,7 +210,8 @@ public class ColGroupRLE extends ColGroupOffset {
 				for(; bix < blen & start < bimax; bix += 2) {
 					start += _data[boff + bix];
 					int len = _data[boff + bix + 1];
-					Arrays.fill(c, start, start + len, values[off + colpos]);
+					for(int i = start; i< start + len; i++)
+						c[i] += values[off + colpos];
 					nnz += len;
 					start += len;
 				}
@@ -292,15 +301,13 @@ public class ColGroupRLE extends ColGroupOffset {
 					int start = astart[k];
 
 					// compute partial results, not aligned
-					while(bix < blen) {
+					while(bix < blen & bix < bimax) {
 						int lstart = _data[boff + bix];
 						int llen = _data[boff + bix + 1];
 						int len = Math.min(start + lstart + llen, bimax) - Math.max(bi, start + lstart);
 						if(len > 0) {
 							LinearAlgebraUtils.vectAdd(val, c, Math.max(bi, start + lstart), len);
 						}
-						if(start + lstart + llen >= bimax)
-							break;
 						start += lstart + llen;
 						bix += 2;
 					}
@@ -508,9 +515,10 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void leftMultByMatrix(final double[] a, final double[] c, final int numVals, final double[] values,
-		final int numRows, final int numCols, int rl, final int ru, final int vOff) {
+	public void leftMultByMatrix(final double[] a, final double[] c, final double[] values, final int numRows,
+		final int numCols, int rl, final int ru, final int vOff) {
 
+		final int numVals = getNumValues();
 		if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
 			final int blksz = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
 
@@ -640,6 +648,34 @@ public class ColGroupRLE extends ColGroupOffset {
 		}
 
 		ADictionary rvalues = applyScalarOp(op, val0, getNumCols());
+		char[] lbitmap = genRLEBitmap(loff, loff.length);
+		char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
+		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
+		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
+		rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
+
+		return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs);
+	}
+
+	@Override
+	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
+		sparseSafe = sparseSafe || !_zeros;
+
+		// fast path: sparse-safe operations
+		// Note that bitmaps don't change and are shallow-copied
+		if(sparseSafe) {
+			return new ColGroupRLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op.fn, v, sparseSafe), _data, _ptr);
+		}
+
+		// slow path: sparse-unsafe operations (potentially create new bitmap)
+		// note: for efficiency, we currently don't drop values that become 0
+		boolean[] lind = computeZeroIndicatorVector();
+		int[] loff = computeOffsets(lind);
+		if(loff.length == 0) { // empty offset list: go back to fast path
+			return new ColGroupRLE(_colIndexes, _numRows, false, applyBinaryRowOp(op.fn, v, true), _data, _ptr);
+		}
+
+		ADictionary rvalues = applyBinaryRowOp(op.fn, v, sparseSafe);
 		char[] lbitmap = genRLEBitmap(loff, loff.length);
 		char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
 		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);

@@ -56,11 +56,13 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		int ncol = getNumCols();
-		double[] values = getValues();
+		final int nCol = getNumCols();
+		final double[] values = getValues();
 		for(int i = rl; i < ru; i++)
-			for(int j = 0; j < ncol; j++)
-				target.appendValue(i, _colIndexes[j], getData(i, j, values));
+			for(int j = 0; j < nCol; j++) {
+				double v = target.quickGetValue(i, _colIndexes[j]);
+				target.quickSetValue(i, _colIndexes[j], getData(i, j, values) + v);
+			}
 	}
 
 	@Override
@@ -72,7 +74,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 				int origMatrixColIx = getColIndex(colIx);
 				int col = colIndexTargets[origMatrixColIx];
 				double cellVal = getData(i, colIx, dictionary);
-				target.quickSetValue(i, col, cellVal);
+				target.quickSetValue(i, col, target.quickGetValue(i, col) + cellVal);
 			}
 		}
 	}
@@ -86,10 +88,10 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		for(int i = 0; i < _numRows; i++) {
 			int index = getIndex(i);
 			if(index < getNumValues()) {
-				nnz += ((c[i] = values[(index) * ncol + colpos]) != 0) ? 1 : 0;
+				nnz += ((c[i] += values[(index) * ncol + colpos]) != 0) ? 1 : 0;
 			}
 			else {
-				c[i] = 0.0;
+				nnz++;
 			}
 		}
 		target.setNonZeros(nnz);
@@ -204,10 +206,9 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] a, double[] c, int numVals, double[] values, int numRows, int numCols, int rl,
-		int ru, int voff) {
-
-		numVals = (numVals == -1) ? getNumValues() : numVals;
+	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
+		int voff) {
+		int numVals = getNumValues();
 		for(int i = rl, j = voff; i < ru; i++, j++) {
 			int offC = i * numCols;
 			if(8 * numVals < _numRows) {
@@ -217,6 +218,9 @@ public abstract class ColGroupDDC extends ColGroupValue {
 				postScaling(values, vals, c, numVals, i, numCols);
 			}
 			else {
+				// Because we want to reduce the number of multiplies then we multiply the number of values with the
+				// number of columns before the for loop.
+				numVals = getNumValues() * _colIndexes.length;
 				for(int k = 0, aOff = j * _numRows; k < _numRows; k++, aOff++) {
 					double aval = a[aOff];
 					if(aval != 0) {
@@ -236,7 +240,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	@Override
 	public void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] c, int numVals,
 		double[] values, int numRows, int numCols, int row, double[] MaterializedRow) {
-		numVals = (numVals == -1) ? getNumValues() : numVals;
+		numVals = getNumValues();
 		for(int i = 0; i < spNrVals; i++) {
 			int k = indexes[i];
 			double aval = sparseV[i];
@@ -252,7 +256,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	public void leftMultByRowVector(double[] a, double[] result, int numVals) {
-		numVals = (numVals == -1) ? getNumValues() : numVals;
+		numVals = getNumValues();
 		double[] values = getValues();
 
 		leftMultByRowVector(a, result, numVals, values);
@@ -291,7 +295,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	@Override
 	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
 
-		numVals = (numVals == -1) ? getNumValues() : numVals;
+		numVals = getNumValues();
 
 		if(8 * numVals < _numRows) {
 			// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
@@ -302,6 +306,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 			postScaling(values, vals, c, numVals);
 		}
 		else {
+			numVals = numVals * _colIndexes.length;
 			// iterate over codes, compute all, and add to the result
 			for(int i = 0; i < _numRows; i++) {
 				double aval = a[i];

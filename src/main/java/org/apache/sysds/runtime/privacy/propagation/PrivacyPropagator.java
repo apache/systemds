@@ -150,6 +150,13 @@ public class PrivacyPropagator
 		return mergedPrivacyConstraint;
 	}
 
+	/**
+	 * Propagate privacy constraints from input to output CPOperands
+	 * in case the privacy constraints of the input are activated.
+	 * @param inst instruction for which the privacy constraints are propagated
+	 * @param ec execution context
+	 * @return instruction with propagated privacy constraints (usually the same instance as the input inst)
+	 */
 	public static Instruction preprocessInstruction(Instruction inst, ExecutionContext ec){
 		switch ( inst.getType() ){
 			case CONTROL_PROGRAM:
@@ -284,6 +291,7 @@ public class PrivacyPropagator
 					MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
 					Propagator propagator = new MatrixMultiplicationPropagatorPrivateFirst(input1, privacyConstraint1, input2, privacyConstraint2);
 					mergedPrivacyConstraint = propagator.propagate();
+					ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
 				}
 				else {
 					mergedPrivacyConstraint = mergeNary(new PrivacyConstraint[]{privacyConstraint1,privacyConstraint2},
@@ -562,13 +570,20 @@ public class PrivacyPropagator
 		}
 	}
 
+	/**
+	 * Propagate privacy constraints to output variables
+	 * based on privacy constraint of CPOperand output in instruction
+	 * which has been set during privacy propagation preprocessing.
+	 * @param inst instruction for which privacy constraints are propagated
+	 * @param ec execution context
+	 */
 	public static void postProcessInstruction(Instruction inst, ExecutionContext ec){
 		// if inst has output
 		List<CPOperand> instOutputs = getOutputOperands(inst);
 		if (!instOutputs.isEmpty()){
 			for ( CPOperand output : instOutputs ){
 				PrivacyConstraint outputPrivacyConstraint = output.getPrivacyConstraint();
-				if ( privacyConstraintActivated(outputPrivacyConstraint) )
+				if ( privacyConstraintActivated(outputPrivacyConstraint) || (outputPrivacyConstraint != null && outputPrivacyConstraint.hasFineGrainedConstraints()))
 					setOutputPrivacyConstraint(ec, outputPrivacyConstraint, output.getName());
 			}
 		}

@@ -215,7 +215,7 @@ public abstract class CostEstimator
 				long rlen = Long.parseLong(parts[6]);
 				long clen = Long.parseLong(parts[7]);
 				int blen = Integer.parseInt(parts[8]);
-				long nnz = Long.parseLong(parts[10]);
+				long nnz = Long.parseLong(parts[9]);
 				VarStats vs = new VarStats(rlen, clen, blen, nnz, false);
 				stats.put(varname, vs);
 			}

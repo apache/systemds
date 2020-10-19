@@ -52,9 +52,9 @@ public class FEDInstructionUtils {
 
 	/**
 	 * Check and replace CP instructions with federated instructions if the instruction match criteria.
-	 * 
+	 *
 	 * @param inst The instruction to analyse
-	 * @param ec The Execution Context 
+	 * @param ec The Execution Context
 	 * @return The potentially modified instruction
 	 */
 	public static Instruction checkAndReplaceCP(Instruction inst, ExecutionContext ec) {
@@ -130,14 +130,14 @@ public class FEDInstructionUtils {
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
 
-			if(ins.getVariableOpcode() == VariableOperationCode.Write 
+			if(ins.getVariableOpcode() == VariableOperationCode.Write
 				&& ins.getInput3().getName().contains("federated")){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
 			}
 
 		}
 
-		
+
 		//set thread id for federated context management
 		if( fedinst != null ) {
 			fedinst.setTID(ec.getTID());

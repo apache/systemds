@@ -77,7 +77,7 @@ public class PrivacyLineageTest extends AutomatedTestBase {
 		finegrainedAssertions();
 	}
 
-	private void finegrainedAssertions(){
+	private static void finegrainedAssertions(){
 		String outputFineGrained = readDMLMetaDataValueCatchException("C", OUTPUT_DIR, DataExpression.FINE_GRAINED_PRIVACY);
 		Assert.assertEquals(
 			"{\"Private\":[[[0,0],[0,19]],[[1,0],[1,19]],[[2,0],[2,19]],[[3,0],[3,19]],[[4,0],[4,19]]],\"PrivateAggregation\":[]}",

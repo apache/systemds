@@ -104,7 +104,7 @@ class Test_DMLScript(unittest.TestCase):
         Yt = Matrix(self.sds, self.d.get_test_labels()[:test_count])
         Yt = Yt + 1.0
 
-        [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute(verbose=True)
+        [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute(verbose=False)
         
         self.assertGreater(acc, 70)
 

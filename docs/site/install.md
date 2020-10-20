@@ -24,8 +24,8 @@ limitations under the License.
 This guide helps in the install and setup of SystemDS from source code.
 
 - [Windows Guide](#windows)
-- [Ubuntu/Linux Guide](#ubuntu%2020.04)
-- [Mac](#mac)
+- [Ubuntu/Linux Guide](#ubuntu-2004)
+- [Mac Guide](#mac)
 
 ## Windows
 

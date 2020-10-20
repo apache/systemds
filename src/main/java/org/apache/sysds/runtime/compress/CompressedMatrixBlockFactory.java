@@ -113,6 +113,9 @@ public class CompressedMatrixBlockFactory {
 			_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 
 		_stats.setNextTimePhase(time.stop());
+		if (DMLScript.STATISTICS ){
+			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 1);
+		}
 		if(LOG.isDebugEnabled()){
 			LOG.debug("Compression statistics:");
 			LOG.debug("--compression phase 1: " + _stats.getLastTimePhase());
@@ -130,8 +133,10 @@ public class CompressedMatrixBlockFactory {
 		List<int[]> coCodeColGroups = PlanningCoCoder
 			.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
 		_stats.setNextTimePhase(time.stop());
+		if (DMLScript.STATISTICS ){
+			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 2);
+		}
 		if(LOG.isDebugEnabled()) {
-
 			LOG.debug("--compression phase 2: " + _stats.getLastTimePhase());
 			StringBuilder sb = new StringBuilder();
 			for(int[] group : coCodeColGroups)
@@ -157,6 +162,9 @@ public class CompressedMatrixBlockFactory {
 		List<ColGroup> colGroupList = ColGroupFactory.assignColumns(numCols, colGroups, rawBlock, compSettings);
 		res.allocateColGroupList(colGroupList);
 		_stats.setNextTimePhase(time.stop());
+		if (DMLScript.STATISTICS ){
+			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 3);
+		}
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("Hash overlap count:" + DblArrayIntListHashMap.hashMissCount);
 			DblArrayIntListHashMap.hashMissCount = 0;
@@ -173,6 +181,9 @@ public class CompressedMatrixBlockFactory {
 		// res._sharedDDC1Dict = true;
 		// }
 		_stats.setNextTimePhase(time.stop());
+		if (DMLScript.STATISTICS ){
+			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 4);
+		}
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("--compression phase 4: " + _stats.getLastTimePhase());
 		}
@@ -197,7 +208,9 @@ public class CompressedMatrixBlockFactory {
 		_stats.setNextTimePhase(time.stop());
 		_stats.setColGroupsCounts(colGroupList);
 
-		
+		if (DMLScript.STATISTICS ){
+			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 5);
+		}
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("--num col groups: " + colGroupList.size() + ", -- num input cols: " + numCols);
 			LOG.debug("--compression phase 5: " + _stats.getLastTimePhase());
@@ -215,9 +228,7 @@ public class CompressedMatrixBlockFactory {
 			}
 		}
 
-		if (DMLScript.STATISTICS ){
-			DMLCompressionStatistics.addCompressionTimes(_stats.getTimeArrayList());
-		}
+		
 		return new ImmutablePair<>(res, _stats);
 		// --------------------------------------------------
 	}

@@ -50,6 +50,7 @@ jobs:
           codegen,
           codegenalg.partone,
           codegenalg.parttwo,
+          compress,
           countDistinct,
           data.misc,
           data.rand,

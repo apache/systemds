@@ -19,8 +19,6 @@
 
 package org.apache.sysds.utils;
 
-import java.util.List;
-
 public class DMLCompressionStatistics {
 
 	// Compute compressed size info
@@ -39,12 +37,25 @@ public class DMLCompressionStatistics {
 	private static int DecompressMTCount = 0;
 	private static double DecompressMT = 0.0;
 
-	public static void addCompressionTimes(List<Double> times) {
-		Phase1 += times.get(0);
-		Phase2 += times.get(1);
-		Phase3 += times.get(2);
-		Phase4 += times.get(3);
-		Phase5 += times.get(4);
+	public static void addCompressionTime(double time, int phase) {
+		switch(phase) {
+			case 1:
+				Phase1 += time;
+				break;
+			case 2:
+				Phase2 += time;
+				break;
+			case 3:
+				Phase3 += time;
+				break;
+			case 4:
+				Phase4 += time;
+				break;
+			case 5:
+				Phase5 += time;
+				break;
+
+		}
 	}
 
 	public static void addDecompressTime(double time, int threads) {
@@ -56,6 +67,14 @@ public class DMLCompressionStatistics {
 			DecompressMTCount++;
 			DecompressMT += time;
 		}
+	}
+
+	public static int getDecompressionCount() {
+		return DecompressMTCount;
+	}
+
+	public static int getDecompressionSTCount() {
+		return DecompressSTCount;
 	}
 
 	public static void display(StringBuilder sb) {

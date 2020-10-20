@@ -379,7 +379,23 @@ public abstract class AutomatedTestBase {
 	protected double[][] getRandomMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
 		return TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed);
 	}
-
+	/**
+	 * <p>
+	 * Generates a random matrix with the specified characteristics and returns it as a two dimensional array.
+	 * </p>
+	 *
+	 * @param rows     number of rows
+	 * @param cols     number of columns
+	 * @param min      minimum value
+	 * @param max      maximum value
+	 * @param sparsity sparsity
+	 * @param seed     seed
+	 * @param delta    The minimum value in between values.
+	 * @return two dimensional array containing random matrix
+	 */
+	protected double[][] getRandomMatrix(int rows, int cols, double min, double max, double sparsity, long seed, double delta) {
+		return TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed, delta);
+	}
 	/**
 	 * <p>
 	 * Generates a random matrix with the specified characteristics which does not contain any zero values and returns

@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.DataGen;
+import org.apache.sysds.lops.DeCompression;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.lops.WeightedCrossEntropy;
@@ -226,6 +227,7 @@ public class SPInstructionParser extends InstructionParser
 		// Spark-specific instructions
 		String2SPInstructionType.put( Checkpoint.OPCODE, SPType.Checkpoint);
 		String2SPInstructionType.put( Compression.OPCODE, SPType.Compression);
+		String2SPInstructionType.put( DeCompression.OPCODE, SPType.DeCompression);
 		
 		// Builtin Instruction Opcodes 
 		String2SPInstructionType.put( "log"  , SPType.Builtin);

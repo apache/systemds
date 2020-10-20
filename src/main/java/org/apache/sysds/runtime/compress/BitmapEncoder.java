@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -74,7 +75,7 @@ public class BitmapEncoder {
 			else
 				reader = new ReaderColumnSelectionDense(rawBlock, colIndices, compSettings);
 
-			res = extractBitmap(colIndices, rawBlock, reader);
+			res = extractBitmap(colIndices, reader);
 		}
 		if(compSettings.lossy) {
 			return makeBitmapLossy(res);
@@ -82,6 +83,12 @@ public class BitmapEncoder {
 		else {
 			return res;
 		}
+	}
+
+	public static ABitmap extractBitmap(int[] colIndices, int rows, BitSet rawBlock, CompressionSettings compSettings) {
+		ReaderColumnSelection reader = new ReaderColumnSelectionBitSet(rawBlock, rows, colIndices, compSettings);
+		Bitmap res = extractBitmap(colIndices, reader);
+		return res;
 	}
 
 	/**
@@ -149,11 +156,10 @@ public class BitmapEncoder {
 	 * It counts the instances of rows containing only zero values, but other groups can contain a zero value.
 	 * 
 	 * @param colIndices The Column indexes to extract the multi-column bit map from.
-	 * @param rawBlock   The raw block to extract from
 	 * @param rowReader  A Reader for the columns selected.
 	 * @return The Bitmap
 	 */
-	private static Bitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, ReaderColumnSelection rowReader) {
+	private static Bitmap extractBitmap(int[] colIndices, ReaderColumnSelection rowReader) {
 		// probe map for distinct items (for value or value groups)
 		DblArrayIntListHashMap distinctVals;
 		if(colIndices.length > 10) {

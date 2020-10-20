@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.compress.colgroup.DenseRowIterator;
 import org.apache.sysds.runtime.compress.colgroup.SparseRowIterator;
 import org.apache.sysds.runtime.compress.lib.LibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.LibLeftMultBy;
+import org.apache.sysds.runtime.compress.lib.LibRelationalOp;
 import org.apache.sysds.runtime.compress.lib.LibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.LibScalar;
 import org.apache.sysds.runtime.compress.utils.ColumnGroupIterator;
@@ -61,16 +62,21 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.Equals;
+import org.apache.sysds.runtime.functionobjects.GreaterThan;
+import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysds.runtime.functionobjects.LessThan;
+import org.apache.sysds.runtime.functionobjects.LessThanEquals;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.NotEquals;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
-import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
@@ -84,7 +90,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
@@ -194,7 +199,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
 			double t = time.stop();
 			LOG.debug("decompressed block w/ k=" + 1 + " in " + t + "ms.");
-			DMLCompressionStatistics.addDecompressTime(t,1);
+			DMLCompressionStatistics.addDecompressTime(t, 1);
 		}
 		return ret;
 	}
@@ -372,18 +377,27 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	@Override
 	public MatrixBlock scalarOperations(ScalarOperator sop, MatrixValue result) {
-		if(overlappingColGroups && !(sop.fn instanceof Multiply || sop.fn instanceof Plus || sop.fn instanceof Minus ||
-			(sop instanceof LeftScalarOperator && sop.fn instanceof Power2))) {
+		// Special case handling of overlapping relational operations
+		if(sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan ||
+			sop.fn instanceof GreaterThanEquals || sop.fn instanceof Equals || sop.fn instanceof NotEquals) {
+			CompressedMatrixBlock ret = null;
+			if(result == null || !(result instanceof CompressedMatrixBlock))
+				ret = new CompressedMatrixBlock(getNumRows(), getNumColumns(), sparse);
+			return LibRelationalOp.relationalOperation(sop, this, ret, overlappingColGroups);
+		}
+
+		if(overlappingColGroups &&
+			(!(sop.fn instanceof Multiply || sop.fn instanceof Plus || sop.fn instanceof Minus))) {
+			LOG.warn("scalar overlapping not supported for op: " + sop.fn);
 			MatrixBlock m1d = decompress(sop.getNumThreads());
-			result = m1d.scalarOperations(sop, result);
-			return (MatrixBlock) result;
+			return m1d.scalarOperations(sop, result);
+
 		}
 
 		CompressedMatrixBlock ret = null;
 		if(result == null || !(result instanceof CompressedMatrixBlock))
 			ret = new CompressedMatrixBlock(getNumRows(), getNumColumns(), sparse);
-		result = LibScalar.scalarOperations(sop, this, ret, overlappingColGroups);
-		return (MatrixBlock) result;
+		return LibScalar.scalarOperations(sop, this, ret, overlappingColGroups);
 	}
 
 	@Override
@@ -499,7 +513,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		// compute matrix mult
 		MatrixBlock tmp = new MatrixBlock(rlen, 1, false);
-		tmp  = LibRightMultBy.rightMultByMatrix(_colGroups, v, tmp, k, getMaxNumValues(), false);
+		tmp = LibRightMultBy.rightMultByMatrix(_colGroups, v, tmp, k, getMaxNumValues(), false);
 		if(ctype == ChainType.XtwXv) {
 			BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject());
 			LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
@@ -563,6 +577,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			(op.aggOp.increOp.fn instanceof KahanPlusSq || (op.aggOp.increOp.fn instanceof Builtin &&
 				(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
 					((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)))) {
+			LOG.info("Unsupported overlapping aggregate: " + op.aggOp.increOp.fn);
 			MatrixBlock m1d = decompress(op.getNumThreads());
 			return m1d.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
 		}

@@ -36,7 +36,9 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
+import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysds.runtime.functionobjects.LessThanEquals;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -84,8 +86,11 @@ public abstract class CompressedTestBase extends TestBase {
 		// ValueRange.BYTE
 	};
 
-	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.COL, OverLapping.MATRIX,
-		OverLapping.NONE, OverLapping.MATRIX_PLUS, OverLapping.MATRIX_MULT_NEGATIVE};
+	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.COL,
+		// OverLapping.MATRIX,
+		OverLapping.NONE, OverLapping.MATRIX_PLUS,
+		// OverLapping.MATRIX_MULT_NEGATIVE
+	};
 
 	private static final int compressionSeed = 7;
 
@@ -535,8 +540,7 @@ public abstract class CompressedTestBase extends TestBase {
 				}
 				else {
 					if(rows > 50000) {
-						TestUtils
-							.compareMatricesPercentageDistance(d1, d2, 0.99, 0.999, this.toString());
+						TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.999, this.toString());
 					}
 					else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
 						overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
@@ -597,6 +601,13 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
+	public void testScalarRightOpEquals() {
+		double addValue = 1.0;
+		ScalarOperator sop = new RightScalarOperator(Equals.getEqualsFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
 	public void testScalarRightOpPower2() {
 		double addValue = 2;
 		ScalarOperator sop = new RightScalarOperator(Power2.getPower2FnObject(), addValue);
@@ -639,9 +650,37 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
+	public void testScalarLeftOpLessSmallValue() {
+		double addValue = -1000000.11;
+		ScalarOperator sop = new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarLeftOpGreaterThanEqualsSmallValue() {
+		double addValue = -1001310000.11;
+		ScalarOperator sop = new LeftScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarLeftOpGreaterThanLargeValue() {
+		double addValue = 10132400000.11;
+		ScalarOperator sop = new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
 	public void testScalarLeftOpGreater() {
 		double addValue = 0.11;
 		ScalarOperator sop = new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarLeftOpEqual() {
+		double addValue = 1.0;
+		ScalarOperator sop = new LeftScalarOperator(Equals.getEqualsFnObject(), addValue);
 		testScalarOperations(sop, lossyTolerance + 0.1);
 	}
 

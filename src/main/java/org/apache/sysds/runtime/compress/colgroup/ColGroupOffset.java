@@ -98,13 +98,11 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		}
 	}
 
-	// generic decompression for OLE/RLE, to be overwritten for performance
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		int[] colIndices = getColIndices();
-		final double[] values = getValues();
 
 		// Run through the bitmaps for this column group
 		for(int i = 0; i < numVals; i++) {
@@ -117,9 +115,11 @@ public abstract class ColGroupOffset extends ColGroupValue {
 					continue;
 				if(row > ru)
 					break;
-
-				for(int colIx = 0; colIx < numCols; colIx++)
-					target.appendValue(row, colIndices[colIx], values[valOff + colIx]);
+				row = row - (rl - offT);
+				for(int colIx = 0; colIx < numCols; colIx++){
+					double v = target.quickGetValue(row , colIndices[colIx]);
+					target.setValue(row, colIndices[colIx], v + values[valOff + colIx]);
+				}
 			}
 		}
 	}

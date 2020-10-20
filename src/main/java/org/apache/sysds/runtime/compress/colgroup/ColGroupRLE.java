@@ -90,12 +90,11 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		if(getNumValues() > 1) {
 			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
-			final double[] values = getValues();
 
 			// position and start offset arrays
 			int[] astart = new int[numVals];
@@ -112,11 +111,11 @@ public class ColGroupRLE extends ColGroupOffset {
 					for(; bix < blen & start < bimax; bix += 2) {
 						start += _data[boff + bix];
 						int len = _data[boff + bix + 1];
-						for(int i = Math.max(rl, start); i < Math.min(start + len, ru); i++)
+						for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++)
 							for(int j = 0; j < numCols; j++) {
 								if(values[off + j] != 0) {
 									double v = target.quickGetValue(i, _colIndexes[j]);
-									target.setValue(i, _colIndexes[j], values[off + j] + v);
+									target.quickSetValue(i, _colIndexes[j], values[off + j] + v);
 								}
 							}
 						start += len;
@@ -128,7 +127,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		}
 		else {
 			// call generic decompression with decoder
-			super.decompressToBlock(target, rl, ru);
+			super.decompressToBlock(target, rl, ru, offT, values);
 		}
 	}
 
@@ -210,7 +209,7 @@ public class ColGroupRLE extends ColGroupOffset {
 				for(; bix < blen & start < bimax; bix += 2) {
 					start += _data[boff + bix];
 					int len = _data[boff + bix + 1];
-					for(int i = start; i< start + len; i++)
+					for(int i = start; i < start + len; i++)
 						c[i] += values[off + colpos];
 					nnz += len;
 					start += len;

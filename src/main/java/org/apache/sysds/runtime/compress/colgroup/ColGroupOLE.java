@@ -88,39 +88,43 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		if(getNumValues() > 1) {
 			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
-			final double[] values = getValues();
 
 			// cache blocking config and position array
 			int[] apos = skipScan(numVals, rl);
 
 			// cache conscious append via horizontal scans
-			for(int bi = rl; bi < ru; bi += blksz) {
+			for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz) {
 				for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
 					int boff = _ptr[k];
 					int blen = len(k);
 					int bix = apos[k];
+					
 					if(bix >= blen)
 						continue;
 					int len = _data[boff + bix];
 					int pos = boff + bix + 1;
-					for(int i = pos; i < pos + len; i++)
-						for(int j = 0, rix = bi + _data[i]; j < numCols; j++)
-							if(values[off + j] != 0) {
-								double v = target.quickGetValue(rix, _colIndexes[j]);
-								target.setValue(rix, _colIndexes[j], values[off + j] + v);
-							}
+					for(int i = pos; i < pos + len; i++) {
+						int row = bi + _data[i];
+						if(row >= rl && row < ru){
+							int rix = row - (rl - offT);
+								for(int j = 0; j < numCols; j++) {
+									double v = target.quickGetValue(rix, _colIndexes[j]);
+									target.setValue(rix, _colIndexes[j], values[off + j] + v);
+								}
+						}
+					}
 					apos[k] += len + 1;
 				}
 			}
 		}
 		else {
 			// call generic decompression with decoder
-			super.decompressToBlock(target, rl, ru);
+			super.decompressToBlock(target, rl, ru, offT, values);
 		}
 	}
 
@@ -881,8 +885,9 @@ public class ColGroupOLE extends ColGroupOffset {
 	 * @return array of positions for all values
 	 */
 	private int[] skipScan(int numVals, int rl) {
-		int[] ret = allocIVector(numVals, rl == 0);
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		rl = (rl / blksz) * blksz;
+		int[] ret = allocIVector(numVals, rl == 0);
 
 		if(rl > 0) { // rl aligned with blksz
 			for(int k = 0; k < numVals; k++) {

@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -192,6 +193,27 @@ public abstract class ColGroup implements Serializable {
 	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru);
 
 	/**
+	 * Decompress the contents of this column group into the specified full matrix block.
+	 * 
+	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
+	 * @param rl     row lower
+	 * @param ru     row upper
+	 * @param offT   The offset into the target matrix block to decompress to.
+	 */
+	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT);
+
+	/**
+	 * Decompress the contents of this column group into the specified full matrix block.
+	 * 
+	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
+	 * @param rl     row lower
+	 * @param ru     row upper
+	 * @param offT   The offset into the target matrix block to decompress to.
+	 * @param values The Values materialized in the dictionary
+	 */
+	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values);
+
+	/**
 	 * Decompress the contents of this column group into uncompressed packed columns
 	 * 
 	 * @param target          a dense matrix block. The block must have enough space to hold the contents of this column
@@ -200,10 +222,10 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract void decompressToBlock(MatrixBlock target, int[] colIndexTargets);
 
-	public static void decompressToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups){
-		for(ColGroup g: colGroups){
+	public static void decompressToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
+		for(ColGroup g : colGroups) {
 			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
-			if( groupColIndex >= 0){
+			if(groupColIndex >= 0) {
 				g.decompressToBlock(target, groupColIndex);
 			}
 		}
@@ -350,8 +372,8 @@ public abstract class ColGroup implements Serializable {
 	 * @param ru      The row to stop the matrix multiplication at.
 	 * @param vOff    The offset into the first argument matrix to start at.
 	 */
-	public abstract void leftMultByMatrix(double[] matrix, double[] result, double[] values, int numRows,
-		int numCols, int rl, int ru, int vOff);
+	public abstract void leftMultByMatrix(double[] matrix, double[] result, double[] values, int numRows, int numCols,
+		int rl, int ru, int vOff);
 
 	/**
 	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
@@ -399,6 +421,15 @@ public abstract class ColGroup implements Serializable {
 	 * @param c  Rhe output matrix block.
 	 */
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c);
+
+	/**
+	 * Compute the max / min value contained in the dictionary.
+	 * 
+	 * @param c       Initial value
+	 * @param builtin The build in to use
+	 * @return The result value
+	 */
+	public abstract double computeMxx(double c, Builtin builtin);
 
 	/**
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed

@@ -55,14 +55,14 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int off, double[] values) {
 		final int nCol = getNumCols();
-		final double[] values = getValues();
-		for(int i = rl; i < ru; i++)
+		for(int i = rl; i < ru; i++, off++) {
 			for(int j = 0; j < nCol; j++) {
-				double v = target.quickGetValue(i, _colIndexes[j]);
-				target.quickSetValue(i, _colIndexes[j], getData(i, j, values) + v);
+				double v = target.quickGetValue(off, _colIndexes[j]);
+				target.quickSetValue(off, _colIndexes[j], getData(i, j, values) + v);
 			}
+		}
 	}
 
 	@Override

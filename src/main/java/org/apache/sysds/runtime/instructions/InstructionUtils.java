@@ -607,6 +607,8 @@ public class InstructionUtils
 	 */
 	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar, double constant)
 	{
+		// TODO add Multithreaded threads to Scalar operations.
+
 		//commutative operators
 		if ( opcode.equalsIgnoreCase("+") ){ 
 			return new RightScalarOperator(Plus.getPlusFnObject(), constant); 

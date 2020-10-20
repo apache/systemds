@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlock.Type;
 import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
@@ -201,14 +202,33 @@ public class ColGroupUncompressed extends ColGroup {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+		decompressToBlock(target, rl, ru, rl);
+	}
+
+	@Override
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
 		// empty block, nothing to add to output
 		if(_data.isEmptyBlock(false))
 			return;
-		for(int row = rl; row < ru; row++) {
+		for(int row = rl; row < ru; row++, offT++) {
 			for(int colIx = 0; colIx < _colIndexes.length; colIx++) {
 				int col = _colIndexes[colIx];
 				double cellVal = _data.quickGetValue(row, colIx);
-				target.quickSetValue(row, col, cellVal);
+				target.quickSetValue(offT, col, target.quickGetValue(offT, col) + cellVal);
+			}
+		}
+	}
+
+	@Override
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+		// empty block, nothing to add to output
+		if(_data.isEmptyBlock(false))
+			return;
+		for(int row = rl; row < ru; row++, offT++) {
+			for(int colIx = 0; colIx < _colIndexes.length; colIx++) {
+				int col = _colIndexes[colIx];
+				double cellVal = _data.quickGetValue(row, colIx);
+				target.quickSetValue(offT, col, target.quickGetValue(offT, col) + cellVal);
 			}
 		}
 	}
@@ -317,8 +337,8 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] vector, double[] c, double[] values, int numRows, int numCols,
-		int rl, int ru, int vOff) {
+	public void leftMultByMatrix(double[] vector, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
+		int vOff) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
@@ -326,6 +346,10 @@ public class ColGroupUncompressed extends ColGroup {
 	public void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] c, int numVals,
 		double[] values, int numRows, int numCols, int row, double[] MaterializedRow) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
+	}
+
+	public double computeMxx(double c, Builtin builtin) {
+		throw new NotImplementedException("Not implemented max min on uncompressed");
 	}
 
 	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result) {

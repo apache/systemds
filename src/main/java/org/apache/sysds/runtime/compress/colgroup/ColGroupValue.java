@@ -103,6 +103,16 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		super(colIndices, numRows);
 		_dict = dict;
 	}
+	
+	@Override
+	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+		decompressToBlock(target,rl,ru,rl);
+	}
+
+	@Override
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlock(target,rl,ru,offT, getValues());
+	}
 
 	/**
 	 * Obtain number of distinct sets of values associated with the bitmaps in this column group.
@@ -331,19 +341,11 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		return ret;
 	}
 
-	/**
-	 * Compute the Max or other equivalent operations.
-	 * 
-	 * NOTE: Shared across OLE/RLE/DDC because value-only computation.
-	 * 
-	 * @param c       output matrix block
-	 * @param builtin function object
-	 */
-	protected void computeMxx(double[] c, Builtin builtin) {
+	public double computeMxx(double c, Builtin builtin) {
 		if(_zeros) {
-			c[0] = builtin.execute(c[0], 0);
+			c = builtin.execute(c, 0);
 		}
-		c[0] = _dict.aggregate(c[0], builtin);
+		return _dict.aggregate(c, builtin);
 	}
 
 	/**
@@ -434,7 +436,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
 
 			if(op.indexFn instanceof ReduceAll)
-				computeMxx(c, builtin);
+				c[0] = computeMxx(c[0], builtin);
 			else if(op.indexFn instanceof ReduceCol)
 				computeRowMxx(c, builtin, rl, ru);
 			else if(op.indexFn instanceof ReduceRow)

@@ -1531,6 +1531,35 @@ public class TestUtils
 	}
 
 	/**
+	 * Generates a test matrix with the specified parameters as a two
+	 * dimensional array.
+	 * Set seed to -1 to use the current time as seed.
+	 * 
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value
+	 * @param max maximum value
+	 * @param sparsity sparsity
+	 * @param seed seed
+	 * @param delta The minimum delta between values.
+	 * @return random matrix
+	 */
+	public static double[][] generateTestMatrix(int rows, int cols, double min, double max, double sparsity, long seed, double delta) {
+		double[][] matrix = new double[rows][cols];
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				if (random.nextDouble() > sparsity)
+					continue;
+				double v = (random.nextDouble()) * (max - min);
+				matrix[i][j] = (v + min ) - v % delta;
+			}
+		}
+
+		return matrix;
+	}
+
+	/**
 	 * 
 	 * Generates a test matrix, but only containing real numbers, in the range specified.
 	 * 

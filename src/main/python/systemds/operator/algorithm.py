@@ -92,6 +92,21 @@ def kmeans(x: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Operatio
     params_dict.update(kwargs)
     return OperationNode(x.sds_context, 'kmeans', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2)
 
+def kmeansPredict(X: OperationNode, C: OperationNode) -> OperationNode:
+    """
+    Perform Kmeans Predict, note that the Ids returned are 1 indexed.
+    
+    :param X: The matrix to classify.
+    :param Y: The Clusters to use for classification into.
+    :return: `OperationNode` containing a matrix of classifications of Id's of specific clusters in C.
+    """
+    X._check_matrix_op()
+    C._check_matrix_op()
+
+    params_dict = {'X' : X, 'C' : C}
+    return OperationNode(X.sds_context, 'kmeansPredict', named_input_nodes=params_dict, output_type=OutputType.MATRIX, shape=(1, X.shape[0]))
+
+
 
 def pca(x: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """

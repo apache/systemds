@@ -278,6 +278,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
 				ListObject model = pullModel();
 				pushGradients(computeBatchGradients(model, batchCounter));
+				ParamservUtils.cleanupListObject(model);
 			}
 		}
 	}
@@ -391,6 +392,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// Pull the global parameters from ps
 			ListObject model = pullModel();
 			pushGradients(computeEpochGradients(model));
+			ParamservUtils.cleanupListObject(model);
 		}
 	}
 

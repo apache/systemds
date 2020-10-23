@@ -57,22 +57,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
     public static Collection parameters() {
         return Arrays.asList(new Object[][] {
                 //Network type, number of federated workers, examples per worker, batch size, epochs, learning rate, update type, update frequency
-                {"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"},
-                {"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
-                {"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"},
-                {"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
-                {"CNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"},
-                {"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
-                {"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"},
-                {"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
-                {"TwoNN", 5, 1000, 32, 2, 0.01, "BSP", "BATCH"},
-                {"TwoNN", 5, 1000, 32, 2, 0.01, "ASP", "BATCH"},
-                {"TwoNN", 5, 1000, 32, 2, 0.01, "BSP", "EPOCH"},
-                {"TwoNN", 5, 1000, 32, 2, 0.01, "ASP", "EPOCH"},
-                {"CNN", 5, 1000, 32, 2, 0.01, "BSP", "BATCH"},
-                {"CNN", 5, 1000, 32, 2, 0.01, "ASP", "BATCH"},
-                {"CNN", 5, 1000, 32, 2, 0.01, "BSP", "EPOCH"},
-                {"CNN", 5, 1000, 32, 2, 0.01, "ASP", "EPOCH"}
+                {"TwoNN", 2, 1000, 32, 2, 0.01, "BSP", "BATCH"}
         });
     }
 

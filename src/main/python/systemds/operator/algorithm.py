@@ -113,18 +113,6 @@ def pca(x: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNo
         raise ValueError(
             "Invalid number of dimensions in PCA, number must be integer above 0")
 
-    if 'scale' in kwargs.keys():
-        if kwargs.get('scale') == True:
-            kwargs.set('scale', "TRUE")
-        elif kwargs.get('scale' == False):
-            kwargs.set('scale', "FALSE")
-
-    if 'center' in kwargs.keys():
-        if kwargs.get('center') == True:
-            kwargs.set('center', "TRUE")
-        elif kwargs.get('center' == False):
-            kwargs.set('center', "FALSE")
-
     params_dict = {'X': x}
     params_dict.update(kwargs)
     return OperationNode(x.sds_context, 'pca', named_input_nodes=params_dict,  output_type=OutputType.LIST, number_of_outputs=2)

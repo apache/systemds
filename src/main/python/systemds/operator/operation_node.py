@@ -489,3 +489,33 @@ class OperationNode(DAGNode):
 
         named_input_nodes = {"X": self, "numClasses": num_classes}
         return OperationNode(self.sds_context, 'toOneHot', named_input_nodes=named_input_nodes, shape=(self.shape[0], num_classes))
+
+    def rbind(self, other) -> 'OperationNode':
+        """
+        Row-wise matrix concatenation, by concatenating the second matrix as additional rows to the first matrix. 
+        :param: The other matrix to bind to the right hand side
+        :return: The OperationNode containing the concatenated matrices.
+        """
+
+        self._check_matrix_op()
+        other._check_matrix_op()
+
+        if self.shape[1] != other.shape[1]:
+            raise ValueError("The input matrices to rbind does not have the same number of columns")
+        
+        return OperationNode(self.sds_context, 'rbind', [self, other], shape=(self.shape[0] + other.shape[0], self.shape[1]))
+
+    def cbind(self, other) -> 'OperationNode':
+        """
+        Column-wise matrix concatenation, by concatenating the second matrix as additional columns to the first matrix. 
+        :param: The other matrix to bind to the right hand side.
+        :return: The OperationNode containing the concatenated matrices.
+        """
+
+        self._check_matrix_op()
+        other._check_matrix_op()
+
+        if self.shape[0] != other.shape[0]:
+            raise ValueError("The input matrices to cbind does not have the same number of columns")
+        
+        return OperationNode(self.sds_context, 'cbind', [self, other], shape=(self.shape[0], self.shape[1] + other.shape[1]))

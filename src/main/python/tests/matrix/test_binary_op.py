@@ -63,32 +63,58 @@ class TestBinaryOp(unittest.TestCase):
         self.assertTrue(np.allclose(
             (Matrix(self.sds, m1) / Matrix(self.sds, m2)).compute(), m1 / m2))
 
-    # TODO arithmetic with numpy rhs
-
-    # TODO arithmetic with numpy lhs
-
-    def test_plus3(self):
+    def test_plus3_rhs(self):
         self.assertTrue(np.allclose(
             (Matrix(self.sds, m1) + s).compute(), m1 + s))
 
-    def test_minus3(self):
+    def test_plus3_lhs(self):
+        self.assertTrue(np.allclose(
+            (s + Matrix(self.sds, m1) ).compute(), s + m1))
+
+    def test_minus3_rhs(self):
         self.assertTrue(np.allclose(
             (Matrix(self.sds, m1) - s).compute(), m1 - s))
 
-    def test_mul3(self):
+    def test_minus3_lhs(self):
+        self.assertTrue(np.allclose(
+            (s - Matrix(self.sds, m1)).compute(), s - m1 ))
+
+    def test_mul3_rhs(self):
         self.assertTrue(np.allclose(
             (Matrix(self.sds, m1) * s).compute(), m1 * s))
 
-    def test_div3(self):
+    def test_mul3_lhs(self):
+        self.assertTrue(np.allclose(
+            (s * Matrix(self.sds, m1)).compute(), s * m1))
+
+    def test_div3_rhs(self):
         self.assertTrue(np.allclose(
             (Matrix(self.sds, m1) / s).compute(), m1 / s))
+
+    def test_div3_lhs(self):
+        self.assertTrue(np.allclose(
+            (s / Matrix(self.sds, m1) ).compute(), s / m1))
 
     def test_matmul(self):
         self.assertTrue(np.allclose(
             (Matrix(self.sds, m1) @ Matrix(self.sds, m2)).compute(), m1.dot(m2)))
 
-    # TODO arithmetic with scala lhs
-
+    def test_matmul_chain(self):
+        m3 = np.ones((m2.shape[1], 10), dtype=np.uint8)
+        m = Matrix(self.sds, m1) @ Matrix(self.sds, m2) @ Matrix(
+            self.sds, m3)
+        res = (m).compute()
+        np_res = m1.dot(m2).dot(m3)
+        self.assertTrue(np.allclose(res, np_res))
+        self.assertTrue(np.allclose(m.shape, np_res.shape))
+    
+    def test_matmul_self(self):
+        m = Matrix(self.sds, m1).t() @ Matrix(self.sds, m1)
+        res = (m).compute()
+        np_res = np.transpose(m1).dot(m1)
+        self.assertTrue(np.allclose(res, np_res))
+        self.assertTrue(np.allclose(m.shape, np_res.shape))
+        
     def test_lt(self):
         self.assertTrue(np.allclose(
             (Matrix(self.sds, m1) < Matrix(self.sds, m2)).compute(), m1 < m2))
@@ -109,6 +135,25 @@ class TestBinaryOp(unittest.TestCase):
         self.assertTrue(np.allclose(
             Matrix(self.sds, m1).abs().compute(), np.abs(m1)))
 
+    def test_lt3_rhs(self):
+        self.assertTrue(np.allclose(
+            (Matrix(self.sds, m1) <3).compute(), m1 < 3))
+
+    def test_lt3_lhs(self):
+        self.assertTrue(np.allclose(
+            (3 < Matrix(self.sds, m1)).compute(), 3 < m1 ))
+
+    def test_gt3_rhs(self):
+        self.assertTrue(np.allclose(
+            (3 > Matrix(self.sds, m1)).compute(), 3 > m1 ))
+
+    def test_le3_rhs(self):
+        self.assertTrue(np.allclose(
+            (3<= Matrix(self.sds, m1) ).compute(), 3 <= m1 ))
+
+    def test_ge3_rhs(self):
+        self.assertTrue(np.allclose(
+            (3 >= Matrix(self.sds, m1)).compute(), 3>= m1))
 
 if __name__ == "__main__":
     unittest.main(exit=False)

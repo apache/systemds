@@ -19,6 +19,18 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.Future;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
@@ -32,8 +44,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -41,19 +53,9 @@ import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.Future;
-
 public class InitFEDInstruction extends FEDInstruction {
+
+	// private static final Log LOG = LogFactory.getLog(InitFEDInstruction.class.getName());
 	
 	public static final String FED_MATRIX_IDENTIFIER = "matrix";
 	public static final String FED_FRAME_IDENTIFIER = "frame";
@@ -202,7 +204,8 @@ public class InitFEDInstruction extends FEDInstruction {
 		}
 	}
 
-	public void federateMatrix(MatrixObject output, List<Pair<FederatedRange, FederatedData>> workers) {
+	public static void federateMatrix(MatrixObject output, List<Pair<FederatedRange, FederatedData>> workers) {
+
 		Map<FederatedRange, FederatedData> fedMapping = new TreeMap<>();
 		for (Pair<FederatedRange, FederatedData> t : workers) {
 			fedMapping.put(t.getLeft(), t.getRight());
@@ -238,7 +241,7 @@ public class InitFEDInstruction extends FEDInstruction {
 		output.getFedMapping().setType(rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
 	}
 	
-	public void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers) {
+	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers) {
 		Map<FederatedRange, FederatedData> fedMapping = new TreeMap<>();
 		for (Pair<FederatedRange, FederatedData> t : workers) {
 			fedMapping.put(t.getLeft(), t.getRight());

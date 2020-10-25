@@ -86,6 +86,10 @@ public class FederationMap
 	public FederatedRange[] getFederatedRanges() {
 		return _fedMap.keySet().toArray(new FederatedRange[0]);
 	}
+
+	public Map<FederatedRange, FederatedData> getFedMapping(){
+		return _fedMap;
+	}
 	
 	public FederatedRequest broadcast(CacheableData<?> data) {
 		//prepare single request for all federated data
@@ -326,5 +330,14 @@ public class FederationMap
 			_data.setVarID(_varID);
 			return null;
 		}
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("Fed Map: " + _type);
+		sb.append("\t ID:" + _ID);
+		sb.append("\n"+ _fedMap);
+		return sb.toString();
 	}
 }

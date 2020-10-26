@@ -259,8 +259,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	protected ListObject pullModel() {
 		// Pull the global parameters from ps
-		ListObject model = _ps.pull(_workerID);
-		return model;
+		return _ps.pull(_workerID);
 	}
 
 	protected void pushGradients(ListObject gradients) {
@@ -277,8 +276,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
 				ListObject model = pullModel();
-				pushGradients(computeBatchGradients(model, batchCounter));
+				ListObject gradients = computeBatchGradients(model, batchCounter);
+				pushGradients(gradients);
 				ParamservUtils.cleanupListObject(model);
+				ParamservUtils.cleanupListObject(gradients);
 			}
 		}
 	}
@@ -391,8 +392,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			// Pull the global parameters from ps
 			ListObject model = pullModel();
-			pushGradients(computeEpochGradients(model));
+			ListObject gradients = computeEpochGradients(model);
+			pushGradients(gradients);
 			ParamservUtils.cleanupListObject(model);
+			ParamservUtils.cleanupListObject(gradients);
 		}
 	}
 

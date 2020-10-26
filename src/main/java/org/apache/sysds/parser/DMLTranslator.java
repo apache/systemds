@@ -1055,7 +1055,9 @@ public class DMLTranslator
 						// write output in binary block format
 						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ConfigurationManager.getBlocksize());
 						break;
-						
+					case FEDERATED:
+						ae.setOutputParams(ae.getDim1(), ae.getDim2(), -1, ae.getUpdateType(), -1);
+						break;
 						default:
 							throw new LanguageException("Unrecognized file format: " + ae.getInputFormatType());
 					}

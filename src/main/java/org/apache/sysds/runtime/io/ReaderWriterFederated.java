@@ -52,12 +52,16 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 /**
  * This class serves as the reader for federated objects. To read the files a mdt file is required. The reader is
- * different from the other readers in the since that it does not return a MatrixBlock. but a Matrix Object wrapper,
+ * different from the other readers in the since that it does not return a MatrixBlock but a Matrix Object wrapper,
  * containing the federated Mapping.
+ * 
+ * On the Matrix Object the function isFederated() will if called read in the federated locations and instantiate the
+ * map. The reading is done through this code.
  * 
  * This means in practice that it circumvent the other reading code. See more in:
  * 
  * org.apache.sysds.runtime.controlprogram.caching.MatrixObject.readBlobFromHDFS()
+ * org.apache.sysds.runtime.controlprogram.caching.CacheableData.isFederated()
  * 
  */
 public class ReaderWriterFederated {
@@ -98,11 +102,6 @@ public class ReaderWriterFederated {
      * @param fedMap The federated map to save.
      */
     public static void write(String file, FederationMap fedMap) {
-        if(fedMap.getID() != 0) {
-            // TODO add writing to remote to allow this anyway.
-            throw new DMLRuntimeException(
-                "Invalid to save federated maps with ID's higher than 0, since they are modified.");
-        }
         LOG.debug("Writing federated map to " + file);
         try {
             JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -110,12 +109,12 @@ public class ReaderWriterFederated {
             FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
             DataOutputStream out = fs.create(path, true);
             ObjectMapper mapper = new ObjectMapper();
-            // FileOutputStream fileOutputStream = new FileOutputStream("post.json");
-            // String postJson = mapper.writeValueAsString(fedMap);
             FederatedDataAddress[] outObjects = parseMap(fedMap.getFedMapping());
             try(BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
                 mapper.writeValue(pw, outObjects);
             }
+
+            IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
         }
         catch(IOException e) {
             fail("Unable to write test federated matrix to (" + file + "): " + e.getMessage());

@@ -560,7 +560,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 
-		if (_data != null)
+		if(this.isFederated() &&  FileFormat.safeValueOf(ofmt) == FileFormat.FEDERATED){
+			ReaderWriterFederated.write(fname,this._fedMapping);
+		}
+		else if (_data != null)
 		{
 			// Get the dimension information from the metadata stored within MatrixObject
 			DataCharacteristics mc = iimd.getDataCharacteristics();

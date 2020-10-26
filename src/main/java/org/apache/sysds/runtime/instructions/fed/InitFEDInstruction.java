@@ -37,8 +37,8 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -147,7 +147,7 @@ public class InitFEDInstruction extends FEDInstruction {
 			}
 		}
 		if (type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
-			MatrixObject output = ec.getMatrixObject(_output);
+			CacheableData<?> output = ec.getCacheableData(_output);
 			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
 			federateMatrix(output, feds);
 		}
@@ -204,7 +204,7 @@ public class InitFEDInstruction extends FEDInstruction {
 		}
 	}
 
-	public static void federateMatrix(MatrixObject output, List<Pair<FederatedRange, FederatedData>> workers) {
+	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers) {
 
 		Map<FederatedRange, FederatedData> fedMapping = new TreeMap<>();
 		for (Pair<FederatedRange, FederatedData> t : workers) {

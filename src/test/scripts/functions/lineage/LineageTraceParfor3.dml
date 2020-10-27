@@ -27,5 +27,5 @@ parfor(i in 1:ncol(X), check=0, opt=None, mode=REMOTE_SPARK) {
   R[1, i] = sum(Xi)
 }
 
-print(lineage(R));
+#print(lineage(R));
 write(R, $1);

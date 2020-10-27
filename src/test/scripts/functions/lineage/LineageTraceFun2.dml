@@ -36,5 +36,5 @@ Y = X^2;
 [R, S] = foo(Y, X);
 R = R - S;
 
-print(lineage(R));
+#print(lineage(R));
 write(R, $2);

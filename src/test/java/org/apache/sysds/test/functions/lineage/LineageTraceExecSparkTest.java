@@ -19,7 +19,10 @@
 
 package org.apache.sysds.test.functions.lineage;
 
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -32,16 +35,12 @@ import org.apache.sysds.runtime.lineage.LineageParser;
 import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Explain;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-public class LineageTraceExecSparkTest extends AutomatedTestBase {
+public class LineageTraceExecSparkTest extends LineageBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME1 = "LineageTraceSpark1";
@@ -77,7 +76,7 @@ public class LineageTraceExecSparkTest extends AutomatedTestBase {
 		boolean oldLocalSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		try {
-			System.out.println("------------ BEGIN " + testname + "------------");
+			LOG.debug("------------ BEGIN " + testname + "------------");
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;

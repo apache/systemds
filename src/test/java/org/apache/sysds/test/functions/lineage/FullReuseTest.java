@@ -19,21 +19,20 @@
 
 package org.apache.sysds.test.functions.lineage;
 
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-public class FullReuseTest extends AutomatedTestBase {
+public class FullReuseTest extends LineageBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME1 = "FullReuse1";
@@ -76,7 +75,7 @@ public class FullReuseTest extends AutomatedTestBase {
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
-			System.out.println("------------ BEGIN " + testname + "------------");
+			LOG.debug("------------ BEGIN " + testname + "------------");
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;

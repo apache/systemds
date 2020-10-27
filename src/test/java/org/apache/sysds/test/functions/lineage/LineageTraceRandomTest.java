@@ -19,19 +19,18 @@
 
 package org.apache.sysds.test.functions.lineage;
 
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageParser;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Explain;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class LineageTraceRandomTest extends AutomatedTestBase {
+public class LineageTraceRandomTest extends LineageBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME1 = "LineageTraceRandom1";
@@ -55,7 +54,7 @@ public class LineageTraceRandomTest extends AutomatedTestBase {
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
-			System.out.println("------------ BEGIN " + testname + "------------");
+			LOG.debug("------------ BEGIN " + testname + "------------");
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;

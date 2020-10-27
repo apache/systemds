@@ -25,19 +25,22 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaRDD;
-import org.junit.Test;
 import org.apache.sysds.api.mlcontext.MatrixFormat;
 import org.apache.sysds.api.mlcontext.MatrixMetadata;
 import org.apache.sysds.api.mlcontext.Script;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.test.functions.mlcontext.MLContextTestBase;
+import org.junit.Test;
 
 public class LineageMLContextTest extends MLContextTestBase {
 
+	protected static final Log LOG = LogFactory.getLog(LineageMLContextTest.class.getName());
 	@Test
 	public void testPrintLineage() {
-		System.out.println("LineageMLContextTest - JavaRDD<String> IJV sum DML");
+		LOG.debug("LineageMLContextTest - JavaRDD<String> IJV sum DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1 1 5");
@@ -59,7 +62,7 @@ public class LineageMLContextTest extends MLContextTestBase {
 	
 	@Test
 	public void testReuseSameRDD() {
-		System.out.println("LineageMLContextTest - JavaRDD<String> IJV sum DML");
+		LOG.debug("LineageMLContextTest - JavaRDD<String> IJV sum DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1 1 5");
@@ -83,7 +86,7 @@ public class LineageMLContextTest extends MLContextTestBase {
 	
 	@Test
 	public void testNoReuseDifferentRDD() {
-		System.out.println("LineageMLContextTest - JavaRDD<String> IJV sum DML");
+		LOG.debug("LineageMLContextTest - JavaRDD<String> IJV sum DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1 1 5");

@@ -281,6 +281,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				ParamservUtils.cleanupListObject(model);
 				ParamservUtils.cleanupListObject(gradients);
 			}
+			System.out.println("[+] " + this.getWorkerName() + " completed epoch " + epochCounter);
 		}
 	}
 
@@ -394,6 +395,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ListObject model = pullModel();
 			ListObject gradients = computeEpochGradients(model);
 			pushGradients(gradients);
+			System.out.println("[+] " + this.getWorkerName() + " completed epoch " + epochCounter);
 			ParamservUtils.cleanupListObject(model);
 			ParamservUtils.cleanupListObject(gradients);
 		}
@@ -533,7 +535,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	// Statistics methods
 	@Override
 	public String getWorkerName() {
-		return String.format("Local worker_%d", _workerID);
+		return String.format("Federated worker_%d", _workerID);
 	}
 
 	@Override

@@ -20,6 +20,6 @@
 #-------------------------------------------------------------
 
 X = read($X)
-[C, Y] = kmeans(X,  $k, $runs, $max_iter, $eps, TRUE, 50)
+[C, Y] = kmeans(X,  $k, $runs, $max_iter, $eps, TRUE, 50, 1845774737537)
 write(C, $C)
 write(Y, $Y)

@@ -482,7 +482,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _data==null && isEmpty(true) ) {
 			try {
 				if( isFederated() ) {
-					LOG.error("Federated pull all data");
 					_data = readBlobFromFederated( _fedMapping );
 					
 					//mark for initial local write despite read operation
@@ -783,35 +782,35 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		{
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix
-			boolean federatedWrite = outputFormat.contains("federated");
-			if( ! federatedWrite){
+			boolean federatedWrite = (outputFormat != null ) &&  outputFormat.contains("federated");
 
-				if( isEmpty(true))
+			if( isEmpty(true))
+			{
+				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
+				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
+				try
 				{
-					//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
-					//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
-					try
-					{
-						if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
-							_data = readBlobFromHDFS( _hdfsFileName );
-						else if( getRDDHandle() != null )
-							_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
-						else {
-							_data = readBlobFromFederated( getFedMapping() );
-						}
-						
-						setDirty(false);
-					}
-					catch (IOException e) {
-						throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
-					}
+					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
+						_data = readBlobFromHDFS( _hdfsFileName );
+					else if( getRDDHandle() != null )
+						_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
+					else if(!federatedWrite)
+						_data = readBlobFromFederated( getFedMapping() );
+					
+					setDirty(false);
 				}
-				//get object from cache
-				if( _data == null )
+				catch (IOException e) {
+					throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
+				}
+			}
+			//get object from cache
+			if(!federatedWrite){
+
+				if(  _data == null )
 					getCache();
 				acquire( false, _data==null ); //incl. read matrix if evicted
 			}
-			
+
 			// b) write the matrix 
 			try {
 				writeMetaData( fName, outputFormat, formatProperties );

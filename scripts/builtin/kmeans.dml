@@ -67,7 +67,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
     print ("Taking data samples for initialization...");
 
   [sample_maps, samples_vs_runs_map, sample_block_size] = get_sample_maps(
-    num_records, num_runs, num_centroids * avg_sample_size_per_centroid);
+    num_records, num_runs, num_centroids * avg_sample_size_per_centroid, seed);
 
   is_row_in_samples = rowSums (sample_maps);
   X_samples = sample_maps %*% X;
@@ -84,6 +84,8 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
 
   min_distances = is_row_in_samples;  # Pick the 1-st centroids uniformly at random
 
+  seed = ifelse(seed == -1, -1, seed + 1)
+  random_row = rand(rows = 1, cols = num_runs, seed = seed);
   for (i in 1 : num_centroids)
   {
     # "Matricize" and prefix-sum to compute the cumulative distribution function:
@@ -92,7 +94,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
 
     # Select the i-th centroid in each sample as a random sample row id with
     # probability ~ min_distances:
-    random_row = rand(rows = 1, cols = num_runs, seed = seed);
+    random_row = random_row + rand(rows = 1, cols = 1, seed = seed + i)
     threshold_matrix = random_row * cdf_min_distances [sample_block_size, ];
     centroid_ids = t(colSums (cdf_min_distances < threshold_matrix)) + 1;
 
@@ -222,12 +224,10 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
     C = matrix(0, num_centroids,  num_records)
     Y = matrix(-1, 1, num_records)
   }
-
-
 }
 
 
-get_sample_maps = function (int num_records, int num_samples, int approx_sample_size)
+get_sample_maps = function (int num_records, int num_samples, int approx_sample_size, int seed)
                   return (Matrix[double] sample_maps, Matrix[double] sample_col_map, int sample_block_size)
 {
   if (approx_sample_size < num_records)
@@ -239,7 +239,7 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
 
     # Generate all samples in parallel by converting uniform random values into random
     # integer skip-ahead intervals and prefix-summing them:
-    sample_rec_ids = Rand (rows = sample_block_size, cols = num_samples, min = 0.0, max = 1.0);
+    sample_rec_ids = Rand (rows = sample_block_size, cols = num_samples, min = 0.0, max = 1.0, seed = seed);
     sample_rec_ids = round (log (sample_rec_ids) / log (1.0 - approx_sample_size / num_records) + 0.5);
     # Prob [k-1 < log(uniform)/log(1-p) < k] = p*(1-p)^(k-1) = Prob [k-1 zeros before a one]
     sample_rec_ids = cumsum (sample_rec_ids);  #  (skip to next one) --> (skip to i-th one)

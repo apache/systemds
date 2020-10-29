@@ -20,9 +20,10 @@
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+
 import java.util.List;
 
-public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedScheme {
+public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);

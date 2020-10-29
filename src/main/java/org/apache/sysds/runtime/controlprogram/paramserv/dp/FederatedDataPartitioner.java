@@ -32,6 +32,9 @@ public class FederatedDataPartitioner {
 			case KEEP_DATA_ON_WORKER:
 				_scheme = new KeepDataOnWorkerFederatedScheme();
 				break;
+			case SHUFFLE:
+				_scheme = new ShuffleFederatedScheme();
+				break;
 			default:
 				throw new DMLRuntimeException(String.format("FederatedDataPartitioner: not support data partition scheme '%s'", scheme));
 		}

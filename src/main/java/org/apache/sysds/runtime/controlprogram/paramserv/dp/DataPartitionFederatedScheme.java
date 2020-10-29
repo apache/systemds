@@ -19,15 +19,24 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
-import org.apache.sysds.api.mlcontext.Matrix;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 public abstract class DataPartitionFederatedScheme {
 
-	public final class Result {
+	public static final class Result {
 		public final List<MatrixObject> pFeatures;
 		public final List<MatrixObject> pLabels;
 		public final int workerNum;
@@ -40,4 +49,40 @@ public abstract class DataPartitionFederatedScheme {
 	}
 
 	public abstract Result doPartitioning(MatrixObject features, MatrixObject labels);
+
+	/**
+	 * Takes a row federated Matrix and slices it into a matrix for each worker
+	 *
+	 * @param fedMatrix the federated input matrix
+	 */
+	static List<MatrixObject> sliceFederatedMatrix(MatrixObject fedMatrix) {
+		if (fedMatrix.isFederated(FederationMap.FType.ROW)) {
+
+			List<MatrixObject> slices = Collections.synchronizedList(new ArrayList<>());
+			fedMatrix.getFedMapping().forEachParallel((range, data) -> {
+				// Create sliced matrix object
+				MatrixObject slice = new MatrixObject(fedMatrix.getValueType(), Dag.getNextUniqueVarname(Types.DataType.MATRIX));
+				// Warning needs MetaDataFormat instead of MetaData
+				slice.setMetaData(new MetaDataFormat(
+						new MatrixCharacteristics(range.getSize(0), range.getSize(1)),
+						Types.FileFormat.BINARY)
+				);
+
+				// Create new federation map
+				HashMap<FederatedRange, FederatedData> newFedHashMap = new HashMap<>();
+				newFedHashMap.put(range, data);
+				slice.setFedMapping(new FederationMap(fedMatrix.getFedMapping().getID(), newFedHashMap));
+				slice.getFedMapping().setType(FederationMap.FType.ROW);
+
+				slices.add(slice);
+				return null;
+			});
+
+			return slices;
+		}
+		else {
+			throw new DMLRuntimeException("Federated data partitioner: " +
+					"currently only supports row federated data");
+		}
+	}
 }

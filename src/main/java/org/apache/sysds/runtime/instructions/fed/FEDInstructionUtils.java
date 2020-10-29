@@ -143,12 +143,6 @@ public class FEDInstructionUtils {
 				}
 			}
 		}
-		else if(inst instanceof ReorgCPInstruction && inst.getOpcode().equals("r'")) {
-			ReorgCPInstruction rinst = (ReorgCPInstruction) inst;
-			CacheableData<?> mo = ec.getCacheableData(rinst.input1);
-			if( mo.isFederated() )
-				fedinst = ReorgFEDInstruction.parseInstruction(rinst.getInstructionString());
-		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
 

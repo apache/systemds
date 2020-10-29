@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinC
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOperationCode;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
@@ -126,6 +127,16 @@ public class FEDInstructionUtils {
 			if( mo.isFederated() )
 				fedinst = ReorgFEDInstruction.parseInstruction(rinst.getInstructionString());
 		}
+		else if(inst instanceof VariableCPInstruction ){
+			VariableCPInstruction ins = (VariableCPInstruction) inst;
+
+			if(ins.getVariableOpcode() == VariableOperationCode.Write 
+				&& ins.getInput3().getName().contains("federated")){
+				fedinst = VariableFEDInstruction.parseInstruction(ins);
+			}
+
+		}
+
 		
 		//set thread id for federated context management
 		if( fedinst != null ) {

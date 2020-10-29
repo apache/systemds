@@ -457,7 +457,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private synchronized T acquireReadIntern() {
 		if ( !isAvailableToRead() )
 			throw new DMLRuntimeException("MatrixObject not available to read.");
-		
+
 		//get object from cache
 		if( _data == null )
 			getCache();
@@ -482,6 +482,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _data==null && isEmpty(true) ) {
 			try {
 				if( isFederated() ) {
+					LOG.error("Federated pull all data");
 					_data = readBlobFromFederated( _fedMapping );
 					
 					//mark for initial local write despite read operation
@@ -747,7 +748,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Export data "+hashCode()+" "+fName);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
 			throw new DMLRuntimeException("MatrixObject not available to read.");
@@ -783,29 +783,34 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		{
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix
-			if( isEmpty(true) )
-			{
-				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
-				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
-				try
+			boolean federatedWrite = outputFormat.contains("federated");
+			if( ! federatedWrite){
+
+				if( isEmpty(true))
 				{
-					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
-						_data = readBlobFromHDFS( _hdfsFileName );
-					else if( getRDDHandle() != null )
-						_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
-					else 
-						_data = readBlobFromFederated( getFedMapping() );
-					
-					setDirty(false);
+					//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
+					//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
+					try
+					{
+						if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
+							_data = readBlobFromHDFS( _hdfsFileName );
+						else if( getRDDHandle() != null )
+							_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
+						else {
+							_data = readBlobFromFederated( getFedMapping() );
+						}
+						
+						setDirty(false);
+					}
+					catch (IOException e) {
+						throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
+					}
 				}
-				catch (IOException e) {
-					throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
-				}
+				//get object from cache
+				if( _data == null )
+					getCache();
+				acquire( false, _data==null ); //incl. read matrix if evicted
 			}
-			//get object from cache
-			if( _data == null )
-				getCache();
-			acquire( false, _data==null ); //incl. read matrix if evicted
 			
 			// b) write the matrix 
 			try {
@@ -818,7 +823,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				throw new DMLRuntimeException("Export to " + fName + " failed.", e);
 			}
 			finally {
-				release();
+				if(!federatedWrite)
+					release();
 			}
 		}
 		else if( pWrite ) // pwrite with same output format

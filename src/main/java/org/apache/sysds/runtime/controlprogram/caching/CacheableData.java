@@ -784,7 +784,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			// a) get the matrix
 			boolean federatedWrite = (outputFormat != null ) &&  outputFormat.contains("federated");
 
-			if( isEmpty(true))
+			if( isEmpty(true) && !federatedWrite)
 			{
 				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
 				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
@@ -978,6 +978,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	// Federated read
 	protected T readBlobFromFederated(FederationMap fedMap) throws IOException {
+		LOG.info("Pulling data from federated sites");
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics dc = iimd.getDataCharacteristics();
 		return readBlobFromFederated(fedMap, dc.getDims());

@@ -35,57 +35,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tests: [
-          aggregate,
-          append,
-          binary.frame,
-          binary.matrix,
-          binary.matrix_full_cellwise,
-          binary.matrix_full_other,
-          binary.scalar,
-          binary.tensor,
-          blocks,
-          builtin,
-          caching,
-          codegen,
-          codegenalg.partone,
-          codegenalg.parttwo,
-          compress,
-          countDistinct,
-          data.misc,
-          data.rand,
-          data.tensor,
-          dnn,
-          federated.algorithms,
-          federated.primitives,
-          federated.io,
-          federated.transform,
-          frame,
-          indexing,
-          io,
-          jmlc,
-          lineage,
-          misc,
-          mlcontext,
-          nary,
-          paramserv,
-          parfor.misc,
-          parfor.partition,
-          pipelines,
-          privacy,
-          quaternary,
-          recompile,
-          reorg,
-          rewrite,
-          ternary,
-          transform,
-          unary.matrix,
-          unary.scalar,
-          updateinplace,
-          vect
-          ]
         os: [ubuntu-latest]
-    name:  Func Test ${{ matrix.tests }} 
+    name: Function Test
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
@@ -98,9 +49,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-test-
 
-    - name: Run all tests starting with "${{ matrix.tests }}"
+    - name: Run all Function Tests
       uses: ./.github/action/
       id: test
       with:
-        test-to-run: org.apache.sysds.test.functions.${{ matrix.tests }}.**
+        test-to-run: org.apache.sysds.test.functions.**
 

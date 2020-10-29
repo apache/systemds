@@ -21,6 +21,8 @@ package org.apache.sysds.test.functions.federated.io;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -36,7 +38,7 @@ import org.junit.runners.Parameterized;
 @net.jcip.annotations.NotThreadSafe
 public class FederatedWriterTest extends AutomatedTestBase {
 
-    // private static final Log LOG = LogFactory.getLog(FederatedWriterTest.class.getName());
+    private static final Log LOG = LogFactory.getLog(FederatedWriterTest.class.getName());
     private final static String TEST_DIR = "functions/federated/";
     private final static String TEST_NAME = "FederatedWriterTest";
     private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWriterTest.class.getSimpleName() + "/";
@@ -96,8 +98,10 @@ public class FederatedWriterTest extends AutomatedTestBase {
             // Run reader and write a federated json to enable the rest of the test
             fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/FederatedReaderTestCreate.dml";
             programArgs = new String[] {"-stats", "-explain","-args", input("X1"), input("X2"), port1 + "", port2 + "", input("X.json")};
-            // String writer = runTest(null).toString();
-            runTest(null);
+            String writer = runTest(null).toString();
+            // runTest(null);
+            LOG.error(writer);
+            LOG.error("Writing Done");
 
             // Run reference dml script with normal matrix
             fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/FederatedReaderTest.dml";

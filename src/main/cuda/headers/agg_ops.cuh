@@ -17,10 +17,9 @@
  * under the License.
  */
 
-#ifndef __AGG_OPS_H
-#define __AGG_OPS_H
-
 #pragma once
+#ifndef AGG_OPS_H
+#define AGG_OPS_H
 
 #include <cuda_runtime.h>
 #include <math_constants.h>

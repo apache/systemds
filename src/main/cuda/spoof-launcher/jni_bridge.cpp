@@ -18,7 +18,7 @@
  */
 
 #include "jni_bridge.h"
-#include "launcher.h"
+#include "SpoofCUDAContext.h"
 
 // JNI Methods to get/release arrays
 #define GET_ARRAY(env, input)                                                  \
@@ -29,21 +29,25 @@
 
 JNIEXPORT jlong JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_initialize_1cuda_1context(
-    JNIEnv *env, jobject jobj, jint device_id) {
-  return SpoofCudaContext::initialize_cuda(device_id);
+    JNIEnv *env, jobject jobj, jint device_id, jstring resource_path) {
+
+  const char *cstr_rp = env->GetStringUTFChars(resource_path, NULL);
+  size_t ctx = SpoofCUDAContext::initialize_cuda(device_id, cstr_rp);
+  env->ReleaseStringUTFChars(resource_path, cstr_rp);
+  return ctx;
 }
 
 JNIEXPORT void JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_destroy_1cuda_1context(
     JNIEnv *env, jobject jobj, jlong ctx, jint device_id) {
-  SpoofCudaContext::destroy_cuda(reinterpret_cast<SpoofCudaContext *>(ctx),
+  SpoofCUDAContext::destroy_cuda(reinterpret_cast<SpoofCUDAContext *>(ctx),
                                  device_id);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jstring src) {
-  SpoofCudaContext *ctx_ = reinterpret_cast<SpoofCudaContext *>(ctx);
+  SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
   const char *cstr_name = env->GetStringUTFChars(name, NULL);
   const char *cstr_src = env->GetStringUTFChars(src, NULL);
   bool result = ctx_->compile_cuda(cstr_src, cstr_name);
@@ -57,7 +61,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
     jlongArray side_ptrs, jlong out_ptr, jdoubleArray scalars_, jlong m, jlong n, jlong grix) {
 
-  SpoofCudaContext *ctx_ = reinterpret_cast<SpoofCudaContext *>(ctx);
+  SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
   const char *cstr_name = env->GetStringUTFChars(name, NULL);
 
   double **inputs = reinterpret_cast<double **>(GET_ARRAY(env, in_ptrs));
@@ -83,7 +87,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
     jlongArray side_ptrs, jlong out_ptr, jfloatArray scalars_, jlong m, jlong n, jlong grix) {
 
-  SpoofCudaContext *ctx_ = reinterpret_cast<SpoofCudaContext *>(ctx);
+  SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
 
   const char *cstr_name = env->GetStringUTFChars(name, NULL);
 

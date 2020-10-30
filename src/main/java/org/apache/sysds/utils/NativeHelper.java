@@ -298,6 +298,10 @@ public class NativeHelper {
 		if((customLibPath != null) && (!customLibPath.equalsIgnoreCase("none"))) {
 			String libPath = customLibPath + File.separator + System.mapLibraryName(blas);
 			try {
+				// This fixes libPath if it already contained a prefix/suffix and mapLibraryName added another one.
+				libPath = libPath.replace("liblibsystemds", "libsystemds")
+								 .replace(".dll.dll", ".dll")
+								 .replace(".so.so", ".so");
 				System.load(libPath);
 				LOG.info("Loaded the library:" + libPath);
 				return true;

@@ -17,10 +17,9 @@
  * under the License.
  */
 
-#ifndef __CUM_PROD_H
-#define __CUM_PROD_H
-
 #pragma once
+#ifndef CUM_PROD_H
+#define CUM_PROD_H
 
 using uint = unsigned int;
 #include <cuda_runtime.h>
@@ -77,4 +76,4 @@ extern "C" __global__ void cumulative_prod_down_sweep_f(float *g_idata, float *g
 	cumulative_scan_down_sweep<ProductOp<float>, ProdNeutralElement<float>, float>(g_idata, g_odata, g_tdata, rows, cols, block_height, op);
 }
 
-#endif // __CUM_PROD_H
+#endif // CUM_PROD_H

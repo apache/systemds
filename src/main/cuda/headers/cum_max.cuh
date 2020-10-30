@@ -17,10 +17,11 @@
  * under the License.
  */
 
-#ifndef __CUM_MAX_H
-#define __CUM_MAX_H
-
 #pragma once
+#ifndef CUM_MAX_H
+#define CUM_MAX_H
+
+using uint = unsigned int;
 #include <cuda_runtime.h>
 
 /**
@@ -75,4 +76,4 @@ extern "C" __global__ void cumulative_max_down_sweep_f(float *g_idata, float *g_
 	cumulative_scan_down_sweep<MaxOp<float>, MaxNeutralElement<float>, float>(g_idata, g_odata, g_tdata, rows, cols, block_height, op);
 }
 
-#endif // __CUM_MAX_H
+#endif // CUM_MAX_H

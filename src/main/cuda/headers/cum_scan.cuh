@@ -17,10 +17,12 @@
  * under the License.
  */
 
-#ifndef __CUM_SCAN_H
-#define __CUM_SCAN_H
-
 #pragma once
+#ifndef CUM_SCAN_H
+#define CUM_SCAN_H
+
+using uint = unsigned int;
+#include <cuda_runtime.h>
 
 /**
  * Cumulative Scan - Applies <scanOp> to accumulate values over columns of an input matrix.
@@ -84,4 +86,4 @@ __device__ void cumulative_scan_down_sweep(T *g_idata, T *g_odata, T *g_tdata, u
 		g_odata[i] = acc = scan_op(acc, g_idata[i]);
 }
 
-#endif // __CUM_SCAN_H
+#endif // CUM_SCAN_H

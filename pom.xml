@@ -87,21 +87,30 @@
 				<targetPath>scripts</targetPath>
 			</resource>
 			<resource>
-				<directory>src/main/cuda/ptx</directory>
-				<excludes>
-					<exclude>*.cu</exclude>
-					<exclude>*.cuh</exclude>
-					<exclude>Makefile</exclude>
-				</excludes>
-				<targetPath>kernels</targetPath>
+				<directory>src/main/cuda/kernels</directory>
+				<includes>
+					<include>SystemDS.ptx</include>
+					<include>reduction.ptx</include>
+				</includes>
+				<targetPath>cuda/kernels</targetPath>
 			</resource>
 			<resource>
 				<directory>src/main/cpp/lib</directory>
 				<targetPath>lib</targetPath>
 			</resource>
 			<resource>
-				<directory>src/main/cuda/spoof-templates</directory>
-				<targetPath>spoof-templates</targetPath>
+				<directory>src/main/cuda/spoof</directory>
+				<targetPath>cuda/spoof</targetPath>
+			</resource>
+			<resource>
+				<directory>src/main/cuda/headers</directory>
+				<includes>
+					<include>agg_ops.cuh</include>
+					<include>reduction.cuh</include>
+					<include>spoof_utils.cuh</include>
+					<include>utils.cuh</include>
+				</includes>
+				<targetPath>cuda/headers</targetPath>
 			</resource>
 		</resources>
 
@@ -535,6 +544,7 @@
 						<configuration>
 							<excludes>
 								<exclude>.gitignore</exclude>
+								<exclude>.gitmodules</exclude>
 								<exclude>.repository/</exclude>
 								<exclude>.idea/</exclude>
 								<exclude>.git</exclude>
@@ -571,7 +581,8 @@
 								<exclude>src/main/java/*.tokens</exclude>
 								<exclude>**/*.interp</exclude>
 								<!-- Compiled ptx file from nvcc -->
-								<exclude>src/main/cpp/kernels/SystemDS.ptx</exclude>
+								<exclude>src/main/cuda/kernels/SystemDS.ptx</exclude>
+								<exclude>src/main/cuda/kernels/reduction.ptx</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>
@@ -590,6 +601,8 @@
 								<exclude>src/main/python/tests/lt*.txt</exclude>
 								<!-- Perftest requirement file -->
 								<exclude>scripts/perftest/python/requirements.txt</exclude>
+								<!-- external sources -->
+								<exclude>src/main/cuda/ext/**</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

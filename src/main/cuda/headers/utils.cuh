@@ -17,14 +17,11 @@
  * under the License.
  */
 
-#ifndef __UTILS_H
-#define __UTILS_H
-
 #pragma once
+#ifndef UTILS_H
+#define UTILS_H
 
-#include <cfloat>
-#include <cmath>
-#include <cuda_runtime.h>
+#include <limits>
 
 // Use this method in templates to fetch the maximum value for a given datatype
 template<typename T>
@@ -33,11 +30,11 @@ __forceinline__ __device__ T MAX() {
 }
 template<>
 __forceinline__ __device__ float MAX<float>() {
-	return FLT_MAX;
+	return std::numeric_limits<float>::max();
 }
 template<>
 __forceinline__ __device__ double MAX<double>() {
-	return DBL_MAX;
+	return std::numeric_limits<double>::max();
 }
 
 /**
@@ -125,4 +122,4 @@ extern "C" __global__ void float2double_f(float *A, double *ret, int N) {
 	}
 }
 
-#endif // __UTILS_H
+#endif // UTILS_H

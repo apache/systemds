@@ -41,7 +41,7 @@ import jcuda.runtime.JCuda;
 
 public class JCudaKernels {
 
-	private final static String ptxFileName = "/kernels/SystemDS.ptx";
+	private final static String ptxFileName = "/cuda/kernels/SystemDS.ptx";
 	private HashMap<String, CUfunction> kernels = new HashMap<>();
 	private CUmodule module;
 

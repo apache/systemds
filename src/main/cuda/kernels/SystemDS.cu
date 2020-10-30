@@ -23,11 +23,8 @@
  nvcc -w -ptx -arch=sm_30 --std c++11 SystemDS.cu
  ***********************************/
 
-#include <cfloat>
-#include <cmath>
 using uint = unsigned int;
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 
 #include "utils.cuh"
 #include "agg_ops.cuh"

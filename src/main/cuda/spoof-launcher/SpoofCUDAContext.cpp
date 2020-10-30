@@ -17,23 +17,26 @@
  * under the License.
  */
 
-#include "launcher.h"
+#include "SpoofCUDAContext.h"
 
 #include <filesystem>
 #include <iostream>
 #include <cstdlib>
+#include <sstream>
 
-size_t SpoofCudaContext::initialize_cuda(uint32_t device_id) {
-  std::cout << "initializing cuda device " << device_id << std::endl;
+size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resource_path) {
 
-  SpoofCudaContext *ctx = new SpoofCudaContext();
+#ifdef __DEBUG
+	std::cout << "initializing cuda device " << device_id << std::endl;
+#endif
+
+  SpoofCUDAContext *ctx = new SpoofCUDAContext(resource_path);
   // cuda device is handled by jCuda atm
   //cudaSetDevice(device_id);
   //cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
   //cudaDeviceSynchronize();
 
-  // ToDo: fix paths
-  CHECK_CUDA(cuModuleLoad(&(ctx->reductions), "./src/main/cuda/ptx/reduction.ptx"));
+  CHECK_CUDA(cuModuleLoad(&(ctx->reductions), std::string(ctx->resource_path + std::string("/cuda/kernels/reduction.ptx")).c_str()));
 
   CUfunction func;
 
@@ -66,22 +69,31 @@ size_t SpoofCudaContext::initialize_cuda(uint32_t device_id) {
   return reinterpret_cast<size_t>(ctx);
 }
 
-void SpoofCudaContext::destroy_cuda(SpoofCudaContext *ctx, uint32_t device_id) {
-  //std::cout << "destroying cuda context " << ctx << " of device " << device_id
-            //<< std::endl;
+void SpoofCUDAContext::destroy_cuda(SpoofCUDAContext *ctx, uint32_t device_id) {
   delete ctx;
   ctx = nullptr;
   // cuda device is handled by jCuda atm
   //cudaDeviceReset();
 }
 
-bool SpoofCudaContext::compile_cuda(const std::string &src,
+bool SpoofCUDAContext::compile_cuda(const std::string &src,
                                     const std::string &name) {
-  std::string cuda_path = std::string("-I") + std::getenv("CUDA_PATH") + "/include";
+    std::string cuda_include_path("");
+    char* cdp = std::getenv("CUDA_PATH");
+    if(cdp != nullptr)
+        cuda_include_path = std::string("-I") + std::string(cdp) + "/include";
+    else {
+    	std::cout << "Warning: CUDA_PATH environment variable not set. Using default include path"
+    			"/usr/local/cuda/include" << std::endl;
+    	cuda_include_path = std::string("-I/usr/local/cuda/include");
+    }
+
+#ifdef __DEBUG
   std::cout << "compiling cuda kernel " << name << std::endl;
   std::cout << src << std::endl;
-  //std::cout << "cwd: " << std::filesystem::current_path() << std::endl;
-  //std::cout << "cuda_path: " << cuda_path << std::endl;
+  std::cout << "cwd: " << std::filesystem::current_path() << std::endl;
+  std::cout << "cuda_path: " << cuda_include_path << std::endl;
+#endif
 
   SpoofOperator::AggType type = SpoofOperator::AggType::NONE;
   SpoofOperator::AggOp op = SpoofOperator::AggOp::NONE;
@@ -97,7 +109,7 @@ bool SpoofCudaContext::compile_cuda(const std::string &src,
       else if(src.substr(pos, pos+30).find("NO_AGG") != std::string::npos)
           type = SpoofOperator::AggType::NO_AGG;
       else {
-          std::cout << "error: unknown aggregation type" << std::endl;
+          std::cerr << "error: unknown aggregation type" << std::endl;
           return false;
       }
 
@@ -112,23 +124,18 @@ bool SpoofCudaContext::compile_cuda(const std::string &src,
               else if(src.substr(pos, pos+30).find("AggOp.MAX") != std::string::npos)
                   op = SpoofOperator::AggOp::MAX;
               else {
-                std::cout << "error: unknown aggregation operator" << std::endl;
+                std::cerr << "error: unknown aggregation operator" << std::endl;
                 return false;
               }
           }
       }
   }
 
-  // ToDo: cleanup cuda path 
-  jitify::Program program = kernel_cache.program(
-      src, 0,
-      {"-I./src/main/cuda/headers/", 
-      "-I./src/main/cpp/kernels/",
-       "-I/usr/local/cuda/include",
-       "-I/usr/local/cuda/include/cuda/std/detail/libcxx/include/", 
-      cuda_path});
+  std::stringstream s1, s2, s3;
+  s1 << "-I" << resource_path << "/cuda/headers";
+  s2 << "-I" << resource_path << "/cuda/spoof";
 
+  jitify::Program program = kernel_cache.program(src, 0, {s1.str(), s2.str(), cuda_include_path});
   ops.insert(std::make_pair(name, SpoofOperator({std::move(program), type, op})));
-
   return true;
 }

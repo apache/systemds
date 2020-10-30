@@ -19,20 +19,18 @@
 
 package org.apache.sysds.hops.codegen;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 import java.util.Map.Entry;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOp1;
@@ -118,7 +116,6 @@ public class SpoofCompiler {
 	public static final RegisterAlloc REG_ALLOC_POLICY = RegisterAlloc.EXACT_STATIC_BUFF;
 	public static GeneratorAPI API = GeneratorAPI.JAVA;
 	public static HashMap<GeneratorAPI, Long> native_contexts;
-	public static final boolean LDEBUG = true;
 
 	public enum CompilerType {
 		AUTO,
@@ -172,14 +169,6 @@ public class SpoofCompiler {
 		EXACT_STATIC_BUFF,   //min number of live vector intermediates, assuming static array ring buffer
 	}
 
-	static {
-		// for internal debugging only
-		if (LDEBUG) {
-			Logger.getLogger("org.apache.sysds.hops.codegen")
-					.setLevel(Level.TRACE);
-		}
-	}
-
 	@Override
 	protected void finalize() {
 			SpoofCompiler.cleanupCodeGenerator();
@@ -208,29 +197,56 @@ public class SpoofCompiler {
 
 				String arch = SystemUtils.OS_ARCH;
 				String os = SystemUtils.OS_NAME;
+				String suffix = ".so";
 
 				if(SystemUtils.IS_OS_LINUX && SystemUtils.OS_ARCH.equalsIgnoreCase("amd64"))
 					arch = "x86_64";
-				if(SystemUtils.IS_OS_WINDOWS)
+				if(SystemUtils.IS_OS_WINDOWS) {
 					os = "Windows";
+					suffix = ".dll";
+				}
 
-				String libName = "libsystemds_spoof_cuda-" + os + "-" + arch;
+				String libName = "libsystemds_spoof_cuda-" + os + "-" + arch + suffix;
 
-				boolean isLoaded = NativeHelper.loadLibraryHelperFromResource(libName);
+				// ToDo: remove legacy paths
+				boolean isLoaded = NativeHelper.loadBLAS(System.getProperty("user.dir")
+					+ "/src/main/cpp/lib".replace("/",File.separator), libName, "");
+
 				if(!isLoaded)
-					isLoaded = NativeHelper.loadBLAS(System.getProperty("user.dir") + "/src/main/cpp/lib", libName, "");
-				if(!isLoaded)
-					isLoaded = NativeHelper.loadBLAS(System.getProperty("user.dir") + "/target/classes/lib", libName, "");
+					isLoaded = NativeHelper.loadBLAS(System.getProperty("user.dir")
+						+ "/target/classes/lib".replace("/", File.separator), libName, "");
 				if(!isLoaded)
 					isLoaded = NativeHelper.loadBLAS(null, libName, "");
+				if(!isLoaded)
+					isLoaded = NativeHelper.loadLibraryHelperFromResource(libName);
 
 				if(isLoaded) {
-					long ctx_ptr = initialize_cuda_context(0);
+					String local_tmp = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_TMP_DIR);
+					String jar_path = SpoofCompiler.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+					if(jar_path.contains(".jar")) {
+						try {
+							extractCodegenSources(local_tmp, jar_path);
+						}
+						catch (IOException e){
+							LOG.error("Could not extract spoof files from jar: " + e);
+							API = GeneratorAPI.JAVA;
+							return;
+						}
+					}
+					else {
+						local_tmp = System.getProperty("user.dir") + "/src/main".replace("/", File.separator);
+					}
+
+					long ctx_ptr = initialize_cuda_context(0, local_tmp);
 					if(ctx_ptr != 0) {
 						native_contexts.put(GeneratorAPI.CUDA, ctx_ptr);
+						API = GeneratorAPI.CUDA;
+						LOG.info("Successfully loaded spoof cuda library");
 					}
-					API = GeneratorAPI.CUDA;
-					LOG.info("Successfully loaded spoof native cuda library");
+					else {
+						API = GeneratorAPI.JAVA;
+						LOG.error("Failed to initialize spoof cuda context. Falling back to java codegen\n");
+					}
 				}
 				else {
 					API = GeneratorAPI.JAVA;
@@ -249,10 +265,30 @@ public class SpoofCompiler {
 		}
 	}
 
+	private static void extractCodegenSources(String resource_path, String jar_path) throws IOException {
+		JarFile jar_file = new JarFile(jar_path);
+		Enumeration<JarEntry> files_in_jar = jar_file.entries();
+
+		while (files_in_jar.hasMoreElements()) {
+			JarEntry in_file = files_in_jar.nextElement();
+			if (in_file.getName().startsWith("cuda/") && !in_file.isDirectory()) {
+				File out_file = new File(resource_path, in_file.getName());
+				out_file.deleteOnExit();
+				File parent = out_file.getParentFile();
+				if (parent != null) {
+					parent.mkdirs();
+					parent.deleteOnExit();
+				}
+				IOUtils.copy(jar_file.getInputStream(in_file), FileUtils.openOutputStream(out_file));
+			}
+		}
+	}
+
 	private static boolean compile_cuda(String name, String src) {
 		return compile_cuda_kernel(native_contexts.get(GeneratorAPI.CUDA), name, src);
 	}
-	private static native long initialize_cuda_context(int device_id);
+
+	private static native long initialize_cuda_context(int device_id, String resource_path);
 
 	private static native boolean compile_cuda_kernel(long ctx, String name, String src);
 

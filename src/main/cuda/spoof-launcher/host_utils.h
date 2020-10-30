@@ -17,10 +17,9 @@
  * under the License.
  */
 
+#pragma once
 #ifndef HOST_UTILS_H
 #define HOST_UTILS_H
-
-#pragma once
 
 #include <cuda.h>
 

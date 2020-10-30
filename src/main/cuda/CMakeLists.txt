@@ -50,6 +50,8 @@ target_include_directories(SystemDS PUBLIC "${CMAKE_SOURCE_DIR}/headers")
 find_package(CUDAToolkit REQUIRED)
 cmake_policy(SET CMP0104 NEW)
 set(CMAKE_CUDA_ARCHITECTURES  OFF)
+#ToDo: more compiler flag settings for Debug/Release compilation
+set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr")
 
 set_property(TARGET SystemDS PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
 set_property(TARGET SystemDS PROPERTY CUDA_PTX_COMPILATION ON)
@@ -59,7 +61,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}" CACHE PATH "sets the installation path to src/main/cpp/lib" FORCE)
 endif()
 
-install(FILES $<TARGET_OBJECTS:SystemDS> DESTINATION ptx)
+install(FILES $<TARGET_OBJECTS:SystemDS> DESTINATION kernels)
 
 #-------------------------------------------------------------
 #project (spoof_cuda LANGUAGES CXX CUDA)
@@ -67,23 +69,30 @@ install(FILES $<TARGET_OBJECTS:SystemDS> DESTINATION ptx)
 add_library(reduction OBJECT kernels/reduction.cu headers/reduction.cuh)
 target_include_directories(reduction PUBLIC "${CMAKE_SOURCE_DIR}/headers")
 set_property(TARGET reduction PROPERTY CUDA_PTX_COMPILATION ON)
-install(FILES $<TARGET_OBJECTS:reduction> DESTINATION ptx)
+install(FILES $<TARGET_OBJECTS:reduction> DESTINATION kernels)
 
 include_directories($ENV{JAVA_HOME}/include/)
-include_directories($ENV{JAVA_HOME}/include/darwin)
-include_directories($ENV{JAVA_HOME}/include/linux)
-include_directories($ENV{JAVA_HOME}/include/win32)
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+    include_directories($ENV{JAVA_HOME}/include/darwin)
+endif()
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    include_directories($ENV{JAVA_HOME}/include/linux)
+endif()
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    include_directories($ENV{JAVA_HOME}/include/win32)
+endif()
 
 set(SPOOF_HEADERS 
-	spoof/jni_bridge.h
-	spoof/launcher.h)
+	spoof-launcher/jni_bridge.h
+	spoof-launcher/SpoofCUDAContext.h)
 set(SPOOF_SOURCES 
-	spoof/jni_bridge.cpp
-	spoof/launcher.cpp)
+	spoof-launcher/jni_bridge.cpp
+	spoof-launcher/SpoofCUDAContext.cpp)
 
 add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_SOURCES} )
 
-target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/extern/jitify")
+target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify")
 target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)
 target_compile_features(spoof_cuda PUBLIC cxx_std_11)
 set_target_properties(spoof_cuda PROPERTIES POSITION_INDEPENDENT_CODE ON)

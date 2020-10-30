@@ -17,6 +17,15 @@
  * under the License.
  */
 
+#pragma once
+#ifndef REDUCTION_CUH
+#define REDUCTION_CUH
+
+using uint = unsigned int;
+#include <cuda_runtime.h>
+
+#include "utils.cuh"
+
 /**
  * Does a reduce operation over all elements of the array.
  * This method has been adapted from the Reduction sample in the NVIDIA CUDA
@@ -44,8 +53,8 @@ template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
 __device__ void FULL_AGG(
 		T *g_idata, ///< input data stored in device memory (of size n)
 		T *g_odata, ///< output/temporary array stored in device memory (of size n)
-		unsigned int m,
-		unsigned int n,
+		uint m,
+		uint n,
 		T initialValue, 
 		ReductionOp reduction_op, 
 	    SpoofCellwiseOp spoof_op)
@@ -54,10 +63,10 @@ __device__ void FULL_AGG(
 
 	// perform first level of reduction,
 	// reading from global memory, writing to shared memory
-	unsigned int tid = threadIdx.x;
-	unsigned int i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
-	unsigned int gridSize = blockDim.x * 2 * gridDim.x;
-	unsigned int N = m * n;
+	uint tid = threadIdx.x;
+	uint i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
+	uint gridSize = blockDim.x * 2 * gridDim.x;
+	uint N = m * n;
 	T v = initialValue;
 
 	// we reduce multiple elements per thread.  The number is determined by the
@@ -164,8 +173,8 @@ __device__ void ROW_AGG(
 		T *g_idata, ///< input data stored in device memory (of size rows*cols)
 		T *g_odata,  ///< output/temporary array store in device memory (of size
 		/// rows*cols)
-		unsigned int rows,  ///< rows in input and temporary/output arrays
-		unsigned int cols,  ///< columns in input and temporary/output arrays
+		uint rows,  ///< rows in input and temporary/output arrays
+		uint cols,  ///< columns in input and temporary/output arrays
 		T initialValue,  ///< initial value for the reduction variable
 		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
 		SpoofCellwiseOp spoof_op) ///< Operation to perform before assigning this
@@ -177,10 +186,10 @@ __device__ void ROW_AGG(
 		return;
 	}
 
-	unsigned int block = blockIdx.x;
-	unsigned int tid = threadIdx.x;
-	unsigned int i = tid;
-	unsigned int block_offset = block * cols;
+	uint block = blockIdx.x;
+	uint tid = threadIdx.x;
+	uint i = tid;
+	uint block_offset = block * cols;
 
 	T v = initialValue;
 	while (i < cols) {
@@ -266,20 +275,20 @@ __device__ void ROW_AGG(
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
 __device__ void COL_AGG(T *g_idata, ///< input data stored in device memory (of size rows*cols)
 		T *g_odata,  ///< output/temporary array store in device memory (of size rows*cols)
-		unsigned int rows,  ///< rows in input and temporary/output arrays
-		unsigned int cols,  ///< columns in input and temporary/output arrays
+		uint rows,  ///< rows in input and temporary/output arrays
+		uint cols,  ///< columns in input and temporary/output arrays
 		T initialValue,  ///< initial value for the reduction variable
 		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
 		SpoofCellwiseOp spoof_op) ///< Operation to perform before aggregation
 		
 {
-	unsigned int global_tid = blockIdx.x * blockDim.x + threadIdx.x;
+	uint global_tid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (global_tid >= cols) {
 		return;
 	}
 
-	unsigned int i = global_tid;
-	unsigned int grid_size = cols;
+	uint i = global_tid;
+	uint grid_size = cols;
 	T val = initialValue;
 
 	while (i < rows * cols) {
@@ -290,7 +299,7 @@ __device__ void COL_AGG(T *g_idata, ///< input data stored in device memory (of 
 }
 
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void NO_AGG(T* g_idata, T* g_odata,  unsigned int rows, unsigned int cols,  
+__device__ void NO_AGG(T* g_idata, T* g_odata,  uint rows, uint cols,
 	T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op) 
 {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -301,3 +310,5 @@ __device__ void NO_AGG(T* g_idata, T* g_odata,  unsigned int rows, unsigned int 
 		g_odata[i] = spoof_op(g_idata[i], i);
 	}
 }
+
+#endif // REDUCTION_CUH

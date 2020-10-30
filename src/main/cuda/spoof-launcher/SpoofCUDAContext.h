@@ -17,15 +17,18 @@
  * under the License.
  */
 
-#ifndef LAUNCHER_H
-#define LAUNCHER_H
-
 #pragma once
+#ifndef SPOOFCUDACONTEXT_H
+#define SPOOFCUDACONTEXT_H
 
 #include <cmath>
 #include <cstdint>
 #include <map>
 #include <string>
+
+#ifdef __DEBUG
+    #define JITIFY_PRINT_ALL 1
+#endif
 
 #include <jitify.hpp>
 
@@ -43,7 +46,7 @@ struct SpoofOperator {
 
 };
 
-class SpoofCudaContext {
+class SpoofCUDAContext {
 
   jitify::JitCache kernel_cache;
   std::map<const std::string, SpoofOperator> ops;
@@ -58,9 +61,13 @@ public:
   // values / thread
   const int VT = 4;
 
-  static size_t initialize_cuda(uint32_t device_id);
+  const std::string resource_path;
 
-  static void destroy_cuda(SpoofCudaContext *ctx, uint32_t device_id);
+  SpoofCUDAContext(const char* resource_path_) : reductions(nullptr), resource_path(resource_path_) {}
+
+  static size_t initialize_cuda(uint32_t device_id, const char* resource_path_);
+
+  static void destroy_cuda(SpoofCUDAContext *ctx, uint32_t device_id);
 
   bool compile_cuda(const std::string &src, const std::string &name);
 
@@ -102,7 +109,7 @@ public:
 
             dev_buf_size = sizeof(T) * NB;
             CHECK_CUDART(cudaMalloc((void **)&d_temp_agg_buf, dev_buf_size));
-
+#ifdef __DEBUG
             // ToDo: connect output to SystemDS logging facilities
             std::cout << "launching spoof cellwise kernel " << name << " with "
                       << NT * NB << " threads in " << NB << " blocks and "
@@ -110,7 +117,7 @@ public:
                       << " bytes of shared memory for full aggregation of "
                       << N << " elements"
                       << std::endl;
-
+#endif
             CHECK_CUDA(op->program.kernel(name)
                 .instantiate(type_of(result))
                 .configure(grid, block, shared_mem_size)
@@ -118,7 +125,6 @@ public:
 
             if(NB > 1) {
                 std::string reduction_kernel_name = determine_agg_kernel<T>(op);
-                std::cout << "using full reduction kernel " << reduction_kernel_name << std::endl;
 
                 CUfunction reduce_kernel = reduction_kernels.find(reduction_kernel_name)->second;
                 N = NB;
@@ -127,14 +133,14 @@ public:
                     void* args[3] = { &d_temp_agg_buf, &d_temp_agg_buf, &N};
 
                     NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
-
+#ifdef __DEBUG
                     std::cout << "agg iter " << iter++ << " launching spoof cellwise kernel " << name << " with "
                     << NT * NB << " threads in " << NB << " blocks and "
                     << shared_mem_size
                     << " bytes of shared memory for full aggregation of "
                     << N << " elements"
                     << std::endl;
-
+#endif
                     CHECK_CUDA(cuLaunchKernel(reduce_kernel, 
                         NB, 1, 1, 
                         NT, 1, 1,
@@ -153,11 +159,11 @@ public:
               dim3 grid(NB, 1, 1);
               dim3 block(NT, 1, 1);
               unsigned int shared_mem_size = 0;
-
+#ifdef __DEBUG
               std::cout << " launching spoof cellwise kernel " << name << " with "
                   << NT * NB << " threads in " << NB << " blocks for column aggregation of "
                   << N << " elements" << std::endl;
-
+#endif
               CHECK_CUDA(op->program.kernel(name)
                   .instantiate(type_of(result))
                   .configure(grid, block)
@@ -172,12 +178,12 @@ public:
               dim3 block(NT, 1, 1);
               unsigned int shared_mem_size = NT * sizeof(T);
 
-
+#ifdef __DEBUG
               std::cout << " launching spoof cellwise kernel " << name << " with "
                   << NT * NB << " threads in " << NB << " blocks and "
                   << shared_mem_size << " bytes of shared memory for row aggregation of "
                   << N << " elements" << std::endl;
-
+#endif
               CHECK_CUDA(op->program.kernel(name)
                   .instantiate(type_of(result))
                   .configure(grid, block, shared_mem_size)
@@ -192,11 +198,12 @@ public:
             int NB = std::ceil((N + NT * VT - 1) / (NT * VT));
             dim3 grid(NB, 1, 1);
             dim3 block(NT, 1, 1);
+#ifdef __DEBUG
             std::cout << "launching spoof cellwise kernel " << name << " with " << NT * NB
                       << " threads in " << NB << " blocks without aggregation for " 
                       << N << " elements"
                       << std::endl;
-
+#endif
             CHECK_CUDA(op->program.kernel(name)
                 .instantiate(type_of(result))
                 .configure(grid, block)
@@ -211,7 +218,7 @@ public:
         CHECK_CUDART(cudaFree(d_sides));
     } 
     else {
-      std::cout << "kernel " << name << " not found." << std::endl;
+      std::cerr << "kernel " << name << " not found." << std::endl;
       return result;
     }
     return result;
@@ -233,7 +240,7 @@ public:
           reduction_type = "_col_";
           break;
       default:
-          std::cout << "unknown reduction type" << std::endl;
+          std::cerr << "unknown reduction type" << std::endl;
           return "";
       }
     
@@ -251,7 +258,7 @@ public:
           reduction_kernel_name = "reduce" + reduction_type + "sum" + suffix;
           break;
       default:
-          std::cout << "unknown reduction op" << std::endl;
+          std::cerr << "unknown reduction op" << std::endl;
           return "";
       }
 
@@ -259,4 +266,4 @@ public:
   }
 };
 
-#endif // LAUNCHER_H
+#endif // SPOOFCUDACONTEXT_H

@@ -21,30 +21,82 @@
 
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
-# need to set this before project() in Linux
+# default to gcc 8.x while we're still supporting CUDA 10.x only
 if (UNIX)
     set(CMAKE_CUDA_HOST_COMPILER g++-8 CACHE INTERNAL "")
     set(CMAKE_CUDA_COMPILER nvcc CACHE INTERNAL "")
     set(CMAKE_CXX_COMPILER g++ CACHE INTERNAL "")
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH True CACHE INTERNAL "")
+
 project(SystemDS LANGUAGES CXX CUDA)
 
-set(HEADERS agg_ops.cuh  cum_max.cuh  cum_min.cuh  cum_prod.cuh  cum_scan.cuh  cum_sum.cuh  cum_sum_prod.cuh  utils.cuh)
-set(SOURCES SystemDS.cu)
-add_library(SystemDS OBJECT ${HEADERS} ${SOURCES})
+set(SYSDS_HEADERS 
+	headers/agg_ops.cuh
+	headers/cum_max.cuh  
+	headers/cum_min.cuh  
+	headers/cum_prod.cuh  
+	headers/cum_scan.cuh  
+	headers/cum_sum.cuh  
+	headers/cum_sum_prod.cuh  
+	headers/utils.cuh)
+set(SYSDS_SOURCES kernels/SystemDS.cu)
+
+add_library(SystemDS OBJECT ${SYSDS_HEADERS} ${SYSDS_SOURCES})
+target_include_directories(SystemDS PUBLIC "${CMAKE_SOURCE_DIR}/headers")
 
 find_package(CUDAToolkit REQUIRED)
 cmake_policy(SET CMP0104 NEW)
-set(CMAKE_CUDA_ARCHITECTURES  "30")
-message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
+set(CMAKE_CUDA_ARCHITECTURES  OFF)
+
 set_property(TARGET SystemDS PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
 set_property(TARGET SystemDS PROPERTY CUDA_PTX_COMPILATION ON)
 
-# sets the installation path to src/main/cpp/lib
+# sets the installation path to src/main/cuda
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  #message(STATUS "setting install prefix")
   set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}" CACHE PATH "sets the installation path to src/main/cpp/lib" FORCE)
 endif()
-set(CMAKE_BUILD_WITH_INSTALL_RPATH True CACHE INTERNAL "")
+
 install(FILES $<TARGET_OBJECTS:SystemDS> DESTINATION ptx)
+
+#-------------------------------------------------------------
+#project (spoof_cuda LANGUAGES CXX CUDA)
+
+add_library(reduction OBJECT kernels/reduction.cu headers/reduction.cuh)
+target_include_directories(reduction PUBLIC "${CMAKE_SOURCE_DIR}/headers")
+set_property(TARGET reduction PROPERTY CUDA_PTX_COMPILATION ON)
+install(FILES $<TARGET_OBJECTS:reduction> DESTINATION ptx)
+
+include_directories($ENV{JAVA_HOME}/include/)
+include_directories($ENV{JAVA_HOME}/include/darwin)
+include_directories($ENV{JAVA_HOME}/include/linux)
+include_directories($ENV{JAVA_HOME}/include/win32)
+
+set(SPOOF_HEADERS 
+	spoof/jni_bridge.h
+	spoof/launcher.h)
+set(SPOOF_SOURCES 
+	spoof/jni_bridge.cpp
+	spoof/launcher.cpp)
+
+add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_SOURCES} )
+
+target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/extern/jitify")
+target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)
+target_compile_features(spoof_cuda PUBLIC cxx_std_11)
+set_target_properties(spoof_cuda PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(spoof_cuda PROPERTIES OUTPUT_NAME "systemds_spoof_cuda-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
+# unify naming convention to libsystemds_...
+if (WIN32)    
+    set(CMAKE_IMPORT_LIBRARY_PREFIX lib CACHE INTERNAL "")
+    set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
+    target_link_libraries(spoof_cuda DbgHelp.lib)
+    install(TARGETS spoof_cuda RUNTIME DESTINATION ../cpp/lib)
+endif()
+
+if(UNIX)
+    install(TARGETS spoof_cuda LIBRARY DESTINATION ../cpp/lib)
+endif()

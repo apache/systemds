@@ -30,7 +30,7 @@ T = read($T);
 A_B = rbind(A, B)
 n = nrow(A_B)
 # group data into k=2 clusters
-[C, Y] = kmeans(rbind(A_B, T),  2, 10, 100, 0.000001, FALSE, 50)
+[C, Y] = kmeans(rbind(A_B, T),  2, 10, 100, 0.000001, FALSE, 50, 314)
 # check if the instances of A and B fall in same cluster
 check = matrix(as.scalar(Y[1,1]), n, 1)
 testSum = sum(check - Y[1:n,])

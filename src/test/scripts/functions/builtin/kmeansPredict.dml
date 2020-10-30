@@ -21,7 +21,7 @@
 
 X = read($X)
 
-[C, Y] = kmeans(X,  $k, $runs, $max_iter, $eps, TRUE, 50)
+[C, Y] = kmeans(X,  $k, $runs, $max_iter, $eps, TRUE, 50, 1324)
 Y_1 = kmeansPredict(X, C)
 
 res = mean(Y==Y_1)

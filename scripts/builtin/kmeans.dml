@@ -32,6 +32,7 @@
 # eps                               Double    0.000001 Tolerance (epsilon) for WCSS change ratio
 # is_verbose                        Boolean   FALSE    do not print per-iteration stats
 # avg_sample_size_per_centroid      Int       50       Average number of records per centroid in data samples
+# seed                              Int       -1       The seed used for initial sampling. If set to -1 random seeds are selected. 
 #
 #
 # RETURN VALUES

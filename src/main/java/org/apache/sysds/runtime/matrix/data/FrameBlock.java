@@ -84,6 +84,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	/** The data frame data as an ordered list of columns */
 	private Array[] _coldata = null;
 	
+	/** Cached size in memory to avoid repeated scans of string columns */
+	long _msize = -1;
+	
 	public FrameBlock() {
 		_numRows = 0;
 	}
@@ -273,6 +276,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	 * @param numRows number of rows
 	 */
 	public void ensureAllocatedColumns(int numRows) {
+		_msize = -1;
 		//early abort if already allocated
 		if( _coldata != null && _schema.length == _coldata.length ) {
 			//handle special case that to few rows allocated
@@ -376,6 +380,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	 */
 	public void set(int r, int c, Object val) {
 		_coldata[c].set(r, UtilFunctions.objectToObject(_schema[c], val));
+		_msize = -1;
 	}
 
 	public void reset(int nrow, boolean clearMeta) {
@@ -392,6 +397,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			for( int i=0; i < _coldata.length; i++ )
 				_coldata[i].reset(nrow);
 		}
+		_msize = -1;
 	}
 
 	public void reset() {
@@ -440,7 +446,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		_coldata = (_coldata==null) ? new Array[]{new StringArray(col)} :
 			(Array[]) ArrayUtils.add(_coldata, new StringArray(col));
 		_numRows = col.length;
-
+		_msize = -1;
 	}
 	
 	/**
@@ -458,6 +464,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		_coldata = (_coldata==null) ? new Array[]{new BooleanArray(col)} :
 			(Array[]) ArrayUtils.add(_coldata, new BooleanArray(col));	
 		_numRows = col.length;
+		_msize = -1;
 	}
 	
 	/**
@@ -475,6 +482,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		_coldata = (_coldata==null) ? new Array[]{new IntegerArray(col)} :
 			(Array[]) ArrayUtils.add(_coldata, new IntegerArray(col));
 		_numRows = col.length;
+		_msize = -1;
 	}
 	/**
 	 * Append a column of value type LONG as the last column of
@@ -491,6 +499,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		_coldata = (_coldata==null) ? new Array[]{new LongArray(col)} :
 			(Array[]) ArrayUtils.add(_coldata, new LongArray(col));
 		_numRows = col.length;
+		_msize = -1;
 	}
 	
 	/**
@@ -508,6 +517,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		_coldata = (_coldata==null) ? new Array[]{new FloatArray(col)} :
 				(Array[]) ArrayUtils.add(_coldata, new FloatArray(col));
 		_numRows = col.length;
+		_msize = -1;
 	}
 	/**
 	 * Append a column of value type DOUBLE as the last column of
@@ -524,6 +534,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		_coldata = (_coldata==null) ? new Array[]{new DoubleArray(col)} :
 			(Array[]) ArrayUtils.add(_coldata, new DoubleArray(col));
 		_numRows = col.length;
+		_msize = -1;
 	}
 	
 	/**
@@ -545,6 +556,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		_schema = empty ? tmpSchema : (ValueType[]) ArrayUtils.addAll(_schema, tmpSchema); 
 		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);
 		_numRows = cols[0].length;
+		_msize = -1;
 	}
 
 	public Object getColumnData(int c) {
@@ -564,12 +576,13 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	public void setColumn(int c, Array column) {
 		if( _coldata == null )
 			_coldata = new Array[getNumColumns()];
-		_coldata[c] = column; 
+		_coldata[c] = column;
+		_msize = -1;
 	}
 	
 	/**
 	 * Get a row iterator over the frame where all fields are encoded
-	 * as strings independent of their value types.  
+	 * as strings independent of their value types.
 	 * 
 	 * @return string array iterator
 	 */
@@ -738,6 +751,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 					(mvvalue==null || mvvalue.isEmpty()) ? null : mvvalue);
 			_coldata[j] = arr;
 		}
+		_msize = -1;
 	}
 
 	@Override
@@ -757,6 +771,10 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	
 	@Override
 	public long getInMemorySize() {
+		//reuse previously computed size
+		if( _msize > 0 )
+			return _msize;
+		
 		//frame block header
 		long size = 16 + 4; //object, num rows
 		
@@ -788,11 +806,11 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 					for( int i=0; i<_numRows; i++ )
 						size += getInMemoryStringSize(arr.get(i));
 					break;
-				default: //not applicable	
+				default: //not applicable
 			}
 		}
 		
-		return size;
+		return _msize = size;
 	}
 	
 	@Override
@@ -819,7 +837,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 					for( int i=0; i<_numRows; i++ )
 						size += IOUtilFunctions.getUTFSize(arr.get(i));
 					break;
-				default: //not applicable	
+				default: //not applicable
 			}
 		}
 		
@@ -965,7 +983,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		//allocate output frame (incl deep copy schema)
 		if( ret == null )
 			ret = new FrameBlock();
-		ret._numRows = _numRows;								
+		ret._numRows = _numRows;
 		ret._schema = _schema.clone();
 		ret._colnames = (_colnames != null) ? _colnames.clone() : null;
 		ret._colmeta = _colmeta.clone();

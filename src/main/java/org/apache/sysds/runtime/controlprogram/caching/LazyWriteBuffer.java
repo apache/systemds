@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
@@ -47,8 +48,8 @@ public class LazyWriteBuffer
 	//for (1) queue semantics and (2) constant time get/insert/delete operations)
 	private static EvictionQueue _mQueue;
 	
-	//file cleaner for synchronous or asynchronous delete of evicted files
-	private static FileCleaner _fClean;
+	//maintenance service for synchronous or asynchronous delete of evicted files
+	private static MaintenanceService _fClean;
 	
 	static {
 		//obtain the logical buffer size in bytes
@@ -100,7 +101,7 @@ public class LazyWriteBuffer
 			}
 			
 			//serialize matrix (outside synchronized critical path)
-			bbuff.serializeBlock(cb);
+			_fClean.serializeData(bbuff, cb);
 			
 			if( DMLScript.STATISTICS ) {
 				CacheStatistics.incrementFSBuffWrites();
@@ -180,7 +181,7 @@ public class LazyWriteBuffer
 
 	public static void init() {
 		_mQueue = new EvictionQueue();
-		_fClean = new FileCleaner();
+		_fClean = new MaintenanceService();
 		_size = 0;
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();
@@ -309,18 +310,19 @@ public class LazyWriteBuffer
 	}
 	
 	/**
-	 * File delete service for abstraction of synchronous and asynchronous
-	 * file cleanup on rmvar/cpvar. The threadpool for asynchronous cleanup
-	 * may increase the number of threads temporarily to the number of concurrent
-	 * delete tasks (which is bounded to the parfor degree of parallelism).
+	 * Maintenance service for abstraction of synchronous and asynchronous
+	 * file cleanup on rmvar/cpvar as well as serialization of matrices and
+	 * frames. The thread pool for asynchronous cleanup may increase the 
+	 * number of threads temporarily to the number of concurrent delete tasks
+	 * (which is bounded to the parfor degree of parallelism).
 	 */
-	private static class FileCleaner
+	private static class MaintenanceService
 	{
 		private ExecutorService _pool = null;
 		
-		public FileCleaner() {
+		public MaintenanceService() {
 			//create new threadpool for async cleanup
-			if( CacheableData.CACHING_ASYNC_FILECLEANUP )
+			if( isAsync() )
 				_pool = Executors.newCachedThreadPool();
 		}
 		
@@ -332,10 +334,30 @@ public class LazyWriteBuffer
 				LocalFileUtils.deleteFileIfExists(fname, true);
 		}
 		
+		public void serializeData(ByteBuffer bbuff, CacheBlock cb) {
+			//sync or async file delete
+			if( CacheableData.CACHING_ASYNC_SERIALIZE )
+				_pool.submit(new DataSerializerTask(bbuff, cb));
+			else {
+				try {
+					bbuff.serializeBlock(cb);
+				}
+				catch(IOException ex) {
+					throw new DMLRuntimeException(ex);
+				}
+			}
+		}
+		
 		public void close() {
 			//execute pending tasks and shutdown pool
-			if( CacheableData.CACHING_ASYNC_FILECLEANUP )
+			if( isAsync() )
 				_pool.shutdown();
+		}
+		
+		@SuppressWarnings("unused")
+		public boolean isAsync() {
+			return CacheableData.CACHING_ASYNC_FILECLEANUP 
+				|| CacheableData.CACHING_ASYNC_SERIALIZE;
 		}
 		
 		private static class FileCleanerTask implements Runnable {
@@ -348,6 +370,26 @@ public class LazyWriteBuffer
 			@Override
 			public void run() {
 				LocalFileUtils.deleteFileIfExists(_fname, true);
+			}
+		}
+		
+		private static class DataSerializerTask implements Runnable {
+			private ByteBuffer _bbuff = null;
+			private CacheBlock _cb = null;
+			
+			public DataSerializerTask(ByteBuffer bbuff, CacheBlock cb) {
+				_bbuff = bbuff;
+				_cb = cb;
+			}
+			
+			@Override
+			public void run() {
+				try {
+					_bbuff.serializeBlock(_cb);
+				}
+				catch(IOException ex) {
+					throw new DMLRuntimeException(ex);
+				}
 			}
 		}
 	}

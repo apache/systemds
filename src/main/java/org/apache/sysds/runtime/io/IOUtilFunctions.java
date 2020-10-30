@@ -442,10 +442,10 @@ public class IOUtilFunctions
 		//size in modified UTF-8 as used by DataInput/DataOutput
 		int size = 2; //length in bytes
 		for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            size += ( c>=0x0001 && c<=0x007F) ? 1 :
-            	(c >= 0x0800) ? 3 : 2;
-        }
+			char c = value.charAt(i);
+			size += ( c>=0x0001 && c<=0x007F) ? 1 :
+				(c >= 0x0800) ? 3 : 2;
+		}
 		return size;
 	}
 

@@ -85,9 +85,20 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO;
 	public static final boolean CACHING_BUFFER_PAGECACHE = false;
 	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;
-	public static final String  CACHING_COUNTER_GROUP_NAME    = "SystemDS Caching Counters";
+	public static final String  CACHING_COUNTER_GROUP_NAME = "SystemDS Caching Counters";
 	public static final String  CACHING_EVICTION_FILEEXTENSION = ".dat";
 	public static final boolean CACHING_ASYNC_FILECLEANUP = true;
+	public static final boolean CACHING_ASYNC_SERIALIZE = false;
+	
+	//NOTE CACHING_ASYNC_SERIALIZE:
+	// The serialization of matrices and frames (ultra-sparse matrices or 
+	// frames with strings) into buffer pool byte arrays happens outside the 
+	// critical region of the global lock in LazyWriteBuffer. However, it still
+	// requires thread-local serialization (before returning from release) in 
+	// order to guarantee that not too many objects are pinned at the same time 
+	// which would violate the memory budget. Therefore, the new asynchronous 
+	// serialization (see CACHING_ASYNC_SERIALIZE) should be understood as
+	// optimistic with weaker guarantees.
 	
 	/**
 	 * Defines all possible cache status types for a data blob.

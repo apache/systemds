@@ -253,4 +253,19 @@ public class PrivacyConstraint implements Externalizable
 		}
 	}
 
+	@Override
+	public boolean equals(Object other){
+		if ( other instanceof PrivacyConstraint ){
+			PrivacyConstraint otherPrivacyConstraint = (PrivacyConstraint) other;
+			return otherPrivacyConstraint.privacyLevel == privacyLevel
+				&& otherPrivacyConstraint.getFineGrainedPrivacy().equals(fineGrainedPrivacy);
+		} else return false;
+	}
+
+	@Override
+	public String toString(){
+		return "General privacy level: " + privacyLevel + System.getProperty("line.separator")
+			+ "Fine-grained privacy level: " + fineGrainedPrivacy.toString();
+	}
+
 }

@@ -236,7 +236,13 @@ public class ListObject extends Data {
 			_lineage.add(li);
 		return this;
 	}
-	
+
+	/**
+	 * Removes the element at the specified position from the list
+	 * and returns that element as the only element in a new ListObject.
+	 * @param pos position of element in the list
+	 * @return new ListObject with the specified element
+	 */
 	public ListObject remove(int pos) {
 		ListObject ret = new ListObject(Arrays.asList(_data.get(pos)),
 				null, _lineage != null?Arrays.asList(_lineage.get(pos)):null);

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.privacy;
+package org.apache.sysds.test.functions.privacy.algorithms;
 
 import java.util.ArrayList;
 import java.util.Arrays;

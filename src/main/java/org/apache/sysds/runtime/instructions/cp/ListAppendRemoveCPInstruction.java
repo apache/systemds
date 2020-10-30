@@ -74,4 +74,8 @@ public final class ListAppendRemoveCPInstruction extends AppendCPInstruction {
 			throw new DMLRuntimeException("Unsupported list operation: "+getOpcode());
 		}
 	}
+
+	public CPOperand getOutput2(){
+		return output2;
+	}
 }

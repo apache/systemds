@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.privacy;
+package org.apache.sysds.test.functions.privacy.propagation;
 
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;

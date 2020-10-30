@@ -295,7 +295,7 @@ public class LibMatrixNative
 		LibMatrixDNN.conv2dBackwardData(filter, dout, outputBlock, params);
 	}
 	
-	private static boolean isSinglePrecision() {
+	public static boolean isSinglePrecision() {
 		return ConfigurationManager.getDMLConfig()
 			.getTextValue(DMLConfig.FLOATING_POINT_PRECISION).equals("single");
 	}

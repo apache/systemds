@@ -24,13 +24,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 
 public abstract class CNodeTpl extends CNode implements Cloneable
 {
 	private int _beginLine = -1;
-	
+
+	protected GeneratorAPI api = GeneratorAPI.AUTO;
+
 	public CNodeTpl(ArrayList<CNode> inputs, CNode output ) {
 		if(inputs.size() < 1)
 			throw new RuntimeException("Cannot pass empty inputs to the CNodeTpl");
@@ -74,7 +76,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	}
 	
 	public String codegen() {
-		return codegen(false);
+		return codegen(false, GeneratorAPI.AUTO);
 	}
 	
 	@Override
@@ -83,7 +85,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	public abstract SpoofOutputDimsType getOutputDimType();
 	
 	public abstract String getTemplateInfo();
-	
+
 	public abstract void renameInputs();
 	
 	protected void renameInputs(ArrayList<CNode> inputs, int startIndex) {
@@ -232,4 +234,6 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 		}
 		return -1;
 	}
+
+	public GeneratorAPI getGeneratorAPI() { return api; }
 }

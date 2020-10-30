@@ -35,8 +35,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        tests: [
+          "**.functions.aggregate.**,**.functions.append.**",
+          "**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
+          "**.functions.blocks.**,**.functions.compress.**,**.functions.countDistinct.**,**.functions.data.misc.**,**.functions.data.rand.**,**.functions.data.tensor.**",
+          "**.functions.binary.matrix_full_**",
+          "**.functions.codegenalg.partone**",
+          "**.functions.codegenalg.parttwo**,**.functions.codegen.**,**.functions.caching.**",
+          "**.functions.builtin.**",
+          "**.functions.federated.**",
+          "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.jmlc.**,**.functions.lineage.**",
+          "**.functions.dnn.**,**.functions.misc.**,**.functions.mlcontext.**",
+          "**.functions.paramserv.**",
+          "**.functions.nary.**,**.functions.parfor.**",
+          "**.functions.pipelines.**,**.functions.privacy.**,**.functions.quaternary.**,**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
+          "**.functions.r**,**.functions.t**",
+          "**.functions.unary.matrix.**"
+          ]
         os: [ubuntu-latest]
-    name: Function Test
+    name: Function Test ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
@@ -49,9 +66,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-test-
 
-    - name: Run all Function Tests
+    - name: ${{ matrix.tests }}
       uses: ./.github/action/
       id: test
       with:
-        test-to-run: org.apache.sysds.test.functions.**
+        test-to-run: ${{ matrix.tests }}
 

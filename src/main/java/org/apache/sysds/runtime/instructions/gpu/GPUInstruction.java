@@ -33,7 +33,7 @@ import org.apache.sysds.utils.Statistics;
 
 public abstract class GPUInstruction extends Instruction {
 	private static final Log LOG = LogFactory.getLog(GPUInstruction.class.getName());
-	
+
 	public enum GPUINSTRUCTION_TYPE {
 		AggregateUnary,
 		AggregateBinary,
@@ -47,7 +47,8 @@ public abstract class GPUInstruction extends Instruction {
 		BuiltinUnary,
 		BuiltinBinary,
 		Builtin,
-		MatrixIndexing
+		MatrixIndexing,
+		SpoofFused
 	}
 
 	// Memory/conversions
@@ -159,7 +160,7 @@ public abstract class GPUInstruction extends Instruction {
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
-	
+
 	@Override
 	public IType getType() {
 		return IType.GPU;

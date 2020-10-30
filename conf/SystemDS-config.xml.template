@@ -41,8 +41,11 @@
     
     <!-- enables operator fusion via code generation, experimental feature -->
     <sysds.codegen.enabled>false</sysds.codegen.enabled>
-    
-    <!-- set the codegen java compiler (auto, janino, javac) -->
+
+    <!-- set the codegen API (auto, java, cuda) -->
+   <sysds.codegen.api>auto</sysds.codegen.api>
+
+    <!-- set the codegen java compiler (auto, janino, javac, nvcc, nvrtc) -->
     <sysds.codegen.compiler>auto</sysds.codegen.compiler>
 
     <!-- set the codegen optimizer (fuse_all, fuse_no_redundancy, fuse_cost_based_v2) -->

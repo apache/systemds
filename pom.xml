@@ -99,6 +99,10 @@
 				<directory>src/main/cpp/lib</directory>
 				<targetPath>lib</targetPath>
 			</resource>
+			<resource>
+				<directory>src/main/cuda/spoof-templates</directory>
+				<targetPath>spoof-templates</targetPath>
+			</resource>
 		</resources>
 
 		<plugins>

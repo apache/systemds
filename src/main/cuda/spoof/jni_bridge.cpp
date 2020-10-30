@@ -53,7 +53,7 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
 }
 
 JNIEXPORT jdouble JNICALL
-Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
+Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
     jlongArray side_ptrs, jlong out_ptr, jdoubleArray scalars_, jlong m, jlong n, jlong grix) {
 
@@ -79,7 +79,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
 }
 
 JNIEXPORT jfloat JNICALL
-Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1f(
+Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
     jlongArray side_ptrs, jlong out_ptr, jfloatArray scalars_, jlong m, jlong n, jlong grix) {
 

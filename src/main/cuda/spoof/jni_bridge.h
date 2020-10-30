@@ -25,10 +25,8 @@
 #pragma once
 
 #include <jni.h>
-/* Header for class org_apache_sysds_hops_codegen_SpoofNativeCUDAContext */
+/* Header for class org_apache_sysds_hops_codegen_SpoofCompiler */
 
-#ifndef _Included_org_apache_sysds_hops_codegen_SpoofNativeCUDAContext
-#define _Included_org_apache_sysds_hops_codegen_SpoofNativeCUDAContext
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,26 +58,25 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
     JNIEnv *, jobject, jlong, jstring, jstring);
 
 /*
- * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofGPUInstruction
+ * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofCUDAInstruction
  * Method:    execute_d
  * Signature: (...)Z
  */
 JNIEXPORT jdouble JNICALL
-Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
+Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
     JNIEnv *, jobject, jlong, jstring, jlongArray, jlongArray, jlong, jdoubleArray, jlong, jlong, jlong);
 
 /*
- * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofGPUInstruction
+ * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofCUDAInstruction
  * Method:    execute_f
  * Signature: (...)Z
  */
 JNIEXPORT jfloat JNICALL
-Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1f(
+Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
     JNIEnv *, jobject, jlong, jstring, jlongArray, jlongArray, jlong, jfloatArray, jlong, jlong, jlong);
 
 #ifdef __cplusplus
 }
-#endif
 #endif
 
 #endif // JNI_BRIDGE_H

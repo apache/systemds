@@ -14,7 +14,7 @@ import java.io.IOException;
 // ToDo: clean code template and load from file
 public class CellWise implements CodeTemplate {
 
-    private static final String TEMPLATE_PATH = "/spoof/templates/cellwise.cu";
+    private static final String TEMPLATE_PATH = "/spoof-templates/cellwise.cu";
 
     @Override
     public String getTemplate() {
@@ -30,7 +30,7 @@ public class CellWise implements CodeTemplate {
             if(new File(TEMPLATE_PATH).isFile())
                 return IOUtilFunctions.toString(getClass().getResourceAsStream(TEMPLATE_PATH));
             else
-                return IOUtilFunctions.toString(new FileInputStream("src/main/cpp" + TEMPLATE_PATH));
+                return IOUtilFunctions.toString(new FileInputStream("src/main/cuda" + TEMPLATE_PATH));
         }
         catch(IOException e) {
             System.out.println(e.getMessage());

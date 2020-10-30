@@ -85,6 +85,7 @@ import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
+import org.apache.sysds.runtime.codegen.SpoofCUDA;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -213,7 +214,7 @@ public class SpoofCompiler {
 				if(SystemUtils.IS_OS_WINDOWS)
 					os = "Windows";
 
-				String libName = "libsystemds_spoof_native_cuda-" + os + "-" + arch;
+				String libName = "libsystemds_spoof_cuda-" + os + "-" + arch;
 
 				boolean isLoaded = NativeHelper.loadLibraryHelperFromResource(libName);
 				if(!isLoaded)

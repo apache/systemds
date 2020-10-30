@@ -23,13 +23,14 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include <math_constants.h>
 
 /**
  * Functor op for assignment op. This is a dummy/identity op.
  */
 template<typename T>
 struct IdentityOp {
-	__device__  __forceinline__ T operator()(T a) const {
+	__device__  __forceinline__ T operator()(T a, int idx = 0) const {
 		return a;
 	}
 };
@@ -45,12 +46,36 @@ struct SumOp {
 };
 
 /**
+ * Functor op for sum of squares operation (returns a + b * b)
+ */
+template<typename T>
+struct SumSqOp {
+	__device__  __forceinline__ T operator()(T a, T b) const {
+		return a + b * b;
+	}
+};
+
+/**
  * Functor op for min operation
  */
 template<typename T>
 struct MinOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
+		return a < b ? a : b;
+	}
+};
+
+template<>
+struct MinOp<double> {
+	__device__  __forceinline__  double operator()(double a, double b) const {
 		return fmin(a, b);
+	}
+};
+
+template<>
+struct MinOp<float> {
+	__device__  __forceinline__ float operator()(float a, float b) const {
+		return fminf(a, b);
 	}
 };
 
@@ -124,10 +149,10 @@ struct MinNeutralElement {
 };
 
 template<>
-float MinNeutralElement<float>::get() { return INFINITY; }
+float MinNeutralElement<float>::get() { return CUDART_INF_F; }
 
 template<>
-double MinNeutralElement<double>::get() { return INFINITY; }
+double MinNeutralElement<double>::get() { return CUDART_INF; }
 
 template<typename T>
 struct MaxNeutralElement {
@@ -135,9 +160,9 @@ struct MaxNeutralElement {
 };
 
 template<>
-float MaxNeutralElement<float>::get() { return -INFINITY; }
+float MaxNeutralElement<float>::get() { return -CUDART_INF_F; }
 
 template<>
-double MaxNeutralElement<double>::get() { return -INFINITY; }
+double MaxNeutralElement<double>::get() { return -CUDART_INF_F; }
 
 #endif // __AGG_OPS_H

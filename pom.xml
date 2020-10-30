@@ -87,7 +87,7 @@
 				<targetPath>scripts</targetPath>
 			</resource>
 			<resource>
-				<directory>src/main/cpp/kernels</directory>
+				<directory>src/main/cuda/ptx</directory>
 				<excludes>
 					<exclude>*.cu</exclude>
 					<exclude>*.cuh</exclude>

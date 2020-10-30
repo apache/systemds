@@ -22,29 +22,15 @@ package org.apache.sysds.runtime.privacy.propagation;
 import java.util.*;
 
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
-import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction;
-import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
+import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -188,6 +174,7 @@ public class PrivacyPropagator
 				// Assumption: aggregates in one or several dimensions, number of dimensions may change, only certain slices of the data may be aggregated upon, elements do not change position
 				return preprocessAggregateUnaryCPInstruction((AggregateUnaryCPInstruction)inst, ec);
 			case Append:
+				return preprocessAppendCPInstruction((AppendCPInstruction) inst, ec);
 			case Binary:
 				// TODO: Support propagation of fine-grained privacy constraints
 				return preprocessBinaryCPInstruction((BinaryCPInstruction) inst, ec);
@@ -281,24 +268,62 @@ public class PrivacyPropagator
 	}
 
 	private static Instruction preprocessAggregateBinaryCPInstruction(AggregateBinaryCPInstruction inst, ExecutionContext ec){
-		PrivacyConstraint privacyConstraint1 = getInputPrivacyConstraint(ec, inst.input1);
-		PrivacyConstraint privacyConstraint2 = getInputPrivacyConstraint(ec, inst.input2);
-		if ( (privacyConstraint1 != null && privacyConstraint1.hasConstraints()) 
-			|| (privacyConstraint2 != null && privacyConstraint2.hasConstraints()) ){
-				PrivacyConstraint mergedPrivacyConstraint;
-				if ( (privacyConstraint1 != null && privacyConstraint1.hasFineGrainedConstraints() ) || (privacyConstraint2 != null && privacyConstraint2.hasFineGrainedConstraints() )){
-					MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
-					MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
-					Propagator propagator = new MatrixMultiplicationPropagatorPrivateFirst(input1, privacyConstraint1, input2, privacyConstraint2);
-					mergedPrivacyConstraint = propagator.propagate();
-					ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
+		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
+		if ( PrivacyUtils.someConstraintSetBinary(privacyConstraints) ){
+			PrivacyConstraint mergedPrivacyConstraint;
+			if ( (privacyConstraints[0] != null && privacyConstraints[0].hasFineGrainedConstraints() ) ||
+				(privacyConstraints[1] != null && privacyConstraints[1].hasFineGrainedConstraints() )){
+				MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
+				MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
+				Propagator propagator = new MatrixMultiplicationPropagatorPrivateFirst(input1, privacyConstraints[0], input2, privacyConstraints[1]);
+				mergedPrivacyConstraint = propagator.propagate();
+				ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
+			}
+			else {
+				mergedPrivacyConstraint = mergeNary(privacyConstraints, OperatorType.NonAggregate);
+				inst.setPrivacyConstraint(mergedPrivacyConstraint);
+			}
+			inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
+		}
+		return inst;
+	}
+
+	public static Instruction preprocessAppendCPInstruction(AppendCPInstruction inst, ExecutionContext ec){
+		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
+		if ( PrivacyUtils.someConstraintSetBinary(privacyConstraints) ){
+			if ( inst.getAppendType() == AppendCPInstruction.AppendType.STRING ){
+				PrivacyLevel[] privacyLevels = new PrivacyLevel[2];
+				privacyLevels[0] = PrivacyUtils.getGeneralPrivacyLevel(privacyConstraints[0]);
+				privacyLevels[1] =  PrivacyUtils.getGeneralPrivacyLevel(privacyConstraints[1]);
+				PrivacyConstraint outputConstraint = new PrivacyConstraint(corePropagation(privacyLevels, OperatorType.NonAggregate));
+				inst.output.setPrivacyConstraint(outputConstraint);
+			} else if ( inst.getAppendType() == AppendCPInstruction.AppendType.LIST ){
+				ListObject input1 = (ListObject) ec.getVariable(inst.input1);
+				if ( inst.getOpcode().equals("remove")){
+					ScalarObject removePosition = ec.getScalarInput(inst.input2);
+					PropagatorMultiReturn propagator = new ListRemovePropagator(input1, privacyConstraints[0], removePosition, removePosition.getPrivacyConstraint());
+					PrivacyConstraint[] outputConstraints = propagator.propagate();
+					inst.output.setPrivacyConstraint(outputConstraints[0]);
+					((ListAppendRemoveCPInstruction) inst).getOutput2().setPrivacyConstraint(outputConstraints[1]);
+				} else {
+					ListObject input2 = (ListObject) ec.getVariable(inst.input2);
+					Propagator propagator = new ListAppendPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
+					inst.output.setPrivacyConstraint(propagator.propagate());
 				}
-				else {
-					mergedPrivacyConstraint = mergeNary(new PrivacyConstraint[]{privacyConstraint1,privacyConstraint2},
-						OperatorType.NonAggregate);
-					inst.setPrivacyConstraint(mergedPrivacyConstraint);
-				}
-				inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
+			}
+			else {
+				MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
+				MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
+				Propagator propagator = null;
+				if ( inst.getAppendType() == AppendCPInstruction.AppendType.RBIND )
+					propagator = new RBindPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
+				else if ( inst.getAppendType() == AppendCPInstruction.AppendType.CBIND )
+					propagator = new CBindPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
+				else throw new DMLPrivacyException("Instruction " + inst.getCPInstructionType() + " with append type " +
+						inst.getAppendType() + " is not supported by the privacy propagator");
+				inst.output.setPrivacyConstraint(propagator.propagate());
+				ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
+			}
 		}
 		return inst;
 	}
@@ -583,16 +608,10 @@ public class PrivacyPropagator
 		if (!instOutputs.isEmpty()){
 			for ( CPOperand output : instOutputs ){
 				PrivacyConstraint outputPrivacyConstraint = output.getPrivacyConstraint();
-				if ( privacyConstraintActivated(outputPrivacyConstraint) || (outputPrivacyConstraint != null && outputPrivacyConstraint.hasFineGrainedConstraints()))
+				if ( PrivacyUtils.someConstraintSetUnary(outputPrivacyConstraint) )
 					setOutputPrivacyConstraint(ec, outputPrivacyConstraint, output.getName());
 			}
 		}
-	}
-
-	private static boolean privacyConstraintActivated(PrivacyConstraint instructionPrivacyConstraint){
-		return instructionPrivacyConstraint != null && 
-			(instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.Private
-			|| instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.PrivateAggregation);
 	}
 
 	@SuppressWarnings("unused")
@@ -624,6 +643,8 @@ public class PrivacyPropagator
 			return getSingletonList(((VariableCPInstruction) inst).getOutput());
 		else if ( inst instanceof SqlCPInstruction )
 			return getSingletonList(((SqlCPInstruction) inst).getOutput());
+		else if ( inst instanceof BuiltinNaryCPInstruction )
+			return getSingletonList(((BuiltinNaryCPInstruction)inst).getOutput());
 		return new ArrayList<>();
 	}
 

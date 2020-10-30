@@ -265,7 +265,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{2,0}), PrivacyLevel.PrivateAggregation);
 		finegrainedRBindTest(constraint1, constraint2);
 	}
-	
+
 	@Test
 	public void finegrainedCBindPrivate1(){
 		PrivacyConstraint constraint1 = new PrivacyConstraint();
@@ -796,7 +796,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 			new DataRange(new long[]{0,columns1}, new long[]{rows,columns1+columns2-1}));
 		secondHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint2.getPrivacyLevel(),level));
 	}
-	
+
 	private static void generalOnlyListAppendTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
 		int length1 = 6;
 		List<Data> dataList1 = Arrays.asList(new Data[length1]);
@@ -859,7 +859,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 				secondHalfPrivacy.containsValue(constraint.getValue()))
 		);
 	}
-	
+
 	private static void finegrainedCBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
 		int rows = 6;
 		int columns1 = 4;
@@ -940,7 +940,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		Assert.assertEquals(expectedOutput2, mergedConstraints[1].getPrivacyLevel());
 		Assert.assertFalse(mergedConstraints[1].hasFineGrainedConstraints());
 	}
-	
+
 	private void integrationCBindTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
 		PrivacyConstraint expectedOutput){
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_CBIND);
@@ -960,7 +960,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
 		Assert.assertEquals(expectedOutput, outputConstraint);
 	}
-	
+
 	private void integrationStringAppendTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
 		PrivacyConstraint expectedOutput){
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_STRING);
@@ -979,7 +979,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
 		Assert.assertEquals(expectedOutput, outputConstraint);
 	}
-	
+
 	private void integrationListAppendTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
 		PrivacyConstraint expectedOutput){
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_LIST);

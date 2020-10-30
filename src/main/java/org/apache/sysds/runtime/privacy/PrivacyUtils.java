@@ -33,6 +33,62 @@ import org.apache.wink.json4j.JSONObject;
 
 public class PrivacyUtils {
 
+	/**
+	 * Returns true if the privacy constraint is not null and the privacy level is set to Private or PrivateAggregation.
+	 * This only works for the general privacy levels, the fine-grained constraints are not checked!
+	 * @param constraint to check
+	 * @return true if the privacy constraint is not null and activated
+	 */
+	public static boolean privacyConstraintActivated(PrivacyConstraint constraint){
+		return constraint != null &&
+			(constraint.getPrivacyLevel() == PrivacyLevel.Private
+				|| constraint.getPrivacyLevel() == PrivacyLevel.PrivateAggregation);
+	}
+
+	/**
+	 * Returns true if the privacy constraint is not null and it has fine-grained constraints.
+	 * @param constraint to check
+	 * @return true if the privacy constraint is not null and has fine-grained constraints
+	 */
+	public static boolean privacyConstraintFineGrainedActivated(PrivacyConstraint constraint){
+		return constraint != null && constraint.getFineGrainedPrivacy().hasConstraints();
+	}
+
+	/**
+	 * Returns true if some constraints are set for either of two input privacy constraints.
+	 * This only checks first two elements in privacy constraint array.
+	 * @param privacyConstraints input privacy constraints
+	 * @return true if one of the two constraints are activated
+	 */
+	public static boolean someConstraintSetBinary(PrivacyConstraint... privacyConstraints){
+		return privacyConstraints != null &&
+			((privacyConstraints[0] != null && privacyConstraints[0].hasConstraints())
+				|| (privacyConstraints[1] != null && privacyConstraints[1].hasConstraints()));
+	}
+
+	/**
+	 * Returns true if the constraint is set for the input privacy constraint.
+	 * @param privacyConstraint input to check
+	 * @return true if any constraint is activated
+	 */
+	public static boolean someConstraintSetUnary(PrivacyConstraint privacyConstraint){
+		return privacyConstraint != null && privacyConstraint.hasConstraints();
+	}
+
+	public static PrivacyLevel getGeneralPrivacyLevel(PrivacyConstraint privacyConstraint){
+		if ( privacyConstraint != null ){
+			return privacyConstraint.getPrivacyLevel();
+		}
+		else return PrivacyLevel.None;
+	}
+
+	public static PrivacyLevel[] getGeneralPrivacyLevels(PrivacyConstraint[] privacyConstraints){
+		PrivacyLevel[] privacyLevels = new PrivacyLevel[privacyConstraints.length];
+		for ( int i = 0; i < privacyConstraints.length; i++)
+			privacyLevels[i] = getGeneralPrivacyLevel(privacyConstraints[i]);
+		return privacyLevels;
+	}
+
 	public static void setFineGrainedPrivacy(PrivacyConstraint privacyConstraint, Expression eFineGrainedPrivacy){
 		FineGrainedPrivacy fineGrainedPrivacy = privacyConstraint.getFineGrainedPrivacy();
 		StringIdentifier fgPrivacyIdentifier = (StringIdentifier) eFineGrainedPrivacy;
@@ -45,7 +101,7 @@ public class PrivacyUtils {
 		privacyConstraint.setFineGrainedPrivacyConstraints(fineGrainedPrivacy);
 	}
 
-	private static void putFineGrainedConstraintsFromString(FineGrainedPrivacy fineGrainedPrivacy, String fgPrivacyValue)
+	public static void putFineGrainedConstraintsFromString(FineGrainedPrivacy fineGrainedPrivacy, String fgPrivacyValue)
 		throws JSONException {
 		JSONArtifact fgPrivacyJson = JSON.parse(fgPrivacyValue);
 		JSONObject fgPrivacyObject = (JSONObject)fgPrivacyJson;

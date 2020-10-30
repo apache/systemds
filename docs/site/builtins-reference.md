@@ -557,7 +557,7 @@ imputeByFD(X, sourceAttribute, targetAttribute, threshold)
 ### Example
 
 ```r
-X = matrix("1 1 1 2 4 5 5 3 3 NaN 4 5 4 1", rows=7, cols=2) 
+X = matrix("1 1 1 2 4 5 5 3 3 NaN 4 5 4 1", rows=7, cols=2)
 imputeByFD(X = X, source = 1, target = 2, threshold = 0.6, verbose = FALSE)
 ```
 
@@ -568,7 +568,7 @@ The kmeans() implements the KMeans Clustering algorithm.
 ### Usage
 
 ```r
-kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50)
+kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50, seed = -1)
 ```
 
 ### Arguments
@@ -581,6 +581,8 @@ kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = F
 | max_iter   | Int             | `100`      |Max no. of iterations allowed |
 | eps        | Double          | `0.000001` | Tolerance (epsilon) for WCSS change ratio |
 | is_verbose | Boolean         |   FALSE    | do not print per-iteration stats |
+| avg_sample_size_per_centroid | int         |   50    | Number of samples to make in the initialization |
+| seed | int         |   -1    | The seed used for initial sampling. If set to -1 random seeds are selected. |
 
 ### Returns
 
@@ -593,7 +595,7 @@ kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = F
 
 ```r
 X = rand (rows = 3972, cols = 972)
-kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50)
+kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50, seed = -1)
 ```
 
 ## `lm`-Function

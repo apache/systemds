@@ -21,6 +21,7 @@ package org.apache.sysds.hops.codegen;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.MemoTable;
 import org.apache.sysds.hops.MultiThreadedHop;
@@ -33,6 +34,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class SpoofFusedOp extends MultiThreadedHop
 {
@@ -55,16 +57,21 @@ public class SpoofFusedOp extends MultiThreadedHop
 	private boolean _distSupported = false;
 	private long _constDim2 = -1;
 	private SpoofOutputDimsType _dimsType;
-	
+	private GeneratorAPI _api = GeneratorAPI.JAVA;
+	private String _genVarName;
+
 	public SpoofFusedOp ( ) {
 	
 	}
 	
-	public SpoofFusedOp( String name, DataType dt, ValueType vt, Class<?> cla, boolean dist, SpoofOutputDimsType type ) {
+	public SpoofFusedOp( String name, DataType dt, ValueType vt, Class<?> cla, GeneratorAPI api, String genVarName,
+						 boolean dist, SpoofOutputDimsType type ) {
 		super(name, dt, vt);
 		_class = cla;
 		_distSupported = dist;
 		_dimsType = type;
+		_api = api;
+		_genVarName = genVarName;
 	}
 
 	@Override
@@ -81,7 +88,10 @@ public class SpoofFusedOp extends MultiThreadedHop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		return false;
+		if(_api == GeneratorAPI.CUDA)
+			return true;
+		else
+			return false;
 	}
 	
 	@Override
@@ -91,10 +101,13 @@ public class SpoofFusedOp extends MultiThreadedHop
 
 	@Override
 	protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
-		return _class.getGenericSuperclass().equals(SpoofRowwise.class) ?
-			OptimizerUtils.estimateSize(dim1, dim2) :
-			OptimizerUtils.estimatePartitionedSizeExactSparsity(
-				dim1, dim2, getBlocksize(), nnz);
+		if(_api == GeneratorAPI.JAVA) {
+			return _class.getGenericSuperclass().equals(SpoofRowwise.class) ?
+					OptimizerUtils.estimateSize(dim1, dim2) :
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(dim1, dim2, getBlocksize(), nnz);
+		}
+		else
+			return OptimizerUtils.estimatePartitionedSizeExactSparsity(dim1, dim2, getBlocksize(), nnz);
 	}
 
 	@Override
@@ -114,7 +127,7 @@ public class SpoofFusedOp extends MultiThreadedHop
 			inputs.add(c.constructLops());
 		
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-		SpoofFused lop = new SpoofFused(inputs, getDataType(), getValueType(), _class, k, et);
+		SpoofFused lop = new SpoofFused(inputs, getDataType(), getValueType(), _class, _api, _genVarName, k, et);
 		setOutputDimensions(lop);
 		setLineNumbers(lop);
 		setLops(lop);
@@ -140,12 +153,16 @@ public class SpoofFusedOp extends MultiThreadedHop
 
 	@Override
 	public String getOpString() {
-		return "spoof("+_class.getSimpleName()+")";
-	}
+		if(_class != null)
+			return "spoof("+_class.getSimpleName()+")";
+		else
+			return "spoof(" + getName() + ")";	}
 	
 	public String getClassName() {
-		return _class.getName();
-	}
+		if(_class != null)
+			return _class.getName();
+		else
+			return "spoof" + getName();	}
 	
 	@Override
 	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
@@ -297,11 +314,12 @@ public class SpoofFusedOp extends MultiThreadedHop
 		
 		SpoofFusedOp that2 = (SpoofFusedOp)that;
 		//note: class implies dims type as well
-		boolean ret = ( _class.equals(that2._class)
+		boolean ret = (Objects.equals(_class, that2._class)
 				&& _distSupported == that2._distSupported
 				&& _maxNumThreads == that2._maxNumThreads
 				&& _constDim2 == that2._constDim2
-				&& getInput().size() == that2.getInput().size());
+				&& getInput().size() == that2.getInput().size()
+				&& _api == that2._api);
 		
 		if( ret ) {
 			for( int i=0; i<getInput().size(); i++ )

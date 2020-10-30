@@ -90,7 +90,7 @@ class TestKMeans(unittest.TestCase):
     def test_invalid_input_2(self):
         features = Matrix(self.sds, np.array([1]))
         with self.assertRaises(ValueError) as context:
-            kmeans(features, k=-1)
+            kmeans(features, k=-1, seed= 13142)
 
     def generate_matrices_for_k_means(self, dims: (int, int), seed: int = 1234):
         np.random.seed(seed)

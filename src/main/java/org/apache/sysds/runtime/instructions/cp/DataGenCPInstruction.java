@@ -409,8 +409,11 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				}
 				//replace output variable name with a placeholder
 				tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
-				tmpInstStr = replaceNonLiteral(tmpInstStr, rows, 2, ec);
-				tmpInstStr = replaceNonLiteral(tmpInstStr, cols, 3, ec);
+				tmpInstStr = method.name().equalsIgnoreCase("rand") ? 
+						replaceNonLiteral(tmpInstStr, rows, 2, ec) :
+						replaceNonLiteral(tmpInstStr, rows, 3, ec);
+				tmpInstStr = method.name().equalsIgnoreCase("rand") ? 
+						replaceNonLiteral(tmpInstStr, cols, 3, ec) : tmpInstStr;
 				break;
 			}
 			case SEQ: {

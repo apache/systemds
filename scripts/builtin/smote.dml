@@ -68,7 +68,11 @@ return (Matrix[Double] Y) {
   synthetic_samples = matrix(0, iterLim*ncol(knn_index), ncol(X))
   
   # shuffle the nn indexes
-  rand_index =  ifelse(k < iterLim, sample(k, iterLim, TRUE, 42), sample(k, iterLim, 42))
+  #rand_index =  ifelse(k < iterLim, sample(k, iterLim, TRUE, 42), sample(k, iterLim, 42))
+  if (k < iterLim)
+    rand_index = sample(k, iterLim, TRUE, 42);
+  else
+    rand_index = sample(k, iterLim, 42);
 
   while(iter < iterLim)
   {

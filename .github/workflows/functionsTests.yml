@@ -36,20 +36,15 @@ jobs:
       fail-fast: false
       matrix:
         tests: [
-          "**.functions.aggregate.**,**.functions.append.**",
-          "**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
-          "**.functions.blocks.**,**.functions.compress.**,**.functions.countDistinct.**,**.functions.data.misc.**,**.functions.data.rand.**,**.functions.data.tensor.**",
-          "**.functions.binary.matrix_full_**",
-          "**.functions.codegenalg.partone**",
-          "**.functions.codegenalg.parttwo**,**.functions.codegen.**,**.functions.caching.**",
+          "**.functions.aggregate.**,**.functions.append.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
+          "**.functions.blocks.**,**.functions.compress.**,**.functions.countDistinct.**,**.functions.data.misc.**,**.functions.data.rand.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
+          "**.functions.federated.**,**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
+          "**.functions.codegenalg.partone.**",
           "**.functions.builtin.**",
-          "**.functions.federated.**",
           "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.jmlc.**,**.functions.lineage.**",
-          "**.functions.dnn.**,**.functions.misc.**,**.functions.mlcontext.**",
-          "**.functions.paramserv.**",
-          "**.functions.nary.**,**.functions.parfor.**",
-          "**.functions.pipelines.**,**.functions.privacy.**,**.functions.quaternary.**,**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
-          "**.functions.r**,**.functions.t**",
+          "**.functions.dnn.**,**.functions.misc.**,**.functions.mlcontext.**,**.functions.paramserv.**",
+          "**.functions.nary.**,**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**,**.functions.quaternary.**,**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
+          "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**"
           ]
         os: [ubuntu-latest]

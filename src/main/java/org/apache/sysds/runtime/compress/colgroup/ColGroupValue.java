@@ -323,7 +323,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		return ret;
 	}
 
-	protected final double[] sparsePreaggValues(int numVals, double v, boolean allocNew, double[] dictVals) {
+	protected static double[] sparsePreaggValues(int numVals, double v, boolean allocNew, double[] dictVals) {
 		double[] ret = allocNew ? new double[numVals + 1] : allocDVector(numVals + 1, true);
 
 		for(int k = 0; k < numVals; k++)

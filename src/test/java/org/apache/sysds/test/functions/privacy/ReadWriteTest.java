@@ -133,7 +133,7 @@ public class ReadWriteTest extends AutomatedTestBase {
 		return a;
 	}
 
-	private void setFineGrained(PrivacyConstraint privacyConstraint){
+	private static void setFineGrained(PrivacyConstraint privacyConstraint){
 		FineGrainedPrivacy fgp = privacyConstraint.getFineGrainedPrivacy();
 		fgp.put(new DataRange(new long[]{1,2}, new long[]{5,4}), PrivacyLevel.Private);
 		fgp.put(new DataRange(new long[]{7,1}, new long[]{9,1}), PrivacyLevel.Private);

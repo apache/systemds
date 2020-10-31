@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 import static org.apache.sysds.runtime.util.ProgramConverter.*;
 
 public class FederatedPSControlThread extends PSWorker implements Callable<Void> {
+	private static final long serialVersionUID = 6846648059569648791L;
 	FederatedData _featuresData;
 	FederatedData _labelsData;
 	final long _batchCounterVarID;
@@ -140,6 +141,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 * Setup UDF executed on the federated worker
 	 */
 	private static class setupFederatedWorker extends FederatedUDF {
+		private static final long serialVersionUID = -3148991224792675607L;
 		long _batchSize;
 		long _dataSize;
 		long _numBatches;
@@ -209,6 +211,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 * Teardown UDF executed on the federated worker
 	 */
 	private static class teardownFederatedWorker extends FederatedUDF {
+		private static final long serialVersionUID = -153650281873318969L;
+
 		protected teardownFederatedWorker() {
 			super(new long[]{});
 		}
@@ -326,6 +330,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 * This is the code that will be executed on the federated Worker when computing a single batch
 	 */
 	private static class federatedComputeBatchGradients extends FederatedUDF {
+		private static final long serialVersionUID = -3652112393963053475L;
+
 		protected federatedComputeBatchGradients(long[] inIDs) {
 			super(inIDs);
 		}
@@ -438,6 +444,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 * This is the code that will be executed on the federated Worker when computing one epoch
 	 */
 	private static class federatedComputeEpochGradients extends FederatedUDF {
+		private static final long serialVersionUID = -3075901536748794832L;
+
 		protected federatedComputeEpochGradients(long[] inIDs) {
 			super(inIDs);
 		}

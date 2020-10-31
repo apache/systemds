@@ -19,24 +19,26 @@
 
 package org.apache.sysds.test.functions.privacy.propagation;
 
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.runtime.instructions.cp.*;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
-import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.sysds.runtime.privacy.finegrained.DataRange;
-import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
-import org.apache.sysds.runtime.privacy.propagation.*;
+import org.apache.sysds.runtime.privacy.propagation.AppendPropagator;
+import org.apache.sysds.runtime.privacy.propagation.CBindPropagator;
+import org.apache.sysds.runtime.privacy.propagation.ListAppendPropagator;
+import org.apache.sysds.runtime.privacy.propagation.ListRemovePropagator;
+import org.apache.sysds.runtime.privacy.propagation.Propagator;
+import org.apache.sysds.runtime.privacy.propagation.PropagatorMultiReturn;
+import org.apache.sysds.runtime.privacy.propagation.RBindPropagator;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.test.functions.federated.primitives.FederatedRCBindTest;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,8 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
 
 public class AppendPropagatorTest extends AutomatedTestBase {
 
@@ -100,23 +100,6 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		generalOnlyRBindTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 	}
 
-	private void generalOnlyRBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
-		int columns = 2;
-		int rows1 = 4;
-		int rows2 = 3;
-		MatrixBlock inputMatrix1 = new MatrixBlock(rows1,columns,3);
-		MatrixBlock inputMatrix2 = new MatrixBlock(rows2,columns,4);
-		AppendPropagator propagator = new RBindPropagator(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
-		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{0,0}, new long[]{rows1-1,columns-1}));
-		firstHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint1.getPrivacyLevel(),level));
-		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{rows1,0}, new long[]{rows1+rows2-1,columns-1}));
-		secondHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint2.getPrivacyLevel(),level));
-	}
-
 	@Test
 	public void generalOnlyCBindPrivate1Test(){
 		generalOnlyCBindTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint());
@@ -152,23 +135,6 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		generalOnlyCBindTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 	}
 
-	private void generalOnlyCBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
-		int rows = 2;
-		int columns1 = 4;
-		int columns2 = 3;
-		MatrixBlock inputMatrix1 = new MatrixBlock(rows,columns1,3);
-		MatrixBlock inputMatrix2 = new MatrixBlock(rows,columns2,4);
-		AppendPropagator propagator = new CBindPropagator(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
-		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{0,0}, new long[]{rows-1,columns1-1}));
-		firstHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint1.getPrivacyLevel(),level));
-		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{0,columns1}, new long[]{rows,columns1+columns2-1}));
-		secondHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint2.getPrivacyLevel(),level));
-	}
-
 	@Test
 	public void generalOnlyListAppendPrivate1Test(){
 		generalOnlyListAppendTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint());
@@ -202,25 +168,6 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 	@Test
 	public void generalOnlyListAppendPrivatePrivateAggregationTest(){
 		generalOnlyListAppendTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-	}
-
-	private void generalOnlyListAppendTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
-		int length1 = 6;
-		List<Data> dataList1 = Arrays.asList(new Data[length1]);
-		ListObject input1 = new ListObject(dataList1);
-		int length2 = 11;
-		List<Data> dataList2 = Arrays.asList(new Data[length2]);
-		ListObject input2 = new ListObject(dataList2);
-		Propagator propagator = new ListAppendPropagator(input1, constraint1, input2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{0}, new long[]{length1-1})
-		);
-		firstHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint1.getPrivacyLevel(),level));
-		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[length1], new long[]{length1+length2-1})
-		);
-		secondHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint2.getPrivacyLevel(),level));
 	}
 
 	@Test
@@ -263,27 +210,6 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 	public void generalOnlyListRemoveAppendPrivatePrivateAggregationTest(){
 		generalOnlyListRemoveAppendTest(new PrivacyConstraint(PrivacyLevel.Private), new PrivacyConstraint(PrivacyLevel.PrivateAggregation),
 			PrivacyLevel.Private, PrivacyLevel.Private);
-	}
-
-	private void generalOnlyListRemoveAppendTest(
-		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expected1, PrivacyLevel expected2){
-		int dataLength = 9;
-		List<Data> dataList = new ArrayList<>();
-		for ( int i = 0; i < dataLength; i++){
-			dataList.add(new DoubleObject(i));
-		}
-		ListObject inputList = new ListObject(dataList);
-
-		int removePositionInt = 5;
-		ScalarObject removePosition = new IntObject(removePositionInt);
-
-		PropagatorMultiReturn propagator = new ListRemovePropagator(inputList, constraint1, removePosition, constraint2);
-		PrivacyConstraint[] mergedConstraints = propagator.propagate();
-
-		Assert.assertEquals(expected1, mergedConstraints[0].getPrivacyLevel());
-		Assert.assertEquals(expected2, mergedConstraints[1].getPrivacyLevel());
-		Assert.assertFalse("The first output constraint should have no fine-grained constraints", mergedConstraints[0].hasFineGrainedConstraints());
-		Assert.assertFalse("The second output constraint should have no fine-grained constraints", mergedConstraints[1].hasFineGrainedConstraints());
 	}
 
 	@Test
@@ -339,30 +265,7 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{2,0}), PrivacyLevel.PrivateAggregation);
 		finegrainedRBindTest(constraint1, constraint2);
 	}
-
-	private void finegrainedRBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
-		int columns = 2;
-		int rows1 = 4;
-		int rows2 = 3;
-		MatrixBlock inputMatrix1 = new MatrixBlock(rows1,columns,3);
-		MatrixBlock inputMatrix2 = new MatrixBlock(rows2,columns,4);
-		AppendPropagator propagator = new RBindPropagator(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
-		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{0,0}, new long[]{rows1-1,columns-1}));
-		constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
-			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
-				firstHalfPrivacy.containsValue(constraint.getValue()))
-		);
-		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{rows1,0}, new long[]{rows1+rows2-1,columns-1}));
-		constraint2.getFineGrainedPrivacy().getAllConstraintsList().forEach(
-			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 2",
-				secondHalfPrivacy.containsValue(constraint.getValue()))
-		);
-	}
-
+	
 	@Test
 	public void finegrainedCBindPrivate1(){
 		PrivacyConstraint constraint1 = new PrivacyConstraint();
@@ -415,29 +318,6 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0},new long[]{0,1}), PrivacyLevel.Private);
 		constraint2.getFineGrainedPrivacy().put(new DataRange(new long[]{1,0},new long[]{2,0}), PrivacyLevel.PrivateAggregation);
 		finegrainedCBindTest(constraint1, constraint2);
-	}
-
-	private void finegrainedCBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
-		int rows = 6;
-		int columns1 = 4;
-		int columns2 = 3;
-		MatrixBlock inputMatrix1 = new MatrixBlock(rows,columns1,3);
-		MatrixBlock inputMatrix2 = new MatrixBlock(rows,columns2,4);
-		AppendPropagator propagator = new CBindPropagator(inputMatrix1, constraint1, inputMatrix2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
-		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{0,0}, new long[]{rows-1,columns1-1}));
-		constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
-			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
-				firstHalfPrivacy.containsValue(constraint.getValue()))
-		);
-		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{0,columns1}, new long[]{rows,columns1+columns2-1}));
-		constraint2.getFineGrainedPrivacy().getAllConstraintsList().forEach(
-			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 2",
-				secondHalfPrivacy.containsValue(constraint.getValue()))
-		);
 	}
 
 	@Test
@@ -494,39 +374,12 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		finegrainedListAppendTest(constraint1, constraint2);
 	}
 
-	private void finegrainedListAppendTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
-		int length1 = 6;
-		List<Data> dataList1 = Arrays.asList(new Data[length1]);
-		ListObject input1 = new ListObject(dataList1);
-		int length2 = 11;
-		List<Data> dataList2 = Arrays.asList(new Data[length2]);
-		ListObject input2 = new ListObject(dataList2);
-		Propagator propagator = new ListAppendPropagator(input1, constraint1, input2, constraint2);
-		PrivacyConstraint mergedConstraint = propagator.propagate();
-		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
-		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{0}, new long[]{length1-1})
-		);
-		constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
-			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
-				firstHalfPrivacy.containsValue(constraint.getValue()))
-		);
-		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
-			new DataRange(new long[]{length1}, new long[]{length1+length2-1})
-		);
-		constraint2.getFineGrainedPrivacy().getAllConstraintsList().forEach(
-			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 2",
-				secondHalfPrivacy.containsValue(constraint.getValue()))
-		);
-	}
-
 	@Test
 	public void testFunction(){
 		int dataLength = 9;
 		List<Data> dataList = new ArrayList<>();
-		for ( int i = 0; i < dataLength; i++){
+		for ( int i = 0; i < dataLength; i++)
 			dataList.add(new DoubleObject(i));
-		}
 		ListObject l = new ListObject(dataList);
 		ListObject lCopy = l.copy();
 		int position = 4;
@@ -589,38 +442,6 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		constraint1.getFineGrainedPrivacy().put(new DataRange(new long[]{5},new long[]{8}), PrivacyLevel.Private);
 		PrivacyConstraint constraint2 = new PrivacyConstraint();
 		finegrainedListRemoveAppendTest(constraint1, constraint2, PrivacyLevel.PrivateAggregation);
-	}
-
-	private void finegrainedListRemoveAppendTest(
-		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expectedOutput2){
-		finegrainedListRemoveAppendTest(constraint1, constraint2, expectedOutput2, false);
-	}
-
-	private void finegrainedListRemoveAppendTest(
-		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expectedOutput2, boolean singleElementPrivacy){
-		int dataLength = 9;
-		List<Data> dataList = new ArrayList<>();
-		for ( int i = 0; i < dataLength; i++){
-			dataList.add(new DoubleObject(i));
-		}
-		ListObject inputList = new ListObject(dataList);
-		int removePositionInt = 5;
-		ScalarObject removePosition = new IntObject(removePositionInt);
-		PropagatorMultiReturn propagator = new ListRemovePropagator(inputList, constraint1, removePosition, constraint2);
-		PrivacyConstraint[] mergedConstraints = propagator.propagate();
-
-		if ( !singleElementPrivacy ){
-			Map<DataRange, PrivacyLevel> outputPrivacy = mergedConstraints[0].getFineGrainedPrivacy().getPrivacyLevel(
-				new DataRange(new long[]{0}, new long[]{dataLength-1})
-			);
-			constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
-				constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
-					outputPrivacy.containsValue(constraint.getValue()))
-			);
-		}
-
-		Assert.assertEquals(expectedOutput2, mergedConstraints[1].getPrivacyLevel());
-		Assert.assertFalse(mergedConstraints[1].hasFineGrainedConstraints());
 	}
 
 	@Test
@@ -865,26 +686,6 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		integrationCBindTest(constraint1, constraint2, pcExpected);
 	}
 
-	private void integrationCBindTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
-		PrivacyConstraint expectedOutput){
-		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_CBIND);
-		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
-
-		int cols1 = 20;
-		int cols2 = 30;
-		int rows = 10;
-		double[][] A = getRandomMatrix(rows, cols1, -10, 10, 0.5, 1);
-		double[][] B = getRandomMatrix(rows, cols2, -10, 10, 0.5, 1);
-		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols1),  privacyConstraint1);
-		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols2),  privacyConstraint2);
-
-		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
-		runTest(true,false,null,-1);
-
-		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
-		Assert.assertEquals(expectedOutput, outputConstraint);
-	}
-
 	@Test
 	public void integrationStringAppendTestNoneNone(){
 		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
@@ -918,25 +719,6 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		PrivacyConstraint pc1 = new PrivacyConstraint(PrivacyLevel.None);
 		PrivacyConstraint pc2 = new PrivacyConstraint(PrivacyLevel.Private);
 		integrationStringAppendTest(pc1, pc2, pc2);
-	}
-
-	private void integrationStringAppendTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
-		PrivacyConstraint expectedOutput){
-		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_STRING);
-		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
-
-		int cols = 1;
-		int rows = 1;
-		double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.5, 1);
-		double[][] B = getRandomMatrix(rows, cols, -10, 10, 0.5, 1);
-		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols),  privacyConstraint1);
-		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols),  privacyConstraint2);
-
-		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
-		runTest(true,false,null,-1);
-
-		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
-		Assert.assertEquals(expectedOutput, outputConstraint);
 	}
 
 	@Ignore
@@ -981,6 +763,223 @@ public class AppendPropagatorTest extends AutomatedTestBase {
 		integrationListAppendTest(pc1, pc2, pc2);
 	}
 
+	private static void generalOnlyRBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
+		int columns = 2;
+		int rows1 = 4;
+		int rows2 = 3;
+		MatrixBlock inputMatrix1 = new MatrixBlock(rows1,columns,3);
+		MatrixBlock inputMatrix2 = new MatrixBlock(rows2,columns,4);
+		AppendPropagator propagator = new RBindPropagator(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
+		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{0,0}, new long[]{rows1-1,columns-1}));
+		firstHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint1.getPrivacyLevel(),level));
+		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{rows1,0}, new long[]{rows1+rows2-1,columns-1}));
+		secondHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint2.getPrivacyLevel(),level));
+	}
+
+	private static void generalOnlyCBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
+		int rows = 2;
+		int columns1 = 4;
+		int columns2 = 3;
+		MatrixBlock inputMatrix1 = new MatrixBlock(rows,columns1,3);
+		MatrixBlock inputMatrix2 = new MatrixBlock(rows,columns2,4);
+		AppendPropagator propagator = new CBindPropagator(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
+		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{0,0}, new long[]{rows-1,columns1-1}));
+		firstHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint1.getPrivacyLevel(),level));
+		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{0,columns1}, new long[]{rows,columns1+columns2-1}));
+		secondHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint2.getPrivacyLevel(),level));
+	}
+	
+	private static void generalOnlyListAppendTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
+		int length1 = 6;
+		List<Data> dataList1 = Arrays.asList(new Data[length1]);
+		ListObject input1 = new ListObject(dataList1);
+		int length2 = 11;
+		List<Data> dataList2 = Arrays.asList(new Data[length2]);
+		ListObject input2 = new ListObject(dataList2);
+		Propagator propagator = new ListAppendPropagator(input1, constraint1, input2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{0}, new long[]{length1-1})
+		);
+		firstHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint1.getPrivacyLevel(),level));
+		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[length1], new long[]{length1+length2-1})
+		);
+		secondHalfPrivacy.forEach((range,level) -> Assert.assertEquals(constraint2.getPrivacyLevel(),level));
+	}
+
+	private static void generalOnlyListRemoveAppendTest(
+		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expected1, PrivacyLevel expected2){
+		int dataLength = 9;
+		List<Data> dataList = new ArrayList<>();
+		for ( int i = 0; i < dataLength; i++){
+			dataList.add(new DoubleObject(i));
+		}
+		ListObject inputList = new ListObject(dataList);
+
+		int removePositionInt = 5;
+		ScalarObject removePosition = new IntObject(removePositionInt);
+
+		PropagatorMultiReturn propagator = new ListRemovePropagator(inputList, constraint1, removePosition, constraint2);
+		PrivacyConstraint[] mergedConstraints = propagator.propagate();
+
+		Assert.assertEquals(expected1, mergedConstraints[0].getPrivacyLevel());
+		Assert.assertEquals(expected2, mergedConstraints[1].getPrivacyLevel());
+		Assert.assertFalse("The first output constraint should have no fine-grained constraints", mergedConstraints[0].hasFineGrainedConstraints());
+		Assert.assertFalse("The second output constraint should have no fine-grained constraints", mergedConstraints[1].hasFineGrainedConstraints());
+	}
+
+	private static void finegrainedRBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
+		int columns = 2;
+		int rows1 = 4;
+		int rows2 = 3;
+		MatrixBlock inputMatrix1 = new MatrixBlock(rows1,columns,3);
+		MatrixBlock inputMatrix2 = new MatrixBlock(rows2,columns,4);
+		AppendPropagator propagator = new RBindPropagator(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
+		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{0,0}, new long[]{rows1-1,columns-1}));
+		constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
+				firstHalfPrivacy.containsValue(constraint.getValue()))
+		);
+		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{rows1,0}, new long[]{rows1+rows2-1,columns-1}));
+		constraint2.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 2",
+				secondHalfPrivacy.containsValue(constraint.getValue()))
+		);
+	}
+	
+	private static void finegrainedCBindTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
+		int rows = 6;
+		int columns1 = 4;
+		int columns2 = 3;
+		MatrixBlock inputMatrix1 = new MatrixBlock(rows,columns1,3);
+		MatrixBlock inputMatrix2 = new MatrixBlock(rows,columns2,4);
+		AppendPropagator propagator = new CBindPropagator(inputMatrix1, constraint1, inputMatrix2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
+		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{0,0}, new long[]{rows-1,columns1-1}));
+		constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
+				firstHalfPrivacy.containsValue(constraint.getValue()))
+		);
+		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{0,columns1}, new long[]{rows,columns1+columns2-1}));
+		constraint2.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 2",
+				secondHalfPrivacy.containsValue(constraint.getValue()))
+		);
+	}
+
+	private static void finegrainedListAppendTest(PrivacyConstraint constraint1, PrivacyConstraint constraint2){
+		int length1 = 6;
+		List<Data> dataList1 = Arrays.asList(new Data[length1]);
+		ListObject input1 = new ListObject(dataList1);
+		int length2 = 11;
+		List<Data> dataList2 = Arrays.asList(new Data[length2]);
+		ListObject input2 = new ListObject(dataList2);
+		Propagator propagator = new ListAppendPropagator(input1, constraint1, input2, constraint2);
+		PrivacyConstraint mergedConstraint = propagator.propagate();
+		Assert.assertEquals(mergedConstraint.getPrivacyLevel(), PrivacyLevel.None);
+		Map<DataRange, PrivacyLevel> firstHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{0}, new long[]{length1-1})
+		);
+		constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
+				firstHalfPrivacy.containsValue(constraint.getValue()))
+		);
+		Map<DataRange, PrivacyLevel> secondHalfPrivacy = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(
+			new DataRange(new long[]{length1}, new long[]{length1+length2-1})
+		);
+		constraint2.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+			constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 2",
+				secondHalfPrivacy.containsValue(constraint.getValue()))
+		);
+	}
+
+	private static void finegrainedListRemoveAppendTest(
+		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expectedOutput2){
+		finegrainedListRemoveAppendTest(constraint1, constraint2, expectedOutput2, false);
+	}
+
+	private static void finegrainedListRemoveAppendTest(
+		PrivacyConstraint constraint1, PrivacyConstraint constraint2, PrivacyLevel expectedOutput2, boolean singleElementPrivacy){
+		int dataLength = 9;
+		List<Data> dataList = new ArrayList<>();
+		for ( int i = 0; i < dataLength; i++){
+			dataList.add(new DoubleObject(i));
+		}
+		ListObject inputList = new ListObject(dataList);
+		int removePositionInt = 5;
+		ScalarObject removePosition = new IntObject(removePositionInt);
+		PropagatorMultiReturn propagator = new ListRemovePropagator(inputList, constraint1, removePosition, constraint2);
+		PrivacyConstraint[] mergedConstraints = propagator.propagate();
+
+		if ( !singleElementPrivacy ){
+			Map<DataRange, PrivacyLevel> outputPrivacy = mergedConstraints[0].getFineGrainedPrivacy().getPrivacyLevel(
+				new DataRange(new long[]{0}, new long[]{dataLength-1})
+			);
+			constraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+				constraint -> Assert.assertTrue("Merged constraint should contain same privacy levels as input 1",
+					outputPrivacy.containsValue(constraint.getValue()))
+			);
+		}
+
+		Assert.assertEquals(expectedOutput2, mergedConstraints[1].getPrivacyLevel());
+		Assert.assertFalse(mergedConstraints[1].hasFineGrainedConstraints());
+	}
+	
+	private void integrationCBindTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
+		PrivacyConstraint expectedOutput){
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_CBIND);
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
+
+		int cols1 = 20;
+		int cols2 = 30;
+		int rows = 10;
+		double[][] A = getRandomMatrix(rows, cols1, -10, 10, 0.5, 1);
+		double[][] B = getRandomMatrix(rows, cols2, -10, 10, 0.5, 1);
+		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols1),  privacyConstraint1);
+		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols2),  privacyConstraint2);
+
+		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
+		runTest(true,false,null,-1);
+
+		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
+		Assert.assertEquals(expectedOutput, outputConstraint);
+	}
+	
+	private void integrationStringAppendTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
+		PrivacyConstraint expectedOutput){
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_STRING);
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
+
+		int cols = 1;
+		int rows = 1;
+		double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.5, 1);
+		double[][] B = getRandomMatrix(rows, cols, -10, 10, 0.5, 1);
+		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols),  privacyConstraint1);
+		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols),  privacyConstraint2);
+
+		programArgs = new String[]{"-nvargs", "A=" + input("A"), "B=" + input("B"), "C=" + output("C")};
+		runTest(true,false,null,-1);
+
+		PrivacyConstraint outputConstraint = getPrivacyConstraintFromMetaData("C");
+		Assert.assertEquals(expectedOutput, outputConstraint);
+	}
+	
 	private void integrationListAppendTest(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2,
 		PrivacyConstraint expectedOutput){
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME_LIST);

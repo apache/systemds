@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.privacy.propagation;
 import java.util.*;
 
 import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.*;

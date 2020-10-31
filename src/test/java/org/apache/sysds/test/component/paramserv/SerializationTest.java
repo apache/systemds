@@ -27,7 +27,6 @@ import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -44,11 +43,8 @@ public class SerializationTest {
 	private int _named;
 
 	@Parameterized.Parameters
-	public static Collection named() {
-		return Arrays.asList(new Object[][] {
-				{ 0 },
-				{ 1 }
-		});
+	public static Collection<?> named() {
+		return Arrays.asList(new Object[][] {{ 0 }, { 1 }});
 	}
 
 	public SerializationTest(Integer named) {

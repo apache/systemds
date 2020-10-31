@@ -758,6 +758,10 @@ public abstract class Hop implements ParseInfo {
 		return _input;
 	}
 	
+	public Hop getInput(int ix) {
+		return _input.get(ix);
+	}
+	
 	public void addInput( Hop h ) {
 		_input.add(h);
 		h._parent.add(this);

@@ -157,6 +157,15 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 	
 	@Override
+	public boolean equalDims(Object anObject) {
+		if( !(anObject instanceof TensorCharacteristics) )
+			return false;
+		TensorCharacteristics tc = (TensorCharacteristics) anObject;
+		return dimsKnown() && tc.dimsKnown()
+			&& Arrays.equals(_dims, tc._dims);
+	}
+	
+	@Override
 	public boolean equals (Object anObject) {
 		if( !(anObject instanceof TensorCharacteristics) )
 			return false;

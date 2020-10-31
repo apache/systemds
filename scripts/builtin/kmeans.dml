@@ -85,8 +85,6 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
 
   min_distances = is_row_in_samples;  # Pick the 1-st centroids uniformly at random
 
-  seed = ifelse(seed == -1, -1, seed + 1)
-  random_row = rand(rows = 1, cols = num_runs, seed = seed);
   for (i in 1 : num_centroids)
   {
     # "Matricize" and prefix-sum to compute the cumulative distribution function:
@@ -95,7 +93,8 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
 
     # Select the i-th centroid in each sample as a random sample row id with
     # probability ~ min_distances:
-    random_row = random_row + rand(rows = 1, cols = 1, seed = seed + i)
+    lseed = ifelse(seed==-1, -1, seed + i);
+    random_row = rand(rows = 1, cols = num_runs, seed = lseed)
     threshold_matrix = random_row * cdf_min_distances [sample_block_size, ];
     centroid_ids = t(colSums (cdf_min_distances < threshold_matrix)) + 1;
 

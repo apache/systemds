@@ -98,7 +98,9 @@ public class FederationUtils {
 			MatrixBlock ret = null;
 			long size = 0;
 			for(int i=0; i<ffr.length; i++) {
-				MatrixBlock tmp = (MatrixBlock)ffr[i].get().getData()[0];
+				Object input = ffr[i].get().getData()[0];
+				MatrixBlock tmp = (input instanceof ScalarObject) ? 
+					new MatrixBlock(((ScalarObject)input).getDoubleValue()) : (MatrixBlock) input;
 				size += ranges[i].getSize(0);
 				sop1 = sop1.setConstant(ranges[i].getSize(0));
 				tmp = tmp.scalarOperations(sop1, new MatrixBlock());
@@ -167,10 +169,11 @@ public class FederationUtils {
 		}
 	}
 
-	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr) {
+	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, FederationMap map) {
 		if(!(aop.aggOp.increOp.fn instanceof KahanFunction || (aop.aggOp.increOp.fn instanceof Builtin &&
-			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
-				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)))) {
+			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN
+			|| ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)
+			|| aop.aggOp.increOp.fn instanceof Mean ))) {
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
 				+ aop.aggOp.increOp.getClass().getSimpleName());
 		}
@@ -181,7 +184,10 @@ public class FederationUtils {
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
 				return new DoubleObject(aggMinMax(ffr, isMin, true,  Optional.empty()).getValue(0,0));
 			}
-			else {
+			else if( aop.aggOp.increOp.fn instanceof Mean ) {
+				return new DoubleObject(aggMean(ffr, map).getValue(0,0));
+			}
+			else { //if (aop.aggOp.increOp.fn instanceof KahanFunction)
 				double sum = 0; //uak+
 				for( Future<FederatedResponse> fr : ffr )
 					sum += ((ScalarObject)fr.get().getData()[0]).getDoubleValue();

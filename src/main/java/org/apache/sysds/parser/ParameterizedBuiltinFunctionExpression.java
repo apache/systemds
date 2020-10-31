@@ -214,10 +214,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case TRANSFORMCOLMAP:
 			validateTransformColmap(output, conditional);
 			break;
-		
-		case TRANSFORMMETA:
-			validateTransformMeta(output, conditional);
-			break;
 			
 		case LOWER_TRI:
 		case UPPER_TRI:
@@ -376,21 +372,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.MATRIX);
 		output.setValueType(ValueType.FP64);
 		output.setDimensions(exprTarget.getOutput().getDim2(), 3);
-	}
-	
-	private void validateTransformMeta(DataIdentifier output, boolean conditional) 
-	{
-		//validate specification
-		checkDataValueType(false,"transformmeta", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
-		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
-		
-		//validate meta data path 
-		checkDataValueType(false,"transformmeta", TF_FN_PARAM_MTD, DataType.SCALAR, ValueType.STRING, conditional);
-		
-		//set output dimensions
-		output.setDataType(DataType.FRAME);
-		output.setValueType(ValueType.STRING);
-		output.setDimensions(-1, -1);
 	}
 	
 	private void validateTransformEncode(DataIdentifier output1, DataIdentifier output2, boolean conditional) 

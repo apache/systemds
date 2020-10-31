@@ -19,6 +19,13 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -58,13 +65,6 @@ import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.transform.meta.TfOffsetMap;
 import scala.Tuple2;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
 	protected ArrayList<CPOperand> _outputs;

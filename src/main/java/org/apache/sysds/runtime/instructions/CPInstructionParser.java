@@ -216,7 +216,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "transformapply", CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformdecode",CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformcolmap",CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "transformmeta",  CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformencode",CPType.MultiReturnParameterizedBuiltin);
 		
 		// Ternary Instruction Opcodes

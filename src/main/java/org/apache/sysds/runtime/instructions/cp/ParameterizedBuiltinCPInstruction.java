@@ -147,12 +147,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		} else if (opcode.equals("transformapply")
 				|| opcode.equals("transformdecode")
 				|| opcode.equals("transformcolmap")
-				|| opcode.equals("transformmeta")
 				|| opcode.equals("toString")
 				|| opcode.equals("nvlist")) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		} else if ("paramserv".equals(opcode)) {
 			return new ParamservBuiltinCPInstruction(null, paramsMap, out, opcode, str);
+		} else if (opcode.equals("transformmeta")) {
+			throw new DMLRuntimeException(opcode + "is no longer supported");
 		} else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 		}
@@ -300,26 +301,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			//release locks
 			ec.setMatrixOutput(output.getName(), mbout);
 			ec.releaseFrameInput(params.get("target"));
-		}
-		else if ( opcode.equalsIgnoreCase("transformmeta")) {
-			//get input spec and path
-			String spec = getParameterMap().get("spec");
-			String path = getParameterMap().get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD);
-			String delim = getParameterMap().getOrDefault("sep", TfUtils.TXMTD_SEP);
-			
-			//execute transform meta data read
-			FrameBlock meta = null;
-			try {
-				meta = TfMetaUtils.readTransformMetaDataFromFile(spec, path, delim);
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
-			
-			//release locks
-			ec.setFrameOutput(output.getName(), meta);
-		}
-		else if ( opcode.equalsIgnoreCase("toString")) {
+		} else if ( opcode.equalsIgnoreCase("toString")) {
 			//handle input parameters
 			int rows = (getParam("rows")!=null) ? Integer.parseInt(getParam("rows")) : TOSTRING_MAXROWS;
 			int cols = (getParam("cols") != null) ? Integer.parseInt(getParam("cols")) : TOSTRING_MAXCOLS;

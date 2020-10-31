@@ -63,7 +63,6 @@ public class Federated extends Lop {
 	
 	@Override
 	public String toString() {
-		// TODO Federated.toString() lop
-		return null;
+		return "FedInit";
 	}
 }

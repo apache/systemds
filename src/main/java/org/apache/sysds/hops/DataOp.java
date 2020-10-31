@@ -30,6 +30,7 @@ import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.Federated;
 import org.apache.sysds.lops.Lop;
@@ -37,6 +38,7 @@ import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.Sql;
 import org.apache.sysds.parser.DataExpression;
+import static org.apache.sysds.parser.DataExpression.FED_RANGES;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.LocalFileUtils;
@@ -270,8 +272,7 @@ public class DataOp extends Hop {
 		// construct lops for all input parameters
 		HashMap<String, Lop> inputLops = new HashMap<>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
-			inputLops.put(cur.getKey(), getInput().get(cur.getValue())
-					.constructLops());
+			inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 		}
 
 		// Create the lop
@@ -488,21 +489,30 @@ public class DataOp extends Hop {
 	}
 	
 	@Override
-	public void refreshSizeInformation()
-	{
-		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE )
-		{
+	public void refreshSizeInformation() {
+		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE ) {
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());
 			setNnz(input1.getNnz());
 		}
-		else //READ
-		{
+		else if( _op == OpOpData.FEDERATED ) {
+			Hop ranges = getInput().get(getParameterIndex(FED_RANGES));
+			long nrow = -1, ncol = -1;
+			for( Hop c : ranges.getInput() ) {
+				if( !(c.getInput(0) instanceof LiteralOp && c.getInput(1) instanceof LiteralOp))
+					return; // invalid size inference if not all know.
+				nrow = Math.max(nrow, HopRewriteUtils.getIntValueSafe(c.getInput(0)));
+				ncol = Math.max(ncol, HopRewriteUtils.getIntValueSafe(c.getInput(1)));
+			}
+			setDim1(nrow);
+			setDim2(ncol);
+		}
+		else { //READ
 			//do nothing; dimensions updated via set output params
 		}
 	}
-		
+
 	
 	/**
 	 * Explicitly disables recompilation of transient reads, this additional information 
@@ -590,5 +600,4 @@ public class DataOp extends Hop {
 			}
 		}
 	}
-
 }

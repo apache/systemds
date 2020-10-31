@@ -120,5 +120,7 @@ public class FederatedReaderTest extends AutomatedTestBase {
 		}
 
 		TestUtils.shutdownThreads(t1, t2);
+		rtplatform = platformOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
 }

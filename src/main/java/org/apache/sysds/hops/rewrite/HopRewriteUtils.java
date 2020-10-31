@@ -162,10 +162,14 @@ public class HopRewriteUtils
 		}
 	}
 	
+	public static long getIntValueSafe( Hop op ) {
+		return getIntValueSafe((LiteralOp) op);
+	}
+	
 	public static long getIntValueSafe( LiteralOp op ) {
 		switch( op.getValueType() ) {
-			case FP64:  return UtilFunctions.toLong(op.getDoubleValue());
-			case INT64:     return op.getLongValue();
+			case FP64:    return UtilFunctions.toLong(op.getDoubleValue());
+			case INT64:   return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: return Long.MAX_VALUE;
 		}

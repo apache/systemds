@@ -1847,8 +1847,8 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 
 		public synchronized void deregisterRDD(int rddID) {
-			long rddSize = _rdds.remove(rddID);
-			_size -= rddSize;
+			Long rddSize = _rdds.remove(rddID);
+			_size -= (rddSize!=null) ? rddSize : 0;
 		}
 
 		public synchronized void clear() {

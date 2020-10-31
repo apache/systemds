@@ -123,7 +123,7 @@ public class FederatedGLMTest extends AutomatedTestBase {
 		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
 		Assert.assertTrue(heavyHittersContainsString("fed_uark+","fed_uarsqk+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
+		//Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_mmchain"));
 		
 		//check that federated input files are still existing

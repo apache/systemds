@@ -72,7 +72,7 @@ public class FederatedReaderTest extends AutomatedTestBase {
 		Types.ExecMode oldPlatform = setExecMode(execMode);
 		getAndLoadTestConfiguration(TEST_NAME);
 		setOutputBuffering(true);
-		
+
 		// write input matrices
 		int halfRows = rows / 2;
 		long[][] begins = new long[][] {new long[] {0, 0}, new long[] {halfRows, 0}};

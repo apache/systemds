@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.federated.io;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -70,14 +69,10 @@ public class FederatedReaderTest extends AutomatedTestBase {
 	}
 
 	public void federatedRead(Types.ExecMode execMode) {
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		Types.ExecMode platformOld = rtplatform;
-		rtplatform = execMode;
-		if(rtplatform == Types.ExecMode.SPARK) {
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		}
+		Types.ExecMode oldPlatform = setExecMode(execMode);
 		getAndLoadTestConfiguration(TEST_NAME);
-
+		setOutputBuffering(true);
+		
 		// write input matrices
 		int halfRows = rows / 2;
 		long[][] begins = new long[][] {new long[] {0, 0}, new long[] {halfRows, 0}};
@@ -95,15 +90,9 @@ public class FederatedReaderTest extends AutomatedTestBase {
 		Thread t2 = startLocalFedWorkerThread(port2);
 		String host = "localhost";
 
-		MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(rows,
-			cols,
-			blocksize,
-			host,
-			begins,
-			ends,
-			new int[] {port1, port2},
-			new String[] {input("X1"), input("X2")},
-			input("X.json"));
+		MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
+			rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
+			new String[] {input("X1"), input("X2")}, input("X.json"));
 		writeInputFederatedWithMTD("X.json", fed, null);
 
 		try {
@@ -120,16 +109,16 @@ public class FederatedReaderTest extends AutomatedTestBase {
 			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
 			// Verify output
 			Assert.assertEquals(Double.parseDouble(refOut.split("\n")[0]),
-				Double.parseDouble(out.split("\n")[0]),
-				0.00001);
+				Double.parseDouble(out.split("\n")[0]), 0.00001);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			Assert.assertTrue(false);
 		}
+		finally {
+			resetExecMode(oldPlatform);
+		}
 
 		TestUtils.shutdownThreads(t1, t2);
-		rtplatform = platformOld;
-		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
 }

@@ -37,26 +37,26 @@ import org.apache.sysds.runtime.meta.MetaData;
 import org.junit.Assert;
 
 public class FederatedTestObjectConstructor {
-    public static MatrixObject constructFederatedInput(int rows, int cols, int blocksize, String host, long[][] begin,
-        long[][] end, int[] ports, String[] inputs, String file) {
-        MatrixObject fed = new MatrixObject(ValueType.FP64, file);
-        try {
-            fed.setMetaData(new MetaData(new MatrixCharacteristics(rows, cols, blocksize, rows * cols)));
-            List<Pair<FederatedRange, FederatedData>> d = new ArrayList<>();
-            for(int i = 0; i < ports.length; i++) {
-                FederatedRange X1r = new FederatedRange(begin[i], end[i]);
-                FederatedData X1d = new FederatedData(Types.DataType.MATRIX,
-                    new InetSocketAddress(InetAddress.getByName(host), ports[i]), inputs[i]);
-                d.add(new ImmutablePair<>(X1r, X1d));
-            }
+	public static MatrixObject constructFederatedInput(int rows, int cols, int blocksize, String host, long[][] begin,
+		long[][] end, int[] ports, String[] inputs, String file) {
+		MatrixObject fed = new MatrixObject(ValueType.FP64, file);
+		try {
+			fed.setMetaData(new MetaData(new MatrixCharacteristics(rows, cols, blocksize, rows * cols)));
+			List<Pair<FederatedRange, FederatedData>> d = new ArrayList<>();
+			for(int i = 0; i < ports.length; i++) {
+				FederatedRange X1r = new FederatedRange(begin[i], end[i]);
+				FederatedData X1d = new FederatedData(Types.DataType.MATRIX,
+					new InetSocketAddress(InetAddress.getByName(host), ports[i]), inputs[i]);
+				d.add(new ImmutablePair<>(X1r, X1d));
+			}
 
-            InitFEDInstruction.federateMatrix(fed, d);
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            Assert.assertTrue(false);
-        }
-        return fed;
+			InitFEDInstruction.federateMatrix(fed, d);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(false);
+		}
+		return fed;
 
-    }
+	}
 }

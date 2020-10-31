@@ -56,6 +56,7 @@ public class BinaryOperator  extends Operator implements Serializable
 	private static final long serialVersionUID = -2547950181558989209L;
 
 	public final ValueFunction fn;
+	public final boolean commutative;
 	
 	public BinaryOperator(ValueFunction p) {
 		//binaryop is sparse-safe iff (0 op 0) == 0
@@ -65,6 +66,8 @@ public class BinaryOperator  extends Operator implements Serializable
 			|| p instanceof BitwAnd || p instanceof BitwOr || p instanceof BitwXor
 			|| p instanceof BitwShiftL || p instanceof BitwShiftR);
 		fn = p;
+		commutative = p instanceof Plus || p instanceof Multiply 
+			|| p instanceof And || p instanceof Or || p instanceof Xor;
 	}
 	
 	/**
@@ -109,6 +112,10 @@ public class BinaryOperator  extends Operator implements Serializable
 		//PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
 		//CENTRALMOMENT, COVARIANCE, APPEND, SOLVE, MEDIAN,
 		return null;
+	}
+	
+	public boolean isCommutative() {
+		return commutative;
 	}
 	
 	@Override

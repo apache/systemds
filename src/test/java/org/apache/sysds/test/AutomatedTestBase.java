@@ -1412,6 +1412,7 @@ public abstract class AutomatedTestBase {
 	 * @param port Port to use for the JVM
 	 * @return the process associated with the worker.
 	 */
+	@Deprecated
 	protected Process startLocalFedWorker(int port) {
 		Process process = null;
 		String separator = System.getProperty("file.separator");

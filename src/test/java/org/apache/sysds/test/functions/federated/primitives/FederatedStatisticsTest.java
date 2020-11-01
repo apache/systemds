@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -97,20 +95,8 @@ public class FederatedStatisticsTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Process t1 = startLocalFedWorker(port1);
-		Process t2 = startLocalFedWorker(port2);
-
-		BufferedReader output = new BufferedReader(new InputStreamReader(t1.getInputStream()));
-		BufferedReader error = new BufferedReader(new InputStreamReader(t1.getInputStream()));
-
-		Thread t = new Thread(() -> {
-			output.lines().forEach(s -> System.out.println(s));
-		});
-		Thread te = new Thread(() -> {
-			error.lines().forEach(s -> System.err.println(s));
-		});
-		t.start();
-		te.start();
+		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t2 = startLocalFedWorkerThread(port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -133,7 +119,6 @@ public class FederatedStatisticsTest extends AutomatedTestBase {
 		compareResults(1e-9);
 
 		TestUtils.shutdownThreads(t1, t2);
-		TestUtils.shutdownThreads(t, te);
 
 		// check for federated operations
 		Assert.assertTrue("contains federated matrix mult", heavyHittersContainsString("fed_ba+*"));

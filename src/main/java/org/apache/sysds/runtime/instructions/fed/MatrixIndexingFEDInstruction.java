@@ -16,147 +16,109 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.sysds.runtime.instructions.fed;
 
-import org.apache.sysds.lops.RightIndex;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
+	private static final Log LOG = LogFactory.getLog(MatrixIndexingFEDInstruction.class.getName());
+
 	public MatrixIndexingFEDInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
 		CPOperand out, String opcode, String istr) {
 		super(in, rl, ru, cl, cu, out, opcode, istr);
 	}
 
-	//for left indexing
-	protected MatrixIndexingFEDInstruction(CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
-		CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
-		super(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
-	}
-
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-
-		String opcode = getOpcode();
-		IndexRange ixrange = getIndexRange(ec);
-		MatrixObject mo = ec.getMatrixObject(input1.getName());
-
-		if (mo.getNumRows()-1 < ixrange.rowEnd || mo.getNumColumns()-1 < ixrange.colEnd ||
-			ixrange.rowStart < 0 || ixrange.colStart < 0 ||
-			ixrange.rowStart > ixrange.rowEnd || ixrange.colStart > ixrange.colEnd)
-			throw new DMLRuntimeException("Federated Matrix Indexing: Invalid indices.");
-
-		FederationMap fedMapping = mo.getFedMapping();
-		FederationMap.FType fType = mo.getFedMapping().getType();
-
-		if(! (mo.isFederated() && opcode.equalsIgnoreCase(RightIndex.OPCODE)) ||
-			fType == FederationMap.FType.OTHER)
-			throw new DMLRuntimeException("Federated Matrix Indexing: "
-				+ "Federated input expected, but invoked w/ " + mo.isFederated());
-
-		int dim = fType == FederationMap.FType.ROW ? 0 : 1;
-		long ixStart = dim == 0 ? ixrange.rowStart + 1 : ixrange.colStart + 1;
-		long ixEnd = dim == 0 ? ixrange.rowEnd + 1 : ixrange.colEnd + 1;
-
-		for(FederatedRange f:fedMapping.getFederatedRanges()) {
-			long dimBegin = f.getBeginDims()[dim], dimEnd = f.getEndDims()[dim];
-			long from = 0, to = 0;
-
-			if(dimBegin <= ixStart && ixEnd <= dimEnd) {
-				from = ixStart; to = ixEnd;
-			} //partly starts
-			else if(dimEnd >= ixStart && dimBegin <= ixStart && ixEnd >= dimEnd) {
-				from = ixStart; to = dimEnd;
-			} //partly ends
-			else if(dimEnd >= ixEnd && dimBegin <= ixEnd && ixStart <= dimBegin) {
-				from = dimBegin; to = ixEnd;
-			} //middle
-			else if(dimBegin >= ixStart && ixEnd >= dimEnd) {
-				from = dimBegin; to = dimEnd;
-			}
-			instString = InstructionUtils.replaceOperand(instString, fType == FederationMap.FType.ROW ? 3:5,
-				String.valueOf(from).concat(".SCALAR.INT64.true"));
-			instString = InstructionUtils.replaceOperand(instString, fType == FederationMap.FType.ROW ? 4:6,
-				String.valueOf(to).concat(".SCALAR.INT64.true"));
-
-			// not really necessary, but just to have scalars instead variables everywhere
-			instString = InstructionUtils.replaceOperand(instString, fType == FederationMap.FType.COL ? 3:5,
-				String.valueOf(fType == FederationMap.FType.COL ? ixrange.rowStart + 1 : ixrange.colStart + 1).concat(".SCALAR.INT64.true"));
-			instString = InstructionUtils.replaceOperand(instString, fType == FederationMap.FType.COL ? 3:5,
-				String.valueOf(fType == FederationMap.FType.COL ? ixrange.rowEnd + 1 : ixrange.colEnd + 1).concat(".SCALAR.INT64.true"));
-
-
-			//TODO fed request with new or try with response
-			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1},
-				new long[]{mo.getFedMapping().getID()});
-			FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
-			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
-			mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
-
-			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics().set(mo.getDataCharacteristics());
-			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
-
-		}
-//		out.getFedMapping().setType(fType);
+		rightIndexing(ec);
 	}
 
-	private void udf(ExecutionContext ec) {
-		// acquire locks
-		MatrixObject mo = ec.getMatrixObject(input1.getName());
+	private void rightIndexing (ExecutionContext ec) {
+		MatrixObject in = ec.getMatrixObject(input1);
+		FederationMap fedMapping = in.getFedMapping();
 		IndexRange ixrange = getIndexRange(ec);
-		FederationMap fedMapping = mo.getFedMapping();
+		FederationMap.FType fedType = fedMapping.getType();
+
+		Map <String, IndexRange> ixs = new HashMap<>();
+
+		for (int i = 0; i < fedMapping.getFederatedRanges().length; i++) {
+			long rs = fedMapping.getFederatedRanges()[i].getBeginDims()[0], re = fedMapping.getFederatedRanges()[i]
+				.getEndDims()[0], cs = fedMapping.getFederatedRanges()[i].getBeginDims()[1], ce = fedMapping.getFederatedRanges()[i].getEndDims()[1];
+
+			long rsn = 0, ren = 0, csn = 0, cen = 0;
+
+			switch(fedType) {
+				case ROW:
+					rsn = (ixrange.rowStart >= rs && ixrange.rowStart < re) ? (ixrange.rowStart - rs) : 0;
+					ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
+					csn = ixrange.colStart;
+					cen = ixrange.colEnd;
+
+					if((ixrange.rowStart < re) && (ixrange.rowEnd >= rs)) {
+						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
+						fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[0]));
+						fedMapping.getFederatedRanges()[i].setEndDim(1, cen + 1);
+					}
+					else {
+						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
+						fedMapping.getFederatedRanges()[i].setEndDim(0, fedMapping.getFederatedRanges()[i - 1].getEndDims()[0]);
+						fedMapping.getFederatedRanges()[i].setEndDim(1, cen + 1);
+						rsn = -1;
+						ren = rsn;
+						csn = rsn;
+						cen = rsn;
+					}
+
+					break;
+				case COL:
+					rsn = ixrange.rowStart;
+					ren = ixrange.rowEnd;
+					csn = (ixrange.colStart >= cs && ixrange.colStart < ce) ? (ixrange.colStart - cs) : 0;
+					cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
+					if((ixrange.colStart < ce) && (ixrange.colEnd >= cs)) {
+						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
+						fedMapping.getFederatedRanges()[i].setEndDim(0, ren + 1);
+						fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[1]));
+					}
+					else {
+						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
+						fedMapping.getFederatedRanges()[i].setEndDim(0, ren + 1);
+						fedMapping.getFederatedRanges()[i].setEndDim(1, fedMapping.getFederatedRanges()[i - 1].getEndDims()[1]);
+						rsn = -1;
+						ren = rsn;
+						csn = rsn;
+						cen = rsn;
+					}
+					break;
+				case OTHER:
+					throw new DMLRuntimeException("Unsupported fed type.");
+			}
+
+			ixs.put(fedMapping.getFederatedRanges()[i].toString(), new IndexRange(rsn, ren, csn, cen));
+		}
 
 		long varID = FederationUtils.getNextFedDataID();
-
-		FederationMap.FType fType = mo.getFedMapping().getType();
-
-		int dim = fType == FederationMap.FType.ROW ? 0 : 1;
-		long ixStart = dim == 0 ? ixrange.rowStart + 1 : ixrange.colStart + 1;
-		long ixEnd = dim == 0 ? ixrange.rowEnd + 1 : ixrange.colEnd + 1;
-
-		FederationMap outMapping = fedMapping.mapParallel(varID, (range, data) -> {
-			long dimBegin = range.getBeginDims()[dim], dimEnd = range.getEndDims()[dim];
-			long from = 0, to = 0;
-
-			if(dimBegin <= ixStart && ixEnd <= dimEnd) {
-				from = ixStart; to = ixEnd;
-			} //partly starts
-			else if(dimEnd >= ixStart && dimBegin <= ixStart && ixEnd >= dimEnd) {
-				from = ixStart; to = dimEnd;
-			} //partly ends
-			else if(dimEnd >= ixEnd && dimBegin <= ixEnd && ixStart <= dimBegin) {
-				from = dimBegin; to = ixEnd;
-			} //middle
-			else if(dimBegin >= ixStart && ixEnd >= dimEnd) {
-				from = dimBegin; to = dimEnd;
-			}
-			instString = InstructionUtils.replaceOperand(instString, fType == FederationMap.FType.ROW ? 3:5,
-				String.valueOf(from).concat(".SCALAR.INT64.true"));
-			instString = InstructionUtils.replaceOperand(instString, fType == FederationMap.FType.ROW ? 4:6,
-				String.valueOf(to).concat(".SCALAR.INT64.true"));
-
-			instString = InstructionUtils.replaceOperand(instString, fType == FederationMap.FType.COL ? 3:5,
-				String.valueOf(fType == FederationMap.FType.COL ? ixrange.rowStart + 1 : ixrange.colStart + 1).concat(".SCALAR.INT64.true"));
-			instString = InstructionUtils.replaceOperand(instString, fType == FederationMap.FType.COL ? 3:5,
-				String.valueOf(fType == FederationMap.FType.COL ? ixrange.rowEnd + 1 : ixrange.colEnd + 1).concat(".SCALAR.INT64.true"));
-
-			FederatedResponse response;
+		FederationMap sortedMapping = fedMapping.mapParallel(varID, (range, data) -> {
 			try {
-				FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1},
-					new long[]{mo.getFedMapping().getID()});
-				response = data.executeFederatedOperation(
-					new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID())).get();
+				FederatedResponse response = data
+					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+						new SliceMatrix(data.getVarID(), varID, ixs.get(range.toString())))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}
@@ -166,10 +128,38 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 			return null;
 		});
 
-		// construct a federated matrix with the encoded data
-		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo.getDataCharacteristics());
-		// set the federated mapping for the matrix
-		out.setFedMapping(outMapping);
+
+		MatrixObject sorted = ec.getMatrixObject(output);
+		sorted.getDataCharacteristics().set(fedMapping.getMaxIndexInRange(0), fedMapping.getMaxIndexInRange(1), (int) in.getBlocksize());
+		System.out.println(1);
+		sorted.setFedMapping(sortedMapping);
+
 	}
+
+	private static class SliceMatrix extends FederatedUDF {
+
+		private static final long serialVersionUID = 5956832933333848772L;
+		private final long _outputID;
+		private final IndexRange _ixrange;
+
+		private SliceMatrix(long input, long outputID, IndexRange ixrange) {
+			super(new long[] {input});
+			_outputID = outputID;
+			_ixrange = ixrange;
+		}
+
+
+		@Override public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
+			MatrixBlock res;
+			if(_ixrange.rowStart != -1)
+				res = mb.slice(_ixrange, new MatrixBlock());
+			else res = new MatrixBlock();
+			MatrixObject mout = ExecutionContext.createMatrixObject(res);
+			ec.setVariable(String.valueOf(_outputID), mout);
+
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
+		}
+	}
+
 }

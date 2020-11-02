@@ -480,9 +480,9 @@ class OperationNode(DAGNode):
         """
 
         self._check_matrix_op()
-        if len(self.shape) != 1:
+        if len(self.shape) == 2 and self.shape[1] != 1:
             raise ValueError(
-                "Only Matrixes  with a single column or row is valid in One Hot, " + str(self.shape) + " is invalid")
+                "Only Matrixes with a single column is valid in One Hot, " + str(self.shape) + " is invalid")
 
         if num_classes < 2:
             raise ValueError("Number of classes should be larger than 1")

@@ -74,6 +74,21 @@ class TestMatrixOneHot(unittest.TestCase):
     #     with self.assertRaises(ValueError) as context:
     #         res = Matrix(self.sds, m1).to_one_hot(2).compute()
 
+    def test_one_hot_matrix_1(self):
+        m1 = np.array([[1],[2],[3]])
+        res = Matrix(self.sds, m1).to_one_hot(3).compute()
+        self.assertTrue((res == [[1,0,0], [0,1,0], [0,0,1]]).all())
+    
+    def test_one_hot_matrix_2(self):
+        m1 = np.array([[1],[3],[3]])
+        res = Matrix(self.sds, m1).to_one_hot(3).compute()
+        self.assertTrue((res == [[1,0,0], [0,0,1], [0,0,1]]).all())
+
+    def test_one_hot_matrix_3(self):
+        m1 = np.array([[1],[2],[1]])
+        res = Matrix(self.sds, m1).to_one_hot(2).compute()
+        self.assertTrue((res == [[1,0], [0,1], [1,0]]).all())
+
     def test_neg_one_hot_numClasses(self):
         m1 = np.array([1])
         with self.assertRaises(ValueError) as context:

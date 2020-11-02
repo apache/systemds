@@ -92,7 +92,7 @@ public class BuiltinSmoteTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("T", T, true);
 
 			runTest(true, false, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> value = readDMLMatrixFromHDFS("Sum");
+			HashMap<MatrixValue.CellIndex, Double> value = readDMLMatrixFromOutputDir("Sum");
 			Assert.assertEquals("synthetic samples does not fall into minority class cluster",1,
 				value.get(new MatrixValue.CellIndex(1,1)), 0.000001);
 		}

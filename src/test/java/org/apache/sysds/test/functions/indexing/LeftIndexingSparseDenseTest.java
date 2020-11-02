@@ -207,8 +207,8 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 			runTest(true, false, null, 6); //2xrblk,2xchk,ix,write
 			runRScript(true);
 			
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "DML", "R");
 			checkDMLMetaDataFile("R", new MatrixCharacteristics(rows1,lcols1,1,1));
 		}

@@ -144,8 +144,8 @@ public class AppendChainTest extends AutomatedTestBase
 			Assert.assertEquals("Wrong number of executed Spark jobs.",
 				expectedCompiled, Statistics.getNoOfExecutedSPInst());
 			for(String file: config.getOutputFiles()) {
-				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-				HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(file);
+				HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir(file);
 				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
 			}
 		}

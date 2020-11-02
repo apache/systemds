@@ -297,7 +297,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			}
 			
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			Assert.assertEquals(Double.valueOf(val), dmlfile.get(new CellIndex(1,1)));
 		}
 		finally {

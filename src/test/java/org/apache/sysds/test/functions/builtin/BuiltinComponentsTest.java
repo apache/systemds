@@ -86,7 +86,7 @@ public class BuiltinComponentsTest extends AutomatedTestBase {
 
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			for( int i=0; i<numVertices; i++ ) {
 				int expected = i<(numVertices/2) ? (numVertices/2) :
 					i==(numVertices/2) ? i+1 : numVertices;

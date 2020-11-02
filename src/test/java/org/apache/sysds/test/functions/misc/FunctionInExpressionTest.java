@@ -103,7 +103,7 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		runTest(true, false, null, -1); 
 		
 		//compare results
-		double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
+		double val = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 		Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -13));
 	}
 }

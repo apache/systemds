@@ -158,8 +158,8 @@ public class LeftIndexingTest extends AutomatedTestBase
 	
 		for(String file: config.getOutputFiles())
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(file);
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir(file);
 		//	System.out.println(file+"-DML: "+dmlfile);
 		//	System.out.println(file+"-R: "+rfile);
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");

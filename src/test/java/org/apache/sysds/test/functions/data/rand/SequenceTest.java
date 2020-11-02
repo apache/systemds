@@ -150,14 +150,14 @@ public class SequenceTest extends AutomatedTestBase
 			
 			if ( !exceptionExpected ) {
 				runRScript(true);
-				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("A_CP");
-				HashMap<CellIndex, Double> rfile = readRMatrixFromFS("A");
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("A_CP");
+				HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("A");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-CP", "A-R");
 				
-				dmlfile = readDMLMatrixFromHDFS("A_HYBRID");
+				dmlfile = readDMLMatrixFromOutputDir("A_HYBRID");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-HYBRID", "A-R");
 				
-				dmlfile = readDMLMatrixFromHDFS("A_SPARK");
+				dmlfile = readDMLMatrixFromOutputDir("A_SPARK");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-SPARK", "A-R");
 			}
 		}

@@ -116,7 +116,7 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 		
 		//compare matrices
 		HashMap<CellIndex, Double> input = TestUtils.convert2DDoubleArrayToHashMap(V);
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 		TestUtils.compareMatrices(dmlfile, input, eps, "DML", "Input");
 	}
 }

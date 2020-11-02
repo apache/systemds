@@ -464,7 +464,7 @@ public class TestUtils
 	 * Reads values from a matrix file in HDFS in DML format
 	 *
 	 * NOTE: For reading the output of a matrix produced by a JUnit test, use the convenience
-	 *       function {@link AutomatedTestBase#readDMLMatrixFromHDFS(String)}
+	 *       function {@link AutomatedTestBase#readDMLMatrixFromOutputDir(String)}
 	 *
 	 * @param filePath Path to the file to be read.
 	 * @return Matrix values in a hashmap <index,value>
@@ -495,7 +495,7 @@ public class TestUtils
 	 * Reads values from a matrix file in OS's FS in R format
 	 *
 	 * NOTE: For reading the output of a matrix produced by a R validation code of a JUnit test, use the convenience
-	 *       function {@link AutomatedTestBase#readRMatrixFromFS(String)}
+	 *       function {@link AutomatedTestBase#readRMatrixFromExpectedDir(String)}
 	 *
 	 * @param filePath Path to the file to be read.
 	 * @return Matrix values in a hashmap <index,value>

@@ -156,8 +156,8 @@ public class FrameEqualTest extends AutomatedTestBase {
 			runRScript(true);
 
 			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
-			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromFS("C");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
+			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("C");
 
 			double eps = 0.0001;
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");

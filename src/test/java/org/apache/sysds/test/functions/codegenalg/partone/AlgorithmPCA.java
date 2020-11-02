@@ -163,12 +163,12 @@ public class AlgorithmPCA extends AutomatedTestBase
 			runRScript(true);
 
 			//compare matrices
-			HashMap<CellIndex, Double> dmleval = readDMLMatrixFromHDFS("dominant.eigen.values");
-			HashMap<CellIndex, Double> reval   = readRMatrixFromFS("dominant.eigen.values");
-			HashMap<CellIndex, Double> dmlevec = readDMLMatrixFromHDFS("dominant.eigen.vectors");
-			HashMap<CellIndex, Double> revec = readDMLMatrixFromHDFS("dominant.eigen.vectors");
-			HashMap<CellIndex, Double> dmlstd = readDMLMatrixFromHDFS("dominant.eigen.standard.deviations");
-			HashMap<CellIndex, Double> rstd   = readRMatrixFromFS("dominant.eigen.standard.deviations");
+			HashMap<CellIndex, Double> dmleval = readDMLMatrixFromOutputDir("dominant.eigen.values");
+			HashMap<CellIndex, Double> reval   = readRMatrixFromExpectedDir("dominant.eigen.values");
+			HashMap<CellIndex, Double> dmlevec = readDMLMatrixFromOutputDir("dominant.eigen.vectors");
+			HashMap<CellIndex, Double> revec = readDMLMatrixFromOutputDir("dominant.eigen.vectors");
+			HashMap<CellIndex, Double> dmlstd = readDMLMatrixFromOutputDir("dominant.eigen.standard.deviations");
+			HashMap<CellIndex, Double> rstd   = readRMatrixFromExpectedDir("dominant.eigen.standard.deviations");
 			TestUtils.compareMatrices(dmleval, reval, eps, "Stat-DML", "Stat-R");
 			TestUtils.compareMatrices(dmlevec, revec, eps, "Stat-DML", "Stat-R");
 			TestUtils.compareMatrices(dmlstd, rstd, eps, "Stat-DML", "Stat-R");

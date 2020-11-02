@@ -94,7 +94,6 @@ import org.junit.Before;
  * </ul>
  *
  */
-@SuppressWarnings("deprecation")
 public abstract class AutomatedTestBase {
 
 	private static final Log LOG = LogFactory.getLog(AutomatedTestBase.class.getName());
@@ -994,25 +993,6 @@ public abstract class AutomatedTestBase {
 
 	public String createXMLElement(String tagName, String value) {
 		return String.format("<%s>%s</%s>", tagName, value, tagName);
-	}
-
-	/**
-	 * <p>
-	 * Loads a test configuration with its parameters. Adds the output directories to the output list as well as to the
-	 * list of possible comparison files.
-	 * </p>
-	 *
-	 * @param configurationName test configuration name
-	 *
-	 */
-	@Deprecated
-	protected void loadTestConfiguration(String configurationName) {
-		if(!availableTestConfigurations.containsKey(configurationName))
-			fail("test configuration not available: " + configurationName);
-
-		TestConfiguration config = availableTestConfigurations.get(configurationName);
-
-		loadTestConfiguration(config);
 	}
 
 	/**

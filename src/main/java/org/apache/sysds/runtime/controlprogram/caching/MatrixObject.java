@@ -462,6 +462,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			DataConverter.readMatrixFromHDFS(fname, iimd.getFileFormat(), rlen,
 			clen, mc.getBlocksize(), mc.getNonZeros(), getFileFormatProperties());
 		
+		if(iimd.getFileFormat() == FileFormat.CSV){
+			_metaData = _metaData instanceof MetaDataFormat ?
+				new MetaDataFormat(newData.getDataCharacteristics(), iimd.getFileFormat()) :
+				new MetaData(newData.getDataCharacteristics());
+		}
+		
 		setHDFSFileExists(true);
 		
 		//sanity check correct output

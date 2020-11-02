@@ -101,7 +101,7 @@ public class RandVarSeedTest extends AutomatedTestBase
 			double[][] expectedMatrix = DataConverter.convertToDoubleMatrix(expectedMB);
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			double[][] resultMatrix = TestUtils.convertHashMapToDoubleArray(dmlfile);
 			TestUtils.compareMatrices(expectedMatrix, resultMatrix, rows, cols, 0);
 		} 

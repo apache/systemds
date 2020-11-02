@@ -227,8 +227,8 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			runRScript(true);
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			if( testname.equals(TEST_NAME8) )
@@ -277,14 +277,14 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			
 			if(testname.equals(TEST_NAME4)) { //wcemm
 				//compare scalars 
-				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
-				HashMap<CellIndex, Double> rfile  = readRScalarFromFS("S");
+				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromOutputDir("S");
+				HashMap<CellIndex, Double> rfile  = readRScalarFromExpectedDir("S");
 				TestUtils.compareScalars((Double) dmlfile.values().toArray()[0], (Double) rfile.values().toArray()[0],0.0001);
 			}
 			else {
 				//compare matrices 
-				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
-				HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
+				HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			}
 			

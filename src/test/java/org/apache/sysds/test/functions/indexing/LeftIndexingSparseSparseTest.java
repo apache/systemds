@@ -193,8 +193,8 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 			LeftIndexingOp.FORCED_LEFT_INDEXING = null;
 		}
 		
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-		HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+		HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 		TestUtils.compareMatrices(dmlfile, rfile, 0, "DML", "R");
 		checkDMLMetaDataFile("R", new MatrixCharacteristics(rows1,cols1,1,1));
 	}

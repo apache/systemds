@@ -126,7 +126,7 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		
 		//compare matrices
 		HashMap<CellIndex, Double> dmlin = TestUtils.readDMLMatrixFromHDFS(input(IN));
-		HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS(OUT); 
+		HashMap<CellIndex, Double> dmlout = readDMLMatrixFromOutputDir(OUT); 
 		
 		TestUtils.compareMatrices(dmlin, dmlout, eps, "DMLin", "DMLout");
 	}

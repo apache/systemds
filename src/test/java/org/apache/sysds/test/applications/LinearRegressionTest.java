@@ -107,8 +107,8 @@ public class LinearRegressionTest extends AutomatedTestBase {
 		
 		runRScript(true);
 		
-		HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
-		HashMap<CellIndex, Double> wSYSTEMDS= readDMLMatrixFromHDFS("w");
+		HashMap<CellIndex, Double> wR = readRMatrixFromExpectedDir("w");
+		HashMap<CellIndex, Double> wSYSTEMDS= readDMLMatrixFromOutputDir("w");
 		TestUtils.compareMatrices(wR, wSYSTEMDS, Math.pow(10, -10), "wR", "wSYSTEMDS");
 	}
 }

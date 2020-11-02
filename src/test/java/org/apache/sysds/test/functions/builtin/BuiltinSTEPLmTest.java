@@ -100,10 +100,10 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase
 
 			//compare matrices
 			//FIXME: currently only scenario w/o any features produce same results
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
-			HashMap<CellIndex, Double> dmfile1 = readDMLMatrixFromHDFS("S");
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("C");
-			HashMap<CellIndex, Double> rfile1 = readRMatrixFromFS("S");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
+			HashMap<CellIndex, Double> dmfile1 = readDMLMatrixFromOutputDir("S");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("C");
+			HashMap<CellIndex, Double> rfile1 = readRMatrixFromExpectedDir("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			TestUtils.compareMatrices(dmfile1, rfile1, eps, "Stat-DML", "Stat-R");
 		}

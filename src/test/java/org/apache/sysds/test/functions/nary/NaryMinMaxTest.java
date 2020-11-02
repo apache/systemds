@@ -129,8 +129,8 @@ public class NaryMinMaxTest extends AutomatedTestBase
 			runRScript(true);
 			
 			//compare result data
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, "DML", "R");
 		}
 		finally {

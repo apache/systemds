@@ -85,8 +85,8 @@ public class MLContextPNMFTest extends MLContextTestBase {
 		MatrixBlock dmlH = outres.getMatrix("H").toMatrixBlock();
 
 		//compare matrices
-		HashMap<MatrixValue.CellIndex, Double> rW = readRMatrixFromFS("W");
-		HashMap<MatrixValue.CellIndex, Double> rH = readRMatrixFromFS("H");
+		HashMap<MatrixValue.CellIndex, Double> rW = readRMatrixFromExpectedDir("W");
+		HashMap<MatrixValue.CellIndex, Double> rH = readRMatrixFromExpectedDir("H");
 		TestUtils.compareMatrices(rW, dmlW, eps);
 		TestUtils.compareMatrices(rH, dmlH, eps);
 	}

@@ -112,8 +112,8 @@ public class ParForSampleTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			//read result data and meta data
-			HashMap<CellIndex, Double> B1 = readDMLMatrixFromHDFS("B1");				
-			HashMap<CellIndex, Double> B2 = readDMLMatrixFromHDFS("B2");				
+			HashMap<CellIndex, Double> B1 = readDMLMatrixFromOutputDir("B1");				
+			HashMap<CellIndex, Double> B2 = readDMLMatrixFromOutputDir("B2");				
 			MatrixCharacteristics B1mc = readDMLMetaDataFile("B1");
 			MatrixCharacteristics B2mc = readDMLMetaDataFile("B2");
 			

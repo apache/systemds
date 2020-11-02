@@ -155,7 +155,7 @@ public class LineageTraceDedupTest extends LineageBase
 			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, RDedupPatches);
 			
 			//match the original and recomputed results
-			HashMap<CellIndex, Double> orig = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> orig = readDMLMatrixFromOutputDir("R");
 			MatrixBlock recomputed = ((MatrixObject)ret).acquireReadAndRelease();
 			TestUtils.compareMatrices(orig, recomputed, 1e-6);
 		}

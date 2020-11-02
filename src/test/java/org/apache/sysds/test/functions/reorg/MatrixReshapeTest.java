@@ -345,8 +345,8 @@ public class MatrixReshapeTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("Y");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Y");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("Y");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("Y");
 			TestUtils.compareMatrices(dmlfile, rfile, 0.001, "Stat-DML", "Stat-R");
 		}
 		finally

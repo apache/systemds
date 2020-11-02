@@ -104,10 +104,10 @@ public class ID3Test extends AutomatedTestBase
 		}
 		
 		//compare results
-		HashMap<CellIndex, Double> nR = readRMatrixFromFS("nodes");
-		HashMap<CellIndex, Double> nSYSTEMDS= readDMLMatrixFromHDFS("nodes");
-		HashMap<CellIndex, Double> eR = readRMatrixFromFS("edges");
-		HashMap<CellIndex, Double> eSYSTEMDS= readDMLMatrixFromHDFS("edges");
+		HashMap<CellIndex, Double> nR = readRMatrixFromExpectedDir("nodes");
+		HashMap<CellIndex, Double> nSYSTEMDS= readDMLMatrixFromOutputDir("nodes");
+		HashMap<CellIndex, Double> eR = readRMatrixFromExpectedDir("edges");
+		HashMap<CellIndex, Double> eSYSTEMDS= readDMLMatrixFromOutputDir("edges");
 		TestUtils.compareMatrices(nR, nSYSTEMDS, Math.pow(10, -14), "nR", "nSYSTEMDS");
 		TestUtils.compareMatrices(eR, eSYSTEMDS, Math.pow(10, -14), "eR", "eSYSTEMDS");
 	}

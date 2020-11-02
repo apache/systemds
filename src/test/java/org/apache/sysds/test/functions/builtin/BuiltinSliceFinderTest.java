@@ -112,8 +112,8 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			//read output and store for dml and R
-			double[][] X = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromHDFS("X"));
-			double[][] e = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromHDFS("e"));
+			double[][] X = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("X"));
+			double[][] e = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("e"));
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("e", e, true);
 			
@@ -130,8 +130,8 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare dml and R
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-2, "Stat-DML", "Stat-R");
 			
 			//compare expected results

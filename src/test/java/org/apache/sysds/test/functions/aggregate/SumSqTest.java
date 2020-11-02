@@ -199,8 +199,8 @@ public class SumSqTest extends AutomatedTestBase {
             runRScript(true);
 
             // Compare output matrices
-            HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(OUTPUT_NAME);
-            HashMap<CellIndex, Double> rfile  = readRMatrixFromFS(OUTPUT_NAME);
+            HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+            HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir(OUTPUT_NAME);
             TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
             // On CP and Spark modes, check that the rewrite actually

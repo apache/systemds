@@ -88,8 +88,8 @@ public class RandJobRecompileTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("Z");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Z");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("Z");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("Z");
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed Spark jobs

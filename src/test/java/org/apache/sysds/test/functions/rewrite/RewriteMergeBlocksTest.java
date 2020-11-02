@@ -94,8 +94,8 @@ public class RewriteMergeBlocksTest extends AutomatedTestBase
 		runRScript(true); 
 		
 		//compare outputs and check for compiled mmchain as proof for merge blocks 
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+		HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		Assert.assertTrue(expectedMerge == 
 			heavyHittersContainsSubString("mmchain"));

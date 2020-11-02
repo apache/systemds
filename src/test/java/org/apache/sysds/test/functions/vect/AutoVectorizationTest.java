@@ -243,8 +243,8 @@ public class AutoVectorizationTest extends AutomatedTestBase
 	        runRScript(true);
 	        
 	        //compare results
-	        HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
+	        HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-14, "DML", "R");		
 		}
 		catch(Exception ex)

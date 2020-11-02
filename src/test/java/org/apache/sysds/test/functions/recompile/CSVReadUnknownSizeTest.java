@@ -119,7 +119,7 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 			runTest(true, false, null, -1); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ )
 				{

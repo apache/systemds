@@ -91,7 +91,7 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//check correct propagated size via final results
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			Assert.assertEquals("Unexpected results.", Double.valueOf(rows*cols*3.0), dmlfile.get(new CellIndex(1,1)));
 			
 			//check expected number of compiled and executed MR jobs

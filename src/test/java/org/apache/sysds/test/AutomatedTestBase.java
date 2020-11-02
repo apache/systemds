@@ -743,17 +743,17 @@ public abstract class AutomatedTestBase {
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
 
-	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
+	protected static HashMap<CellIndex, Double> readDMLMatrixFromOutputDir(String fileName) {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
-	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
+	public HashMap<CellIndex, Double> readRMatrixFromExpectedDir(String fileName) {
 		if(LOG.isInfoEnabled())
 			LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
-	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
+	protected static HashMap<CellIndex, Double> readDMLScalarFromOutputDir(String fileName) {
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
@@ -795,7 +795,7 @@ public abstract class AutomatedTestBase {
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
-	public HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
+	public HashMap<CellIndex, Double> readRScalarFromExpectedDir(String fileName) {
 		if(LOG.isInfoEnabled())
 			LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);

@@ -142,11 +142,20 @@ public class LineageCacheEntry {
 		return _timestamp;
 	}
 	
+	protected synchronized long getDagHeight() {
+		return _key.getDistLeaf2Node();
+	}
+	
+	protected synchronized double getCostNsize() {
+		return ((double)_computeTime)/getSize();
+	}
+	
 	private void recomputeScore() {
 		// Gather the weights for scoring components
 		double w1 = LineageCacheConfig.WEIGHTS[0];
 		double w2 = LineageCacheConfig.WEIGHTS[1];
+		double w3 = LineageCacheConfig.WEIGHTS[2];
 		// Generate scores
-		score = w1*(((double)_computeTime)/getSize()) + w2*getTimestamp();
+		score = w1*(((double)_computeTime)/getSize()) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
 	}
 }

@@ -62,8 +62,8 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{20, 1000,  1, 4, true},
-			{20, 1000,  2, 10, true},
+			{20, 10,  1, 4, true},
+			{20, 12,  2, 10, false},
 		});
 	}
 
@@ -154,7 +154,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+		programArgs = new String[] { "-args", input("X1"), input("X2"), input("X3"), input("X4"),
 			String.valueOf(from), String.valueOf(to),  Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
 		runTest(true, false, null, -1);
 
@@ -172,9 +172,9 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-//		compareResults(1e-9);
-//
-//		Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
+		compareResults(1e-9);
+
+		Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

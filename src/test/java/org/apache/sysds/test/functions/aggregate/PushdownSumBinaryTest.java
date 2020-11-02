@@ -145,8 +145,8 @@ public class PushdownSumBinaryTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare output matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("C");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			String lopcode = TEST_NAME.equals(TEST_NAME1) ? "+" : "-";

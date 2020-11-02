@@ -117,12 +117,12 @@ public class LineageTraceExecSparkTest extends LineageBase {
 			
 			//generate program
 			Data X_data = LineageRecomputeUtils.parseNComputeLineageTrace(X_lineage, null);
-			HashMap<MatrixValue.CellIndex, Double> X_dmlfile = readDMLMatrixFromHDFS("X");
+			HashMap<MatrixValue.CellIndex, Double> X_dmlfile = readDMLMatrixFromOutputDir("X");
 			MatrixBlock X_tmp = ((MatrixObject)X_data).acquireReadAndRelease();
 			TestUtils.compareMatrices(X_dmlfile, X_tmp, 1e-6);
 			
 			Data Y_data = LineageRecomputeUtils.parseNComputeLineageTrace(Y_lineage, null);
-			HashMap<MatrixValue.CellIndex, Double> Y_dmlfile = readDMLMatrixFromHDFS("Y");
+			HashMap<MatrixValue.CellIndex, Double> Y_dmlfile = readDMLMatrixFromOutputDir("Y");
 			MatrixBlock Y_tmp = ((MatrixObject)Y_data).acquireReadAndRelease();
 			TestUtils.compareMatrices(Y_dmlfile, Y_tmp, 1e-6);
 		}

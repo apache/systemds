@@ -810,8 +810,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 			runRScript(true);
 			
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
 				|| heavyHittersContainsSubString("sp_spoofRA"));

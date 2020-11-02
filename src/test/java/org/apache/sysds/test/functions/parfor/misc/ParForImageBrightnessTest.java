@@ -109,8 +109,8 @@ public class ParForImageBrightnessTest extends AutomatedTestBase
 			runRScript(true);
 
 			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
-			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromFS("B");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {

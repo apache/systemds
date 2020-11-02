@@ -153,8 +153,8 @@ public class LeftIndexingUpdateInPlaceTest extends AutomatedTestBase
 			runTest(true, false, null, 2); //2xrblk
 			runRScript(true);
 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "DML", "R");
 			checkDMLMetaDataFile("R", testName.equals(TEST_NAME1) ?
 				new MatrixCharacteristics(rows1, cols1, 1, 1):

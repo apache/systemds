@@ -103,7 +103,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		runRScript(true);
 		
 		//read and convert R output
-		HashMap<CellIndex, Double> rfile = readRMatrixFromFS("predicted_y");
+		HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("predicted_y");
 		double[][] expected = TestUtils.convertHashMapToDoubleArray(rfile, rows, 1);
 		
 		//for each input data set compare results

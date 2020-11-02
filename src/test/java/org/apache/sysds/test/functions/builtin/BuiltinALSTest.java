@@ -80,8 +80,8 @@ public class BuiltinALSTest extends AutomatedTestBase {
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
 		//compare expected results
-		HashMap<MatrixValue.CellIndex, Double> matrixV = readDMLMatrixFromHDFS("V");
-		HashMap<MatrixValue.CellIndex, Double> matrixU = readDMLMatrixFromHDFS("U");
+		HashMap<MatrixValue.CellIndex, Double> matrixV = readDMLMatrixFromOutputDir("V");
+		HashMap<MatrixValue.CellIndex, Double> matrixU = readDMLMatrixFromOutputDir("U");
 		double[][] doubleV = TestUtils.convertHashMapToDoubleArray(matrixV);
 		double[][] doubleU = TestUtils.convertHashMapToDoubleArray(matrixU);
 		double[][] result = TestUtils.performMatrixMultiplication(doubleU, doubleV);

@@ -84,9 +84,9 @@ public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase
 			
 			//compare matrices 
 			long expect = Math.round(0.5*rows);
-			HashMap<CellIndex, Double> dmlfile1 = readDMLScalarFromHDFS("R1");
+			HashMap<CellIndex, Double> dmlfile1 = readDMLScalarFromOutputDir("R1");
 			Assert.assertEquals("Wrong result R1, expected: "+expect, expect, Math.round(dmlfile1.get(new CellIndex(1,1))));
-			HashMap<CellIndex, Double> dmlfile2 = readDMLScalarFromHDFS("R2");
+			HashMap<CellIndex, Double> dmlfile2 = readDMLScalarFromOutputDir("R2");
 			Assert.assertEquals("Wrong result R2, expected: "+expect, expect, Math.round(dmlfile2.get(new CellIndex(1,1))));
 		}
 		finally {

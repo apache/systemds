@@ -143,7 +143,7 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 			
 			//compare results
 			if( !testName.equals(TEST_NAME6) && !testName.equals(TEST_NAME7) ) {
-				double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
+				double val = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 				Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -14));
 			}
 			

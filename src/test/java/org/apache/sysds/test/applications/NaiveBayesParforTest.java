@@ -116,10 +116,10 @@ public class NaiveBayesParforTest  extends AutomatedTestBase{
 	        
 		 runRScript(true);
 	        
-		 HashMap<CellIndex, Double> priorR = readRMatrixFromFS("prior");
-		 HashMap<CellIndex, Double> priorSYSTEMDS= readDMLMatrixFromHDFS("prior");
-		 HashMap<CellIndex, Double> conditionalsR = readRMatrixFromFS("conditionals");
-		 HashMap<CellIndex, Double> conditionalsSYSTEMDS = readDMLMatrixFromHDFS("conditionals");
+		 HashMap<CellIndex, Double> priorR = readRMatrixFromExpectedDir("prior");
+		 HashMap<CellIndex, Double> priorSYSTEMDS= readDMLMatrixFromOutputDir("prior");
+		 HashMap<CellIndex, Double> conditionalsR = readRMatrixFromExpectedDir("conditionals");
+		 HashMap<CellIndex, Double> conditionalsSYSTEMDS = readDMLMatrixFromOutputDir("conditionals");
 		 TestUtils.compareMatrices(priorR, priorSYSTEMDS, Math.pow(10, -12), "priorR", "priorSYSTEMDS");
 		 TestUtils.compareMatrices(conditionalsR, conditionalsSYSTEMDS, Math.pow(10.0, -12.0), "conditionalsR", "conditionalsSYSTEMDS");
 	 }

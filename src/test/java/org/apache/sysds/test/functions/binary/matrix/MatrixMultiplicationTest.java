@@ -173,7 +173,7 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 		runTest();
 		
 		HashMap<CellIndex, Double> hmDMLJ = TestUtils.convert2DDoubleArrayToHashMap(e);
-		HashMap<CellIndex, Double> hmDMLE = readDMLMatrixFromHDFS("e");
+		HashMap<CellIndex, Double> hmDMLE = readDMLMatrixFromOutputDir("e");
 		TestUtils.compareMatrices(hmDMLJ, hmDMLE, 0, "hmDMLJ","hmDMLE");
 		
 		TestUtils.displayAssertionBuffer();

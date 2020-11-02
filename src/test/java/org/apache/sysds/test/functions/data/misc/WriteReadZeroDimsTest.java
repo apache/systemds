@@ -165,7 +165,7 @@ public class WriteReadZeroDimsTest extends AutomatedTestBase
 				//check overall result
 				double expected = ((type == Type.Zero_Rows) ? colsM : rowsM) * 7;
 				Assert.assertEquals(new Double(expected),
-					readDMLMatrixFromHDFS("R2").get(new CellIndex(1,1)));
+					readDMLMatrixFromOutputDir("R2").get(new CellIndex(1,1)));
 			}
 		}
 		finally {

@@ -173,8 +173,8 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
 			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
 			
 			if( testname.equals(TEST_NAME5) ) {

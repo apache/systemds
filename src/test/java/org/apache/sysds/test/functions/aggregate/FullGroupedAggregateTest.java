@@ -470,8 +470,8 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 			runRScript(true); 
 		
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(weights?"D":"C");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS(weights?"D":"C");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(weights?"D":"C");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir(weights?"D":"C");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		catch(IOException ex)

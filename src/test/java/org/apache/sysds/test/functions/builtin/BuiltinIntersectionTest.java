@@ -94,7 +94,7 @@ public class BuiltinIntersectionTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> R = new HashMap<>();
 			for(int i=0; i<expected.length; i++)
 				R.put(new CellIndex(i+1,1), expected[i][0]);
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
 			TestUtils.compareMatrices(dmlfile, R, 1e-10, "dml", "expected");
 		}
 		finally {

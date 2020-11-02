@@ -88,7 +88,7 @@ public class ParForReplaceThreadIDRecompileTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			//compare matrices
-			HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS("B");
+			HashMap<CellIndex, Double> dmlout = readDMLMatrixFromOutputDir("B");
 			Assert.assertTrue( dmlout.size()>=1 );
 		}
 		finally{

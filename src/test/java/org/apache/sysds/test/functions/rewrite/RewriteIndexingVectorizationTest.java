@@ -90,7 +90,7 @@ public class RewriteIndexingVectorizationTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			//compare output 
-			double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
+			double ret = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 			Assert.assertTrue(ret == (711*5));
 			
 			//check for applied rewrite

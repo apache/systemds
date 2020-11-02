@@ -96,7 +96,7 @@ public class CacheEvictionTest extends LineageBase {
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromHDFS("R");
+			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromOutputDir("R");
 			long expCount_lru = Statistics.getCPHeavyHitterCount("exp");
 			long hitCount_lru = LineageCacheStatistics.getInstHits();
 			long evictedCount_lru = LineageCacheStatistics.getMemDeletes();
@@ -113,7 +113,7 @@ public class CacheEvictionTest extends LineageBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromHDFS("R");
+			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromOutputDir("R");
 			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
 			long hitCount_wt = LineageCacheStatistics.getInstHits();
 			long evictedCount_wt = LineageCacheStatistics.getMemDeletes();

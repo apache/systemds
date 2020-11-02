@@ -106,8 +106,8 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			runRScript(true);
 			
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("HV");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("HV");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("HV");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("HV");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 			
 			//check expected number of compiled and executed Spark jobs

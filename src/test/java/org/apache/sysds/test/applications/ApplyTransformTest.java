@@ -95,7 +95,7 @@ public class ApplyTransformTest extends AutomatedTestBase{
 		 
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		 
-		HashMap<CellIndex, Double> XDML= readDMLMatrixFromHDFS("transformed_X.mtx");
+		HashMap<CellIndex, Double> XDML= readDMLMatrixFromOutputDir("transformed_X.mtx");
 		 
 		Iterator<Map.Entry<CellIndex, Double>> iter = XDML.entrySet().iterator();
 		while(iter.hasNext()){

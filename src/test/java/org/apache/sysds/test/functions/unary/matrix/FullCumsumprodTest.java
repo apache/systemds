@@ -117,7 +117,7 @@ public class FullCumsumprodTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			Assert.assertEquals(new Double(rows),
-				readDMLMatrixFromHDFS("C").get(new CellIndex(1,1)));
+				readDMLMatrixFromOutputDir("C").get(new CellIndex(1,1)));
 		}
 		finally {
 			rtplatform = platformOld;

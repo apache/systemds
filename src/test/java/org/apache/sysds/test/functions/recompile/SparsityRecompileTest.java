@@ -143,7 +143,7 @@ public class SparsityRecompileTest extends AutomatedTestBase
 				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			Assert.assertEquals((Double)val, dmlfile.get(new CellIndex(1,1)));
 		}
 		catch(Exception ex) {

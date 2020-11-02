@@ -100,8 +100,8 @@ public class ParForCorrelationTestLarge extends AutomatedTestBase
 		runRScript(true);
 		
 		//compare matrices
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("PearsonR");
-		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("PearsonR");
+		HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("Rout");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "PearsonR-DML", "PearsonR-R");
 	}
 }

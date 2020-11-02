@@ -167,8 +167,8 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		
 			//check for compiled tsmm instructions

@@ -226,10 +226,10 @@ public class GNMFTest extends MLContextTestBase
 			runRScript(true);
 
 			//compare matrices
-			HashMap<CellIndex, Double> hmWDML = readDMLMatrixFromHDFS("w");
-			HashMap<CellIndex, Double> hmHDML = readDMLMatrixFromHDFS("h");
-			HashMap<CellIndex, Double> hmWR = readRMatrixFromFS("w");
-			HashMap<CellIndex, Double> hmHR = readRMatrixFromFS("h");
+			HashMap<CellIndex, Double> hmWDML = readDMLMatrixFromOutputDir("w");
+			HashMap<CellIndex, Double> hmHDML = readDMLMatrixFromOutputDir("h");
+			HashMap<CellIndex, Double> hmWR = readRMatrixFromExpectedDir("w");
+			HashMap<CellIndex, Double> hmHR = readRMatrixFromExpectedDir("h");
 			TestUtils.compareMatrices(hmWDML, hmWR, 0.000001, "hmWDML", "hmWR");
 			TestUtils.compareMatrices(hmHDML, hmHR, 0.000001, "hmHDML", "hmHR");
 		}

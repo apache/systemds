@@ -118,11 +118,11 @@ public class DataTypeCastingTest extends AutomatedTestBase
 		        //read output
 		        double ret = -1;
 		        if( testName.equals(TEST_NAME2) ){
-		        	HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+		        	HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 		        	ret = dmlfile.get(new CellIndex(1,1));		
 		        }
 				else if( testName.equals(TEST_NAME1) ){
-					HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("R");
+					HashMap<CellIndex, Double> dmlfile = readDMLScalarFromOutputDir("R");
 					ret = dmlfile.get(new CellIndex(1,1));
 				}
 		        

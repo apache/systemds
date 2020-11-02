@@ -95,8 +95,8 @@ public class BuiltinLmPredictTest extends AutomatedTestBase
 			runRScript(true); 
 
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("D");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("D");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("D");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("D");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {

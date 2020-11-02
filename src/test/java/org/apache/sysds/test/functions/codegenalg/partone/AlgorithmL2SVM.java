@@ -181,8 +181,8 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("w");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("w");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
 		}

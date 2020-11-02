@@ -119,8 +119,8 @@ public class RewriteEliminateAggregatesTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare scalars 
-			double ret1 = readDMLScalarFromHDFS("Scalar").get(new CellIndex(1,1));
-			double ret2 = readRScalarFromFS("Scalar").get(new CellIndex(1,1));
+			double ret1 = readDMLScalarFromOutputDir("Scalar").get(new CellIndex(1,1));
+			double ret2 = readRScalarFromExpectedDir("Scalar").get(new CellIndex(1,1));
 			TestUtils.compareScalars(ret1, ret2, tol);
 			
 			//check for applied rewrites

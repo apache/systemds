@@ -123,12 +123,12 @@ public class LineageTraceExecTest extends LineageBase {
 		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
 		
 		if( testname.equals(TEST_NAME2) || testname.equals(TEST_NAME5)) {
-			double val1 = readDMLScalarFromHDFS("R").get(new CellIndex(1,1));
+			double val1 = readDMLScalarFromOutputDir("R").get(new CellIndex(1,1));
 			double val2 = ((ScalarObject)ret).getDoubleValue();
 			TestUtils.compareScalars(val1, val2, 1e-6);
 		}
 		else {
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			MatrixBlock tmp = ((MatrixObject)ret).acquireReadAndRelease();
 			TestUtils.compareMatrices(dmlfile, tmp, 1e-6);
 		}

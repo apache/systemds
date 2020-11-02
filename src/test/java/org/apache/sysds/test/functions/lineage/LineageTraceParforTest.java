@@ -162,7 +162,7 @@ public class LineageTraceParforTest extends LineageBase {
 			String Rtrace = readDMLLineageFromHDFS("R");
 			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			MatrixBlock tmp = ((MatrixObject) ret).acquireReadAndRelease();
 			TestUtils.compareMatrices(dmlfile, tmp, 1e-6);
 		}

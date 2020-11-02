@@ -137,8 +137,8 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 			runRScript(true);
 	
 			//compare results
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("C");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("C");
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, "DML", "R");
 			
 			//check dml output meta data

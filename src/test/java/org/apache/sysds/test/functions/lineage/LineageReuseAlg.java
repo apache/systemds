@@ -120,7 +120,7 @@ public class LineageReuseAlg extends LineageBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> X_orig = readDMLMatrixFromHDFS("X");
+			HashMap<MatrixValue.CellIndex, Double> X_orig = readDMLMatrixFromOutputDir("X");
 			
 			// With lineage-based reuse enabled
 			proArgs.clear();
@@ -134,7 +134,7 @@ public class LineageReuseAlg extends LineageBase {
 			Lineage.setLinReuseFull();
 			
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> X_reused = readDMLMatrixFromHDFS("X");
+			HashMap<MatrixValue.CellIndex, Double> X_reused = readDMLMatrixFromOutputDir("X");
 			
 			Lineage.setLinReuseNone();
 			TestUtils.compareMatrices(X_orig, X_reused, 1e-6, "Origin", "Reused");

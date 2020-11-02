@@ -119,16 +119,16 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 
 	private void testNumericOutput() {
 		//compare matrices
-		HashMap<MatrixValue.CellIndex, Double> dmlfileN = readDMLMatrixFromHDFS("N");
-		HashMap<MatrixValue.CellIndex, Double> rfileN  = readRMatrixFromFS("N");
+		HashMap<MatrixValue.CellIndex, Double> dmlfileN = readDMLMatrixFromOutputDir("N");
+		HashMap<MatrixValue.CellIndex, Double> rfileN  = readRMatrixFromExpectedDir("N");
 
 		// compare numerical imputations
 		TestUtils.compareMatrices(dmlfileN, rfileN, eps, "Stat-DML", "Stat-R");
 	}
 
 	private void testCategoricalOutput() {
-		HashMap<MatrixValue.CellIndex, Double> dmlfileC = readDMLMatrixFromHDFS("C");
-		HashMap<MatrixValue.CellIndex, Double> rfileC  = readRMatrixFromFS("C");
+		HashMap<MatrixValue.CellIndex, Double> dmlfileC = readDMLMatrixFromOutputDir("C");
+		HashMap<MatrixValue.CellIndex, Double> rfileC  = readRMatrixFromExpectedDir("C");
 
 		// compare categorical imputations
 		int countTrue = 0;

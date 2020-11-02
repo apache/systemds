@@ -138,7 +138,7 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 			
 			//check output 
 			Assert.assertEquals(Double.valueOf(148), 
-				readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)));
+				readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1)));
 		}
 		finally {
 			rtplatform = rtold;

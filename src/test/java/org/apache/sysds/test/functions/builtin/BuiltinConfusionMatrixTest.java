@@ -130,7 +130,7 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("Y", y, false);
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> dmlResult = readDMLMatrixFromHDFS("B");
+			HashMap<MatrixValue.CellIndex, Double> dmlResult = readDMLMatrixFromOutputDir("B");
 			TestUtils.compareMatrices(dmlResult, res, eps, "DML_Result", "Expected");
 		}
 		finally {

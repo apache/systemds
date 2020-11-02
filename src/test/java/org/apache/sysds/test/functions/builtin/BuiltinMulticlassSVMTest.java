@@ -123,8 +123,8 @@ public class BuiltinMulticlassSVMTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 			runRScript(true);
 
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("model");
-			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromFS("model");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("model");
+			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("model");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {

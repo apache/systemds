@@ -108,8 +108,8 @@ public class BuiltinNaLocfTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 			runRScript(true);
 			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("O");
-			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromFS("O");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("O");
+			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("O");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {

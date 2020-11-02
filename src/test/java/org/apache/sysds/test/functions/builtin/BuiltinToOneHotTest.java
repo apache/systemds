@@ -82,7 +82,7 @@ public class BuiltinToOneHotTest extends AutomatedTestBase {
 
 			if(!shouldFail) {
 				HashMap<MatrixValue.CellIndex, Double> expected = computeExpectedResult(A);
-				HashMap<MatrixValue.CellIndex, Double> result = readDMLMatrixFromHDFS("B");
+				HashMap<MatrixValue.CellIndex, Double> result = readDMLMatrixFromOutputDir("B");
 				TestUtils.compareMatrices(result, expected, eps, "Stat-DML", "Stat-Java");
 			}
 		}

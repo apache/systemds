@@ -116,7 +116,7 @@ public class RemoveEmptySelTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 	
 			//compare expected dimensions
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			Double expectedRows = (double) (margin.equals("rows") ? rows/2 : rows);
 			Double expectedCols = (double) (margin.equals("cols") ? cols/2 : cols);
 			Assert.assertEquals("Wrong output nrow.", expectedRows, dmlfile.get(new CellIndex(1,1)));

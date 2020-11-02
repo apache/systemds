@@ -199,11 +199,11 @@ public class FullPowerTest extends AutomatedTestBase
 		
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = null;
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("C");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("C");
 			if( dt1==DataType.SCALAR&&dt2==DataType.SCALAR )
 				dmlfile = readScalarMatrixFromHDFS("C");
 			else
-				dmlfile = readDMLMatrixFromHDFS("C");
+				dmlfile = readDMLMatrixFromOutputDir("C");
 			
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R", true);
 		}

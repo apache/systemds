@@ -103,7 +103,7 @@ public class RewriteNaryPlusTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//compare output
-			Double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
+			Double ret = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 			Assert.assertEquals(new Double(100000), ret);
 			
 			//check for applied nary plus

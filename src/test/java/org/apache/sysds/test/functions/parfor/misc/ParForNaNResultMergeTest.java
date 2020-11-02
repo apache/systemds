@@ -106,8 +106,8 @@ public class ParForNaNResultMergeTest extends AutomatedTestBase
 		runRScript(true);
 	
 		//compare matrices
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-		HashMap<CellIndex, Double> rfile  = replaceNaNValues(readRMatrixFromFS("R"));
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+		HashMap<CellIndex, Double> rfile  = replaceNaNValues(readRMatrixFromExpectedDir("R"));
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
 	}
 	

@@ -134,7 +134,7 @@ public class LineageRewriteTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromHDFS("Res");
+			HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("Res");
 
 			proArgs.clear();
 			proArgs.add("-stats");
@@ -151,7 +151,7 @@ public class LineageRewriteTest extends AutomatedTestBase {
 			Lineage.setLinReusePartial();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			Lineage.setLinReuseNone();
-			HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLMatrixFromHDFS("Res");
+			HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLMatrixFromOutputDir("Res");
 			TestUtils.compareMatrices(R_orig, R_reused, 1e-6, "Origin", "Reused");
 		}
 		finally {

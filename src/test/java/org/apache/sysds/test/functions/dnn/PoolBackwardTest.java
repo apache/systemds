@@ -170,8 +170,8 @@ public class PoolBackwardTest extends AutomatedTestBase
 			runRScript(true);
 			
 			// compare results
-			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
+			HashMap<CellIndex, Double> bHM = readRMatrixFromExpectedDir("B");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "R");
 		}
 		finally {

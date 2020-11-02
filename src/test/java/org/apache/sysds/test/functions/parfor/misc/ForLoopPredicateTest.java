@@ -192,7 +192,7 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 		runTest(true, false, null, -1);
 		
 		//compare matrices
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 		Assert.assertEquals( Double.valueOf(Math.ceil((Math.round(to)-Math.round(from)+1)/increment)),
 				             dmlfile.get(new CellIndex(1,1)));
 	}

@@ -66,11 +66,11 @@ public class IPAConstantPropagationFunTest extends AutomatedTestBase
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = true;
 			runTest(true, false, null, -1);
-			HashMap<CellIndex, Double> dmlfile1 = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile1 = readDMLMatrixFromOutputDir("R");
 			
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 			runTest(true, false, null, -1);
-			HashMap<CellIndex, Double> dmlfile2 = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile2 = readDMLMatrixFromOutputDir("R");
 			
 			//compare results with and without IPA
 			TestUtils.compareMatrices(dmlfile1, dmlfile2, 1e-14, "IPA", "No IPA");

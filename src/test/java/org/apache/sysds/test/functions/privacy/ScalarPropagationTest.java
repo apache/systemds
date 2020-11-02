@@ -67,7 +67,7 @@ public class ScalarPropagationTest extends AutomatedTestBase
 		
 		runTest(true, false, null, -1);
 		
-		HashMap<CellIndex, Double> map = readDMLScalarFromHDFS("scalar");
+		HashMap<CellIndex, Double> map = readDMLScalarFromOutputDir("scalar");
 		double dmlvalue = map.get(new CellIndex(1,1));
 		
 		assertEquals("Values mismatch: DMLvalue " + dmlvalue + " != ExpectedValue " + roundScalar, 
@@ -124,7 +124,7 @@ public class ScalarPropagationTest extends AutomatedTestBase
 		
 		runTest(true, false, null, -1);
 		
-		HashMap<CellIndex, Double> map = readDMLScalarFromHDFS("scalar");
+		HashMap<CellIndex, Double> map = readDMLScalarFromOutputDir("scalar");
 		double actualScalar = map.get(new CellIndex(1,1));
 		
 		assertEquals("Values mismatch: DMLvalue " + actualScalar + " != ExpectedValue " + expectedScalar, 

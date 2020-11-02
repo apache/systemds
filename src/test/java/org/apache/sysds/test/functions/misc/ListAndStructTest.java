@@ -182,8 +182,8 @@ public class ListAndStructTest extends AutomatedTestBase
 			runRScript(true);
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			Assert.assertEquals(dmlfile.get(new CellIndex(1,1)), rfile.get(new CellIndex(1,1)));
 			
 			//check for properly compiled CP operations

@@ -128,8 +128,8 @@ public class TableOutputTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("F");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("F");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("F");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("F");
 			
 			CellIndex tmp = new CellIndex(-1, -1);
 			double dmlVal, rVal;

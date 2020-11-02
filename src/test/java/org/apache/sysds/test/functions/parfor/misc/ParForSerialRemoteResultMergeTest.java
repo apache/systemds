@@ -146,8 +146,8 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 			Assert.assertEquals("Unexpected number of executed Spark jobs.", expectedJobs, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("Rout");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 		}
 		finally {

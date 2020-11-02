@@ -84,7 +84,7 @@ public class MLContextPageRankTest extends MLContextTestBase {
 
 
 		//compare matrices
-		HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromFS("p");
+		HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("p");
 		TestUtils.compareMatrices(rfile, outmat, eps);
 	}
 }

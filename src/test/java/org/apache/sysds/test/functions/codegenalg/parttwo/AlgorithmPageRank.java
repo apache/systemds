@@ -159,8 +159,8 @@ public class AlgorithmPageRank extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dml = readDMLMatrixFromHDFS("p");
-			HashMap<CellIndex, Double> r = readRMatrixFromFS("p");
+			HashMap<CellIndex, Double> dml = readDMLMatrixFromOutputDir("p");
+			HashMap<CellIndex, Double> r = readRMatrixFromExpectedDir("p");
 			TestUtils.compareMatrices(dml, r, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
 				|| heavyHittersContainsSubString("sp_spoofRA"));

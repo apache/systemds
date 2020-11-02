@@ -115,8 +115,8 @@ public class BuiltinMulticlassSVMPredictTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("W", w, false);
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> YRaw_res = readDMLMatrixFromHDFS("YRaw");
-			HashMap<MatrixValue.CellIndex, Double> Y_res = readDMLMatrixFromHDFS("Y");
+			HashMap<MatrixValue.CellIndex, Double> YRaw_res = readDMLMatrixFromOutputDir("YRaw");
+			HashMap<MatrixValue.CellIndex, Double> Y_res = readDMLMatrixFromOutputDir("Y");
 
 			TestUtils.compareMatrices(YRaw_res, YRaw, eps, "DML_Result", "Expected");
 			TestUtils.compareMatrices(Y_res, Y, eps, "DML_Result", "Expected");

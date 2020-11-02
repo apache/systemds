@@ -85,12 +85,12 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile;
 			if (file.endsWith(".scalar")) {
 				file = file.replace(".scalar", "");
-				dmlfile = readDMLScalarFromHDFS(file);
-				rfile = readRScalarFromFS(file);
+				dmlfile = readDMLScalarFromOutputDir(file);
+				rfile = readRScalarFromExpectedDir(file);
 			}
 			else {
-				dmlfile = readDMLMatrixFromHDFS(file);
-				rfile = readRMatrixFromFS(file);
+				dmlfile = readDMLMatrixFromOutputDir(file);
+				rfile = readRMatrixFromExpectedDir(file);
 			}
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
@@ -132,12 +132,12 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile;
 			if (file.endsWith(".scalar")) {
 				file = file.replace(".scalar", "");
-				dmlfile = readDMLScalarFromHDFS(file);
-				rfile = readRScalarFromFS(file);
+				dmlfile = readDMLScalarFromOutputDir(file);
+				rfile = readRScalarFromExpectedDir(file);
 			}
 			else {
-				dmlfile = readDMLMatrixFromHDFS(file);
-				rfile = readRMatrixFromFS(file);
+				dmlfile = readDMLMatrixFromOutputDir(file);
+				rfile = readRMatrixFromExpectedDir(file);
 			}
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}

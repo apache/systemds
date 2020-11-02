@@ -112,8 +112,8 @@ public class IPAConstantPropagationTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("X");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("X");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("X");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("X");
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed Spark jobs

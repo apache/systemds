@@ -261,8 +261,8 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		runRScript(true);
 		
 		//compare matrices
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+		HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("Rout");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 	}
 	
@@ -327,8 +327,8 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		
 		//compare matrices 
 		for( String out : new String[]{"bivar.stats", "category.counts", "category.means",  "category.variances" } ) {
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("bivarstats/"+out);
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS(out);
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("bivarstats/"+out);
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir(out);
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 	}

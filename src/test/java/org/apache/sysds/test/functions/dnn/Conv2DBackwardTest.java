@@ -213,8 +213,8 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			runRScript(true);
 			
-			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
+			HashMap<CellIndex, Double> bHM = readRMatrixFromExpectedDir("B");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "NumPy");
 		}
 		finally {

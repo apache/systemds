@@ -79,7 +79,7 @@ public class BuiltinKmeansPredictTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("X", X, true);
 
 			runTest(null);
-			HashMap<CellIndex, Double>  res = readDMLScalarFromHDFS("res");
+			HashMap<CellIndex, Double>  res = readDMLScalarFromOutputDir("res");
 			Assert.assertTrue(res.values().size() == 1);
 			Assert.assertEquals(res.values().toArray()[0] , 1.);
 		}

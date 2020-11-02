@@ -104,7 +104,7 @@ public class MLContextLinregTest extends MLContextTestBase {
 		}
 
 		//compare matrices
-		HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromFS("w");
+		HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("w");
 		TestUtils.compareMatrices(rfile, outmat, eps);
 	}
 }

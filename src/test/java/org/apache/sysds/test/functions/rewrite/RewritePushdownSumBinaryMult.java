@@ -95,8 +95,8 @@ public class RewritePushdownSumBinaryMult extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare scalars 
-			HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("Scalar");
-			HashMap<CellIndex, Double> rfile  = readRScalarFromFS("Scalar");
+			HashMap<CellIndex, Double> dmlfile = readDMLScalarFromOutputDir("Scalar");
+			HashMap<CellIndex, Double> rfile  = readRScalarFromExpectedDir("Scalar");
 			TestUtils.compareScalars(dmlfile.toString(), rfile.toString());
 		}
 		finally {

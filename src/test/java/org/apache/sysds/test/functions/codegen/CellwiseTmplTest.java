@@ -490,14 +490,14 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			if(testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7) 
 				|| testname.equals(TEST_NAME9) || testname.equals(TEST_NAME10)) {
 				//compare scalars 
-				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
-				HashMap<CellIndex, Double> rfile  = readRScalarFromFS("S");
+				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromOutputDir("S");
+				HashMap<CellIndex, Double> rfile  = readRScalarFromExpectedDir("S");
 				TestUtils.compareScalars((Double) dmlfile.values().toArray()[0], (Double) rfile.values().toArray()[0],0);
 			}
 			else {
 				//compare matrices 
-				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
-				HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
+				HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			}
 			

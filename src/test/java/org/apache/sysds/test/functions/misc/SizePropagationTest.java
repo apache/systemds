@@ -120,7 +120,7 @@ public class SizePropagationTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			runTest(true, false, null, -1); 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			Assert.assertEquals(new Double(expect), dmlfile.get(new CellIndex(1,1)));
 		}
 		finally {

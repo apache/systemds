@@ -60,6 +60,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.data.TensorBlock;
@@ -461,11 +462,12 @@ public class TestUtils
 
 	/**
 	 * Reads values from a matrix file in HDFS in DML format
-	 * 
-	 * @deprecated You should not use this method, it is recommended to use the
-	 *             corresponding method in AutomatedTestBase
-	 * @param filePath
-	 * @return
+	 *
+	 * NOTE: For reading the output of a matrix produced by a JUnit test, use the convenience
+	 *       function {@link AutomatedTestBase#readDMLMatrixFromHDFS(String)}
+	 *
+	 * @param filePath Path to the file to be read.
+	 * @return Matrix values in a hashmap <index,value>
 	 */
 	public static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String filePath) 
 	{
@@ -491,12 +493,12 @@ public class TestUtils
 
 	/**
 	 * Reads values from a matrix file in OS's FS in R format
-	 * 
-	 * @deprecated You should not use this method, it is recommended to use the
-	 *             corresponding method in AutomatedTestBase
-	 * 
-	 * @param filePath
-	 * @return
+	 *
+	 * NOTE: For reading the output of a matrix produced by a R validation code of a JUnit test, use the convenience
+	 *       function {@link AutomatedTestBase#readRMatrixFromFS(String)}
+	 *
+	 * @param filePath Path to the file to be read.
+	 * @return Matrix values in a hashmap <index,value>
 	 */
 	public static HashMap<CellIndex, Double> readRMatrixFromFS(String filePath) 
 	{
@@ -2083,10 +2085,11 @@ public class TestUtils
 			SequenceFile.Writer writer = null;
 			try {
 				Path path = new Path(file);
-				FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
-				writer = new SequenceFile.Writer(fs, conf, path,
-					MatrixIndexes.class, MatrixCell.class);
-
+				Writer.Option filePath = Writer.file(path);
+				Writer.Option keyClass = Writer.keyClass(MatrixIndexes.class);
+				Writer.Option valueClass = Writer.valueClass(MatrixBlock.class);
+				Writer.Option compression = Writer.compression(SequenceFile.CompressionType.NONE);
+				writer = SequenceFile.createWriter(conf, filePath, keyClass, valueClass, compression);
 				MatrixIndexes index = new MatrixIndexes();
 				MatrixCell value = new MatrixCell();
 				for (int i = 0; i < matrix.length; i++) {
@@ -2131,10 +2134,11 @@ public class TestUtils
 			
 		try {
 			Path path = new Path(file);
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
-			writer = new SequenceFile.Writer(fs, conf, path,
-					MatrixIndexes.class, MatrixBlock.class);
-
+			Writer.Option filePath = Writer.file(path);
+			Writer.Option keyClass = Writer.keyClass(MatrixIndexes.class);
+			Writer.Option valueClass = Writer.valueClass(MatrixBlock.class);
+			Writer.Option compression = Writer.compression(SequenceFile.CompressionType.NONE);
+			writer = SequenceFile.createWriter(conf, filePath, keyClass, valueClass, compression);
 			MatrixIndexes index = new MatrixIndexes();
 			MatrixBlock value = new MatrixBlock();
 			for (int i = 0; i < matrix.length; i += rowsInBlock) {
@@ -2142,7 +2146,7 @@ public class TestUtils
 				for (int j = 0; j < matrix[i].length; j += colsInBlock) {
 					int cols = Math.min(colsInBlock, (matrix[i].length - j));
 					index.setIndexes(((i / rowsInBlock) + 1), ((j / colsInBlock) + 1));
-					value = new MatrixBlock(rows, cols, sparseFormat);
+					value.reset(rows, cols, sparseFormat);
 					for (int k = 0; k < rows; k++) {
 						for (int l = 0; l < cols; l++) {
 							value.setValue(k, l, matrix[i + k][j + l]);

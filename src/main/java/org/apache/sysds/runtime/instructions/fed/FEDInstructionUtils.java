@@ -114,10 +114,10 @@ public class FEDInstructionUtils {
 			if( mo.isFederated() )
 				fedinst = ReorgFEDInstruction.parseInstruction(rinst.getInstructionString());
 		}
-		else if(inst instanceof IndexingCPInstruction) {
+		else if(inst instanceof MatrixIndexingCPInstruction && inst.getOpcode().equalsIgnoreCase("rightIndex")) {
 			// matrix indexing
 			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
-			if(minst.input1.isMatrix() && inst.getOpcode().equalsIgnoreCase("rightIndex")) {
+			if(minst.input1.isMatrix()) {
 				CacheableData<?> fo = ec.getCacheableData(minst.input1);
 				if(fo.isFederated())
 					fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());

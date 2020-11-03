@@ -73,12 +73,12 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 					if((ixrange.rowStart < re) && (ixrange.rowEnd >= rs)) {
 						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
 						fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[0]));
-						fedMapping.getFederatedRanges()[i].setEndDim(1, cen + 1);
+						fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1);
 					}
 					else {
 						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
 						fedMapping.getFederatedRanges()[i].setEndDim(0, fedMapping.getFederatedRanges()[i - 1].getEndDims()[0]);
-						fedMapping.getFederatedRanges()[i].setEndDim(1, cen + 1);
+						fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1);
 						rsn = -1;
 						ren = rsn;
 						csn = rsn;
@@ -93,12 +93,12 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 					cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
 					if((ixrange.colStart < ce) && (ixrange.colEnd >= cs)) {
 						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(0, ren + 1);
+						fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1);
 						fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[1]));
 					}
 					else {
 						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(0, ren + 1);
+						fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1);
 						fedMapping.getFederatedRanges()[i].setEndDim(1, fedMapping.getFederatedRanges()[i - 1].getEndDims()[1]);
 						rsn = -1;
 						ren = rsn;

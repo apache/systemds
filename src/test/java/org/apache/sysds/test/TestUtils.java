@@ -60,6 +60,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.data.TensorBlock;
@@ -461,11 +462,12 @@ public class TestUtils
 
 	/**
 	 * Reads values from a matrix file in HDFS in DML format
-	 * 
-	 * @deprecated You should not use this method, it is recommended to use the
-	 *             corresponding method in AutomatedTestBase
-	 * @param filePath
-	 * @return
+	 *
+	 * NOTE: For reading the output of a matrix produced by a JUnit test, use the convenience
+	 *       function {@link AutomatedTestBase#readDMLMatrixFromOutputDir(String)}
+	 *
+	 * @param filePath Path to the file to be read.
+	 * @return Matrix values in a hashmap <index,value>
 	 */
 	public static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String filePath) 
 	{
@@ -491,12 +493,12 @@ public class TestUtils
 
 	/**
 	 * Reads values from a matrix file in OS's FS in R format
-	 * 
-	 * @deprecated You should not use this method, it is recommended to use the
-	 *             corresponding method in AutomatedTestBase
-	 * 
-	 * @param filePath
-	 * @return
+	 *
+	 * NOTE: For reading the output of a matrix produced by a R validation code of a JUnit test, use the convenience
+	 *       function {@link AutomatedTestBase#readRMatrixFromExpectedDir(String)}
+	 *
+	 * @param filePath Path to the file to be read.
+	 * @return Matrix values in a hashmap <index,value>
 	 */
 	public static HashMap<CellIndex, Double> readRMatrixFromFS(String filePath) 
 	{
@@ -737,7 +739,7 @@ public class TestUtils
 		for (int i = 0; i < rows && countErrors < 50; i++) {
 			for (int j = 0; j < cols && countErrors < 50; j++) {
 				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, false)) {
-					message += ("\n " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
+					message += ("\n Expected: " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}
@@ -765,7 +767,7 @@ public class TestUtils
 			for (int j = 0; j < cols; j++) {
 				if( !( (expectedFrame[i][j]==null && actualFrame[i][j]==null) ||
 					expectedFrame[i][j].equals(actualFrame[i][j]) || (expectedFrame[i][j]+".0").equals(actualFrame[i][j])) ) {
-					System.out.println(expectedFrame[i][j] +" vs actual: "+actualFrame[i][j]+" at "+i+" "+j);
+					System.out.println("Expected:" + expectedFrame[i][j] +" vs actual: "+actualFrame[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}
@@ -783,7 +785,7 @@ public class TestUtils
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				if( !compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j], maxUnitsOfLeastPrecision)){
-					System.out.println(expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
+					System.out.println("Expected: " + expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}
@@ -804,19 +806,20 @@ public class TestUtils
 		int countErrors = 0;
 		long sumDistance = 0;
 		long distance;
-		for (int i = 0; i < rows && countErrors < 50; i++) {
-			for (int j = 0; j < cols && countErrors < 50; j++) {
+		for (int i = 0; i < rows && countErrors < 20; i++) {
+			for (int j = 0; j < cols && countErrors < 20; j++) {
 				distance = compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j]);
 				sumDistance += distance;
 				if(distance > maxUnitsOfLeastPrecision){
-					message += ("\n " + expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in bits: " + distance);
+					message += ("\n Expected:" + expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in bits: " + distance);
 					countErrors++;
 				}
 			}
 		}
-		if(countErrors == 50){
-			assertTrue(message + "\n At least 50 values are not in equal", countErrors == 0);
-		}else{
+		if(countErrors == 20){
+			assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+		}
+		else{
 			long avgDistance = sumDistance / (rows * cols);
 			assertTrue(message + "\n" + countErrors + " values are not in equal", countErrors == 0);
 			assertTrue(message + "\nThe avg distance in bits: "+ avgDistance +" was higher than max: " + maxAvgDistance,
@@ -872,20 +875,25 @@ public class TestUtils
 			double sumPercentDistance = 0;
 			double distance;
 
-			for (int i = 0; i < rows; i++) {
-				for (int j = 0; j < cols; j++) {
+			for (int i = 0; i < rows && countErrors < 20; i++) {
+				for (int j = 0; j < cols && countErrors < 20; j++) {
 					distance = getPercentDistance(expectedMatrix[i][j], actualMatrix[i][j], ignoreZero);
 					sumPercentDistance += distance;
 					if(distance < percentDistanceAllowed){
-						message += ("\n"+ expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in percent " + distance);
+						message += ("\nExpected: "+ expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in percent " + distance);
 						countErrors++;
 					}
 				}
 			}
-			double avgDistance = sumPercentDistance / (rows * cols);
-			assertTrue(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols), countErrors == 0);
-			assertTrue(message + "\nThe avg distance: "+ avgDistance +" was lower than threshold " + maxAveragePercentDistance,
-				avgDistance > maxAveragePercentDistance);
+			if(countErrors == 20){
+				assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+			}
+			else{
+				double avgDistance = sumPercentDistance / (rows * cols);
+				assertTrue(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols), countErrors == 0);
+				assertTrue(message + "\nThe avg distance: "+ avgDistance +" was lower than threshold " + maxAveragePercentDistance,
+					avgDistance > maxAveragePercentDistance);
+			}
 	}
 
 	public static void compareMatricesBitAvgDistance(double[][] expectedMatrix, double[][] actualMatrix, int rows,
@@ -1525,6 +1533,35 @@ public class TestUtils
 	}
 
 	/**
+	 * Generates a test matrix with the specified parameters as a two
+	 * dimensional array.
+	 * Set seed to -1 to use the current time as seed.
+	 * 
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value
+	 * @param max maximum value
+	 * @param sparsity sparsity
+	 * @param seed seed
+	 * @param delta The minimum delta between values.
+	 * @return random matrix
+	 */
+	public static double[][] generateTestMatrix(int rows, int cols, double min, double max, double sparsity, long seed, double delta) {
+		double[][] matrix = new double[rows][cols];
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				if (random.nextDouble() > sparsity)
+					continue;
+				double v = (random.nextDouble()) * (max - min);
+				matrix[i][j] = (v + min ) - v % delta;
+			}
+		}
+
+		return matrix;
+	}
+
+	/**
 	 * 
 	 * Generates a test matrix, but only containing real numbers, in the range specified.
 	 * 
@@ -2048,10 +2085,11 @@ public class TestUtils
 			SequenceFile.Writer writer = null;
 			try {
 				Path path = new Path(file);
-				FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
-				writer = new SequenceFile.Writer(fs, conf, path,
-					MatrixIndexes.class, MatrixCell.class);
-
+				Writer.Option filePath = Writer.file(path);
+				Writer.Option keyClass = Writer.keyClass(MatrixIndexes.class);
+				Writer.Option valueClass = Writer.valueClass(MatrixBlock.class);
+				Writer.Option compression = Writer.compression(SequenceFile.CompressionType.NONE);
+				writer = SequenceFile.createWriter(conf, filePath, keyClass, valueClass, compression);
 				MatrixIndexes index = new MatrixIndexes();
 				MatrixCell value = new MatrixCell();
 				for (int i = 0; i < matrix.length; i++) {
@@ -2096,10 +2134,11 @@ public class TestUtils
 			
 		try {
 			Path path = new Path(file);
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
-			writer = new SequenceFile.Writer(fs, conf, path,
-					MatrixIndexes.class, MatrixBlock.class);
-
+			Writer.Option filePath = Writer.file(path);
+			Writer.Option keyClass = Writer.keyClass(MatrixIndexes.class);
+			Writer.Option valueClass = Writer.valueClass(MatrixBlock.class);
+			Writer.Option compression = Writer.compression(SequenceFile.CompressionType.NONE);
+			writer = SequenceFile.createWriter(conf, filePath, keyClass, valueClass, compression);
 			MatrixIndexes index = new MatrixIndexes();
 			MatrixBlock value = new MatrixBlock();
 			for (int i = 0; i < matrix.length; i += rowsInBlock) {
@@ -2107,7 +2146,7 @@ public class TestUtils
 				for (int j = 0; j < matrix[i].length; j += colsInBlock) {
 					int cols = Math.min(colsInBlock, (matrix[i].length - j));
 					index.setIndexes(((i / rowsInBlock) + 1), ((j / colsInBlock) + 1));
-					value = new MatrixBlock(rows, cols, sparseFormat);
+					value.reset(rows, cols, sparseFormat);
 					for (int k = 0; k < rows; k++) {
 						for (int l = 0; l < cols; l++) {
 							value.setValue(k, l, matrix[i + k][j + l]);

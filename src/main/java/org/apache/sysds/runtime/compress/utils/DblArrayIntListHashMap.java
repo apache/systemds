@@ -36,6 +36,7 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 	protected static final Log LOG = LogFactory.getLog(DblArrayIntListHashMap.class.getName());
 
 	private DArrayIListEntry[] _data = null;
+	public static int hashMissCount = 0;
 
 	public DblArrayIntListHashMap() {
 		_data = new DArrayIListEntry[INIT_CAPACITY];
@@ -51,7 +52,6 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 		// probe for early abort
 		if(_size == 0)
 			return null;
-
 		// compute entry index position
 		int hash = hash(key);
 		int ix = indexFor(hash, _data.length);
@@ -60,7 +60,10 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 		for(DArrayIListEntry e = _data[ix]; e != null; e = e.next) {
 			if(e.key.equals(key)) {
 				return e.value;
+			}else{
+				hashMissCount++;
 			}
+
 		}
 
 		return null;
@@ -98,8 +101,6 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 			}
 		}
 		Collections.sort(ret);
-
-		LOG.info(ret);
 		return ret;
 	}
 
@@ -127,7 +128,7 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 
 	private static int hash(DblArray key) {
 		int h = key.hashCode();
-
+		
 		// This function ensures that hashCodes that differ only by
 		// constant multiples at each bit position have a bounded
 		// number of collisions (approximately 8 at default load factor).
@@ -162,7 +163,10 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 					return -1;
 				}
 			}
-			if(o1d.length > o2d.length) {
+			if(o1d.length == o2d.length){
+				return 0;
+			}
+			else if(o1d.length > o2d.length) {
 				return 1;
 			}
 			else {
@@ -174,5 +178,33 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 		public int compareTo(DArrayIListEntry o) {
 			return compare(this, o);
 		}
+
+		@Override
+		public String toString(){
+			if(next == null){
+				return key + ":" + value;
+			}else{
+				return key +":" + value + "," + next;
+			}
+		}
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName() + this.hashCode());
+		sb.append("   "+  _size);
+		for(int i = 0 ; i < _data.length; i++){
+			DArrayIListEntry ent = _data[i];
+			if(ent != null){
+
+				sb.append("\n");
+				sb.append("id:" + i);
+				sb.append("[");
+				sb.append(ent);
+				sb.append("]");
+			}
+		}
+		return sb.toString();
 	}
 }

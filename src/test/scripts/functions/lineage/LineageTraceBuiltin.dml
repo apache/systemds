@@ -24,9 +24,11 @@ X = rand(rows=$3, cols=$4, seed=7);
 R = X;
 for(i in 1:7) {
   R = R + 1 / 2;
-  print(lineage(R));
+  #print(lineage(R));
+  linR = lineage(R);
 }
 R = R + X;
 
-print(lineage(R));
+#print(lineage(R));
+linR = lineage(R);
 write(R, $2);

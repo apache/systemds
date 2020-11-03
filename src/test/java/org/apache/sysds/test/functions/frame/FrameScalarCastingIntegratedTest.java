@@ -153,7 +153,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 
 			//compare output 
-			Assert.assertEquals(readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)), Double.valueOf(1));
+			Assert.assertEquals(readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1)), Double.valueOf(1));
 			if( et != ExecMode.SPARK ) {
 				Assert.assertTrue(Statistics.getNoOfCompiledSPInst()==0);
 				Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);

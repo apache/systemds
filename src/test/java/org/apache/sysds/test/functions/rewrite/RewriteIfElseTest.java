@@ -172,8 +172,8 @@ public class RewriteIfElseTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, Math.pow(10,-10), "Stat-DML", "Stat-R"));
 			
 			//check for presence of power operator, if we did a rewrite

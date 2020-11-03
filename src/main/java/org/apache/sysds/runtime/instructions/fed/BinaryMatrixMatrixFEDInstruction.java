@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
@@ -39,8 +40,16 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
 		
+		//canonicalization for federated lhs
+		if( !mo1.isFederated() && mo2.isFederated() 
+			&& mo1.getDataCharacteristics().equalDims(mo2.getDataCharacteristics()) 
+			&& ((BinaryOperator)_optr).isCommutative() ) {
+			mo1 = ec.getMatrixObject(input2);
+			mo2 = ec.getMatrixObject(input1);
+		}
+		
+		//execute federated operation on mo1 or mo2
 		FederatedRequest fr2 = null;
-
 		if( mo2.isFederated() ) {
 			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false)) {
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
@@ -48,12 +57,12 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				mo1.getFedMapping().execute(getTID(), true, fr2);
 			}
 			else {
-				throw new DMLRuntimeException("Matrix-matrix binary operations "
-					+ " with a federated right input are not supported yet.");
+				throw new DMLRuntimeException("Matrix-matrix binary operations with a "
+					+ "federated right input are only supported for special cases yet.");
 			}
 		}
 		else {
-			//matrix-matrix binary oFederatedRequest fr2 = null;perations -> lhs fed input -> fed output
+			//matrix-matrix binary operations -> lhs fed input -> fed output
 			if(mo2.getNumRows() > 1 && mo2.getNumColumns() == 1 ) { //MV row vector
 				FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},

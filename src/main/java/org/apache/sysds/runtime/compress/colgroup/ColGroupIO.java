@@ -77,6 +77,9 @@ public class ColGroupIO {
 				case DDC2:
 					grp = new ColGroupDDC2();
 					break;
+				case CONST:
+					grp = new ColGroupConst();
+					break;
 				default:
 					throw new DMLRuntimeException("Unsupported ColGroup Type used:  " + ctype);
 			}

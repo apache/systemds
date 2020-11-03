@@ -39,7 +39,8 @@ public class LineageCacheConfig
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", "qpick"
+		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
+		"qpick", "transformapply"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -99,7 +100,7 @@ public class LineageCacheConfig
 
 	private static LineageCachePolicy _cachepolicy = null;
 	// Weights for scoring components (computeTime/size, LRU timestamp)
-	protected static double[] WEIGHTS = {0, 1};
+	protected static double[] WEIGHTS = {0, 1, 0};
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
@@ -117,13 +118,48 @@ public class LineageCacheConfig
 	public enum LineageCachePolicy {
 		LRU,
 		COSTNSIZE,
+		DAGHEIGHT,
 		HYBRID;
 	}
 	
 	protected static Comparator<LineageCacheEntry> LineageCacheComparator = (e1, e2) -> {
-		return e1.score == e2.score ?
+		/*return e1.score == e2.score ?
 			Long.compare(e1._key.getId(), e2._key.getId()) :
 			e1.score < e2.score ? -1 : 1;
+		*/
+		int ret = 0;
+		if (e1.score == e2.score) {
+			switch(_cachepolicy) {
+				case LRU:
+				case DAGHEIGHT:
+				{
+					// order entries with same score by cost, size ratio
+					double e1_cs = e1.getCostNsize();
+					double e2_cs = e2.getCostNsize();
+					ret = e1_cs == e2_cs ?
+						Long.compare(e1._key.getId(), e2._key.getId()) :
+						e1_cs < e2_cs ? -1 : 1;
+					break;
+				}
+				case COSTNSIZE:
+				{
+					// order entries with same score by last used time
+					double e1_ts = e1.getTimestamp();
+					double e2_ts = e2.getTimestamp();
+					ret = e1_ts == e2_ts ?
+						Long.compare(e1._key.getId(), e2._key.getId()) :
+						e1_ts < e2_ts ? -1 : 1;
+					break;
+				}
+				case HYBRID:
+					// order entries with same score by IDs
+					ret = Long.compare(e1._key.getId(), e2._key.getId());
+			}
+		}
+		else
+			ret = e1.score < e2.score ? -1 : 1;
+
+		return ret;
 	};
 
 	//----------------------------------------------------------------//
@@ -217,17 +253,21 @@ public class LineageCacheConfig
 	public static void setCachePolicy(LineageCachePolicy policy) {
 		switch(policy) {
 			case LRU:
-				WEIGHTS[0] = 0; WEIGHTS[1] = 1;
+				WEIGHTS[0] = 0; WEIGHTS[1] = 1; WEIGHTS[2] = 0;
 				break;
 			case COSTNSIZE:
-				WEIGHTS[0] = 1; WEIGHTS[1] = 0;
+				WEIGHTS[0] = 1; WEIGHTS[1] = 0; WEIGHTS[2] = 0;
+				break;
+			case DAGHEIGHT:
+				WEIGHTS[0] = 0; WEIGHTS[1] = 0; WEIGHTS[2] = 1;
 				break;
 			case HYBRID:
-				WEIGHTS[0] = 1; WEIGHTS[1] = 0.0033;
+				WEIGHTS[0] = 1; WEIGHTS[1] = 0.0033; WEIGHTS[2] = 0;
 				// FIXME: Relative timestamp fix reduces the absolute
 				// value of the timestamp component of the scoring function
 				// to a comparatively much smaller number. W[1] needs to be
 				// re-tuned accordingly.
+				// FIXME: Tune hybrid with a ratio of all three.
 				// TODO: Automatic tuning of weights.
 				break;
 		}
@@ -241,6 +281,11 @@ public class LineageCacheConfig
 	public static boolean isTimeBased() {
 		// Check the LRU component of weights array.
 		return (WEIGHTS[1] > 0);
+	}
+
+	public static boolean isDagHeightBased() {
+		// Check the DAGHEIGHT component of weights array.
+		return (WEIGHTS[2] > 0);
 	}
 
 	public static void setSpill(boolean toSpill) {

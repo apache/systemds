@@ -128,8 +128,10 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		
 			// check for federated operations
 			Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-			Assert.assertTrue(heavyHittersContainsString("fed_uasqk+"));
+			//Assert.assertTrue(heavyHittersContainsString("fed_uasqk+"));
 			Assert.assertTrue(heavyHittersContainsString("fed_uarmin"));
+			Assert.assertTrue(heavyHittersContainsString("fed_uark+"));
+			Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
 			Assert.assertTrue(heavyHittersContainsString("fed_*"));
 			Assert.assertTrue(heavyHittersContainsString("fed_+"));
 			Assert.assertTrue(heavyHittersContainsString("fed_<="));

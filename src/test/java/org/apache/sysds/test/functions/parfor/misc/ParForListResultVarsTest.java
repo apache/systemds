@@ -57,6 +57,6 @@ public class ParForListResultVarsTest extends AutomatedTestBase
 
 		runTest(true, false, null, -1);
 		Assert.assertEquals(new Double(7),
-			readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)));
+			readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1)));
 	}
 }

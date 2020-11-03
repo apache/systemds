@@ -159,10 +159,19 @@ public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 				return true;
 			if ( !otherFGP.hasConstraints() || !hasConstraints() )
 				return false;
-			return otherFGP.getAllConstraintsList().equals(constraintCollection);
-			
+			return listEquals(otherFGP.getAllConstraintsList());
 		}
 		return false;
+	}
+
+	private boolean listEquals(ArrayList<Map.Entry<DataRange,PrivacyLevel>> otherFGP){
+		if ( otherFGP.size() != constraintCollection.size() )
+			return false;
+		for ( Map.Entry<DataRange, PrivacyLevel> constraint : constraintCollection){
+			if ( !otherFGP.contains(constraint) )
+				return false;
+		}
+		return true;
 	}
 
 	@Override

@@ -19,27 +19,25 @@
 
 package org.apache.sysds.test.functions.lineage;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheEviction;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
-import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-public class CacheEvictionTest extends AutomatedTestBase {
+public class CacheEvictionTest extends LineageBase {
 
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME1 = "CacheEviction1";
@@ -62,7 +60,7 @@ public class CacheEvictionTest extends AutomatedTestBase {
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
-			System.out.println("------------ BEGIN " + testname + "------------");
+			LOG.debug("------------ BEGIN " + testname + "------------");
 			
 			/* This test verifies the order of evicted items w.r.t. the specified
 			 * cache policies. This test enables individual components of the 
@@ -98,7 +96,7 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromHDFS("R");
+			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromOutputDir("R");
 			long expCount_lru = Statistics.getCPHeavyHitterCount("exp");
 			long hitCount_lru = LineageCacheStatistics.getInstHits();
 			long evictedCount_lru = LineageCacheStatistics.getMemDeletes();
@@ -115,7 +113,7 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromHDFS("R");
+			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromOutputDir("R");
 			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
 			long hitCount_wt = LineageCacheStatistics.getInstHits();
 			long evictedCount_wt = LineageCacheStatistics.getMemDeletes();

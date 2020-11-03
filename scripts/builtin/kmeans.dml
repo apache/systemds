@@ -32,6 +32,7 @@
 # eps                               Double    0.000001 Tolerance (epsilon) for WCSS change ratio
 # is_verbose                        Boolean   FALSE    do not print per-iteration stats
 # avg_sample_size_per_centroid      Int       50       Average number of records per centroid in data samples
+# seed                              Int       -1       The seed used for initial sampling. If set to -1 random seeds are selected. 
 #
 #
 # RETURN VALUES
@@ -44,32 +45,38 @@
 
 
 m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer max_iter = 1000,
-    Double eps = 0.000001, Boolean is_verbose = FALSE, Integer avg_sample_size_per_centroid = 50)
+    Double eps = 0.000001, Boolean is_verbose = FALSE, Integer avg_sample_size_per_centroid = 50,
+    Integer seed = -1)
   return (Matrix[Double] C, Matrix[Double] Y)
 {
-  print ("BEGIN K-MEANS SCRIPT");
+  if( is_verbose )
+    print ("BEGIN K-MEANS SCRIPT");
+  
   num_records   = nrow (X);
   num_features  = ncol (X);
   num_centroids = k;
   num_runs = runs;
 
-  if(is_verbose == TRUE)
+  if(is_verbose)
     print("dim X=" + nrow(X) + "x" + ncol(X))
 
   sumXsq = sum (X ^ 2);
 
   # STEP 1: INITIALIZE CENTROIDS FOR ALL RUNS FROM DATA SAMPLES:
 
-  print ("Taking data samples for initialization...");
+  if( is_verbose )
+    print ("Taking data samples for initialization...");
 
   [sample_maps, samples_vs_runs_map, sample_block_size] = get_sample_maps(
-    num_records, num_runs, num_centroids * avg_sample_size_per_centroid);
+    num_records, num_runs, num_centroids * avg_sample_size_per_centroid, seed);
 
   is_row_in_samples = rowSums (sample_maps);
   X_samples = sample_maps %*% X;
   X_samples_sq_norms = rowSums (X_samples ^ 2);
 
-  print ("Initializing the centroids for all runs...");
+  if( is_verbose )
+    print ("Initializing the centroids for all runs...");
+  
   All_Centroids = matrix (0, num_runs * num_centroids, num_features);
 
   # We select centroids according to the k-Means++ heuristic applied to a sample of X
@@ -86,7 +93,8 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
 
     # Select the i-th centroid in each sample as a random sample row id with
     # probability ~ min_distances:
-    random_row = rand(rows = 1, cols = num_runs);
+    lseed = ifelse(seed==-1, -1, seed + i);
+    random_row = rand(rows = 1, cols = num_runs, seed = lseed)
     threshold_matrix = random_row * cdf_min_distances [sample_block_size, ];
     centroid_ids = t(colSums (cdf_min_distances < threshold_matrix)) + 1;
 
@@ -112,7 +120,8 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
   final_wcss = matrix (0, rows = num_runs, cols = 1);
   num_iterations = matrix (0, rows = num_runs, cols = 1);
 
-  print ("Performing k-means iterations for all runs...");
+  if( is_verbose )
+    print ("Performing k-means iterations for all runs...");
 
   parfor (run_index in 1 : num_runs, check = 0)
   {
@@ -177,9 +186,12 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
   termination_bitmap [, 1 : ncol(termination_bitmap_raw)] = termination_bitmap_raw;
   termination_stats = colSums (termination_bitmap);
 
-  print ("Number of successful runs = " + as.integer (as.scalar (termination_stats [1, 1])));
-  print ("Number of incomplete runs = " + as.integer (as.scalar (termination_stats [1, 2])));
-  print ("Number of failed runs (with lost centroids) = " + as.integer (as.scalar (termination_stats [1, 3])));
+  if(is_verbose){
+
+    print ("Number of successful runs = " + as.integer (as.scalar (termination_stats [1, 1])));
+    print ("Number of incomplete runs = " + as.integer (as.scalar (termination_stats [1, 2])));
+    print ("Number of failed runs (with lost centroids) = " + as.integer (as.scalar (termination_stats [1, 3])));
+  }
 
   num_successful_runs = as.scalar (termination_stats [1, 1]);
 
@@ -193,8 +205,9 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
     aggr_best_index_vector = cumsum (best_index_vector);
     best_index = as.integer (sum (aggr_best_index_vector == 0) + 1);
 
-    print ("Successful runs:  Best run is " + best_index + " with Centroid WCSS = " + best_wcss
-           + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
+    if(is_verbose)
+      print ("Successful runs:  Best run is " + best_index + " with Centroid WCSS = " + best_wcss
+             + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
 
     C = All_Centroids [(num_centroids * (best_index - 1) + 1) : (num_centroids * best_index), ];
     D =  -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
@@ -202,17 +215,19 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
     aggr_P = t(cumsum (t(P)));
     Y = rowSums (aggr_P == 0) + 1
 
-    if(is_verbose == TRUE)
+    if(is_verbose)
       print("dim C=" + nrow(C) + "x" + ncol(C) + ", dim Y=" + nrow(Y) + "x" + ncol(Y))
-    print ("DONE.");
-  }
-  else
-    stop ("No output is produced.  Try increasing the number of iterations and/or runs.");
 
+  }
+  else{
+    print ("K-means: No output is produced. Try increasing the number of iterations and/or lower eps.");
+    C = matrix(0, num_centroids,  num_records)
+    Y = matrix(-1, 1, num_records)
+  }
 }
 
 
-get_sample_maps = function (int num_records, int num_samples, int approx_sample_size)
+get_sample_maps = function (int num_records, int num_samples, int approx_sample_size, int seed)
                   return (Matrix[double] sample_maps, Matrix[double] sample_col_map, int sample_block_size)
 {
   if (approx_sample_size < num_records)
@@ -224,7 +239,7 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
 
     # Generate all samples in parallel by converting uniform random values into random
     # integer skip-ahead intervals and prefix-summing them:
-    sample_rec_ids = Rand (rows = sample_block_size, cols = num_samples, min = 0.0, max = 1.0);
+    sample_rec_ids = Rand (rows = sample_block_size, cols = num_samples, min = 0.0, max = 1.0, seed = seed);
     sample_rec_ids = round (log (sample_rec_ids) / log (1.0 - approx_sample_size / num_records) + 0.5);
     # Prob [k-1 < log(uniform)/log(1-p) < k] = p*(1-p)^(k-1) = Prob [k-1 zeros before a one]
     sample_rec_ids = cumsum (sample_rec_ids);  #  (skip to next one) --> (skip to i-th one)

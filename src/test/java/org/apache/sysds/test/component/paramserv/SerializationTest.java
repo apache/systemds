@@ -19,7 +19,13 @@
 
 package org.apache.sysds.test.component.paramserv;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
+import java.util.Collection;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,32 +35,77 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.ProgramConverter;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class SerializationTest {
+	private int _named;
 
-	@Test
-	public void serializeUnnamedListObject() {
-		MatrixObject mo1 = generateDummyMatrix(10);
-		MatrixObject mo2 = generateDummyMatrix(20);
-		IntObject io = new IntObject(30);
-		ListObject lo = new ListObject(Arrays.asList(mo1, mo2, io));
-		String serial = ProgramConverter.serializeDataObject("key", lo);
-		Object[] obj = ProgramConverter.parseDataObject(serial);
-		ListObject actualLO = (ListObject) obj[1];
-		MatrixObject actualMO1 = (MatrixObject) actualLO.slice(0);
-		MatrixObject actualMO2 = (MatrixObject) actualLO.slice(1);
-		IntObject actualIO = (IntObject) actualLO.slice(2);
-		Assert.assertArrayEquals(mo1.acquireRead().getDenseBlockValues(), actualMO1.acquireRead().getDenseBlockValues(), 0);
-		Assert.assertArrayEquals(mo2.acquireRead().getDenseBlockValues(), actualMO2.acquireRead().getDenseBlockValues(), 0);
-		Assert.assertEquals(io.getLongValue(), actualIO.getLongValue());
+	@Parameterized.Parameters
+	public static Collection<?> named() {
+		return Arrays.asList(new Object[][] {{ 0 }, { 1 }});
+	}
+
+	public SerializationTest(Integer named) {
+		this._named = named;
 	}
 
 	@Test
-	public void serializeNamedListObject() {
+	public void serializeListObject() {
 		MatrixObject mo1 = generateDummyMatrix(10);
 		MatrixObject mo2 = generateDummyMatrix(20);
 		IntObject io = new IntObject(30);
-		ListObject lo = new ListObject(Arrays.asList(mo1, mo2, io), Arrays.asList("e1", "e2", "e3"));
+		ListObject lot = new ListObject(Arrays.asList(mo2));
+		ListObject lo;
+
+		if (_named == 1)
+			 lo = new ListObject(Arrays.asList(mo1, lot, io), Arrays.asList("e1", "e2", "e3"));
+		else
+			lo = new ListObject(Arrays.asList(mo1, lot, io));
+
+		ListObject loDeserialized = null;
+
+		// serialize and back
+		try {
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
+			out.writeObject(lo);
+			out.flush();
+			byte[] loBytes = bos.toByteArray();
+
+			ByteArrayInputStream bis = new ByteArrayInputStream(loBytes);
+			ObjectInput in = new ObjectInputStream(bis);
+			loDeserialized = (ListObject) in.readObject();
+		}
+		catch(Exception e){
+			System.out.println("Error while serializing and deserializing to bytes: " + e);
+			assert(false);
+		}
+
+		MatrixObject mo1Deserialized = (MatrixObject) loDeserialized.getData(0);
+		ListObject lotDeserialized = (ListObject) loDeserialized.getData(1);
+		MatrixObject mo2Deserialized = (MatrixObject) lotDeserialized.getData(0);
+		IntObject ioDeserialized = (IntObject) loDeserialized.getData(2);
+
+		if (_named == 1)
+			Assert.assertEquals(lo.getNames(), loDeserialized.getNames());
+
+		Assert.assertArrayEquals(mo1.acquireRead().getDenseBlockValues(), mo1Deserialized.acquireRead().getDenseBlockValues(), 0);
+		Assert.assertArrayEquals(mo2.acquireRead().getDenseBlockValues(), mo2Deserialized.acquireRead().getDenseBlockValues(), 0);
+		Assert.assertEquals(io.getLongValue(), ioDeserialized.getLongValue());
+	}
+
+	@Test
+	public void serializeListObjectProgramConverter() {
+		MatrixObject mo1 = generateDummyMatrix(10);
+		MatrixObject mo2 = generateDummyMatrix(20);
+		IntObject io = new IntObject(30);
+		ListObject lo;
+		if (_named == 1)
+			lo = new ListObject(Arrays.asList(mo1, mo2, io), Arrays.asList("e1", "e2", "e3"));
+		else
+			lo = new ListObject(Arrays.asList(mo1, mo2, io));
 
 		String serial = ProgramConverter.serializeDataObject("key", lo);
 		Object[] obj = ProgramConverter.parseDataObject(serial);
@@ -62,7 +113,10 @@ public class SerializationTest {
 		MatrixObject actualMO1 = (MatrixObject) actualLO.slice(0);
 		MatrixObject actualMO2 = (MatrixObject) actualLO.slice(1);
 		IntObject actualIO = (IntObject) actualLO.slice(2);
-		Assert.assertEquals(lo.getNames(), actualLO.getNames());
+
+		if (_named == 1)
+			Assert.assertEquals(lo.getNames(), actualLO.getNames());
+
 		Assert.assertArrayEquals(mo1.acquireRead().getDenseBlockValues(), actualMO1.acquireRead().getDenseBlockValues(), 0);
 		Assert.assertArrayEquals(mo2.acquireRead().getDenseBlockValues(), actualMO2.acquireRead().getDenseBlockValues(), 0);
 		Assert.assertEquals(io.getLongValue(), actualIO.getLongValue());

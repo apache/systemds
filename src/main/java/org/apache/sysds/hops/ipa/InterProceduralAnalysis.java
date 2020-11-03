@@ -521,8 +521,8 @@ public class InterProceduralAnalysis
 		ArrayList<Hop> inputOps = fop.getInput();
 		String fkey = fop.getFunctionKey();
 		
-		for( int i=0; i<funArgNames.length; i++ )
-		{
+		//iterate over all parameters (with robustness for missing parameters)
+		for( int i=0; i<Math.min(inputOps.size(), funArgNames.length); i++ ) {
 			//create mapping between input hops and vars
 			DataIdentifier dat = fstmt.getInputParam(funArgNames[i]);
 			Hop input = inputOps.get(i);

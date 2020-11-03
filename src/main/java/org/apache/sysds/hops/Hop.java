@@ -36,6 +36,7 @@ import org.apache.sysds.lops.CSVReBlock;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.DeCompression;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.LopsException;
@@ -101,6 +102,9 @@ public abstract class Hop implements ParseInfo {
 	// indicates if the output of this hop needs to be compressed
 	// (this happens on persistent reads after reblock but before checkpoint)
 	protected boolean _requiresCompression = false;
+
+	/** Boolean specifying if decompression is required.*/
+	protected boolean _requiresDeCompression = false;
 	
 	// indicates if the output of this hop needs to be checkpointed (cached)
 	// (the default storage level for caching is not yet exposed here)
@@ -259,6 +263,10 @@ public abstract class Hop implements ParseInfo {
 	public void setRequiresCompression(boolean flag) {
 		_requiresCompression = flag;
 	}
+
+	public void setRequiresDeCompression(boolean flag){
+		_requiresDeCompression = flag;
+	}
 	
 	public boolean requiresCompression() {
 		return _requiresCompression;
@@ -401,6 +409,18 @@ public abstract class Hop implements ParseInfo {
 				setLops( compress );
 			}
 			catch( LopsException ex ) {
+				throw new HopsException(ex);
+			}
+		}
+
+		if( _requiresDeCompression ){
+			try{
+				Lop decompress = new DeCompression(getLops(), getDataType(), getValueType(), et);
+				setOutputDimensions(decompress);
+				setLineNumbers(decompress);
+				setLops(decompress);
+			}
+			catch(LopsException ex){
 				throw new HopsException(ex);
 			}
 		}
@@ -736,6 +756,10 @@ public abstract class Hop implements ParseInfo {
 
 	public ArrayList<Hop> getInput() {
 		return _input;
+	}
+	
+	public Hop getInput(int ix) {
+		return _input.get(ix);
 	}
 	
 	public void addInput( Hop h ) {

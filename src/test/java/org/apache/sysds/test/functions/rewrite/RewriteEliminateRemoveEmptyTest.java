@@ -170,7 +170,7 @@ public class RewriteEliminateRemoveEmptyTest extends AutomatedTestBase
 		runTest(true, false, null, -1); 
 		
 		//compare NNZ
-		double ret1 = readDMLMatrixFromHDFS("B").get(new CellIndex(1,1));
+		double ret1 = readDMLMatrixFromOutputDir("B").get(new CellIndex(1,1));
 		TestUtils.compareScalars(ret1, nnz, 1e-10); 
 	}
 
@@ -182,7 +182,7 @@ public class RewriteEliminateRemoveEmptyTest extends AutomatedTestBase
 		runTest(true, false, null, -1);
 		
 		//compare scalar
-		double s = readDMLScalarFromHDFS("s").get(new CellIndex(1, 1));
+		double s = readDMLScalarFromOutputDir("s").get(new CellIndex(1, 1));
 		TestUtils.compareScalars(s,sum[0][0],1e-10);
 	}
 

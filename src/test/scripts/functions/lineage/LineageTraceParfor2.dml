@@ -28,5 +28,5 @@ parfor(i in 1:ncol(X), check=0, opt=None, mode=REMOTE_SPARK) {
   R[,i] = rowSums(Xi)+colSums(Xi);
 }
 
-print(lineage(R));
+#print(lineage(R));
 write(R, $1);

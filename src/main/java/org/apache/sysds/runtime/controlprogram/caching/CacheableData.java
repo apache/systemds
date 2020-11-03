@@ -19,6 +19,13 @@
 
 package org.apache.sysds.runtime.controlprogram.caching;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.ref.SoftReference;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,12 +44,14 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -50,13 +59,6 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.utils.Statistics;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.ref.SoftReference;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -83,9 +85,20 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO;
 	public static final boolean CACHING_BUFFER_PAGECACHE = false;
 	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;
-	public static final String  CACHING_COUNTER_GROUP_NAME    = "SystemDS Caching Counters";
+	public static final String  CACHING_COUNTER_GROUP_NAME = "SystemDS Caching Counters";
 	public static final String  CACHING_EVICTION_FILEEXTENSION = ".dat";
 	public static final boolean CACHING_ASYNC_FILECLEANUP = true;
+	public static final boolean CACHING_ASYNC_SERIALIZE = false;
+	
+	//NOTE CACHING_ASYNC_SERIALIZE:
+	// The serialization of matrices and frames (ultra-sparse matrices or 
+	// frames with strings) into buffer pool byte arrays happens outside the 
+	// critical region of the global lock in LazyWriteBuffer. However, it still
+	// requires thread-local serialization (before returning from release) in 
+	// order to guarantee that not too many objects are pinned at the same time 
+	// which would violate the memory budget. Therefore, the new asynchronous 
+	// serialization (see CACHING_ASYNC_SERIALIZE) should be understood as
+	// optimistic with weaker guarantees.
 	
 	/**
 	 * Defines all possible cache status types for a data blob.
@@ -333,6 +346,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @return true if federated else false
 	 */
 	public boolean isFederated() {
+		if(_fedMapping == null && _metaData instanceof MetaDataFormat){
+			MetaDataFormat mdf = (MetaDataFormat) _metaData;
+			if(mdf.getFileFormat() == FileFormat.FEDERATED){
+				InitFEDInstruction.federateMatrix(this, ReaderWriterFederated.read(_hdfsFileName, mdf.getDataCharacteristics()));
+				return true;
+			}
+		}
 		return _fedMapping != null;
 	}
 	
@@ -448,7 +468,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private synchronized T acquireReadIntern() {
 		if ( !isAvailableToRead() )
 			throw new DMLRuntimeException("MatrixObject not available to read.");
-		
+
 		//get object from cache
 		if( _data == null )
 			getCache();
@@ -738,7 +758,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Export data "+hashCode()+" "+fName);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
 			throw new DMLRuntimeException("MatrixObject not available to read.");
@@ -774,7 +793,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		{
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix
-			if( isEmpty(true) )
+			boolean federatedWrite = (outputFormat != null ) &&  outputFormat.contains("federated");
+
+			if( isEmpty(true) && !federatedWrite)
 			{
 				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
 				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
@@ -784,7 +805,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 						_data = readBlobFromHDFS( _hdfsFileName );
 					else if( getRDDHandle() != null )
 						_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
-					else 
+					else if(!federatedWrite)
 						_data = readBlobFromFederated( getFedMapping() );
 					
 					setDirty(false);
@@ -794,10 +815,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				}
 			}
 			//get object from cache
-			if( _data == null )
-				getCache();
-			acquire( false, _data==null ); //incl. read matrix if evicted
-			
+			if(!federatedWrite){
+
+				if(  _data == null )
+					getCache();
+				acquire( false, _data==null ); //incl. read matrix if evicted
+			}
+
 			// b) write the matrix 
 			try {
 				writeMetaData( fName, outputFormat, formatProperties );
@@ -809,7 +833,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				throw new DMLRuntimeException("Export to " + fName + " failed.", e);
 			}
 			finally {
-				release();
+				if(!federatedWrite)
+					release();
 			}
 		}
 		else if( pWrite ) // pwrite with same output format
@@ -964,6 +989,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	// Federated read
 	protected T readBlobFromFederated(FederationMap fedMap) throws IOException {
+		LOG.info("Pulling data from federated sites");
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics dc = iimd.getDataCharacteristics();
 		return readBlobFromFederated(fedMap, dc.getDims());

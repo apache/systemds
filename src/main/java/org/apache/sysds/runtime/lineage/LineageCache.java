@@ -163,6 +163,9 @@ public class LineageCache
 		for (int i=0; i<numOutputs; i++) {
 			String opcode = name + String.valueOf(i+1);
 			LineageItem li = new LineageItem(opcode, liInputs);
+			// set _distLeaf2Node for this special lineage item to 1
+			// to save it from early eviction if DAGHEIGHT policy is selected
+			li.setDistLeaf2Node(1);
 			LineageCacheEntry e = null;
 			synchronized(_cache) {
 				if (LineageCache.probe(li)) {

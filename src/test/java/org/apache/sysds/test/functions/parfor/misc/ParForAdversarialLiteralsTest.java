@@ -100,11 +100,9 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		runLiteralTest(TEST_NAME4b);
 	}
 
-	@SuppressWarnings("deprecation")
 	private void runLiteralTest( String testName )
 	{
-		String TEST_NAME = testName;
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		TestConfiguration config = getTestConfiguration(testName);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
@@ -114,22 +112,21 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		String IN = "A";
 		String OUT = (testName.equals(TEST_NAME1a)||testName.equals(TEST_NAME1b))?Lop.CP_ROOT_THREAD_ID:"B";
 
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		fullDMLScriptName = HOME + testName + ".dml";
 		programArgs = new String[]{"-args", input(IN),
 			Integer.toString(rows), Integer.toString(cols), output(OUT) };
 		
-		fullRScriptName = HOME + TEST_NAME + ".R";
+		fullRScriptName = HOME + testName + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 		
 		double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 		writeInputMatrix("A", A, false);
 
-		boolean exceptionExpected = false;
-		runTest(true, exceptionExpected, null, -1);
+		runTest(true, false, null, -1);
 		
 		//compare matrices
 		HashMap<CellIndex, Double> dmlin = TestUtils.readDMLMatrixFromHDFS(input(IN));
-		HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS(OUT); 
+		HashMap<CellIndex, Double> dmlout = readDMLMatrixFromOutputDir(OUT); 
 		
 		TestUtils.compareMatrices(dmlin, dmlout, eps, "DMLin", "DMLout");
 	}

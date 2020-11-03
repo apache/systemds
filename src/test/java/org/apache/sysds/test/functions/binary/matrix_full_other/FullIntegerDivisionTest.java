@@ -270,11 +270,11 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 		
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = null;
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("C");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("C");
 			if( dt1==DataType.SCALAR&&dt2==DataType.SCALAR )
 				dmlfile = readScalarMatrixFromHDFS("C");
 			else
-				dmlfile = readDMLMatrixFromHDFS("C");
+				dmlfile = readDMLMatrixFromOutputDir("C");
 			
 			//NaN and Infinity currently ignored because R's writeMM replaces them with 1.0E308
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R", true);

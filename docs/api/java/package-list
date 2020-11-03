@@ -24,6 +24,7 @@ org.apache.sysds.runtime.compress.cocode
 org.apache.sysds.runtime.compress.colgroup
 org.apache.sysds.runtime.compress.estim
 org.apache.sysds.runtime.compress.estim.sample
+org.apache.sysds.runtime.compress.lib
 org.apache.sysds.runtime.compress.utils
 org.apache.sysds.runtime.controlprogram
 org.apache.sysds.runtime.controlprogram.caching
@@ -55,6 +56,7 @@ org.apache.sysds.runtime.matrix.operators
 org.apache.sysds.runtime.meta
 org.apache.sysds.runtime.privacy
 org.apache.sysds.runtime.privacy.finegrained
+org.apache.sysds.runtime.privacy.propagation
 org.apache.sysds.runtime.transform
 org.apache.sysds.runtime.transform.decode
 org.apache.sysds.runtime.transform.encode

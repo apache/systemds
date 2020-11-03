@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -36,6 +38,7 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinC
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOperationCode;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
@@ -43,9 +46,19 @@ import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 
 public class FEDInstructionUtils {
+	private static final Log LOG = LogFactory.getLog(FEDInstructionUtils.class.getName());
+
 	// This is currently a rather simplistic to our solution of replacing instructions with their correct federated
 	// counterpart, since we do not propagate the information that a matrix is federated, therefore we can not decide
 	// to choose a federated instruction earlier.
+
+	/**
+	 * Check and replace CP instructions with federated instructions if the instruction match criteria.
+	 * 
+	 * @param inst The instruction to analyse
+	 * @param ec The Execution Context 
+	 * @return The potentially modified instruction
+	 */
 	public static Instruction checkAndReplaceCP(Instruction inst, ExecutionContext ec) {
 		FEDInstruction fedinst = null;
 		if (inst instanceof AggregateBinaryCPInstruction) {
@@ -74,8 +87,10 @@ public class FEDInstructionUtils {
 			AggregateUnaryCPInstruction instruction = (AggregateUnaryCPInstruction) inst;
 			if( instruction.input1.isMatrix() && ec.containsVariable(instruction.input1) ) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
-				if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
+				if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT){
+					LOG.debug("Federated UnaryAggregate");
 					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+				}
 			}
 		}
 		else if (inst instanceof BinaryCPInstruction) {
@@ -123,7 +138,6 @@ public class FEDInstructionUtils {
 					fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());
 			}
 		}
-		
 		//set thread id for federated context management
 		if( fedinst != null ) {
 			fedinst.setTID(ec.getTID());

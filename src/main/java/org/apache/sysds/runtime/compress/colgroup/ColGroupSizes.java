@@ -96,6 +96,11 @@ public class ColGroupSizes {
 		return size;
 	}
 
+	public static long estimateInMemorySizeCONST(int nrColumns, int nrValues, boolean lossy){
+		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
+		return size;
+	}
+
 	public static long estimateInMemorySizeUncompressed(int nrRows, int nrColumns, double sparsity) {
 		long size = 0;
 		// Since the Object is a col group the overhead from the Memory Size group is added
@@ -104,5 +109,4 @@ public class ColGroupSizes {
 		size += MatrixBlock.estimateSizeInMemory(nrRows, nrColumns, sparsity);
 		return size;
 	}
-
 }

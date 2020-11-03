@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.privacy;
+package org.apache.sysds.test.functions.privacy.algorithms;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -305,7 +305,7 @@ public class GLMTest extends AutomatedTestBase
 				max_abs_beta = (max_abs_beta >= Math.abs (beta[j]) ? max_abs_beta : Math.abs (beta[j]));
 			}
 
-			HashMap<CellIndex, Double> wSYSTEMDS_raw = readDMLMatrixFromHDFS ("betas_SYSTEMDS");
+			HashMap<CellIndex, Double> wSYSTEMDS_raw = readDMLMatrixFromOutputDir("betas_SYSTEMDS");
 			HashMap<CellIndex, Double> wSYSTEMDS = new HashMap<> ();
 			for (CellIndex key : wSYSTEMDS_raw.keySet())
 				if (key.column == 1)
@@ -313,7 +313,7 @@ public class GLMTest extends AutomatedTestBase
 
 			runRScript(true);
 
-			HashMap<CellIndex, Double> wR   = readRMatrixFromFS ("betas_R");
+			HashMap<CellIndex, Double> wR   = readRMatrixFromExpectedDir("betas_R");
 			
 			double eps = 0.0001;
 			if( (distParam==0 && linkType==1) ) { // Gaussian.*

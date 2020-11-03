@@ -493,6 +493,7 @@ public class Types
 		LIBSVM, // text libsvm sparse row representation
 		JSONL,  // text nested JSON (Line) representation
 		BINARY, // binary block representation (dense/sparse/ultra-sparse)
+		FEDERATED, // A federated matrix
 		PROTO;  // protocol buffer representation
 		
 		public boolean isIJVFormat() {

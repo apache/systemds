@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.utils;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -28,6 +30,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * LibMatrixMult, these calls are simply forwarded to ensure consistency in performance and result correctness.
  */
 public class LinearAlgebraUtils {
+	protected static final Log LOG = LogFactory.getLog(LinearAlgebraUtils.class.getName());
 	// forwarded calls to LibMatrixMult
 
 	public static double dotProduct(double[] a, double[] b, final int len) {
@@ -82,6 +85,27 @@ public class LinearAlgebraUtils {
 
 	}
 
+	public static void vectListAdd(final double[] values, double[] c, char[] bix, final int rl, final int ru,
+		final int off) {
+		final int bn = (ru - rl) % 8;
+
+		// rest, not aligned to 8-blocks
+		for(int j = rl; j < rl + bn; j++)
+			c[j + off] += values[bix[j]];
+
+		// unrolled 8-block (for better instruction-level parallelism)
+		for(int j = rl + bn; j < ru; j += 8) {
+			c[j + 0 + off] += values[bix[j + 0]];
+			c[j + 1 + off] += values[bix[j + 1]];
+			c[j + 2 + off] += values[bix[j + 2]];
+			c[j + 3 + off] += values[bix[j + 3]];
+			c[j + 4 + off] += values[bix[j + 4]];
+			c[j + 5 + off] += values[bix[j + 5]];
+			c[j + 6 + off] += values[bix[j + 6]];
+			c[j + 7 + off] += values[bix[j + 7]];
+		}
+	}
+
 	public static void vectListAdd(final double[] values, double[] c, char[] bix, final int rl, final int ru) {
 		final int bn = (ru - rl) % 8;
 
@@ -99,6 +123,70 @@ public class LinearAlgebraUtils {
 			c[j + 5] += values[bix[j + 5]];
 			c[j + 6] += values[bix[j + 6]];
 			c[j + 7] += values[bix[j + 7]];
+		}
+	}
+
+	public static void vectListAdd(final double[] values, double[] c, byte[] bix, final int rl, final int ru,
+		final int off) {
+		final int bn = (ru - rl) % 8;
+
+		// rest, not aligned to 8-blocks
+		for(int j = rl; j < rl + bn; j++)
+			c[j + off] += values[bix[j] & 0xFF];
+
+		// unrolled 8-block (for better instruction-level parallelism)
+		for(int j = rl + bn; j < ru; j += 8) {
+			c[j + 0 + off] += values[bix[j + 0] & 0xFF];
+			c[j + 1 + off] += values[bix[j + 1] & 0xFF];
+			c[j + 2 + off] += values[bix[j + 2] & 0xFF];
+			c[j + 3 + off] += values[bix[j + 3] & 0xFF];
+			c[j + 4 + off] += values[bix[j + 4] & 0xFF];
+			c[j + 5 + off] += values[bix[j + 5] & 0xFF];
+			c[j + 6 + off] += values[bix[j + 6] & 0xFF];
+			c[j + 7 + off] += values[bix[j + 7] & 0xFF];
+		}
+	}
+
+	public static void vectListAddDDC(final double[] values, double[] c, byte[] bix, final int rl, final int ru,
+		final int cl, final int cu, final int cut, final int numVals) {
+
+		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
+			int rowIdx = (bix[j] & 0xFF);
+			if(rowIdx < numVals)
+				for(int k = cl, h = rowIdx * (cu - cl); k < cu; k++, h++) {
+					// LOG.error((off + k) + " \t" + h);
+					c[off + k] += values[h];
+				}
+		}
+	}
+
+	public static void vectListAddDDC(final double[] values, double[] c, char[] bix, final int rl, final int ru,
+		final int cl, final int cu, final int cut, final int numVals) {
+		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
+			int rowIdx = bix[j];
+			if(rowIdx < numVals)
+				for(int k = cl, h = rowIdx * (cu - cl); k < cu; k++, h++)
+					c[off + k] += values[h];
+		}
+	}
+
+	/**
+	 * Adds the values list into all rows of c within row and col range.
+	 * 
+	 * @param values The values to Add
+	 * @param c      The double array to add into
+	 * @param rl     The row lower index
+	 * @param ru     The row upper index
+	 * @param cl     The column lower index
+	 * @param cu     The column upper index
+	 * @param cut    The total number of columns in c.
+	 * @param valOff The offset into the values list to start reading from.
+	 */
+	public static void vectListAdd(final double[] values, double[] c, final int rl, final int ru, final int cl,
+		final int cu, final int cut, final int valOff) {
+		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
+			for(int k = cl, h = valOff; k < cu; k++, h++)
+				c[off + k] += values[h];
 		}
 	}
 
@@ -183,8 +271,17 @@ public class LinearAlgebraUtils {
 		double[] a = tmp.getDenseBlockValues();
 		DenseBlock c = ret.getDenseBlock();
 		for(int i = 0; i < tmp.getNumColumns(); i++)
-			if(a[i] != 0)
-				c.set((ix < i) ? ix : i, (ix < i) ? i : ix, a[i]);
+			if(a[i] != 0) {
+				int row = (ix < i) ? ix : i;
+				int col = (ix < i) ? i : ix;
+				// if(row == col) {
+					c.set(row, col, a[i]);
+				// }
+				// else {
+					// double v = c.get(row, col);
+					// c.set(row, col, a[i] + v);
+				// }
+			}
 	}
 
 	/**

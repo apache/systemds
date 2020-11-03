@@ -56,10 +56,13 @@ import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
+import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -67,6 +70,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
+import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.ParameterBuilder;
@@ -90,7 +94,6 @@ import org.junit.Before;
  * </ul>
  *
  */
-@SuppressWarnings("deprecation")
 public abstract class AutomatedTestBase {
 
 	private static final Log LOG = LogFactory.getLog(AutomatedTestBase.class.getName());
@@ -200,9 +203,10 @@ public abstract class AutomatedTestBase {
 	private boolean isOutAndExpectedDeletionDisabled = false;
 
 	private static boolean outputBuffering = false;
-	
+
 	static {
-		java.io.InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("my.properties");
+		java.io.InputStream inputStream = Thread.currentThread().getContextClassLoader()
+			.getResourceAsStream("my.properties");
 		java.util.Properties properties = new Properties();
 		try {
 			properties.load(inputStream);
@@ -211,8 +215,10 @@ public abstract class AutomatedTestBase {
 			e.printStackTrace();
 		}
 		outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
-		TEST_GPU = Boolean.parseBoolean(properties.getProperty("enableGPU"));
-		VERBOSE_STATS = Boolean.parseBoolean(properties.getProperty("enableStats"));
+		boolean gpu = Boolean.parseBoolean(properties.getProperty("enableGPU"));
+		TEST_GPU = TEST_GPU || gpu;
+		boolean stats = Boolean.parseBoolean(properties.getProperty("enableStats"));
+		VERBOSE_STATS = VERBOSE_STATS || stats;
 	}
 
 	// Timestamp before test start.
@@ -336,7 +342,7 @@ public abstract class AutomatedTestBase {
 	protected File getCodegenConfigFile(String parent, CodegenTestType type) {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
 		File tmp = new File(parent, type.getCodgenConfig());
-		if( LOG.isInfoEnabled() )
+		if(LOG.isInfoEnabled())
 			LOG.info("This test case overrides default configuration with " + tmp.getPath());
 		return tmp;
 	}
@@ -378,6 +384,25 @@ public abstract class AutomatedTestBase {
 	 */
 	protected double[][] getRandomMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
 		return TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed);
+	}
+
+	/**
+	 * <p>
+	 * Generates a random matrix with the specified characteristics and returns it as a two dimensional array.
+	 * </p>
+	 *
+	 * @param rows     number of rows
+	 * @param cols     number of columns
+	 * @param min      minimum value
+	 * @param max      maximum value
+	 * @param sparsity sparsity
+	 * @param seed     seed
+	 * @param delta    The minimum value in between values.
+	 * @return two dimensional array containing random matrix
+	 */
+	protected double[][] getRandomMatrix(int rows, int cols, double min, double max, double sparsity, long seed,
+		double delta) {
+		return TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed, delta);
 	}
 
 	/**
@@ -529,6 +554,34 @@ public abstract class AutomatedTestBase {
 		}
 
 		return matrix;
+	}
+
+	protected void writeInputFederatedWithMTD(String name, MatrixObject fm, PrivacyConstraint privacyConstraint){
+		writeFederatedInputMatrix(name, fm.getFedMapping());
+		MatrixCharacteristics mc = (MatrixCharacteristics)fm.getDataCharacteristics();
+		try {
+			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.FEDERATED, privacyConstraint);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+
+	}
+
+	protected void writeFederatedInputMatrix(String name, FederationMap fedMap){
+		String completePath = baseDirectory + INPUT_DIR + name;
+		try {
+			cleanupExistingData(baseDirectory + INPUT_DIR + name, false);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+
+		ReaderWriterFederated.write(completePath, fedMap);
+		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 	}
 
 	/**
@@ -690,17 +743,17 @@ public abstract class AutomatedTestBase {
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
 
-	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
+	protected static HashMap<CellIndex, Double> readDMLMatrixFromOutputDir(String fileName) {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
-	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
-		if( LOG.isInfoEnabled() )
+	public HashMap<CellIndex, Double> readRMatrixFromExpectedDir(String fileName) {
+		if(LOG.isInfoEnabled())
 			LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
-	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
+	protected static HashMap<CellIndex, Double> readDMLScalarFromOutputDir(String fileName) {
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
@@ -742,8 +795,8 @@ public abstract class AutomatedTestBase {
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
-	public HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
-		if( LOG.isInfoEnabled() )
+	public HashMap<CellIndex, Double> readRScalarFromExpectedDir(String fileName) {
+		if(LOG.isInfoEnabled())
 			LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
@@ -775,22 +828,56 @@ public abstract class AutomatedTestBase {
 		return new DataExpression().readMetadataFile(fname, false);
 	}
 
+	/**
+	 * Returns the privacy constraint as read from metadata file.
+	 * @param fileName name of file
+	 * @return loaded privacy constraint
+	 * @throws DMLRuntimeException in case of problems with reading the metadata file
+	 */
+	public static PrivacyConstraint getPrivacyConstraintFromMetaData(String fileName, String dir) throws DMLRuntimeException {
+		PrivacyConstraint outputPrivacyConstraint = new PrivacyConstraint();
+		try {
+			JSONObject metadata = getMetaDataJSON(fileName, dir);
+			if ( metadata != null ){
+				if ( metadata.containsKey(DataExpression.PRIVACY) ){
+					PrivacyLevel readPrivacyLevel = PrivacyLevel.valueOf(metadata.get(DataExpression.PRIVACY).toString());
+					outputPrivacyConstraint.setPrivacyLevel(readPrivacyLevel);
+				} else {
+					outputPrivacyConstraint.setPrivacyLevel(PrivacyLevel.None);
+				}
+				if ( metadata.containsKey(DataExpression.FINE_GRAINED_PRIVACY)){
+					JSONObject fineGrainedJSON = (JSONObject) metadata.get(DataExpression.FINE_GRAINED_PRIVACY);
+					PrivacyUtils.putFineGrainedConstraintsFromString(outputPrivacyConstraint.getFineGrainedPrivacy(), fineGrainedJSON.toString());
+				}
+			}
+		} catch (JSONException e){
+			throw new DMLRuntimeException("Exception when reading from meta data file", e);
+		}
+		return outputPrivacyConstraint;
+	}
+
+	public static PrivacyConstraint getPrivacyConstraintFromMetaData(String fileName) throws DMLRuntimeException {
+		return getPrivacyConstraintFromMetaData(fileName, OUTPUT_DIR);
+	}
+
 	public static String readDMLMetaDataValue(String fileName, String outputDir, String key) throws JSONException {
 		JSONObject meta = getMetaDataJSON(fileName, outputDir);
 		return meta.get(key).toString();
 	}
 
 	/**
-	 * Call readDMLMetaDataValue but fail test in case of JSONException or NullPointerException. 
-	 * @param fileName of metadata file
+	 * Call readDMLMetaDataValue but fail test in case of JSONException or NullPointerException.
+	 * 
+	 * @param fileName  of metadata file
 	 * @param outputDir directory of metadata file
-	 * @param key key to find in metadata
+	 * @param key       key to find in metadata
 	 * @return value retrieved from metadata for the given key
 	 */
-	public static String readDMLMetaDataValueCatchException(String fileName, String outputDir, String key){
+	public static String readDMLMetaDataValueCatchException(String fileName, String outputDir, String key) {
 		try {
 			return readDMLMetaDataValue(fileName, outputDir, key);
-		} catch (JSONException | NullPointerException e){
+		}
+		catch(JSONException | NullPointerException e) {
 			fail("Privacy constraint not written to output metadata file:\n" + e);
 			return null;
 		}
@@ -893,7 +980,7 @@ public abstract class AutomatedTestBase {
 
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 
-			if( LOG.isDebugEnabled() )
+			if(LOG.isDebugEnabled())
 				LOG.debug("This test case will use SystemDS config file %s\n" + getCurConfigFile());
 		}
 		catch(IOException e) {
@@ -909,25 +996,6 @@ public abstract class AutomatedTestBase {
 	}
 
 	/**
-	 * <p>
-	 * Loads a test configuration with its parameters. Adds the output directories to the output list as well as to the
-	 * list of possible comparison files.
-	 * </p>
-	 *
-	 * @param configurationName test configuration name
-	 *
-	 */
-	@Deprecated
-	protected void loadTestConfiguration(String configurationName) {
-		if(!availableTestConfigurations.containsKey(configurationName))
-			fail("test configuration not available: " + configurationName);
-
-		TestConfiguration config = availableTestConfigurations.get(configurationName);
-
-		loadTestConfiguration(config);
-	}
-
-	/**
 	 * Runs an R script, default to the old way
 	 */
 	protected void runRScript() {
@@ -940,7 +1008,8 @@ public abstract class AutomatedTestBase {
 	 */
 	protected void runRScript(boolean newWay) {
 
-		String executionFile = sourceDirectory + selectedTest + ".R";;
+		String executionFile = sourceDirectory + selectedTest + ".R";
+		;
 		if(fullRScriptName != null)
 			executionFile = fullRScriptName;
 
@@ -994,7 +1063,7 @@ public abstract class AutomatedTestBase {
 			if(outputFiles != null && outputFiles.length > 0) {
 				expectedFile = new File(expectedDir.getPath() + "/" + outputFiles[0]);
 				if(expectedFile.canRead()) {
-					if( LOG.isInfoEnabled() )
+					if(LOG.isInfoEnabled())
 						LOG.info("Skipping R script cmd: " + cmd);
 					return;
 				}
@@ -1005,7 +1074,7 @@ public abstract class AutomatedTestBase {
 		String errorString;
 		try {
 			long t0 = System.nanoTime();
-			if( LOG.isInfoEnabled() ) {
+			if(LOG.isInfoEnabled()) {
 				LOG.info("starting R script");
 				LOG.debug("R cmd: " + cmd);
 			}
@@ -1013,11 +1082,11 @@ public abstract class AutomatedTestBase {
 
 			outputR = IOUtils.toString(child.getInputStream());
 			errorString = IOUtils.toString(child.getErrorStream());
-			if( LOG.isTraceEnabled() ) {
+			if(LOG.isTraceEnabled()) {
 				LOG.trace("Standard Output from R:" + outputR);
 				LOG.trace("Standard Error from R:" + errorString);
 			}
-			
+
 			//
 			// To give any stream enough time to print all data, otherwise there
 			// are situations where the test case fails, even before everything
@@ -1173,6 +1242,14 @@ public abstract class AutomatedTestBase {
 	protected ByteArrayOutputStream runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException,
 		String errMessage, int maxSparkInst) {
 
+		String name = "";
+		final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
+		for(int i = 0; i < ste.length; i++) {
+			if(ste[i].getMethodName().equalsIgnoreCase("invoke0"))
+				name = ste[i - 1].getClassName() + "." + ste[i - 1].getMethodName();
+		}
+		LOG.info("Test method name: " + name);
+
 		String executionFile = sourceDirectory + selectedTest + ".dml";
 
 		if(!newWay) {
@@ -1216,15 +1293,15 @@ public abstract class AutomatedTestBase {
 				TestUtils.printDMLScript(fullDMLScriptName);
 			}
 		}
-		
+
 		ByteArrayOutputStream buff = outputBuffering ? new ByteArrayOutputStream() : null;
 		PrintStream old = System.out;
 		if(outputBuffering)
 			System.setOut(new PrintStream(buff));
-		
+
 		try {
 			String[] dmlScriptArgs = args.toArray(new String[args.size()]);
-			if( LOG.isTraceEnabled() )
+			if(LOG.isTraceEnabled())
 				LOG.trace("arguments to DMLScript: " + Arrays.toString(dmlScriptArgs));
 			main(dmlScriptArgs);
 
@@ -1236,7 +1313,7 @@ public abstract class AutomatedTestBase {
 				fail("expected exception which has not been raised: " + expectedException);
 		}
 		catch(Exception | Error e) {
-			if( !outputBuffering )
+			if(!outputBuffering)
 				e.printStackTrace();
 			if(errMessage != null && !errMessage.equals("")) {
 				boolean result = rCompareException(exceptionExpected, errMessage, e, false);
@@ -1248,7 +1325,7 @@ public abstract class AutomatedTestBase {
 				StringBuilder errorMessage = new StringBuilder();
 				errorMessage.append("\nfailed to run script: " + executionFile);
 				errorMessage.append("\nStandard Out:");
-				if( outputBuffering )
+				if(outputBuffering)
 					errorMessage.append("\n" + buff);
 				errorMessage.append("\nStackTrace:");
 				errorMessage.append(getStackTraceString(e, 0));
@@ -1267,9 +1344,7 @@ public abstract class AutomatedTestBase {
 	 * @param args command-line arguments
 	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
 	 */
-	public static void main(String[] args)
-			throws IOException, ParseException, DMLScriptException
-	{
+	public static void main(String[] args) throws IOException, ParseException, DMLScriptException {
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		DMLScript.executeScript(conf, otherArgs);
@@ -1317,31 +1392,30 @@ public abstract class AutomatedTestBase {
 	 * @param port Port to use for the JVM
 	 * @return the process associated with the worker.
 	 */
+	@Deprecated
 	protected Process startLocalFedWorker(int port) {
 		Process process = null;
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
-		String path = System.getProperty("java.home")
-					+ separator + "bin" + separator + "java";
-		ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", 
-				classpath, DMLScript.class.getName(), "-w",  Integer.toString(port), "-stats");
+		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
+		ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", classpath, DMLScript.class.getName(), "-w",
+			Integer.toString(port), "-stats");
 
-		try{
+		try {
 			process = processBuilder.start();
 			// Give some time to startup the worker.
 			sleep(FED_WORKER_WAIT);
-		} catch (IOException | InterruptedException e){
+		}
+		catch(IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 		return process;
 	}
 
 	/**
-	 * Start a thread for a worker. This will share the same JVM,
-	 * so all static variables will be shared.!
+	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
 	 * 
-	 * Also when using the local Fed Worker thread the statistics printing, 
-	 * and clearing from the worker is disabled.
+	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
 	 * 
 	 * @param port Port to use
 	 * @return the thread associated with the worker.
@@ -1379,12 +1453,13 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Start java worker in same JVM.
+	 * 
 	 * @param args the command line arguments
 	 * @return the thread associated with the process.s
 	 */
 	public static Thread startLocalFedWorkerWithArgs(String[] args) {
 		Thread t = null;
-		
+
 		try {
 			t = new Thread(() -> {
 				try {
@@ -1620,14 +1695,15 @@ public abstract class AutomatedTestBase {
 	public void tearDown() {
 		LOG.trace("Duration: " + (System.currentTimeMillis() - lTimeBeforeTest) + "ms");
 
-//		assertTrue("expected String did not occur: " + expectedStdOut,
-//			iExpectedStdOutState == 0 || iExpectedStdOutState == 2);
-//		assertTrue("expected String did not occur (stderr): " + expectedStdErr,
-//			iExpectedStdErrState == 0 || iExpectedStdErrState == 2);
-//		assertFalse("unexpected String occurred: " + unexpectedStdOut, iUnexpectedStdOutState == 1);
+		// assertTrue("expected String did not occur: " + expectedStdOut,
+		// iExpectedStdOutState == 0 || iExpectedStdOutState == 2);
+		// assertTrue("expected String did not occur (stderr): " + expectedStdErr,
+		// iExpectedStdErrState == 0 || iExpectedStdErrState == 2);
+		// assertFalse("unexpected String occurred: " + unexpectedStdOut, iUnexpectedStdOutState == 1);
 		TestUtils.displayAssertionBuffer();
 
 		if(!isOutAndExpectedDeletionDisabled()) {
+
 			TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));
 			TestUtils.removeFiles(inputRFiles.toArray(new String[inputRFiles.size()]));
 
@@ -1645,7 +1721,7 @@ public abstract class AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 	}
 
-	public boolean bufferContainsString(ByteArrayOutputStream buffer, String str){
+	public boolean bufferContainsString(ByteArrayOutputStream buffer, String str) {
 		return Arrays.stream(buffer.toString().split("\n")).anyMatch(x -> x.contains(str));
 	}
 

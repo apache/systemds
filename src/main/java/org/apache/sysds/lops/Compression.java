@@ -23,19 +23,17 @@ import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 
-public class Compression extends Lop 
-{
+public class Compression extends Lop {
 	public static final String OPCODE = "compress";
-	
+
 	public enum CompressConfig {
-		TRUE,
-		FALSE,
-		AUTO;
+		TRUE, FALSE, COST, AUTO;
+
 		public boolean isEnabled() {
-			return this == TRUE || this == AUTO;
+			return this != FALSE;
 		}
 	}
-	
+
 	public Compression(Lop input, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.Checkpoint, dt, vt);
 		addInput(input);
@@ -47,17 +45,17 @@ public class Compression extends Lop
 	public String toString() {
 		return "Compress";
 	}
-	
+
 	@Override
 	public String getInstructions(String input1, String output) {
 		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output));
+		sb.append(getExecType());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(OPCODE);
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(getInputs().get(0).prepInputOperand(input1));
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(prepOutputOperand(output));
 		return sb.toString();
 	}
 }

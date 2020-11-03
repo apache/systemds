@@ -33,6 +33,7 @@ public class LineageItem {
 	private final String _data;
 	private final LineageItem[] _inputs;
 	private int _hash = 0;
+	private long _distLeaf2Node;
 	// init visited to true to ensure visited items are
 	// not hidden when used as inputs to new items
 	private boolean _visited = true;
@@ -84,6 +85,8 @@ public class LineageItem {
 		// materialize hash on construction 
 		// (constant time operation if input hashes constructed)
 		_hash = hashCode();
+		// store the distance of this node from the leaves. (O(#inputs)) operation
+		_distLeaf2Node = distLeaf2Node();
 	}
 	
 	public LineageItem[] getInputs() {
@@ -111,12 +114,39 @@ public class LineageItem {
 		_visited = flag;
 	}
 	
+	private long distLeaf2Node() {
+		// Derive height only if the corresponding reuse
+		// policy is selected, otherwise set -1.
+		if (LineageCacheConfig.ReuseCacheType.isNone()
+			|| !LineageCacheConfig.isDagHeightBased())
+			return -1;
+
+		if (_inputs != null && _inputs.length > 0) {
+			// find the input with highest height
+			long maxDistance = _inputs[0].getDistLeaf2Node();
+			for (int i=1; i<_inputs.length; i++)
+				if (_inputs[i].getDistLeaf2Node() > maxDistance)
+					maxDistance = _inputs[i].getDistLeaf2Node();
+			return maxDistance + 1;
+		}
+		else
+			return 1;  //leaf node
+	}
+	
 	public long getId() {
 		return _id;
 	}
 	
 	public String getOpcode() {
 		return _opcode;
+	}
+	
+	public void setDistLeaf2Node(long d) {
+		_distLeaf2Node = d;
+	}
+	
+	public long getDistLeaf2Node() {
+		return _distLeaf2Node;
 	}
 	
 	public LineageItemType getType() {

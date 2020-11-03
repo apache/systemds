@@ -158,8 +158,8 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 		runRScript(true); 
 		
 		//compare matrices 
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("stats");
-		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("stats");
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("stats");
+		HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("stats");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 	}
 }

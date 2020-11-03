@@ -141,10 +141,10 @@ public class AlgorithmPNMF extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlW = readDMLMatrixFromHDFS("W");
-			HashMap<CellIndex, Double> dmlH = readDMLMatrixFromHDFS("H");
-			HashMap<CellIndex, Double> rW = readRMatrixFromFS("W");
-			HashMap<CellIndex, Double> rH = readRMatrixFromFS("H");
+			HashMap<CellIndex, Double> dmlW = readDMLMatrixFromOutputDir("W");
+			HashMap<CellIndex, Double> dmlH = readDMLMatrixFromOutputDir("H");
+			HashMap<CellIndex, Double> rW = readRMatrixFromExpectedDir("W");
+			HashMap<CellIndex, Double> rH = readRMatrixFromExpectedDir("H");
 			TestUtils.compareMatrices(dmlW, rW, eps, "Stat-DML", "Stat-R");
 			TestUtils.compareMatrices(dmlH, rH, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));

@@ -74,8 +74,8 @@ public class BuiltinDBSCANTest extends AutomatedTestBase
 			runRScript(true);
 
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
 
 			//map cluster ids
 			//NOTE: border points that are reachable from more than 1 cluster

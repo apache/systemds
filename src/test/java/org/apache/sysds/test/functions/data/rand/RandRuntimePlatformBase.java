@@ -164,8 +164,8 @@ public abstract class RandRuntimePlatformBase extends AutomatedTestBase
 			}
 		
 			//compare matrices
-			HashMap<CellIndex, Double> cpfile = readDMLMatrixFromHDFS("A_CP");
-			HashMap<CellIndex, Double> spfile = readDMLMatrixFromHDFS("A_SPARK");
+			HashMap<CellIndex, Double> cpfile = readDMLMatrixFromOutputDir("A_CP");
+			HashMap<CellIndex, Double> spfile = readDMLMatrixFromOutputDir("A_SPARK");
 			TestUtils.compareMatrices(spfile, cpfile, eps, "SPFile", "CPFile");
 		}
 		finally {

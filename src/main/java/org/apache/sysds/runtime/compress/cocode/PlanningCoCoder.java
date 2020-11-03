@@ -41,7 +41,7 @@ public class PlanningCoCoder {
 	private static final Log LOG = LogFactory.getLog(PlanningCoCoder.class.getName());
 
 	public enum PartitionerType {
-		BIN_PACKING, STATIC,
+		BIN_PACKING, STATIC, COST,
 	}
 
 	/**
@@ -69,15 +69,19 @@ public class PlanningCoCoder {
 		HashMap<Integer, GroupableColInfo> groupColsInfo = new HashMap<>();
 		for(int i = 0; i < numCols; i++) {
 			int colIx = cols.get(i);
-			double cardinality = colGroups[colIx].getEstCard();
-			double weight = cardinality / numRows;
+			int cardinality = colGroups[colIx].getEstCard();
+			double weight = ((double)cardinality) / numRows;
 			groupCols.add(colIx);
-			groupColsInfo.put(colIx, new GroupableColInfo(weight, colGroups[colIx].getMinSize()));
+			groupColsInfo.put(colIx, new GroupableColInfo(weight, colGroups[colIx].getMinSize(), cardinality));
 		}
 
 		// use column group partitioner to create partitions of columns
 		List<int[]> bins = createColumnGroupPartitioner(cs.columnPartitioner)
 			.partitionColumns(groupCols, groupColsInfo, cs);
+		
+		if (cs.columnPartitioner == PartitionerType.COST){
+			return bins;
+		}
 
 		// brute force grouping within each partition
 		return (k > 1) ? getCocodingGroupsBruteForce(bins,
@@ -210,6 +214,8 @@ public class PlanningCoCoder {
 			case STATIC:
 				return new ColumnGroupPartitionerStatic();
 
+			case COST:
+				return new ColumnGroupPartitionerCost();
 			default:
 				throw new RuntimeException("Unsupported column group partitioner: " + type.toString());
 		}
@@ -218,10 +224,12 @@ public class PlanningCoCoder {
 	public static class GroupableColInfo {
 		public final double cardRatio;
 		public final long size;
+		public final int nrDistinct;
 
-		public GroupableColInfo(double lcardRatio, long lsize) {
+		public GroupableColInfo(double lcardRatio, long lsize, int cardinality) {
 			cardRatio = lcardRatio;
 			size = lsize;
+			nrDistinct = cardinality;
 		}
 	}
 

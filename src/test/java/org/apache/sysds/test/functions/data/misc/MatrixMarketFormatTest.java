@@ -229,10 +229,10 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare row and column aggregates
-			TestUtils.compareMatrices(readDMLMatrixFromHDFS("R"),
-				readRMatrixFromFS("R"), 1e-10, "Stat-DML", "Stat-R");
-			TestUtils.compareMatrices(readDMLMatrixFromHDFS("C"),
-				readRMatrixFromFS("C"), 1e-10, "Stat-DML", "Stat-R");
+			TestUtils.compareMatrices(readDMLMatrixFromOutputDir("R"),
+				readRMatrixFromExpectedDir("R"), 1e-10, "Stat-DML", "Stat-R");
+			TestUtils.compareMatrices(readDMLMatrixFromOutputDir("C"),
+				readRMatrixFromExpectedDir("C"), 1e-10, "Stat-DML", "Stat-R");
 		}
 		catch (IOException e) {
 			throw new RuntimeException(e);

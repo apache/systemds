@@ -19,10 +19,14 @@
 
 package org.apache.sysds.runtime.compress;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 
 /** Base class for all column selection readers. */
 public abstract class ReaderColumnSelection {
+
+	protected static final Log LOG = LogFactory.getLog(ReaderColumnSelection.class.getName());
 	protected int[] _colIndexes = null;
 	protected int _numRows = -1;
 	protected int _lastRow = -1;

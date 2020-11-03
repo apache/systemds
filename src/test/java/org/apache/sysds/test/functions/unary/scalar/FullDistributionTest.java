@@ -197,8 +197,8 @@ public class FullDistributionTest extends AutomatedTestBase
 			runRScript(true); 
 			
 			//compare results
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("dfout");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("dfout");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("dfout");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("dfout");
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-8, "DMLout", "Rout");
 		}
 		finally {

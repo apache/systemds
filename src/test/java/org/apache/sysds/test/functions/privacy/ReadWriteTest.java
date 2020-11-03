@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacyList;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.wink.json4j.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class ReadWriteTest extends AutomatedTestBase {
@@ -88,19 +89,56 @@ public class ReadWriteTest extends AutomatedTestBase {
 		assertTrue(metadata.containsKey("fine_grained_privacy"));
 	}
 
+	@Test
+	public void writeAndEqualsFineGrainedConstraintsTest(){
+		TestConfiguration config = availableTestConfigurations.get("ReadWriteTest");
+		loadTestConfiguration(config);
+
+		writeA();
+
+		JSONObject metadata = getMetaDataJSON("a", "in/");
+		assertTrue(metadata.containsKey("fine_grained_privacy"));
+
+		PrivacyConstraint expectedPC = new PrivacyConstraint();
+		setFineGrained(expectedPC);
+		PrivacyConstraint constraint = getPrivacyConstraintFromMetaData("a", "in/");
+		Assert.assertEquals(expectedPC, constraint);
+	}
+
+	@Test
+	public void writeAndEqualsFineGrainedConstraintsTest2(){
+		TestConfiguration config = availableTestConfigurations.get("ReadWriteTest");
+		loadTestConfiguration(config);
+
+		writeA();
+
+		JSONObject metadata = getMetaDataJSON("a", "in/");
+		assertTrue(metadata.containsKey("fine_grained_privacy"));
+
+		PrivacyConstraint expectedPC = new PrivacyConstraint();
+		setFineGrained(expectedPC);
+		expectedPC.getFineGrainedPrivacy().put(new DataRange(new long[]{12,6}, new long[]{15,8}), PrivacyLevel.PrivateAggregation);
+		PrivacyConstraint constraint = getPrivacyConstraintFromMetaData("a", "in/");
+		Assert.assertNotEquals(expectedPC, constraint);
+	}
+
 	private double[][] writeA(){
 		int k = 15;
 		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
 
 		PrivacyConstraint privacyConstraint = new PrivacyConstraint();
-		FineGrainedPrivacy fgp = new FineGrainedPrivacyList();
+		setFineGrained(privacyConstraint);
+		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
+		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
+		return a;
+	}
+
+	private static void setFineGrained(PrivacyConstraint privacyConstraint){
+		FineGrainedPrivacy fgp = privacyConstraint.getFineGrainedPrivacy();
 		fgp.put(new DataRange(new long[]{1,2}, new long[]{5,4}), PrivacyLevel.Private);
 		fgp.put(new DataRange(new long[]{7,1}, new long[]{9,1}), PrivacyLevel.Private);
 		fgp.put(new DataRange(new long[]{10,5}, new long[]{10,9}), PrivacyLevel.PrivateAggregation);
 		privacyConstraint.setFineGrainedPrivacyConstraints(fgp);
-		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
-		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
-		return a;
 	}
 
 	@Test

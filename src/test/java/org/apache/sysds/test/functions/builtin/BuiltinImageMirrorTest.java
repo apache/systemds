@@ -90,13 +90,13 @@ public class BuiltinImageMirrorTest extends AutomatedTestBase
 			runRScript(true);
 
 			//compare matrices of the image mirrored on the x axis
-			HashMap<MatrixValue.CellIndex, Double> dmlfile_x = readDMLMatrixFromHDFS("Bx");
-			HashMap<MatrixValue.CellIndex, Double> rfile_x  = readRMatrixFromFS("Bx");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile_x = readDMLMatrixFromOutputDir("Bx");
+			HashMap<MatrixValue.CellIndex, Double> rfile_x  = readRMatrixFromExpectedDir("Bx");
 			TestUtils.compareMatrices(dmlfile_x, rfile_x, eps, "Stat-DML", "Stat-R");
 
 			//compare matrices of the image mirrored on the y axis
-			HashMap<MatrixValue.CellIndex, Double> dmlfile_y = readDMLMatrixFromHDFS("By");
-			HashMap<MatrixValue.CellIndex, Double> rfile_y  = readRMatrixFromFS("By");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile_y = readDMLMatrixFromOutputDir("By");
+			HashMap<MatrixValue.CellIndex, Double> rfile_y  = readRMatrixFromExpectedDir("By");
 			TestUtils.compareMatrices(dmlfile_y, rfile_y, eps, "Stat-DML", "Stat-R");
 		}
 

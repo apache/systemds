@@ -24,7 +24,7 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 from systemds.matrix import Matrix
-from systemds.operator.algorithm import kmeans
+from systemds.operator.algorithm import kmeans, kmeansPredict
 
 
 class TestKMeans(unittest.TestCase):
@@ -59,6 +59,29 @@ class TestKMeans(unittest.TestCase):
                 corners.add("nn")
         self.assertTrue(len(corners) == 4)
 
+    def test_500x2(self):
+        """
+        This test is based on statistics, that if we run kmeans, on a normal distributed dataset, centered around 0
+        and use 4 clusters then they will be located in each one corner.
+        This test uses the prediction builtin.
+        """
+        features = self.generate_matrices_for_k_means((500, 2), seed=1304)
+        [c, _] = kmeans(features, k=4).compute()
+        C = Matrix(self.sds, c)
+        elm = Matrix(self.sds, np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]]))
+        res = kmeansPredict(elm, C).compute()
+        corners = set()
+        for x in res:
+            if x == 1:
+                corners.add("pp")
+            elif x == 2:
+                corners.add("pn")
+            elif x == 3:
+                corners.add("np")
+            else:
+                corners.add("nn")
+        self.assertTrue(len(corners) == 4)
+
     def test_invalid_input_1(self):
         features = Matrix(self.sds, np.array([]))
         with self.assertRaises(ValueError) as context:
@@ -67,7 +90,7 @@ class TestKMeans(unittest.TestCase):
     def test_invalid_input_2(self):
         features = Matrix(self.sds, np.array([1]))
         with self.assertRaises(ValueError) as context:
-            kmeans(features, k=-1)
+            kmeans(features, k=-1, seed= 13142)
 
     def generate_matrices_for_k_means(self, dims: (int, int), seed: int = 1234):
         np.random.seed(seed)

@@ -59,8 +59,7 @@ public class BitmapEncoder {
 	 * @param compSettings The compression settings used for the compression.
 	 * @return uncompressed bitmap representation of the columns
 	 */
-	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock,
-		CompressionSettings compSettings) {
+	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, CompressionSettings compSettings) {
 		// note: no sparse column selection reader because low potential
 		// single column selection
 		Bitmap res = null;
@@ -156,24 +155,32 @@ public class BitmapEncoder {
 	 */
 	private static Bitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, ReaderColumnSelection rowReader) {
 		// probe map for distinct items (for value or value groups)
-		DblArrayIntListHashMap distinctVals = new DblArrayIntListHashMap();
+		DblArrayIntListHashMap distinctVals;
+		if(colIndices.length > 10) {
+			distinctVals = new DblArrayIntListHashMap(2048);
+		}
+		else {
+			distinctVals = new DblArrayIntListHashMap();
+		}
 
 		// scan rows and probe/build distinct items
 		DblArray cellVals = null;
 
 		int zero = 0;
 		while((cellVals = rowReader.nextRow()) != null) {
-			IntArrayList lstPtr = distinctVals.get(cellVals);
-			if(lstPtr == null) {
-				// create new objects only on demand
-				lstPtr = new IntArrayList();
-				distinctVals.appendValue(new DblArray(cellVals), lstPtr);
+			if(cellVals.getData() == null) {
+				zero += 1;
 			}
-			zero += DblArray.isZero(cellVals) ? 1 : 0;
-
-			lstPtr.appendValue(rowReader.getCurrentRowIndex());
+			else {
+				IntArrayList lstPtr = distinctVals.get(cellVals);
+				if(lstPtr == null) {
+					// create new objects only on demand
+					lstPtr = new IntArrayList();
+					distinctVals.appendValue(new DblArray(cellVals), lstPtr);
+				}
+				lstPtr.appendValue(rowReader.getCurrentRowIndex());
+			}
 		}
-
 		return makeBitmap(distinctVals, colIndices.length, zero);
 	}
 
@@ -197,6 +204,14 @@ public class BitmapEncoder {
 			System.arraycopy(val.key.getData(), 0, values, bitmapIx * numCols, numCols);
 			offsetsLists[bitmapIx++] = val.value;
 		}
+
+		// HACK; we make sure that the first sparse unsafe operation assume
+		// that we have entries with zero values. This makes the first sparse
+		// unsafe operation slightly slower, if the input compressed matrix is
+		// fully dense, aka containing no zero values.
+		// This is required for multi-column colGroups.
+		numZeros = (numColumns > 1) ? numZeros + 1 : numZeros;
+
 		return new Bitmap(numCols, offsetsLists, numZeros, values);
 	}
 
@@ -218,6 +233,7 @@ public class BitmapEncoder {
 			values[bitmapIx] = val.key;
 			offsetsLists[bitmapIx++] = val.value;
 		}
+
 		return new Bitmap(1, offsetsLists, numZeros, values);
 	}
 
@@ -281,12 +297,14 @@ public class BitmapEncoder {
 
 		IntArrayList[] fullSizeOffsetsLists = ubm.getOffsetList();
 		int numZeroGroups = ubm.getZeroCounts();
+		boolean somethingToMerge = false;
 
 		for(int idx = 0; idx < scaledValues.length; idx++) {
 			if(scaledValues[idx] != 0) { // Throw away zero values.
 				if(values.containsKey(scaledValues[idx])) {
 					values.get(scaledValues[idx]).add(fullSizeOffsetsLists[idx]);
 					lengths.put(scaledValues[idx], lengths.get(scaledValues[idx]) + fullSizeOffsetsLists[idx].size());
+					somethingToMerge = true;
 				}
 				else {
 					Queue<IntArrayList> offsets = new LinkedList<>();
@@ -299,23 +317,29 @@ public class BitmapEncoder {
 				numZeroGroups++;
 			}
 		}
-		byte[] scaledValuesReduced = new byte[values.keySet().size()];
-		IntArrayList[] newOffsetsLists = new IntArrayList[values.keySet().size()];
-		Iterator<Entry<Byte, Queue<IntArrayList>>> x = values.entrySet().iterator();
-		int idx = 0;
-		while(x.hasNext()) {
-			Entry<Byte, Queue<IntArrayList>> ent = x.next();
-			scaledValuesReduced[idx] = ent.getKey().byteValue();
-			Queue<IntArrayList> q = ent.getValue();
-			if(q.size() == 1) {
-				newOffsetsLists[idx] = q.remove();
+
+		if(somethingToMerge) {
+			byte[] scaledValuesReduced = new byte[values.keySet().size()];
+			IntArrayList[] newOffsetsLists = new IntArrayList[values.keySet().size()];
+			Iterator<Entry<Byte, Queue<IntArrayList>>> x = values.entrySet().iterator();
+			int idx = 0;
+			while(x.hasNext()) {
+				Entry<Byte, Queue<IntArrayList>> ent = x.next();
+				scaledValuesReduced[idx] = ent.getKey().byteValue();
+				Queue<IntArrayList> q = ent.getValue();
+				if(q.size() == 1) {
+					newOffsetsLists[idx] = q.remove();
+				}
+				else {
+					newOffsetsLists[idx] = mergeOffsets(q, new int[lengths.get(ent.getKey())]);
+				}
+				idx++;
 			}
-			else {
-				newOffsetsLists[idx] = mergeOffsets(q, new int[lengths.get(ent.getKey())]);
-			}
-			idx++;
+			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, numZeroGroups, scaledValuesReduced, scale);
 		}
-		return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, numZeroGroups, scaledValuesReduced, scale);
+		else {
+			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists, numZeroGroups, scaledValues, scale);
+		}
 	}
 
 	/**
@@ -333,6 +357,7 @@ public class BitmapEncoder {
 		IntArrayList[] fullSizeOffsetsLists = ubm.getOffsetList();
 		int numZeroGroups = ubm.getZeroCounts();
 		boolean allZero = true;
+		boolean somethingToMerge = false;
 		for(int idx = 0; idx < scaledValues.length; idx += numColumns) {
 			List<Byte> array = new ArrayList<>();
 			for(int off = 0; off < numColumns; off++) {
@@ -342,37 +367,57 @@ public class BitmapEncoder {
 
 			numZeroGroups += allZero ? 1 : 0;
 			if(!allZero) {
+				IntArrayList entry = fullSizeOffsetsLists[idx / numColumns];
 				if(values.containsKey(array)) {
-					values.get(array).add(fullSizeOffsetsLists[idx / numColumns]);
-					lengths.put(array, lengths.get(array) + fullSizeOffsetsLists[idx / numColumns].size());
+					values.get(array).add(entry);
+					lengths.put(array, lengths.get(array) + entry.size());
+					somethingToMerge = true;
 				}
 				else {
 					Queue<IntArrayList> offsets = new LinkedList<>();
-					offsets.add(fullSizeOffsetsLists[idx / numColumns]);
+					offsets.add(entry);
 					values.put(array, offsets);
-					lengths.put(array, fullSizeOffsetsLists[idx / numColumns].size());
+					lengths.put(array, entry.size());
 				}
 			}
 			allZero = true;
 		}
 
-		byte[] scaledValuesReduced = new byte[values.keySet().size() * numColumns];
-		IntArrayList[] newOffsetsLists = new IntArrayList[values.keySet().size()];
-		Iterator<Entry<List<Byte>, Queue<IntArrayList>>> x = values.entrySet().iterator();
-		int idx = 0;
-		while(x.hasNext()) {
-			Entry<List<Byte>, Queue<IntArrayList>> ent = x.next();
-			List<Byte> key = ent.getKey();
-			int row = idx * numColumns;
-			for(int off = 0; off < numColumns; off++) {
-				scaledValuesReduced[row + off] = key.get(off);
-			}
-			Queue<IntArrayList> q = ent.getValue();
-			newOffsetsLists[idx] = mergeOffsets(q, new int[lengths.get(key)]);
-			idx++;
-		}
+		// HACK; we make sure that the first sparse unsafe operation assume
+		// that we have entries with zero values. This makes the first sparse
+		// unsafe operation slightly slower, if the input compressed matrix is
+		// fully dense, aka containing no zero values.
+		// This is required for multi-column colGroups.
+		numZeroGroups = numZeroGroups + 1;
 
-		return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, numZeroGroups, scaledValuesReduced, scale);
+		if(somethingToMerge) {
+
+			byte[] scaledValuesReduced = new byte[values.keySet().size() * numColumns];
+			IntArrayList[] newOffsetsLists = new IntArrayList[values.keySet().size()];
+			Iterator<Entry<List<Byte>, Queue<IntArrayList>>> x = values.entrySet().iterator();
+			int idx = 0;
+			while(x.hasNext()) {
+				Entry<List<Byte>, Queue<IntArrayList>> ent = x.next();
+				List<Byte> key = ent.getKey();
+				int row = idx * numColumns;
+				for(int off = 0; off < numColumns; off++) {
+					scaledValuesReduced[row + off] = key.get(off);
+				}
+				Queue<IntArrayList> q = ent.getValue();
+				if(q.size() == 1) {
+					newOffsetsLists[idx] = q.remove();
+				}
+				else {
+					newOffsetsLists[idx] = mergeOffsets(q, new int[lengths.get(key)]);
+				}
+				idx++;
+			}
+
+			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, numZeroGroups, scaledValuesReduced, scale);
+		}
+		else {
+			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists, numZeroGroups, scaledValues, scale);
+		}
 	}
 
 	/**
@@ -411,7 +456,6 @@ public class BitmapEncoder {
 		return res;
 	}
 
-
 	/**
 	 * Statistics class to analyse what compression plan to use.
 	 */
@@ -423,15 +467,19 @@ public class BitmapEncoder {
 		protected boolean sameDelta;
 
 		public Stats(double[] fp) {
-			max = fp[fp.length - 1];
-			min = fp[0];
-			minDelta = Double.POSITIVE_INFINITY;
+			max = Double.NEGATIVE_INFINITY;
+			min = Double.POSITIVE_INFINITY;
 			maxDelta = Double.NEGATIVE_INFINITY;
+			minDelta = Double.POSITIVE_INFINITY;
 			sameDelta = true;
 			if(fp.length > 1) {
 
 				double delta = fp[0] - fp[1];
 				for(int i = 0; i < fp.length - 1; i++) {
+					if(fp[i] > max)
+						max = fp[i];
+					if(fp[i] < min)
+						min = fp[i];
 					double ndelta = fp[i] - fp[i + 1];
 					if(delta < minDelta) {
 						minDelta = delta;
@@ -444,7 +492,30 @@ public class BitmapEncoder {
 					}
 					delta = ndelta;
 				}
+				if(fp[fp.length - 1] > max)
+					max = fp[fp.length - 1];
+				if(fp[fp.length - 1] < min)
+					min = fp[fp.length - 1];
+			}
+			else {
+				max = fp[0];
+				min = fp[0];
+				maxDelta = 0;
+				minDelta = 0;
 			}
 		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Stats{" + this.hashCode() + "}");
+			sb.append(" max: " + max);
+			sb.append(" min: " + min);
+			sb.append(" minΔ: " + minDelta);
+			sb.append(" maxΔ: " + maxDelta);
+			sb.append(" sameΔ: " + maxDelta);
+			return sb.toString();
+		}
+
 	}
 }

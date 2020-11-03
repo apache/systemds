@@ -97,8 +97,8 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	        runTest(true, false, null, -1);		
 			runRScript(true);
 			
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("A");
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("A");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("A");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("A");
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, "A-DML", "A-R");
 			checkDMLMetaDataFile("A", new MatrixCharacteristics(rows,cols,1,1));
 		}

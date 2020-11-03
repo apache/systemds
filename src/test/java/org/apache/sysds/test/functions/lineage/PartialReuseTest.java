@@ -19,8 +19,9 @@
 
 package org.apache.sysds.test.functions.lineage;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.recompile.Recompiler;
@@ -28,16 +29,13 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-public class PartialReuseTest extends AutomatedTestBase {
+public class PartialReuseTest extends LineageBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME1 = "PartialReuse1";
@@ -78,7 +76,7 @@ public class PartialReuseTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> X_orig = readDMLMatrixFromHDFS("X");
+			HashMap<MatrixValue.CellIndex, Double> X_orig = readDMLMatrixFromOutputDir("X");
 			
 			// With lineage-based reuse enabled
 			proArgs.clear();
@@ -91,7 +89,7 @@ public class PartialReuseTest extends AutomatedTestBase {
 			Lineage.resetInternalState();
 			Lineage.setLinReuseFull();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> X_reused = readDMLMatrixFromHDFS("X");
+			HashMap<MatrixValue.CellIndex, Double> X_reused = readDMLMatrixFromOutputDir("X");
 			Lineage.setLinReuseNone();
 			
 			//compare matrices

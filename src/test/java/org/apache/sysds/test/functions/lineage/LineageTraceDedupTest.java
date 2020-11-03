@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class LineageTraceDedupTest extends AutomatedTestBase
+public class LineageTraceDedupTest extends LineageBase
 {
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME = "LineageTraceDedup";
@@ -127,7 +127,7 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 		Types.ExecMode old_rtplatform = AutomatedTestBase.rtplatform;
 		
 		try {
-			System.out.println("------------ BEGIN " + testname + "------------");
+			LOG.debug("------------ BEGIN " + testname + "------------");
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
@@ -155,7 +155,7 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, RDedupPatches);
 			
 			//match the original and recomputed results
-			HashMap<CellIndex, Double> orig = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> orig = readDMLMatrixFromOutputDir("R");
 			MatrixBlock recomputed = ((MatrixObject)ret).acquireReadAndRelease();
 			TestUtils.compareMatrices(orig, recomputed, 1e-6);
 		}

@@ -31,12 +31,14 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlock.Type;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.SortUtils;
 
@@ -270,28 +272,37 @@ public class ColGroupUncompressed extends ColGroup {
 		shortVector.recomputeNonZeros();
 
 		// Multiply the selected columns by the appropriate parts of the vector
-		LibMatrixMult.matrixMult(_data, shortVector, result,rl,ru);
+		LibMatrixMult.matrixMult(_data, shortVector, result, rl, ru);
 	}
 
-	public void rightMultByMatrix(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
+	public void rightMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 		// Pull out the relevant rows of the vector
-		// int clen = _colIndexes.length;
 
-		// MatrixBlock subMatrix = new MatrixBlock(clen, vector.getNumColumns(), false);
-		// subMatrix.allocateDenseBlock();
-		// double[] b = subMatrix.getDenseBlockValues();
-		// TODO Fix, to copy correctly
-		throw new NotImplementedException("Dense right block uncompressed column multiplication not implemented yet.");
-		// for(int colIx = 0; colIx < clen; colIx++)
-		// 	b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
-		// subMatrix.recomputeNonZeros();
+		int clen = _colIndexes.length;
+		MatrixBlock subMatrix = new MatrixBlock(clen, matrix.getNumColumns(), false);
+		subMatrix.allocateDenseBlock();
+		double[] b = subMatrix.getDenseBlockValues();
+
+		for(int colIx = 0; colIx < clen; colIx++) {
+			int row = _colIndexes[colIx];
+			for(int col = 0; col < matrix.getNumColumns(); col++)
+				b[colIx * matrix.getNumColumns() + col] = matrix.quickGetValue(row, col);
+		}
+
+		subMatrix.setNonZeros(clen * matrix.getNumColumns());
 
 		// // Multiply the selected columns by the appropriate parts of the vector
-		// LibMatrixMult.matrixMult(_data, subMatrix, result);
+		LibMatrixMult.matrixMult(_data, subMatrix, result);
+	}
+
+	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
+		int cu) {
+		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
 	@Override
-	public void rightMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int rl, int ru, int vOff){
+	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
+		int rl, int ru) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
@@ -306,10 +317,16 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] vector, double[] c, int numVals, double[] values, int numRows, int numCols, int rl, int ru, int vOff) {
+	public void leftMultByMatrix(double[] vector, double[] c, double[] values, int numRows, int numCols,
+		int rl, int ru, int vOff) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
+	@Override
+	public void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] c, int numVals,
+		double[] values, int numRows, int numCols, int row, double[] MaterializedRow) {
+		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
+	}
 
 	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result) {
 		MatrixBlock pret = new MatrixBlock(matrix.getNumRows(), _colIndexes.length, false);
@@ -330,6 +347,11 @@ public class ColGroupUncompressed extends ColGroup {
 		MatrixBlock retContent = _data.scalarOperations(op, new MatrixBlock());
 		// construct new uncompressed column group
 		return new ColGroupUncompressed(getColIndices(), _data.getNumRows(), retContent);
+	}
+
+	@Override
+	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
+		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] ret) {
@@ -488,7 +510,11 @@ public class ColGroupUncompressed extends ColGroup {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append("\n");
-		sb.append(_data.toString());
+		sb.append(_data.getNumColumns() + " ");
+		sb.append(_data.getNumRows() + " ");
+		sb.append(_data.getNonZeros() + " ");
+		sb.append(_data.isInSparseFormat() + " ");
+		// sb.append(_data.toString());
 		return sb.toString();
 	}
 

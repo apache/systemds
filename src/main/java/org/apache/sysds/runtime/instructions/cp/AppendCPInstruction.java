@@ -72,4 +72,8 @@ public abstract class AppendCPInstruction extends BinaryCPInstruction
 		else //DataType.FRAME
 			return new FrameAppendCPInstruction(op, in1, in2, out, type, opcode, str);
 	}
+
+	public AppendType getAppendType() {
+		return _type;
+	}
 }

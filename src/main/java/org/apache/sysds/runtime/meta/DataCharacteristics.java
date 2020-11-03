@@ -188,9 +188,11 @@ public abstract class DataCharacteristics implements Serializable {
 		dimOut.set(dim1.getRows(), dim2.getCols(), dim1.getBlocksize());
 	}
 
+	public abstract boolean equalDims(Object anObject);
+
 	@Override
 	public abstract boolean equals(Object anObject);
-
+	
 	@Override
 	public abstract int hashCode();
 }

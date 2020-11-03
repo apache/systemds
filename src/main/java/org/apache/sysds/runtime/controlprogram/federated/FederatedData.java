@@ -19,6 +19,20 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Future;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -33,23 +47,10 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.util.concurrent.Promise;
 
-import org.apache.log4j.Logger;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
-
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Future;
-
 
 public class FederatedData {
-	protected final static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
-	private final static Set<InetSocketAddress> _allFedSites = new HashSet<>();
+	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
+	private static final Set<InetSocketAddress> _allFedSites = new HashSet<>();
 	
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
@@ -81,6 +82,10 @@ public class FederatedData {
 	
 	public String getFilepath() {
 		return _filepath;
+	}
+
+	public Types.DataType getDataType(){
+		return _dataType;
 	}
 	
 	public boolean isInitialized() {
@@ -172,7 +177,7 @@ public class FederatedData {
 			FederationUtils.waitFor(ret);
 		}
 		catch(Exception ex) {
-			log.warn("Failed to execute CLEAR request on existing federated sites.", ex);
+			LOG.warn("Failed to execute CLEAR request on existing federated sites.", ex);
 		}
 		finally {
 			resetFederatedSites();
@@ -203,5 +208,15 @@ public class FederatedData {
 			ctx.close();
 			_workerGroup.shutdownGracefully();
 		}
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName().toString());
+		sb.append(" "+ _dataType);
+		sb.append(" "+_address.toString());
+		sb.append(":" + _filepath);
+		return sb.toString();
 	}
 }

@@ -152,8 +152,8 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 			//compare output matrices
 			for( String out : new String[]{"class_prior", "class_conditionals" } )
 			{
-				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(out);				
-				HashMap<CellIndex, Double> rfile  = readRMatrixFromFS(out);
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(out);				
+				HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir(out);
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			}	
 		}

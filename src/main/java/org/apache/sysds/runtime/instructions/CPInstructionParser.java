@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.instructions.cp.CompressionCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DeCompressionCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DnnCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
@@ -309,6 +310,7 @@ public class CPInstructionParser extends InstructionParser
 
 		String2CPInstructionType.put( "partition", CPType.Partition);
 		String2CPInstructionType.put( "compress",  CPType.Compression);
+		String2CPInstructionType.put( "decompress", CPType.DeCompression);
 		String2CPInstructionType.put( "spoof",     CPType.SpoofFused);
 		
 		String2CPInstructionType.put( "sql", CPType.Sql);
@@ -439,6 +441,9 @@ public class CPInstructionParser extends InstructionParser
 			case Compression:
 				return CompressionCPInstruction.parseInstruction(str);
 			
+			case DeCompression:
+				return DeCompressionCPInstruction.parseInstruction(str);
+				
 			case SpoofFused:
 				return SpoofCPInstruction.parseInstruction(str);
 				

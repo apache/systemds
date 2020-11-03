@@ -114,7 +114,7 @@ public class AggregateInfTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 		
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			HashMap<CellIndex, Double> compfile  = new HashMap<>();
 			compfile.put(new CellIndex(1,1), infval);
 			TestUtils.compareMatrices(dmlfile, compfile, eps, "Stat-DML", "Stat-R");

@@ -131,10 +131,10 @@ public class GNMFTest extends AutomatedTestBase
 		
 		runRScript(true);
 
-		HashMap<CellIndex, Double> hmWSYSTEMDS = readDMLMatrixFromHDFS("w");
-		HashMap<CellIndex, Double> hmHSYSTEMDS = readDMLMatrixFromHDFS("h");
-		HashMap<CellIndex, Double> hmWR = readRMatrixFromFS("w");
-		HashMap<CellIndex, Double> hmHR = readRMatrixFromFS("h");
+		HashMap<CellIndex, Double> hmWSYSTEMDS = readDMLMatrixFromOutputDir("w");
+		HashMap<CellIndex, Double> hmHSYSTEMDS = readDMLMatrixFromOutputDir("h");
+		HashMap<CellIndex, Double> hmWR = readRMatrixFromExpectedDir("w");
+		HashMap<CellIndex, Double> hmHR = readRMatrixFromExpectedDir("h");
 
 		TestUtils.compareMatrices(hmWSYSTEMDS, hmWR, 0.000001, "hmWSYSTEMDS", "hmWR");
 		TestUtils.compareMatrices(hmHSYSTEMDS, hmHR, 0.000001, "hmHSYSTEMDS", "hmHR");

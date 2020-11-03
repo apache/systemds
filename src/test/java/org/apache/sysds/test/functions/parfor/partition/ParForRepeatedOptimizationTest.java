@@ -166,8 +166,8 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 				numExpectedMR, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 		}
 		finally {

@@ -1932,7 +1932,7 @@ public class LibMatrixMult
 					if( alen == n ) { //dense row
 						for( int i=rl; i<ru; i++ ) {
 							vectMultiplyAdd(avals[i], avals,
-								c.values(i), i, c.pos(i), n-i);
+								c.values(i), i, c.pos(i) + i, n-i);
 						}
 					}
 					else { //non-full sparse row

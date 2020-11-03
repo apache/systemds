@@ -103,12 +103,16 @@ public class IntArrayList {
 	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
-		sb.append("IntArrayList ");
-		sb.append("size: " + _size);
+		
 		if(_size == 1){
-			sb.append(" [" + _val0+ "]");
+			sb.append(_val0);
 		} else{
-			sb.append(" " + Arrays.toString(_data));
+			sb.append("[");
+			int i = 0;
+			for(; i < _size-1; i++){
+				sb.append(_data[i] + ",");
+			}
+			sb.append(_data[i]+"]");
 		}
 		return sb.toString();
 	}

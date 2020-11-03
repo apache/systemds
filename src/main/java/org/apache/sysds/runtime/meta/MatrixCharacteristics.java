@@ -229,7 +229,17 @@ public class MatrixCharacteristics extends DataCharacteristics
 		return !nnzKnown() || numRows==0 || numColumns==0
 			|| (nonZero < numRows*numColumns - singleBlk);
 	}
-
+	
+	@Override
+	public boolean equalDims(Object anObject) {
+		if( !(anObject instanceof MatrixCharacteristics) )
+			return false;
+		MatrixCharacteristics mc = (MatrixCharacteristics) anObject;
+		return dimsKnown() && mc.dimsKnown()
+			&& numRows == mc.numRows
+			&& numColumns == mc.numColumns;
+	}
+	
 	@Override
 	public boolean equals (Object anObject) {
 		if( !(anObject instanceof MatrixCharacteristics) )

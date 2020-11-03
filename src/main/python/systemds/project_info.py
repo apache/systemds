@@ -23,4 +23,4 @@
 # via string substitutions using the maven-resources-plugin
 __project_group_id__ = 'org.apache.systemds'
 __project_artifact_id__ = 'systemds'
-__project_version__ = '2.0.0-SNAPSHOT'
+__project_version__ = '2.1.0-SNAPSHOT'

@@ -118,7 +118,7 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//compare matrices 
-			Double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
+			Double ret = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 			if( testname.equals(TEST_NAME1) )
 				Assert.assertEquals("Wrong result", new Double(rows), ret);
 			else if( testname.equals(TEST_NAME2) )

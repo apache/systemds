@@ -109,7 +109,7 @@ public class CholeskyTest extends AutomatedTestBase
 			
 			//run tests and compare results
 			runTest(true, false, null, -1);
-			HashMap<CellIndex, Double> dmlOut = readDMLMatrixFromHDFS("D");
+			HashMap<CellIndex, Double> dmlOut = readDMLMatrixFromOutputDir("D");
 			MatrixValue.CellIndex index = dmlOut.keySet().iterator().next();
 			double d = dmlOut.get(index);
 			Assert.assertEquals(0, d, 1e-5);

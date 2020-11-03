@@ -66,7 +66,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		//execute federated commands and cleanups
 		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
 		if( output.isScalar() )
-			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp));
+			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, map));
 		else
 			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, tmp, map));
 	}

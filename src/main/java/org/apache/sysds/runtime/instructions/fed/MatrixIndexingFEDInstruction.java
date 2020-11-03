@@ -77,7 +77,7 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 					}
 					else {
 						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(0, fedMapping.getFederatedRanges()[i - 1].getEndDims()[0]);
+						fedMapping.getFederatedRanges()[i].setEndDim(0, fedMapping.getFederatedRanges()[i].getBeginDims()[0]);
 						fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1);
 						rsn = -1;
 						ren = rsn;
@@ -99,7 +99,7 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 					else {
 						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
 						fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1);
-						fedMapping.getFederatedRanges()[i].setEndDim(1, fedMapping.getFederatedRanges()[i - 1].getEndDims()[1]);
+						fedMapping.getFederatedRanges()[i].setEndDim(1, fedMapping.getFederatedRanges()[i].getBeginDims()[1]);
 						rsn = -1;
 						ren = rsn;
 						csn = rsn;
@@ -131,7 +131,6 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 
 		MatrixObject sorted = ec.getMatrixObject(output);
 		sorted.getDataCharacteristics().set(fedMapping.getMaxIndexInRange(0), fedMapping.getMaxIndexInRange(1), (int) in.getBlocksize());
-		System.out.println(1);
 		sorted.setFedMapping(sortedMapping);
 
 	}

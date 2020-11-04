@@ -446,7 +446,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if (opcode.equalsIgnoreCase("transformdecode") ||
 				opcode.equalsIgnoreCase("transformapply")) {
-			CPOperand target = getTargetOperand();
+			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.FRAME);
 			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, DataType.FRAME);
 			CPOperand spec = getStringLiteral("spec");
 			return Pair.of(output.getName(), new LineageItem(getOpcode(),

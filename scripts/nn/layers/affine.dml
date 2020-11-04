@@ -64,7 +64,7 @@ backward = function(matrix[double] dout, matrix[double] X,
   db = colSums(dout)
 }
 
-init = function(int D, int M)
+init = function(int D, int M, int seed = -1 )
     return (matrix[double] W, matrix[double] b) {
   /*
    * Initialize the parameters of this layer.
@@ -81,12 +81,13 @@ init = function(int D, int M)
    * Inputs:
    *  - D: Dimensionality of the input features (number of features).
    *  - M: Number of neurons in this layer.
+   *  - seed: The seed to initialize the weights
    *
    * Outputs:
    *  - W: Weights, of shape (D, M).
    *  - b: Biases, of shape (1, M).
    */
-  W = rand(rows=D, cols=M, pdf="normal") * sqrt(2.0/D)
+  W = rand(rows=D, cols=M, pdf="normal", seed=seed) * sqrt(2.0/D)
   b = matrix(0, rows=1, cols=M)
 }
 

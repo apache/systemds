@@ -216,7 +216,7 @@ public class LineageCacheEviction
 				if (exectime > LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
 					System.out.print("LI " + e._key.getOpcode());
 					System.out.print(" exec time " + ((double) e._computeTime) / 1000000);
-					System.out.print(" estimate time " + getDiskSpillEstimate(e) * 1000);
+					System.out.print(" spill time " + getDiskSpillEstimate(e) * 1000);
 					System.out.print(" dim " + e.getMBValue().getNumRows() + " " + e.getMBValue().getNumColumns());
 					System.out.println(" size " + getDiskSizeEstimate(e));
 				}

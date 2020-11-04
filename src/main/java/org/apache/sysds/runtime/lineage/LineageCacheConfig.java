@@ -75,9 +75,9 @@ public class LineageCacheConfig
 
 	private static boolean _allowSpill = false;
 	// Minimum reliable spilling estimate in milliseconds.
-	public static final double MIN_SPILL_TIME_ESTIMATE = 100;
+	public static final double MIN_SPILL_TIME_ESTIMATE = 10;
 	// Minimum reliable data size for spilling estimate in MB.
-	public static final double MIN_SPILL_DATA = 20;
+	public static final double MIN_SPILL_DATA = 2;
 	// Default I/O in MB per second for binary blocks
 	public static double FSREAD_DENSE = 200;
 	public static double FSREAD_SPARSE = 100;

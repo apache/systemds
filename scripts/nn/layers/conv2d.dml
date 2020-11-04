@@ -153,7 +153,7 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   }
 }
 
-init = function(int F, int C, int Hf, int Wf)
+init = function(int F, int C, int Hf, int Wf, int seed = -1)
     return (matrix[double] W, matrix[double] b) {
   /*
    * Initialize the parameters of this layer.
@@ -172,12 +172,13 @@ init = function(int F, int C, int Hf, int Wf)
    *  - C: Number of input channels (dimensionality of depth).
    *  - Hf: Filter height.
    *  - Wf: Filter width.
+   *  - seed: The seed to initialize the weights
    *
    * Outputs:
    *  - W: Weights, of shape (F, C*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    */
-  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2.0/(C*Hf*Wf))
+  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal", seed=seed ) * sqrt(2.0/(C*Hf*Wf))
   b = matrix(0, rows=F, cols=1)
 }
 

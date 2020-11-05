@@ -19,6 +19,7 @@
 package org.apache.sysds.test.functions.federated.io;
 
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -36,13 +37,16 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedReaderTest extends AutomatedTestBase {
+public class FederatedSSLTest extends AutomatedTestBase {
 
 	// private static final Log LOG = LogFactory.getLog(FederatedReaderTest.class.getName());
-	private final static String TEST_DIR = "functions/federated/ioR/";
+	// This test use the same scripts as the Federated Reader tests, just with SSL enabled.
+	private final static String TEST_DIR = "functions/federated/io/";
 	private final static String TEST_NAME = "FederatedReaderTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedReaderTest.class.getSimpleName() + "/";
 	private final static int blocksize = 1024;
+	private final static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR + "SSLConfig.xml");
+
 	@Parameterized.Parameter()
 	public int rows;
 	@Parameterized.Parameter(1)
@@ -122,5 +126,16 @@ public class FederatedReaderTest extends AutomatedTestBase {
 		}
 
 		TestUtils.shutdownThreads(t1, t2);
+	}
+
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
 	}
 }

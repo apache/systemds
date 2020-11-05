@@ -25,6 +25,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.cert.CertificateException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -77,7 +78,6 @@ import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
-
 
 public class DMLScript 
 {
@@ -237,12 +237,17 @@ public class DMLScript
 				return true;
 			}
 			
-			if (dmlOptions.fedWorker) {
+			if(dmlOptions.fedWorker) {
 				loadConfiguration(fnameOptConfig);
-				new FederatedWorker(dmlOptions.fedWorkerPort).run();
+				try {
+					new FederatedWorker(dmlOptions.fedWorkerPort).run();
+				}
+				catch(CertificateException e) {
+					e.printStackTrace();
+				}
 				return true;
 			}
-			
+
 			LineageCacheConfig.setConfig(LINEAGE_REUSE);
 			LineageCacheConfig.setCachePolicy(LINEAGE_POLICY);
 

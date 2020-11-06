@@ -54,9 +54,9 @@ source("scripts/nn/layers/sigmoid.dml") as sigmoid
 source("scripts/nn/layers/softmax.dml") as softmax
 source("scripts/nn/layers/softmax2d.dml") as softmax2d
 source("scripts/nn/layers/tanh.dml") as tanh
-source("scripts/nn/test/conv2d_simple.dml") as conv2d_simple
-source("scripts/nn/test/max_pool2d_simple.dml") as max_pool2d_simple
-source("scripts/nn/test/util.dml") as test_util
+source("src/test/scripts/applications/nn/conv2d_simple.dml") as conv2d_simple
+source("src/test/scripts/applications/nn/max_pool2d_simple.dml") as max_pool2d_simple
+source("src/test/scripts/applications/nn/util.dml") as test_util
 source("scripts/nn/util.dml") as util
 source("scripts/nn/layers/elu.dml") as elu
 
@@ -72,7 +72,7 @@ affine = function() {
   M = 10 # num neurons
   X = rand(rows=N, cols=D)
   y = rand(rows=N, cols=M)
-  [W, b] = affine::init(D, M)
+  [W, b] = affine::init(D, M, -1)
 
   # Compute analytical gradients of loss wrt parameters
   out = affine::forward(X, W, b)
@@ -464,7 +464,7 @@ conv2d = function() {
   y = rand(rows=N, cols=F*Hin*Win)
 
   # Create layers
-  [W, b] = conv2d::init(F, C, Hf, Wf)
+  [W, b] = conv2d::init(F, C, Hf, Wf, -1)
 
   # Compute analytical gradients of loss wrt parameters
   [out, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
@@ -553,7 +553,7 @@ conv2d_builtin = function() {
   y = rand(rows=N, cols=F*Hin*Win)
 
   # Create layers
-  [W, b] = conv2d_builtin::init(F, C, Hf, Wf)
+  [W, b] = conv2d_builtin::init(F, C, Hf, Wf, -1)
 
   # Compute analytical gradients of loss wrt parameters
   [out, Hout, Wout] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
@@ -2341,8 +2341,8 @@ two_layer_affine_l2_net = function() {
 
   # Create 2-layer, fully-connected network
   M = 10 # number of hidden neurons
-  [W1, b1] = affine::init(D, M)
-  [W2, b2] = affine::init(M, yD)
+  [W1, b1] = affine::init(D, M, 1)
+  [W2, b2] = affine::init(M, yD, 1)
   W2 = W2 / sqrt(2)  # different initialization, since being fed into l2 loss, instead of relu
 
   # Optimize for short "burn-in" time to move to characteristic

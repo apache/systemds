@@ -21,6 +21,6 @@ limitations under the License.
 
 The scripts in this folder tests the convolutions and maxpooling built-in functions
 by comparing the CPU implementation v/s GPU implementation.
-These scripts allows the developer to test different CPU implementation (such 
+These scripts allows the developer to test different CPU implementation (such
 as sparse data and dense filter, dense data and sparse filter, etc)
 with MKL, OpenBLAS and Java.

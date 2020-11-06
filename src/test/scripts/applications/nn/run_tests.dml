@@ -22,8 +22,8 @@
 /*
  * Script to run tests.
  */
-source("nn/test/grad_check.dml") as grad_check
-source("nn/test/test.dml") as test
+source("src/test/scripts/applications/nn/grad_check.dml") as grad_check
+source("src/test/scripts/applications/nn/test.dml") as test
 
 print("")
 print("Starting grad checks.")

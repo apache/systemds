@@ -82,10 +82,10 @@ train = function(matrix[double] X, matrix[double] Y,
   N3 = 512  # num nodes in affine3
   # Note: affine4 has K nodes, which is equal to the number of target dimensions (num classes)
 
-  [W1, b1] = conv2d::init(F1, C, Hf, Wf)  # inputs: (N, C*Hin*Win)
-  [W2, b2] = conv2d::init(F2, F1, Hf, Wf)  # inputs: (N, F1*(Hin/2)*(Win/2))
-  [W3, b3] = affine::init(F2*(Hin/2/2)*(Win/2/2), N3)  # inputs: (N, F2*(Hin/2/2)*(Win/2/2))
-  [W4, b4] = affine::init(N3, K)  # inputs: (N, N3)
+  [W1, b1] = conv2d::init(F1, C, Hf, Wf, -1)  # inputs: (N, C*Hin*Win)
+  [W2, b2] = conv2d::init(F2, F1, Hf, Wf, -1)  # inputs: (N, F1*(Hin/2)*(Win/2))
+  [W3, b3] = affine::init(F2*(Hin/2/2)*(Win/2/2), N3, -1)  # inputs: (N, F2*(Hin/2/2)*(Win/2/2))
+  [W4, b4] = affine::init(N3, K, -1)  # inputs: (N, N3)
   W4 = W4 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
 
   # Initialize SGD w/ Nesterov momentum optimizer

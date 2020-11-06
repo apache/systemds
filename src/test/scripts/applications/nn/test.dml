@@ -35,13 +35,12 @@ source("scripts/nn/layers/max_pool2d.dml") as max_pool2d
 source("scripts/nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
 source("scripts/nn/layers/tanh.dml") as tanh
 source("scripts/nn/layers/softmax2d.dml") as softmax2d
-source("scripts/nn/test/conv2d_simple.dml") as conv2d_simple
-source("scripts/nn/test/max_pool2d_simple.dml") as max_pool2d_simple
-source("scripts/nn/test/util.dml") as test_util
+source("src/test/scripts/applications/nn/conv2d_simple.dml") as conv2d_simple
+source("src/test/scripts/applications/nn/max_pool2d_simple.dml") as max_pool2d_simple
+source("src/test/scripts/applications/nn/util.dml") as test_util
 source("scripts/nn/util.dml") as util
 source("scripts/nn/layers/sigmoid.dml") as sigmoid
 source("scripts/nn/layers/elu.dml") as elu
-
 
 batch_norm1d = function() {
   /*
@@ -186,7 +185,7 @@ conv2d = function() {
   X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
 
   # Create layer
-  [W, b] = conv2d::init(F, C, Hf, Wf)
+  [W, b] = conv2d::init(F, C, Hf, Wf, -1)
 
   # Forward
   [out, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)

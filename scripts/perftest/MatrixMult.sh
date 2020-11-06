@@ -34,30 +34,30 @@ export SYSDS_QUIET=0
 # Logging output
 LogName='scripts/perftest/results/MM.log'
 mkdir -p 'scripts/perftest/results'
-# rm -f $LogName
+rm -f $LogName
 
-# # Baseline
-# perf stat -d -d -d -r 5 \
-#     systemds scripts/perftest/scripts/MM.dml \
-#     -config scripts/perftest/conf/std.xml \
-#     -stats \
-#     -args 5000 5000 5000 1.0 1.0 3 \
-#     >>$LogName 2>&1
+# Baseline
+perf stat -d -d -d -r 5 \
+    systemds scripts/perftest/scripts/MM.dml \
+    -config scripts/perftest/conf/std.xml \
+    -stats \
+    -args 5000 5000 5000 1.0 1.0 3 \
+    >>$LogName 2>&1
 
-# # MKL
-# perf stat -d -d -d -r 5 \
-#     systemds scripts/perftest/scripts/MM.dml \
-#     -config scripts/perftest/conf/mkl.xml \
-#     -stats \
-#     -args 5000 5000 5000 1.0 1.0 3 \
-#     >>$LogName 2>&1
+# MKL
+perf stat -d -d -d -r 5 \
+    systemds scripts/perftest/scripts/MM.dml \
+    -config scripts/perftest/conf/mkl.xml \
+    -stats \
+    -args 5000 5000 5000 1.0 1.0 3 \
+    >>$LogName 2>&1
 
-# # Open Blas
-# perf stat -d -d -d -r 5 \
-#     systemds scripts/perftest/scripts/MM.dml \
-#     -config scripts/perftest/conf/openblas.xml \
-#     -stats \
-#     -args 5000 5000 5000 1.0 1.0 3 \
-#     >>$LogName 2>&1
+# Open Blas
+perf stat -d -d -d -r 5 \
+    systemds scripts/perftest/scripts/MM.dml \
+    -config scripts/perftest/conf/openblas.xml \
+    -stats \
+    -args 5000 5000 5000 1.0 1.0 3 \
+    >>$LogName 2>&1
 
-cat $LogName | grep -E ' ba\+\* |Total elapsed time|-----------| instructions |  cycles | CPUs utilized ' | tee -a $LogName.log
+cat $LogName | grep -E ' ba\+\* |Total elapsed time|-----------| instructions |  cycles | CPUs utilized ' | tee $LogName.log

@@ -36,84 +36,32 @@ import org.apache.sysds.runtime.util.LocalFileUtils;
  */
 public class ByteBuffer
 {
-	private volatile boolean _serialized;	
-	private volatile boolean _shallow;
-	private volatile boolean _matrix;
+	private volatile boolean _serialized;
 	private final long _size;
-	
-	protected byte[]     _bdata = null; //sparse matrix
-	protected CacheBlock _cdata = null; //dense matrix/frame
-	
+	private boolean _hasLineage = false;
+
+	private Buffer _buffer = null;
+
 	public ByteBuffer( long size ) {
 		_size = size;
 		_serialized = false;
 	}
 
-	public void serializeBlock( CacheBlock cb ) 
+	public boolean hasValidLineage() { return _hasLineage; }
+
+	public void serializeBlock( CacheBlock cb )
 		throws IOException
-	{	
-		_shallow = cb.isShallowSerialize(true);
-		_matrix = (cb instanceof MatrixBlock);
-		
-		try
-		{
-			if( !_shallow ) //SPARSE/DENSE -> SPARSE
-			{
-				//deep serialize (for compression)
-				if( CacheableData.CACHING_BUFFER_PAGECACHE )
-					_bdata = PageCache.getPage((int)_size);
-				if( _bdata==null )
-					_bdata = new byte[(int)_size];
-				DataOutput dout = new CacheDataOutput(_bdata);
-				cb.write(dout);
-			}
-			else //SPARSE/DENSE -> DENSE
-			{
-				//convert to shallow serialize block if necessary
-				if( !cb.isShallowSerialize() )
-					cb.toShallowSerializeBlock();
-				
-				//shallow serialize
-				_cdata = cb;
-			}
-		}
-		catch(Exception ex) {
-			throw new IOException("Failed to serialize cache block.", ex);
-		}
+	{
+		_hasLineage = cb.hasValidLineage();
+		_buffer = cb.isShallowSerialize(true) ? new ShallowSerializeBuffer() : new DeepSerializeBuffer();
+		_buffer.serializeBlock(cb, _size);
 		
 		_serialized = true;
 	}
 
-	public CacheBlock deserializeBlock() 
-		throws IOException
-	{
-		CacheBlock ret = null;
-		
-		if( !_shallow ) { //sparse matrix / string frame
-			DataInput din = _matrix ? new CacheDataInput(_bdata) :
-				new DataInputStream(new ByteArrayInputStream(_bdata));
-			ret = _matrix ? new MatrixBlock() : new FrameBlock();
-			ret.readFields(din);
-		}
-		else { //dense matrix/frame
-			ret = _cdata;
-		}
-		
-		return ret;
-	}
+	public CacheBlock deserializeBlock() throws IOException { return _buffer.deserializeBlock(); }
 
-	public void evictBuffer( String fname ) 
-		throws IOException
-	{
-		if( !_shallow ) {
-			//write out byte serialized array
-			LocalFileUtils.writeByteArrayToLocal(fname, _bdata);
-		}
-		else {
-			//serialize cache block to output stream
-			LocalFileUtils.writeCacheBlockToLocal(fname, _cdata);
-		}
-	}
+	public void evictBuffer( String fname ) throws IOException { _buffer.evictBuffer(fname); }
 	
 	/**
 	 * Returns the buffer size in bytes.
@@ -124,22 +72,13 @@ public class ByteBuffer
 		return _size;
 	}
 
+	public String getSimpleClassName() { return _buffer.getDataClassName(); }
+
 	public boolean isShallow() {
-		return _shallow;
+		return _buffer.isShallow();
 	}
 	
-	public void freeMemory()
-	{
-		//clear strong references to buffer/matrix
-		if( !_shallow ) {
-			if( CacheableData.CACHING_BUFFER_PAGECACHE )
-				PageCache.putPage(_bdata);
-			_bdata = null;
-		}
-		else {
-			_cdata = null;
-		}
-	}
+	public void freeMemory() { _buffer.freeMemory(); }
 
 	public void checkSerialized()
 	{
@@ -177,3 +116,96 @@ public class ByteBuffer
 		}
 	}
 }
+
+interface Buffer {
+	void serializeBlock( CacheBlock cb, long _size ) throws IOException;
+	CacheBlock deserializeBlock() throws IOException;
+	void evictBuffer( String fname ) throws IOException;
+	void freeMemory();
+	boolean isShallow();
+	String getDataClassName();
+}
+
+class ShallowSerializeBuffer implements Buffer {
+
+	protected CacheBlock _data = null; //dense matrix/frame
+
+	public void serializeBlock( CacheBlock cb, long _size ) throws IOException {
+		try
+		{
+			//convert to shallow serialize block if necessary
+			if( !cb.isShallowSerialize() )
+				cb.toShallowSerializeBlock();
+
+			//shallow serialize
+			_data = cb;
+		}
+		catch(Exception ex) {
+			throw new IOException("Failed to serialize cache block.", ex);
+		}
+	}
+
+	public CacheBlock deserializeBlock() throws IOException { return _data;	}
+
+	public void evictBuffer( String fname ) throws IOException { LocalFileUtils.writeCacheBlockToLocal(fname, _data); }
+
+	public boolean isShallow() { return true; }
+
+	public void freeMemory() { _data = null; }
+
+	public String getDataClassName() { return _data.getClass().getSimpleName(); }
+}
+
+class DeepSerializeBuffer implements Buffer {
+	protected byte[]     _data = null; //sparse matrix
+	private volatile boolean _matrix;
+
+	public void serializeBlock( CacheBlock cb, long _size ) throws IOException {
+
+		_matrix = (cb instanceof MatrixBlock);
+
+		try
+		{
+			//deep serialize (for compression)
+			if( CacheableData.CACHING_BUFFER_PAGECACHE )
+				_data = PageCache.getPage((int)_size);
+			if( _data==null )
+				_data = new byte[(int)_size];
+			DataOutput dout = new CacheDataOutput(_data);
+			cb.write(dout);
+		}
+		catch(Exception ex) {
+			throw new IOException("Failed to serialize cache block.", ex);
+		}
+	}
+
+	public CacheBlock deserializeBlock() throws IOException {
+		CacheBlock ret = null;
+
+		try {
+			DataInput din = _matrix ? new CacheDataInput(_data) :
+					new DataInputStream(new ByteArrayInputStream(_data));
+			ret = _matrix ? new MatrixBlock() : new FrameBlock();
+			ret.readFields(din);
+		}
+		catch(Exception ex) {
+			throw new IOException("Failed to serialize cache block.", ex);
+		}
+
+		return ret;
+	}
+
+	public void evictBuffer( String fname ) throws IOException { LocalFileUtils.writeByteArrayToLocal(fname, _data); }
+
+	public boolean isShallow() { return false; }
+
+	public void freeMemory() {
+		//clear strong references to buffer/matrix
+		if( CacheableData.CACHING_BUFFER_PAGECACHE )
+			PageCache.putPage(_data);
+		_data = null;
+	}
+
+	public String getDataClassName() { return _data.getClass().getSimpleName(); }
+}
+

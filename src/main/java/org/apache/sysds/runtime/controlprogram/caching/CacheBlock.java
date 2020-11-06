@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.sysds.runtime.lineage.LineageItem;
 
 
 /**
@@ -103,4 +104,10 @@ public interface CacheBlock extends Writable
 	 * @param appendOnly ?
 	 */
 	public void merge(CacheBlock that, boolean appendOnly);
+
+	public LineageItem getLineage();
+
+	public void setLineage(LineageItem li);
+
+	public boolean hasValidLineage();
 }

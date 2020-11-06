@@ -530,6 +530,7 @@ public class ExecutionContext {
 			setVariable(varName, createMatrixObject(outputData));
 		MatrixObject mo = getMatrixObject(varName);
 		mo.acquireModify(outputData);
+		mo.setLineage(_lineage.get(varName));
 		mo.release();
 		setVariable(varName, mo);
 	}
@@ -548,6 +549,7 @@ public class ExecutionContext {
 	public void setTensorOutput(String varName, TensorBlock outputData) {
 		TensorObject to = getTensorObject(varName);
 		to.acquireModify(outputData);
+		to.setLineage(_lineage.get(varName));
 		to.release();
 		setVariable(varName, to);
 	}
@@ -557,6 +559,7 @@ public class ExecutionContext {
 			setVariable(varName, createFrameObject(outputData));
 		FrameObject fo = getFrameObject(varName);
 		fo.acquireModify(outputData);
+		fo.setLineage(_lineage.get(varName));
 		fo.release();
 		setVariable(varName, fo);
 	}

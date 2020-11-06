@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -44,6 +45,9 @@ import java.util.Arrays;
 
 public class TensorObject extends CacheableData<TensorBlock> {
 	private static final long serialVersionUID = -2843358400200380775L;
+
+	/** Lineage trace for object recompute */
+	private LineageItem _lineage = null;
 
 	protected TensorObject() {
 		super(DataType.TENSOR, ValueType.STRING);
@@ -190,4 +194,8 @@ public class TensorObject extends CacheableData<TensorBlock> {
 			throws DMLRuntimeException {
 		//TODO rdd write
 	}
+
+	public LineageItem getLineage() { return _lineage; }
+
+	public void setLineage(LineageItem li) { _lineage = li; }
 }

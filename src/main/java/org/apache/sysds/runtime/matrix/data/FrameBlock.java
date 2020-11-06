@@ -46,6 +46,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -53,6 +54,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -90,6 +92,8 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	public FrameBlock() {
 		_numRows = 0;
 	}
+
+	protected LineageItem _lineage = null;
 	
 	/**
 	 * Copy constructor for frame blocks, which uses a shallow copy for
@@ -1242,6 +1246,21 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	@Override
 	public void merge(CacheBlock that, boolean bDummy) {
 		merge((FrameBlock)that);
+	}
+
+	@Override
+	public LineageItem getLineage() { return _lineage; }
+
+	@Override
+	public void setLineage(LineageItem li) { _lineage = li; }
+
+	@Override
+	public boolean hasValidLineage() {
+		List<String> dataGenOpCodes = Arrays.asList(
+				DataGen.RAND_OPCODE, DataGen.SEQ_OPCODE,
+				DataGen.SAMPLE_OPCODE, DataGen.TIME_OPCODE);
+
+		return ( _lineage != null && dataGenOpCodes.contains(_lineage.getOpcode()) );
 	}
 
 	public void merge(FrameBlock that) {

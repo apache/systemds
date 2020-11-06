@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -54,6 +55,9 @@ public class FrameObject extends CacheableData<FrameBlock>
 	private static final long serialVersionUID = 1755082174281927785L;
 
 	private ValueType[] _schema = null;
+
+	/** Lineage trace for object recompute */
+	private LineageItem _lineage = null;
 	
 	protected FrameObject() {
 		super(DataType.FRAME, ValueType.STRING);
@@ -286,4 +290,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 		//lazy evaluation of pending transformations.
 		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, iimd.getFileFormat());
 	}
+
+	public LineageItem getLineage() { return _lineage; }
+
+	public void setLineage(LineageItem li) { _lineage = li; }
 }

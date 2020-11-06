@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -1410,4 +1411,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 		return str.toString();
 	}
+
+	public LineageItem getLineage() { return _data.getLineage(); }
+
+	public void setLineage(LineageItem li) { _data.setLineage(li); }
 }

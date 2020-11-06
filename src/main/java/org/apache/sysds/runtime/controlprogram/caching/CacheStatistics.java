@@ -40,9 +40,11 @@ public class CacheStatistics
 		CACHE_HITS_FSBUFF,
 		CACHE_HITS_FS,
 		CACHE_HITS_HDFS,
+		CACHE_HITS_LIN,
 		CACHE_WRITES_FSBUFF,
 		CACHE_WRITES_FS,
 		CACHE_WRITES_HDFS,
+		CACHE_WRITES_LIN,
 		CACHE_TIME_ACQR, //acquire read
 		CACHE_TIME_ACQM, //acquire read
 		CACHE_TIME_RLS, //release
@@ -54,11 +56,13 @@ public class CacheStatistics
 	private static final LongAdder _numHitsFSBuff   = new LongAdder();
 	private static final LongAdder _numHitsFS       = new LongAdder();
 	private static final LongAdder _numHitsHDFS     = new LongAdder();
-	
+	private static final LongAdder _numHitsLin      = new LongAdder();
+
 	//write statistics caching
 	private static final LongAdder _numWritesFSBuff = new LongAdder();
 	private static final LongAdder _numWritesFS     = new LongAdder();
 	private static final LongAdder _numWritesHDFS   = new LongAdder();
+	private static final LongAdder _numWritesLin    = new LongAdder();
 	
 	//time statistics caching
 	private static final LongAdder _ctimeAcquireR   = new LongAdder(); //in nano sec
@@ -75,6 +79,7 @@ public class CacheStatistics
 		_numWritesFSBuff.reset();
 		_numWritesFS.reset();
 		_numWritesHDFS.reset();
+		_numWritesLin.reset();
 		
 		_ctimeAcquireR.reset();
 		_ctimeAcquireM.reset();
@@ -130,6 +135,18 @@ public class CacheStatistics
 		return _numHitsHDFS.longValue();
 	}
 
+	public static void incrementLinHits() {
+		_numHitsLin.increment();
+	}
+
+	public static void incrementLinHits(int delta) {
+		_numHitsLin.add(delta);
+	}
+
+	public static long getLinHits() {
+		return _numHitsLin.longValue();
+	}
+
 	public static void incrementFSBuffWrites() {
 		_numWritesFSBuff.increment();
 	}
@@ -164,6 +181,18 @@ public class CacheStatistics
 	
 	public static long getHDFSWrites() {
 		return _numWritesHDFS.longValue();
+	}
+
+	public static void incrementLinWrites() {
+		_numWritesLin.increment();
+	}
+
+	public static void incrementLinWrites(int delta) {
+		_numWritesLin.add(delta);
+	}
+
+	public static long getLinWrites() {
+		return _numWritesLin.longValue();
 	}
 	
 	public static void incrementAcquireRTime(long delta) {
@@ -218,6 +247,8 @@ public class CacheStatistics
 		sb.append(_numWritesFS.longValue());
 		sb.append("/");
 		sb.append(_numWritesHDFS.longValue());
+		sb.append("/");
+		sb.append(_numWritesLin.longValue());
 		
 		return sb.toString();
 	}

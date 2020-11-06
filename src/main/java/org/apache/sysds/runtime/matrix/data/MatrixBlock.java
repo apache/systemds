@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -69,6 +70,7 @@ import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
@@ -95,6 +97,7 @@ import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.NativeHelper;
 
+import javax.sound.sampled.Line;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.Externalizable;
@@ -103,10 +106,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
@@ -144,7 +144,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	protected SparseBlock sparseBlock = null;
 	
 	//sparse-block-specific attributes (allocation only)
-	protected int estimatedNNzsPerRow = -1; 
+	protected int estimatedNNzsPerRow = -1;
+
+	protected LineageItem _lineage = null;
 	
 	////////
 	// Matrix Constructors
@@ -470,7 +472,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public int getNumColumns() {
 		return clen;
 	}
-	
+
 	public void setNumColumns(int c) {
 		clen = c;
 	}
@@ -1644,7 +1646,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		merge((MatrixBlock)that, appendOnly);
 	}
 
-	
+	@Override
+	public LineageItem getLineage() { return _lineage; }
+
+	@Override
+	public void setLineage(LineageItem li) { _lineage = li; }
+
+	@Override
+	public boolean hasValidLineage() {
+		List<String> dataGenOpCodes = Arrays.asList(
+				DataGen.RAND_OPCODE, DataGen.SEQ_OPCODE,
+				DataGen.SAMPLE_OPCODE, DataGen.TIME_OPCODE);
+
+		return ( _lineage != null && dataGenOpCodes.contains(_lineage.getOpcode()) );
+	}
+
 	/**
 	 * Merge disjoint: merges all non-zero values of the given input into the current
 	 * matrix block. Note that this method does NOT check for overlapping entries;

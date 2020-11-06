@@ -110,3 +110,6 @@ src/main/cpp/bin
 
 # legacy dml 
 *.dmlt
+
+# Performance Test artifacts
+scripts/perftest/results

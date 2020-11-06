@@ -1,5 +1,8 @@
+
 HOW TO RUN THE PERFORMANCE SUITE
 ================================
+
+Deprecated
 
 Create a directory <...> on target machine on cluster, and copy from
 repository SystemDS/system-ds: machine/cluster:
@@ -10,19 +13,18 @@ repository SystemDS/system-ds: machine/cluster:
 
 Also copy:
 
-   scripts/sparkDML.sh     to <...>/perftest/                     // Edit sparkDML and set SPARK_HOME and SYSTEMDS_ROOT.
+   // Edit sparkDML and set SPARK_HOME and SYSTEMDS_ROOT.
+   scripts/sparkDML.sh     to <...>/perftest/
    target/system-ds-5.0-SNAPSHOT.jar  to <...>/perftest/SystemDS.jar
    test/config/SystemDS-config.xml to <...>/perftest/SystemDS-config.xml
 
    chmod -R +x <...>/./*                        // Change permissions
 
-
 Customize in runAll*.sh to choose data sizes as well as in gen*Data.sh.
-
 
 Following alternative run modes are supported from <...>/perftest/
 
-   ./runAll.sh $1 $2                // run all test 
+   ./runAll.sh $1 $2                // run all test
 
    ./runAll.sh myperftest SPARK     // example
 
@@ -49,10 +51,3 @@ Following alternative run modes are supported from <...>/perftest/
    ./genDescriptiveStatisticsData.sh $1 $2
    ./genStratStatisticsData.sh $1 $2
    ./genDimensionReductionData.sh $1 $2
-
-
-
-      
-
-
-

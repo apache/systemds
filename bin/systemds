@@ -258,7 +258,9 @@ else
   fi
 fi
 
-if [ -z "$CONFIG_FILE" ] ; then
+if [[ "$*" == *-config* ]]; then
+  CONFIG_FILE=""
+elif [ -z "$CONFIG_FILE" ] ; then
   # same as above: set config file param if the file exists
   CONFIG_FILE=$(find $DIR_SEARCH_ORDER -iname "SystemDS*config*.xml" 2> /dev/null  | head -n 1)
   if [ -z "$CONFIG_FILE" ]; then

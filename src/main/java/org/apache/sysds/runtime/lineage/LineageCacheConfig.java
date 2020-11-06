@@ -79,10 +79,13 @@ public class LineageCacheConfig
 	// Minimum reliable data size for spilling estimate in MB.
 	public static final double MIN_SPILL_DATA = 2;
 	// Default I/O in MB per second for binary blocks
-	public static double FSREAD_DENSE = 200;
-	public static double FSREAD_SPARSE = 100;
-	public static double FSWRITE_DENSE = 150;
-	public static double FSWRITE_SPARSE = 75;
+	// NOTE: These defaults are tuned according to high
+	// speed disks, so that spilling starts early. These 
+	// will anyway be adjusted as per the current disk.
+	public static double FSREAD_DENSE = 500;
+	public static double FSREAD_SPARSE = 400;
+	public static double FSWRITE_DENSE = 450;
+	public static double FSWRITE_SPARSE = 225;
 	
 	private enum CachedItemHead {
 		TSMM,

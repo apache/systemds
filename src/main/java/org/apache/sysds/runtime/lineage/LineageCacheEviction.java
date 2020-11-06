@@ -213,13 +213,12 @@ public class LineageCacheEviction
 			double exectime = ((double) e._computeTime) / 1000000; // in milliseconds
 
 			if (LineageCache.DEBUG) {
-				if (exectime > LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
-					System.out.print("LI " + e._key.getOpcode());
-					System.out.print(" exec time " + ((double) e._computeTime) / 1000000);
-					System.out.print(" spill time " + getDiskSpillEstimate(e) * 1000);
-					System.out.print(" dim " + e.getMBValue().getNumRows() + " " + e.getMBValue().getNumColumns());
-					System.out.println(" size " + getDiskSizeEstimate(e));
-				}
+				System.out.print("LI = " + e._key.getOpcode());
+				System.out.print(" exec time = " + ((double) e._computeTime) / 1000000);
+				System.out.println(" spill time = " + getDiskSpillEstimate(e) * 1000);
+				System.out.print("dim = " + e.getMBValue().getNumRows() + " " + e.getMBValue().getNumColumns());
+				System.out.print(" size = " + getDiskSizeEstimate(e));
+				System.out.println(" DAG height = " + e._key.getDistLeaf2Node());
 			}
 
 			if (spilltime < LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {

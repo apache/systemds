@@ -277,18 +277,18 @@ public class LineageCache
 					LineageItem item = entry.getKey();
 					Data data = entry.getValue();
 					LineageCacheEntry centry = _cache.get(item);
-					if (data instanceof MatrixObject)
-						centry.setValue(((MatrixObject)data).acquireReadAndRelease(), computetime);
-					else if (data instanceof ScalarObject)
-						centry.setValue((ScalarObject)data, computetime);
-					else {
+
+					if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
 						// Reusable instructions can return a frame (rightIndex). Remove placeholders.
 						_cache.remove(item);
 						continue;
 					}
 
-					long size = centry.getSize();
-					//remove the entry if the entry is bigger than the cache.
+					MatrixBlock mb = (data instanceof MatrixObject) ? 
+							((MatrixObject)data).acquireReadAndRelease() : null;
+					long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
+
+					//remove the placeholder if the entry is bigger than the cache.
 					//FIXME: the resumed threads will enter into infinite wait as the entry
 					//is removed. Need to add support for graceful remove (placeholder) and resume.
 					if (size > LineageCacheEviction.getCacheLimit()) {
@@ -296,12 +296,20 @@ public class LineageCache
 						continue; 
 					}
 
-					//maintain order for eviction
-					LineageCacheEviction.addEntry(centry);
-
+					//make space for the data
 					if (!LineageCacheEviction.isBelowThreshold(size))
 						LineageCacheEviction.makeSpace(_cache, size);
 					LineageCacheEviction.updateSize(size, true);
+
+					//place the data
+					if (data instanceof MatrixObject)
+						centry.setValue(mb, computetime);
+					else if (data instanceof ScalarObject)
+						centry.setValue((ScalarObject)data, computetime);
+
+					//maintain order for eviction
+					LineageCacheEviction.addEntry(centry);
+
 				}
 			}
 		}
@@ -358,7 +366,7 @@ public class LineageCache
 		// Create a new entry.
 		LineageCacheEntry newItem = new LineageCacheEntry(key, dt, Mval, Sval, computetime);
 		
-		// Make space by removing or spilling LRU entries.
+		// Make space by removing or spilling entries.
 		if( Mval != null || Sval != null ) {
 			long size = newItem.getSize();
 			if( size > LineageCacheEviction.getCacheLimit())

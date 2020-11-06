@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 
 # Import MKL
-if [ -f ~/intel/bin/compilervars.sh ]; then
+if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
     . ~/intel/bin/compilervars.sh intel64
 else
     . /opt/intel/bin/compilervars.sh intel64
@@ -29,7 +29,7 @@ fi
 
 # Set properties
 export LOG4JPROP='scripts/perftest/conf/log4j-off.properties'
-export SYSDS_QUIET=0
+export SYSDS_QUIET=1
 
 # Logging output
 LogName='scripts/perftest/results/MM.log'

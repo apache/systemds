@@ -23,7 +23,7 @@ to run all performance tests for SystemDS, simply download systemds, install the
 
 There are a few prerequisites:
 
-- First follow the install guide: <http://apache.github.io/systemds/site/install>
+- First follow the install guide: <http://apache.github.io/systemds/site/install> and build the project.
 - Setup Intel MKL: <http://apache.github.io/systemds/site/run>
 - Setup OpenBlas: <https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages>
 - Install Perf stat: <https://linoxide.com/linux-how-to/install-perf-tool-centos-ubuntu/>

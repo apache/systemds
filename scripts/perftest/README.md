@@ -25,6 +25,7 @@ There are a few prerequisites:
 
 - First follow the install guide: <http://apache.github.io/systemds/site/install>
 - Setup Intel MKL: <http://apache.github.io/systemds/site/run>
+- Setup OpenBlas: <https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages>
 - Install Perf stat: <https://linoxide.com/linux-how-to/install-perf-tool-centos-ubuntu/>
 
 ```bash

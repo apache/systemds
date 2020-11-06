@@ -66,14 +66,14 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
 			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"},
 			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
-			{"TwoNN", 5, 1000, 32, 2, 0.01, "BSP", "BATCH"},
-			{"TwoNN", 5, 1000, 32, 2, 0.01, "ASP", "BATCH"},
-			{"TwoNN", 5, 1000, 32, 2, 0.01, "BSP", "EPOCH"},
-			{"TwoNN", 5, 1000, 32, 2, 0.01, "ASP", "EPOCH"},
-			{"CNN", 5, 1000, 32, 2, 0.01, "BSP", "BATCH"},
-			{"CNN", 5, 1000, 32, 2, 0.01, "ASP", "BATCH"},
-			{"CNN", 5, 1000, 32, 2, 0.01, "BSP", "EPOCH"},
-			{"CNN", 5, 1000, 32, 2, 0.01, "ASP", "EPOCH"}
+			{"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH"},
+			// {"TwoNN", 5, 1000, 200, 2, 0.01, "ASP", "BATCH"},
+			// {"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH"},
+			// {"TwoNN", 5, 1000, 200, 2, 0.01, "ASP", "EPOCH"},
+			// {"CNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH"},
+			// {"CNN", 5, 1000, 200, 2, 0.01, "ASP", "BATCH"},
+			{"CNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH"},
+			// {"CNN", 5, 1000, 200, 2, 0.01, "ASP", "EPOCH"}
 		});
 	}
 

@@ -66,9 +66,9 @@ train = function(matrix[double] X, matrix[double] y,
 
   # Create the network:
   ## input -> affine1 -> relu1 -> affine2 -> relu2 -> affine3 -> softmax
-  [W1, b1] = affine::init(D, 200)
-  [W2, b2] = affine::init(200, 200)
-  [W3, b3] = affine::init(200, K)
+  [W1, b1] = affine::init(D, 200, -1)
+  [W2, b2] = affine::init(200, 200, -1)
+  [W3, b3] = affine::init(200, K, -1)
   W3 = W3 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
 
   # Create the hyper parameter list
@@ -156,9 +156,9 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
 
   # Create the network:
   ## input -> affine1 -> relu1 -> affine2 -> relu2 -> affine3 -> softmax
-  [W1, b1] = affine::init(D, 200)
-  [W2, b2] = affine::init(200, 200)
-  [W3, b3] = affine::init(200, K)
+  [W1, b1] = affine::init(D, 200, -1)
+  [W2, b2] = affine::init(200, 200, -1)
+  [W3, b3] = affine::init(200, K, -1)
 
   # Create the model list
   model_list = list(W1, W2, W3, b1, b2, b3)

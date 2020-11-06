@@ -19,13 +19,14 @@
 
 package org.apache.sysds.test.functions.misc;
 
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Test for static rewrites + IPA second chance compilation.
@@ -68,12 +69,16 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 		runIPAScalarVariablePropagationTest(TEST_NAME1, false);
 	}
 
+	// TODO: this test is ignored because  sourcing functions from another script does not allow named variables, with default values.
 	@Test
+	@Ignore
 	public void testConstantFoldingScalarPropagation2IPASecondChance() {
 		runIPAScalarVariablePropagationTest(TEST_NAME2, true);
 	}
 
+	// TODO: this test is ignored because  sourcing functions from another script does not allow named variables, with default values.
 	@Test
+	@Ignore
 	public void testConstantFoldingScalarPropagation2NoIPASecondChance() {
 		runIPAScalarVariablePropagationTest(TEST_NAME2, false);
 	}

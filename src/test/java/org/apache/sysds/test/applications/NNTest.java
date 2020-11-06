@@ -31,13 +31,17 @@ import org.apache.sysds.test.functions.mlcontext.MLContextTestBase;
  */
 public class NNTest extends MLContextTestBase {
 
-	private static final String TEST_SCRIPT = "scripts/nn/test/run_tests.dml";
+	private static final String TEST_SCRIPT = "src/test/scripts/applications/nn/run_tests.dml";
 	private static final String ERROR_STRING = "ERROR:";
 
 	@Test
 	public void testNNLibrary() {
 		Script script = dmlFromFile(TEST_SCRIPT);
 		String stdOut = executeAndCaptureStdOut(ml, script).getRight();
+		// This print should stay. Since the structure of these test,
+		// is different compared to other tests.
+		// The one script tests most of the gradient calculations and NN layers.
+		System.out.println(stdOut);
 		assertTrue(stdOut, !stdOut.contains(ERROR_STRING));
 	}
 }

@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.FedTestWorkers;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
@@ -61,16 +62,16 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedSinglenodeLogReg() {
+	public void federatedSinglenodeLogReg() throws Exception {
 		federatedLogReg(Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void federatedHybridLogReg() {
+	public void federatedHybridLogReg() throws Exception {
 		federatedLogReg(Types.ExecMode.HYBRID);
 	}
 
-	public void federatedLogReg(Types.ExecMode execMode) {
+	public void federatedLogReg(Types.ExecMode execMode) throws Exception {
 		ExecMode platformOld = setExecMode(execMode);
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -89,12 +90,8 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 		writeInputMatrixWithMTD("Y", Y, false, new MatrixCharacteristics(rows, 1, blocksize, rows));
 
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		FedTestWorkers workers = new FedTestWorkers(this, 2);
+		int[] ports = workers.start();
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -108,15 +105,15 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "30", "-nvargs",
-			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
+			"in_X1=" + TestUtils.federatedAddress(ports[0], input("X1")),
+			"in_X2=" + TestUtils.federatedAddress(ports[1], input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y=" + input("Y"), "out=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files
 		compareResults(1e-9);
 
-		TestUtils.shutdownThreads(t1, t2);
+		workers.stop();
 
 		// check for federated operations
 		Assert.assertTrue("contains federated matrix mult", heavyHittersContainsString("fed_ba+*"));

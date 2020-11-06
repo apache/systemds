@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import org.apache.sysds.test.FedTestWorkers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -59,16 +60,16 @@ public class FederatedSumTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedSumCP() {
+	public void federatedSumCP() throws Exception {
 		federatedSum(Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void federatedSumSP() {
+	public void federatedSumSP() throws Exception {
 		federatedSum(Types.ExecMode.SPARK);
 	}
 
-	public void federatedSum(Types.ExecMode execMode) {
+	public void federatedSum(Types.ExecMode execMode) throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
@@ -77,8 +78,9 @@ public class FederatedSumTest extends AutomatedTestBase {
 
 		double[][] A = getRandomMatrix(rows / 2, cols, -10, 10, 1, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows / 2, cols, blocksize, (rows / 2) * cols));
-		int port = getRandomAvailablePort();
-		Thread t = startLocalFedWorkerThread(port);
+		
+		FedTestWorkers workers = new FedTestWorkers(this, 1);
+		int[] ports = workers.start();
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -103,7 +105,7 @@ public class FederatedSumTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
+		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(ports[0], input("A")), "rows=" + rows,
 			"cols=" + cols, "out_S=" + output("S"), "out_R=" + output("R"), "out_C=" + output("C")};
 
 		runTest(true, false, null, -1);
@@ -111,7 +113,7 @@ public class FederatedSumTest extends AutomatedTestBase {
 		// compare all sums via files
 		compareResults(1e-11);
 
-		TestUtils.shutdownThread(t);
+		workers.stop();
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}

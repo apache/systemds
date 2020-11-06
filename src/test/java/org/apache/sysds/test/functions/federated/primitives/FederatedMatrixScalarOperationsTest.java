@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import org.apache.sysds.test.FedTestWorkers;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.junit.runner.RunWith;
@@ -57,9 +58,6 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 	private static final String TEST_PROG_SCALAR_SUBTRACTION_MATRIX = "FederatedScalarSubtractionMatrix";
 	private static final String TEST_PROG_SCALAR_MULTIPLICATION_MATRIX = "FederatedScalarMultiplicationMatrix";
 
-	private static final String FEDERATED_WORKER_HOST = "localhost";
-	private static final int FEDERATED_WORKER_PORT = 1222;
-
 	@Override
 	public void setUp() {
 		// Save Result to File R
@@ -78,7 +76,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testFederatedMatrixAdditionScalar() {
+	public void testFederatedMatrixAdditionScalar() throws Exception {
 		getAndLoadTestConfiguration(TEST_PROG_MATRIX_ADDITION_SCALAR);
 
 		double[][] m = getRandomMatrix(this.rows, this.cols, -1, 1, 1.0, 1);
@@ -96,7 +94,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testFederatedMatrixSubtractionScalar() {
+	public void testFederatedMatrixSubtractionScalar() throws Exception {
 		getAndLoadTestConfiguration(TEST_PROG_MATRIX_SUBTRACTION_SCALAR);
 
 		double[][] m = getRandomMatrix(this.rows, this.cols, -1, 1, 1.0, 1);
@@ -114,7 +112,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testFederatedMatrixMultiplicationScalar() {
+	public void testFederatedMatrixMultiplicationScalar() throws Exception {
 		getAndLoadTestConfiguration(TEST_PROG_MATRIX_MULTIPLICATION_SCALAR);
 
 		double[][] m = getRandomMatrix(this.rows, this.cols, -1, 1, 1.0, 1);
@@ -132,7 +130,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testScalarAdditionFederatedMatrix() {
+	public void testScalarAdditionFederatedMatrix() throws Exception {
 		getAndLoadTestConfiguration(TEST_PROG_SCALAR_ADDITION_MATRIX);
 
 		double[][] m = getRandomMatrix(this.rows, this.cols, -1, 1, 1.0, 1);
@@ -150,7 +148,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testScalarSubtractionFederatedMatrix() {
+	public void testScalarSubtractionFederatedMatrix() throws Exception {
 		getAndLoadTestConfiguration(TEST_PROG_SCALAR_SUBTRACTION_MATRIX);
 
 		double[][] m = getRandomMatrix(this.rows, this.cols, -1, 1, 1.0, 1);
@@ -168,7 +166,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testScalarMultiplicationFederatedMatrix() {
+	public void testScalarMultiplicationFederatedMatrix() throws Exception {
 		getAndLoadTestConfiguration(TEST_PROG_SCALAR_MULTIPLICATION_MATRIX);
 
 		double[][] m = getRandomMatrix(this.rows, this.cols, -1, 1, 1.0, 1);
@@ -185,21 +183,18 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 		runGenericTest(TEST_PROG_SCALAR_MULTIPLICATION_MATRIX, scalar);
 	}
 
-	private void runGenericTest(String dmlFile, int scalar) {
+	private void runGenericTest(String dmlFile, int scalar) throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t = null;
+		FedTestWorkers workers = new FedTestWorkers(this, 1);
 		try {
 			// we need the reference file to not be written to hdfs, so we get the correct format
 			rtplatform = Types.ExecMode.SINGLE_NODE;
-			programArgs = new String[] {"-w", Integer.toString(FEDERATED_WORKER_PORT)};
-			t = new Thread(() -> runTest(true, false, null, -1));
-			t.start();
+			int[] ports = workers.start();
 			sleep(FED_WORKER_WAIT);
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + dmlFile + ".dml";
-			programArgs = new String[] {"-nvargs",
-				"in=" + TestUtils.federatedAddress(FEDERATED_WORKER_HOST, FEDERATED_WORKER_PORT, input("M")),
+			programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(ports[0], input("M")),
 				"rows=" + rows, "cols=" + cols, "scalar=" + scalar, "out=" + output("R")};
 			runTest(true, false, null, -1);
 
@@ -210,8 +205,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 			assert (false);
 		}
 		finally {
-			rtplatform = platformOld;
-			TestUtils.shutdownThread(t);
+			workers.stop();
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}

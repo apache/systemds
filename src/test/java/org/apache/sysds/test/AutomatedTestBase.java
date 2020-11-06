@@ -111,7 +111,7 @@ public abstract class AutomatedTestBase {
 
 	public static final int FED_WORKER_WAIT = 1000; // in ms
 	// max time to wait when checking if worker accepts connections
-	public static final int FED_WORKER_CONNECTION_WAIT = 5000;
+	public static final int FED_WORKER_CONNECTION_WAIT = 10000;
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
 	// to set the native library paths internally thus breaking the code.
@@ -1391,12 +1391,14 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
-	private static void waitForFederatedWorker(int port) throws TimeoutException {
+	protected static void waitForFederatedWorker(int port) throws TimeoutException {
 		long start = System.currentTimeMillis();
 		boolean failed = true;
 		while(System.currentTimeMillis() - start <= FED_WORKER_CONNECTION_WAIT) {
 			FederatedResponse response = null;
 			try {
+				// don't request too frequently
+				Thread.sleep(FED_WORKER_CONNECTION_WAIT / 1000);
 				response = executeFederatedOperation(new InetSocketAddress("localhost", port),
 					new FederatedRequest(FederatedRequest.RequestType.CLEAR)).get();
 			}
@@ -1422,10 +1424,12 @@ public abstract class AutomatedTestBase {
 	 * @param ports the ports to use
 	 * @return the processes associated with the workers
 	 */
-	protected Process[] startLocalFedWorkers(int... ports) throws TimeoutException {
-		Process[] processes = Arrays.stream(ports).mapToObj(port -> startLocalFedWorker(port, false))
-			.toArray(Process[]::new);
-		for (int port : ports) {
+	protected Process[] startLocalFedWorkers(int... ports) throws TimeoutException, IOException {
+		Process[] processes = new Process[ports.length];
+		for(int i = 0; i < ports.length; i++) {
+			processes[i] = startLocalFedWorker(ports[i], false);
+		}
+		for(int port : ports) {
 			waitForFederatedWorker(port);
 		}
 		return processes;
@@ -1436,21 +1440,11 @@ public abstract class AutomatedTestBase {
 	 *
 	 *
 	 * @param port Port to use for the JVM
+	 * @param wait wait a delay to ensure the worker is ready for connections (max
+	 *             <code>FED_WORKER_CONNECTION_WAIT</code>ms)
 	 * @return the process associated with the worker.
 	 */
-	protected Process startLocalFedWorker(int port) {
-		return startLocalFedWorker(port, true);
-	}
-
-	/**
-	 * Start new JVM for a federated worker at the port.
-	 *
-	 *
-	 * @param port Port to use for the JVM
-	 * @param wait wait a delay to ensure the worker is ready for connections (max <code>FED_WORKER_CONNECTION_WAIT</code>ms)
-	 * @return the process associated with the worker.
-	 */
-	protected Process startLocalFedWorker(int port, boolean wait) {
+	protected Process startLocalFedWorker(int port, boolean wait) throws IOException, TimeoutException {
 		Process process = null;
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
@@ -1458,20 +1452,11 @@ public abstract class AutomatedTestBase {
 		ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", classpath, DMLScript.class.getName(), "-w",
 			Integer.toString(port), "-stats");
 
-		try {
-			process = processBuilder.start();
-			// Give some time to startup the worker.
-			sleep(FED_WORKER_WAIT);
-		}
-		catch(IOException | InterruptedException e) {
+		process = processBuilder.start();
 
-			if(wait)
-				// Give some time to startup the worker.
-				waitForFederatedWorker(port);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
+		if(wait)
+			// Give some time to startup the worker.
+			waitForFederatedWorker(port);
 		return process;
 	}
 
@@ -1483,34 +1468,28 @@ public abstract class AutomatedTestBase {
 	 * @param port Port to use
 	 * @return the thread associated with the worker.
 	 */
-	protected Thread startLocalFedWorkerThread(int port) {
-		Thread t = null;
+	protected Thread startLocalFedWorkerThread(int port) throws TimeoutException {
+		Thread t;
 		String[] fedWorkArgs = {"-w", Integer.toString(port)};
 		ArrayList<String> args = new ArrayList<>();
 
 		addProgramIndependentArguments(args);
 
-		for(int i = 0; i < fedWorkArgs.length; i++)
-			args.add(fedWorkArgs[i]);
+		args.addAll(Arrays.asList(fedWorkArgs));
 
-		String[] finalArguments = args.toArray(new String[args.size()]);
+		String[] finalArguments = args.toArray(new String[0]);
 
 		Statistics.allowWorkerStatistics = false;
 
-		try {
-			t = new Thread(() -> {
-				try {
-					main(finalArguments);
-				}
-				catch(IOException e) {
-				}
-			});
-			t.start();
-			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(FED_WORKER_WAIT);
-		}
-		catch(InterruptedException e) {
-			e.printStackTrace();
-		}
+		t = new Thread(() -> {
+			try {
+				main(finalArguments);
+			}
+			catch(IOException ignored) {
+			}
+		});
+		t.start();
+		waitForFederatedWorker(port);
 		return t;
 	}
 
@@ -1528,7 +1507,7 @@ public abstract class AutomatedTestBase {
 				try {
 					main(args);
 				}
-				catch(IOException e) {
+				catch(IOException ignored) {
 				}
 			});
 			t.start();

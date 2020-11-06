@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.FedTestWorkers;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Ignore;
@@ -138,21 +139,22 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void aggregatePrivateTest() {
+	public void aggregatePrivateTest() throws Exception {
 		federatedSum(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLRuntimeException.class);
 	}
 
 	@Test
-	public void aggregatePrivateAggregationTest() {
+	public void aggregatePrivateAggregationTest() throws Exception {
 		federatedSum(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, null);
 	}
 
 	@Test
-	public void aggregateNonePrivateTest() {
+	public void aggregateNonePrivateTest() throws Exception {
 		federatedSum(Types.ExecMode.SINGLE_NODE, PrivacyLevel.None, null);
 	}
 
-	public void federatedSum(Types.ExecMode execMode, PrivacyLevel privacyLevel, Class<?> expectedException) {
+	public void federatedSum(Types.ExecMode execMode, PrivacyLevel privacyLevel, Class<?> expectedException)
+			throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
@@ -162,8 +164,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols), new PrivacyConstraint(privacyLevel));
-		int port = getRandomAvailablePort();
-		Thread t = startLocalFedWorkerThread(port);
+		FedTestWorkers workers = new FedTestWorkers(this, 1);
+		int[] ports = workers.start();
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -190,8 +192,9 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get("aggregation");
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + AGGREGATION_TEST_NAME + ".dml";
-		programArgs = new String[] {"-checkPrivacy", "-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
-			"cols=" + cols, "out_S=" + output("S"), "out_R=" + output("R"), "out_C=" + output("C")};
+		programArgs = new String[] {"-checkPrivacy", "-nvargs",
+			"in=" + TestUtils.federatedAddress(ports[0], input("A")), "rows=" + rows, "cols=" + cols,
+			"out_S=" + output("S"), "out_R=" + output("R"), "out_C=" + output("C")};
 
 		runTest(true, (expectedException != null), expectedException, -1);
 
@@ -202,30 +205,31 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		assertTrue("The privacy level " + privacyLevel.toString() + " should have been checked during execution",
 			checkedPrivacyConstraintsContains(privacyLevel));
 
-		TestUtils.shutdownThread(t);
+		workers.stop();
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
 
 	@Test
 	@Ignore
-	public void transferPrivateTest() {
+	public void transferPrivateTest() throws Exception {
 		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLRuntimeException.class);
 	}
 
 	@Test
 	@Ignore
-	public void transferPrivateAggregationTest() {
+	public void transferPrivateAggregationTest() throws Exception {
 		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLRuntimeException.class);
 	}
 
 	@Test
 	@Ignore
-	public void transferNonePrivateTest() {
+	public void transferNonePrivateTest() throws Exception {
 		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.None, null);
 	}
 
-	public void federatedRCBind(Types.ExecMode execMode, PrivacyLevel privacyLevel, Class<?> expectedException) {
+	public void federatedRCBind(Types.ExecMode execMode, PrivacyLevel privacyLevel, Class<?> expectedException)
+			throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
@@ -236,8 +240,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols), new PrivacyConstraint(privacyLevel));
 
-		int port = getRandomAvailablePort();
-		Thread t = startLocalFedWorkerThread(port);
+		FedTestWorkers workers = new FedTestWorkers(this, 1);
+		int[] ports = workers.start();
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -255,7 +259,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TRANSFER_TEST_NAME + ".dml";
 		programArgs = new String[] {"-checkPrivacy", "-nvargs",
-			"in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
+			"in=" + TestUtils.federatedAddress(ports[0], input("A")), "rows=" + rows,
 			"cols=" + cols, "out_R=" + output("R"), "out_C=" + output("C")};
 
 		runTest(true, (expectedException != null), expectedException, -1);
@@ -267,27 +271,28 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		assertTrue("Privacy constraint with level " + privacyLevel + " should have been checked during execution",
 			checkedPrivacyConstraintsContains(privacyLevel));
 
-		TestUtils.shutdownThread(t);
+		workers.stop();
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
 
 	@Test
-	public void matVecMultPrivateTest() {
+	public void matVecMultPrivateTest() throws Exception {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLRuntimeException.class);
 	}
 
 	@Test
-	public void matVecMultPrivateAggregationTest() {
+	public void matVecMultPrivateAggregationTest() throws Exception {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLRuntimeException.class);
 	}
 
 	@Test
-	public void matVecMultNonePrivateTest() {
+	public void matVecMultNonePrivateTest() throws Exception {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.None, null);
 	}
 
-	public void federatedMultiply(Types.ExecMode execMode, PrivacyLevel privacyLevel, Class<?> expectedException) {
+	public void federatedMultiply(Types.ExecMode execMode, PrivacyLevel privacyLevel, Class<?> expectedException)
+			throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -314,10 +319,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(cols, halfRows, blocksize, halfRows * cols));
 		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(cols, halfRows, blocksize, halfRows * cols));
 
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		t1 = startLocalFedWorkerThread(port1);
-		t2 = startLocalFedWorkerThread(port2);
+		FedTestWorkers workers = new FedTestWorkers(this, 2);
+		int[] ports = workers.start();
 
 		TestConfiguration config = availableTestConfigurations.get("matvecmult");
 		loadTestConfiguration(config);
@@ -332,10 +335,10 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + MATVECMULT_TEST_NAME + ".dml";
 		programArgs = new String[] {"-checkPrivacy", 
 			"-nvargs",
-			"X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
-			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols,
+			"X1=" + TestUtils.federatedAddress(ports[0], input("X1")),
+			"X2=" + TestUtils.federatedAddress(ports[1], input("X2")),
+			"Y1=" + TestUtils.federatedAddress(ports[0], input("Y1")),
+			"Y2=" + TestUtils.federatedAddress(ports[1], input("Y2")), "r=" + rows, "c=" + cols,
 			"hr=" + halfRows, "Z=" + output("Z")};
 		runTest(true, (expectedException != null), expectedException, -1);
 
@@ -346,7 +349,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		assertTrue("Privacy constraint with level " + privacyLevel + " should have been checked during execution",
 			checkedPrivacyConstraintsContains(privacyLevel));
 
-		TestUtils.shutdownThreads(t1, t2);
+		workers.stop();
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

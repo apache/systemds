@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.algorithms;
 
+import org.apache.sysds.test.FedTestWorkers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,17 +62,17 @@ public class FederatedGLMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedSinglenodeGLM() {
+	public void federatedSinglenodeGLM() throws Exception {
 		federatedGLM(Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void federatedHybridGLM() {
+	public void federatedHybridGLM() throws Exception {
 		federatedGLM(Types.ExecMode.HYBRID);
 	}
 
 	
-	public void federatedGLM(Types.ExecMode execMode) {
+	public void federatedGLM(Types.ExecMode execMode) throws Exception {
 		ExecMode platformOld = setExecMode(execMode);
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -90,12 +91,8 @@ public class FederatedGLMTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 		writeInputMatrixWithMTD("Y", Y, false, new MatrixCharacteristics(rows, 1, blocksize, rows));
 
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		FedTestWorkers workers = new FedTestWorkers(this, 2);
+		int[] ports = workers.start();
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -109,15 +106,14 @@ public class FederatedGLMTest extends AutomatedTestBase {
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats",
-			"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
+			"-nvargs", "in_X1=" + TestUtils.federatedAddress(ports[0], input("X1")),
+			"in_X2=" + TestUtils.federatedAddress(ports[1], input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y=" + input("Y"), "out=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files
 		compareResults(1e-9);
-
-		TestUtils.shutdownThreads(t1, t2);
+		workers.stop();
 
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));

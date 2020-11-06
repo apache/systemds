@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import org.apache.sysds.test.FedTestWorkers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -59,7 +60,7 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedMultiplyCP() {
+	public void federatedMultiplyCP() throws Exception {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE);
 	}
 
@@ -69,7 +70,7 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 	 * @Test public void federatedMultiplySP() { federatedMultiply(Types.ExecMode.SPARK); }
 	 */
 
-	public void federatedMultiply(Types.ExecMode execMode) {
+	public void federatedMultiply(Types.ExecMode execMode) throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -93,11 +94,9 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(cols, halfRows, blocksize, halfRows * cols));
 		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(cols, halfRows, blocksize, halfRows * cols));
-
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		
+		FedTestWorkers workers = new FedTestWorkers(this, 2);
+		int[] ports = workers.start();
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -110,16 +109,16 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
-			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
+		programArgs = new String[] {"-nvargs", "X1=" + TestUtils.federatedAddress(ports[0], input("X1")),
+			"X2=" + TestUtils.federatedAddress(ports[1], input("X2")),
+			"Y1=" + TestUtils.federatedAddress(ports[0], input("Y1")),
+			"Y2=" + TestUtils.federatedAddress(ports[1], input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files
 		compareResults(1e-9);
 
-		TestUtils.shutdownThreads(t1, t2);
+		workers.stop();
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

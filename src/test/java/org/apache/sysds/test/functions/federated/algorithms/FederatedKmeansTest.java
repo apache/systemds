@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.algorithms;
 
+import org.apache.sysds.test.FedTestWorkers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -74,16 +75,16 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedKmeansSinglenode() {
+	public void federatedKmeansSinglenode() throws Exception {
 		federatedKmeans(Types.ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
-	public void federatedKmeansHybrid() {
+	public void federatedKmeansHybrid() throws Exception {
 		federatedKmeans(Types.ExecMode.HYBRID);
 	}
 
-	public void federatedKmeans(Types.ExecMode execMode) {
+	public void federatedKmeans(Types.ExecMode execMode) throws Exception {
 		ExecMode platformOld = setExecMode(execMode);
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -97,12 +98,8 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		FedTestWorkers workers = new FedTestWorkers(this, 2);
+		int[] ports = workers.start();
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -117,8 +114,8 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats",
-			"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
+			"-nvargs", "in_X1=" + TestUtils.federatedAddress(ports[0], input("X1")),
+			"in_X2=" + TestUtils.federatedAddress(ports[1], input("X2")), "rows=" + rows, "cols=" + cols,
 			"runs=" + String.valueOf(runs), "out=" + output("Z")};
 		
 		for( int i=0; i<rep; i++ ) {
@@ -145,7 +142,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		
 		// compare via files
 		//compareResults(1e-9); --> randomized
-		TestUtils.shutdownThreads(t1, t2);
+		workers.stop();
 		
 		resetExecMode(platformOld);
 	}

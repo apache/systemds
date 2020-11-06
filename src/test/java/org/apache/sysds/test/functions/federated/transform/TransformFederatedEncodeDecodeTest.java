@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.FedTestWorkers;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
@@ -118,18 +119,11 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 	private void runTransformEncodeDecodeTest(boolean recode, boolean sparse, Types.FileFormat format) {
 		ExecMode rtold = setExecMode(ExecMode.SINGLE_NODE);
 		
-		Thread t1 = null, t2 = null, t3 = null, t4 = null;
+		FedTestWorkers workers = new FedTestWorkers(this, 4);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME_RECODE);
 
-			int port1 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1);
-			int port2 = getRandomAvailablePort();
-			t2 = startLocalFedWorkerThread(port2);
-			int port3 = getRandomAvailablePort();
-			t3 = startLocalFedWorkerThread(port3);
-			int port4 = getRandomAvailablePort();
-			t4 = startLocalFedWorkerThread(port4);
+			int[] ports = workers.start();
 
 			// schema
 			Types.ValueType[] schema = new Types.ValueType[cols / 2];
@@ -155,12 +149,12 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 
 			String spec_file = recode ? SPEC_RECODE : SPEC_DUMMYCODE;
 			programArgs = new String[] {"-nvargs",
-				"in_AU=" + TestUtils.federatedAddress("localhost", port1, input("AU")),
-				"in_AL=" + TestUtils.federatedAddress("localhost", port2, input("AL")),
-				"in_BU=" + TestUtils.federatedAddress("localhost", port3, input("BU")),
-				"in_BL=" + TestUtils.federatedAddress("localhost", port4, input("BL")), "rows=" + rows, "cols=" + cols,
-				"spec_file=" + SCRIPT_DIR + TEST_DIR + spec_file, "out1=" + output("FO1"), "out2=" + output("FO2"),
-				"format=" + format.toString()};
+				"in_AU=" + TestUtils.federatedAddress("localhost", ports[0], input("AU")),
+				"in_AL=" + TestUtils.federatedAddress("localhost", ports[1], input("AL")),
+				"in_BU=" + TestUtils.federatedAddress("localhost", ports[2], input("BU")),
+				"in_BL=" + TestUtils.federatedAddress("localhost", ports[3], input("BL")), "rows=" + rows,
+				"cols=" + cols, "spec_file=" + SCRIPT_DIR + TEST_DIR + spec_file, "out1=" + output("FO1"),
+				"out2=" + output("FO2"), "format=" + format.toString()};
 
 			// run test
 			runTest(true, false, null, -1);
@@ -195,7 +189,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			Assert.fail(ex.getMessage());
 		}
 		finally {
-			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			workers.stop();
 			resetExecMode(rtold);
 		}
 	}

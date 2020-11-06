@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.FedTestWorkers;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.functions.federated.FederatedTestObjectConstructor;
@@ -82,20 +83,16 @@ public class FederatedReaderTest extends AutomatedTestBase {
 		double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 1340);
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
-		String host = "localhost";
-
-		MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
-			rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
-			new String[] {input("X1"), input("X2")}, input("X.json"));
-		writeInputFederatedWithMTD("X.json", fed, null);
-
+		
+		FedTestWorkers workers = new FedTestWorkers(this, 2);
 		try {
+			int[] ports = workers.start();
+			String host = "localhost";
+			
+			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
+					rows, cols, blocksize, host, begins, ends, new int[] {ports[0], ports[1]},
+					new String[] {input("X1"), input("X2")}, input("X.json"));
+			writeInputFederatedWithMTD("X.json", fed, null);
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + (rowPartitioned ? "Row" : "Col")
 				+ "Reference.dml";
@@ -116,9 +113,8 @@ public class FederatedReaderTest extends AutomatedTestBase {
 			Assert.assertTrue(false);
 		}
 		finally {
+			workers.stop();
 			resetExecMode(oldPlatform);
 		}
-
-		TestUtils.shutdownThreads(t1, t2);
 	}
 }

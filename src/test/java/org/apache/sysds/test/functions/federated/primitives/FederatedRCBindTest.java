@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import org.apache.sysds.test.FedTestWorkers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -62,16 +63,16 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedRCBindCP() {
+	public void federatedRCBindCP() throws Exception {
 		federatedRCBind(Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void federatedRCBindSP() {
+	public void federatedRCBindSP() throws Exception {
 		federatedRCBind(Types.ExecMode.SPARK);
 	}
 
-	public void federatedRCBind(Types.ExecMode execMode) {
+	public void federatedRCBind(Types.ExecMode execMode) throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
@@ -82,11 +83,9 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
 		double[][] B = getRandomMatrix(rows, cols, -10, 10, 1, 2);
 		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
-
-		int port1 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		int port2 = getRandomAvailablePort();
-		Thread t2 = startLocalFedWorkerThread(port2);
+		
+		FedTestWorkers workers = new FedTestWorkers(this, 2);
+		int[] ports = workers.start();
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -105,8 +104,8 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "in1=" + TestUtils.federatedAddress(port1, input("A")),
-			"in2=" + TestUtils.federatedAddress(port2, input("B")), "in2_local=" + input("B"), "rows=" + rows,
+		programArgs = new String[] {"-nvargs", "in1=" + TestUtils.federatedAddress(ports[0], input("A")),
+			"in2=" + TestUtils.federatedAddress(ports[1], input("B")), "in2_local=" + input("B"), "rows=" + rows,
 			"cols=" + cols, "out_R_FF=" + output("R_FF"), "out_R_FL=" + output("R_FL"),
 			"out_R_LF=" + output("R_LF"), "out_C_FF=" + output("C_FF"), "out_C_FL=" + output("C_FL"),
 			"out_C_LF=" + output("C_LF")};
@@ -116,7 +115,7 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		// compare all sums via files
 		compareResults(1e-11);
 
-		TestUtils.shutdownThreads(t1, t2);
+		workers.stop();
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}

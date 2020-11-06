@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.FedTestWorkers;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
@@ -87,46 +88,46 @@ public class FederatedRowColAggregateTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testColSumDenseMatrixCP() {
+	public void testColSumDenseMatrixCP() throws Exception {
 		runAggregateOperationTest(OpType.SUM, InstType.COL, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testColMeanDenseMatrixCP() {
+	public void testColMeanDenseMatrixCP() throws Exception {
 		runAggregateOperationTest(OpType.MEAN, InstType.COL, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testColMaxDenseMatrixCP() {
+	public void testColMaxDenseMatrixCP() throws Exception {
 		runAggregateOperationTest(OpType.MAX, InstType.COL, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testRowSumDenseMatrixCP() {
+	public void testRowSumDenseMatrixCP() throws Exception {
 		runAggregateOperationTest(OpType.SUM, InstType.ROW, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testRowMeanDenseMatrixCP() {
+	public void testRowMeanDenseMatrixCP() throws Exception {
 		runAggregateOperationTest(OpType.MEAN, InstType.ROW, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testRowMaxDenseMatrixCP() {
+	public void testRowMaxDenseMatrixCP() throws Exception {
 		runAggregateOperationTest(OpType.MAX, InstType.ROW, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testRowMinDenseMatrixCP() {
+	public void testRowMinDenseMatrixCP() throws Exception {
 		runAggregateOperationTest(OpType.MIN, InstType.ROW, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testColMinDenseMatrixCP() {
+	public void testColMinDenseMatrixCP() throws Exception {
 		runAggregateOperationTest(OpType.MIN, InstType.COL, ExecMode.SINGLE_NODE);
 	}
 
-	private void runAggregateOperationTest(OpType type, InstType instr, ExecMode execMode) {
+	private void runAggregateOperationTest(OpType type, InstType instr, ExecMode execMode) throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -170,17 +171,9 @@ public class FederatedRowColAggregateTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X2", X2, false, mc);
 		writeInputMatrixWithMTD("X3", X3, false, mc);
 		writeInputMatrixWithMTD("X4", X4, false, mc);
-
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		int port3 = getRandomAvailablePort();
-		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
-		Thread t3 = startLocalFedWorkerThread(port3);
-		Thread t4 = startLocalFedWorkerThread(port4);
+		
+		FedTestWorkers workers = new FedTestWorkers(this, 4);
+		int[] ports = workers.start();
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -200,10 +193,10 @@ public class FederatedRowColAggregateTest extends AutomatedTestBase {
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-nvargs",
-			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
+			"in_X1=" + TestUtils.federatedAddress(ports[0], input("X1")),
+			"in_X2=" + TestUtils.federatedAddress(ports[1], input("X2")),
+			"in_X3=" + TestUtils.federatedAddress(ports[2], input("X3")),
+			"in_X4=" + TestUtils.federatedAddress(ports[3], input("X4")), "rows=" + rows, "cols=" + cols,
 			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
 		runTest(true, false, null, -1);
@@ -234,7 +227,7 @@ public class FederatedRowColAggregateTest extends AutomatedTestBase {
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
 
-		TestUtils.shutdownThreads(t1, t2, t3, t4);
+		workers.stop();
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

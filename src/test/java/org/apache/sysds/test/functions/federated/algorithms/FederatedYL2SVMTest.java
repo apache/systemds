@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.algorithms;
 
+import org.apache.sysds.test.FedTestWorkers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -61,7 +62,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedL2SVMCP() {
+	public void federatedL2SVMCP() throws Exception {
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE);
 	}
 
@@ -71,7 +72,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 	 * @Test public void federatedL2SVMSP() { federatedL2SVM(Types.ExecMode.SPARK); }
 	 */
 
-	public void federatedL2SVM(Types.ExecMode execMode) {
+	public void federatedL2SVM(Types.ExecMode execMode) throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -100,12 +101,8 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(halfRows, 1, blocksize, halfRows));
 		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(halfRows, 1, blocksize, halfRows));
 
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		FedTestWorkers workers = new FedTestWorkers(this, 2);
+		int[] ports = workers.start();
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -118,16 +115,16 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrixz
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
-			"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
-			"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "out=" + output("Z")};
+		programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(ports[0], input("X1")),
+			"in_X2=" + TestUtils.federatedAddress(ports[1], input("X2")), "rows=" + rows, "cols=" + cols,
+			"in_Y1=" + TestUtils.federatedAddress(ports[0], input("Y1")),
+			"in_Y2=" + TestUtils.federatedAddress(ports[1], input("Y2")), "out=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files
 		compareResults(1e-9);
 
-		TestUtils.shutdownThreads(t1, t2);
+		workers.stop();
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

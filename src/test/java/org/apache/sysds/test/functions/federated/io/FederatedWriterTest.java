@@ -63,11 +63,11 @@ public class FederatedWriterTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedSinglenodeWrite() {
+	public void federatedSinglenodeWrite() throws Exception {
 		federatedWrite(ExecMode.SINGLE_NODE);
 	}
 
-	public void federatedWrite(ExecMode execMode) {
+	public void federatedWrite(ExecMode execMode) throws Exception {
 		ExecMode oldPlatform = setExecMode(execMode);
 		getAndLoadTestConfiguration(TEST_NAME);
 		setOutputBuffering(true);
@@ -112,7 +112,8 @@ public class FederatedWriterTest extends AutomatedTestBase {
 
 			// Verify output
 			Assert.assertEquals(Double.parseDouble(refOut.split("\n")[0]),
-				Double.parseDouble(out.split("\n")[0]), 0.00001);
+				Double.parseDouble(out.split("\n")[0]),
+				0.00001);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.FedTestWorkers;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
@@ -43,7 +44,7 @@ import org.junit.Test;
 public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "TransformFederatedEncodeApply";
 	private final static String TEST_DIR = "functions/transform/";
-	private final static String TEST_CLASS_DIR = TEST_DIR 
+	private final static String TEST_CLASS_DIR = TEST_DIR
 		+ TransformFederatedEncodeApplyTest.class.getSimpleName() + "/";
 
 	// dataset and transform tasks without missing values
@@ -190,19 +191,12 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			case HASH: SPEC = colnames ? SPEC8b : SPEC8; DATASET = DATASET1; break;
 			case HASH_RECODE: SPEC = colnames ? SPEC9b : SPEC9; DATASET = DATASET1; break;
 		}
-
-		Thread t1 = null, t2 = null, t3 = null, t4 = null;
+		
+		FedTestWorkers workers = new FedTestWorkers(this, 4);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME1);
 
-			int port1 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1);
-			int port2 = getRandomAvailablePort();
-			t2 = startLocalFedWorkerThread(port2);
-			int port3 = getRandomAvailablePort();
-			t3 = startLocalFedWorkerThread(port3);
-			int port4 = getRandomAvailablePort();
-			t4 = startLocalFedWorkerThread(port4);
+			int[] ports = workers.start();
 
 			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, DataExpression.DEFAULT_DELIM_DELIMITER,
 				DataExpression.DEFAULT_DELIM_FILL, DataExpression.DEFAULT_DELIM_FILL_VALUE, DATASET.equals(DATASET1) ?
@@ -241,10 +235,10 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 				dataset.getNumColumns() - 1);
 
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[] {"-nvargs", "in_AH=" + TestUtils.federatedAddress(port1, input("AH")),
-				"in_AL=" + TestUtils.federatedAddress(port2, input("AL")),
-				"in_BH=" + TestUtils.federatedAddress(port3, input("BH")),
-				"in_BL=" + TestUtils.federatedAddress(port4, input("BL")), "rows=" + dataset.getNumRows(),
+			programArgs = new String[] {"-nvargs", "in_AH=" + TestUtils.federatedAddress(ports[0], input("AH")),
+				"in_AL=" + TestUtils.federatedAddress(ports[1], input("AL")),
+				"in_BH=" + TestUtils.federatedAddress(ports[2], input("BH")),
+				"in_BL=" + TestUtils.federatedAddress(ports[3], input("BL")), "rows=" + dataset.getNumRows(),
 				"cols=" + dataset.getNumColumns(), "TFSPEC=" + HOME + "input/" + SPEC, "TFDATA1=" + output("tfout1"),
 				"TFDATA2=" + output("tfout2"), "OFMT=csv"};
 
@@ -280,7 +274,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			throw new RuntimeException(ex);
 		}
 		finally {
-			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			workers.stop();
 			resetExecMode(rtold);
 		}
 	}

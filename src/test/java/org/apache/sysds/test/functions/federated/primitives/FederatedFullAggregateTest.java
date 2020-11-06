@@ -28,6 +28,7 @@ import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.FedTestWorkers;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
@@ -74,46 +75,46 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testSumDenseMatrixCP() {
+	public void testSumDenseMatrixCP() throws Exception {
 		runColAggregateOperationTest(OpType.SUM, ExecType.CP);
 	}
 
 	@Test
-	public void testMeanDenseMatrixCP() {
+	public void testMeanDenseMatrixCP() throws Exception {
 		runColAggregateOperationTest(OpType.MEAN, ExecType.CP);
 	}
 
 	@Test
-	public void testMaxDenseMatrixCP() {
+	public void testMaxDenseMatrixCP() throws Exception {
 		runColAggregateOperationTest(OpType.MAX, ExecType.CP);
 	}
 
 	@Test
-	public void testMinDenseMatrixCP() {
+	public void testMinDenseMatrixCP() throws Exception {
 		runColAggregateOperationTest(OpType.MIN, ExecType.CP);
 	}
 
 	@Test
-	public void testSumDenseMatrixSP() {
+	public void testSumDenseMatrixSP() throws Exception {
 		runColAggregateOperationTest(OpType.SUM, ExecType.SPARK);
 	}
 
 	@Test
-	public void testMeanDenseMatrixSP() {
+	public void testMeanDenseMatrixSP() throws Exception {
 		runColAggregateOperationTest(OpType.MEAN, ExecType.SPARK);
 	}
 
 	@Test
-	public void testMaxDenseMatrixSP() {
+	public void testMaxDenseMatrixSP() throws Exception {
 		runColAggregateOperationTest(OpType.MAX, ExecType.SPARK);
 	}
 
 	@Test
-	public void testMinDenseMatrixSP() {
+	public void testMinDenseMatrixSP() throws Exception {
 		runColAggregateOperationTest(OpType.MIN, ExecType.SPARK);
 	}
 
-	private void runColAggregateOperationTest(OpType type, ExecType instType) {
+	private void runColAggregateOperationTest(OpType type, ExecType instType) throws Exception {
 		ExecMode platformOld = rtplatform;
 		switch(instType) {
 			case SPARK:
@@ -164,17 +165,9 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X2", X2, false, mc);
 		writeInputMatrixWithMTD("X3", X3, false, mc);
 		writeInputMatrixWithMTD("X4", X4, false, mc);
-
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		int port3 = getRandomAvailablePort();
-		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
-		Thread t3 = startLocalFedWorkerThread(port3);
-		Thread t4 = startLocalFedWorkerThread(port4);
+		
+		FedTestWorkers workers = new FedTestWorkers(this, 4);
+		int[] ports = workers.start();
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -189,10 +182,10 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-nvargs",
-			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
+			"in_X1=" + TestUtils.federatedAddress(ports[0], input("X1")),
+			"in_X2=" + TestUtils.federatedAddress(ports[1], input("X2")),
+			"in_X3=" + TestUtils.federatedAddress(ports[2], input("X3")),
+			"in_X4=" + TestUtils.federatedAddress(ports[3], input("X4")), "rows=" + rows, "cols=" + cols,
 			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
 		runTest(true, false, null, -1);
@@ -221,7 +214,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
 
-		TestUtils.shutdownThreads(t1, t2, t3, t4);
+		workers.stop();
 		resetExecMode(platformOld);
 
 	}

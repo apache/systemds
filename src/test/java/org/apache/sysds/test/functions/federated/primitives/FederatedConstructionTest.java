@@ -24,13 +24,13 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.FedTestWorkers;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -66,16 +66,16 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedMatrixConstructionCP() {
+	public void federatedMatrixConstructionCP() throws Exception {
 		federatedMatrixConstruction(Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void federatedMatrixConstructionSP() {
+	public void federatedMatrixConstructionSP() throws Exception {
 		federatedMatrixConstruction(Types.ExecMode.SPARK);
 	}
 
-	public void federatedMatrixConstruction(Types.ExecMode execMode) {
+	public void federatedMatrixConstruction(Types.ExecMode execMode) throws Exception {
 		getAndLoadTestConfiguration(TEST_NAME);
 		// write input matrix
 		double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, 1234);
@@ -84,7 +84,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedFrameConstructionCP() throws IOException {
+	public void federatedFrameConstructionCP() throws Exception {
 		federatedFrameConstruction(Types.ExecMode.SINGLE_NODE);
 	}
 
@@ -96,7 +96,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	 * federatedFrameConstruction(Types.ExecMode.SPARK); }
 	 */
 
-	public void federatedFrameConstruction(Types.ExecMode execMode) throws IOException {
+	public void federatedFrameConstruction(Types.ExecMode execMode) throws Exception {
 		getAndLoadTestConfiguration(TEST_NAME);
 		// write input matrix
 		double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, 1234);
@@ -113,18 +113,17 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	}
 
 	public void federatedConstruction(Types.ExecMode execMode, String testFile, String inputIdentifier,
-		Types.ValueType[] schema) {
+		Types.ValueType[] schema) throws Exception {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		int port = getRandomAvailablePort();
-		Thread t = startLocalFedWorkerThread(port);
+		FedTestWorkers workers = new FedTestWorkers(this, 1);
+		int[] ports = workers.start();
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -139,7 +138,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 		fullDMLScriptName = HOME + testFile + ".dml";
-		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input(inputIdentifier)),
+		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(ports[0], input(inputIdentifier)),
 			"rows=" + rows, "cols=" + cols, "out=" + output("B")};
 
 		runTest(true, false, null, -1);
@@ -149,7 +148,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		else
 			compareResults(1e-12);
 
-		TestUtils.shutdownThread(t);
+		workers.stop();
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}

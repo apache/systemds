@@ -28,6 +28,8 @@ There are a few prerequisites:
 - Setup OpenBlas: <https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages>
 - Install Perf stat: <https://linoxide.com/linux-how-to/install-perf-tool-centos-ubuntu/>
 
+NOTE THE SCRIPT HAS TO BE RUN FROM THE ROOT OF THE REPOSITORY.
+
 ```bash
 ./scripts/perftest/runAll.sh
 ```

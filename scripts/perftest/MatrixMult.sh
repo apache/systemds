@@ -30,6 +30,10 @@ fi
 # Set properties
 export LOG4JPROP='scripts/perftest/conf/log4j-off.properties'
 export SYSDS_QUIET=1
+export SYSTEMDS_ROOT=$(pwd)
+export PATH=$SYSTEMDS_ROOT/bin:$PATH
+
+
 
 # Logging output
 LogName='scripts/perftest/results/MM.log'

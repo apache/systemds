@@ -44,7 +44,6 @@ import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
-import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -88,9 +87,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
-
-	/** Lineage trace for object recompute */
-	private LineageItem _lineage = null;
 
 	/**
 	 * Constructor that takes the value type and the HDFS filename.
@@ -633,8 +629,4 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long newnnz = SparkExecutionContext.writeMatrixRDDtoHDFS(rdd, fname, fmt);
 		_metaData.getDataCharacteristics().setNonZeros(newnnz);
 	}
-
-	public LineageItem getLineage() { return _lineage; }
-
-	public void setLineage(LineageItem li) { _lineage = li; }
 }

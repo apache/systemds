@@ -22,11 +22,9 @@ package org.apache.sysds.runtime.data;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -38,7 +36,6 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * A <code>TensorBlock</code> is the most top level representation of a tensor. There are two types of data representation
@@ -63,8 +60,6 @@ public class TensorBlock implements CacheBlock, Externalizable {
 
 	private DataTensorBlock _dataTensor = null;
 	private BasicTensorBlock _basicTensor = null;
-
-	protected LineageItem _lineage = null;
 	
 	/**
 	 * Create a <code>TensorBlock</code> with [0,0] dimension and homogeneous representation (aka. basic).
@@ -300,21 +295,6 @@ public class TensorBlock implements CacheBlock, Externalizable {
 	@Override
 	public void merge(CacheBlock that, boolean appendOnly) {
 		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public LineageItem getLineage() { return _lineage; }
-
-	@Override
-	public void setLineage(LineageItem li) { _lineage = li;	}
-
-	@Override
-	public boolean hasValidLineage() {
-		List<String> dataGenOpCodes = Arrays.asList(
-				DataGen.RAND_OPCODE, DataGen.SEQ_OPCODE,
-				DataGen.SAMPLE_OPCODE, DataGen.TIME_OPCODE);
-
-		return ( _lineage != null && dataGenOpCodes.contains(_lineage.getOpcode()) );
 	}
 
 	public int getDim(int i) {

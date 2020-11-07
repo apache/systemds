@@ -22,7 +22,9 @@ package org.apache.sysds.runtime.controlprogram.caching;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,6 +39,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
@@ -53,6 +56,7 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -213,6 +217,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
 	protected HashMap<GPUContext, GPUObject> _gpuObjects = null; //Per GPUContext object allocated on GPU
+
+	private LineageItem _lineage = null;
 	
 	/**
 	 * Basic constructor for any cacheable data.
@@ -341,6 +347,18 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	public abstract void refreshMetaData();
+
+	public LineageItem getLineage() { return _lineage; }
+
+	public void setLineage(LineageItem li) { _lineage = li;	}
+
+	public boolean hasValidLineage() {
+		List<String> dataGenOpCodes = Arrays.asList(
+				DataGen.RAND_OPCODE, DataGen.SEQ_OPCODE,
+				DataGen.SAMPLE_OPCODE, DataGen.TIME_OPCODE);
+
+		return ( _lineage != null && dataGenOpCodes.contains(_lineage.getOpcode()) );
+	}
 
 	/**
 	 * Check if object is federated.
@@ -491,11 +509,17 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		//read data from HDFS/RDD if required
 		//(probe data for cache_nowrite / jvm_reuse)
-		if( _data==null && isEmpty(true) ) {
+		if( _data==null && ( isEmpty(true) || hasValidLineage() )) {
 			try {
-				if( isFederated() ) {
-					_data = readBlobFromFederated( _fedMapping );
-					
+				if( hasValidLineage() ) {
+					_data = (T) LineageRecomputeUtils.parseNComputeLineageTrace(getLineage().getData(), null);
+					_requiresLocalWrite = false;
+					if( DMLScript.STATISTICS )
+						CacheStatistics.incrementLinHits();
+				}
+				else if( isFederated() ) {
+					_data = readBlobFromFederated(_fedMapping);
+
 					//mark for initial local write despite read operation
 					_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
 				}
@@ -639,7 +663,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			&& isCached(true) //not empty and not read/modify
 			&& !isBelowCachingThreshold() ) //min size for caching
 		{
-			if( write || _requiresLocalWrite ) {
+			if( ( write && !hasValidLineage() ) || _requiresLocalWrite ) {
 				String filePath = getCacheFilePathAndName();
 				try {
 					LazyWriteBuffer.writeBlock(filePath, _data);
@@ -649,6 +673,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				}
 				_requiresLocalWrite = false;
 			}
+
+			if( DMLScript.STATISTICS && write && hasValidLineage() )
+				CacheStatistics.incrementLinWrites();
 			
 			//create cache
 			createCache();
@@ -1411,8 +1438,4 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 		return str.toString();
 	}
-
-	public LineageItem getLineage() { return _data.getLineage(); }
-
-	public void setLineage(LineageItem li) { _data.setLineage(li); }
 }

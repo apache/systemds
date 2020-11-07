@@ -969,8 +969,8 @@ public class Statistics
 						String.format("%.3f", examSparsityTime*1e-9) + "/" + String.format("%.3f", allocateDoubleArrTime*1e-9)  + ".\n");
 			}
 
-			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
-			sb.append("Cache writes (WB,FS,HDFS,Li):\t" + CacheStatistics.displayWrites() + ".\n");
+			sb.append("Cache hits (Mem/WB/FS/HDFS/Li):\t" + CacheStatistics.displayHits() + ".\n");
+			sb.append("Cache writes (WB/FS/HDFS/Li):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
 			if (DMLScript.JMLC_MEM_STATISTICS)
 				sb.append("Max size of live objects:\t" + byteCountToDisplaySize(getSizeofPinnedObjects()) + " ("  + getNumPinnedObjects() + " total objects)" + "\n");

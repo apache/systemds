@@ -28,9 +28,6 @@ import java.util.concurrent.Executors;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 public class LazyWriteBuffer 
@@ -49,8 +46,6 @@ public class LazyWriteBuffer
 	//eviction queue of <filename,buffer> pairs (implemented via linked hash map
 	//for (1) queue semantics and (2) constant time get/insert/delete operations)
 	private static EvictionQueue _mQueue;
-
-	private static Map<String, LineageItem> _map;
 	
 	//maintenance service for synchronous or asynchronous delete of evicted files
 	private static MaintenanceService _fClean;
@@ -90,22 +85,13 @@ public class LazyWriteBuffer
 					if( tmp != null ) {
 						//wait for pending serialization
 						tmp.checkSerialized();
-						
-						//if a cache block is a result of data generating operators,
-						//store its lineage to further recompute instead of eviction
-						if( tmp.hasValidLineage() ) {
-							_map.put(ftmp, tmp.deserializeBlock().getLineage());
-							if( DMLScript.STATISTICS ) {
-								CacheStatistics.incrementLinWrites();
-							}
-						} else {
-							//evict matrix
-							tmp.evictBuffer(ftmp);
-							numEvicted++;
-						}
+
+						//evict matrix
+						tmp.evictBuffer(ftmp);
 
 						tmp.freeMemory();
 						_size -= tmp.getSize();
+						numEvicted++;
 					}
 				}
 				
@@ -124,22 +110,12 @@ public class LazyWriteBuffer
 		}
 		else
 		{
-			//if a cache block is a result of data generating operators,
-			//store its lineage to further recompute instead of eviction
-			if( cb.hasValidLineage() ) {
-				_map.put(fname, cb.getLineage());
-				if( DMLScript.STATISTICS ) {
-					CacheStatistics.incrementLinWrites();
-				}
-			} else {
-				//write directly to local FS (bypass buffer if too large)
-				LocalFileUtils.writeCacheBlockToLocal(fname, cb);
-				if( DMLScript.STATISTICS ) {
-					CacheStatistics.incrementFSWrites();
-				}
-				numEvicted++;
+			//write directly to local FS (bypass buffer if too large)
+			LocalFileUtils.writeCacheBlockToLocal(fname, cb);
+			if( DMLScript.STATISTICS ) {
+				CacheStatistics.incrementFSWrites();
 			}
-
+			numEvicted++;
 		}
 		
 		return numEvicted;
@@ -159,9 +135,6 @@ public class LazyWriteBuffer
 				ldata.freeMemory(); //cleanup
 			}
 		}
-
-		//delete from lineage map
-		_map.remove(fname);
 		
 		//delete from FS if required
 		if( requiresDelete )
@@ -198,18 +171,9 @@ public class LazyWriteBuffer
 		}
 		else
 		{
-			//if lineage of this block exists, recompute
-			if( _map.containsKey(fname) ) {
-				LineageItem trace = _map.get(fname);
-				Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(trace.getData(), null);
-				cb = (CacheBlock) ret; // .acquireReadAndRelease();
-				if( DMLScript.STATISTICS )
-					CacheStatistics.incrementLinHits();
-			} else { // otherwise, read from FS
-				cb = LocalFileUtils.readCacheBlockFromLocal(fname, matrix);
-				if( DMLScript.STATISTICS )
-					CacheStatistics.incrementFSHits();
-			}
+			cb = LocalFileUtils.readCacheBlockFromLocal(fname, matrix);
+			if( DMLScript.STATISTICS )
+				CacheStatistics.incrementFSHits();
 		}
 		
 		return cb;
@@ -218,7 +182,6 @@ public class LazyWriteBuffer
 	public static void init() {
 		_mQueue = new EvictionQueue();
 		_fClean = new MaintenanceService();
-		_map = new HashMap<>();
 		_size = 0;
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();

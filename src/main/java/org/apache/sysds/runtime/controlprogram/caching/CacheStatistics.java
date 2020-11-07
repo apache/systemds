@@ -236,6 +236,8 @@ public class CacheStatistics
 		sb.append(_numHitsFS.longValue());
 		sb.append("/");
 		sb.append(_numHitsHDFS.longValue());
+		sb.append("/");
+		sb.append(_numHitsLin.longValue());
 		
 		return sb.toString();
 	}

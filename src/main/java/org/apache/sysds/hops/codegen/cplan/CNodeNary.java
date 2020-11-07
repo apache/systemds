@@ -27,6 +27,7 @@ import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.DnnUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 
 public class CNodeNary extends CNode
 {
@@ -43,7 +44,7 @@ public class CNodeNary extends CNode
 					return true;
 			return false;
 		}
-		public String getTemplate(boolean sparseGen, long len, ArrayList<CNode> inputs) {
+		public String getTemplate(boolean sparseGen, long len, ArrayList<CNode> inputs, GeneratorAPI api) {
 			switch (this) {
 				case VECT_CBIND:
 					StringBuilder sb = new StringBuilder();
@@ -111,7 +112,7 @@ public class CNodeNary extends CNode
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api) {
 		if( isGenerated() )
 			return "";
 		
@@ -119,14 +120,14 @@ public class CNodeNary extends CNode
 		
 		//generate children
 		for(CNode in : _inputs)
-			sb.append(in.codegen(sparse));
+			sb.append(in.codegen(sparse, api));
 		
 		//generate nary operation (use sparse template, if data input)
 		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData
 			&& _inputs.get(0).getVarname().startsWith("a")
 			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
-		String tmp = _type.getTemplate(lsparse, _cols, _inputs);
+		String tmp = _type.getTemplate(lsparse, _cols, _inputs, api);
 		tmp = tmp.replace("%TMP%", var);
 		
 		//replace sparse and dense inputs
@@ -219,7 +220,18 @@ public class CNodeNary extends CNode
 		return super.equals(that)
 			&& _type == that._type;
 	}
-	
+
+	@Override
+	public boolean isSupported(GeneratorAPI api) {
+		boolean is_supported = (api == GeneratorAPI.JAVA);
+		int i = 0;
+		while(is_supported && i < _inputs.size()) {
+			CNode in = _inputs.get(i++);
+			is_supported = in.isSupported(api);
+		}
+		return  is_supported;
+	}
+
 	private static String getDnnParameterString(List<CNode> inputs, boolean unary) {
 		int off = unary ? 0 : 1;
 		

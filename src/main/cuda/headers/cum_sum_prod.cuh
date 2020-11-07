@@ -17,11 +17,11 @@
  * under the License.
  */
 
-#ifndef __CUM_SUM_PROD_H
-#define __CUM_SUM_PROD_H
-
 #pragma once
+#ifndef CUM_SUM_PROD_H
+#define CUM_SUM_PROD_H
 
+using uint = unsigned int;
 #include <cuda_runtime.h>
 
 /**
@@ -145,4 +145,4 @@ extern "C" __global__ void cumulative_sum_prod_f(float *g_idata, float *g_odata,
 	cumulative_sum_prod<float, float2Accessor>(g_idata, g_odata, g_tiData, g_toData, rows, block_height, offset);
 }
 
-#endif // __CUM_SUM_PROD_H
+#endif // CUM_SUM_PROD_H

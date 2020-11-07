@@ -23,11 +23,8 @@
  nvcc -w -ptx -arch=sm_30 --std c++11 SystemDS.cu
  ***********************************/
 
-#include <cfloat>
-#include <cmath>
 using uint = unsigned int;
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 
 #include "utils.cuh"
 #include "agg_ops.cuh"
@@ -422,20 +419,6 @@ extern "C" __global__ void copy_u2l_dense_d(double *ret, int dim, int N) {
 
 extern "C" __global__ void copy_u2l_dense_f(float *ret, int dim, int N) {
 	copy_u2l_dense(ret, dim, N);
-}
-
-// Use this method in templates to fetch the maximum value for a given datatype
-template<typename T>
-__forceinline__ __device__ T MAX() {
-	return T();
-}
-template<>
-__forceinline__ __device__ float MAX<float>() {
-	return FLT_MAX;
-}
-template<>
-__forceinline__ __device__ double MAX<double>() {
-	return DBL_MAX;
 }
 
 // op = {0=plus, 1=minus, 2=multiply, 3=divide, 4=power,

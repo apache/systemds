@@ -17,10 +17,9 @@
  * under the License.
  */
 
-#ifndef __CUM_SUM_H
-#define __CUM_SUM_H
-
 #pragma once
+#ifndef CUM_SUM_H
+#define CUM_SUM_H
 
 using uint = unsigned int;
 #include <cuda_runtime.h>
@@ -75,4 +74,4 @@ extern "C" __global__ void cumulative_sum_down_sweep_f(float *g_idata, float *g_
 	cumulative_scan_down_sweep<SumOp<float>, SumNeutralElement<float>, float>(g_idata, g_odata, g_tdata, rows, cols, block_height, op);
 }
 
-#endif // __CUM_SUM_H
+#endif // CUM_SUM_H

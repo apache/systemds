@@ -41,12 +41,15 @@
     
     <!-- enables operator fusion via code generation, experimental feature -->
     <sysds.codegen.enabled>false</sysds.codegen.enabled>
-    
-    <!-- set the codegen java compiler (auto, janino, javac) -->
+
+    <!-- set the codegen API (auto, java, cuda) -->
+   <sysds.codegen.api>auto</sysds.codegen.api>
+
+    <!-- set the codegen java compiler (auto, janino, javac, nvcc, nvrtc) -->
     <sysds.codegen.compiler>auto</sysds.codegen.compiler>
 
     <!-- set the codegen optimizer (fuse_all, fuse_no_redundancy, fuse_cost_based_v2) -->
-    <sysds.codegen.compiler>fuse_cost_based_v2</sysds.codegen.compiler>
+    <sysds.codegen.optimizer>fuse_cost_based_v2</sysds.codegen.optimizer>
     
     <!-- if codegen.enabled, enables source code caching of fused operators -->
     <sysds.codegen.plancache>true</sysds.codegen.plancache>

@@ -87,11 +87,11 @@ public class SpoofSPInstruction extends SPInstruction {
 		
 		//String opcode = parts[0];
 		ArrayList<CPOperand> inlist = new ArrayList<>();
-		Class<?> cls = CodegenUtils.getClass(parts[1]);
-		byte[] classBytes = CodegenUtils.getClassData(parts[1]);
+		Class<?> cls = CodegenUtils.getClass(parts[2]);
+		byte[] classBytes = CodegenUtils.getClassData(parts[2]);
 		String opcode =  parts[0] + CodegenUtils.createInstance(cls).getSpoofType();
 		
-		for( int i=2; i<parts.length-2; i++ )
+		for( int i=3; i<parts.length-2; i++ )
 			inlist.add(new CPOperand(parts[i]));
 		CPOperand out = new CPOperand(parts[parts.length-2]);
 		//note: number of threads parts[parts.length-1] always ignored

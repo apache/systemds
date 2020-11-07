@@ -45,6 +45,7 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
@@ -97,7 +98,7 @@ public class DMLScript
 	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;     // whether deduplicate lineage items
 	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;   // whether lineage-based reuse
 	public static LineageCachePolicy LINEAGE_POLICY = DMLOptions.defaultOptions.linCachePolicy; // lineage cache eviction policy
-	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;      // Check which privacy constraints are loaded and checked during federated execution 
+	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;      // Check which privacy constraints are loaded and checked during federated execution
 
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
 	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
@@ -179,7 +180,7 @@ public class DMLScript
 	 * @return true if success, false otherwise
 	 * @throws IOException If an internal IOException happens.
 	 */
-	public static boolean executeScript( Configuration conf, String[] args ) 
+	public static boolean executeScript( Configuration conf, String[] args )
 		throws  IOException, ParseException, DMLScriptException
 	{
 		//parse arguments and set execution properties
@@ -364,7 +365,10 @@ public class DMLScript
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
 		loadConfiguration(fnameOptConfig);
-		
+
+		//Step 2: configure codegen
+		configureCodeGen();
+
 		//Step 3: parse dml script
 		Statistics.startCompileTimer();
 		ParserWrapper parser = ParserFactory.createParser();
@@ -416,7 +420,7 @@ public class DMLScript
 			cleanupHadoopExecution( ConfigurationManager.getDMLConfig());
 		}
 	}
-	
+
 	/**
 	 * Sets the global flags in DMLScript based on user provided configuration
 	 * 
@@ -493,8 +497,8 @@ public class DMLScript
 		
 		//0) cleanup federated workers if necessary
 		FederatedData.clearFederatedWorkers();
-		
-		//1) cleanup scratch space (everything for current uuid) 
+
+		//1) cleanup scratch space (everything for current uuid)
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
 		HDFSTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
 		
@@ -560,7 +564,7 @@ public class DMLScript
 
 	/**
 	 * Print the error in a user friendly manner.
-	 * 
+	 *
 	 * @param e The exception thrown.
 	 */
 	public static void errorPrint(Exception e){
@@ -583,5 +587,20 @@ public class DMLScript
 		}
 		sb.append("\n" + ANSI_RESET);
 		System.out.println(sb.toString());
+	}
+
+	private static void configureCodeGen() {
+		// load native codegen if configured
+		if(ConfigurationManager.isCodegenEnabled()) {
+			SpoofCompiler.GeneratorAPI configured_generator = SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
+			if(configured_generator != SpoofCompiler.GeneratorAPI.JAVA) {
+				try {
+					SpoofCompiler.loadNativeCodeGenerator(configured_generator);
+				}
+				catch(Exception e) {
+					LOG.error("Failed to load native cuda codegen library\n" + e);
+				}
+			}
+		}
 	}
 }

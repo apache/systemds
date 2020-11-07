@@ -145,7 +145,14 @@ public abstract class SpoofOperator implements Serializable
 			scalars[i] = scalarObjects.get(i).getDoubleValue();
 		return scalars;
 	}
-	
+
+	protected static float[] prepInputScalarsFloat(ArrayList<ScalarObject> scalarObjects) {
+		float[] scalars = new float[scalarObjects.size()];
+		for(int i=0; i < scalarObjects.size(); i++)
+			scalars[i] = (float)scalarObjects.get(i).getDoubleValue();
+		return scalars;
+	}
+
 	public static long getTotalInputNnz(ArrayList<MatrixBlock> inputs) {
 		return inputs.stream().mapToLong(in -> in.getNonZeros()).sum();
 	}

@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.instructions.gpu.MatrixReshapeGPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.RelationalBinaryGPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.ReorgGPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
+import org.apache.sysds.runtime.instructions.gpu.SpoofCUDAInstruction;
 
 public class GPUInstructionParser  extends InstructionParser 
 {
@@ -157,7 +158,9 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( ">="   , GPUINSTRUCTION_TYPE.RelationalBinary);
 		
 		// Indexing 
-		String2GPUInstructionType.put( RightIndex.OPCODE, GPUINSTRUCTION_TYPE.MatrixIndexing); 
+		String2GPUInstructionType.put( RightIndex.OPCODE, GPUINSTRUCTION_TYPE.MatrixIndexing);
+
+		String2GPUInstructionType.put( "spoof"   , GPUINSTRUCTION_TYPE.SpoofFused);
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) {
@@ -217,7 +220,10 @@ public class GPUInstructionParser  extends InstructionParser
 
 			case MatrixIndexing:
 				return MatrixIndexingGPUInstruction.parseInstruction(str);
-				
+
+			case SpoofFused:
+				return SpoofCUDAInstruction.parseInstruction(str);
+
 			default: 
 				throw new DMLRuntimeException("Invalid GPU Instruction Type: " + gputype );
 		}

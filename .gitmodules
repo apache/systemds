@@ -1,0 +1,3 @@
+[submodule "jitify"]
+	path = src/main/cuda/ext/jitify
+	url = git@github.com:NVIDIA/jitify.git

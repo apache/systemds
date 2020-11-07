@@ -25,6 +25,9 @@ import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+
+import static org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI.CUDA;
 
 public abstract class CNode
 {
@@ -79,7 +82,10 @@ public abstract class CNode
 	public String getVarname() {
 		return _genVar;
 	}
-	
+
+	public String getVarname(GeneratorAPI api) { return getVarname(); }
+
+
 	public String getVectorLength() {
 		if( getVarname().startsWith("a") )
 			return "len";
@@ -161,7 +167,7 @@ public abstract class CNode
 		setVisited(false);
 	}
 	
-	public abstract String codegen(boolean sparse);
+	public abstract String codegen(boolean sparse, GeneratorAPI api);
 	
 	public abstract void setOutputDims();
 	
@@ -228,4 +234,36 @@ public abstract class CNode
 		
 		return tmp;
 	}
+
+	protected CodeTemplate getLanguageTemplateClass(CNode caller, GeneratorAPI api) {
+		switch (api) {
+			case CUDA:
+				if(caller instanceof CNodeCell)
+					return new org.apache.sysds.hops.codegen.cplan.cpp.CellWise();
+				else if (caller instanceof CNodeUnary)
+					return new org.apache.sysds.hops.codegen.cplan.cpp.Unary();
+				else if (caller instanceof CNodeBinary)
+					return new org.apache.sysds.hops.codegen.cplan.cpp.Binary();
+				else if (caller instanceof CNodeTernary)
+					return new org.apache.sysds.hops.codegen.cplan.cpp.Ternary();
+				else
+					return null;
+			case JAVA:
+				if(caller instanceof CNodeCell)
+					return new org.apache.sysds.hops.codegen.cplan.java.CellWise();
+				else if (caller instanceof CNodeUnary)
+					return new org.apache.sysds.hops.codegen.cplan.java.Unary();
+				else if (caller instanceof CNodeBinary)
+					return new org.apache.sysds.hops.codegen.cplan.java.Binary();
+				else if (caller instanceof CNodeTernary)
+					return new org.apache.sysds.hops.codegen.cplan.java.Ternary();
+
+				else
+					return null;
+			default:
+				throw new RuntimeException("API not supported by code generator: " + api.toString());
+		}
+	}
+
+	public abstract boolean isSupported(GeneratorAPI api);
 }

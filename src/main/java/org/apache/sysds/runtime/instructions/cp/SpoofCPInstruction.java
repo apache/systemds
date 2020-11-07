@@ -55,11 +55,11 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		
 		ArrayList<CPOperand> inlist = new ArrayList<>();
-		Class<?> cla = CodegenUtils.getClass(parts[1]);
+		Class<?> cla = CodegenUtils.getClass(parts[2]);
 		SpoofOperator op = CodegenUtils.createInstance(cla);
 		String opcode =  parts[0] + op.getSpoofType();
 		
-		for( int i=2; i<parts.length-2; i++ )
+		for( int i=3; i<parts.length-2; i++ )
 			inlist.add(new CPOperand(parts[i]));
 		CPOperand out = new CPOperand(parts[parts.length-2]);
 		int k = Integer.parseInt(parts[parts.length-1]);

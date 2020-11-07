@@ -26,6 +26,7 @@ import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 
 public class CNodeRow extends CNodeTpl
 {
@@ -95,15 +96,15 @@ public class CNodeRow extends CNodeTpl
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api) {
 		// note: ignore sparse flag, generate both
 		String tmp = TEMPLATE;
 		
 		//generate dense/sparse bodies
-		String tmpDense = _output.codegen(false)
+		String tmpDense = _output.codegen(false, api)
 			+ getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
-		String tmpSparse = _output.codegen(true)
+		String tmpSparse = _output.codegen(true, api)
 			+ getOutputStatement(_output.getVarname());
 		tmp = tmp.replace("%TMP%", createVarname());
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
@@ -208,5 +209,16 @@ public class CNodeRow extends CNodeTpl
 		sb.append(_numVectors);
 		sb.append("]");
 		return sb.toString();
+	}
+
+	@Override
+	public boolean isSupported(GeneratorAPI api) {
+		boolean is_supported = (api == GeneratorAPI.JAVA);
+		int i = 0;
+		while(is_supported && i < _inputs.size()) {
+			CNode in = _inputs.get(i++);
+			is_supported = in.isSupported(api);
+		}
+		return  is_supported;
 	}
 }

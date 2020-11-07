@@ -72,7 +72,7 @@ public class ExecutionContext {
 	protected LocalVariableMap _variables;
 	protected long _tid = -1;
 	protected boolean _autoCreateVars;
-	
+
 	//lineage map, cache, prepared dedup blocks
 	protected Lineage _lineage;
 
@@ -124,19 +124,19 @@ public class ExecutionContext {
 	public void setLineage(Lineage lineage) {
 		_lineage = lineage;
 	}
-	
+
 	public boolean isAutoCreateVars() {
 		return _autoCreateVars;
 	}
-	
+
 	public void setAutoCreateVars(boolean flag) {
 		_autoCreateVars = flag;
 	}
-	
+
 	public void setTID(long tid) {
 		_tid = tid;
 	}
-	
+
 	public long getTID() {
 		return _tid;
 	}
@@ -406,6 +406,14 @@ public class ExecutionContext {
 		return mo;
 	}
 
+	public long getGPUPointerAddress(MatrixObject obj) {
+
+			if(obj.getGPUObject(getGPUContext(0)) == null)
+				return 0;
+			else
+				return obj.getGPUObject(getGPUContext(0)).getPointerAddress();
+	}
+
 	public MatrixObject getMatrixInputForGPUInstruction(String varName, String opcode) {
 		GPUContext gCtx = getGPUContext(0);
 		MatrixObject mo = getMatrixObject(varName);
@@ -568,9 +576,9 @@ public class ExecutionContext {
 			return createFrameObject((FrameBlock) cb);
 		return null;
 	}
-	
+
 	public static MatrixObject createMatrixObject(MatrixBlock mb) {
-		MatrixObject ret = new MatrixObject(Types.ValueType.FP64, 
+		MatrixObject ret = new MatrixObject(Types.ValueType.FP64,
 			OptimizerUtils.getUniqueTempFileName());
 		ret.acquireModify(mb);
 		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(
@@ -580,7 +588,7 @@ public class ExecutionContext {
 		ret.release();
 		return ret;
 	}
-	
+
 	public static FrameObject createFrameObject(FrameBlock fb) {
 		FrameObject ret = new FrameObject(OptimizerUtils.getUniqueTempFileName());
 		ret.acquireModify(fb);
@@ -589,7 +597,7 @@ public class ExecutionContext {
 		ret.release();
 		return ret;
 	}
-	
+
 	public List<MatrixBlock> getMatrixInputs(CPOperand[] inputs) {
 		return getMatrixInputs(inputs, false);
 	}

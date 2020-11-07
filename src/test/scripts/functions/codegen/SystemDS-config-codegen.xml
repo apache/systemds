@@ -27,4 +27,6 @@
 
    <!-- The number of theads for the spark instance artificially selected-->
    <sysds.local.spark.number.threads>16</sysds.local.spark.number.threads>
+
+   <sysds.codegen.api>auto</sysds.codegen.api>
 </root>

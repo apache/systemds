@@ -1006,4 +1006,23 @@ public class GPUObject {
 		return sb.toString();
 	}
 
+	private static long getPointerAddress(Pointer p) {
+		// WORKAROUND until a method like CUdeviceptr#getAddress exists in jCuda
+		class PointerWithAddress extends Pointer
+		{
+			PointerWithAddress(Pointer other)
+			{
+				super(other);
+			}
+			long getAddress()
+			{
+				return getNativePointer() + getByteOffset();
+			}
+		}
+		return new PointerWithAddress(p).getAddress();
+	}
+
+	public long getPointerAddress() {
+		return getPointerAddress(getDensePointer());
+	}
 }

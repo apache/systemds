@@ -22,31 +22,14 @@ package org.apache.sysds.hops.codegen.cplan;
 import java.util.ArrayList;
 
 import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeCell extends CNodeTpl 
-{	
-	private static final String TEMPLATE = 
-			  "package codegen;\n"
-			+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
-			+ "import org.apache.commons.math3.util.FastMath;\n"
-			+ "\n"
-			+ "public final class %TMP% extends SpoofCellwise {\n" 
-			+ "  public %TMP%() {\n"
-			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP%);\n"
-			+ "  }\n"
-			+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) { \n"
-			+ "%BODY_dense%"
-			+ "    return %OUT%;\n"
-			+ "  }\n"
-			+ "}\n";
-	
+{
 	private CellType _type = null;
 	private AggOp _aggOp = null;
 	private boolean _sparseSafe = false;
@@ -83,7 +66,25 @@ public class CNodeCell extends CNodeTpl
 	public AggOp getAggOp() {
 		return _aggOp;
 	}
-	
+
+	public SpoofCellwise.AggOp getSpoofAggOp() {
+		if(_aggOp != null)
+			switch(_aggOp) {
+				case SUM:
+					return SpoofCellwise.AggOp.SUM;
+				case SUM_SQ:
+					return SpoofCellwise.AggOp.SUM_SQ;
+				case MIN:
+					return SpoofCellwise.AggOp.MIN;
+				case MAX:
+					return SpoofCellwise.AggOp.MAX;
+				default:
+					throw new RuntimeException("Unsupported cell type: "+_type.toString());
+		}
+		else
+			return null;
+	}
+
 	public void setSparseSafe(boolean flag) {
 		_sparseSafe = flag;
 	}
@@ -114,34 +115,63 @@ public class CNodeCell extends CNodeTpl
 		rRenameDataNode(_output, _inputs.get(0), "a");
 		renameInputs(_inputs, 1);
 	}
-	
-	@Override
-	public String codegen(boolean sparse) {
-		String tmp = TEMPLATE;
-		
+
+	public String codegen(boolean sparse, GeneratorAPI _api) {
+		api = _api;
+
+		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type);
+
 		//generate dense/sparse bodies
-		String tmpDense = _output.codegen(false);
+		String tmpDense = _output.codegen(false, api);
 		_output.resetGenerated();
 
 		tmp = tmp.replace("%TMP%", createVarname());
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
 		//return last TMP
-		tmp = tmp.replace("%OUT%", _output.getVarname());
-		
+		tmp = tmp.replaceAll("%OUT%", _output.getVarname());
+
 		//replace meta data information
-		tmp = tmp.replace("%TYPE%", getCellType().name());
-		tmp = tmp.replace("%AGG_OP%", (_aggOp!=null) ? "AggOp."+_aggOp.name() : "null" );
+		tmp = tmp.replaceAll("%TYPE%", getCellType().name());
+		tmp = tmp.replace("%AGG_OP_NAME%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
 		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
-		
+
+		if(api == GeneratorAPI.CUDA) {
+			// ToDo: initial_value is misused to pass VT (values per thread) to no_agg operator
+			String agg_op = "IdentityOp";
+			String initial_value = "(T)4.0";
+			if(_aggOp != null)
+			switch(_aggOp) {
+				case SUM:
+					agg_op = "SumOp";
+					initial_value = "(T)0.0";
+					break;
+				case SUM_SQ:
+					agg_op = "SumSqOp";
+					initial_value = "(T)0.0";
+					break;
+				case MIN:
+					agg_op = "MinOp";
+					initial_value = "MAX<T>()";
+					break;
+				case MAX:
+					agg_op = "MaxOp";
+					initial_value = "-MAX<T>()";
+					break;
+				default:
+					agg_op = "IdentityOp";
+					initial_value = "(T)0.0";
+			}
+
+			tmp = tmp.replaceAll("%AGG_OP%", agg_op);
+			tmp = tmp.replaceAll("%INITIAL_VALUE%", initial_value);
+		}
 		return tmp;
 	}
 
 	@Override
 	public void setOutputDims() {
-		
-		
 	}
 
 	@Override
@@ -205,5 +235,9 @@ public class CNodeCell extends CNodeTpl
 		sb.append(", mc="+_multipleConsumers);
 		sb.append("]");
 		return sb.toString();
+	}
+	@Override
+	public boolean isSupported(GeneratorAPI api) {
+		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api);
 	}
 }

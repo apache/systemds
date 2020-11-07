@@ -17,10 +17,11 @@
  * under the License.
  */
 
-#ifndef __CUM_MIN_H
-#define __CUM_MIN_H
-
 #pragma once
+#ifndef CUM_MIN_H
+#define CUM_MIN_H
+
+using uint = unsigned int;
 #include <cuda_runtime.h>
 
 /**

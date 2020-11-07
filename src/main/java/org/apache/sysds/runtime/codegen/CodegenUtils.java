@@ -63,7 +63,9 @@ public class CodegenUtils
 	
 	//janino-specific map of source code transfer/recompile on-demand
 	private static ConcurrentHashMap<String, String> _src = new ConcurrentHashMap<>();
-	
+
+	private static ConcurrentHashMap<String, SpoofCUDA> _native_op_data = new ConcurrentHashMap<>();
+
 	//javac-specific working directory for src/class files
 	private static String _workingDir = null;
 	
@@ -156,7 +158,15 @@ public class CodegenUtils
 		
 		return ret;
 	}
-	
+
+	public static SpoofCUDA getNativeOpData(String name) {
+		return _native_op_data.get(name);
+	}
+
+	public static void putNativeOpData(SpoofCUDA op) {
+		_native_op_data.put(op.getName(), op);
+	}
+
 	public static SideInput createSideInput(MatrixBlock in) {
 		SideInput ret = (in.isInSparseFormat() || !in.isAllocated()) ?
 			new SideInput(null, in, in.getNumColumns()) :

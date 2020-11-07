@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 
 public class CNodeTernary extends CNode
 {
@@ -37,43 +37,7 @@ public class CNodeTernary extends CNode
 			return Arrays.stream(values()).anyMatch(tt -> tt.name().equals(value));
 		}
 		
-		public String getTemplate(boolean sparse) {
-			switch (this) {
-				case PLUS_MULT:
-					return "    double %TMP% = %IN1% + %IN2% * %IN3%;\n";
-				
-				case MINUS_MULT:
-					return "    double %TMP% = %IN1% - %IN2% * %IN3%;\n";
-				
-				case BIASADD:
-					return "    double %TMP% = %IN1% + getValue(%IN2%, cix/%IN3%);\n";
-				
-				case BIASMULT:
-					return "    double %TMP% = %IN1% * getValue(%IN2%, cix/%IN3%);\n";
-				
-				case REPLACE:
-					return "    double %TMP% = (%IN1% == %IN2% || (Double.isNaN(%IN1%) "
-							+ "&& Double.isNaN(%IN2%))) ? %IN3% : %IN1%;\n";
-				
-				case REPLACE_NAN:
-					return "    double %TMP% = Double.isNaN(%IN1%) ? %IN3% : %IN1%;\n";
-				
-				case IFELSE:
-					return "    double %TMP% = (%IN1% != 0) ? %IN2% : %IN3%;\n";
-				
-				case LOOKUP_RC1:
-					return sparse ?
-						"    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
-						"    double %TMP% = getValue(%IN1%, %IN2%, rix, %IN3%-1);\n";
-					
-				case LOOKUP_RVECT1:
-					return "    double[] %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1);\n";
-					
-				default: 
-					throw new RuntimeException("Invalid ternary type: "+this.toString());
-			}
-		}
-		
+
 		public boolean isVectorPrimitive() {
 			return (this == LOOKUP_RVECT1);
 		}
@@ -94,23 +58,25 @@ public class CNodeTernary extends CNode
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api) {
 		if( isGenerated() )
 			return "";
 			
 		StringBuilder sb = new StringBuilder();
 		
 		//generate children
-		sb.append(_inputs.get(0).codegen(sparse));
-		sb.append(_inputs.get(1).codegen(sparse));
-		sb.append(_inputs.get(2).codegen(sparse));
+		sb.append(_inputs.get(0).codegen(sparse, api));
+		sb.append(_inputs.get(1).codegen(sparse, api));
+		sb.append(_inputs.get(2).codegen(sparse, api));
 		
 		//generate binary operation
 		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData
 			&& _inputs.get(0).getVarname().startsWith("a")
 			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
-		String tmp = _type.getTemplate(lsparse);
+//		String tmp = _type.getTemplate(lsparse, api, lang);
+		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparse);
+
 		tmp = tmp.replace("%TMP%", var);
 		for( int j=1; j<=3; j++ ) {
 			String varj = _inputs.get(j-1).getVarname();
@@ -185,5 +151,15 @@ public class CNodeTernary extends CNode
 		CNodeTernary that = (CNodeTernary) o;
 		return super.equals(that)
 			&& _type == that._type;
+	}
+	@Override
+	public boolean isSupported(GeneratorAPI api) {
+		boolean is_supported = (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA);
+		int i = 0;
+		while(is_supported && i < _inputs.size()) {
+			CNode in = _inputs.get(i++);
+			is_supported = in.isSupported(api);
+		}
+		return  is_supported;
 	}
 }

@@ -485,8 +485,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
 			runTest(true, false, null, -1); 
-			runRScript(true); 
-			
+			runRScript(true);
+
 			if(testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7) 
 				|| testname.equals(TEST_NAME9) || testname.equals(TEST_NAME10)) {
 				//compare scalars 
@@ -504,7 +504,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			if( !(rewrites && (testname.equals(TEST_NAME2)
 				|| testname.equals(TEST_NAME19))) && !testname.equals(TEST_NAME27) )
 				Assert.assertTrue(heavyHittersContainsSubString(
-						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA"));
+						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "gpu_SpoofCUDA_CW_"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
 				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused

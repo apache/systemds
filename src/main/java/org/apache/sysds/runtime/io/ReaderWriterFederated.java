@@ -65,153 +65,153 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  * 
  */
 public class ReaderWriterFederated {
-    private static final Log LOG = LogFactory.getLog(ReaderWriterFederated.class.getName());
+	private static final Log LOG = LogFactory.getLog(ReaderWriterFederated.class.getName());
 
-    /**
-     * Read a federated map from disk, It is not initialized before it is used in:
-     * 
-     * org.apache.sysds.runtime.instructions.fed.InitFEDInstruction
-     * 
-     * @param file The file to read (defaults to HDFS)
-     * @param mc   The data characteristics of the file, that can be read from the mtd file.
-     * @return A List of federatedRanges and Federated Data
-     */
-    public static List<Pair<FederatedRange, FederatedData>> read(String file, DataCharacteristics mc) {
-        LOG.debug("Reading federated map from " + file);
-        try {
-            JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-            Path path = new Path(file);
-            FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-            FSDataInputStream data = fs.open(path);
-            ObjectMapper mapper = new ObjectMapper();
-            List<FederatedDataAddress> obj = mapper.readValue(data, new TypeReference<List<FederatedDataAddress>>() {
-            });
-            return obj.stream().map(x -> x.convert()).collect(Collectors.toList());
-        }
-        catch(Exception e) {
-            throw new DMLRuntimeException("Unable to read federated matrix (" + file + ")", e);
-        }
-    }
+	/**
+	 * Read a federated map from disk, It is not initialized before it is used in:
+	 * 
+	 * org.apache.sysds.runtime.instructions.fed.InitFEDInstruction
+	 * 
+	 * @param file The file to read (defaults to HDFS)
+	 * @param mc   The data characteristics of the file, that can be read from the mtd file.
+	 * @return A List of federatedRanges and Federated Data
+	 */
+	public static List<Pair<FederatedRange, FederatedData>> read(String file, DataCharacteristics mc) {
+		LOG.debug("Reading federated map from " + file);
+		try {
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+			Path path = new Path(file);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+			FSDataInputStream data = fs.open(path);
+			ObjectMapper mapper = new ObjectMapper();
+			List<FederatedDataAddress> obj = mapper.readValue(data, new TypeReference<List<FederatedDataAddress>>() {
+			});
+			return obj.stream().map(x -> x.convert()).collect(Collectors.toList());
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Unable to read federated matrix (" + file + ")", e);
+		}
+	}
 
-    /**
-     * TODO add writing to each of the federated locations so that they also save their matrices.
-     * 
-     * Currently this would write the federated matrix to disk only locally.
-     * 
-     * @param file   The file to save to, (defaults to HDFS paths)
-     * @param fedMap The federated map to save.
-     */
-    public static void write(String file, FederationMap fedMap) {
-        LOG.debug("Writing federated map to " + file);
-        try {
-            JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-            Path path = new Path(file);
-            FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-            DataOutputStream out = fs.create(path, true);
-            ObjectMapper mapper = new ObjectMapper();
-            FederatedDataAddress[] outObjects = parseMap(fedMap.getFedMapping());
-            try(BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
-                mapper.writeValue(pw, outObjects);
-            }
+	/**
+	 * TODO add writing to each of the federated locations so that they also save their matrices.
+	 * 
+	 * Currently this would write the federated matrix to disk only locally.
+	 * 
+	 * @param file   The file to save to, (defaults to HDFS paths)
+	 * @param fedMap The federated map to save.
+	 */
+	public static void write(String file, FederationMap fedMap) {
+		LOG.debug("Writing federated map to " + file);
+		try {
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+			Path path = new Path(file);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+			DataOutputStream out = fs.create(path, true);
+			ObjectMapper mapper = new ObjectMapper();
+			FederatedDataAddress[] outObjects = parseMap(fedMap.getFedMapping());
+			try(BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
+				mapper.writeValue(pw, outObjects);
+			}
 
-            IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
-        }
-        catch(IOException e) {
-            fail("Unable to write test federated matrix to (" + file + "): " + e.getMessage());
-        }
-    }
+			IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+		}
+		catch(IOException e) {
+			fail("Unable to write test federated matrix to (" + file + "): " + e.getMessage());
+		}
+	}
 
-    private static FederatedDataAddress[] parseMap(Map<FederatedRange, FederatedData> map) {
-        FederatedDataAddress[] res = new FederatedDataAddress[map.size()];
-        int i = 0;
-        for(Entry<FederatedRange, FederatedData> ent : map.entrySet()) {
-            res[i++] = new FederatedDataAddress(ent.getKey(), ent.getValue());
-        }
-        return res;
-    }
+	private static FederatedDataAddress[] parseMap(Map<FederatedRange, FederatedData> map) {
+		FederatedDataAddress[] res = new FederatedDataAddress[map.size()];
+		int i = 0;
+		for(Entry<FederatedRange, FederatedData> ent : map.entrySet()) {
+			res[i++] = new FederatedDataAddress(ent.getKey(), ent.getValue());
+		}
+		return res;
+	}
 
-    /**
-     * This class is used for easy serialization from json using Jackson. The warnings are suppressed because the
-     * setters and getters only is used inside Jackson.
-     */
-    @SuppressWarnings("unused")
-    private static class FederatedDataAddress {
-        private Types.DataType _dataType;
-        private InetSocketAddress _address;
-        private String _filepath;
-        private long[] _begin;
-        private long[] _end;
+	/**
+	 * This class is used for easy serialization from json using Jackson. The warnings are suppressed because the
+	 * setters and getters only is used inside Jackson.
+	 */
+	@SuppressWarnings("unused")
+	private static class FederatedDataAddress {
+		private Types.DataType _dataType;
+		private InetSocketAddress _address;
+		private String _filepath;
+		private long[] _begin;
+		private long[] _end;
 
-        public FederatedDataAddress() {
-        }
+		public FederatedDataAddress() {
+		}
 
-        protected FederatedDataAddress(FederatedRange fr, FederatedData fd) {
-            _dataType = fd.getDataType();
-            _address = fd.getAddress();
-            _filepath = fd.getFilepath();
-            _begin = fr.getBeginDims();
-            _end = fr.getEndDims();
-        }
+		protected FederatedDataAddress(FederatedRange fr, FederatedData fd) {
+			_dataType = fd.getDataType();
+			_address = fd.getAddress();
+			_filepath = fd.getFilepath();
+			_begin = fr.getBeginDims();
+			_end = fr.getEndDims();
+		}
 
-        protected Pair<FederatedRange, FederatedData> convert() {
-            FederatedRange fr = new FederatedRange(_begin, _end);
-            FederatedData fd = new FederatedData(_dataType, _address, _filepath);
-            return new ImmutablePair<>(fr, fd);
-        }
+		protected Pair<FederatedRange, FederatedData> convert() {
+			FederatedRange fr = new FederatedRange(_begin, _end);
+			FederatedData fd = new FederatedData(_dataType, _address, _filepath);
+			return new ImmutablePair<>(fr, fd);
+		}
 
-        public String getFilepath() {
-            return _filepath;
-        }
+		public String getFilepath() {
+			return _filepath;
+		}
 
-        public void setFilepath(String filePath) {
-            _filepath = filePath;
-        }
+		public void setFilepath(String filePath) {
+			_filepath = filePath;
+		}
 
-        public Types.DataType getDataType() {
-            return _dataType;
-        }
+		public Types.DataType getDataType() {
+			return _dataType;
+		}
 
-        public void setDataType(Types.DataType dataType) {
-            _dataType = dataType;
-        }
+		public void setDataType(Types.DataType dataType) {
+			_dataType = dataType;
+		}
 
-        public InetSocketAddress getAddress() {
-            return _address;
-        }
+		public InetSocketAddress getAddress() {
+			return _address;
+		}
 
-        public void setAddress(InetSocketAddress address) {
-            _address = address;
-        }
+		public void setAddress(InetSocketAddress address) {
+			_address = address;
+		}
 
-        public long[] getBegin() {
-            return _begin;
-        }
+		public long[] getBegin() {
+			return _begin;
+		}
 
-        public void setBegin(long[] begin) {
-            _begin = begin;
-        }
+		public void setBegin(long[] begin) {
+			_begin = begin;
+		}
 
-        public long[] getEnd() {
-            return _end;
-        }
+		public long[] getEnd() {
+			return _end;
+		}
 
-        public void setEnd(long[] end) {
-            _end = end;
-        }
+		public void setEnd(long[] end) {
+			_end = end;
+		}
 
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(_dataType);
-            sb.append(" ");
-            sb.append(_address);
-            sb.append(" ");
-            sb.append(_filepath);
-            sb.append(" ");
-            sb.append(Arrays.toString(_begin));
-            sb.append(" ");
-            sb.append(Arrays.toString(_end));
-            return sb.toString();
-        }
-    }
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(_dataType);
+			sb.append(" ");
+			sb.append(_address);
+			sb.append(" ");
+			sb.append(_filepath);
+			sb.append(" ");
+			sb.append(Arrays.toString(_begin));
+			sb.append(" ");
+			sb.append(Arrays.toString(_end));
+			return sb.toString();
+		}
+	}
 }

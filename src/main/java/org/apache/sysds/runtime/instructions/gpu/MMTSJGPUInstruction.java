@@ -38,17 +38,17 @@ public class MMTSJGPUInstruction extends GPUInstruction {
 	 * MMTSJGPUInstruction constructor.
 	 * 
 	 * @param op
-	 *            operator
+	 *			operator
 	 * @param in1
-	 *            input
+	 *			input
 	 * @param type
-	 *            left/right, left-&gt; A' %*% A, right-&gt; A %*% A'
+	 *			left/right, left-&gt; A' %*% A, right-&gt; A %*% A'
 	 * @param out
-	 *            output
+	 *			output
 	 * @param opcode
-	 *            the opcode
+	 *			the opcode
 	 * @param istr
-	 *            ?
+	 *			?
 	 */
 	private MMTSJGPUInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, String opcode, String istr) {
 		super(op, opcode, istr);
@@ -58,37 +58,37 @@ public class MMTSJGPUInstruction extends GPUInstruction {
 		_output = out;
 	}
 
-        public static MMTSJGPUInstruction parseInstruction ( String str )
-        {
-                String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-                InstructionUtils.checkNumFields ( parts, 3 );
+	public static MMTSJGPUInstruction parseInstruction ( String str )
+	{
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		InstructionUtils.checkNumFields ( parts, 3 );
 
-                String opcode = parts[0];
-                CPOperand in1 = new CPOperand(parts[1]);
-                CPOperand out = new CPOperand(parts[2]);
-                MMTSJType titype = MMTSJType.valueOf(parts[3]);
+		String opcode = parts[0];
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
+		MMTSJType titype = MMTSJType.valueOf(parts[3]);
 
-                if(!opcode.equalsIgnoreCase("tsmm"))
-                        throw new DMLRuntimeException("Unknown opcode while parsing an MMTSJGPUInstruction: " + str);
-                else
-                        return new MMTSJGPUInstruction(new Operator(true), in1, titype, out, opcode, str);
-        }
+		if(!opcode.equalsIgnoreCase("tsmm"))
+				throw new DMLRuntimeException("Unknown opcode while parsing an MMTSJGPUInstruction: " + str);
+		else
+				return new MMTSJGPUInstruction(new Operator(true), in1, titype, out, opcode, str);
+	}
 
-        @Override
-        public void processInstruction(ExecutionContext ec) {
-                GPUStatistics.incrementNoOfExecutedGPUInst();
-                MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
-                boolean isLeftTransposed = ( _type == MMTSJType.LEFT);
-                int rlen = (int) (isLeftTransposed? mat.getNumColumns() : mat.getNumRows());
-                int clen = rlen;
-                //execute operations 
-                ec.setMetaData(_output.getName(), rlen, clen);
-                LibMatrixCUDA.matmultTSMM(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName(), isLeftTransposed);
-                ec.releaseMatrixInputForGPUInstruction(_input.getName());
-                ec.releaseMatrixOutputForGPUInstruction(_output.getName());
-        }
+	@Override
+	public void processInstruction(ExecutionContext ec) {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
+		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
+		boolean isLeftTransposed = ( _type == MMTSJType.LEFT);
+		int rlen = (int) (isLeftTransposed? mat.getNumColumns() : mat.getNumRows());
+		int clen = rlen;
+		//execute operations 
+		ec.setMetaData(_output.getName(), rlen, clen);
+		LibMatrixCUDA.matmultTSMM(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName(), isLeftTransposed);
+		ec.releaseMatrixInputForGPUInstruction(_input.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
 
-        public MMTSJType getMMTSJType() {
-                return _type;
-        }
+	public MMTSJType getMMTSJType() {
+			return _type;
+	}
 }

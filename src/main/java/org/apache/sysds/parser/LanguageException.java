@@ -29,30 +29,30 @@ public class LanguageException extends DMLException
 	
 	private static final long serialVersionUID = 1L;
 	
-    public LanguageException() {
-        super();
-    }
-    
-    public LanguageException(String message) {
-        super(message);
-    }
-    
-    public LanguageException(Throwable cause) {
-        super(cause);
-    }
-    
-    public LanguageException(String message, Throwable cause) {
-        super(message, cause);
-    }
-    
-    public LanguageException(String message, String code) {
-        super(code + ERROR_MSG_DELIMITER + message);
-    }
-    
-    public static class LanguageErrorCodes {
-    	public static final String UNSUPPORTED_EXPRESSION = "Unsupported Expression";
-    	public static final String INVALID_PARAMETERS = "Invalid Parameters";
-    	public static final String UNSUPPORTED_PARAMETERS = "Unsupported Parameters";
-    }
+	public LanguageException() {
+		super();
+	}
+	
+	public LanguageException(String message) {
+		super(message);
+	}
+	
+	public LanguageException(Throwable cause) {
+		super(cause);
+	}
+	
+	public LanguageException(String message, Throwable cause) {
+		super(message, cause);
+	}
+	
+	public LanguageException(String message, String code) {
+		super(code + ERROR_MSG_DELIMITER + message);
+	}
+	
+	public static class LanguageErrorCodes {
+		public static final String UNSUPPORTED_EXPRESSION = "Unsupported Expression";
+		public static final String INVALID_PARAMETERS = "Invalid Parameters";
+		public static final String UNSUPPORTED_PARAMETERS = "Unsupported Parameters";
+	}
 
 }

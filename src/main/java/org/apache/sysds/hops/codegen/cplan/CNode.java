@@ -27,8 +27,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 
-import static org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI.CUDA;
-
 public abstract class CNode
 {
 	private static final IDSequence _seqVar = new IDSequence();

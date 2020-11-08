@@ -39,81 +39,81 @@ import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import java.util.ArrayList;
 
 public class SpoofCUDAInstruction extends GPUInstruction implements LineageTraceable {
-    private final SpoofCUDA _op;
-    private final CPOperand[] _in;
+	private final SpoofCUDA _op;
+	private final CPOperand[] _in;
 
-    public final CPOperand _out;
+	public final CPOperand _out;
 
-    private SpoofCUDAInstruction(SpoofOperator op, CPOperand[] in, CPOperand out, String opcode, String istr) {
-        super(null, opcode, istr);
+	private SpoofCUDAInstruction(SpoofOperator op, CPOperand[] in, CPOperand out, String opcode, String istr) {
+		super(null, opcode, istr);
 
-        if(!(op instanceof SpoofCUDA))
-            throw new RuntimeException("SpoofGPUInstruction needs an operator of type SpoofNativeCUDA!");
+		if(!(op instanceof SpoofCUDA))
+			throw new RuntimeException("SpoofGPUInstruction needs an operator of type SpoofNativeCUDA!");
 
-        _op = (SpoofCUDA) op;
-        _in = in;
-        _out = out;
-        instString = istr;
-        instOpcode = opcode;
-    }
+		_op = (SpoofCUDA) op;
+		_in = in;
+		_out = out;
+		instString = istr;
+		instOpcode = opcode;
+	}
 
-    public static SpoofCUDAInstruction parseInstruction(String str) {
-        String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+	public static SpoofCUDAInstruction parseInstruction(String str) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 
-        ArrayList<CPOperand> inlist = new ArrayList<>();
-        SpoofCUDA op = CodegenUtils.getNativeOpData(parts[2]);
-        String opcode =  op.getSpoofType();
+		ArrayList<CPOperand> inlist = new ArrayList<>();
+		SpoofCUDA op = CodegenUtils.getNativeOpData(parts[2]);
+		String opcode =  op.getSpoofType();
 
-        for( int i=3; i<parts.length-2; i++ )
-            inlist.add(new CPOperand(parts[i]));
-        CPOperand out = new CPOperand(parts[parts.length-2]);
+		for( int i=3; i<parts.length-2; i++ )
+			inlist.add(new CPOperand(parts[i]));
+		CPOperand out = new CPOperand(parts[parts.length-2]);
 
-        return new SpoofCUDAInstruction(op, inlist.toArray(new CPOperand[0]), out, opcode, str);
-    }
+		return new SpoofCUDAInstruction(op, inlist.toArray(new CPOperand[0]), out, opcode, str);
+	}
 
-    @Override
-    public void processInstruction(ExecutionContext ec) {
+	@Override
+	public void processInstruction(ExecutionContext ec) {
 
-        //get input matrices and scalars, incl pinning of matrices
-        ArrayList<MatrixObject> inputs = new ArrayList<>();
-        ArrayList<ScalarObject> scalars = new ArrayList<>();
-        for (CPOperand input : _in) {
-            if(input.getDataType()== Types.DataType.MATRIX)
-                inputs.add(ec.getMatrixInputForGPUInstruction(input.getName(), getExtendedOpcode()));
-            else if(input.getDataType()== Types.DataType.SCALAR) {
-                //note: even if literal, it might be compiled as scalar placeholder
-                scalars.add(ec.getScalarInput(input));
-            }
-        }
+		//get input matrices and scalars, incl pinning of matrices
+		ArrayList<MatrixObject> inputs = new ArrayList<>();
+		ArrayList<ScalarObject> scalars = new ArrayList<>();
+		for (CPOperand input : _in) {
+			if(input.getDataType()== Types.DataType.MATRIX)
+				inputs.add(ec.getMatrixInputForGPUInstruction(input.getName(), getExtendedOpcode()));
+			else if(input.getDataType()== Types.DataType.SCALAR) {
+				//note: even if literal, it might be compiled as scalar placeholder
+				scalars.add(ec.getScalarInput(input));
+			}
+		}
 
-        // set the output dimensions to the hop node matrix dimensions
-        if( _out.getDataType() == Types.DataType.MATRIX) {
-            long rows = inputs.get(0).getNumRows();
-            long cols = inputs.get(0).getNumColumns();
-            if(_op.getSpoofTemplateType().contains("CW"))
-                if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.COL_AGG)
-                    rows = 1;
-                else if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.ROW_AGG)
-                    cols = 1;
+		// set the output dimensions to the hop node matrix dimensions
+		if( _out.getDataType() == Types.DataType.MATRIX) {
+			long rows = inputs.get(0).getNumRows();
+			long cols = inputs.get(0).getNumColumns();
+			if(_op.getSpoofTemplateType().contains("CW"))
+				if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.COL_AGG)
+					rows = 1;
+				else if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.ROW_AGG)
+					cols = 1;
 
-            MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), rows, cols).getKey();
-            ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
-            _op.execute(inputs, scalars, out_obj, ec);
-            ec.releaseMatrixOutputForGPUInstruction(_out.getName());
-        }
-        else if (_out.getDataType() == Types.DataType.SCALAR) {
-            ScalarObject out = new DoubleObject(_op.execute(inputs, scalars, null, ec));
-            ec.setScalarOutput(_out.getName(), out);
-        }
+			MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), rows, cols).getKey();
+			ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
+			_op.execute(inputs, scalars, out_obj, ec);
+			ec.releaseMatrixOutputForGPUInstruction(_out.getName());
+		}
+		else if (_out.getDataType() == Types.DataType.SCALAR) {
+			ScalarObject out = new DoubleObject(_op.execute(inputs, scalars, null, ec));
+			ec.setScalarOutput(_out.getName(), out);
+		}
 
-        for (CPOperand input : _in)
-            if(input.getDataType()== Types.DataType.MATRIX)
-                ec.releaseMatrixInputForGPUInstruction(input.getName());
-    }
+		for (CPOperand input : _in)
+			if(input.getDataType()== Types.DataType.MATRIX)
+				ec.releaseMatrixInputForGPUInstruction(input.getName());
+	}
 
-    @Override
-    public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-        return Pair.of(_out.getName(),
-                new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, _in)));
-    }
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(_out.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, _in)));
+	}
 }

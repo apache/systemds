@@ -30,45 +30,45 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 
 public class VariableFEDInstruction extends FEDInstruction implements LineageTraceable {
-    private static final Log LOG = LogFactory.getLog(VariableFEDInstruction.class.getName());
+	private static final Log LOG = LogFactory.getLog(VariableFEDInstruction.class.getName());
 
-    private final VariableCPInstruction _in;
+	private final VariableCPInstruction _in;
 
-    protected VariableFEDInstruction(VariableCPInstruction in) {
-        super(null, in.getOperator(), in.getOpcode(), in.getInstructionString());
-        _in = in;
-    }
+	protected VariableFEDInstruction(VariableCPInstruction in) {
+		super(null, in.getOperator(), in.getOpcode(), in.getInstructionString());
+		_in = in;
+	}
 
-    public static VariableFEDInstruction parseInstruction(VariableCPInstruction cpInstruction) {
-        return new VariableFEDInstruction(cpInstruction);
-    }
+	public static VariableFEDInstruction parseInstruction(VariableCPInstruction cpInstruction) {
+		return new VariableFEDInstruction(cpInstruction);
+	}
 
-    @Override
-    public void processInstruction(ExecutionContext ec) {
-        VariableOperationCode opcode = _in.getVariableOpcode();
-        switch(opcode) {
+	@Override
+	public void processInstruction(ExecutionContext ec) {
+		VariableOperationCode opcode = _in.getVariableOpcode();
+		switch(opcode) {
 
-            case Write:
-                processWriteInstruction(ec);
-                break;
+			case Write:
+				processWriteInstruction(ec);
+				break;
 
-            default:
-                throw new DMLRuntimeException("Unsupported Opcode for federated Variable Instruction : " + opcode);
-        }
-    }
+			default:
+				throw new DMLRuntimeException("Unsupported Opcode for federated Variable Instruction : " + opcode);
+		}
+	}
 
-    private void processWriteInstruction(ExecutionContext ec) {
-        LOG.warn("Processing write command federated");
-        // TODO Add write command to the federated site if the matrix has been modified
-        // this has to be done while appending some string to the federated output file.
-        // furthermore the outputted file on the federated sites path should be returned
-        // the controller.
-        _in.processInstruction(ec);
-    }
+	private void processWriteInstruction(ExecutionContext ec) {
+		LOG.warn("Processing write command federated");
+		// TODO Add write command to the federated site if the matrix has been modified
+		// this has to be done while appending some string to the federated output file.
+		// furthermore the outputted file on the federated sites path should be returned
+		// the controller.
+		_in.processInstruction(ec);
+	}
 
-    @Override
-    public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-        return _in.getLineageItem(ec);
-    }
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return _in.getLineageItem(ec);
+	}
 
 }

@@ -35,87 +35,88 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
 public class SpoofCUDA extends SpoofOperator {
+	private static final long serialVersionUID = -2161276866245388359L;
+	
+	private final CNodeTpl cnt;
+	public final String name;
 
-    private final CNodeTpl cnt;
-    public final String name;
+	public SpoofCUDA(CNodeTpl cnode) {
+		name = "codegen." + cnode.getVarname();
+		cnt = cnode;
+	}
 
-    public SpoofCUDA(CNodeTpl cnode) {
-        name = "codegen." + cnode.getVarname();
-        cnt = cnode;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public CNodeTpl getCNodeTemplate() {
+		return cnt;
+	}
 
-    public CNodeTpl getCNodeTemplate() {
-        return cnt;
-    }
+	public String getSpoofTemplateType() {
+		if (cnt instanceof CNodeCell)
+			return "CW";
+		else if(cnt instanceof CNodeRow)
+			return "RA";
+		else if(cnt instanceof CNodeMultiAgg)
+			return "MA";
+		else if(cnt instanceof CNodeOuterProduct)
+			return "OP";
+		else
+			throw new RuntimeException("unknown spoof operator type");
+	}
+	@Override
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) {
+		throw new RuntimeException("method not implemented for SpoofNativeCUDA");
+	}
 
-    public String getSpoofTemplateType() {
-        if (cnt instanceof CNodeCell)
-            return "CW";
-        else if(cnt instanceof CNodeRow)
-            return "RA";
-        else if(cnt instanceof CNodeMultiAgg)
-            return "MA";
-        else if(cnt instanceof CNodeOuterProduct)
-            return "OP";
-        else
-            throw new RuntimeException("unknown spoof operator type");
-    }
-    @Override
-    public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) {
-        throw new RuntimeException("method not implemented for SpoofNativeCUDA");
-    }
+	public double execute(ArrayList<MatrixObject> inputs, ArrayList<ScalarObject> scalarObjects, MatrixObject out_obj,
+							   ExecutionContext ec) {
+		double ret = 0;
+		long out_ptr = 0;
 
-    public double execute(ArrayList<MatrixObject> inputs, ArrayList<ScalarObject> scalarObjects, MatrixObject out_obj,
-                               ExecutionContext ec) {
-        double ret = 0;
-        long out_ptr = 0;
+		if(out_obj != null)
+			out_ptr = ec.getGPUPointerAddress(out_obj);
 
-        if(out_obj != null)
-            out_ptr = ec.getGPUPointerAddress(out_obj);
+		int offset = 1;
+		if(cnt instanceof CNodeOuterProduct)
+			offset = 2;
 
-        int offset = 1;
-        if(cnt instanceof CNodeOuterProduct)
-            offset = 2;
+		// only dense input preparation for now
+		long[] in_ptrs = new long[offset];
+		for(int i = 0; i < offset; ++i)
+			in_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
 
-        // only dense input preparation for now
-        long[] in_ptrs = new long[offset];
-        for(int i = 0; i < offset; ++i)
-            in_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
+		long[] side_ptrs = new long[inputs.size() - offset];
+		for(int i = offset; i < inputs.size(); ++i)
+			side_ptrs[i - offset] = ec.getGPUPointerAddress(inputs.get(i));
 
-        long[] side_ptrs = new long[inputs.size() - offset];
-        for(int i = offset; i < inputs.size(); ++i)
-            side_ptrs[i - offset] = ec.getGPUPointerAddress(inputs.get(i));
+		if(isSinglePrecision()) {
+			float[] scalars = prepInputScalarsFloat(scalarObjects);
 
-        if(isSinglePrecision()) {
-            float[] scalars = prepInputScalarsFloat(scalarObjects);
+			// ToDo: handle float
+		   ret = execute_f(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
+					in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
 
-            // ToDo: handle float
-           ret = execute_f(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
-                    in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
+		}
+		else {
+			double[] scalars = prepInputScalars(scalarObjects);
 
-        }
-        else {
-            double[] scalars = prepInputScalars(scalarObjects);
+			ret = execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
+					in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
+		}
+		return ret;
+	}
 
-            ret = execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
-                    in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
-        }
-        return ret;
-    }
+	@Override
+	public String getSpoofType() {
+		String tmp[] = getClass().getName().split("\\.");
+			return  tmp[tmp.length-1] + "_" + getSpoofTemplateType() + "_" + name.split("\\.")[1];
+	}
 
-    @Override
-    public String getSpoofType() {
-        String tmp[] = getClass().getName().split("\\.");
-            return  tmp[tmp.length-1] + "_" + getSpoofTemplateType() + "_" + name.split("\\.")[1];
-    }
+	private native float execute_f(long ctx, String name, long[] in_ptr, long[] side_ptr,
+								   long out_ptr, float[] scalars, long m, long n, long grix);
 
-    private native float execute_f(long ctx, String name, long[] in_ptr, long[] side_ptr,
-                                   long out_ptr, float[] scalars, long m, long n, long grix);
-
-    private native double execute_d(long ctx, String name, long[] in_ptr, long[] side_ptr,
-                                    long out_ptr, double[] scalars, long m, long n, long grix);
+	private native double execute_d(long ctx, String name, long[] in_ptr, long[] side_ptr,
+									long out_ptr, double[] scalars, long m, long n, long grix);
 }

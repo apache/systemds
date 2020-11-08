@@ -266,20 +266,21 @@ public class SpoofCompiler {
 	}
 
 	private static void extractCodegenSources(String resource_path, String jar_path) throws IOException {
-		JarFile jar_file = new JarFile(jar_path);
-		Enumeration<JarEntry> files_in_jar = jar_file.entries();
-
-		while (files_in_jar.hasMoreElements()) {
-			JarEntry in_file = files_in_jar.nextElement();
-			if (in_file.getName().startsWith("cuda/") && !in_file.isDirectory()) {
-				File out_file = new File(resource_path, in_file.getName());
-				out_file.deleteOnExit();
-				File parent = out_file.getParentFile();
-				if (parent != null) {
-					parent.mkdirs();
-					parent.deleteOnExit();
+		try(JarFile jar_file = new JarFile(jar_path)) {
+			Enumeration<JarEntry> files_in_jar = jar_file.entries();
+	
+			while (files_in_jar.hasMoreElements()) {
+				JarEntry in_file = files_in_jar.nextElement();
+				if (in_file.getName().startsWith("cuda/") && !in_file.isDirectory()) {
+					File out_file = new File(resource_path, in_file.getName());
+					out_file.deleteOnExit();
+					File parent = out_file.getParentFile();
+					if (parent != null) {
+						parent.mkdirs();
+						parent.deleteOnExit();
+					}
+					IOUtils.copy(jar_file.getInputStream(in_file), FileUtils.openOutputStream(out_file));
 				}
-				IOUtils.copy(jar_file.getInputStream(in_file), FileUtils.openOutputStream(out_file));
 			}
 		}
 	}

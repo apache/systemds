@@ -21,7 +21,6 @@
 
 import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.driver.JCudaDriver.cuInit;
-import static jcuda.runtime.JCuda.cudaGetDevice;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 
 import java.util.ArrayList;

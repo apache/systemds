@@ -135,7 +135,7 @@ public class LibMatrixDatagen
 		}
 	}
 
-    public static RandomMatrixGenerator createRandomMatrixGenerator(String pdfStr, int r, int c, int blen, double sp, double min, double max, String distParams) {
+	public static RandomMatrixGenerator createRandomMatrixGenerator(String pdfStr, int r, int c, int blen, double sp, double min, double max, String distParams) {
 		RandomMatrixGenerator.PDF pdf = RandomMatrixGenerator.PDF.valueOf(pdfStr.toUpperCase());
 		RandomMatrixGenerator rgen = null;
 		switch (pdf) {

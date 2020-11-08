@@ -19,6 +19,9 @@
 
 package org.apache.sysds.hops.codegen.cplan.cpp;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
@@ -28,49 +31,47 @@ import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 
-import java.io.*;
-import java.util.stream.Collectors;
 
 // ToDo: clean code template and load from file
 public class CellWise implements CodeTemplate {
 
-    private static final String TEMPLATE_PATH = "/cuda/spoof/cellwise.cu";
+	private static final String TEMPLATE_PATH = "/cuda/spoof/cellwise.cu";
 
-    @Override
-    public String getTemplate() {
-        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-    }
+	@Override
+	public String getTemplate() {
+		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+	}
 
-    @Override
-    public String getTemplate(SpoofCellwise.CellType ct) {
-        try {
-            // Change prefix to the code template file if running from jar. File were extracted to a temporary
-            // directory in that case. By default we load the template from the source tree.
-            if(CellWise.class.getProtectionDomain().getCodeSource().getLocation().getPath().contains(".jar"))
-                return(IOUtilFunctions.toString(new FileInputStream(ConfigurationManager.getDMLConfig()
-                        .getTextValue(DMLConfig.LOCAL_TMP_DIR) + TEMPLATE_PATH)));
-            else
-                return IOUtilFunctions.toString(new FileInputStream(System.getProperty("user.dir") +
-                        "/src/main" + TEMPLATE_PATH));
-        }
-        catch(IOException e) {
-            System.out.println(e.getMessage());
-            return null;
-        }
-    }
+	@Override
+	public String getTemplate(SpoofCellwise.CellType ct) {
+		try {
+			// Change prefix to the code template file if running from jar. File were extracted to a temporary
+			// directory in that case. By default we load the template from the source tree.
+			if(CellWise.class.getProtectionDomain().getCodeSource().getLocation().getPath().contains(".jar"))
+				return(IOUtilFunctions.toString(new FileInputStream(ConfigurationManager.getDMLConfig()
+						.getTextValue(DMLConfig.LOCAL_TMP_DIR) + TEMPLATE_PATH)));
+			else
+				return IOUtilFunctions.toString(new FileInputStream(System.getProperty("user.dir") +
+						"/src/main" + TEMPLATE_PATH));
+		}
+		catch(IOException e) {
+			System.out.println(e.getMessage());
+			return null;
+		}
+	}
 
-    @Override
-    public String getTemplate(CNodeUnary.UnaryType type, boolean sparse) {
-        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-    }
+	@Override
+	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse) {
+		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+	}
 
-    @Override
-    public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector, boolean scalarInput) {
-        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-    }
+	@Override
+	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector, boolean scalarInput) {
+		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+	}
 
-    @Override
-    public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
-        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-    }
+	@Override
+	public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
+		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+	}
 }

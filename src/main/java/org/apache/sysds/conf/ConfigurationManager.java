@@ -20,7 +20,6 @@
 package org.apache.sysds.conf;
 
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 
 

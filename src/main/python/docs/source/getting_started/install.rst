@@ -62,7 +62,7 @@ Once installed you please verify your version numbers.
 Additionally you have to install a few python packages.
 Note depending on your installation you might need to use pip3 instead of pip::
 
-  pip install numpy py4j wheel jinja2 onnx requests
+  pip install numpy py4j wheel requests
 
 Then to build the system you do the following
 

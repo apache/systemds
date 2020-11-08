@@ -2079,7 +2079,6 @@ public class TestUtils
 	 * @param matrix
 	 *            matrix
 	 */
-	@SuppressWarnings("deprecation")
 	public static void writeBinaryTestMatrixCells(String file, double[][] matrix) {
 		try {
 			SequenceFile.Writer writer = null;
@@ -2127,7 +2126,6 @@ public class TestUtils
 	 * @param sparseFormat
 	 *            sparse format
 	 */
-	@SuppressWarnings("deprecation")
 	public static void writeBinaryTestMatrixBlocks(String file, double[][] matrix, int rowsInBlock, int colsInBlock,
 			boolean sparseFormat) {
 		SequenceFile.Writer writer = null;

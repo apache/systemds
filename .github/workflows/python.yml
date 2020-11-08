@@ -85,7 +85,7 @@ jobs:
       run: sudo apt-get install protobuf-compiler libprotoc-dev 
   
     - name: Install pip Dependencies
-      run: pip install numpy py4j wheel scipy sklearn jinja2 onnx requests
+      run: pip install numpy py4j wheel scipy sklearn requests
 
     - name: Build Python Package
       run: |
@@ -98,13 +98,11 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         export SYSDS_QUIET=1
         cd src/main/python
-        python tests/onnx_systemds/test_models/model_generate.py
         python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
     
     - name: Run all python tests no environment
       run: |
         cd src/main/python
-        python tests/onnx_systemds/test_models/model_generate.py
         python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?

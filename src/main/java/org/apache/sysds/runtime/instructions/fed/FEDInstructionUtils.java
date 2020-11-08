@@ -129,6 +129,15 @@ public class FEDInstructionUtils {
 			if( mo.isFederated() )
 				fedinst = ReorgFEDInstruction.parseInstruction(rinst.getInstructionString());
 		}
+		else if(inst instanceof MatrixIndexingCPInstruction && inst.getOpcode().equalsIgnoreCase("rightIndex")) {
+			// matrix indexing
+			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
+			if(minst.input1.isMatrix()) {
+				CacheableData<?> fo = ec.getCacheableData(minst.input1);
+				if(fo.isFederated() && !fo.isFederated(FType.OTHER))
+					fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());
+			}
+		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
 

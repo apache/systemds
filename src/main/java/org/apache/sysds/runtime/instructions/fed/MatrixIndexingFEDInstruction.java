@@ -54,8 +54,10 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 		FederationMap fedMapping = in.getFedMapping();
 		IndexRange ixrange = getIndexRange(ec);
 		FederationMap.FType fedType = fedMapping.getType();
-
 		Map <String, IndexRange> ixs = new HashMap<>();
+
+		long[] lastEndDim = new long[2];
+		long[] lastBeginDim = new long[2];
 
 		for (int i = 0; i < fedMapping.getFederatedRanges().length; i++) {
 			long rs = fedMapping.getFederatedRanges()[i].getBeginDims()[0], re = fedMapping.getFederatedRanges()[i]
@@ -107,18 +109,49 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 					}
 					break;
 				case OTHER:
-					throw new DMLRuntimeException("Unsupported fed type.");
-			}
+					rsn = (ixrange.rowStart >= rs && ixrange.rowStart < re) ? (ixrange.rowStart - rs) : 0;
+					ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
+					csn = (ixrange.colStart >= cs && ixrange.colStart < ce) ? (ixrange.colStart - cs) : 0;
+					cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
 
+					if((ixrange.colStart < ce) && (ixrange.colEnd >= cs) && (ixrange.rowStart < re) && (ixrange.rowEnd >= rs)) {
+						if (fedMapping.getFederatedRanges()[i-1].getSize() != 0 || lastEndDim[0] + lastEndDim[1] == 0) {
+							fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
+							fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
+							fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[0]));
+							fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[1]));
+						} else {
+							fedMapping.getFederatedRanges()[i].setBeginDim(0, 1 + ren - rsn + lastBeginDim[0]);
+							fedMapping.getFederatedRanges()[i].setBeginDim(1, cen - csn + lastBeginDim[1]);
+							fedMapping.getFederatedRanges()[i].setEndDim(0, 1 + ren - rsn + lastEndDim[0]);
+							fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + lastEndDim[1]);
+						}
+						lastEndDim = fedMapping.getFederatedRanges()[i].getEndDims();
+						lastBeginDim = fedMapping.getFederatedRanges()[i].getBeginDims();
+					}
+					else {
+						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
+						fedMapping.getFederatedRanges()[i].setEndDim(0, fedMapping.getFederatedRanges()[i].getBeginDims()[0]);
+
+						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
+						fedMapping.getFederatedRanges()[i].setEndDim(1, fedMapping.getFederatedRanges()[i].getBeginDims()[1]);
+
+						rsn = -1;
+						ren = rsn;
+						csn = rsn;
+						cen = rsn;
+					}
+			}
 			ixs.put(fedMapping.getFederatedRanges()[i].toString(), new IndexRange(rsn, ren, csn, cen));
 		}
-
+//		List<MatrixBlock> mb = new ArrayList<>();
 		long varID = FederationUtils.getNextFedDataID();
 		FederationMap sortedMapping = fedMapping.mapParallel(varID, (range, data) -> {
 			try {
 				FederatedResponse response = data
 					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
 						new SliceMatrix(data.getVarID(), varID, ixs.get(range.toString())))).get();
+//				mb.add((MatrixBlock) response.getData()[0]);
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}
@@ -160,5 +193,4 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
 		}
 	}
-
 }

@@ -38,8 +38,6 @@ ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
 REQUIRED_PACKAGES = [
     'numpy >= 1.8.2',
     'py4j >= 0.10.9',
-    'jinja2 >= 2.11.2',
-    'onnx >= 1.7.0',
     'requests >= 2.24.0'
 ]
 

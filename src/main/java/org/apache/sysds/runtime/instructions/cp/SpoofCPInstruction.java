@@ -99,6 +99,11 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		//return the lineage item if already traced once
+		LineageItem li = ec.getLineage().get(output.getName());
+		if (li != null)
+			return Pair.of(output.getName(), li);
+
 		//read and deepcopy the corresponding lineage DAG (pre-codegen)
 		LineageItem LIroot = LineageCodegenItem.getCodegenLTrace(getOperatorClass().getName()).deepCopy();
 		

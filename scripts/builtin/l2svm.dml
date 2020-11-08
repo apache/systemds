@@ -48,7 +48,7 @@
 
 m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     Double epsilon = 0.001, Double lambda = 1, Integer maxIterations = 100, 
-    Boolean verbose = FALSE, Integer columnId = -1)
+    Integer maxii = 20, Boolean verbose = FALSE, Integer columnId = -1)
   return(Matrix[Double] model)
 {
   #check input parameter assertions
@@ -110,7 +110,8 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     wd = lambda * sum(w * s)
     dd = lambda * sum(s * s)
     continue1 = TRUE
-    while(continue1){
+    iiter = 0
+    while(continue1 & iiter < maxii){
       tmp_Xw = Xw + step_sz*Xd
       out = 1 - Y * (tmp_Xw)
       sv = (out > 0)
@@ -119,6 +120,9 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
       h = dd + sum(Xd * sv * Xd)
       step_sz = step_sz - g/h
       continue1 = (g*g/h >= epsilon)
+      if(verbose)
+        print("Inner Iter:" + toString(iiter))
+      iiter = iiter + 1
     }
 
     #update weights

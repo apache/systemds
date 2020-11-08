@@ -102,6 +102,11 @@ public class LineageItem {
 		return _data;
 	}
 	
+	public void fixHash() {
+		_hash = 0;
+		_hash = hashCode();
+	}
+
 	public boolean isVisited() {
 		return _visited;
 	}

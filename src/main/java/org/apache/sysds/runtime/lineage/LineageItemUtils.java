@@ -36,6 +36,7 @@ import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.IndexingOp;
 import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
@@ -212,6 +213,11 @@ public class LineageItemUtils {
 		}
 		else if (root instanceof IndexingOp)
 			li = new LineageItem(name, "rightIndex", LIinputs);
+		else if (root instanceof ParameterizedBuiltinOp) {
+			String opcode = ((ParameterizedBuiltinOp) root).getOp().toString();
+			if (opcode.equalsIgnoreCase("replace"))
+				li = new LineageItem(name, opcode, LIinputs);
+		}
 		else if (root instanceof SpoofFusedOp)
 			li = LineageCodegenItem.getCodegenLTrace(((SpoofFusedOp) root).getClassName());
 		
@@ -375,6 +381,8 @@ public class LineageItemUtils {
 				rReplaceDagLeaves(li, newleaves);
 		}
 
+		//fix the hash codes bottom-up, as the inputs have changed
+		root.fixHash();
 		root.setVisited();
 	}
 

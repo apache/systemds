@@ -33,6 +33,8 @@ import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -189,5 +191,12 @@ public class TensorObject extends CacheableData<TensorBlock> {
 	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt)
 			throws DMLRuntimeException {
 		//TODO rdd write
+	}
+	
+	@Override
+	protected TensorBlock reconstructByLineage(LineageItem li) throws IOException {
+		return ((TensorObject) LineageRecomputeUtils
+			.parseNComputeLineageTrace(li.getData(), null))
+			.acquireReadAndRelease();
 	}
 }

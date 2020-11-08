@@ -30,6 +30,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -375,11 +376,15 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				soresBlock.examSparsity();
 		
 			//release created output
-			ec.setMatrixOutput(output.getName(), soresBlock);
-		} else if(output.isTensor()) {
+			LineageItem lin = CacheableData.isBelowCachingThreshold(soresBlock) ?
+				null : getLineageItem(ec).getValue();
+			ec.setMatrixOutputAndLineage(output.getName(), soresBlock, lin);
+		}
+		else if(output.isTensor()) {
 			// TODO memory optimization
 			ec.setTensorOutput(output.getName(), tensorBlock);
-		} else if( output.isScalar() )
+		}
+		else if( output.isScalar() )
 			ec.setScalarOutput(output.getName(), soresScalar);
 	}
 	

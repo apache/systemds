@@ -44,6 +44,8 @@ import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -628,5 +630,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		//lazy evaluation of pending transformations.
 		long newnnz = SparkExecutionContext.writeMatrixRDDtoHDFS(rdd, fname, fmt);
 		_metaData.getDataCharacteristics().setNonZeros(newnnz);
+	}
+	
+	@Override
+	protected MatrixBlock reconstructByLineage(LineageItem li) throws IOException {
+		return ((MatrixObject) LineageRecomputeUtils
+			.parseNComputeLineageTrace(li.getData(), null))
+			.acquireReadAndRelease();
 	}
 }

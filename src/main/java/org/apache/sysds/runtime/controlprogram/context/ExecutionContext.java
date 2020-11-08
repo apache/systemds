@@ -534,12 +534,16 @@ public class ExecutionContext {
 	}
 	
 	public void setMatrixOutput(String varName, MatrixBlock outputData) {
+		setMatrixOutputAndLineage(varName, outputData, null);
+	}
+
+	public void setMatrixOutputAndLineage(String varName, MatrixBlock outputData, LineageItem li) {
 		if( isAutoCreateVars() && !containsVariable(varName) )
 			setVariable(varName, createMatrixObject(outputData));
 		MatrixObject mo = getMatrixObject(varName);
 		mo.acquireModify(outputData);
+		mo.setCacheLineage(li);
 		mo.release();
-		setVariable(varName, mo);
 	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) {

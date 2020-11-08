@@ -37,6 +37,8 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -285,5 +287,12 @@ public class FrameObject extends CacheableData<FrameBlock>
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.
 		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, iimd.getFileFormat());
+	}
+	
+	@Override
+	protected FrameBlock reconstructByLineage(LineageItem li) throws IOException {
+		return ((FrameObject) LineageRecomputeUtils
+			.parseNComputeLineageTrace(li.getData(), null))
+			.acquireReadAndRelease();
 	}
 }

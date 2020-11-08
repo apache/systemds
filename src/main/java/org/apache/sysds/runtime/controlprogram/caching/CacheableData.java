@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -212,6 +213,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
 	protected HashMap<GPUContext, GPUObject> _gpuObjects = null; //Per GPUContext object allocated on GPU
+
+	private LineageItem _lineage = null;
 	
 	/**
 	 * Basic constructor for any cacheable data.
@@ -340,6 +343,18 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	public abstract void refreshMetaData();
+
+	public LineageItem getCacheLineage() {
+		return _lineage;
+	}
+
+	public void setCacheLineage(LineageItem li) {
+		_lineage = li;
+	}
+
+	public boolean hasValidLineage() {
+		return (_lineage != null);
+	}
 
 	/**
 	 * Check if object is federated.
@@ -490,11 +505,17 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		//read data from HDFS/RDD if required
 		//(probe data for cache_nowrite / jvm_reuse)
-		if( _data==null && isEmpty(true) ) {
+		if( _data==null && ( isEmpty(true) || hasValidLineage() )) {
 			try {
-				if( isFederated() ) {
-					_data = readBlobFromFederated( _fedMapping );
-					
+				if( hasValidLineage() ) {
+					_data = reconstructByLineage(getCacheLineage());
+					_requiresLocalWrite = false;
+					if( DMLScript.STATISTICS )
+						CacheStatistics.incrementLinHits();
+				}
+				else if( isFederated() ) {
+					_data = readBlobFromFederated(_fedMapping);
+
 					//mark for initial local write despite read operation
 					_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
 				}
@@ -638,7 +659,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			&& isCached(true) //not empty and not read/modify
 			&& !isBelowCachingThreshold() ) //min size for caching
 		{
-			if( write || _requiresLocalWrite ) {
+			if( ( write && !hasValidLineage() ) || _requiresLocalWrite ) {
 				String filePath = getCacheFilePathAndName();
 				try {
 					LazyWriteBuffer.writeBlock(filePath, _data);
@@ -648,6 +669,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				}
 				_requiresLocalWrite = false;
 			}
+
+			if( DMLScript.STATISTICS && write && hasValidLineage() )
+				CacheStatistics.incrementLinWrites();
 			
 			//create cache
 			createCache();
@@ -956,6 +980,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return (_data.getInMemorySize() <= CACHING_THRESHOLD);
 	}
 	
+	public static boolean isBelowCachingThreshold(CacheBlock data) {
+		return LazyWriteBuffer.getCacheBlockSize(data) <= CACHING_THRESHOLD;
+	}
+	
 	public long getDataSize() {
 		return (_data != null) ?_data.getInMemorySize() : 0;
 	}
@@ -1004,6 +1032,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	protected abstract void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt)
 		throws IOException;
 
+	protected abstract T reconstructByLineage(LineageItem li)
+		throws IOException;
+
+	
 	protected void writeMetaData (String filePathAndName, String outputFormat, FileFormatProperties formatProperties)
 		throws IOException
 	{		
@@ -1011,7 +1043,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	
 		if (iimd == null)
 			throw new DMLRuntimeException("Unexpected error while writing mtd file (" + filePathAndName + ") -- metadata is null.");
-			
+		
 		// Write the matrix to HDFS in requested format
 		FileFormat fmt = (outputFormat != null) ? FileFormat.safeValueOf(outputFormat) : iimd.getFileFormat();
 		if ( fmt != FileFormat.MM ) {

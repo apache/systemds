@@ -103,7 +103,6 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 			
 			Script script2 = dmlFromFile(dml2).in("X", X).out("z");
 			String z = ml.execute(script2).getString("z");
-			
 			System.out.println(z);
 		}
 		catch(Exception ex) {

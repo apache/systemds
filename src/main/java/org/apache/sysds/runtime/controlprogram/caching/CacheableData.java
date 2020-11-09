@@ -711,6 +711,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		// clear the in-memory data
 		_data = null;
 		clearCache();
+		setCacheLineage(null);
 		
 		// clear rdd/broadcast back refs
 		if( _rddHandle != null )

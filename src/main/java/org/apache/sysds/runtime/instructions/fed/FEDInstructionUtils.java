@@ -134,7 +134,7 @@ public class FEDInstructionUtils {
 			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
 			if(minst.input1.isMatrix()) {
 				CacheableData<?> fo = ec.getCacheableData(minst.input1);
-				if(fo.isFederated() && !fo.isFederated(FType.OTHER))
+				if(fo.isFederated())
 					fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());
 			}
 		}

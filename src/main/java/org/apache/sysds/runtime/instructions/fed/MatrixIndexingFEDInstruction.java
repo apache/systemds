@@ -18,7 +18,9 @@
  */
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -26,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
@@ -49,109 +52,58 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 		rightIndexing(ec);
 	}
 
+
 	private void rightIndexing (ExecutionContext ec) {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap fedMapping = in.getFedMapping();
 		IndexRange ixrange = getIndexRange(ec);
-		FederationMap.FType fedType = fedMapping.getType();
-		Map <String, IndexRange> ixs = new HashMap<>();
+		FederationMap.FType fedType;
+		Map <FederatedRange, IndexRange> ixs = new HashMap<>();
 
-		long[] lastEndDim = new long[2];
-		long[] lastBeginDim = new long[2];
+		FederatedRange nextDim = new FederatedRange(new long[]{0, 0}, new long[]{0, 0});
 
 		for (int i = 0; i < fedMapping.getFederatedRanges().length; i++) {
 			long rs = fedMapping.getFederatedRanges()[i].getBeginDims()[0], re = fedMapping.getFederatedRanges()[i]
 				.getEndDims()[0], cs = fedMapping.getFederatedRanges()[i].getBeginDims()[1], ce = fedMapping.getFederatedRanges()[i].getEndDims()[1];
 
+			// for OTHER
+			fedType = ((i + 1) < fedMapping.getFederatedRanges().length &&
+				fedMapping.getFederatedRanges()[i].getEndDims()[0] == fedMapping.getFederatedRanges()[i+1].getBeginDims()[0]) ?
+				FederationMap.FType.ROW : FederationMap.FType.COL;
+
 			long rsn = 0, ren = 0, csn = 0, cen = 0;
 
-			switch(fedType) {
-				case ROW:
-					rsn = (ixrange.rowStart >= rs && ixrange.rowStart < re) ? (ixrange.rowStart - rs) : 0;
-					ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
-					csn = ixrange.colStart;
-					cen = ixrange.colEnd;
+			rsn = (ixrange.rowStart >= rs && ixrange.rowStart < re) ? (ixrange.rowStart - rs) : 0;
+			ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
+			csn = (ixrange.colStart >= cs && ixrange.colStart < ce) ? (ixrange.colStart - cs) : 0;
+			cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
 
-					if((ixrange.rowStart < re) && (ixrange.rowEnd >= rs)) {
-						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[0]));
-						fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1);
-					}
-					else {
-						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(0, fedMapping.getFederatedRanges()[i].getBeginDims()[0]);
-						fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1);
-						rsn = -1;
-						ren = rsn;
-						csn = rsn;
-						cen = rsn;
-					}
+			fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? nextDim.getBeginDims()[0] : 0);
+			fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? nextDim.getBeginDims()[1] : 0);
+			if((ixrange.colStart < ce) && (ixrange.colEnd >= cs) && (ixrange.rowStart < re) && (ixrange.rowEnd >= rs)) {
+				fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1 + nextDim.getBeginDims()[0]);
+				fedMapping.getFederatedRanges()[i].setEndDim(1,  cen - csn + 1 + nextDim.getBeginDims()[1]);
 
-					break;
-				case COL:
-					rsn = ixrange.rowStart;
-					ren = ixrange.rowEnd;
-					csn = (ixrange.colStart >= cs && ixrange.colStart < ce) ? (ixrange.colStart - cs) : 0;
-					cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
-					if((ixrange.colStart < ce) && (ixrange.colEnd >= cs)) {
-						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1);
-						fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[1]));
-					}
-					else {
-						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1);
-						fedMapping.getFederatedRanges()[i].setEndDim(1, fedMapping.getFederatedRanges()[i].getBeginDims()[1]);
-						rsn = -1;
-						ren = rsn;
-						csn = rsn;
-						cen = rsn;
-					}
-					break;
-				case OTHER:
-					rsn = (ixrange.rowStart >= rs && ixrange.rowStart < re) ? (ixrange.rowStart - rs) : 0;
-					ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
-					csn = (ixrange.colStart >= cs && ixrange.colStart < ce) ? (ixrange.colStart - cs) : 0;
-					cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
-
-					if((ixrange.colStart < ce) && (ixrange.colEnd >= cs) && (ixrange.rowStart < re) && (ixrange.rowEnd >= rs)) {
-						if (fedMapping.getFederatedRanges()[i-1].getSize() != 0 || lastEndDim[0] + lastEndDim[1] == 0) {
-							fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
-							fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
-							fedMapping.getFederatedRanges()[i].setEndDim(0, ren - rsn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[0]));
-							fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + 1 + (i == 0 ? 0 : fedMapping.getFederatedRanges()[i - 1].getEndDims()[1]));
-						} else {
-							fedMapping.getFederatedRanges()[i].setBeginDim(0, 1 + ren - rsn + lastBeginDim[0]);
-							fedMapping.getFederatedRanges()[i].setBeginDim(1, cen - csn + lastBeginDim[1]);
-							fedMapping.getFederatedRanges()[i].setEndDim(0, 1 + ren - rsn + lastEndDim[0]);
-							fedMapping.getFederatedRanges()[i].setEndDim(1, cen - csn + lastEndDim[1]);
-						}
-						lastEndDim = fedMapping.getFederatedRanges()[i].getEndDims();
-						lastBeginDim = fedMapping.getFederatedRanges()[i].getBeginDims();
-					}
-					else {
-						fedMapping.getFederatedRanges()[i].setBeginDim(0, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[0] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(0, fedMapping.getFederatedRanges()[i].getBeginDims()[0]);
-
-						fedMapping.getFederatedRanges()[i].setBeginDim(1, i != 0 ? fedMapping.getFederatedRanges()[i - 1].getEndDims()[1] : 0);
-						fedMapping.getFederatedRanges()[i].setEndDim(1, fedMapping.getFederatedRanges()[i].getBeginDims()[1]);
-
-						rsn = -1;
-						ren = rsn;
-						csn = rsn;
-						cen = rsn;
-					}
+				ixs.put(fedMapping.getFederatedRanges()[i], new IndexRange(rsn, ren, csn, cen));
+			} else {
+				fedMapping.getFederatedRanges()[i].setEndDim(0,  i != 0 ? nextDim.getBeginDims()[0] : 0);
+				fedMapping.getFederatedRanges()[i].setEndDim(1,  i != 0 ? nextDim.getBeginDims()[1] : 0);
 			}
-			ixs.put(fedMapping.getFederatedRanges()[i].toString(), new IndexRange(rsn, ren, csn, cen));
+
+			if(fedType == FederationMap.FType.ROW) {
+				nextDim.setBeginDim(0,fedMapping.getFederatedRanges()[i].getEndDims()[0]);
+				nextDim.setBeginDim(1, fedMapping.getFederatedRanges()[i].getBeginDims()[1]);
+			} else if(fedType == FederationMap.FType.COL) {
+				nextDim.setBeginDim(1,fedMapping.getFederatedRanges()[i].getEndDims()[1]);
+				nextDim.setBeginDim(0, fedMapping.getFederatedRanges()[i].getBeginDims()[0]);
+			}
 		}
-//		List<MatrixBlock> mb = new ArrayList<>();
+
 		long varID = FederationUtils.getNextFedDataID();
 		FederationMap sortedMapping = fedMapping.mapParallel(varID, (range, data) -> {
 			try {
-				FederatedResponse response = data
-					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-						new SliceMatrix(data.getVarID(), varID, ixs.get(range.toString())))).get();
-//				mb.add((MatrixBlock) response.getData()[0]);
+				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
+					-1, new SliceMatrix(data.getVarID(), varID, ixs.getOrDefault(range, new IndexRange(-1, -1, -1, -1))))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}
@@ -167,6 +119,7 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 		sorted.setFedMapping(sortedMapping);
 
 	}
+
 
 	private static class SliceMatrix extends FederatedUDF {
 

@@ -33,5 +33,4 @@ if ($rP) {
 }
 
 s = A[from:to, from:to];
-
 write(s, $out_S);

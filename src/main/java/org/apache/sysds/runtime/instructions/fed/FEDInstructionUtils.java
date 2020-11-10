@@ -145,10 +145,7 @@ public class FEDInstructionUtils {
 				&& ins.getInput3().getName().contains("federated")){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
 			}
-
 		}
-
-
 		//set thread id for federated context management
 		if( fedinst != null ) {
 			fedinst.setTID(ec.getTID());

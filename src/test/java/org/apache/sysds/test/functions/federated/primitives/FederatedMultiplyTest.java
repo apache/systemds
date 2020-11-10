@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -63,11 +64,13 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE);
 	}
 
-	/*
-	 * FIXME spark execution mode support
-	 * 
-	 * @Test public void federatedMultiplySP() { federatedMultiply(Types.ExecMode.SPARK); }
-	 */
+
+	@Test 
+	@Ignore
+	public void federatedMultiplySP() {
+		// TODO Fix me Spark execution error
+		federatedMultiply(Types.ExecMode.SPARK);
+	}
 
 	public void federatedMultiply(Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;

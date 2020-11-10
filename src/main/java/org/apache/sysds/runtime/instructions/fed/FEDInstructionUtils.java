@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
@@ -126,6 +127,15 @@ public class FEDInstructionUtils {
 			CacheableData<?> mo = ec.getCacheableData(rinst.input1);
 			if( mo.isFederated() )
 				fedinst = ReorgFEDInstruction.parseInstruction(rinst.getInstructionString());
+		}
+		else if(inst instanceof MatrixIndexingCPInstruction && inst.getOpcode().equalsIgnoreCase("rightIndex")) {
+			// matrix indexing
+			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
+			if(minst.input1.isMatrix()) {
+				CacheableData<?> fo = ec.getCacheableData(minst.input1);
+				if(fo.isFederated())
+					fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());
+			}
 		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;

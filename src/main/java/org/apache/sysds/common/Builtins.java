@@ -187,6 +187,7 @@ public enum Builtins {
 	SLICEFINDER("slicefinder", true),
 	SMOTE("smote", true),
 	SOLVE("solve", false),
+	SPLIT("split", true),
 	SQRT("sqrt", false),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),

@@ -102,6 +102,21 @@ public class FederatedRange implements Comparable<FederatedRange> {
 		return Arrays.toString(_beginDims) + " - " + Arrays.toString(_endDims);
 	}
 
+	@Override public boolean equals(Object o) {
+		if(this == o)
+			return true;
+		if(o == null || getClass() != o.getClass())
+			return false;
+		FederatedRange range = (FederatedRange) o;
+		return Arrays.equals(_beginDims, range._beginDims) && Arrays.equals(_endDims, range._endDims);
+	}
+
+	@Override public int hashCode() {
+		int result = Arrays.hashCode(_beginDims);
+		result = 31 * result + Arrays.hashCode(_endDims);
+		return result;
+	}
+
 	public FederatedRange shift(long rshift, long cshift) {
 		//row shift
 		_beginDims[0] += rshift;

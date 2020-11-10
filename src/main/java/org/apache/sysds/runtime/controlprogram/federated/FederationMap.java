@@ -224,8 +224,10 @@ public class FederationMap
 	public FederationMap copyWithNewID(long id) {
 		Map<FederatedRange, FederatedData> map = new TreeMap<>();
 		//TODO handling of file path, but no danger as never written
-		for( Entry<FederatedRange, FederatedData> e : _fedMap.entrySet() )
-			map.put(new FederatedRange(e.getKey()), e.getValue().copyWithNewID(id));
+		for( Entry<FederatedRange, FederatedData> e : _fedMap.entrySet() ) {
+			if(e.getKey().getSize() != 0)
+				map.put(new FederatedRange(e.getKey()), e.getValue().copyWithNewID(id));
+		}
 		return new FederationMap(id, map, _type);
 	}
 	

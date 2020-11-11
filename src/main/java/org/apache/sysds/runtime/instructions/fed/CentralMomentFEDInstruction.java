@@ -101,12 +101,6 @@ public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
 
     @Override
     public void processInstruction( ExecutionContext ec ) {
-        String opcode = getOpcode();
-        if (opcode.equalsIgnoreCase("cm"))
-            cm(ec);
-    }
-
-    private void cm(ExecutionContext ec) {
         MatrixObject mo = ec.getMatrixObject(input1.getName());
         ScalarObject order = ec.getScalarInput(input3==null ? input2 : input3);
 
@@ -147,7 +141,7 @@ public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
             return null;
         });
 
-        Optional<CM_COV_Object> res = globalCmobj.parallelStream().reduce((arg0, arg1) -> (CM_COV_Object) finalCm_op.fn.execute(arg0, arg1));
+        Optional<CM_COV_Object> res = globalCmobj.stream().reduce((arg0, arg1) -> (CM_COV_Object) finalCm_op.fn.execute(arg0, arg1));
         try {
             ec.setScalarOutput(output.getName(), new DoubleObject(res.get().getRequiredResult(finalCm_op)));
         }
@@ -168,7 +162,7 @@ public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
         @Override
         public FederatedResponse execute(ExecutionContext ec, Data... data) {
             MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
-            return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {mb.cmOperations(_op)});
+            return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, mb.cmOperations(_op));
         }
     }
 
@@ -187,25 +181,7 @@ public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
         @Override
         public FederatedResponse execute(ExecutionContext ec, Data... data) {
             MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
-            return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {mb.cmOperations(_op, _weights)});
-        }
-    }
-
-    private static class CMReduceFunction extends FederatedUDF {
-        private static final long serialVersionUID = 7474960390191224417L;
-        private final CMOperator _op;
-
-        protected CMReduceFunction(long input, CMOperator op) {
-            super(new long[] {input});
-            _op = op;
-        }
-
-        @Override
-        public FederatedResponse execute(ExecutionContext ec, Data... data) {
-            CM_COV_Object arg0 = ((CM_COV_Object)data[0]);
-            CM_COV_Object arg1 = ((CM_COV_Object)data[1]);
-            _op.fn.execute(arg1, arg1);
-            return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {arg0});
+            return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, mb.cmOperations(_op, _weights));
         }
     }
 }

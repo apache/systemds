@@ -28,7 +28,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.util.IndexRange;
 
-public abstract class IndexingFEDInstruction extends  UnaryFEDInstruction {
+public abstract class IndexingFEDInstruction extends UnaryFEDInstruction {
 	protected final CPOperand rowLower, rowUpper, colLower, colUpper;
 
 	protected IndexingFEDInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
@@ -50,7 +50,7 @@ public abstract class IndexingFEDInstruction extends  UnaryFEDInstruction {
 	}
 
 	protected IndexRange getIndexRange(ExecutionContext ec) {
-		return new IndexRange( //rl, ru, cl, ru
+		return new IndexRange( // rl, ru, cl, ru
 			(int) (ec.getScalarInput(rowLower).getLongValue() - 1),
 			(int) (ec.getScalarInput(rowUpper).getLongValue() - 1),
 			(int) (ec.getScalarInput(colLower).getLongValue() - 1),
@@ -72,40 +72,16 @@ public abstract class IndexingFEDInstruction extends  UnaryFEDInstruction {
 				out = new CPOperand(parts[6]);
 				if(in.getDataType() == Types.DataType.MATRIX)
 					return new MatrixIndexingFEDInstruction(in, rl, ru, cl, cu, out, opcode, str);
-					//				else if( in.getDataType() == Types.DataType.FRAME )
-					//					return new FrameIndexingCPInstruction(in, rl, ru, cl, cu, out, opcode, str);
-					//				else if( in.getDataType() == Types.DataType.LIST )
-					//					return new ListIndexingCPInstruction(in, rl, ru, cl, cu, out, opcode, str);
 				else
-					throw new DMLRuntimeException("Can index only on matrices, frames, and lists.");
+					throw new DMLRuntimeException("Can index only on matrices, frames, and lists in federated.");
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		}
-		//		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE)) {
-		//			if ( parts.length == 8 ) {
-		//				CPOperand lhsInput, rhsInput, rl, ru, cl, cu, out;
-		//				lhsInput = new CPOperand(parts[1]);
-		//				rhsInput = new CPOperand(parts[2]);
-		//				rl = new CPOperand(parts[3]);
-		//				ru = new CPOperand(parts[4]);
-		//				cl = new CPOperand(parts[5]);
-		//				cu = new CPOperand(parts[6]);
-		//				out = new CPOperand(parts[7]);
-		//				if( lhsInput.getDataType()== Types.DataType.MATRIX )
-		//					return new MatrixIndexingFEDInstruction(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
-		//				else if (lhsInput.getDataType() == Types.DataType.FRAME)
-		//					return new FrameIndexingFEDInstruction(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
-		//				else if( lhsInput.getDataType() == Types.DataType.LIST )
-		//					return new ListIndexingFEDInstruction(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
-		//				else
-		//					throw new DMLRuntimeException("Can index only on matrices, frames, and lists.");
-		//			}
-		//			else {
-		//				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
-		//			}
-		//		}
+		else if(opcode.equalsIgnoreCase(LeftIndex.OPCODE)) {
+			throw new DMLRuntimeException("Left indexing not implemented for federated operations.");
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a MatrixIndexingFEDInstruction: " + str);
 		}

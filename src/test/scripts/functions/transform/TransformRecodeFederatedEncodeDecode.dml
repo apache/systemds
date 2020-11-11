@@ -26,8 +26,10 @@ F = federated(type="frame", addresses=list($in_AU, $in_AL, $in_BU, $in_BL), rang
     list($rows / 2, $cols / 2), list($rows, $cols))); # BLower range
 jspec = read($spec_file, data_type="scalar", value_type="string");
 
+print(toString(F, rows = 10))
 [X, M] = transformencode(target=F, spec=jspec);
 
+print(toString(X, rows = 10))
 A = aggregate(target=X[,1], groups=X[,2], fn="count");
 Ag = cbind(A, seq(1,nrow(A)));
 

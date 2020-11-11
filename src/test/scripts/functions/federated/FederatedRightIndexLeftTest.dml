@@ -34,3 +34,5 @@ if ($rP) {
 
 s = A[from:to,];
 write(s, $out_S);
+
+print(toString(s))

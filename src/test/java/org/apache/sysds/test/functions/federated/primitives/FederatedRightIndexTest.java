@@ -22,8 +22,6 @@ package org.apache.sysds.test.functions.federated.primitives;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -39,7 +37,7 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedRightIndexTest extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
+	// private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
 
 	private final static String TEST_NAME1 = "FederatedRightIndexRightTest";
 	private final static String TEST_NAME2 = "FederatedRightIndexLeftTest";
@@ -65,10 +63,9 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {
-			{20, 10,  6, 8, true},
-			//  {20, 10,  2, 10, true},
-			// {20, 12,  2, 10, false}, {20, 12,  1, 4, false}
+		return Arrays.asList(new Object[][] {{20, 10, 6, 8, true},
+			// {20, 10, 2, 10, true},
+			// {20, 12, 2, 10, false}, {20, 12, 1, 4, false}
 		});
 	}
 
@@ -109,11 +106,14 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		String TEST_NAME = null;
 		switch(type) {
 			case RIGHT:
-				TEST_NAME = TEST_NAME1; break;
+				TEST_NAME = TEST_NAME1;
+				break;
 			case LEFT:
-				TEST_NAME = TEST_NAME2; break;
+				TEST_NAME = TEST_NAME2;
+				break;
 			case FULL:
-				TEST_NAME = TEST_NAME3; break;
+				TEST_NAME = TEST_NAME3;
+				break;
 		}
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -159,10 +159,10 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] { "-args", input("X1"), input("X2"), input("X3"), input("X4"),
-			String.valueOf(from), String.valueOf(to),  Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
+		programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"), String.valueOf(from),
+			String.valueOf(to), Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
 		// LOG.error(runTest(null));
-		runTest(null)
+		runTest(null);
 		// Run actual dml script with federated matrix
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -170,12 +170,11 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
-			"from=" + from, "to=" + to, "rP=" + Boolean.toString(rowPartitioned).toUpperCase(),
-			"out_S=" + output("S")};
+			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols, "from=" + from,
+			"to=" + to, "rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
 		// LOG.error(runTest(null));
-		runTest(null)
+		runTest(null);
 		// compare via files
 		compareResults(1e-9);
 

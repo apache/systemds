@@ -54,7 +54,7 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap fedMapping = in.getFedMapping();
 		IndexRange ixrange = getIndexRange(ec);
-		FederationMap.FType fedType;
+		// FederationMap.FType fedType;
 		Map<FederatedRange, IndexRange> ixs = new HashMap<>();
 
 		for(int i = 0; i < fedMapping.getFederatedRanges().length; i++) {
@@ -63,15 +63,15 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 				cs = curFedRange.getBeginDims()[1], ce = curFedRange.getEndDims()[1];
 
 			// for OTHER
-			fedType = ((i + 1) < fedMapping.getFederatedRanges().length &&
-				curFedRange.getEndDims()[0] == fedMapping.getFederatedRanges()[i + 1]
-					.getBeginDims()[0]) ? FederationMap.FType.ROW : FederationMap.FType.COL;
+			// fedType = ((i + 1) < fedMapping.getFederatedRanges().length &&
+			// curFedRange.getEndDims()[0] == fedMapping.getFederatedRanges()[i + 1]
+			// .getBeginDims()[0]) ? FederationMap.FType.ROW : FederationMap.FType.COL;
 
 			if((ixrange.colStart < ce) && (ixrange.colEnd > cs) && (ixrange.rowStart < re) && (ixrange.rowEnd > rs)) {
 				long rsn = 0, ren = 0, csn = 0, cen = 0;
-				rsn = (ixrange.rowStart >= rs ) ? (ixrange.rowStart - rs) : 0;
+				rsn = (ixrange.rowStart >= rs) ? (ixrange.rowStart - rs) : 0;
 				ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
-				csn = (ixrange.colStart >= cs ) ? (ixrange.colStart - cs) : 0;
+				csn = (ixrange.colStart >= cs) ? (ixrange.colStart - cs) : 0;
 				cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
 				if(LOG.isDebugEnabled()) {
 					LOG.debug("Ranges for fed location: " + rsn + " " + ren + " " + csn + " " + cen);
@@ -83,9 +83,9 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 				curFedRange.setBeginDim(0, Math.max(rs - ixrange.rowStart, 0));
 				curFedRange.setBeginDim(1, Math.max(cs - ixrange.colStart, 0));
 				curFedRange.setEndDim(0,
-					(ixrange.rowEnd > re ? re - ixrange.rowStart: ixrange.rowEnd - ixrange.rowStart + 1) );
+					(ixrange.rowEnd > re ? re - ixrange.rowStart : ixrange.rowEnd - ixrange.rowStart + 1));
 				curFedRange.setEndDim(1,
-					(ixrange.colEnd > ce ? ce - ixrange.colStart: ixrange.colEnd - ixrange.colStart + 1) );
+					(ixrange.colEnd > ce ? ce - ixrange.colStart : ixrange.colEnd - ixrange.colStart + 1));
 				if(LOG.isDebugEnabled()) {
 					LOG.debug("Fed Mapping After      : " + curFedRange);
 				}

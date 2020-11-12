@@ -39,88 +39,88 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederetedCastToFrameTest extends AutomatedTestBase {
-    private static final Log LOG = LogFactory.getLog(FederetedCastToFrameTest.class.getName());
+	private static final Log LOG = LogFactory.getLog(FederetedCastToFrameTest.class.getName());
 
-    private final static String TEST_DIR = "functions/federated/primitives/";
-    private final static String TEST_NAME = "FederatedCastToFrameTest";
-    private final static String TEST_CLASS_DIR = TEST_DIR + FederetedCastToFrameTest.class.getSimpleName() + "/";
+	private final static String TEST_DIR = "functions/federated/primitives/";
+	private final static String TEST_NAME = "FederatedCastToFrameTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederetedCastToFrameTest.class.getSimpleName() + "/";
 
-    private final static int blocksize = 1024;
-    @Parameterized.Parameter()
-    public int rows;
-    @Parameterized.Parameter(1)
-    public int cols;
+	private final static int blocksize = 1024;
+	@Parameterized.Parameter()
+	public int rows;
+	@Parameterized.Parameter(1)
+	public int cols;
 
-    @Override
-    public void setUp() {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
-    }
+	@Override
+	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
+	}
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> data() {
-        // rows have to be even and > 1
-        return Arrays.asList(new Object[][] {{10, 32}});
-    }
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
+		// rows have to be even and > 1
+		return Arrays.asList(new Object[][] {{10, 32}});
+	}
 
-    @Test
-    public void federatedMultiplyCP() {
-        federatedMultiply(Types.ExecMode.SINGLE_NODE);
-    }
+	@Test
+	public void federatedMultiplyCP() {
+		federatedMultiply(Types.ExecMode.SINGLE_NODE);
+	}
 
-    @Test
-    @Ignore
-    public void federatedMultiplySP() {
-        // TODO Fix me Spark execution error
-        federatedMultiply(Types.ExecMode.SPARK);
-    }
+	@Test
+	@Ignore
+	public void federatedMultiplySP() {
+		// TODO Fix me Spark execution error
+		federatedMultiply(Types.ExecMode.SPARK);
+	}
 
-    public void federatedMultiply(Types.ExecMode execMode) {
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        Types.ExecMode platformOld = rtplatform;
-        rtplatform = execMode;
-        if(rtplatform == Types.ExecMode.SPARK) {
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-        }
+	public void federatedMultiply(Types.ExecMode execMode) {
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		Types.ExecMode platformOld = rtplatform;
+		rtplatform = execMode;
+		if(rtplatform == Types.ExecMode.SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		}
 
-        getAndLoadTestConfiguration(TEST_NAME);
-        String HOME = SCRIPT_DIR + TEST_DIR;
+		getAndLoadTestConfiguration(TEST_NAME);
+		String HOME = SCRIPT_DIR + TEST_DIR;
 
-        // write input matrices
-        int halfRows = rows / 2;
-        // We have two matrices handled by a single federated worker
-        double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 42);
-        double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 1340);
+		// write input matrices
+		int halfRows = rows / 2;
+		// We have two matrices handled by a single federated worker
+		double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 42);
+		double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 1340);
 
-        writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
-        writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
+		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
+		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 
-        int port1 = getRandomAvailablePort();
-        int port2 = getRandomAvailablePort();
-        Thread t1 = startLocalFedWorkerThread(port1);
-        Thread t2 = startLocalFedWorkerThread(port2);
+		int port1 = getRandomAvailablePort();
+		int port2 = getRandomAvailablePort();
+		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t2 = startLocalFedWorkerThread(port2);
 
-        TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-        loadTestConfiguration(config);
+		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+		loadTestConfiguration(config);
 
-        // Run reference dml script with normal matrix
-        fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-        programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2")};
-        String out = runTest(null).toString().split("SystemDS Statistics:")[0];
+		// Run reference dml script with normal matrix
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2")};
+		String out = runTest(null).toString().split("SystemDS Statistics:")[0];
 
-        // Run actual dml script with federated matrix
-        fullDMLScriptName = HOME + TEST_NAME + ".dml";
-        programArgs = new String[] {"-stats", "100", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
-            "X2=" + TestUtils.federatedAddress(port2, input("X2")), "r=" + rows, "c=" + cols};
-        String fedOut = runTest(null).toString();
+		// Run actual dml script with federated matrix
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-stats", "100", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			"X2=" + TestUtils.federatedAddress(port2, input("X2")), "r=" + rows, "c=" + cols};
+		String fedOut = runTest(null).toString();
 
-        LOG.error(fedOut);
-        fedOut = fedOut.split("SystemDS Statistics:")[0];
-        Assert.assertTrue("Equal Printed Output", out.equals(fedOut));
-        Assert.assertTrue("Contains federated Cast to frame", heavyHittersContainsString("fed_castdtf"));
-        TestUtils.shutdownThreads(t1, t2);
-        
-        rtplatform = platformOld;
-        DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-    }
+		LOG.error(fedOut);
+		fedOut = fedOut.split("SystemDS Statistics:")[0];
+		Assert.assertTrue("Equal Printed Output", out.equals(fedOut));
+		Assert.assertTrue("Contains federated Cast to frame", heavyHittersContainsString("fed_castdtf"));
+		TestUtils.shutdownThreads(t1, t2);
+		
+		rtplatform = platformOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+	}
 }

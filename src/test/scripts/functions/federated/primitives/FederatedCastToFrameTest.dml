@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-
-
 X = federated(addresses=list($X1, $X2),
     ranges=list(list(0, 0), list($r / 2, $c), list($r / 2, 0), list($r, $c)))
 

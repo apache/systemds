@@ -87,37 +87,62 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 		_in.processInstruction(ec);
 	}
 
-	private void processCastAsMatrixVariableInstruction(ExecutionContext ec){
-		LOG.error("Not Implemented");
-		throw new DMLRuntimeException("Not Implemented Cast as Matrix");
+	private void processCastAsMatrixVariableInstruction(ExecutionContext ec) {
 
-	}
+		FrameObject mo1 = ec.getFrameObject(_in.getInput1());
 
-	private void processCastAsFrameVariableInstruction(ExecutionContext ec){
+		if(!mo1.isFederated())
+			throw new DMLRuntimeException(
+				"Federated Reorg: " + "Federated input expected, but invoked w/ " + mo1.isFederated());
 
-		MatrixObject mo1 = ec.getMatrixObject(_in.getInput1());
-		
-		if( !mo1.isFederated() )
-			throw new DMLRuntimeException("Federated Reorg: "
-				+ "Federated input expected, but invoked w/ "+mo1.isFederated());
-	
-		//execute transpose at federated site
-		FederatedRequest fr1 = FederationUtils.callInstruction(_in.getInstructionString(), _in.getOutput(),
-			new CPOperand[]{_in.getInput1()}, new long[]{mo1.getFedMapping().getID()});
+		// execute function at federated site.
+		FederatedRequest fr1 = FederationUtils.callInstruction(_in.getInstructionString(),
+			_in.getOutput(),
+			new CPOperand[] {_in.getInput1()},
+			new long[] {mo1.getFedMapping().getID()});
 		mo1.getFedMapping().execute(getTID(), true, fr1);
-		
-		//drive output federated mapping
-		FrameObject out = ec.getFrameObject(_in.getOutput());
-		out.getDataCharacteristics().set(mo1.getNumColumns(),
-			mo1.getNumRows(), (int)mo1.getBlocksize(), mo1.getNnz());
-		FederationMap outMap =  mo1.getFedMapping().copyWithNewID(fr1.getID());
+
+		// Construct output local.
+
+		MatrixObject out = ec.getMatrixObject(_in.getOutput());
+		FederationMap outMap = mo1.getFedMapping().copyWithNewID(fr1.getID());
 		Map<FederatedRange, FederatedData> newMap = new HashMap<>();
-		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getFedMapping().entrySet()){
+		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getFedMapping().entrySet()) {
 			FederatedData om = pair.getValue();
-			FederatedData nf = new FederatedData(Types.DataType.FRAME, om.getAddress(),om.getFilepath(),om.getVarID());
+			FederatedData nf = new FederatedData(Types.DataType.MATRIX, om.getAddress(), om.getFilepath(),
+				om.getVarID());
 			newMap.put(pair.getKey(), nf);
 		}
-		ValueType[] schema = new ValueType[(int)mo1.getDataCharacteristics().getCols()];
+		out.setFedMapping(outMap);
+	}
+
+	private void processCastAsFrameVariableInstruction(ExecutionContext ec) {
+
+		MatrixObject mo1 = ec.getMatrixObject(_in.getInput1());
+
+		if(!mo1.isFederated())
+			throw new DMLRuntimeException(
+				"Federated Reorg: " + "Federated input expected, but invoked w/ " + mo1.isFederated());
+
+		// execute function at federated site.
+		FederatedRequest fr1 = FederationUtils.callInstruction(_in.getInstructionString(),
+			_in.getOutput(),
+			new CPOperand[] {_in.getInput1()},
+			new long[] {mo1.getFedMapping().getID()});
+		mo1.getFedMapping().execute(getTID(), true, fr1);
+
+		// Construct output local.
+		FrameObject out = ec.getFrameObject(_in.getOutput());
+		out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
+		FederationMap outMap = mo1.getFedMapping().copyWithNewID(fr1.getID());
+		Map<FederatedRange, FederatedData> newMap = new HashMap<>();
+		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getFedMapping().entrySet()) {
+			FederatedData om = pair.getValue();
+			FederatedData nf = new FederatedData(Types.DataType.FRAME, om.getAddress(), om.getFilepath(),
+				om.getVarID());
+			newMap.put(pair.getKey(), nf);
+		}
+		ValueType[] schema = new ValueType[(int) mo1.getDataCharacteristics().getCols()];
 		Arrays.fill(schema, ValueType.FP64);
 		out.setSchema(schema);
 		out.setFedMapping(outMap);

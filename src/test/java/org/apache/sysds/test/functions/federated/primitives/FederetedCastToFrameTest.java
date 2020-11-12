@@ -114,12 +114,12 @@ public class FederetedCastToFrameTest extends AutomatedTestBase {
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")), "r=" + rows, "c=" + cols};
 		String fedOut = runTest(null).toString();
 
-		LOG.error(fedOut);
+		LOG.debug(fedOut);
 		fedOut = fedOut.split("SystemDS Statistics:")[0];
 		Assert.assertTrue("Equal Printed Output", out.equals(fedOut));
 		Assert.assertTrue("Contains federated Cast to frame", heavyHittersContainsString("fed_castdtf"));
 		TestUtils.shutdownThreads(t1, t2);
-		
+
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}

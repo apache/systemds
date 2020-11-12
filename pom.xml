@@ -280,7 +280,7 @@
 					<reuseForks>false</reuseForks>
 					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
-					<!-- <rerunFailingTestsCount>2</rerunFailingTestsCount> -->
+					<rerunFailingTestsCount>2</rerunFailingTestsCount>
 				</configuration>
 			</plugin>
 

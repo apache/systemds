@@ -22,8 +22,8 @@ package org.apache.sysds.test.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LopProperties.ExecType;
@@ -31,9 +31,13 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class RowVectorComparisonTest extends AutomatedTestBase 
 {
+	private static final Log LOG = LogFactory.getLog(RowVectorComparisonTest.class.getName());
+
 	private static final String TEST_NAME1 = "rowComparisonEq";
 	private static final String TEST_NAME2 = "rowComparisonNeq";
 	private static final String TEST_NAME3 = "rowComparisonLte";
@@ -164,7 +168,7 @@ public class RowVectorComparisonTest extends AutomatedTestBase
 	@Override
 	protected File getConfigTemplateFile() {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
-		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		LOG.info("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
 		return TEST_CONF_FILE;
 	}
 }

@@ -23,6 +23,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -38,8 +40,8 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedSSLTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedSSLTest.class.getName());
 
-	// private static final Log LOG = LogFactory.getLog(FederatedReaderTest.class.getName());
 	// This test use the same scripts as the Federated Reader tests, just with SSL enabled.
 	private final static String TEST_DIR = "functions/federated/io/";
 	private final static String TEST_NAME = "FederatedReaderTest";
@@ -135,7 +137,7 @@ public class FederatedSSLTest extends AutomatedTestBase {
 	@Override
 	protected File getConfigTemplateFile() {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
-		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		LOG.info("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
 		return TEST_CONF_FILE;
 	}
 }

@@ -178,7 +178,7 @@ public class LineageItem {
 			return false;
 		
 		resetVisitStatusNR();
-		boolean ret = equalsLI((LineageItem) o);
+		boolean ret = equalsLINR((LineageItem) o);
 		resetVisitStatusNR();
 		return ret;
 	}
@@ -195,6 +195,33 @@ public class LineageItem {
 				ret &= _inputs[i].equalsLI(that._inputs[i]);
 		
 		setVisited();
+		return ret;
+	}
+	
+	private boolean equalsLINR(LineageItem that) {
+		Stack<LineageItem> s1 = new Stack<>();
+		Stack<LineageItem> s2 = new Stack<>();
+		s1.push(this);
+		s2.push(that);
+		boolean ret = false;
+		while (!s1.empty() && !s2.empty()) {
+			LineageItem li1 = s1.pop();
+			LineageItem li2 = s2.pop();
+			if (li1.isVisited() || li1 == li2)
+				return true;
+
+			ret = li1._opcode.equals(li2._opcode);
+			ret &= li1._data.equals(li2._data);
+			ret &= (li1.hashCode() == li2.hashCode());
+			if (!ret) break;
+			if (ret && li1._inputs != null && li1._inputs.length == li2._inputs.length)
+				for (int i=0; i<li1._inputs.length; i++) {
+					s1.push(li1.getInputs()[i]);
+					s2.push(li2.getInputs()[i]);
+				}
+			li1.setVisited();
+		}
+		
 		return ret;
 	}
 	

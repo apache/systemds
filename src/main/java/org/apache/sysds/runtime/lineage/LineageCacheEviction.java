@@ -20,9 +20,8 @@
 package org.apache.sysds.runtime.lineage;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.sysds.api.DMLScript;
@@ -37,7 +36,7 @@ public class LineageCacheEviction
 	private static long _cachesize = 0;
 	private static long CACHE_LIMIT; //limit in bytes
 	private static long _startTimestamp = 0;
-	protected static final Set<LineageItem> _removelist = new HashSet<>();
+	protected static final Map<LineageItem, Integer> _removelist = new HashMap<>();
 	private static String _outdir = null;
 	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(LineageCacheConfig.LineageCacheComparator);
 	
@@ -71,19 +70,27 @@ public class LineageCacheEviction
 			// Don't add the memory pinned entries in weighted queue. 
 			// The eviction queue should contain only entries that can
 			// be removed or spilled to disk.
-			entry.setTimestamp();
+			//entry.setTimestamp();
+			entry.computeScore(_removelist); 
+			// Adjust score according to cache miss counts.
 			weightedQueue.add(entry);
 		}
 	}
 	
 	protected static void getEntry(LineageCacheEntry entry) {
 		// Reset the timestamp to maintain the LRU component of the scoring function
-		if (!LineageCacheConfig.isTimeBased()) 
-			return;
-		
-		if (weightedQueue.remove(entry)) {
-			entry.setTimestamp();
-			weightedQueue.add(entry);
+		if (LineageCacheConfig.isTimeBased()) { 
+			if (weightedQueue.remove(entry)) {
+				entry.setTimestamp();
+				weightedQueue.add(entry);
+			}
+		}
+		// Increase computation time of the sought entry.
+		if (LineageCacheConfig.isCostNsize()) {
+			if (weightedQueue.remove(entry)) {
+				entry.updateComputeTime();
+				weightedQueue.add(entry);
+			}
 		}
 	}
 
@@ -91,8 +98,13 @@ public class LineageCacheEviction
 		if (cache.remove(e._key) != null)
 			_cachesize -= e.getSize();
 
+		// Increase priority if same entry is removed multiple times
+		if (_removelist.containsKey(e._key))
+			_removelist.replace(e._key, _removelist.get(e._key)+1);
+		else
+			_removelist.put(e._key, 1);
+
 		if (DMLScript.STATISTICS) {
-			_removelist.add(e._key);
 			LineageCacheStatistics.incrementMemDeletes();
 		}
 		// NOTE: The caller of this method maintains the eviction queue.
@@ -207,10 +219,11 @@ public class LineageCacheEviction
 				removeOrSpillEntry(cache, e, false);
 				continue;
 			}
-
+			
 			// Estimate time to write to FS + read from FS.
 			double spilltime = getDiskSpillEstimate(e) * 1000; // in milliseconds
 			double exectime = ((double) e._computeTime) / 1000000; // in milliseconds
+			//FIXME: this comuteTime is not adjusted according to hit/miss counts
 
 			if (LineageCache.DEBUG) {
 				System.out.print("LI = " + e._key.getOpcode());

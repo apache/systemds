@@ -62,24 +62,18 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 			long rs = curFedRange.getBeginDims()[0], re = curFedRange.getEndDims()[0],
 				cs = curFedRange.getBeginDims()[1], ce = curFedRange.getEndDims()[1];
 
-			// for OTHER
-			// fedType = ((i + 1) < fedMapping.getFederatedRanges().length &&
-			// curFedRange.getEndDims()[0] == fedMapping.getFederatedRanges()[i + 1]
-			// .getBeginDims()[0]) ? FederationMap.FType.ROW : FederationMap.FType.COL;
-
-			if((ixrange.colStart < ce) && (ixrange.colEnd > cs) && (ixrange.rowStart < re) && (ixrange.rowEnd > rs)) {
-				long rsn = 0, ren = 0, csn = 0, cen = 0;
-				rsn = (ixrange.rowStart >= rs) ? (ixrange.rowStart - rs) : 0;
-				ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
-				csn = (ixrange.colStart >= cs) ? (ixrange.colStart - cs) : 0;
-				cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
+			if((ixrange.colStart <= ce) && (ixrange.colEnd >= cs) && (ixrange.rowStart <= re) && (ixrange.rowEnd >= rs)) {
+				// If the indexing range contains values that are within the specific federated range.
+				// change the range.
+				long rsn = (ixrange.rowStart >= rs) ? (ixrange.rowStart - rs) : 0;
+				long ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
+				long csn = (ixrange.colStart >= cs) ? (ixrange.colStart - cs) : 0;
+				long cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
 				if(LOG.isDebugEnabled()) {
 					LOG.debug("Ranges for fed location: " + rsn + " " + ren + " " + csn + " " + cen);
 					LOG.debug("ixRange                : " + ixrange);
 					LOG.debug("Fed Mapping            : " + curFedRange);
 				}
-				// If the indexing range contains values that are within the specific federated range.
-				// change the range.
 				curFedRange.setBeginDim(0, Math.max(rs - ixrange.rowStart, 0));
 				curFedRange.setBeginDim(1, Math.max(cs - ixrange.colStart, 0));
 				curFedRange.setEndDim(0,
@@ -117,12 +111,19 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 			}
 			return null;
 		});
-		LOG.debug(slicedMapping);
 
 		MatrixObject sliced = ec.getMatrixObject(output);
 		sliced.getDataCharacteristics()
 			.set(fedMapping.getMaxIndexInRange(0), fedMapping.getMaxIndexInRange(1), (int) in.getBlocksize());
+		if(ixrange.rowEnd - ixrange.rowStart == 0) {
+			slicedMapping.setType(FederationMap.FType.COL);
+		}
+		else if(ixrange.colEnd - ixrange.colStart == 0) {
+			slicedMapping.setType(FederationMap.FType.ROW);
+		}
 		sliced.setFedMapping(slicedMapping);
+		LOG.debug(slicedMapping);
+		LOG.debug(sliced);
 	}
 
 	private static class SliceMatrix extends FederatedUDF {

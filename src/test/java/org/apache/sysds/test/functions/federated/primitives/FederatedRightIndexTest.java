@@ -63,7 +63,10 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{20, 10, 6, 8, true},
+		return Arrays.asList(new Object[][] {
+			{20, 10, 6, 8, true},
+			{20, 10, 1, 1, true},
+			{20, 10, 2, 10, true},
 			// {20, 10, 2, 10, true},
 			// {20, 12, 2, 10, false}, {20, 12, 1, 4, false}
 		});

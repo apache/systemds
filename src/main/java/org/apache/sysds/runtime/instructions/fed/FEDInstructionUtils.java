@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOperationCode;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
@@ -81,13 +83,15 @@ public class FEDInstructionUtils {
 			if( mo.isFederated() )
 				fedinst = TsmmFEDInstruction.parseInstruction(linst.getInstructionString());
 		}
-		else if (inst instanceof AggregateUnaryCPInstruction) {
-			AggregateUnaryCPInstruction instruction = (AggregateUnaryCPInstruction) inst;
-			if( instruction.input1.isMatrix() && ec.containsVariable(instruction.input1) ) {
-				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
-				if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT){
-					LOG.debug("Federated UnaryAggregate");
-					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+		else if(inst instanceof UnaryCPInstruction){
+			if (inst instanceof AggregateUnaryCPInstruction) {
+				AggregateUnaryCPInstruction instruction = (AggregateUnaryCPInstruction) inst;
+				if( instruction.input1.isMatrix() && ec.containsVariable(instruction.input1) ) {
+					MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
+					if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT){
+						LOG.debug("Federated UnaryAggregate");
+						fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					}
 				}
 			}
 		}
@@ -131,11 +135,18 @@ public class FEDInstructionUtils {
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
 
 			if(ins.getVariableOpcode() == VariableOperationCode.Write 
+				&& ins.getInput1().isMatrix()
 				&& ins.getInput3().getName().contains("federated")){
+				fedinst = VariableFEDInstruction.parseInstruction(ins);
+			}
+			else if(ins.getVariableOpcode() == VariableOperationCode.CastAsFrameVariable 
+				&& ins.getInput1().isMatrix() 
+				&& ec.getCacheableData(ins.getInput1()).isFederated()){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
 			}
 
 		}
+
 
 		
 		//set thread id for federated context management

@@ -74,6 +74,13 @@ public class FederatedData {
 			_allFedSites.add(_address);
 	}
 
+	public FederatedData(Types.DataType dataType, InetSocketAddress address, String filepath, long varID) {
+		_dataType = dataType;
+		_address = address;
+		_filepath = filepath;
+		_varID = varID;
+	}
+
 	public InetSocketAddress getAddress() {
 		return _address;
 	}

@@ -63,11 +63,9 @@ public class FederatedCentralMomentTest extends AutomatedTestBase {
         addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S.scalar"}));
     }
 
-    @Ignore
     @Test
     public void federatedCentralMomentCP() { federatedCentralMoment(Types.ExecMode.SINGLE_NODE); }
 
-    @Ignore
     @Test
     public void federatedCentralMomentSP() { federatedCentralMoment(Types.ExecMode.SPARK); }
 
@@ -102,23 +100,21 @@ public class FederatedCentralMomentTest extends AutomatedTestBase {
         Thread t3 = startLocalFedWorkerThread(port3);
         Thread t4 = startLocalFedWorkerThread(port4);
 
-        // we need the reference file to not be written to hdfs, so we get the correct format
-        rtplatform = Types.ExecMode.SINGLE_NODE;
-        // Run reference dml script with normal matrix for Row/Col
-        fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-        programArgs = new String[] {"-explain", "-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"), expected("S"), String.valueOf(k)};
-        runTest(true, false, null, -1);
-
         // reference file should not be written to hdfs, so we set platform here
         rtplatform = execMode;
         if(rtplatform == Types.ExecMode.SPARK) {
             DMLScript.USE_LOCAL_SPARK_CONFIG = true;
         }
+        // Run reference dml script with normal matrix for Row/Col
+        fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+        programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"), expected("S"), String.valueOf(k)};
+        runTest(true, false, null, -1);
+
         TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
         loadTestConfiguration(config);
 
         fullDMLScriptName = HOME + TEST_NAME + ".dml";
-        programArgs = new String[] {"-explain", "-stats", "100", "-nvargs",
+        programArgs = new String[] {"-stats", "100", "-nvargs",
             "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
             "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
             "in_X3=" + TestUtils.federatedAddress(port3, input("X3")),

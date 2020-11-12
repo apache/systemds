@@ -22,8 +22,8 @@ package org.apache.sysds.test.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LopProperties.ExecType;
@@ -31,9 +31,13 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class SparseSideInputTest extends AutomatedTestBase 
 {
+	private static final Log LOG = LogFactory.getLog(SparseSideInputTest.class.getName());
+
 	private static final String TEST_NAME = "SparseSideInput";
 	private static final String TEST_NAME1 = TEST_NAME+"1"; //row sum(X/rowSums(X)+Y)
 	private static final String TEST_NAME2 = TEST_NAME+"2"; //cell sum(abs(X^2)+Y)
@@ -189,7 +193,7 @@ public class SparseSideInputTest extends AutomatedTestBase
 	protected File getConfigTemplateFile() {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
 		File f = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
-		System.out.println("This test case overrides default configuration with " + f.getPath());
+		LOG.info("This test case overrides default configuration with " + f.getPath());
 		return f;
 	}
 }

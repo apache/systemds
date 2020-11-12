@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 package org.apache.sysds.test.functions.lineage;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
 
+@net.jcip.annotations.NotThreadSafe
 public class CacheEvictionTest extends LineageBase {
 
 	protected static final String TEST_DIR = "functions/lineage/";

@@ -115,8 +115,8 @@ public class FederatedSplitTest extends AutomatedTestBase {
             "Cont=" + cont};
         String fedOut = runTest(null).toString();
 
-        LOG.error(out);
-        LOG.error(fedOut);
+        LOG.debug(out);
+        LOG.debug(fedOut);
         // compare via files
         compareResults(1e-9);
 

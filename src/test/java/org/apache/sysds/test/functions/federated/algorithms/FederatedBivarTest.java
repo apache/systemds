@@ -29,6 +29,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -53,15 +54,19 @@ public class FederatedBivarTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{10000, 16}, {2000, 32}, {1000, 64}, {10000, 128}});
+		return Arrays.asList(new Object[][] {{10000, 16},
+			// {2000, 32}, {1000, 64},
+			{10000, 128}});
 	}
 
 	@Test
+	@Ignore
 	public void federatedBivarSinglenode() {
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
+	@Ignore
 	public void federatedBivarHybrid() {
 		federatedL2SVM(Types.ExecMode.HYBRID);
 	}

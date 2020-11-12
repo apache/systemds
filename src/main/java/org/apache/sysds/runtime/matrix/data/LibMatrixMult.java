@@ -28,6 +28,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MapMultChain.ChainType;
@@ -68,7 +70,8 @@ public class LibMatrixMult
 	private static final long PAR_MINFLOP_THRESHOLD2 = 128L*1024; //MIN 2 MFLOP
 	public static final int L2_CACHESIZE = 256 * 1024; //256KB (common size)
 	public static final int L3_CACHESIZE = 16 * 1024 * 1024; //16MB (common size)
-	
+	private static final Log LOG = LogFactory.getLog(LibMatrixMult.class.getName());
+
 	private LibMatrixMult() {
 		//prevent instantiation via private constructor
 	}
@@ -2490,9 +2493,13 @@ public class LibMatrixMult
 		
 		//call native matrix multiplication (only called for single-threaded and matrix-vector
 		//because this ensures that we can deal with the transpose mV without additional transpose)
-		if(!NativeHelper.dmmdd(((m==1)?mV:mU).getDenseBlockValues(),
-			((m==1)?mU:mV).getDenseBlockValues(), c, (m==1)?n:m, cd, 1, 1) )
-			throw new DMLRuntimeException("Error executing native matrix mult.");
+		long nnz =NativeHelper.dmmdd(((m==1)?mV:mU).getDenseBlockValues(),
+			((m==1)?mU:mV).getDenseBlockValues(), c, (m==1)?n:m, cd, 1, 1);
+		if(nnz < 0) {
+			//fallback to default java implementation
+			LOG.warn("matrixMultWSigmoidDenseNative: Native mat mult failed. Falling back to java version.");
+			matrixMult(((m==1)?mV:mU), ((m==1)?mU:mV), ret, false);
+		}
 		
 		//compute remaining wsigmoid for all relevant outputs
 		for( int i=0; i<m*n; i++ ) {

@@ -135,7 +135,8 @@ public class FederatedCorTest extends AutomatedTestBase {
 		// compare via files
 		compareResults(1e-2);
 
-		// Assert.assertTrue(heavyHittersContainsString("k+"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uacvar"));
+		Assert.assertTrue(heavyHittersContainsString("fed_tsmm"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

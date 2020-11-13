@@ -99,6 +99,6 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		if( output.isScalar() )
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, meanTmp, map));
 		else
-			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, meanTmp, tmp, map));
+			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, tmp, meanTmp, map));
 	}
 }

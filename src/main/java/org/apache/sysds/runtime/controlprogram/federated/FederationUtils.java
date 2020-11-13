@@ -172,30 +172,6 @@ public class FederationUtils {
 
 	public static MatrixBlock aggVar(Future<FederatedResponse>[] ffr, Future<FederatedResponse>[] meanFfr, FederationMap map, boolean isRowAggregate, boolean isScalar) {
 		try {
-//			else if(aop.aggOp.increOp.fn instanceof CM) {
-//				double var = ((ScalarObject) ffr[0].get().getData()[0]).getDoubleValue();
-//				double mean = ((ScalarObject) meanFfr[0].get().getData()[0]).getDoubleValue();
-//				long size = map.getFederatedRanges()[0].getSize();
-//				for(int i = 0; i < ffr.length - 1; i++) {
-//					long l = size + map.getFederatedRanges()[i+1].getSize();
-//					double k = ((size * var) + (map.getFederatedRanges()[i+1].getSize() * ((ScalarObject) ffr[i+1].get().getData()[0]).getDoubleValue())) / l;
-//					var = k + (size * map.getFederatedRanges()[i+1].getSize()) * Math.pow((mean - ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue()) / l, 2);
-//					mean = (mean *  size + ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue() * (map.getFederatedRanges()[i+1].getSize())) / l;
-//					size = l;
-//					System.out.println("Olga");
-//					//					long l = sizes[i] + sizes[i + 1];
-//					//					double k = Math.pow(means[i] - means[i+1], 2) * (sizes[i] * sizes[i+1]);
-//					//					k += ((sizes[i] * vars[i]) + (sizes[i+1] * vars[i+1])) * l;
-//					//					vars[i+1] = k / Math.pow(l, 2);
-//					//
-//					//					means[i+1] = (means[i] * sizes[i] + means[i] * sizes[i]) / l;
-//					//					sizes[i+1] = l;
-//				}
-//				return new DoubleObject(var);
-//
-//			}
-
-
 			FederatedRange[] ranges = map.getFederatedRanges();
 			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
 			BinaryOperator minus = InstructionUtils.parseBinaryOperator("-");
@@ -204,13 +180,13 @@ public class FederationUtils {
 			ScalarOperator dev1 = InstructionUtils.parseScalarBinaryOperator("/", false);
 			ScalarOperator pow = InstructionUtils.parseScalarBinaryOperator("^2", false);
 
-			long size1 = isScalar ? ranges[0].getSize() : ranges[0].getSize(isRowAggregate ? 0 : 1);
+			long size1 = isScalar ? ranges[0].getSize() : ranges[0].getSize(isRowAggregate ? 1 : 0);
 			MatrixBlock var1 = (MatrixBlock)ffr[0].get().getData()[0];
 			MatrixBlock mean1 = (MatrixBlock)meanFfr[0].get().getData()[0];
 			for(int i=0; i < ffr.length - 1; i++) {
 				MatrixBlock var2 = (MatrixBlock)ffr[i+1].get().getData()[0];
 				MatrixBlock mean2 = (MatrixBlock)meanFfr[i+1].get().getData()[0];
-				long size2 = isScalar ? ranges[i+1].getSize() : ranges[i+1].getSize(isRowAggregate ? 0 : 1);
+				long size2 = isScalar ? ranges[i+1].getSize() : ranges[i+1].getSize(isRowAggregate ? 1 : 0);
 
 				mult1 = mult1.setConstant(size1);
 				var1 = var1.scalarOperations(mult1, new MatrixBlock());
@@ -272,13 +248,6 @@ public class FederationUtils {
 					var = k + (size * map.getFederatedRanges()[i+1].getSize()) * Math.pow((mean - ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue()) / l, 2);
 					mean = (mean *  size + ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue() * (map.getFederatedRanges()[i+1].getSize())) / l;
 					size = l;
-//					long l = sizes[i] + sizes[i + 1];
-//					double k = Math.pow(means[i] - means[i+1], 2) * (sizes[i] * sizes[i+1]);
-//					k += ((sizes[i] * vars[i]) + (sizes[i+1] * vars[i+1])) * l;
-//					vars[i+1] = k / Math.pow(l, 2);
-//
-//					means[i+1] = (means[i] * sizes[i] + means[i] * sizes[i]) / l;
-//					sizes[i+1] = l;
 				}
 				return new DoubleObject(var);
 
@@ -311,7 +280,7 @@ public class FederationUtils {
 			boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
 			return aggMinMax(ffr,isMin,false, Optional.of(map.getType()));
 		} else if(aop.aggOp.increOp.fn instanceof CM) {
-			return aggVar(ffr, meanFfr, map, aop.isRowAggregate(), !(aop.isColAggregate() && aop.isRowAggregate())); //TODO
+			return aggVar(ffr, meanFfr, map, aop.isRowAggregate(), !(aop.isColAggregate() || aop.isRowAggregate())); //TODO
 		}
 		else
 			throw new DMLRuntimeException("Unsupported aggregation operator: "

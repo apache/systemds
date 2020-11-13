@@ -139,7 +139,7 @@
 		 runTest(true, false, null, -1);
 
 		 // compare via files
-		 compareResults(1e-9);
+		 compareResults(1e-2);
 
 
 		 //		Assert.assertTrue(heavyHittersContainsString("k+"));

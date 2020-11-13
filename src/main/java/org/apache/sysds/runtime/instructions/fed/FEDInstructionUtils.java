@@ -99,22 +99,19 @@ public class FEDInstructionUtils {
 				if((mo instanceof MatrixObject || mo instanceof FrameObject) && mo.isFederated() )
 					fedinst = ReorgFEDInstruction.parseInstruction(rinst.getInstructionString());
 			}
-			else if(instruction.input1 != null && instruction.input1.isMatrix() 
-				&& ec.getMatrixObject(instruction.input1).isFederated()
+			else if(instruction.input1 != null && instruction.input1.isMatrix()
 				&& ec.containsVariable(instruction.input1)) {
 				
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				
-				if(instruction.getOpcode().equalsIgnoreCase("cm")) {
+				if(instruction.getOpcode().equalsIgnoreCase("cm") && mo1.isFederated()) {
 					fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
-				}
-				else if(inst instanceof AggregateUnaryCPInstruction  &&
+				} else if(inst.getOpcode().equalsIgnoreCase("qsort") && mo1.isFederated()) {
+					if(mo1.getFedMapping().getFederatedRanges().length == 1)
+						fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
+				} else if(inst instanceof AggregateUnaryCPInstruction  && mo1.isFederated() &&
 					((AggregateUnaryCPInstruction) instruction).getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT) {
 					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
-				}
-				else if(inst.getOpcode().equalsIgnoreCase("qsort") &&
-					mo1.getFedMapping().getFederatedRanges().length == 1) {
-					fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
 			}
 		}
@@ -154,7 +151,7 @@ public class FEDInstructionUtils {
 			// matrix indexing
 			LOG.info("Federated Indexing");
 			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
-			if(inst.getOpcode().equalsIgnoreCase("rightIndex") 
+			if(inst.getOpcode().equalsIgnoreCase("rightIndex")
 				&& minst.input1.isMatrix() && ec.getCacheableData(minst.input1).isFederated()) {
 				LOG.info("Federated Right Indexing");
 				fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());

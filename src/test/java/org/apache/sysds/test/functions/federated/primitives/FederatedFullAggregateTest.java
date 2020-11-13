@@ -43,6 +43,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	private final static String TEST_NAME2 = "FederatedMeanTest";
 	private final static String TEST_NAME3 = "FederatedMaxTest";
 	private final static String TEST_NAME4 = "FederatedMinTest";
+	private final static String TEST_NAME5 = "FederatedVarTest";
 
 	private final static String TEST_DIR = "functions/federated/aggregate/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedFullAggregateTest.class.getSimpleName() + "/";
@@ -68,7 +69,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	}
 
 	private enum OpType {
-		SUM, MEAN, MAX, MIN
+		SUM, MEAN, MAX, MIN, VAR
 	}
 
 	@Override
@@ -78,6 +79,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S.scalar"}));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S.scalar"}));
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S.scalar"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"S.scalar"}));
 	}
 
 	@Test
@@ -101,7 +103,11 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
+	public void testVarDenseMatrixCP() {
+		runColAggregateOperationTest(OpType.VAR, ExecType.CP);
+	}
+
+	@Test
 	public void testSumDenseMatrixSP() {
 		runColAggregateOperationTest(OpType.SUM, ExecType.SPARK);
 	}
@@ -122,6 +128,11 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	@Ignore
 	public void testMinDenseMatrixSP() {
 		runColAggregateOperationTest(OpType.MIN, ExecType.SPARK);
+	}
+
+	@Test
+	public void testVarDenseMatrixSP() {
+		runColAggregateOperationTest(OpType.VAR, ExecType.SPARK);
 	}
 
 	private void runColAggregateOperationTest(OpType type, ExecType instType) {
@@ -151,6 +162,9 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 				break;
 			case MIN:
 				TEST_NAME = TEST_NAME4;
+				break;
+			case VAR:
+				TEST_NAME = TEST_NAME5;
 				break;
 		}
 
@@ -209,7 +223,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(type == OpType.VAR ? 1e-2 : 1e-9);
 
 		switch(type) {
 			case SUM:
@@ -223,6 +237,9 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 				break;
 			case MIN:
 				Assert.assertTrue(heavyHittersContainsString("fed_uamin"));
+				break;
+			case VAR:
+				Assert.assertTrue(heavyHittersContainsString("fed_uavar"));
 				break;
 		}
 

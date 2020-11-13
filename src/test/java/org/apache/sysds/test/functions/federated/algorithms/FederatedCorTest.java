@@ -53,7 +53,7 @@ public class FederatedCorTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{1600, 8, true}});
+		return Arrays.asList(new Object[][] {{1600, 40, true}});
 	}
 
 	@Override
@@ -133,7 +133,7 @@ public class FederatedCorTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-2);
 
 		// Assert.assertTrue(heavyHittersContainsString("k+"));
 

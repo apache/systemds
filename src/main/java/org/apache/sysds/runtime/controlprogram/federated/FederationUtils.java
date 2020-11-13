@@ -195,11 +195,12 @@ public class FederationUtils {
 				dev1 = dev1.setConstant(size1 + size2);
 				var1 = var1.scalarOperations(dev1, new MatrixBlock());
 
-				MatrixBlock tmp1 = (mean1.binaryOperationsInPlace(minus, mean2)).scalarOperations(dev1, new MatrixBlock());
+				MatrixBlock tmp1 = new MatrixBlock(mean1);
+				tmp1 = tmp1.binaryOperationsInPlace(minus, mean2);
+				tmp1 = tmp1.scalarOperations(dev1, new MatrixBlock());
 				tmp1 = tmp1.scalarOperations(pow, new MatrixBlock());
 				mult1 = mult1.setConstant(size1*size2);
 				tmp1 = tmp1.scalarOperations(mult1, new MatrixBlock());
-
 				var1 = tmp1.binaryOperationsInPlace(plus, var1);
 
 				// next mean

@@ -105,7 +105,7 @@ public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
 			"Y2=" + input("Y2"), "Z=" + expected("Z")};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -113,7 +113,7 @@ public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// compare via files
 		compareResults(1e-9);

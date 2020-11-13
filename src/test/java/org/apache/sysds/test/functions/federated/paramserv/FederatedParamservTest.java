@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -39,6 +41,7 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedParamservTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedParamservTest.class.getName());
 	private final static String TEST_DIR = "functions/federated/paramserv/";
 	private final static String TEST_NAME = "FederatedParamservTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedParamservTest.class.getSimpleName() + "/";
@@ -159,9 +162,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			}
 	
 			programArgs = programArgsList.toArray(new String[0]);
-			// ByteArrayOutputStream stdout =
-			runTest(null);
-			// System.out.print(stdout.toString());
+			LOG.debug(runTest(null));
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			
 			// cleanup

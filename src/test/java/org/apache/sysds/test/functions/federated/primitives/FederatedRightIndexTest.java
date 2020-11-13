@@ -167,7 +167,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"), String.valueOf(from),
 			String.valueOf(to), Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
-		LOG.info(runTest(null));
+		LOG.debug(runTest(null));
 		// Run actual dml script with federated matrix
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -178,7 +178,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols, "from=" + from,
 			"to=" + to, "rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
-		LOG.info(runTest(null));
+		LOG.debug(runTest(null));
 
 		// compare via files
 		compareResults(1e-9);

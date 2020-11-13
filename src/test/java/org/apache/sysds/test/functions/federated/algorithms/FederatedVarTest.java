@@ -58,12 +58,8 @@ public class FederatedVarTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			// {10, 1000, false},
-			{100, 4, false},
-			// {36, 1000, true},
-			{1000, 10, true},
-			// {4, 100, true}
-			// {1600, 8, false},
+			{1000, 40, false},
+			{1000, 400, true}
 		});
 	}
 

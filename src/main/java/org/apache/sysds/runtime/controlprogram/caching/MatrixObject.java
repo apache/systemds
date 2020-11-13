@@ -436,7 +436,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	}
 	
 
-
+	
 	@Override
 	protected MatrixBlock readBlobFromHDFS(String fname, long[] dims)
 		throws IOException
@@ -458,7 +458,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			InitFEDInstruction.federateMatrix(this, ReaderWriterFederated.read(fname,mc));
 		}
 
-		// Read matrix and maintain meta data,
+		// Read matrix and maintain meta data, 
 		// if the MatrixObject is federated there is nothing extra to read, and therefore only acquire read and release
 		MatrixBlock newData = isFederated() ? acquireReadAndRelease() :
 			DataConverter.readMatrixFromHDFS(fname, iimd.getFileFormat(), rlen,

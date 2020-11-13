@@ -51,7 +51,7 @@
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
 		<jacoco.skip>true</jacoco.skip>
-		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
+		<automatedtestbase.outputbuffering>true</automatedtestbase.outputbuffering>
 		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
 		<enableStats>false</enableStats>
 	</properties>

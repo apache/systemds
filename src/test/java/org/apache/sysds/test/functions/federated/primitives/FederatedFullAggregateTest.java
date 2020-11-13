@@ -31,6 +31,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -57,7 +58,13 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
-			new Object[][] {{10, 1000, false}, {100, 4, false}, {36, 1000, true}, {1000, 10, true}, {4, 100, true}});
+			new Object[][] {
+				// {10, 1000, false}, 
+				{100, 4, false}, 
+				// {36, 1000, true}, 
+				// {1000, 10, true}, 
+				{4, 100, true}
+			});
 	}
 
 	private enum OpType {
@@ -94,21 +101,25 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testSumDenseMatrixSP() {
 		runColAggregateOperationTest(OpType.SUM, ExecType.SPARK);
 	}
 
 	@Test
+	@Ignore
 	public void testMeanDenseMatrixSP() {
 		runColAggregateOperationTest(OpType.MEAN, ExecType.SPARK);
 	}
 
 	@Test
+	@Ignore
 	public void testMaxDenseMatrixSP() {
 		runColAggregateOperationTest(OpType.MAX, ExecType.SPARK);
 	}
 
 	@Test
+	@Ignore
 	public void testMinDenseMatrixSP() {
 		runColAggregateOperationTest(OpType.MIN, ExecType.SPARK);
 	}

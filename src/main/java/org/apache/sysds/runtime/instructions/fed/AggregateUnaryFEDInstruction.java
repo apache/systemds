@@ -64,6 +64,34 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		if (getOpcode().contains("var")) {
+			processVar(ec);
+		}else{
+			processDefault(ec);
+		}
+
+	}
+
+	private void processDefault(ExecutionContext ec){
+		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
+		MatrixObject in = ec.getMatrixObject(input1);
+		FederationMap map = in.getFedMapping();
+		
+		//create federated commands for aggregation
+		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
+			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});
+		FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
+		FederatedRequest fr3 = map.cleanup(getTID(), fr1.getID());
+		
+		//execute federated commands and cleanups
+		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
+		if( output.isScalar() )
+			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, map));
+		else
+			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, tmp, map));
+	}
+
+	private void processVar(ExecutionContext ec){
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();

@@ -93,7 +93,7 @@ public class FederatedSSLTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t1 = startLocalFedWorkerThread(port1, 10);
 		Thread t2 = startLocalFedWorkerThread(port2);
 		String host = "localhost";
 

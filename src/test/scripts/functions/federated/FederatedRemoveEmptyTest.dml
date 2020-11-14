@@ -29,5 +29,5 @@ if ($rP) {
             	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
 
-s = removeEmpty(target=A, margin="rows");
+s = removeEmpty(target=A, margin="cols");
 write(s, $out_S);

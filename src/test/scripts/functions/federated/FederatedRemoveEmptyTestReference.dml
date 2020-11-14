@@ -22,6 +22,5 @@
 if($5) { A = rbind(read($1), read($2), read($3), read($4)); }
 else { A = cbind(read($1), read($2), read($3), read($4)); }
 
-print(toString(A))
-s = removeEmpty(target=A, margin="rows");
+s = removeEmpty(target=A, margin="cols");
 write(s, $6);

@@ -19,11 +19,14 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import java.util.List;
+import java.util.Map;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -34,6 +37,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
@@ -49,6 +53,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.transform.decode.Decoder;
@@ -57,6 +62,7 @@ import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderOmit;
+import scala.Int;
 
 public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final LinkedHashMap<String, String> params;
@@ -100,7 +106,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		LinkedHashMap<String, String> paramsMap = constructParameterMap(parts);
 
 		// determine the appropriate value function
-		if( opcode.equalsIgnoreCase("replace") ) {
+		if( opcode.equalsIgnoreCase("replace") ||
+			opcode.equalsIgnoreCase("rmempty")) {
 			ValueFunction func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinFEDInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
@@ -129,12 +136,82 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			out.getDataCharacteristics().set(mo.getDataCharacteristics());
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
 		}
+		else if(opcode.equals("rmempty")) {
+			rmempty(ec);
+		}
 		else if(opcode.equalsIgnoreCase("transformdecode"))
 			transformDecode(ec);
 		else if(opcode.equalsIgnoreCase("transformapply"))
 			transformApply(ec);
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
+		}
+	}
+
+	private void rmempty(ExecutionContext ec) {
+		MatrixObject mo = (MatrixObject) getTarget(ec);
+		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
+			new CPOperand[] {getTargetOperand()}, new long[] {mo.getFedMapping().getID()});
+		mo.getFedMapping().execute(getTID(), true, fr1);
+
+		MatrixObject out = ec.getMatrixObject(output);
+		out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
+
+		Map<FederatedRange, int[]> dcs = new HashMap<>();
+		out.getFedMapping().forEachParallel((range, data) -> {
+			try {
+				FederatedResponse response = data
+					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+						new GetDataCharacteristics(data.getVarID()))).get();
+
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+				int[] subRangeCharacteristics = (int[]) response.getData()[0];
+				synchronized(dcs) {
+					dcs.put(range, subRangeCharacteristics);
+				}
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+			return null;
+		});
+		out.getDataCharacteristics().set(mo.getDataCharacteristics());
+		for(int i = 0; i < mo.getFedMapping().getFederatedRanges().length; i++) {
+
+			int[] newRange = dcs.get(out.getFedMapping().getFederatedRanges()[i]);
+
+			out.getFedMapping().getFederatedRanges()[i].setBeginDim(0,
+				(out.getFedMapping().getFederatedRanges()[i].getBeginDims()[0] == 0 || i == 0) ?
+					0 : out.getFedMapping().getFederatedRanges()[i-1].getEndDims()[0]);
+
+			out.getFedMapping().getFederatedRanges()[i].setEndDim(0,
+				out.getFedMapping().getFederatedRanges()[i].getBeginDims()[0] + newRange[0]);
+
+			out.getFedMapping().getFederatedRanges()[i].setBeginDim(1,
+				(out.getFedMapping().getFederatedRanges()[i].getBeginDims()[1] ==0 || i == 0) ?
+					0 : out.getFedMapping().getFederatedRanges()[i-1].getEndDims()[1]);
+
+			out.getFedMapping().getFederatedRanges()[i].setEndDim(1,
+				out.getFedMapping().getFederatedRanges()[i].getBeginDims()[1] + newRange[1]);
+		}
+
+		out.getDataCharacteristics()
+			.set(out.getFedMapping().getMaxIndexInRange(0), out.getFedMapping().getMaxIndexInRange(1), (int) mo.getBlocksize());
+	}
+
+	private static class GetDataCharacteristics extends FederatedUDF {
+
+		private static final long serialVersionUID = 578461386177730925L;
+
+		public GetDataCharacteristics(long varID) {
+			super(new long[] {varID});
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
+			return new FederatedResponse(ResponseType.SUCCESS, new int[] {mb.getNumRows(), mb.getNumColumns()});
 		}
 	}
 

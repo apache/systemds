@@ -36,20 +36,15 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedRowColAggregateTest extends AutomatedTestBase {
+public class FederatedColAggregateTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "FederatedColSumTest";
 	private final static String TEST_NAME2 = "FederatedColMeanTest";
 	private final static String TEST_NAME3 = "FederatedColMaxTest";
 	private final static String TEST_NAME4 = "FederatedColMinTest";
-	private final static String TEST_NAME5 = "FederatedRowSumTest";
-	private final static String TEST_NAME6 = "FederatedRowMeanTest";
-	private final static String TEST_NAME7 = "FederatedRowMaxTest";
-	private final static String TEST_NAME8 = "FederatedRowMinTest";
-	private final static String TEST_NAME9 = "FederatedRowVarTest";
 	private final static String TEST_NAME10 = "FederatedColVarTest";
 
 	private final static String TEST_DIR = "functions/federated/aggregate/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRowColAggregateTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedColAggregateTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -72,10 +67,6 @@ public class FederatedRowColAggregateTest extends AutomatedTestBase {
 		SUM, MEAN, MAX, MIN, VAR
 	}
 
-	private enum InstType {
-		ROW, COL
-	}
-
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
@@ -83,65 +74,36 @@ public class FederatedRowColAggregateTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {"S"}));
 	}
 
 	@Test
 	public void testColSumDenseMatrixCP() {
-		runAggregateOperationTest(OpType.SUM, InstType.COL, ExecMode.SINGLE_NODE);
+		runAggregateOperationTest(OpType.SUM, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testColMeanDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MEAN, InstType.COL, ExecMode.SINGLE_NODE);
+		runAggregateOperationTest(OpType.MEAN, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testColMaxDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MAX, InstType.COL, ExecMode.SINGLE_NODE);
+		runAggregateOperationTest(OpType.MAX, ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void testRowSumDenseMatrixCP() {
-		runAggregateOperationTest(OpType.SUM, InstType.ROW, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowMeanDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MEAN, InstType.ROW, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowMaxDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MAX, InstType.ROW, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowMinDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MIN, InstType.ROW, ExecMode.SINGLE_NODE);
-	}
 
 	@Test
 	public void testColMinDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MIN, InstType.COL, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowVarDenseMatrixCP() {
-		runAggregateOperationTest(OpType.VAR, InstType.ROW, ExecMode.SINGLE_NODE);
+		runAggregateOperationTest(OpType.MIN, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testColVarDenseMatrixCP() {
-		runAggregateOperationTest(OpType.VAR, InstType.COL, ExecMode.SINGLE_NODE);
+		runAggregateOperationTest(OpType.VAR, ExecMode.SINGLE_NODE);
 	}
 
-	private void runAggregateOperationTest(OpType type, InstType instr, ExecMode execMode) {
+	private void runAggregateOperationTest(OpType type, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -151,19 +113,19 @@ public class FederatedRowColAggregateTest extends AutomatedTestBase {
 		String TEST_NAME = null;
 		switch(type) {
 			case SUM:
-				TEST_NAME = instr == InstType.COL ? TEST_NAME1 : TEST_NAME5;
+				TEST_NAME = TEST_NAME1;
 				break;
 			case MEAN:
-				TEST_NAME = instr == InstType.COL ? TEST_NAME2 : TEST_NAME6;
+				TEST_NAME = TEST_NAME2;
 				break;
 			case MAX:
-				TEST_NAME = instr == InstType.COL ? TEST_NAME3 : TEST_NAME7;
+				TEST_NAME = TEST_NAME3;
 				break;
 			case MIN:
-				TEST_NAME = instr == InstType.COL ? TEST_NAME4 : TEST_NAME8;
+				TEST_NAME = TEST_NAME4;
 				break;
 			case VAR:
-				TEST_NAME = instr == InstType.COL ? TEST_NAME10 : TEST_NAME9;
+				TEST_NAME = TEST_NAME10;
 				break;
 		}
 
@@ -227,9 +189,9 @@ public class FederatedRowColAggregateTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(type == FederatedRowColAggregateTest.OpType.VAR ? 1e-2 : 1e-9);
+		compareResults(type == FederatedColAggregateTest.OpType.VAR ? 1e-2 : 1e-9);
 
-		String fedInst = instr == InstType.COL ? "fed_uac" : "fed_uar";
+		String fedInst = "fed_uac";
 
 		switch(type) {
 			case SUM:

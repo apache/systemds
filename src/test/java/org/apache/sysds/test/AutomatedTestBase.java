@@ -1421,6 +1421,19 @@ public abstract class AutomatedTestBase {
 	 * @return the thread associated with the worker.
 	 */
 	protected Thread startLocalFedWorkerThread(int port) {
+		return startLocalFedWorkerThread(port, FED_WORKER_WAIT);
+	}
+
+	/**
+	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
+	 * 
+	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
+	 * 
+	 * @param port Port to use
+	 * @param sleep  The amount of time to wait for the worker startup. in Milliseconds
+	 * @return the thread associated with the worker.
+	 */
+	protected Thread startLocalFedWorkerThread(int port, int sleep) {
 		Thread t = null;
 		String[] fedWorkArgs = {"-w", Integer.toString(port)};
 		ArrayList<String> args = new ArrayList<>();
@@ -1443,7 +1456,7 @@ public abstract class AutomatedTestBase {
 				}
 			});
 			t.start();
-			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(FED_WORKER_WAIT);
+			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(sleep);
 		}
 		catch(InterruptedException e) {
 			e.printStackTrace();

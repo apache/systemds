@@ -98,8 +98,8 @@ public class FederatedSplitTest extends AutomatedTestBase {
 
         int port1 = getRandomAvailablePort();
         int port2 = getRandomAvailablePort();
-        Thread t1 = startLocalFedWorkerThread(port1);
-        Thread t2 = startLocalFedWorkerThread(port2);
+		Thread t1 = startLocalFedWorkerThread(port1, 10);
+		Thread t2 = startLocalFedWorkerThread(port2);
 
         // Run reference dml script with normal matrix
         fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";

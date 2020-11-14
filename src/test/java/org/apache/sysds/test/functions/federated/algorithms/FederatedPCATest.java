@@ -102,9 +102,9 @@ public class FederatedPCATest extends AutomatedTestBase {
 		int port2 = getRandomAvailablePort();
 		int port3 = getRandomAvailablePort();
 		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
-		Thread t3 = startLocalFedWorkerThread(port3);
+		Thread t1 = startLocalFedWorkerThread(port1, 10);
+		Thread t2 = startLocalFedWorkerThread(port2, 10);
+		Thread t3 = startLocalFedWorkerThread(port3, 10);
 		Thread t4 = startLocalFedWorkerThread(port4);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);

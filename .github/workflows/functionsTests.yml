@@ -32,13 +32,15 @@ on:
 jobs:
   applicationsTests:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         tests: [
           "**.functions.aggregate.**,**.functions.append.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
           "**.functions.blocks.**,**.functions.compress.**,**.functions.countDistinct.**,**.functions.data.misc.**,**.functions.data.rand.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
-          "**.functions.federated.**,**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
+          "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
+          "**.functions.federated.**",
           "**.functions.codegenalg.partone.**",
           "**.functions.builtin.**",
           "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.jmlc.**,**.functions.lineage.**",

@@ -65,6 +65,8 @@ public class PrivacyMonitor
 	 * @return data object or data object with privacy constraint removed in case the privacy level was none. 
 	 */
 	public static Data handlePrivacy(Data dataObject){
+		if(dataObject == null)
+			return null;
 		PrivacyConstraint privacyConstraint = dataObject.getPrivacyConstraint();
 		if (privacyConstraint != null){
 			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();

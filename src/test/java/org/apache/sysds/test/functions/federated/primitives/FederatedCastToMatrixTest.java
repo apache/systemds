@@ -126,7 +126,7 @@ public class FederatedCastToMatrixTest extends AutomatedTestBase {
 
 			int port1 = getRandomAvailablePort();
 			int port2 = getRandomAvailablePort();
-			Thread t1 = startLocalFedWorkerThread(port1);
+			Thread t1 = startLocalFedWorkerThread(port1, 10);
 			Thread t2 = startLocalFedWorkerThread(port2);
 
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);

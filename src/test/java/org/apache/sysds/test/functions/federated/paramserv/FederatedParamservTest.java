@@ -37,7 +37,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedParamservTest extends AutomatedTestBase {
@@ -60,15 +59,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> parameters() {
 		return Arrays.asList(new Object[][] {
-			//Network type, number of federated workers, examples per worker, batch size, epochs, learning rate, update type, update frequency
-			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
-			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"},
-			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
-			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"},
-			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
+			// Network type, number of federated workers, examples per worker, batch size, epochs, learning rate, update
+			// type, update frequency
+			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"}, {"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
+			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"}, {"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
+			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"}, {"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
+			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"}, {"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
 			{"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH"},
 			// {"TwoNN", 5, 1000, 200, 2, 0.01, "ASP", "BATCH"},
 			// {"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH"},
@@ -80,7 +76,8 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		});
 	}
 
-	public FederatedParamservTest(String networkType, int numFederatedWorkers, int examplesPerWorker, int batch_size, int epochs, double eta, String utype, String freq) {
+	public FederatedParamservTest(String networkType, int numFederatedWorkers, int examplesPerWorker, int batch_size,
+		int epochs, double eta, String utype, String freq) {
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_examplesPerWorker = examplesPerWorker;
@@ -101,12 +98,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	public void federatedParamservSingleNode() {
 		federatedParamserv(ExecMode.SINGLE_NODE);
 	}
-	
+
 	@Test
 	public void federatedParamservHybrid() {
 		federatedParamserv(ExecMode.HYBRID);
 	}
-	
+
 	private void federatedParamserv(ExecMode mode) {
 		// config
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -114,18 +111,17 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		setOutputBuffering(true);
 
 		int C = 1, Hin = 28, Win = 28;
-		int numFeatures = C*Hin*Win;
+		int numFeatures = C * Hin * Win;
 		int numLabels = 10;
 
 		ExecMode platformOld = setExecMode(mode);
-		
+
 		try {
-		
+
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			// generate program args
-			List<String> programArgsList = new ArrayList<>(Arrays.asList(
-				"-stats",
+			List<String> programArgsList = new ArrayList<>(Arrays.asList("-stats",
 				"-nvargs",
 				"examples_per_worker=" + _examplesPerWorker,
 				"num_features=" + numFeatures,
@@ -138,27 +134,38 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				"network_type=" + _networkType,
 				"channels=" + C,
 				"hin=" + Hin,
-				"win=" + Win
-			));
-	
+				"win=" + Win));
+
 			// for each worker
 			List<Integer> ports = new ArrayList<>();
 			List<Thread> threads = new ArrayList<>();
 			for(int i = 0; i < _numFederatedWorkers; i++) {
 				// write row partitioned features to disk
-				writeInputMatrixWithMTD("X" + i, generateDummyMNISTFeatures(_examplesPerWorker, C, Hin, Win), false,
-						new MatrixCharacteristics(_examplesPerWorker, numFeatures, _blocksize, _examplesPerWorker * numFeatures));
+				writeInputMatrixWithMTD("X" + i,
+					generateDummyMNISTFeatures(_examplesPerWorker, C, Hin, Win),
+					false,
+					new MatrixCharacteristics(_examplesPerWorker, numFeatures, _blocksize,
+						_examplesPerWorker * numFeatures));
 				// write row partitioned labels to disk
-				writeInputMatrixWithMTD("y" + i, generateDummyMNISTLabels(_examplesPerWorker, numLabels), false,
-						new MatrixCharacteristics(_examplesPerWorker, numLabels, _blocksize, _examplesPerWorker * numLabels));
-	
+				writeInputMatrixWithMTD("y" + i,
+					generateDummyMNISTLabels(_examplesPerWorker, numLabels),
+					false,
+					new MatrixCharacteristics(_examplesPerWorker, numLabels, _blocksize,
+						_examplesPerWorker * numLabels));
+
 				// start worker
 				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i)));
-	
+				threads.add(startLocalFedWorkerThread(ports.get(i), 10));
+
 				// add worker to program args
 				programArgsList.add("X" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("X" + i)));
 				programArgsList.add("y" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("y" + i)));
+			}
+			try {
+				Thread.sleep(1000);
+			}
+			catch(InterruptedException e) {
+				e.printStackTrace();
 			}
 	
 			programArgs = programArgsList.toArray(new String[0]);

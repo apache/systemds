@@ -19,10 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.algorithms;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import java.util.Arrays;
+import java.util.Collection;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
@@ -33,9 +31,11 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
-import java.util.Arrays;
-import java.util.Collection;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -64,9 +64,10 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		return Arrays.asList(new Object[][] {{10000, 10, 1, 1},
+		return Arrays.asList(new Object[][] {
+			// {10000, 10, 1, 1},
 			// {2000, 50, 1, 1}, {1000, 100, 1, 1},
-			{10000, 10, 2, 1},
+			// {10000, 10, 2, 1},
 			// {2000, 50, 2, 1}, {1000, 100, 2, 1}, //concurrent requests
 			{10000, 10, 2, 2}, // repeated exec
 			// TODO more runs e.g., 16 -> but requires rework RPC framework first
@@ -80,6 +81,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void federatedKmeansHybrid() {
 		federatedKmeans(Types.ExecMode.HYBRID);
 	}
@@ -102,7 +104,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t1 = startLocalFedWorkerThread(port1, 10);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);

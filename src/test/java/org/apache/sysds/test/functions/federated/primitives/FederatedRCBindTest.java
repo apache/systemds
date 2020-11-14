@@ -93,8 +93,8 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
 
 		int port1 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		int port2 = getRandomAvailablePort();
+		int port2 = getRandomAvailablePort();		
+		Thread t1 = startLocalFedWorkerThread(port1, 10);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
 		// we need the reference file to not be written to hdfs, so we get the correct format

@@ -58,9 +58,21 @@ public class FederatedData {
 	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
 	private static final Set<InetSocketAddress> _allFedSites = new HashSet<>();
 
+	private static SslContext sslCtx;
+	
+	static {
+		try {
+			sslCtx = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+		}
+		catch(SSLException e) {
+			LOG.error("Static SSL setup failed for client side");
+		}
+	}
+
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
 	private final String _filepath;
+
 	/**
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
 	 */
@@ -156,8 +168,7 @@ public class FederatedData {
 		// Careful with the number of threads. Each thread opens connections to multiple files making resulting in
 		// java.io.IOException: Too many open files
 		EventLoopGroup workerGroup = new NioEventLoopGroup(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
-		final SslContext sslCtx = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE)
-			.build();
+
 		try {
 			Bootstrap b = new Bootstrap();
 			final DataRequestHandler handler = new DataRequestHandler(workerGroup);
@@ -179,9 +190,10 @@ public class FederatedData {
 
 				}
 			});
-
+			
 			ChannelFuture f = b.connect(address).sync();
 			Promise<FederatedResponse> promise = f.channel().eventLoop().newPromise();
+			
 			handler.setPromise(promise);
 			f.channel().writeAndFlush(request);
 			return promise;

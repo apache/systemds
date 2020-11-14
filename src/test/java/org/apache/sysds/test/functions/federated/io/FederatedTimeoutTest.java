@@ -18,14 +18,18 @@
  */
 package org.apache.sysds.test.functions.federated.io;
 
-
 import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -39,15 +43,15 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedSSLTest extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(FederatedSSLTest.class.getName());
+public class FederatedTimeoutTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedTimeoutTest.class.getName());
 
-	// This test use the same scripts as the Federated Reader tests, just with SSL enabled.
+	// This test use the same scripts as the Federated Reader tests, just with intended to fail connecting
 	private final static String TEST_DIR = "functions/federated/io/";
 	private final static String TEST_NAME = "FederatedReaderTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedSSLTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedTimeoutTest.class.getSimpleName() + "/";
 	private final static int blocksize = 1024;
-	private final static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR + "SSLConfig.xml");
+	private final static File TEST_CONF_FILE = new File("src/test/config/SystemDS-config.xml");
 
 	@Parameterized.Parameter()
 	public int rows;
@@ -72,14 +76,9 @@ public class FederatedSSLTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedSinglenodeRead() {
-		federatedRead(Types.ExecMode.SINGLE_NODE);
-	}
-
-	public void federatedRead(Types.ExecMode execMode) {
+		Types.ExecMode execMode = Types.ExecMode.SINGLE_NODE;
 		Types.ExecMode oldPlatform = setExecMode(execMode);
-		getAndLoadTestConfiguration(TEST_NAME);
-		setOutputBuffering(true);
-		
+
 		// write input matrices
 		int halfRows = rows / 2;
 		long[][] begins = new long[][] {new long[] {0, 0}, new long[] {halfRows, 0}};
@@ -93,31 +92,30 @@ public class FederatedSSLTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, 10);
-		Thread t2 = startLocalFedWorkerThread(port2);
 		String host = "localhost";
 
-		
+		ServerSocket clientSocket = null;
+		ServerSocket clientSocket2 = null;
 		try {
-			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
-				rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
-				new String[] {input("X1"), input("X2")}, input("X.json"));
+			DMLConfig dmlconf = DMLConfig.readConfigurationFile(TEST_CONF_FILE.getPath());
+			ConfigurationManager.setGlobalConfig(dmlconf);
+			clientSocket = new ServerSocket(port1);
+			clientSocket2 = new ServerSocket(port2);
+			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(rows,
+				cols,
+				blocksize,
+				host,
+				begins,
+				ends,
+				new int[] {port1, port2},
+				new String[] {input("X1"), input("X2")},
+				input("X.json"));
 			writeInputFederatedWithMTD("X.json", fed, null);
-			// Run reference dml script with normal matrix
-			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + (rowPartitioned ? "Row" : "Col")
-				+ "Reference.dml";
-			programArgs = new String[] {"-stats", "-args", input("X1"), input("X2")};
-			String refOut = runTest(null).toString();
-			
-			// Run federated
-			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "-args", input("X.json")};
-			String out = runTest(null).toString();
 
-			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
-			// Verify output
-			Assert.assertEquals(Double.parseDouble(refOut.split("\n")[0]),
-				Double.parseDouble(out.split("\n")[0]), 0.00001);
+		}
+		catch(DMLRuntimeException e) {
+			LOG.info("Correctly timeout");
+			// Great the test parsed.
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -125,19 +123,22 @@ public class FederatedSSLTest extends AutomatedTestBase {
 		}
 		finally {
 			resetExecMode(oldPlatform);
+			if(clientSocket != null)
+				try {
+					clientSocket.close();
+				}
+				catch(IOException e) {
+					e.printStackTrace();
+				}
+			if(clientSocket2 != null)
+				try {
+					clientSocket2.close();
+				}
+				catch(IOException e) {
+					e.printStackTrace();
+				}
 		}
 
-		TestUtils.shutdownThreads(t1, t2);
 	}
 
-	/**
-	 * Override default configuration with custom test configuration to ensure
-	 * scratch space and local temporary directory locations are also updated.
-	 */
-	@Override
-	protected File getConfigTemplateFile() {
-		// Instrumentation in this test's output log to show custom configuration file used for template.
-		LOG.info("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
-		return TEST_CONF_FILE;
-	}
 }

@@ -30,9 +30,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -55,7 +59,7 @@ import org.apache.sysds.runtime.instructions.cp.StringObject;
 
 public class InitFEDInstruction extends FEDInstruction {
 
-	// private static final Log LOG = LogFactory.getLog(InitFEDInstruction.class.getName());
+	private static final Log LOG = LogFactory.getLog(InitFEDInstruction.class.getName());
 	
 	public static final String FED_MATRIX_IDENTIFIER = "matrix";
 	public static final String FED_FRAME_IDENTIFIER = "frame";
@@ -229,8 +233,13 @@ public class InitFEDInstruction extends FEDInstruction {
 			colPartitioned &= (range.getSize(0) == output.getNumRows()); 
 		}
 		try {
+			int timeout = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT);
+			LOG.error("Federated Initialization with timeout: " + timeout);
 			for (Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses)
-				idResponse.getRight().get(); //wait for initialization
+				idResponse.getRight().get(timeout,TimeUnit.SECONDS); //wait for initialization
+		}
+		catch (TimeoutException e){
+			throw new DMLRuntimeException("Federated Initialization timeout exceeded", e);
 		}
 		catch (Exception e) {
 			throw new DMLRuntimeException("Federation initialization failed", e);

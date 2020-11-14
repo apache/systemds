@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.federated;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,28 +35,24 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
-import org.junit.Assert;
+
 
 public class FederatedTestObjectConstructor {
 	public static MatrixObject constructFederatedInput(int rows, int cols, int blocksize, String host, long[][] begin,
-		long[][] end, int[] ports, String[] inputs, String file) {
+		long[][] end, int[] ports, String[] inputs, String file) throws UnknownHostException {
 		MatrixObject fed = new MatrixObject(ValueType.FP64, file);
-		try {
-			fed.setMetaData(new MetaData(new MatrixCharacteristics(rows, cols, blocksize, rows * cols)));
-			List<Pair<FederatedRange, FederatedData>> d = new ArrayList<>();
-			for(int i = 0; i < ports.length; i++) {
-				FederatedRange X1r = new FederatedRange(begin[i], end[i]);
-				FederatedData X1d = new FederatedData(Types.DataType.MATRIX,
-					new InetSocketAddress(InetAddress.getByName(host), ports[i]), inputs[i]);
-				d.add(new ImmutablePair<>(X1r, X1d));
-			}
 
-			InitFEDInstruction.federateMatrix(fed, d);
+		fed.setMetaData(new MetaData(new MatrixCharacteristics(rows, cols, blocksize, rows * cols)));
+		List<Pair<FederatedRange, FederatedData>> d = new ArrayList<>();
+		for(int i = 0; i < ports.length; i++) {
+			FederatedRange X1r = new FederatedRange(begin[i], end[i]);
+			FederatedData X1d = new FederatedData(Types.DataType.MATRIX,
+				new InetSocketAddress(InetAddress.getByName(host), ports[i]), inputs[i]);
+			d.add(new ImmutablePair<>(X1r, X1d));
 		}
-		catch(Exception e) {
-			e.printStackTrace();
-			Assert.assertTrue(false);
-		}
+
+		InitFEDInstruction.federateMatrix(fed, d);
+
 		return fed;
 
 	}

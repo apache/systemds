@@ -131,12 +131,12 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			getAndLoadTestConfiguration(TEST_NAME_RECODE);
 
 			int port1 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1);
 			int port2 = getRandomAvailablePort();
-			t2 = startLocalFedWorkerThread(port2);
 			int port3 = getRandomAvailablePort();
-			t3 = startLocalFedWorkerThread(port3);
 			int port4 = getRandomAvailablePort();
+			t1 = startLocalFedWorkerThread(port1, 10);
+			t2 = startLocalFedWorkerThread(port2, 10);
+			t3 = startLocalFedWorkerThread(port3, 10);
 			t4 = startLocalFedWorkerThread(port4);
 
 			// schema

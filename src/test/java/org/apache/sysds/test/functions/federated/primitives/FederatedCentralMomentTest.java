@@ -98,10 +98,10 @@ public class FederatedCentralMomentTest extends AutomatedTestBase {
         int port2 = getRandomAvailablePort();
         int port3 = getRandomAvailablePort();
         int port4 = getRandomAvailablePort();
-        Thread t1 = startLocalFedWorkerThread(port1);
-        Thread t2 = startLocalFedWorkerThread(port2);
-        Thread t3 = startLocalFedWorkerThread(port3);
-        Thread t4 = startLocalFedWorkerThread(port4);
+		Thread t1 = startLocalFedWorkerThread(port1, 10);
+		Thread t2 = startLocalFedWorkerThread(port2, 10);
+		Thread t3 = startLocalFedWorkerThread(port3, 10);
+		Thread t4 = startLocalFedWorkerThread(port4);
 
         // reference file should not be written to hdfs, so we set platform here
         rtplatform = execMode;

@@ -65,14 +65,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {
-			// {20, 10, 6, 8, true},
-			{20, 10, 1, 1, true},
-			{20, 10, 2, 10, true},
-			// {20, 10, 2, 10, true},
-			// {20, 12, 2, 10, false}, 
-			// {20, 12, 1, 4, false}
-		});
+		return Arrays.asList(new Object[][] {{20, 10, 1, 1, true}, {20, 10, 3, 5, true}, {10, 12, 1, 10, false}});
 	}
 
 	private enum IndexType {
@@ -87,15 +80,15 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S"}));
 	}
 
-	@Test
-	public void testRightIndexRightDenseMatrixCP() {
-		runAggregateOperationTest(IndexType.RIGHT, ExecMode.SINGLE_NODE);
-	}
+	// @Test
+	// public void testRightIndexRightDenseMatrixCP() {
+	// runAggregateOperationTest(IndexType.RIGHT, ExecMode.SINGLE_NODE);
+	// }
 
-	@Test
-	public void testRightIndexLeftDenseMatrixCP() {
-		runAggregateOperationTest(IndexType.LEFT, ExecMode.SINGLE_NODE);
-	}
+	// @Test
+	// public void testRightIndexLeftDenseMatrixCP() {
+	// runAggregateOperationTest(IndexType.LEFT, ExecMode.SINGLE_NODE);
+	// }
 
 	@Test
 	public void testRightIndexFullDenseMatrixCP() {
@@ -112,13 +105,19 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		String TEST_NAME = null;
 		switch(type) {
 			case RIGHT:
+				from = from <= cols ? from : cols;
+				to = to <= cols ? to : cols;
 				TEST_NAME = TEST_NAME1;
 				break;
 			case LEFT:
+				from = from <= rows ? from : rows;
+				to = to <= rows ? to : rows;
 				TEST_NAME = TEST_NAME2;
 				break;
 			case FULL:
 				TEST_NAME = TEST_NAME3;
+				from = from <= rows && from <= cols ? from : Math.min(rows, cols);
+				to = to <= rows && to <= cols ? to : Math.min(rows, cols);
 				break;
 		}
 
@@ -162,6 +161,10 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		}
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
+
+		if(from > to) {
+			from = to;
+		}
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";

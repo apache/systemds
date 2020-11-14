@@ -77,9 +77,9 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 				curFedRange.setBeginDim(0, Math.max(rs - ixrange.rowStart, 0));
 				curFedRange.setBeginDim(1, Math.max(cs - ixrange.colStart, 0));
 				curFedRange.setEndDim(0,
-					(ixrange.rowEnd > re ? re - ixrange.rowStart : ixrange.rowEnd - ixrange.rowStart + 1));
+					(ixrange.rowEnd >= re ? re - ixrange.rowStart : ixrange.rowEnd - ixrange.rowStart + 1));
 				curFedRange.setEndDim(1,
-					(ixrange.colEnd > ce ? ce - ixrange.colStart : ixrange.colEnd - ixrange.colStart + 1));
+					(ixrange.colEnd >= ce ? ce - ixrange.colStart : ixrange.colEnd - ixrange.colStart + 1));
 				if(LOG.isDebugEnabled()) {
 					LOG.debug("Fed Mapping After      : " + curFedRange);
 				}

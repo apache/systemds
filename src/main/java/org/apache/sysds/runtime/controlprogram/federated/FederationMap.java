@@ -104,20 +104,38 @@ public class FederationMap
 		return new FederatedRequest(RequestType.PUT_VAR, id, scalar);
 	}
 	
+	/**
+	 * Creates separate slices of an input data object according
+	 * to the index ranges of federated data. Theses slices are then
+	 * wrapped in separate federated requests for broadcasting.
+	 * 
+	 * @param data input data object (matrix, tensor, frame)
+	 * @param transposed false: slice according to federated data,
+	 *                   true: slice according to transposed federated data
+	 * @return array of federated requests corresponding to federated data
+	 */
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
-		//prepare separate requests for different slices
+		//prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-		List<FederatedRequest> ret = new ArrayList<>();
+		
+		//prepare indexing ranges
+		int[][] ix = new int[_fedMap.size()][];
+		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
 			int rl = transposed ? 0 : e.getKey().getBeginDimsInt()[0];
 			int ru = transposed ? cb.getNumRows()-1 : e.getKey().getEndDimsInt()[0]-1;
 			int cl = transposed ? e.getKey().getBeginDimsInt()[0] : 0;
 			int cu = transposed ? e.getKey().getEndDimsInt()[0]-1 : cb.getNumColumns()-1;
-			CacheBlock tmp = cb.slice(rl, ru, cl, cu, new MatrixBlock());
-			ret.add(new FederatedRequest(RequestType.PUT_VAR, id, tmp));
+			ix[pos++] = new int[] {rl, ru, cl, cu};
 		}
-		return ret.toArray(new FederatedRequest[0]);
+		
+		//multi-threaded block slicing and federation request creation
+		FederatedRequest[] ret = new FederatedRequest[ix.length];
+		Arrays.parallelSetAll(ret, i ->
+			new FederatedRequest(RequestType.PUT_VAR, id,
+			cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+		return ret;
 	}
 	
 	public boolean isAligned(FederationMap that, boolean transposed) {

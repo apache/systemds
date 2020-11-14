@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-import java.util.Arrays;
 import java.util.concurrent.Future;
 
 public class TsmmFEDInstruction extends BinaryFEDInstruction {

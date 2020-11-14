@@ -19,11 +19,14 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-
 import java.util.List;
+import java.util.Map;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -34,6 +37,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
@@ -47,6 +51,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -100,7 +105,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		LinkedHashMap<String, String> paramsMap = constructParameterMap(parts);
 
 		// determine the appropriate value function
-		if( opcode.equalsIgnoreCase("replace") ) {
+		if(opcode.equalsIgnoreCase("replace") || opcode.equalsIgnoreCase("rmempty")) {
 			ValueFunction func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinFEDInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
@@ -120,14 +125,19 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			// similar to unary federated instructions, get federated input
 			// execute instruction, and derive federated output matrix
 			MatrixObject mo = (MatrixObject) getTarget(ec);
-			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[] {getTargetOperand()}, new long[] {mo.getFedMapping().getID()});
+			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
+				output,
+				new CPOperand[] {getTargetOperand()},
+				new long[] {mo.getFedMapping().getID()});
 			mo.getFedMapping().execute(getTID(), true, fr1);
 
 			// derive new fed mapping for output
 			MatrixObject out = ec.getMatrixObject(output);
 			out.getDataCharacteristics().set(mo.getDataCharacteristics());
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
+		}
+		else if(opcode.equals("rmempty")) {
+			rmempty(ec);
 		}
 		else if(opcode.equalsIgnoreCase("transformdecode"))
 			transformDecode(ec);
@@ -136,6 +146,136 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
 		}
+	}
+
+	private void rmempty(ExecutionContext ec) {
+		MatrixObject mo = (MatrixObject) getTarget(ec);
+		MatrixObject out = ec.getMatrixObject(output);
+		Map<FederatedRange, int[]> dcs;
+		if((instString.contains("margin=rows") && mo.isFederated(FederationMap.FType.ROW)) ||
+			(instString.contains("margin=cols") && mo.isFederated(FederationMap.FType.COL))) {
+			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
+				output,
+				new CPOperand[] {getTargetOperand()},
+				new long[] {mo.getFedMapping().getID()});
+			mo.getFedMapping().execute(getTID(), true, fr1);
+			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
+
+			// new ranges
+			dcs = new HashMap<>();
+			out.getFedMapping().forEachParallel((range, data) -> {
+				try {
+					FederatedResponse response = data
+						.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+							new GetDataCharacteristics(data.getVarID())))
+						.get();
+
+					if(!response.isSuccessful())
+						response.throwExceptionFromResponse();
+					int[] subRangeCharacteristics = (int[]) response.getData()[0];
+					synchronized(dcs) {
+						dcs.put(range, subRangeCharacteristics);
+					}
+				}
+				catch(Exception e) {
+					throw new DMLRuntimeException(e);
+				}
+				return null;
+			});
+		}
+		else {
+			Map.Entry<FederationMap, Map<FederatedRange, int[]>> entry = rmemptyC(ec, mo);
+			out.setFedMapping(entry.getKey());
+			dcs = entry.getValue();
+		}
+		out.getDataCharacteristics().set(mo.getDataCharacteristics());
+		for(int i = 0; i < mo.getFedMapping().getFederatedRanges().length; i++) {
+			int[] newRange = dcs.get(out.getFedMapping().getFederatedRanges()[i]);
+
+			out.getFedMapping().getFederatedRanges()[i].setBeginDim(0,
+				(out.getFedMapping().getFederatedRanges()[i].getBeginDims()[0] == 0 ||
+					i == 0) ? 0 : out.getFedMapping().getFederatedRanges()[i - 1].getEndDims()[0]);
+
+			out.getFedMapping().getFederatedRanges()[i].setEndDim(0,
+				out.getFedMapping().getFederatedRanges()[i].getBeginDims()[0] + newRange[0]);
+
+			out.getFedMapping().getFederatedRanges()[i].setBeginDim(1,
+				(out.getFedMapping().getFederatedRanges()[i].getBeginDims()[1] == 0 ||
+					i == 0) ? 0 : out.getFedMapping().getFederatedRanges()[i - 1].getEndDims()[1]);
+
+			out.getFedMapping().getFederatedRanges()[i].setEndDim(1,
+				out.getFedMapping().getFederatedRanges()[i].getBeginDims()[1] + newRange[1]);
+		}
+
+		out.getDataCharacteristics().set(out.getFedMapping().getMaxIndexInRange(0),
+			out.getFedMapping().getMaxIndexInRange(1),
+			(int) mo.getBlocksize());
+	}
+
+	private Map.Entry<FederationMap, Map<FederatedRange, int[]>> rmemptyC(ExecutionContext ec, MatrixObject mo) {
+		boolean marginRow = instString.contains("margin=rows");
+
+		// find empty in ranges
+		List<MatrixBlock> colSums = new ArrayList<>();
+		mo.getFedMapping().forEachParallel((range, data) -> {
+			try {
+				FederatedResponse response = data
+					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+						new GetVector(data.getVarID(), marginRow)))
+					.get();
+
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+				MatrixBlock vector = (MatrixBlock) response.getData()[0];
+				synchronized(colSums) {
+					colSums.add(vector);
+				}
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+			return null;
+		});
+
+		// find empty in matrix
+		BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
+		BinaryOperator greater = InstructionUtils.parseBinaryOperator(">");
+		MatrixBlock tmp1 = colSums.get(0);
+		for(int i = 1; i < colSums.size(); i++)
+			tmp1 = tmp1.binaryOperationsInPlace(plus, colSums.get(i));
+		tmp1 = tmp1.binaryOperationsInPlace(greater, new MatrixBlock(tmp1.getNumRows(), tmp1.getNumColumns(), 0.0));
+
+		// remove empty from matrix
+		Map<FederatedRange, int[]> dcs = new HashMap<>();
+		long varID = FederationUtils.getNextFedDataID();
+		MatrixBlock finalTmp = new MatrixBlock(tmp1);
+		FederationMap resMapping;
+		if(tmp1.sum() == (marginRow ? tmp1.getNumColumns() : tmp1.getNumRows())) {
+			resMapping = mo.getFedMapping();
+		}
+		else {
+			resMapping = mo.getFedMapping().mapParallel(varID, (range, data) -> {
+				try {
+					FederatedResponse response = data
+						.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+							new ParameterizedBuiltinFEDInstruction.RemoveEmpty(data.getVarID(), varID, finalTmp,
+								params.containsKey("select") ? ec.getMatrixInput(params.get("select")) : null,
+								Boolean.parseBoolean(params.get("empty.return").toLowerCase()), marginRow)))
+						.get();
+					if(!response.isSuccessful())
+						response.throwExceptionFromResponse();
+					int[] subRangeCharacteristics = (int[]) response.getData()[0];
+					synchronized(dcs) {
+						dcs.put(range, subRangeCharacteristics);
+					}
+				}
+				catch(Exception e) {
+					throw new DMLRuntimeException(e);
+				}
+				return null;
+			});
+		}
+		return new AbstractMap.SimpleEntry<>(resMapping, dcs);
 	}
 
 	private void transformDecode(ExecutionContext ec) {
@@ -155,14 +295,14 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			long[] beginDims = range.getBeginDims();
 			long[] endDims = range.getEndDims();
 			int colStartBefore = (int) beginDims[1];
-			
+
 			// update begin end dims (column part) considering columns added by dummycoding
 			globalDecoder.updateIndexRanges(beginDims, endDims);
-			
+
 			// get the decoder segment that is relevant for this federated worker
 			Decoder decoder = globalDecoder
-					.subRangeDecoder((int) beginDims[1] + 1, (int) endDims[1] + 1, colStartBefore);
-			
+				.subRangeDecoder((int) beginDims[1] + 1, (int) endDims[1] + 1, colStartBefore);
+
 			FrameBlock metaSlice = new FrameBlock();
 			synchronized(meta) {
 				meta.slice(0, meta.getNumRows() - 1, (int) beginDims[1], (int) endDims[1] - 1, metaSlice);
@@ -170,9 +310,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 			FederatedResponse response;
 			try {
-				response = data.executeFederatedOperation(
-					new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-					new DecodeMatrix(data.getVarID(), varID, metaSlice, decoder))).get();
+				response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
+					-1, new DecodeMatrix(data.getVarID(), varID, metaSlice, decoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 
@@ -217,7 +356,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			try {
 				FederatedResponse response = data
 					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-						new GetColumnNames(data.getVarID()))).get();
+						new GetColumnNames(data.getVarID())))
+					.get();
 
 				// no synchronization necessary since names should anyway match
 				String[] subRangeColNames = (String[]) response.getData()[0];
@@ -261,7 +401,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				EncoderOmit subRangeEncoder = (EncoderOmit) omitEncoder.subRangeEncoder(range.asIndexRange().add(1));
 				FederatedResponse response = data
 					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-						new InitRowsToRemoveOmit(data.getVarID(), subRangeEncoder))).get();
+						new InitRowsToRemoveOmit(data.getVarID(), subRangeEncoder)))
+					.get();
 
 				// no synchronization necessary since names should anyway match
 				Encoder builtEncoder = (Encoder) response.getData()[0];
@@ -283,7 +424,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 	private CPOperand getTargetOperand() {
 		return new CPOperand(params.get("target"), ValueType.FP64, DataType.MATRIX);
 	}
-	
+
 	public static class DecodeMatrix extends FederatedUDF {
 		private static final long serialVersionUID = 2376756757742169692L;
 		private final long _outputID;
@@ -330,7 +471,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
+			FrameBlock fb = ((FrameObject) data[0]).acquireReadAndRelease();
 			// return column names
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {fb.getColumnNames()});
 		}
@@ -348,9 +489,98 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
+			FrameBlock fb = ((FrameObject) data[0]).acquireReadAndRelease();
 			_encoder.build(fb);
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {_encoder});
+		}
+	}
+
+	private static class GetDataCharacteristics extends FederatedUDF {
+
+		private static final long serialVersionUID = 578461386177730925L;
+
+		public GetDataCharacteristics(long varID) {
+			super(new long[] {varID});
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
+			return new FederatedResponse(ResponseType.SUCCESS, new int[] {mb.getNumRows(), mb.getNumColumns()});
+		}
+	}
+
+	private static class RemoveEmpty extends FederatedUDF {
+
+		private static final long serialVersionUID = 12341521331L;
+		private final MatrixBlock _vector;
+		private final long _outputID;
+		private MatrixBlock _select;
+		private boolean _emptyReturn;
+		private final boolean _marginRow;
+
+		public RemoveEmpty(long varID, long outputID, MatrixBlock vector, MatrixBlock select, boolean emptyReturn,
+			boolean marginRow) {
+			super(new long[] {varID});
+			_vector = vector;
+			_outputID = outputID;
+			_select = select;
+			_emptyReturn = emptyReturn;
+			_marginRow = marginRow;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
+
+			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
+			BinaryOperator minus = InstructionUtils.parseBinaryOperator("-");
+
+			mb = mb.binaryOperationsInPlace(plus, new MatrixBlock(mb.getNumRows(), mb.getNumColumns(), 1.0));
+			for(int i = 0; i < mb.getNumRows(); i++)
+				for(int j = 0; j < mb.getNumColumns(); j++)
+					if(_marginRow)
+						mb.setValue(i, j, _vector.getValue(i, 0) * mb.getValue(i, j));
+					else
+						mb.setValue(i, j, _vector.getValue(0, j) * mb.getValue(i, j));
+
+			MatrixBlock res = mb.removeEmptyOperations(new MatrixBlock(), _marginRow, _emptyReturn, _select);
+			res = res.binaryOperationsInPlace(minus, new MatrixBlock(res.getNumRows(), res.getNumColumns(), 1.0));
+
+			MatrixObject mout = ExecutionContext.createMatrixObject(res);
+			ec.setVariable(String.valueOf(_outputID), mout);
+
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
+				new int[] {res.getNumRows(), res.getNumColumns()});
+		}
+	}
+
+	private static class GetVector extends FederatedUDF {
+
+		private static final long serialVersionUID = -1003061862215703768L;
+		private final boolean _marginRow;
+
+		public GetVector(long varID, boolean marginRow) {
+			super(new long[] {varID});
+			_marginRow = marginRow;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
+
+			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
+			BinaryOperator greater = InstructionUtils.parseBinaryOperator(">");
+			int len = _marginRow ? mb.getNumColumns() : mb.getNumRows();
+			MatrixBlock tmp1 = _marginRow ? mb.slice(0, mb.getNumRows() - 1, 0, 0, new MatrixBlock()) : mb
+				.slice(0, 0, 0, mb.getNumColumns() - 1, new MatrixBlock());
+			for(int i = 1; i < len; i++) {
+				MatrixBlock tmp2 = _marginRow ? mb.slice(0, mb.getNumRows() - 1, i, i, new MatrixBlock()) : mb
+					.slice(i, i, 0, mb.getNumColumns() - 1, new MatrixBlock());
+				tmp1 = tmp1.binaryOperationsInPlace(plus, tmp2);
+			}
+			tmp1 = tmp1.binaryOperationsInPlace(greater, new MatrixBlock(tmp1.getNumRows(), tmp1.getNumColumns(), 0.0));
+			return new FederatedResponse(ResponseType.SUCCESS, tmp1);
 		}
 	}
 }

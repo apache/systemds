@@ -91,12 +91,12 @@ public class FederatedReaderTest extends AutomatedTestBase {
 		Thread t2 = startLocalFedWorkerThread(port2);
 		String host = "localhost";
 
-		MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
-			rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
-			new String[] {input("X1"), input("X2")}, input("X.json"));
-		writeInputFederatedWithMTD("X.json", fed, null);
-
+		
 		try {
+			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
+				rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
+				new String[] {input("X1"), input("X2")}, input("X.json"));
+			writeInputFederatedWithMTD("X.json", fed, null);
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + (rowPartitioned ? "Row" : "Col")
 				+ "Reference.dml";

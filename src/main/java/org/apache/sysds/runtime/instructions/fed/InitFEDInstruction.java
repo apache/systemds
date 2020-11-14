@@ -234,7 +234,7 @@ public class InitFEDInstruction extends FEDInstruction {
 		}
 		try {
 			int timeout = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT);
-			LOG.error("Federated Initialization with timeout: " + timeout);
+			LOG.debug("Federated Initialization with timeout: " + timeout);
 			for (Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses)
 				idResponse.getRight().get(timeout,TimeUnit.SECONDS); //wait for initialization
 		}

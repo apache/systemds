@@ -103,6 +103,7 @@ public enum Builtins {
 	FLOOR("floor", false),
 	GLM("glm", true),
 	GMM("gmm", true),
+	GMM_PREDICT("gmm_predict", true),
 	GNMF("gnmf", true),
 	GRID_SEARCH("gridSearch", true),
 	HYPERBAND("hyperband", true),

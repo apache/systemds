@@ -39,109 +39,109 @@ import org.junit.runners.Parameterized;
 @net.jcip.annotations.NotThreadSafe
 public class FederatedCentralMomentTest extends AutomatedTestBase {
 
-    private final static String TEST_DIR = "functions/federated/";
-    private final static String TEST_NAME = "FederatedCentralMomentTest";
-    private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCentralMomentTest.class.getSimpleName() + "/";
+	private final static String TEST_DIR = "functions/federated/";
+	private final static String TEST_NAME = "FederatedCentralMomentTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCentralMomentTest.class.getSimpleName() + "/";
 
-    private final static int blocksize = 1024;
-    @Parameterized.Parameter()
-    public int rows;
+	private final static int blocksize = 1024;
+	@Parameterized.Parameter()
+	public int rows;
 
-    @Parameterized.Parameter(1)
-    public int k;
+	@Parameterized.Parameter(1)
+	public int k;
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                {1000, 2},
-                {1000, 3}, 
-                {1000, 4}
-        });
-    }
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {
+				{1000, 2},
+				{1000, 3}, 
+				{1000, 4}
+		});
+	}
 
-    @Override
-    public void setUp() {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S.scalar"}));
-    }
+	@Override
+	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S.scalar"}));
+	}
 
-    @Test
-    public void federatedCentralMomentCP() { federatedCentralMoment(Types.ExecMode.SINGLE_NODE); }
+	@Test
+	public void federatedCentralMomentCP() { federatedCentralMoment(Types.ExecMode.SINGLE_NODE); }
 
-    @Test
-    @Ignore
-    public void federatedCentralMomentSP() { federatedCentralMoment(Types.ExecMode.SPARK); }
+	@Test
+	@Ignore
+	public void federatedCentralMomentSP() { federatedCentralMoment(Types.ExecMode.SPARK); }
 
-    public void federatedCentralMoment(Types.ExecMode execMode) {
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        Types.ExecMode platformOld = rtplatform;
+	public void federatedCentralMoment(Types.ExecMode execMode) {
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		Types.ExecMode platformOld = rtplatform;
 
-        getAndLoadTestConfiguration(TEST_NAME);
-        String HOME = SCRIPT_DIR + TEST_DIR;
+		getAndLoadTestConfiguration(TEST_NAME);
+		String HOME = SCRIPT_DIR + TEST_DIR;
 
-        int r = rows / 4;
+		int r = rows / 4;
 
-        double[][] X1 = getRandomMatrix(r, 1, 1, 5, 1, 3);
-        double[][] X2 = getRandomMatrix(r, 1, 1, 5, 1, 7);
-        double[][] X3 = getRandomMatrix(r, 1, 1, 5, 1, 8);
-        double[][] X4 = getRandomMatrix(r, 1, 1, 5, 1, 9);
+		double[][] X1 = getRandomMatrix(r, 1, 1, 5, 1, 3);
+		double[][] X2 = getRandomMatrix(r, 1, 1, 5, 1, 7);
+		double[][] X3 = getRandomMatrix(r, 1, 1, 5, 1, 8);
+		double[][] X4 = getRandomMatrix(r, 1, 1, 5, 1, 9);
 
-        MatrixCharacteristics mc = new MatrixCharacteristics(r, 1, blocksize, r);
-        writeInputMatrixWithMTD("X1", X1, false, mc);
-        writeInputMatrixWithMTD("X2", X2, false, mc);
-        writeInputMatrixWithMTD("X3", X3, false, mc);
-        writeInputMatrixWithMTD("X4", X4, false, mc);
+		MatrixCharacteristics mc = new MatrixCharacteristics(r, 1, blocksize, r);
+		writeInputMatrixWithMTD("X1", X1, false, mc);
+		writeInputMatrixWithMTD("X2", X2, false, mc);
+		writeInputMatrixWithMTD("X3", X3, false, mc);
+		writeInputMatrixWithMTD("X4", X4, false, mc);
 
-        // empty script name because we don't execute any script, just start the worker
-        fullDMLScriptName = "";
-        int port1 = getRandomAvailablePort();
-        int port2 = getRandomAvailablePort();
-        int port3 = getRandomAvailablePort();
-        int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, 10);
-		Thread t2 = startLocalFedWorkerThread(port2, 10);
-		Thread t3 = startLocalFedWorkerThread(port3, 10);
+		// empty script name because we don't execute any script, just start the worker
+		fullDMLScriptName = "";
+		int port1 = getRandomAvailablePort();
+		int port2 = getRandomAvailablePort();
+		int port3 = getRandomAvailablePort();
+		int port4 = getRandomAvailablePort();
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
+		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
+		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
 		Thread t4 = startLocalFedWorkerThread(port4);
 
-        // reference file should not be written to hdfs, so we set platform here
-        rtplatform = execMode;
-        if(rtplatform == Types.ExecMode.SPARK) {
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-        }
-        // Run reference dml script with normal matrix for Row/Col
-        fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-        programArgs = new String[] {"-stats", "100", "-args", 
-            input("X1"), input("X2"), input("X3"), input("X4"), expected("S"), String.valueOf(k)};
-        runTest(null);
+		// reference file should not be written to hdfs, so we set platform here
+		rtplatform = execMode;
+		if(rtplatform == Types.ExecMode.SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		}
+		// Run reference dml script with normal matrix for Row/Col
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		programArgs = new String[] {"-stats", "100", "-args", 
+			input("X1"), input("X2"), input("X3"), input("X4"), expected("S"), String.valueOf(k)};
+		runTest(null);
 
-        TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-        loadTestConfiguration(config);
+		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+		loadTestConfiguration(config);
 
-        fullDMLScriptName = HOME + TEST_NAME + ".dml";
-        programArgs = new String[] {"-stats", "100", "-nvargs",
-            "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-            "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-            "in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-            "in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
-            "rows=" + rows,
-            "cols=" + 1,
-            "out_S=" + output("S"),
-            "k=" + k};
-        runTest(null);
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-stats", "100", "-nvargs",
+			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
+			"rows=" + rows,
+			"cols=" + 1,
+			"out_S=" + output("S"),
+			"k=" + k};
+		runTest(null);
 
-        // compare all sums via files
-        compareResults(0.01);
+		// compare all sums via files
+		compareResults(0.01);
 
-        Assert.assertTrue(heavyHittersContainsString("fed_cm"));
+		Assert.assertTrue(heavyHittersContainsString("fed_cm"));
 
-        // check that federated input files are still existing
-        Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
-        Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
-        Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
-        Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
+		// check that federated input files are still existing
+		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
+		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
+		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
+		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
 
-        TestUtils.shutdownThreads(t1, t2, t3, t4);
-        rtplatform = platformOld;
-        DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-    }
+		TestUtils.shutdownThreads(t1, t2, t3, t4);
+		rtplatform = platformOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+	}
 }

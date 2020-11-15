@@ -128,10 +128,18 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				System.arraycopy(subRangeColNames, 0, colNames, (int) range.getBeginDims()[1], subRangeColNames.length);
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getMessage());
+				throw new DMLRuntimeException("Federated encoder creation failed: ", e);
 			}
 			return null;
 		});
+		
+		//sort for consistent encoding in local and federated
+		if( EncoderRecode.SORT_RECODE_MAP ) {
+			for(Encoder encoder : globalEncoder.getEncoders())
+				if( encoder instanceof EncoderRecode )
+					((EncoderRecode)encoder).sortCPRecodeMaps();
+		}
+		
 		FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
 		meta.setColumnNames(colNames);
 		globalEncoder.getMetaData(meta);

@@ -106,6 +106,8 @@ public abstract class AutomatedTestBase {
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	public static final int FED_WORKER_WAIT = 1000; // in ms
+	public static final int FED_WORKER_WAIT_S = 30; // in ms
+	
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
 	// to set the native library paths internally thus breaking the code.

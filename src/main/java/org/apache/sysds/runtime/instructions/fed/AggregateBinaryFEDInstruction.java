@@ -94,7 +94,6 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				MatrixObject out = ec.getMatrixObject(output);
 				out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
 				out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID(), mo2.getNumColumns()));
-				out.getFedMapping().setType(FType.ROW);
 			}
 		}
 		//#2 vector - federated matrix multiplication

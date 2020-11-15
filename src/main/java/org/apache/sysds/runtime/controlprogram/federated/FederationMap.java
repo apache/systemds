@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,6 +41,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.IndexRange;
 
 public class FederationMap
 {
@@ -81,6 +83,10 @@ public class FederationMap
 	
 	public void setType(FType type) {
 		_type = type;
+	}
+	
+	public int getSize() {
+		return _fedMap.size();
 	}
 	
 	public FederatedRange[] getFederatedRanges() {
@@ -254,7 +260,7 @@ public class FederationMap
 		//TODO handling of file path, but no danger as never written
 		for( Entry<FederatedRange, FederatedData> e : _fedMap.entrySet() )
 			map.put(new FederatedRange(e.getKey(), clen), e.getValue().copyWithNewID(id));
-		return new FederationMap(id, map);
+		return new FederationMap(id, map, _type);
 	}
 
 	public FederationMap bind(long rOffset, long cOffset, FederationMap that) {
@@ -324,6 +330,23 @@ public class FederationMap
 		return fedMapCopy;
 	}
 	
+	public FederationMap filter(IndexRange ixrange) {
+		FederationMap ret = this.clone(); //same ID
+		
+		Iterator<Entry<FederatedRange, FederatedData>> iter = ret._fedMap.entrySet().iterator();
+		while( iter.hasNext() ) {
+			Entry<FederatedRange, FederatedData> e = iter.next();
+			FederatedRange range = e.getKey();
+			long rs = range.getBeginDims()[0], re = range.getEndDims()[0],
+				cs = range.getBeginDims()[1], ce = range.getEndDims()[1];
+			boolean overlap = ((ixrange.colStart <= ce) && (ixrange.colEnd >= cs)
+				&& (ixrange.rowStart <= re) && (ixrange.rowEnd >= rs));
+			if( !overlap )
+				iter.remove();
+		}
+		return ret;
+	}
+	
 	private static void setThreadID(long tid, FederatedRequest[]... frsets) {
 		for( FederatedRequest[] frset : frsets )
 			if( frset != null )
@@ -359,5 +382,10 @@ public class FederationMap
 		sb.append("\t ID:" + _ID);
 		sb.append("\n"+ _fedMap);
 		return sb.toString();
+	}
+	
+	@Override
+	public FederationMap clone() {
+		return copyWithNewID(getID());
 	}
 }

@@ -199,9 +199,9 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			int port2 = getRandomAvailablePort();
 			int port3 = getRandomAvailablePort();
 			int port4 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1, 10);
-			t2 = startLocalFedWorkerThread(port2, 10);
-			t3 = startLocalFedWorkerThread(port3, 10);
+			t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
+			t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
+			t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
 			t4 = startLocalFedWorkerThread(port4);
 
 			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, DataExpression.DEFAULT_DELIM_DELIMITER,

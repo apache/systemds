@@ -50,80 +50,65 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 		rightIndexing(ec);
 	}
 
-	private void rightIndexing(ExecutionContext ec) {
+	private void rightIndexing(ExecutionContext ec)
+	{
+		//get input and requested index range
 		MatrixObject in = ec.getMatrixObject(input1);
-		FederationMap fedMapping = in.getFedMapping();
 		IndexRange ixrange = getIndexRange(ec);
-		// FederationMap.FType fedType;
+		
+		//prepare output federation map (copy-on-write)
+		FederationMap fedMap = in.getFedMapping().filter(ixrange);
+		
+		//modify federated ranges in place
 		Map<FederatedRange, IndexRange> ixs = new HashMap<>();
-
-		for(int i = 0; i < fedMapping.getFederatedRanges().length; i++) {
-			FederatedRange curFedRange = fedMapping.getFederatedRanges()[i];
-			long rs = curFedRange.getBeginDims()[0], re = curFedRange.getEndDims()[0],
-				cs = curFedRange.getBeginDims()[1], ce = curFedRange.getEndDims()[1];
-
-			if((ixrange.colStart <= ce) && (ixrange.colEnd >= cs) && (ixrange.rowStart <= re) && (ixrange.rowEnd >= rs)) {
-				// If the indexing range contains values that are within the specific federated range.
-				// change the range.
-				long rsn = (ixrange.rowStart >= rs) ? (ixrange.rowStart - rs) : 0;
-				long ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
-				long csn = (ixrange.colStart >= cs) ? (ixrange.colStart - cs) : 0;
-				long cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
-				if(LOG.isDebugEnabled()) {
-					LOG.debug("Ranges for fed location: " + rsn + " " + ren + " " + csn + " " + cen);
-					LOG.debug("ixRange                : " + ixrange);
-					LOG.debug("Fed Mapping            : " + curFedRange);
-				}
-				curFedRange.setBeginDim(0, Math.max(rs - ixrange.rowStart, 0));
-				curFedRange.setBeginDim(1, Math.max(cs - ixrange.colStart, 0));
-				curFedRange.setEndDim(0,
-					(ixrange.rowEnd >= re ? re - ixrange.rowStart : ixrange.rowEnd - ixrange.rowStart + 1));
-				curFedRange.setEndDim(1,
-					(ixrange.colEnd >= ce ? ce - ixrange.colStart : ixrange.colEnd - ixrange.colStart + 1));
-				if(LOG.isDebugEnabled()) {
-					LOG.debug("Fed Mapping After      : " + curFedRange);
-				}
-				ixs.put(curFedRange, new IndexRange(rsn, ren, csn, cen));
+		for(FederatedRange range : fedMap.getFedMapping().keySet()) {
+			long rs = range.getBeginDims()[0], re = range.getEndDims()[0],
+				cs = range.getBeginDims()[1], ce = range.getEndDims()[1];
+			long rsn = (ixrange.rowStart >= rs) ? (ixrange.rowStart - rs) : 0;
+			long ren = (ixrange.rowEnd >= rs && ixrange.rowEnd < re) ? (ixrange.rowEnd - rs) : (re - rs - 1);
+			long csn = (ixrange.colStart >= cs) ? (ixrange.colStart - cs) : 0;
+			long cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("Ranges for fed location: " + rsn + " " + ren + " " + csn + " " + cen);
+				LOG.debug("ixRange                : " + ixrange);
+				LOG.debug("Fed Mapping            : " + range);
 			}
-			else {
-				// If not within the range, change the range to become an 0 times 0 big range.
-				// by setting the end dimensions to the same as the beginning dimensions.
-				curFedRange.setBeginDim(0, 0);
-				curFedRange.setBeginDim(1, 0);
-				curFedRange.setEndDim(0, 0);
-				curFedRange.setEndDim(1, 0);
-			}
-
+			range.setBeginDim(0, Math.max(rs - ixrange.rowStart, 0));
+			range.setBeginDim(1, Math.max(cs - ixrange.colStart, 0));
+			range.setEndDim(0, (ixrange.rowEnd >= re ? re-ixrange.rowStart : ixrange.rowEnd-ixrange.rowStart + 1));
+			range.setEndDim(1, (ixrange.colEnd >= ce ? ce-ixrange.colStart : ixrange.colEnd-ixrange.colStart + 1));
+			if(LOG.isDebugEnabled())
+				LOG.debug("Fed Mapping After      : " + range);
+			ixs.put(range, new IndexRange(rsn, ren, csn, cen));
 		}
 
+		// execute slicing of valid range 
 		long varID = FederationUtils.getNextFedDataID();
-		FederationMap slicedMapping = fedMapping.mapParallel(varID, (range, data) -> {
+		FederationMap slicedFedMap = fedMap.mapParallel(varID, (range, data) -> {
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
 					FederatedRequest.RequestType.EXEC_UDF, -1,
-					new SliceMatrix(data.getVarID(), varID, ixs.getOrDefault(range, new IndexRange(-1, -1, -1, -1)))))
-					.get();
+					new SliceMatrix(data.getVarID(), varID, ixs.get(range)))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
+				return null;
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);
 			}
-			return null;
 		});
 
+		//update output mapping and data characteristics
 		MatrixObject sliced = ec.getMatrixObject(output);
 		sliced.getDataCharacteristics()
-			.set(fedMapping.getMaxIndexInRange(0), fedMapping.getMaxIndexInRange(1), (int) in.getBlocksize());
-		if(ixrange.rowEnd - ixrange.rowStart == 0) {
-			slicedMapping.setType(FederationMap.FType.COL);
-		}
-		else if(ixrange.colEnd - ixrange.colStart == 0) {
-			slicedMapping.setType(FederationMap.FType.ROW);
-		}
-		sliced.setFedMapping(slicedMapping);
-		LOG.debug(slicedMapping);
-		LOG.debug(sliced);
+			.set(slicedFedMap.getMaxIndexInRange(0), slicedFedMap.getMaxIndexInRange(1), (int) in.getBlocksize());
+		sliced.setFedMapping(slicedFedMap);
+		
+		//TODO is this really necessary
+		if(ixrange.rowEnd - ixrange.rowStart == 0)
+			slicedFedMap.setType(FederationMap.FType.COL);
+		else if(ixrange.colEnd - ixrange.colStart == 0)
+			slicedFedMap.setType(FederationMap.FType.ROW);
 	}
 
 	private static class SliceMatrix extends FederatedUDF {
@@ -141,11 +126,7 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
-			MatrixBlock res;
-			if(_ixrange.rowStart != -1)
-				res = mb.slice(_ixrange, new MatrixBlock());
-			else
-				res = new MatrixBlock();
+			MatrixBlock res = mb.slice(_ixrange, new MatrixBlock());
 			MatrixObject mout = ExecutionContext.createMatrixObject(res);
 			ec.setVariable(String.valueOf(_outputID), mout);
 

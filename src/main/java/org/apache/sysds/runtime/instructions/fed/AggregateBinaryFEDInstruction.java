@@ -19,22 +19,23 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-import java.util.concurrent.Future;
-
 public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
+	// private static final Log LOG = LogFactory.getLog(AggregateBinaryFEDInstruction.class.getName());
 	
 	public AggregateBinaryFEDInstruction(Operator op, CPOperand in1,
 		CPOperand in2, CPOperand out, String opcode, String istr) {
@@ -60,7 +61,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
-		
+
 		//#1 federated matrix-vector multiplication
 		if(mo1.isFederated(FType.COL) && mo2.isFederated(FType.ROW)
 			&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), true) ) {

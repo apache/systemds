@@ -48,7 +48,29 @@ public class FederationMap
 	public enum FType {
 		ROW, //row partitioned, groups of rows
 		COL, //column partitioned, groups of columns
-		OTHER,
+		FULL,  // Meaning both Row and Column indicating a single federated location and a full matrix
+		OTHER;
+
+		public boolean isRowPartitioned() {
+			return this == ROW || this == FULL;
+		}
+
+		public boolean isColPartitioned() {
+			return this == ROW || this == FULL;
+		}
+
+		public boolean isType(FType t){
+			switch (t) {
+				case ROW:
+					return isRowPartitioned();
+				case COL:
+					return isColPartitioned();
+				case FULL:
+				case OTHER:
+				default:
+					return t == this;
+			}
+		}
 	}
 	
 	private long _ID = -1;
@@ -278,6 +300,7 @@ public class FederationMap
 		}
 		//derive output type
 		switch(_type) {
+			case FULL: _type = FType.FULL; break;
 			case ROW: _type = FType.COL; break;
 			case COL: _type = FType.ROW; break;
 			default: _type = FType.OTHER;

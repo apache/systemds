@@ -48,7 +48,7 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testGMMMDefault() { runGMMTest(1, "VVV", "kmeans", 100,
+	public void testGMMMDefault() { runGMMTest(10, "VVV", "kmeans", 100,
 		1e-6, 0.000001,42, false, LopProperties.ExecType.CP); }
 		
 	@Test

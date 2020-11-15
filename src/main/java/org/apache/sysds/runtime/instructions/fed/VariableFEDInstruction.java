@@ -126,14 +126,12 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 
 		// execute function at federated site.
 		FederatedRequest fr1 = FederationUtils.callInstruction(_in.getInstructionString(),
-			_in.getOutput(),
-			new CPOperand[] {_in.getInput1()},
-			new long[] {mo1.getFedMapping().getID()});
+			_in.getOutput(), new CPOperand[] {_in.getInput1()}, new long[] {mo1.getFedMapping().getID()});
 		mo1.getFedMapping().execute(getTID(), true, fr1);
 
 		// Construct output local.
 		FrameObject out = ec.getFrameObject(_in.getOutput());
-		out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
+		out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
 		FederationMap outMap = mo1.getFedMapping().copyWithNewID(fr1.getID());
 		Map<FederatedRange, FederatedData> newMap = new HashMap<>();
 		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getFedMapping().entrySet()) {
@@ -152,5 +150,4 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		return _in.getLineageItem(ec);
 	}
-
 }

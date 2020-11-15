@@ -22,7 +22,9 @@ package org.apache.sysds.runtime.instructions.fed;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -30,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataUtils;
 
 public class AppendFEDInstruction extends BinaryFEDInstruction {
 	protected boolean _cbind; // otherwise rbind
@@ -60,7 +63,7 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		MatrixObject mo1 = ec.getMatrixObject(input1.getName());
 		MatrixObject mo2 = ec.getMatrixObject(input2.getName());
 		DataCharacteristics dc1 = mo1.getDataCharacteristics();
-		DataCharacteristics dc2 = mo1.getDataCharacteristics();
+		DataCharacteristics dc2 = mo2.getDataCharacteristics();
 
 		// check input dimensions
 		if(_cbind && mo1.getNumRows() != mo2.getNumRows()) {
@@ -80,32 +83,53 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 			throw new DMLRuntimeException(sb.toString());
 		}
 
-		FederationMap fm1;
-		if(mo1.isFederated())
-			fm1 = mo1.getFedMapping();
-		else
-			fm1 = FederationUtils.federateLocalData(mo1);
-		FederationMap fm2;
-		if(mo2.isFederated())
-			fm2 = mo2.getFedMapping();
-		else
-			fm2 = FederationUtils.federateLocalData(mo2);
-
+		//prepare output
 		MatrixObject out = ec.getMatrixObject(output);
-		long id = FederationUtils.getNextFedDataID();
-		if(_cbind) {
-			out.getDataCharacteristics().set(dc1.getRows(),
-				dc1.getCols() + dc2.getCols(),
-				dc1.getBlocksize(),
-				dc1.getNonZeros() + dc2.getNonZeros());
-			out.setFedMapping(fm1.identCopy(getTID(), id).bind(0, dc1.getCols(), fm2.identCopy(getTID(), id)));
+		MetaDataUtils.updateAppendDataCharacteristics(dc1, dc2, out.getDataCharacteristics(), _cbind);
+		
+		// federated/federated
+		if( mo1.isFederated() && mo2.isFederated() 
+			&& mo1.getFedMapping().getType()==mo2.getFedMapping().getType() ) 
+		{
+			long id = FederationUtils.getNextFedDataID();
+			long roff = _cbind ? 0 : dc1.getRows();
+			long coff = _cbind ? dc1.getCols() : 0;
+			out.setFedMapping(mo1.getFedMapping().identCopy(getTID(), id)
+				.bind(roff, coff, mo2.getFedMapping().identCopy(getTID(), id)));
+		}
+		// federated/local, local/federated cbind
+		else if( (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && _cbind ) {
+			MatrixObject moFed = mo1.isFederated(FType.ROW) ? mo1 : mo2;
+			MatrixObject moLoc = mo1.isFederated(FType.ROW) ? mo2 : mo1;
+			
+			//construct commands: broadcast lhs, fed append, clean broadcast
+			FederatedRequest[] fr1 = moFed.getFedMapping().broadcastSliced(moLoc, false);
+			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[]{input1, input2}, mo1.isFederated(FType.ROW) ?
+				new long[]{ moFed.getFedMapping().getID(), fr1[0].getID()} :
+				new long[]{ fr1[0].getID(), moFed.getFedMapping().getID()});
+			FederatedRequest fr3 = moFed.getFedMapping().cleanup(getTID(), fr1[0].getID());
+			
+			//execute federated operations and set output
+			moFed.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+			out.setFedMapping(moFed.getFedMapping().copyWithNewID(fr2.getID(), out.getNumColumns()));
+		}
+		// federated/local, local/federated rbind
+		else if( (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && !_cbind) {
+			long id = FederationUtils.getNextFedDataID();
+			long roff = _cbind ? 0 : dc1.getRows();
+			long coff = _cbind ? dc1.getCols() : 0;
+			FederationMap fed1 = mo1.isFederated(FType.ROW) ?
+				mo1.getFedMapping() : FederationUtils.federateLocalData(mo1);
+			FederationMap fed2 = mo2.isFederated(FType.ROW) ?
+				mo2.getFedMapping() : FederationUtils.federateLocalData(mo2);
+			out.setFedMapping(fed1.identCopy(getTID(), id)
+				.bind(roff, coff, fed2.identCopy(getTID(), id)));
 		}
 		else {
-			out.getDataCharacteristics().set(dc1.getRows() + dc2.getRows(),
-				dc1.getCols(),
-				dc1.getBlocksize(),
-				dc1.getNonZeros() + dc2.getNonZeros());
-			out.setFedMapping(fm1.identCopy(getTID(), id).bind(dc1.getRows(), 0, fm2.identCopy(getTID(), id)));
+			throw new DMLRuntimeException("Unsupported federated append: "
+				+ (mo1.isFederated() ? mo1.getFedMapping().getType().name():"LOCAL") + " "
+				+ (mo2.isFederated() ? mo2.getFedMapping().getType().name():"LOCAL") + " " + _cbind);
 		}
 	}
 }

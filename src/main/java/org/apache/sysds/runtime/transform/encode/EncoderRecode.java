@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.transform.encode;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -39,6 +40,9 @@ import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 public class EncoderRecode extends Encoder 
 {
 	private static final long serialVersionUID = 8213163881283341874L;
+	
+	//test property to ensure consistent encoding for local and federated
+	public static boolean SORT_RECODE_MAP = false;
 	
 	//recode maps and custom map for partial recode maps 
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<>();
@@ -70,6 +74,16 @@ public class EncoderRecode extends Encoder
 	
 	public HashMap<Integer, HashSet<Object>> getCPRecodeMapsPartial() { 
 		return _rcdMapsPart; 
+	}
+	
+	public void sortCPRecodeMaps() {
+		for( HashMap<String,Long> map : _rcdMaps.values() ) {
+			String[] keys= map.keySet().toArray(new String[0]);
+			Arrays.sort(keys);
+			map.clear();
+			for(String key : keys)
+				putCode(map, key);
+		}
 	}
 	
 	private long lookupRCDMap(int colID, String key) {
@@ -110,6 +124,10 @@ public class EncoderRecode extends Encoder
 				if( key!=null && !key.isEmpty() && !map.containsKey(key) )
 					putCode(map, key);
 			}
+		}
+		
+		if( SORT_RECODE_MAP ) {
+			sortCPRecodeMaps();
 		}
 	}
 

@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataUtils;
 
 public abstract class BinarySPInstruction extends ComputationSPInstruction {
 
@@ -344,22 +345,13 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		return mcOut;
 	}
 
-	protected void updateBinaryAppendOutputDataCharacteristics(SparkExecutionContext sec, boolean cbind)
-	{
+	protected void updateBinaryAppendOutputDataCharacteristics(SparkExecutionContext sec, boolean cbind) {
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
 		//infer initially unknown dimensions from inputs
-		if(!mcOut.dimsKnown()) { 
-			if( !mc1.dimsKnown() || !mc2.dimsKnown() )
-				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
-			
-			if( cbind )
-				mcOut.set(mc1.getRows(), mc1.getCols()+mc2.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
-			else //rbind
-				mcOut.set(mc1.getRows()+mc2.getRows(), mc1.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
-		}	
+		MetaDataUtils.updateAppendDataCharacteristics(mc1, mc2, mcOut, cbind);
 		
 		//infer initially unknown nnz from inputs
 		if( !mcOut.nnzKnown() && mc1.nnzKnown() && mc2.nnzKnown() ) {

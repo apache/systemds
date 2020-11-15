@@ -155,7 +155,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 				// start worker
 				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i), 10));
+				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
 
 				// add worker to program args
 				programArgsList.add("X" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("X" + i)));

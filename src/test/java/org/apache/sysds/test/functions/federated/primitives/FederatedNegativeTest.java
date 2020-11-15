@@ -47,6 +47,7 @@ public class FederatedNegativeTest {
 		try{
 			String[] args = {"-w", Integer.toString(port)};
 			t = AutomatedTestBase.startLocalFedWorkerWithArgs(args);
+			Thread.sleep(1000);
 		} catch(Exception e){
 			NegativeTest1();
 		}

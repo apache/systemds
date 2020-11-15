@@ -230,7 +230,7 @@ public class InitFEDInstruction extends FEDInstruction {
 				idResponses.add(new ImmutablePair<>(value, value.initFederatedData(id)));
 			}
 			rowPartitioned &= (range.getSize(1) == output.getNumColumns());
-			colPartitioned &= (range.getSize(0) == output.getNumRows()); 
+			colPartitioned &= (range.getSize(0) == output.getNumRows());
 		}
 		try {
 			int timeout = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT);
@@ -247,7 +247,8 @@ public class InitFEDInstruction extends FEDInstruction {
 		output.getDataCharacteristics().setNonZeros(-1);
 		output.getDataCharacteristics().setBlocksize(ConfigurationManager.getBlocksize());
 		output.setFedMapping(new FederationMap(id, fedMapping));
-		output.getFedMapping().setType(rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
+		output.getFedMapping().setType(rowPartitioned && colPartitioned ? FType.FULL : 
+			rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
 	}
 	
 	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers) {
@@ -260,6 +261,8 @@ public class InitFEDInstruction extends FEDInstruction {
 		// and the future for the response
 		List<Pair<FederatedData, Pair<Integer, Future<FederatedResponse>>>> idResponses = new ArrayList<>();
 		long id = FederationUtils.getNextFedDataID();
+		boolean rowPartitioned = true;
+		boolean colPartitioned = true;
 		for (Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
 			FederatedRange range = entry.getKey();
 			FederatedData value = entry.getValue();
@@ -272,6 +275,8 @@ public class InitFEDInstruction extends FEDInstruction {
 				}
 				idResponses.add(new ImmutablePair<>(value, new ImmutablePair<>((int) beginDims[1], value.initFederatedData(id))));
 			}
+			rowPartitioned &= (range.getSize(1) == output.getNumColumns());
+			colPartitioned &= (range.getSize(0) == output.getNumRows());
 		}
 		// columns are definitely in int range, because we throw an DMLRuntime Exception in `processInstruction` else
 		Types.ValueType[] schema = new Types.ValueType[(int) output.getNumColumns()];
@@ -290,6 +295,8 @@ public class InitFEDInstruction extends FEDInstruction {
 		output.getDataCharacteristics().setNonZeros(output.getNumColumns() * output.getNumRows());
 		output.setSchema(schema);
 		output.setFedMapping(new FederationMap(id, fedMapping));
+		output.getFedMapping().setType(rowPartitioned && colPartitioned ? FType.FULL : 
+			rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
 	}
 	
 	private static void handleFedFrameResponse(Types.ValueType[] schema, FederatedData federatedData,

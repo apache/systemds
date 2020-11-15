@@ -19,22 +19,25 @@
 
 package org.apache.sysds.test.functions.federated.algorithms;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
-import java.util.Arrays;
-import java.util.Collection;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedYL2SVMTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedYL2SVMTest.class.getName());
 
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME = "FederatedYL2SVMTest";
@@ -114,7 +117,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-args", input("X1"), input("X2"), input("Y1"), input("Y2"), expected("Z")};
-		runTest(true, false, null, -1);
+		LOG.debug(runTest(null));
 
 		// Run actual dml script with federated matrixz
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -122,7 +125,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 			"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "out=" + output("Z")};
-		runTest(true, false, null, -1);
+		LOG.debug(runTest(null));
 
 		// compare via files
 		compareResults(1e-9);

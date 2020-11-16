@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -41,6 +42,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME = "FederatedYL2SVMTest";
+	private final static String TEST_NAME_2 = "FederatedYL2SVMTest2";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedYL2SVMTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -53,6 +55,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_2, new String[] {"Z"}));
 	}
 
 	@Parameterized.Parameters
@@ -60,21 +63,29 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
 			// {2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000},
-			 {2000, 10}});
+			{2000, 10}});
 	}
 
 	@Test
 	public void federatedL2SVMCP() {
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, TEST_NAME);
 	}
 
-	/*
-	 * TODO support SPARK execution mode -> RDDs and SPARK instructions lead to quite a few problems
-	 * 
-	 * @Test public void federatedL2SVMSP() { federatedL2SVM(Types.ExecMode.SPARK); }
-	 */
+	@Test
+	public void federatedL2SVMCP_2() {
+		// This test is equal to the first tests, just with one worker location used instead.
+		// making all federated matrices FULL type.
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, TEST_NAME_2);
 
-	public void federatedL2SVM(Types.ExecMode execMode) {
+	}
+
+	@Test
+	@Ignore
+	public void federatedL2SVMSP() {
+		federatedL2SVM(Types.ExecMode.SPARK, TEST_NAME);
+	}
+
+	public void federatedL2SVM(Types.ExecMode execMode, String testName) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -82,7 +93,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 
-		getAndLoadTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(testName);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		// write input matrices
@@ -110,18 +121,17 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+		TestConfiguration config = availableTestConfigurations.get(testName);
 		loadTestConfiguration(config);
-		
 
 		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		fullDMLScriptName = HOME + testName + "Reference.dml";
 		programArgs = new String[] {"-args", input("X1"), input("X2"), input("Y1"), input("Y2"), expected("Z")};
 		LOG.debug(runTest(null));
 
 		// Run actual dml script with federated matrixz
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+		fullDMLScriptName = HOME + testName + ".dml";
+		programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 			"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "out=" + output("Z")};

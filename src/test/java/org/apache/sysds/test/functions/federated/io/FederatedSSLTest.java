@@ -105,7 +105,7 @@ public class FederatedSSLTest extends AutomatedTestBase {
 			writeInputFederatedWithMTD("X.json", fed, null);
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + (rowPartitioned ? "Row" : "Col")
-				+ "Reference.dml";
+				+ "2Reference.dml";
 			programArgs = new String[] {"-stats", "-args", input("X1"), input("X2")};
 			String refOut = runTest(null).toString();
 			

@@ -18,10 +18,11 @@
  */
 package org.apache.sysds.test.functions.federated.io;
 
-
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -38,7 +39,7 @@ import org.junit.runners.Parameterized;
 @net.jcip.annotations.NotThreadSafe
 public class FederatedReaderTest extends AutomatedTestBase {
 
-	// private static final Log LOG = LogFactory.getLog(FederatedReaderTest.class.getName());
+	private static final Log LOG = LogFactory.getLog(FederatedReaderTest.class.getName());
 	private final static String TEST_DIR = "functions/federated/ioR/";
 	private final static String TEST_NAME = "FederatedReaderTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedReaderTest.class.getSimpleName() + "/";
@@ -65,15 +66,22 @@ public class FederatedReaderTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedSinglenodeRead() {
-		federatedRead(Types.ExecMode.SINGLE_NODE);
+	public void federatedSingleNodeReadOneWorker() {
+		LOG.debug("1Federated");
+		federatedRead(Types.ExecMode.SINGLE_NODE, 1);
 	}
 
-	public void federatedRead(Types.ExecMode execMode) {
+	@Test
+	public void federatedSingleNodeReadTwoWorker() {
+		LOG.debug("2Federated");
+		federatedRead(Types.ExecMode.SINGLE_NODE, 2);
+	}
+
+	public void federatedRead(Types.ExecMode execMode, int workerCount) {
 		Types.ExecMode oldPlatform = setExecMode(execMode);
 		getAndLoadTestConfiguration(TEST_NAME);
 		setOutputBuffering(true);
-		
+
 		// write input matrices
 		int halfRows = rows / 2;
 		long[][] begins = new long[][] {new long[] {0, 0}, new long[] {halfRows, 0}};
@@ -91,18 +99,31 @@ public class FederatedReaderTest extends AutomatedTestBase {
 		Thread t2 = startLocalFedWorkerThread(port2);
 		String host = "localhost";
 
-		
 		try {
-			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
-				rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
-				new String[] {input("X1"), input("X2")}, input("X.json"));
+			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(rows,
+				cols,
+				blocksize,
+				host,
+				begins,
+				ends,
+				workerCount == 2 ? new int[] {port1, port2} : new int[] {port1},
+				workerCount == 2 ? new String[] {input("X1"), input("X2")} : new String[] {input("X1")},
+				input("X.json"));
 			writeInputFederatedWithMTD("X.json", fed, null);
 			// Run reference dml script with normal matrix
-			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + (rowPartitioned ? "Row" : "Col")
-				+ "Reference.dml";
-			programArgs = new String[] {"-stats", "-args", input("X1"), input("X2")};
+
+			if(workerCount == 1) {
+				fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + "1Reference.dml";
+				programArgs = new String[] {"-stats", "-args", input("X1")};
+			}
+			else {
+				fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME
+					+ (rowPartitioned ? "Row" : "Col") + "2Reference.dml";
+				programArgs = new String[] {"-stats", "-args", input("X1"), input("X2")};
+			}
+
 			String refOut = runTest(null).toString();
-			
+
 			// Run federated
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats", "-args", input("X.json")};
@@ -111,7 +132,8 @@ public class FederatedReaderTest extends AutomatedTestBase {
 			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
 			// Verify output
 			Assert.assertEquals(Double.parseDouble(refOut.split("\n")[0]),
-				Double.parseDouble(out.split("\n")[0]), 0.00001);
+				Double.parseDouble(out.split("\n")[0]),
+				0.00001);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

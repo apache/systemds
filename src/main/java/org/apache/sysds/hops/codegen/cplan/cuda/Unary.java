@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.codegen.cplan.cpp;
+package org.apache.sysds.hops.codegen.cplan.cuda;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;

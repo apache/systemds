@@ -1,0 +1,64 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# ------------------------------------------
+# Built-in LOGSUMEXP 
+# ------------------------------------------
+
+
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME        TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X           Double  ---         matrix M 
+# margin      String  none        if the logsumexp of rows is required set margin = "row"
+#                                 if the logsumexp of columns is required set margin = "col"
+#                                 if set to "none" then a single scalar is returned computing logsumexp of matrix
+# ---------------------------------------------------------------------------------------------
+
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME        TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# output      Double  ---         A 1*1 matrix, row vector or column vector depends on margin value
+
+m_logSumExp = function(Matrix[Double] M, String margin = "none")
+return(Matrix[Double] output)
+{
+  if(margin == "rows") {
+    ds = M - rowMaxs(M)
+    rSumOfexp = rowSums(exp(ds))
+    output = rowMaxs(M) + log(rSumOfexp)
+  }
+  else if(margin == "cols") {
+    ds = M - colMaxs(M)
+    cSumOfexp = colSums(exp(ds))
+    output = colMaxs(M) + log(cSumOfexp)
+  }
+  else if(margin == "none") {
+    ds = M - max(M)
+    sumOfexp = sum(exp(ds))
+    output = as.matrix(max(M) + log(sumOfexp))
+  }
+  else 
+		stop("invalid margin value expecting rows, cols or none found: "+margin)
+}

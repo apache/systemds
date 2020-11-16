@@ -40,7 +40,7 @@ import org.apache.sysds.runtime.util.DataConverter;
  */
 public class LibCommonsMath 
 {
-	static final double RELATIVE_SYMMETRY_THRESHOLD = 1e-10;
+	static final double RELATIVE_SYMMETRY_THRESHOLD = 1e-6;
 
 	private LibCommonsMath() {
 		//prevent instantiation via private constructor

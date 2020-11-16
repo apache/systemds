@@ -19,14 +19,22 @@
 #
 #-------------------------------------------------------------
 
-X = read($1, data_type = "frame", format = "csv")
-X = as.matrix(X[, 2:ncol(X)-1])
 
-[labels, prob, df, bic, mu, prec_chol, w] = gmm(X=X, n_components = $2,
-  model = $3,  init_params = $4, iter = $5, 
-  reg_covar = $6, tol = $7, seed=$8, verbose=TRUE)
+args<-commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+library("matrixStats")
 
-out = (rowMaxs(prob) < 0.7)
+M = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
+opt = args[2]
+if(opt == "rows") {
+  O = rowLogSumExps(M)
+} else if (opt == "cols") {
+  O = t(colLogSumExps(M))
+} else {
+  O = logSumExp(M)
+}
 
-write(prob, $9)
-write(out, $10)
+log(sum(exp(M)))
+
+writeMM(as(O, "CsparseMatrix"), paste(args[3], "B", sep=""));

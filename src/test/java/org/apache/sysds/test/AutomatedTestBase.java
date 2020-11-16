@@ -1040,11 +1040,7 @@ public abstract class AutomatedTestBase {
 				"Rscript --default-packages=methods,datasets,graphics,grDevices,stats,utils");
 			// *** END HACK ***
 		}
-
-		if(System.getProperty("os.name").contains("Windows")) {
-			cmd = cmd.replace('/', '\\');
-			executionFile = executionFile.replace('/', '\\');
-		}
+		
 		if(DEBUG) {
 			if(!newWay) { // not sure why have this condition
 				TestUtils.printRScript(executionFile);
@@ -1075,6 +1071,16 @@ public abstract class AutomatedTestBase {
 		String outputR;
 		String errorString;
 		try {
+			// if R < 4.0 on Windows is used, the file separator needs to be Windows style
+			if(System.getProperty("os.name").contains("Windows")) {
+				Process r_ver_cmd = Runtime.getRuntime().exec("RScript --version");
+				String r_ver = IOUtils.toString(r_ver_cmd.getErrorStream());
+				if(!r_ver.contains("4.0")) {
+					cmd = cmd.replace('/', '\\');
+					executionFile = executionFile.replace('/', '\\');
+				}
+			}
+			
 			long t0 = System.nanoTime();
 			if(LOG.isInfoEnabled()) {
 				LOG.info("starting R script");

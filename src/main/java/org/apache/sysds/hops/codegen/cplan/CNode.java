@@ -237,13 +237,13 @@ public abstract class CNode
 		switch (api) {
 			case CUDA:
 				if(caller instanceof CNodeCell)
-					return new org.apache.sysds.hops.codegen.cplan.cpp.CellWise();
+					return new org.apache.sysds.hops.codegen.cplan.cuda.CellWise();
 				else if (caller instanceof CNodeUnary)
-					return new org.apache.sysds.hops.codegen.cplan.cpp.Unary();
+					return new org.apache.sysds.hops.codegen.cplan.cuda.Unary();
 				else if (caller instanceof CNodeBinary)
-					return new org.apache.sysds.hops.codegen.cplan.cpp.Binary();
+					return new org.apache.sysds.hops.codegen.cplan.cuda.Binary();
 				else if (caller instanceof CNodeTernary)
-					return new org.apache.sysds.hops.codegen.cplan.cpp.Ternary();
+					return new org.apache.sysds.hops.codegen.cplan.cuda.Ternary();
 				else
 					return null;
 			case JAVA:

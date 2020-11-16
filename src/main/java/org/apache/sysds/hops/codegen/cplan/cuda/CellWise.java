@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.codegen.cplan.cpp;
+package org.apache.sysds.hops.codegen.cplan.cuda;
 
 import java.io.FileInputStream;
 import java.io.IOException;

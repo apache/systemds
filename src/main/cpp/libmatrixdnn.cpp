@@ -17,30 +17,21 @@
  * under the License.
  */
 
-#include "libmatrixmult.h"
-#include "libmatrixdnn.h"
-#include <cstdlib>
-#include <iostream>
-#include <cstdio>
-#include <cmath>
+#include "common.h"
 #include <cstring>
+#include <iostream>
+#include "libmatrixdnn.h"
+#include "libmatrixmult.h"
+
+
 #ifdef USE_INTEL_MKL
-  #include "mkl_dnn.h"
+#include "mkl_dnn.h"
 #else
-  #include "omp.h"
+#include "omp.h"
 #endif
 
-template<class FP> int computeNNZ(FP* arr, int limit) {
-  int nnz = 0;
-#ifndef USE_INTEL_MKL
-  #pragma omp parallel for reduction(+: nnz)
-#endif
-  for(int i=0; i<limit; i++)
-    nnz += (arr[i]!=0) ? 1 : 0;
-  return nnz;
-}
-
-template<class FP> void biasAdd(FP* bias, FP* output, int K, int PQ) {
+template<class FP>
+void biasAdd(FP* bias, FP* output, int K, int PQ) {
   for(int k = 0, index=0; k < K; k++)
     for(int pq = 0; pq < PQ; pq++, index++)
       output[index] += bias[k];
@@ -91,7 +82,8 @@ void col2im(double* inputArray, double* outputArray, int N, int C, int H, int W,
 	}
 }
 
-template<class FP> void im2col(FP* inputArray, FP* outputArray, int N, int C, int H, int W,
+template<class FP>
+void im2col(FP* inputArray, FP* outputArray, int N, int C, int H, int W,
     int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q) {
   int CRS = C * R * S;
   std::size_t size = Q * sizeof(FP);
@@ -151,7 +143,7 @@ bool MKL_DNN_ERROR(dnnError_t code) {
 } 
 #endif
 
-int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
+size_t conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
     int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CRS = C*R*S;
@@ -244,7 +236,7 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
   return computeNNZ<double>(retPtr, K*CRS);
 }
 
-int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
+size_t conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CHW = C * H * W;
 #ifdef USE_INTEL_MKL
@@ -370,7 +362,7 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 	delete [] temp1;
 }
 
-int dconv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, 
+size_t dconv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, 
     int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
   int KPQ = K * P * Q;
@@ -446,7 +438,7 @@ int dconv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, do
 #endif
 }
 
-int sconv2dBiasAddDense(float* inputPtr, float* biasPtr, float* filterPtr, float* retPtr, 
+size_t sconv2dBiasAddDense(float* inputPtr, float* biasPtr, float* filterPtr, float* retPtr, 
     int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
   int KPQ = K * P * Q;

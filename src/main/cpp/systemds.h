@@ -29,25 +29,25 @@ extern "C" {
 /*
  * Class:     org_apache_sysds_utils_NativeHelper
  * Method:    dmmdd
- * Signature: ([D[D[DIIII)Z
+ * Signature: ([D[D[DIIII)I
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_dmmdd
+JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_dmmdd
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint);
 
 /*
  * Class:     org_apache_sysds_utils_NativeHelper
  * Method:    smmdd
- * Signature: (Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;IIII)Z
+ * Signature: (Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;IIII)I
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_smmdd
+JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_smmdd
   (JNIEnv *, jclass, jobject, jobject, jobject, jint, jint, jint, jint);
 
 /*
  * Class:     org_apache_sysds_utils_NativeHelper
  * Method:    tsmm
- * Signature: ([D[DIIZI)Z
+ * Signature: ([D[DIIZI)I
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_tsmm
+JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_tsmm
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jint, jint, jboolean, jint);
 
 /*
@@ -55,7 +55,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_tsmm
  * Method:    conv2dDense
  * Signature: ([D[D[DIIIIIIIIIIIIII)I
  */
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dDense
+JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
@@ -63,7 +63,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dDense
  * Method:    dconv2dBiasAddDense
  * Signature: ([D[D[D[DIIIIIIIIIIIIII)I
  */
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_dconv2dBiasAddDense
+JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_dconv2dBiasAddDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
@@ -71,7 +71,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_dconv2dBiasAddDe
  * Method:    sconv2dBiasAddDense
  * Signature: (Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;Ljava/nio/FloatBuffer;IIIIIIIIIIIIII)I
  */
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_sconv2dBiasAddDense
+JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_sconv2dBiasAddDense
   (JNIEnv *, jclass, jobject, jobject, jobject, jobject, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
@@ -79,7 +79,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_sconv2dBiasAddDe
  * Method:    conv2dBackwardFilterDense
  * Signature: ([D[D[DIIIIIIIIIIIIII)I
  */
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardFilterDense
+JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardFilterDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*
@@ -87,7 +87,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardFi
  * Method:    conv2dBackwardDataDense
  * Signature: ([D[D[DIIIIIIIIIIIIII)I
  */
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardDataDense
+JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardDataDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
 /*

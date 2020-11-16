@@ -333,14 +333,15 @@ public class NativeHelper {
 	 * @return true if successfully loaded BLAS
 	 */
 	public static boolean loadLibraryHelperFromResource(String libFileName)  {
-		OutputStream out = null;
 		try(InputStream in = NativeHelper.class.getResourceAsStream("/lib/"+ libFileName)) {
 			// This logic is added because Java does not allow to load library from a resource file.
 			if(in != null) {
 				File temp = File.createTempFile(libFileName, "");
 				temp.deleteOnExit();
-				out = FileUtils.openOutputStream(temp);
+				OutputStream out = FileUtils.openOutputStream(temp);
 				IOUtils.copy(in, out);
+				// not closing the stream here makes dll loading fail on Windows
+				IOUtilFunctions.closeSilently(out);
 				System.load(temp.getAbsolutePath());
 				return true;
 			}
@@ -350,22 +351,19 @@ public class NativeHelper {
 		catch(IOException e) {
 			LOG.warn("Unable to load library " + libFileName + " from resource:" + e.getMessage());
 		}
-		finally {
-			IOUtilFunctions.closeSilently(out);
-		}
 		return false;
 	}
 
 	// TODO: Add pmm, wsloss, mmchain, etc.
 	
 	//double-precision matrix multiply dense-dense
-	public static native boolean dmmdd(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen,
+	public static native long dmmdd(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen,
 									   int numThreads);
 	//single-precision matrix multiply dense-dense
-	public static native boolean smmdd(FloatBuffer m1, FloatBuffer m2, FloatBuffer ret, int m1rlen, int m1clen, int m2clen,
+	public static native long smmdd(FloatBuffer m1, FloatBuffer m2, FloatBuffer ret, int m1rlen, int m1clen, int m2clen,
 									   int numThreads);
 	//transpose-self matrix multiply
-	public static native boolean tsmm(double[] m1, double[] ret, int m1rlen, int m1clen, boolean leftTrans, int numThreads);
+	public static native long tsmm(double[] m1, double[] ret, int m1rlen, int m1clen, boolean leftTrans, int numThreads);
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// LibMatrixDNN operations:
@@ -376,25 +374,25 @@ public class NativeHelper {
 
 	// Returns -1 if failures or returns number of nonzeros
 	// Called by DnnCPInstruction if both input and filter are dense
-	public static native int conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 
+	public static native long conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 
-	public static native int dconv2dBiasAddDense(double [] input, double [] bias, double [] filter, double [] ret, int N,
+	public static native long dconv2dBiasAddDense(double [] input, double [] bias, double [] filter, double [] ret, int N,
 		int C, int H, int W, int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q,
 												 int numThreads);
 
-	public static native int sconv2dBiasAddDense(FloatBuffer input, FloatBuffer bias, FloatBuffer filter, FloatBuffer ret,
+	public static native long sconv2dBiasAddDense(FloatBuffer input, FloatBuffer bias, FloatBuffer filter, FloatBuffer ret,
 		int N, int C, int H, int W, int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q,
 												 int numThreads);
 
 	// Called by DnnCPInstruction if both input and filter are dense
-	public static native int conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C,
+	public static native long conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C,
 													   int H, int W, int K, int R, int S, int stride_h, int stride_w,
 													   int pad_h, int pad_w, int P, int Q, int numThreads);
 
 	// If both filter and dout are dense, then called by DnnCPInstruction
 	// Else, called by LibMatrixDNN's thread if filter is dense. dout[n] is converted to dense if sparse.
-	public static native int conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C,
+	public static native long conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C,
 													 int H, int W, int K, int R, int S, int stride_h, int stride_w,
 													 int pad_h, int pad_w, int P, int Q, int numThreads);
 

@@ -54,7 +54,9 @@ public class FederatedSplitTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{152, 12, "TRUE"}, {132, 11, "FALSE"}});
+		return Arrays.asList(new Object[][] {
+			// {152, 12, "TRUE"}, 
+			{132, 11, "FALSE"}});
 	}
 
 	@Override
@@ -125,9 +127,7 @@ public class FederatedSplitTest extends AutomatedTestBase {
 		if(cont.equals("TRUE"))
 			Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
 		else {
-			Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-			// TODO add federated diag operator.
-			// Assert.assertTrue(heavyHittersContainsString("fed_rdiag"));
+			Assert.assertTrue(heavyHittersContainsString("fed_rmempty"));
 		}
 		
 		TestUtils.shutdownThreads(t1, t2);

@@ -24,7 +24,6 @@ X = federated(addresses=list($X1, $X2),
 Y = federated(addresses=list($Y1, $Y2),
     ranges=list(list(0, 0), list($r / 2, $c), list($r / 2, 0), list($r, $c)))
 
-
-[Xtr, Xte, Ytr, Yte] = split(X=X,Y=Y,f=0.95, cont=$Cont, seed = 13)
+[Xtr, Xte, Ytr, Yte] = split(X=X, Y=Y, f=0.95, cont=$Cont, seed = 13)
 write(Xte, $Z)
 print(toString(Xte))

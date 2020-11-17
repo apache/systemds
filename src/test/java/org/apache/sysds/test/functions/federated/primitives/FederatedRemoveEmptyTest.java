@@ -55,7 +55,10 @@ public class FederatedRemoveEmptyTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{20, 10, true}, {20, 12, false}});
+		return Arrays.asList(new Object[][] {
+			{20, 12, true},
+			{20, 12, false}
+		});
 	}
 
 	@Override
@@ -94,11 +97,6 @@ public class FederatedRemoveEmptyTest extends AutomatedTestBase {
 
 		for(int k : new int[] {1, 2, 3}) {
 			Arrays.fill(X3[k], 0);
-			if(!rowPartitioned) {
-				Arrays.fill(X1[k], 0);
-				Arrays.fill(X2[k], 0);
-				Arrays.fill(X4[k], 0);
-			}
 		}
 
 		MatrixCharacteristics mc = new MatrixCharacteristics(r, c, blocksize, r * c);

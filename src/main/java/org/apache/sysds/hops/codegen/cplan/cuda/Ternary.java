@@ -19,15 +19,12 @@
 
 package org.apache.sysds.hops.codegen.cplan.cuda;
 
-import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
-import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
-import org.apache.sysds.runtime.codegen.SpoofCellwise;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
-public class Ternary implements CodeTemplate {
+public class Ternary extends CodeTemplate {
 
 	@Override
 	public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
@@ -105,26 +102,4 @@ public class Ternary implements CodeTemplate {
 
 		}
 	}
-
-	@Override
-	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector,
-							  boolean scalarInput) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate() {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(SpoofCellwise.CellType ct) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
 }

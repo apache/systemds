@@ -30,26 +30,6 @@ import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 
 public class CNodeRow extends CNodeTpl
 {
-	private static final String TEMPLATE = 
-			  "package codegen;\n"
-			+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofRowwise;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;\n"
-			+ "import org.apache.commons.math3.util.FastMath;\n"
-			+ "\n"
-			+ "public final class %TMP% extends SpoofRowwise { \n"
-			+ "  public %TMP%() {\n"
-			+ "    super(RowType.%TYPE%, %CONST_DIM2%, %TB1%, %VECT_MEM%);\n"
-			+ "  }\n"
-			+ "  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix, int rix) { \n"
-			+ "%BODY_dense%"
-			+ "  }\n"
-			+ "  protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int alen, int len, long grix, int rix) { \n"
-			+ "%BODY_sparse%"
-			+ "  }\n"
-			+ "}\n";
-
 	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rix] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
 	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, ci, %LEN%);\n";
@@ -98,14 +78,12 @@ public class CNodeRow extends CNodeTpl
 	@Override
 	public String codegen(boolean sparse, GeneratorAPI api) {
 		// note: ignore sparse flag, generate both
-		String tmp = TEMPLATE;
-		
+		String tmp = getLanguageTemplate(this, api);
+
 		//generate dense/sparse bodies
-		String tmpDense = _output.codegen(false, api)
-			+ getOutputStatement(_output.getVarname());
+		String tmpDense = _output.codegen(false, api) + getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
-		String tmpSparse = _output.codegen(true, api)
-			+ getOutputStatement(_output.getVarname());
+		String tmpSparse = _output.codegen(true, api) + getOutputStatement(_output.getVarname());
 		tmp = tmp.replace("%TMP%", createVarname());
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		tmp = tmp.replace("%BODY_sparse%", tmpSparse);
@@ -132,8 +110,7 @@ public class CNodeRow extends CNodeTpl
 			case NO_AGG:
 			case NO_AGG_B1:
 			case NO_AGG_CONST:
-				return TEMPLATE_NOAGG_OUT.replace("%IN%", varName)
-					.replace("%LEN%", _output.getVarname()+".length");
+				return TEMPLATE_NOAGG_OUT.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+".length");
 			case FULL_AGG:
 				return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
 			case ROW_AGG:

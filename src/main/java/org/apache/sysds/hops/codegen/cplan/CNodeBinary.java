@@ -157,7 +157,6 @@ public class CNodeBinary extends CNode {
 		boolean scalarVector = (_inputs.get(0).getDataType().isScalar()
 			&& _inputs.get(1).getDataType().isMatrix());
 		String var = createVarname();
-//		String tmp = _type.getTemplate(api, lang, lsparseLhs, lsparseRhs, scalarVector, scalarInput);
 		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector, scalarInput);
 
 		tmp = tmp.replace("%TMP%", var);

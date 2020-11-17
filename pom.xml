@@ -112,6 +112,14 @@
 				</includes>
 				<targetPath>cuda/headers</targetPath>
 			</resource>
+			<resource>
+				<directory>src/main/java/org/apache/sysds/hops/codegen/cplan/java</directory>
+				<includes>
+					<include>Cellwise.java.template</include>
+					<include>Rowwise.java.template</include>
+				</includes>
+				<targetPath>java/spoof</targetPath>
+			</resource>
 		</resources>
 
 		<plugins>

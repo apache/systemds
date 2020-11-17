@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 # default to gcc 8.x while we're still supporting CUDA 10.x only
 if (UNIX)

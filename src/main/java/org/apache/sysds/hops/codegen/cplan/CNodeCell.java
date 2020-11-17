@@ -119,7 +119,7 @@ public class CNodeCell extends CNodeTpl
 	public String codegen(boolean sparse, GeneratorAPI _api) {
 		api = _api;
 
-		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type);
+		String tmp = getLanguageTemplate(this, api);
 
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false, api);

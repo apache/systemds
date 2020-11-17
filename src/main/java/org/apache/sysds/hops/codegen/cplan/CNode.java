@@ -235,33 +235,45 @@ public abstract class CNode
 	protected CodeTemplate getLanguageTemplateClass(CNode caller, GeneratorAPI api) {
 		switch (api) {
 			case CUDA:
-				if(caller instanceof CNodeCell)
-					return new org.apache.sysds.hops.codegen.cplan.cuda.CellWise();
-				else if (caller instanceof CNodeUnary)
-					return new org.apache.sysds.hops.codegen.cplan.cuda.Unary();
-				else if (caller instanceof CNodeBinary)
+				if(caller instanceof CNodeBinary)
 					return new org.apache.sysds.hops.codegen.cplan.cuda.Binary();
-				else if (caller instanceof CNodeTernary)
+				else if(caller instanceof CNodeTernary)
 					return new org.apache.sysds.hops.codegen.cplan.cuda.Ternary();
-				else
-					return null;
-			case JAVA:
-				if(caller instanceof CNodeCell)
-					return new org.apache.sysds.hops.codegen.cplan.java.CellWise();
-				else if (caller instanceof CNodeUnary)
-					return new org.apache.sysds.hops.codegen.cplan.java.Unary();
-				else if (caller instanceof CNodeBinary)
+				else if(caller instanceof CNodeUnary)
+					return new org.apache.sysds.hops.codegen.cplan.cuda.Unary();
+				else return null;
+			case JAVA: 
+				if(caller instanceof CNodeBinary)
 					return new org.apache.sysds.hops.codegen.cplan.java.Binary();
-				else if (caller instanceof CNodeTernary)
+				else if(caller instanceof CNodeTernary)
 					return new org.apache.sysds.hops.codegen.cplan.java.Ternary();
-
-				else
-					return null;
+				else if(caller instanceof CNodeUnary)
+					return new org.apache.sysds.hops.codegen.cplan.java.Unary();
+				else return null;
 			default:
 				throw new RuntimeException("API not supported by code generator: " + api.toString());
 		}
 	}
-
+	
+	protected String getLanguageTemplate(CNode caller, GeneratorAPI api) {
+		switch (api) {
+			case CUDA:
+				if(caller instanceof CNodeCell)
+					return CodeTemplate.getTemplate("/cuda/spoof/cellwise.cu");
+				else if(caller instanceof CNodeRow)
+					return CodeTemplate.getTemplate("/cuda/spoof/rowwise.cu");
+				else return null;
+			case JAVA:
+				if(caller instanceof CNodeCell)
+					return CodeTemplate.getTemplate("/java/org/apache/sysds/hops/codegen/cplan/java/Cellwise.java.template");
+				else if(caller instanceof CNodeRow)
+					return CodeTemplate.getTemplate("/java/org/apache/sysds/hops/codegen/cplan/java/Rowwise.java.template");
+				else return null;
+			default:
+				throw new RuntimeException("API not supported by code generator: " + api.toString());
+		}
+	}
+	
 	public abstract boolean isSupported(GeneratorAPI api);
 	
 	public void setVarName(String name) { _genVar = name; }

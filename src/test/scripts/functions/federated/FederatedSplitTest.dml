@@ -27,4 +27,3 @@ Y = federated(addresses=list($Y1, $Y2),
 
 [Xtr, Xte, Ytr, Yte] = split(X=X,Y=Y,f=0.95, cont=$Cont, seed = 13)
 write(Xte, $Z)
-print(toString(Xte))

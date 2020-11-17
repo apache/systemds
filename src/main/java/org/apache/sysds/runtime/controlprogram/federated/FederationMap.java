@@ -151,10 +151,20 @@ public class FederationMap
 		int[][] ix = new int[_fedMap.size()][];
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-			int rl = transposed ? 0 : e.getKey().getBeginDimsInt()[0];
-			int ru = transposed ? cb.getNumRows()-1 : e.getKey().getEndDimsInt()[0]-1;
-			int cl = transposed ? e.getKey().getBeginDimsInt()[0] : 0;
-			int cu = transposed ? e.getKey().getEndDimsInt()[0]-1 : cb.getNumColumns()-1;
+			int rl, ru, cl, cu;
+			if(_type == FType.ROW) {
+				rl = transposed ? 0 : e.getKey().getBeginDimsInt()[0];
+				ru = transposed ? cb.getNumRows() - 1 : e.getKey().getEndDimsInt()[0] - 1;
+				cl = transposed ? e.getKey().getBeginDimsInt()[0] : 0;
+				cu = transposed ? e.getKey().getEndDimsInt()[0] - 1 : cb.getNumColumns() - 1;
+			} else {
+				rl = transposed ? 0 : e.getKey().getBeginDimsInt()[0];
+				ru = transposed ? cb.getNumRows() - 1 : e.getKey().getEndDimsInt()[0] - 1;
+				cl = transposed ? e.getKey().getBeginDimsInt()[1] : 0;
+				cu = transposed ? e.getKey().getEndDimsInt()[1] - 1 : cb.getNumColumns() - 1;
+			}
+
+
 			ix[pos++] = new int[] {rl, ru, cl, cu};
 		}
 		

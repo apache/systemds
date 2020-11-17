@@ -53,12 +53,18 @@ m_split = function(Matrix[Double] X, Matrix[Double] Y, Double f=0.7, Boolean con
   }
   # sampled train/test splits
   else {
-    I = rand(rows=nrow(X), cols=1, seed=seed) <= f;
-    P1 = removeEmpty(target=diag(I), margin="rows", select=I);
-    P2 = removeEmpty(target=diag(I==0), margin="rows", select=I==0);
-    Xtrain = P1 %*% X;
-    Ytrain = P1 %*% Y;
-    Xtest = P2 %*% X;
-    Ytest = P2 %*% Y;
+  	# create random select vector according to f and then
+  	# extract tuples via permutation (selection) matrix multiply
+		# or directly via removeEmpty by selection vector
+  	I = rand(rows=nrow(X), cols=1, seed=seed) <= f;
+
+  	print(toString(X))
+  	print(toString(I==0))
+
+    Xtrain = removeEmpty(target=X, margin="rows", select=I);
+    Ytrain = removeEmpty(target=Y, margin="rows", select=I);
+    Xtest = removeEmpty(target=X, margin="rows", select=(I==0));
+    Ytest = removeEmpty(target=Y, margin="rows", select=(I==0));
+    print(toString(Xtest))
   }
 }

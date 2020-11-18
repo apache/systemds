@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -158,7 +159,6 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
-
 			if(ins.getVariableOpcode() == VariableOperationCode.Write 
 				&& ins.getInput1().isMatrix()
 				&& ins.getInput3().getName().contains("federated")){
@@ -173,6 +173,13 @@ public class FEDInstructionUtils {
 				&& ins.getInput1().isFrame() 
 				&& ec.getCacheableData(ins.getInput1()).isFederated()){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
+			}
+		}
+		else if(inst instanceof AggregateTernaryCPInstruction){
+			AggregateTernaryCPInstruction ins = (AggregateTernaryCPInstruction) inst;
+			if(ins.input1.isMatrix() && ec.getCacheableData(ins.input1).isFederated() && ins.input2.isMatrix() &&
+				ec.getCacheableData(ins.input2).isFederated()) {
+				fedinst = AggregateTernaryFEDInstruction.parseInstruction(ins);
 			}
 		}
 

@@ -61,18 +61,15 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 	public void processInstruction(ExecutionContext ec) {
 		VariableOperationCode opcode = _in.getVariableOpcode();
 		switch(opcode) {
-
 			case Write:
 				processWriteInstruction(ec);
 				break;
-
 			case CastAsMatrixVariable:
 				processCastAsMatrixVariableInstruction(ec);
 				break;
 			case CastAsFrameVariable:
 				processCastAsFrameVariableInstruction(ec);
 				break;
-
 			default:
 				throw new DMLRuntimeException("Unsupported Opcode for federated Variable Instruction : " + opcode);
 		}

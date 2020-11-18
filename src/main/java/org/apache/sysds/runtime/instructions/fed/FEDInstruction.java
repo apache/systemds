@@ -29,6 +29,7 @@ public abstract class FEDInstruction extends Instruction {
 	public enum FEDType {
 		AggregateBinary,
 		AggregateUnary,
+		AggregateTernary,
 		Append,
 		Binary,
 		Init,

@@ -135,7 +135,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
 
     if(verbose) {
       colstr = ifelse(columnId!=-1, ", Col:"+columnId + " ,", " ,")
-      print("Iter:" + toString(iter) + "InnerIter:" + toString(iiter) +" --- "+ colstr + " Obj:" + obj)
+      print("Iter: " + toString(iter) + " InnerIter: " + toString(iiter) +" --- "+ colstr + " Obj:" + obj)
     }
 
     tmp = sum(s * g_old)

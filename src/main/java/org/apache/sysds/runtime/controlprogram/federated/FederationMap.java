@@ -231,8 +231,14 @@ public class FederationMap {
 		List<Future<FederatedResponse>> tmp = new ArrayList<>();
 		for(FederatedData fd : _fedMap.values())
 			tmp.add(fd.executeFederatedOperation(request));
-		// wait to avoid interference w/ following requests
-		FederationUtils.waitFor(tmp);
+		// This cleaning is allowed to go in a separate thread, and finish on its own.
+		// The benefit is that the program is able to continue working on other things.
+		// The downside is that at the end of execution these threads can have executed
+		// for some extra time that can in particular be noticeable for shorter federated jobs.
+
+		// To force the cleanup use waitFor -> drastically increasing execution time if
+		// communication is slow to federated sites.
+		// FederationUtils.waitFor(tmp);
 	}
 
 	private static FederatedRequest[] addAll(FederatedRequest a, FederatedRequest[] b) {

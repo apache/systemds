@@ -120,8 +120,6 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
       h = dd + sum(Xd * sv * Xd)
       step_sz = step_sz - g/h
       continue1 = (g*g/h >= epsilon)
-      if(verbose)
-        print("Inner Iter:" + toString(iiter))
       iiter = iiter + 1
     }
 
@@ -137,7 +135,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
 
     if(verbose) {
       colstr = ifelse(columnId!=-1, ", Col:"+columnId + " ,", " ,")
-      print("Iter:" + toString(iter) + colstr + " Obj:" + obj)
+      print("Iter:" + toString(iter) + "InnerIter:" + toString(iiter) +" --- "+ colstr + " Obj:" + obj)
     }
 
     tmp = sum(s * g_old)

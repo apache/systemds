@@ -48,9 +48,68 @@ m_gmm_predict = function(Matrix[Double] X, Matrix[Double] weight, Matrix[Double]
 
 return(Matrix[Double] predict, Matrix[Double] posterior_prob)
 {
-  weighted_log_prob =  estimate_log_gaussian_prob(X, mu, precisions_cholesky, model) + log(weight)
+  # compute the posterior probabilities for new instances
+  weighted_log_prob =  compute_log_gaussian_prob(X, mu, precisions_cholesky, model) + log(weight)
   log_prob_norm = logSumExp(weighted_log_prob, "rows")
   log_resp = weighted_log_prob - log_prob_norm
   posterior_prob = exp(log_resp)
   predict =  rowIndexMax(weighted_log_prob)
+}
+
+
+compute_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] mu, Matrix[Double] prec_chol, String model)
+return(Matrix[Double] es_log_prob ) # nrow(X) * n_components
+{
+  n_components = nrow(mu)
+  d = ncol(X)
+
+  if(model == "VVV")
+  { 
+    log_prob = matrix(0, nrow(X), n_components) # log probabilities
+    log_det_chol = matrix(0, 1, n_components)   # log determinant 
+    i = 1
+    for(k in 1:n_components)
+    {
+      prec = prec_chol[i:(k*ncol(X)),]
+      y = X %*% prec - mu[k,] %*% prec  
+      log_prob[, k] = rowSums(y*y)
+      # compute log_det_cholesky
+      log_det = sum(log(diag(t(prec)))) 
+      log_det_chol[1,k] = log_det
+      i = i + ncol(X)
+    }      
+  }
+  else if(model == "EEE")
+  { 
+    log_prob = matrix(0, nrow(X), n_components) 
+    log_det_chol = as.matrix(sum(log(diag(prec_chol))))
+    prec = prec_chol
+    for(k in 1:n_components) {
+      y = X %*% prec - mu[k,] %*% prec
+      log_prob[, k] = rowSums(y*y) 
+    }
+  }
+  else if(model ==  "VVI")
+  {
+    log_det_chol = t(rowSums(log(prec_chol)))
+    prec = prec_chol
+    precisions = prec^2
+    bc_matrix = matrix(1,nrow(X), nrow(mu))
+    log_prob = (bc_matrix*t(rowSums(mu^2 * precisions)) -
+                    2. * (X %*% t(mu * precisions)) +
+                    X^2 %*% t(precisions))
+  }
+  else if (model == "VII")
+  {
+    log_det_chol = t(d * log(prec_chol))
+    prec = prec_chol
+    precisions = prec^ 2
+    bc_matrix = matrix(1,nrow(X), nrow(mu))
+    log_prob = (bc_matrix * t(rowSums(mu^2) * precisions) -
+                2 * X %*% t(mu * precisions) + rowSums(X*X) %*% t(precisions) )
+  }
+  if(ncol(log_det_chol) == 1)
+    log_det_chol = matrix(1, 1, ncol(log_prob)) * log_det_chol
+    
+  es_log_prob = -.5 * (ncol(X) * log(2 * pi) + log_prob) + log_det_chol
 }

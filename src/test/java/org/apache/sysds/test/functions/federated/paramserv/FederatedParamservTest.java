@@ -54,6 +54,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final double _eta;
 	private final String _utype;
 	private final String _freq;
+	private final String _scheme;
 
 	// parameters
 	@Parameterized.Parameters
@@ -61,23 +62,21 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		return Arrays.asList(new Object[][] {
 			// Network type, number of federated workers, examples per worker, batch size, epochs, learning rate, update
 			// type, update frequency
-			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"}, {"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"}, {"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
-			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"}, {"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
-			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"}, {"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
-			{"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH"},
-			// {"TwoNN", 5, 1000, 200, 2, 0.01, "ASP", "BATCH"},
-			// {"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH"},
-			// {"TwoNN", 5, 1000, 200, 2, 0.01, "ASP", "EPOCH"},
-			// {"CNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH"},
-			// {"CNN", 5, 1000, 200, 2, 0.01, "ASP", "BATCH"},
-			{"CNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH"},
-			// {"CNN", 5, 1000, 200, 2, 0.01, "ASP", "EPOCH"}
+			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
+			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH", "SHUFFLE"},
+			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
+			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH", "SHUFFLE"},
+			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
+			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH", "SHUFFLE"},
+			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
+			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH", "SHUFFLE"},
+			{"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH", "SHUFFLE"},
+			{"CNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH", "SHUFFLE"}
 		});
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int examplesPerWorker, int batch_size,
-		int epochs, double eta, String utype, String freq) {
+		int epochs, double eta, String utype, String freq, String scheme) {
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_examplesPerWorker = examplesPerWorker;
@@ -86,6 +85,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		_eta = eta;
 		_utype = utype;
 		_freq = freq;
+		_scheme = scheme;
 	}
 
 	@Override
@@ -131,10 +131,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				"eta=" + _eta,
 				"utype=" + _utype,
 				"freq=" + _freq,
+				"scheme=" + _scheme,
 				"network_type=" + _networkType,
 				"channels=" + C,
 				"hin=" + Hin,
-				"win=" + Win));
+				"win=" + Win,
+				"seed=" + 25));
 
 			// for each worker
 			List<Integer> ports = new ArrayList<>();

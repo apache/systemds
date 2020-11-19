@@ -56,6 +56,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
 import org.apache.sysds.parser.Statement.PSModeType;
 import org.apache.sysds.parser.Statement.PSScheme;
+import org.apache.sysds.parser.Statement.FederatedPSScheme;
 import org.apache.sysds.parser.Statement.PSUpdateType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
@@ -86,6 +87,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
+	private static final FederatedPSScheme DEFAULT_FEDERATED_SCHEME = FederatedPSScheme.KEEP_DATA_ON_WORKER;
 	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
 	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
 
@@ -124,11 +126,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// get inputs
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
+		FederatedPSScheme federatedPSScheme = getFederatedScheme();
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 
 		// partition federated data
-		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(Statement.FederatedPSScheme.KEEP_DATA_ON_WORKER)
+		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme)
 				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
 		List<MatrixObject> pFeatures = result.pFeatures;
 		List<MatrixObject> pLabels = result.pLabels;
@@ -141,8 +144,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
-		// Level of par is 1 because one worker will be launched per task
-		// TODO: Fix recompilation
+		// Level of par is -1 so each federated worker can scale to its cpu cores
 		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, -1, true);
 		// Create workers' execution context
 		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
@@ -469,4 +471,15 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return scheme;
 	}
 
+	private FederatedPSScheme getFederatedScheme() {
+		FederatedPSScheme federated_scheme = DEFAULT_FEDERATED_SCHEME;
+		if (getParameterMap().containsKey(PS_SCHEME)) {
+			try {
+				federated_scheme = FederatedPSScheme.valueOf(getParam(PS_SCHEME));
+			} catch (IllegalArgumentException e) {
+				throw new DMLRuntimeException(String.format("Paramserv function in federated mode: not support data partition scheme '%s'", getParam(PS_SCHEME)));
+			}
+		}
+		return federated_scheme;
+	}
 }

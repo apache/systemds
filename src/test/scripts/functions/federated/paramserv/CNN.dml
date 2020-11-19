@@ -208,7 +208,7 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
 
   # Use paramserv function
   model = paramserv(model=model, features=X, labels=y, val_features=X_val, val_labels=y_val,
-    upd="./src/scripts/CNN.dml::gradients", agg="./src/scripts/CNN.dml::aggregation",
+    upd="./src/test/scripts/functions/federated/paramserv/CNN.dml::gradients", agg="./src/test/scripts/functions/federated/paramserv/CNN.dml::aggregation",
     utype=utype, freq=freq, epochs=epochs, batchsize=batch_size,
     scheme=scheme, hyperparams=hyperparams)
 }

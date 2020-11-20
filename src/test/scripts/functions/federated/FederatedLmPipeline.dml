@@ -19,8 +19,10 @@
 #
 #-------------------------------------------------------------
 
-Fin = federated(addresses=list($in_X1, $in_X2),
-    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
+Fin = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+    ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+        list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)))
+
 y = read($in_Y)
 
 # one hot encoding categorical, other passthrough
@@ -35,7 +37,7 @@ colMean = (colMeans(X))
 upperBound = colMean + 1.5 * colSD
 lowerBound = colMean - 1.5 * colSD
 outFilter = (X < lowerBound) | (X > upperBound)
-X = X - outFilter*X + outFilter*colMeans(X); 
+X = X - outFilter*X + outFilter*colMeans(X);
 
 # normalization
 X = scale(X=X, center=TRUE, scale=TRUE);
@@ -43,7 +45,7 @@ X = scale(X=X, center=TRUE, scale=TRUE);
 # split training and testing
 [Xtrain , Xtest, ytrain, ytest] = split(X=X, Y=y, cont=$cont, seed=7)
 
-# train regression model 
+# train regression model
 B = lm(X=Xtrain, y=ytrain, icpt=1, reg=1e-3, tol=1e-9, verbose=TRUE)
 
 # model evaluation on test split
@@ -55,11 +57,11 @@ ss_res = sum(y_residual^2);
 ss_avg_res = ss_res - nrow(ytest) * avg_res^2;
 R2 = 1 - ss_res / (sum(y^2) - nrow(ytest) * (sum(y)/nrow(ytest))^2);
 print("\nAccuracy:" +
-      "\n--sum(ytest) = " + sum(ytest) + 
+      "\n--sum(ytest) = " + sum(ytest) +
       "\n--sum(yhat) = " + sum(yhat) +
-      "\n--AVG_RES_Y: " + avg_res + 
-      "\n--SS_AVG_RES_Y: " + ss_avg_res + 
-      "\n--R2: " + R2 );  
- 
+      "\n--AVG_RES_Y: " + avg_res +
+      "\n--SS_AVG_RES_Y: " + ss_avg_res +
+      "\n--R2: " + R2 );
+
 # write trained model and meta data
 write(B, $out)

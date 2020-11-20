@@ -76,37 +76,46 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 			X = rc.append(X, new MatrixBlock(), true);
 			
 			// We have two matrices handled by a single federated worker
-			int halfRows = rows / 2;
-			writeInputMatrixWithMTD("X1", X.slice(0, halfRows-1), false);
-			writeInputMatrixWithMTD("X2", X.slice(halfRows, rows-1), false);
+			int quarterRows = rows / 4;
+			writeInputMatrixWithMTD("X1", X.slice(0, quarterRows-1), false);
+			writeInputMatrixWithMTD("X2", X.slice(quarterRows, 2*quarterRows-1), false);
+			writeInputMatrixWithMTD("X3", X.slice(2*quarterRows, 3*quarterRows-1), false);
+			writeInputMatrixWithMTD("X4", X.slice(3*quarterRows, rows-1), false);
 			writeInputMatrixWithMTD("Y", y, false);
 			
 			// empty script name because we don't execute any script, just start the worker
 			fullDMLScriptName = "";
 			int port1 = getRandomAvailablePort();
 			int port2 = getRandomAvailablePort();
+			int port3 = getRandomAvailablePort();
+			int port4 = getRandomAvailablePort();
 			Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 			Thread t2 = startLocalFedWorkerThread(port2);
+			Thread t3 = startLocalFedWorkerThread(port3);
+			Thread t4 = startLocalFedWorkerThread(port4);
 	
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
 	
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-args", input("X1"), input("X2"), input("Y"),
+			programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"), input("Y"),
 				String.valueOf(contSplits).toUpperCase(), expected("Z")};
 			runTest(true, false, null, -1);
 	
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + (cols+1),
+				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
+				"rows=" + rows, "cols=" + (cols+1),
 				"in_Y=" + input("Y"), "cont=" + String.valueOf(contSplits).toUpperCase(), "out=" + output("Z")};
 			runTest(true, false, null, -1);
 	
 			// compare via files
 			compareResults(1e-2);
-			TestUtils.shutdownThreads(t1, t2);
+			TestUtils.shutdownThreads(t1, t2, t3, t4);
 		}
 		finally {
 			resetExecMode(oldExec);

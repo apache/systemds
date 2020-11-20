@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.algorithms;
 
+import com.sun.tools.javac.util.List;
 import org.junit.Test;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
@@ -35,7 +36,8 @@ import org.apache.sysds.test.TestUtils;
 public class FederatedLmPipeline extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
-	private final static String TEST_NAME = "FederatedLmPipeline";
+	private final static String TEST_NAME1 = "FederatedLmPipeline";
+	private final static String TEST_NAME2 = "FederatedLmPipeline4Workers";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedLmPipeline.class.getSimpleName() + "/";
 
 	public int rows = 10000;
@@ -44,20 +46,27 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"Z"}));
 	}
 
 	@Test
 	public void federatedLmPipelineContinguous() {
-		federatedLmPipeline(Types.ExecMode.SINGLE_NODE, true);
+		federatedLmPipeline(Types.ExecMode.SINGLE_NODE, true, TEST_NAME1);
 	}
+
+	@Test
+	public void federatedLmPipelineContinguous4Workers() { federatedLmPipeline(Types.ExecMode.SINGLE_NODE, true, TEST_NAME2); }
 	
 	@Test
 	public void federatedLmPipelineSampled() {
-		federatedLmPipeline(Types.ExecMode.SINGLE_NODE, false);
+		federatedLmPipeline(Types.ExecMode.SINGLE_NODE, false, TEST_NAME1);
 	}
 
-	public void federatedLmPipeline(ExecMode execMode, boolean contSplits) {
+	@Test
+	public void federatedLmPipelineSampled4Workers() { federatedLmPipeline(Types.ExecMode.SINGLE_NODE, false, TEST_NAME2); }
+
+	public void federatedLmPipeline(ExecMode execMode, boolean contSplits, String TEST_NAME) {
 		ExecMode oldExec = setExecMode(execMode);
 		boolean oldSort = EncoderRecode.SORT_RECODE_MAP;
 		EncoderRecode.SORT_RECODE_MAP = true;
@@ -76,11 +85,13 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 			X = rc.append(X, new MatrixBlock(), true);
 			
 			// We have two matrices handled by a single federated worker
-			int quarterRows = rows / 4;
-			writeInputMatrixWithMTD("X1", X.slice(0, quarterRows-1), false);
-			writeInputMatrixWithMTD("X2", X.slice(quarterRows, 2*quarterRows-1), false);
-			writeInputMatrixWithMTD("X3", X.slice(2*quarterRows, 3*quarterRows-1), false);
-			writeInputMatrixWithMTD("X4", X.slice(3*quarterRows, rows-1), false);
+			int quarterRows = TEST_NAME.equals(TEST_NAME2) ? rows / 4 : rows / 2;
+			List<Integer> k =  TEST_NAME.equals(TEST_NAME2) ? List.of(quarterRows-1, quarterRows, 2*quarterRows-1, 2*quarterRows, 3*quarterRows-1, 3*quarterRows, rows-1) :
+				List.of(quarterRows-1, quarterRows, rows-1, 0, 0, 0, 0);
+			writeInputMatrixWithMTD("X1", X.slice(0, k.get(0)), false);
+			writeInputMatrixWithMTD("X2", X.slice(k.get(1), k.get(2)), false);
+			writeInputMatrixWithMTD("X3", X.slice(k.get(3), k.get(4)), false);
+			writeInputMatrixWithMTD("X4", X.slice(k.get(5), k.get(6)), false);
 			writeInputMatrixWithMTD("Y", y, false);
 			
 			// empty script name because we don't execute any script, just start the worker

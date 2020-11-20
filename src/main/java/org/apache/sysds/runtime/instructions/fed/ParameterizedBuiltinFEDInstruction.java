@@ -104,7 +104,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		LinkedHashMap<String, String> paramsMap = constructParameterMap(parts);
 
 		// determine the appropriate value function
-		if(opcode.equalsIgnoreCase("replace") || opcode.equalsIgnoreCase("rmempty")) {
+		if(opcode.equalsIgnoreCase("replace") || opcode.equalsIgnoreCase("rmempty")
+			|| opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
 			ValueFunction func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinFEDInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
@@ -137,6 +138,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		}
 		else if(opcode.equals("rmempty"))
 			rmempty(ec);
+		else if(opcode.equals("lowertri") || opcode.equals("uppertri"))
+			triangle(ec, opcode);
 		else if(opcode.equalsIgnoreCase("transformdecode"))
 			transformDecode(ec);
 		else if(opcode.equalsIgnoreCase("transformapply"))
@@ -145,22 +148,117 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
 		}
 	}
+	
+	private void triangle(ExecutionContext ec, String opcode) {
+		boolean lower = opcode.equals("lowertri");
+		boolean diag = Boolean.parseBoolean(params.get("diag"));
+		boolean values = Boolean.parseBoolean(params.get("values"));
+
+		MatrixObject mo = (MatrixObject) getTarget(ec);
+
+		FederationMap fedMap = mo.getFedMapping();
+		boolean rowFed = mo.isFederated(FederationMap.FType.ROW);
+
+		long varID = FederationUtils.getNextFedDataID();
+		FederationMap diagFedMap;
+
+		diagFedMap = fedMap.mapParallel(varID, (range, data) -> {
+			try {
+				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
+					FederatedRequest.RequestType.EXEC_UDF, -1,
+					new ParameterizedBuiltinFEDInstruction.Tri(data.getVarID(), varID,
+						rowFed ? (new int[] {range.getBeginDimsInt()[0], range.getEndDimsInt()[0]}) :
+							new int[] {range.getBeginDimsInt()[1], range.getEndDimsInt()[1]},
+						rowFed, lower, diag, values))).get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+				return null;
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		});
+		MatrixObject out = ec.getMatrixObject(output);
+		out.setFedMapping(diagFedMap);
+	}
+
+	private static class Tri extends FederatedUDF {
+		private static final long serialVersionUID = 6254009025304038215L;
+
+		private final long _outputID;
+		private final int[] _slice;
+		private final boolean _rowFed;
+		private final boolean _lower;
+		private final boolean _diag;
+		private final boolean _values;
+
+		private Tri(long input, long outputID, int[] slice, boolean rowFed, boolean lower, boolean diag, boolean values) {
+			super(new long[] {input});
+			_outputID = outputID;
+			_slice = slice;
+			_rowFed = rowFed;
+			_lower = lower;
+			_diag = diag;
+			_values = values;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
+			MatrixBlock soresBlock, addBlock;
+			MatrixBlock ret;
+
+			//slice
+			soresBlock = _rowFed ?
+				mb.slice(0, mb.getNumRows()-1, _slice[0], _slice[1]-1, new MatrixBlock()) :
+				mb.slice(_slice[0], _slice[1]-1);
+
+			//triangle
+			MatrixBlock tri = soresBlock.extractTriangular(new MatrixBlock(), _lower, _diag, _values);
+			// todo: optimize to not allocate and slice all these matrix blocks, but leveraging underlying dense or sparse blocks.
+			if(_rowFed) {
+				ret = new MatrixBlock(mb.getNumRows(), mb.getNumColumns(), 0.0);
+				ret.copy(0, ret.getNumRows()-1, _slice[0], _slice[1]-1, tri, false);
+				if(_slice[1] <= mb.getNumColumns()-1 && !_lower) {
+					addBlock = mb.slice(0, mb.getNumRows()-1, _slice[1], mb.getNumColumns()-1, new MatrixBlock());
+					ret.copy(0, ret.getNumRows()-1, _slice[1], ret.getNumColumns() - 1, addBlock, false);
+				} else if(_slice[0] > 0 && _lower) {
+					addBlock = mb.slice(0, mb.getNumRows()-1, 0, _slice[0]-1, new MatrixBlock());
+					ret.copy(0, ret.getNumRows()-1, 0,  _slice[0]-1, addBlock, false);
+				}
+			} else {
+				ret = new MatrixBlock(mb.getNumRows(), mb.getNumColumns(), 0.0);
+				ret.copy(_slice[0], _slice[1]-1, 0, mb.getNumColumns() - 1, tri, false);
+				if(_slice[0] > 0 && !_lower) {
+					addBlock = mb.slice(0, _slice[0]-1,0, mb.getNumColumns()-1, new MatrixBlock());
+					ret.copy(0, ret.getNumRows() - 1, _slice[1], ret.getNumColumns() - 1, addBlock, false);
+				} else if(_slice[1] <= mb.getNumRows() &&_lower) {
+					addBlock = mb.slice(_slice[1], ret.getNumRows()-1,0, mb.getNumColumns()-1, new MatrixBlock());
+					ret.copy(_slice[1], ret.getNumRows() - 1, 0, mb.getNumColumns()-1, addBlock, false);
+				}
+			}
+			MatrixObject mout = ExecutionContext.createMatrixObject(ret);
+			ec.setVariable(String.valueOf(_outputID), mout);
+
+			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+		}
+	}
 
 	private void rmempty(ExecutionContext ec) {
 		String margin = params.get("margin");
 		if( !(margin.equals("rows") || margin.equals("cols")) )
-			throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
+			throw new DMLRuntimeException("Unsupported margin identifier '"+margin+"'.");
 
 		MatrixObject mo = (MatrixObject) getTarget(ec);
 		MatrixObject select = params.containsKey("select") ? ec.getMatrixObject(params.get("select")) : null;
 		MatrixObject out = ec.getMatrixObject(output);
 
 		boolean marginRow = params.get("margin").equals("rows");
-		boolean k = ((marginRow && mo.getFedMapping().getType().isColPartitioned()) ||
+		boolean isNotAligned = ((marginRow && mo.getFedMapping().getType().isColPartitioned()) ||
 			(!marginRow && mo.getFedMapping().getType().isRowPartitioned()));
 
 		MatrixBlock s = new MatrixBlock();
-		if(select == null && k) {
+		if(select == null && isNotAligned) {
 			List<MatrixBlock> colSums = new ArrayList<>();
 			mo.getFedMapping().forEachParallel((range, data) -> {
 				try {
@@ -209,7 +307,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			mo.getFedMapping().execute(getTID(), true, fr1);
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
 		}
-		else if (!k) {
+		else if (!isNotAligned) {
 			//construct commands: broadcast , fed rmempty, clean broadcast
 			FederatedRequest[] fr1 = mo.getFedMapping().broadcastSliced(select, !marginRow);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString,

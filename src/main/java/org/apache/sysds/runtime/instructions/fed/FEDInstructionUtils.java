@@ -93,7 +93,7 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof UnaryCPInstruction && ! (inst instanceof IndexingCPInstruction)) {
 			UnaryCPInstruction instruction = (UnaryCPInstruction) inst;
-			if(inst instanceof ReorgCPInstruction && inst.getOpcode().equals("r'")) {
+			if(inst instanceof ReorgCPInstruction && (inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag"))) {
 				ReorgCPInstruction rinst = (ReorgCPInstruction) inst;
 				CacheableData<?> mo = ec.getCacheableData(rinst.input1);
 

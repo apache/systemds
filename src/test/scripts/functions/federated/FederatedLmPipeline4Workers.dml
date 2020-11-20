@@ -19,9 +19,11 @@
 #
 #-------------------------------------------------------------
 
-Fin = rbind(read($1), read($2))
+Fin = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+    ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+        list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)))
 
-y = read($5)
+y = read($in_Y)
 
 # one hot encoding categorical, other passthrough
 Fall = as.frame(Fin)
@@ -41,7 +43,7 @@ X = X - outFilter*X + outFilter*colMeans(X);
 X = scale(X=X, center=TRUE, scale=TRUE);
 
 # split training and testing
-[Xtrain , Xtest, ytrain, ytest] = split(X=X, Y=y, cont=$6, seed=7)
+[Xtrain , Xtest, ytrain, ytest] = split(X=X, Y=y, cont=$cont, seed=7)
 
 # train regression model
 B = lm(X=Xtrain, y=ytrain, icpt=1, reg=1e-3, tol=1e-9, verbose=TRUE)
@@ -62,4 +64,4 @@ print("\nAccuracy:" +
       "\n--R2: " + R2 );
 
 # write trained model and meta data
-write(B, $7)
+write(B, $out)

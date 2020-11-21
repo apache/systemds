@@ -19,15 +19,81 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 
 import java.util.List;
+import java.util.concurrent.Future;
 
 public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
+
+		for(int i = 0; i < pFeatures.size(); i++) {
+			// Works, because the map contains a single entry
+			FederatedData featuresData = (FederatedData) pFeatures.get(i).getFedMapping().getFRangeFDataMap().values().toArray()[0];
+			FederatedData labelsData = (FederatedData) pLabels.get(i).getFedMapping().getFRangeFDataMap().values().toArray()[0];
+
+			Future<FederatedResponse> udfResponse = featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
+					featuresData.getVarID(), new shuffleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()})));
+
+			try {
+				FederatedResponse response = udfResponse.get();
+				if(!response.isSuccessful())
+					throw new DMLRuntimeException("FederatedDataPartitioner ShuffleFederatedScheme: shuffle UDF returned fail");
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException("FederatedDataPartitioner ShuffleFederatedScheme: executing shuffle UDF failed" + e.getMessage());
+			}
+		}
+
 		return new Result(pFeatures, pLabels, pFeatures.size());
+	}
+
+	/**
+	 * Shuffle UDF executed on the federated worker
+	 */
+	private static class shuffleDataOnFederatedWorker extends FederatedUDF {
+		protected shuffleDataOnFederatedWorker(long[] inIDs) {
+			super(inIDs);
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixObject features = (MatrixObject) data[0];
+			MatrixObject labels = (MatrixObject) data[1];
+
+			// generate permutation matrix
+			MatrixBlock permutationMatrixBlock = ParamservUtils.generatePermutation(Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+
+			// matrix multiplies
+			features.acquireModify(permutationMatrixBlock.aggregateBinaryOperations(
+					permutationMatrixBlock, features.acquireReadAndRelease(), new MatrixBlock(),
+					new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()))
+			));
+			features.release();
+
+			labels.acquireModify(permutationMatrixBlock.aggregateBinaryOperations(
+					permutationMatrixBlock, labels.acquireReadAndRelease(), new MatrixBlock(),
+					new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()))
+			));
+			labels.release();
+
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
+		}
 	}
 }

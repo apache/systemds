@@ -72,14 +72,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 */
 	public void setup() {
 		// prepare features and labels
-		_features.getFedMapping().forEachParallel((range, data) -> {
-			_featuresData = data;
-			return null;
-		});
-		_labels.getFedMapping().forEachParallel((range, data) -> {
-			_labelsData = data;
-			return null;
-		});
+		_featuresData = (FederatedData) _features.getFedMapping().getFRangeFDataMap().values().toArray()[0];
+		_labelsData = (FederatedData) _labels.getFedMapping().getFRangeFDataMap().values().toArray()[0];
 
 		// calculate number of batches and get data size
 		long dataSize = _features.getNumRows();

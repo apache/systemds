@@ -114,7 +114,7 @@ public class FederationMap {
 		return _fedMap.keySet().toArray(new FederatedRange[0]);
 	}
 
-	public Map<FederatedRange, FederatedData> getFedMapping() {
+	public Map<FederatedRange, FederatedData> getFRangeFDataMap() {
 		return _fedMap;
 	}
 

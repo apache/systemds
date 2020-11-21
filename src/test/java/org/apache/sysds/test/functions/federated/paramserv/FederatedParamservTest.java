@@ -63,15 +63,15 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			// Network type, number of federated workers, examples per worker, batch size, epochs, learning rate, update
 			// type, update frequency
 			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH", "SHUFFLE"},
+			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
 			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH", "SHUFFLE"},
+			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
 			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
-			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH", "SHUFFLE"},
+			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
 			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
-			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH", "SHUFFLE"},
+			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
 			{"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH", "SHUFFLE"},
-			{"CNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH", "SHUFFLE"}
+			{"CNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH", "KEEP_DATA_ON_WORKER"}
 		});
 	}
 

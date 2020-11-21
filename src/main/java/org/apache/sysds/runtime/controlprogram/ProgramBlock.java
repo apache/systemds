@@ -376,7 +376,7 @@ public abstract class ProgramBlock implements ParseInfo
 			
 			CacheableData<?> mo = (CacheableData<?>)dat;
 			if( mo.isFederated() ) {
-				if( mo.getFedMapping().getFedMapping().isEmpty() )
+				if( mo.getFedMapping().getFRangeFDataMap().isEmpty() )
 					throw new DMLRuntimeException("Invalid empty FederationMap for: "+mo);
 			}
 		}

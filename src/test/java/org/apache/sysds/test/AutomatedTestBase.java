@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test;
 
+import static java.lang.Math.ceil;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -27,10 +28,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -43,6 +46,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -52,12 +56,15 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
@@ -67,6 +74,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -584,6 +592,52 @@ public abstract class AutomatedTestBase {
 
 		ReaderWriterFederated.write(completePath, fedMap);
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
+	}
+
+	protected void federateBalancedAndWriteInputMatrixWithMTD(String name, double[][] matrix, int numFederatedWorkers,
+															  List<Integer> ports) {
+		// check matrix non empty
+		if(matrix.length == 0 || matrix[0].length == 0)
+			return;
+
+		int nrows = matrix.length;
+		int ncol = matrix[0].length;
+
+		// create federated MatrixObject
+		MatrixObject federatedMatrixObject = new MatrixObject(ValueType.FP64, Dag.getNextUniqueVarname(Types.DataType.MATRIX));
+		federatedMatrixObject.setMetaData(new MetaDataFormat(
+				new MatrixCharacteristics(nrows, ncol),
+				Types.FileFormat.BINARY)
+		);
+
+		// write parts balanced and generate FederationMap
+		HashMap<FederatedRange, FederatedData> fedHashMap = new HashMap<>();
+		double examplesPerWorker = ceil( (double) nrows / (double) numFederatedWorkers);
+
+		for(int i = 0; i < numFederatedWorkers; i++) {
+			double lowerBound = examplesPerWorker * i;
+			double upperBound = Math.min(examplesPerWorker * (i + 1), nrows);
+			double examplesForWorkerI = upperBound - lowerBound;
+			String path = name + "_" + (i + 1);
+
+			// write slice
+			writeInputMatrixWithMTD(path,
+					Arrays.copyOfRange(matrix, (int) lowerBound, (int) upperBound),
+					false,
+					new MatrixCharacteristics((long) examplesForWorkerI, ncol,
+							OptimizerUtils.DEFAULT_BLOCKSIZE, (long) examplesForWorkerI * ncol));
+
+			// generate fedmap entry
+			FederatedRange range = new FederatedRange(new long[]{(long) lowerBound, 0}, new long[]{(long) upperBound, ncol});
+			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), input(path));
+			fedHashMap.put(range, data);
+		}
+
+		// TODO: How to generate the ID
+		federatedMatrixObject.setFedMapping(new FederationMap(1, fedHashMap));
+		federatedMatrixObject.getFedMapping().setType(FederationMap.FType.ROW);
+
+		writeInputFederatedWithMTD(name, federatedMatrixObject, new PrivacyConstraint());
 	}
 
 	/**

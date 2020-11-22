@@ -43,7 +43,6 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/federated/paramserv/";
 	private final static String TEST_NAME = "FederatedParamservTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedParamservTest.class.getSimpleName() + "/";
-	private final static int _blocksize = 1024;
 
 	private final String _networkType;
 	private final int _numFederatedWorkers;

@@ -26,11 +26,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -39,8 +35,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import static java.lang.Math.ceil;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe

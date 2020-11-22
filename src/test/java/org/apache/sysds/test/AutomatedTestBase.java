@@ -619,7 +619,7 @@ public abstract class AutomatedTestBase {
 			double lowerBound = examplesPerWorker * i;
 			double upperBound = Math.min(examplesPerWorker * (i + 1), nrows);
 			double examplesForWorkerI = upperBound - lowerBound;
-			String path = name + "_" + numFederatedWorkers + "_" + (i + 1);
+			String path = name + "_" + (i + 1);
 
 			// write slice
 			writeInputMatrixWithMTD(path,
@@ -630,7 +630,7 @@ public abstract class AutomatedTestBase {
 
 			// generate fedmap entry
 			FederatedRange range = new FederatedRange(new long[]{(long) lowerBound, 0}, new long[]{(long) upperBound, ncol});
-			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), path);
+			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), input(path));
 			fedHashMap.put(range, data);
 		}
 

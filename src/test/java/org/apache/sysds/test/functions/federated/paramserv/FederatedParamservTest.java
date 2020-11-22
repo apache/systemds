@@ -132,8 +132,8 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
 			double[][] labels = generateDummyMNISTLabels(_dataSetSize, numLabels);
-			String featuresName = "X";
-			String labelsName = "y";
+			String featuresName = "X_" + _numFederatedWorkers;
+			String labelsName = "y_" + _numFederatedWorkers;
 
 			federateBalancedAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports);
 			federateBalancedAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports);
@@ -150,8 +150,8 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			// generate program args
 			List<String> programArgsList = new ArrayList<>(Arrays.asList("-stats",
 					"-nvargs",
-					"features=" + featuresName,
-					"labels=" + labelsName,
+					"features=" + input(featuresName),
+					"labels=" + input(labelsName),
 					"epochs=" + _epochs,
 					"batch_size=" + _batch_size,
 					"eta=" + _eta,

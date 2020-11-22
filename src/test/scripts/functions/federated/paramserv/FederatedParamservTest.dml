@@ -23,18 +23,17 @@ source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
 source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
 
 # create federated input matrices
-features = federated(addresses=list($X0, $X1),
-    ranges=list(list(0, 0), list($examples_per_worker, $num_features),
-                list($examples_per_worker, 0), list($examples_per_worker * 2, $num_features)))
+# features = read($features)
+labels = read($labels)
 
-labels = federated(addresses=list($y0, $y1),
-    ranges=list(list(0, 0), list($examples_per_worker, $num_labels),
-                list($examples_per_worker, 0), list($examples_per_worker * 2, $num_labels)))
+# print(toString(features))
+print(toString(labels))
 
+/*
 if($network_type == "TwoNN") {
   model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), $epochs, $utype, $freq, $batch_size, $scheme, $eta, $seed)
 }
 else {
   model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), $epochs, $utype, $freq, $batch_size, $scheme, $eta, $channels, $hin, $win, $seed)
 }
-print(toString(model))
+print(toString(model))*/

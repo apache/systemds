@@ -26,8 +26,11 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -36,6 +39,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import static java.lang.Math.ceil;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -48,7 +53,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 	private final String _networkType;
 	private final int _numFederatedWorkers;
-	private final int _examplesPerWorker;
+	private final int _dataSetSize;
 	private final int _epochs;
 	private final int _batch_size;
 	private final double _eta;
@@ -60,26 +65,26 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> parameters() {
 		return Arrays.asList(new Object[][] {
-			// Network type, number of federated workers, examples per worker, batch size, epochs, learning rate, update
+			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update
 			// type, update frequency
-			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
-			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
-			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
-			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
-			{"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
+			{"CNN", 2, 4, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
+			{"CNN", 2, 4, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
+			{"CNN", 2, 4, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
+			{"CNN", 2, 4, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
 			{"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH", "SHUFFLE"},
 			{"CNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH", "KEEP_DATA_ON_WORKER"}
 		});
 	}
 
-	public FederatedParamservTest(String networkType, int numFederatedWorkers, int examplesPerWorker, int batch_size,
+	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
 		int epochs, double eta, String utype, String freq, String scheme) {
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
-		_examplesPerWorker = examplesPerWorker;
+		_dataSetSize = dataSetSize;
 		_batch_size = batch_size;
 		_epochs = epochs;
 		_eta = eta;
@@ -117,64 +122,53 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		ExecMode platformOld = setExecMode(mode);
 
 		try {
+			// start threads
+			List<Integer> ports = new ArrayList<>();
+			List<Thread> threads = new ArrayList<>();
+			for(int i = 0; i < _numFederatedWorkers; i++) {
+				ports.add(getRandomAvailablePort());
+				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
+			}
+
+			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
+			double[][] labels = generateDummyMNISTLabels(_dataSetSize, numLabels);
+			String featuresName = "X";
+			String labelsName = "y";
+
+			federateBalancedAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports);
+			federateBalancedAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports);
+
+			try {
+				Thread.sleep(2000);
+			}
+			catch(InterruptedException e) {
+				e.printStackTrace();
+			}
 
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			// generate program args
 			List<String> programArgsList = new ArrayList<>(Arrays.asList("-stats",
-				"-nvargs",
-				"examples_per_worker=" + _examplesPerWorker,
-				"num_features=" + numFeatures,
-				"num_labels=" + numLabels,
-				"epochs=" + _epochs,
-				"batch_size=" + _batch_size,
-				"eta=" + _eta,
-				"utype=" + _utype,
-				"freq=" + _freq,
-				"scheme=" + _scheme,
-				"network_type=" + _networkType,
-				"channels=" + C,
-				"hin=" + Hin,
-				"win=" + Win,
-				"seed=" + 25));
+					"-nvargs",
+					"features=" + featuresName,
+					"labels=" + labelsName,
+					"epochs=" + _epochs,
+					"batch_size=" + _batch_size,
+					"eta=" + _eta,
+					"utype=" + _utype,
+					"freq=" + _freq,
+					"scheme=" + _scheme,
+					"network_type=" + _networkType,
+					"channels=" + C,
+					"hin=" + Hin,
+					"win=" + Win,
+					"seed=" + 25));
 
-			// for each worker
-			List<Integer> ports = new ArrayList<>();
-			List<Thread> threads = new ArrayList<>();
-			for(int i = 0; i < _numFederatedWorkers; i++) {
-				// write row partitioned features to disk
-				writeInputMatrixWithMTD("X" + i,
-					generateDummyMNISTFeatures(_examplesPerWorker, C, Hin, Win),
-					false,
-					new MatrixCharacteristics(_examplesPerWorker, numFeatures, _blocksize,
-						_examplesPerWorker * numFeatures));
-				// write row partitioned labels to disk
-				writeInputMatrixWithMTD("y" + i,
-					generateDummyMNISTLabels(_examplesPerWorker, numLabels),
-					false,
-					new MatrixCharacteristics(_examplesPerWorker, numLabels, _blocksize,
-						_examplesPerWorker * numLabels));
-
-				// start worker
-				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
-
-				// add worker to program args
-				programArgsList.add("X" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("X" + i)));
-				programArgsList.add("y" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("y" + i)));
-			}
-			try {
-				Thread.sleep(1000);
-			}
-			catch(InterruptedException e) {
-				e.printStackTrace();
-			}
-	
 			programArgs = programArgsList.toArray(new String[0]);
 			LOG.debug(runTest(null));
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			
-			// cleanup
+			// shut down threads
 			for(int i = 0; i < _numFederatedWorkers; i++) {
 				TestUtils.shutdownThreads(threads.get(i));
 			}

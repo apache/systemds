@@ -65,7 +65,7 @@ public class LineageCacheEviction
 			// with high computation time might contain function outputs. Pinning them
 			// will increase chances of multilevel reuse.
 			entry.setCacheStatus(LineageCacheStatus.PINNED);
-
+		
 		if (entry.isMatrixValue() || exectime < LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
 			// Don't add the memory pinned entries in weighted queue. 
 			// The eviction queue should contain only entries that can
@@ -86,6 +86,7 @@ public class LineageCacheEviction
 			}
 		}
 		// Increase computation time of the sought entry.
+		// FIXME: avoid when called from partial reuse methods
 		if (LineageCacheConfig.isCostNsize()) {
 			if (weightedQueue.remove(entry)) {
 				entry.updateComputeTime();
@@ -205,7 +206,7 @@ public class LineageCacheEviction
 				removeOrSpillEntry(cache, e, false);
 				continue;
 			}
-
+			
 			if (!e.getCacheStatus().canEvict()) {
 				// Note: Execution should never reach here, as these 
 				//       entries are not part of the weightedQueue.

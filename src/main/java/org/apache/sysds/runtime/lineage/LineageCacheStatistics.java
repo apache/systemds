@@ -38,6 +38,8 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numRewrites     = new LongAdder();
 	private static final LongAdder _ctimeFSRead     = new LongAdder(); //in nano sec
 	private static final LongAdder _ctimeFSWrite    = new LongAdder(); //in nano sec
+	private static final LongAdder _ctimeSaved      = new LongAdder(); //in nano sec
+	private static final LongAdder _ctimeMissed     = new LongAdder(); //in nano sec
 
 	public static void reset() {
 		_numHitsMem.reset();
@@ -52,6 +54,8 @@ public class LineageCacheStatistics {
 		_numRewrites.reset();
 		_ctimeFSRead.reset();
 		_ctimeFSWrite.reset();
+		_ctimeSaved.reset();
+		_ctimeMissed.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -122,6 +126,18 @@ public class LineageCacheStatistics {
 		_ctimeFSWrite.add(delta);
 	}
 
+	public static void incrementSavedComputeTime(long delta) {
+		// Total time saved by reusing.
+		// TODO: Handle overflow
+		_ctimeSaved.add(delta);
+	}
+
+	public static void incrementMissedComputeTime(long delta) {
+		// Total time missed due to eviction.
+		// TODO: Handle overflow
+		_ctimeMissed.add(delta);
+	}
+
 	public static long getMultiLevelFnHits() {
 		return _numHitsFunc.longValue();
 	}
@@ -166,11 +182,18 @@ public class LineageCacheStatistics {
 		return sb.toString();
 	}
 	
-	public static String displayTime() {
+	public static String displayFSTime() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("%.3f", ((double)_ctimeFSRead.longValue())/1000000000)); //in sec
 		sb.append("/");
 		sb.append(String.format("%.3f", ((double)_ctimeFSWrite.longValue())/1000000000)); //in sec
+		return sb.toString();
+	}
+	public static String displayComputeTime() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("%.3f", ((double)_ctimeSaved.longValue())/1000000000)); //in sec
+		sb.append("/");
+		sb.append(String.format("%.3f", ((double)_ctimeMissed.longValue())/1000000000)); //in sec
 		return sb.toString();
 	}
 }

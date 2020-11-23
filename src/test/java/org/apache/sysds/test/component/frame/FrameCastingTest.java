@@ -29,6 +29,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
+import java.util.Arrays;
+
 public class FrameCastingTest extends AutomatedTestBase
 {
 	private final static int rows = 2891;
@@ -84,6 +86,7 @@ public class FrameCastingTest extends AutomatedTestBase
 	 */
 	private void runFrameCastingTest( ValueType[] schema, CastType ctype)
 	{
+		setOutputBuffering(false);
 		try
 		{
 			//data generation
@@ -105,10 +108,12 @@ public class FrameCastingTest extends AutomatedTestBase
 					for( int j=0; j<schema.length; j++ )
 						row1[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]);
 					frame1.appendRow(row1);
+					System.out.println(Arrays.toString(row1));
 				}
-				
+
 				MatrixBlock mb = DataConverter.convertToMatrixBlock(frame1);
 				frame = DataConverter.convertToFrameBlock(mb);
+
 			}
 			else if( ctype == CastType.M2F_G )
 			{
@@ -130,7 +135,15 @@ public class FrameCastingTest extends AutomatedTestBase
 			for( int i=0; i<rows; i++ ) 
 				for( int j=0; j<lschema.length; j++ )	{
 					double tmp = UtilFunctions.objectToDouble(lschema[j], frame.get(i, j));
-					if( tmp != A[i][j] )
+					double tmpm = A[i][j];
+
+					if(Double.isNaN(tmp))
+						tmp = 0.0;
+					if(Double.isNaN(tmpm))
+						tmpm = 0.0;
+
+
+					if( tmp != tmpm)
 						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		
 		}

@@ -124,8 +124,15 @@ public class FrameAppendTest extends AutomatedTestBase
 			for( int i=0; i<rows; i++ ) 
 				for( int j=0; j<lschema.length; j++ )	{
 					double tmp = UtilFunctions.objectToDouble(lschema[j], frame3.get(i, j));
-					if( tmp != mbC.quickGetValue(i, j) )
-						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+mbC.quickGetValue(i, j));
+					double tmpm = mbC.quickGetValue(i, j);
+
+					if(Double.isNaN(tmp))
+						tmp = 0.0;
+					if(Double.isNaN(tmpm))
+						tmpm = 0.0;
+
+					if( tmp != tmpm )
+						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+tmpm);
 				}		
 		}
 		catch(Exception ex) {

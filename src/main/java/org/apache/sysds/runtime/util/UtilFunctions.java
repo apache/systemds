@@ -454,7 +454,7 @@ public class UtilFunctions {
 	}
 
 	public static Object doubleToObject(ValueType vt, double in, boolean sparse) {
-		if( in == 0 && sparse) return null;
+		if( Double.isNaN(in) && sparse) return null;
 		switch( vt ) {
 			case STRING:  return String.valueOf(in);
 			case BOOLEAN: return (in!=0);

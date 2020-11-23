@@ -49,15 +49,10 @@ public class CleaningTest extends AutomatedTestBase {
 		runCleaningTest(Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void testBandit3CP() {
-		runCleaningTest(Types.ExecMode.SINGLE_NODE);
-	}
 
 	private void runCleaningTest(Types.ExecMode et) {
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
-			setOutputBuffering(false);
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";

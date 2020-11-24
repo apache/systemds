@@ -66,6 +66,7 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
@@ -632,12 +633,11 @@ public abstract class AutomatedTestBase {
 			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), input(path));
 			fedHashMap.put(range, data);
 		}
-
-		// TODO: How to generate the ID
-		federatedMatrixObject.setFedMapping(new FederationMap(1, fedHashMap));
+		
+		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
 		federatedMatrixObject.getFedMapping().setType(FederationMap.FType.ROW);
 
-		writeInputFederatedWithMTD(name, federatedMatrixObject, new PrivacyConstraint());
+		writeInputFederatedWithMTD(name, federatedMatrixObject, null);
 	}
 
 	/**

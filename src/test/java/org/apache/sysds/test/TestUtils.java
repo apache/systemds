@@ -738,8 +738,7 @@ public class TestUtils
 		int countErrors = 0;
 		for (int i = 0; i < rows && countErrors < 50; i++) {
 			for (int j = 0; j < cols && countErrors < 50; j++) {
-				double tmp = (Double.isNaN(actualMatrix[i][j])? 0: actualMatrix[i][j]);
-				if (!compareCellValue(expectedMatrix[i][j], tmp, epsilon, false)) {
+				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, true)) {
 					message += ("\n Expected: " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}

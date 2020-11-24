@@ -60,6 +60,11 @@ public class LibRightMultBy {
 	public static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v, boolean allowOverlap) {
 
+		if(that instanceof CompressedMatrixBlock){
+			LOG.info("Decompression Right matrix");
+		}
+		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress() : that;
+
 		boolean containsUncompressable = false;
 		int distinctCount = 0;
 		for(ColGroup g : colGroups) {

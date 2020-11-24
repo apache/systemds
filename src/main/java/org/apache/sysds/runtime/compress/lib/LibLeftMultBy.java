@@ -54,6 +54,9 @@ public class LibLeftMultBy {
 			ret = new MatrixBlock(rl, cl, false, rl * cl);
 		else if(!(ret.getNumColumns() == cl && ret.getNumRows() == rl && ret.isAllocated()))
 			ret.reset(rl, cl, false, rl * cl);
+		if(that instanceof CompressedMatrixBlock){
+			LOG.info("Decompression Left side Matrix (Should not really happen)");
+		}
 		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress() : that;
 
 		// if(that.getNumRows() == 1) {

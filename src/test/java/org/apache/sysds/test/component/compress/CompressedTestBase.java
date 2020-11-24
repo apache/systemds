@@ -77,7 +77,8 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static ValueType[] usedValueTypes = new ValueType[] {
 		// ValueType.RAND,
 		// ValueType.CONST,
-		ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE,
+		ValueType.RAND_ROUND, 
+		ValueType.OLE_COMPRESSIBLE,
 		// ValueType.RLE_COMPRESSIBLE,
 	};
 
@@ -86,9 +87,11 @@ public abstract class CompressedTestBase extends TestBase {
 		// ValueRange.BYTE
 	};
 
-	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.COL,
+	protected static OverLapping[] overLapping = new OverLapping[] {
+		OverLapping.COL,
 		// OverLapping.MATRIX,
-		OverLapping.NONE, OverLapping.MATRIX_PLUS,
+		OverLapping.NONE, 
+		OverLapping.MATRIX_PLUS,
 		// OverLapping.MATRIX_MULT_NEGATIVE
 	};
 
@@ -134,7 +137,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
 		// MatrixTypology.SMALL, MatrixTypology.FEW_COL,
-		// MatrixTypology.FEW_ROW,
+		MatrixTypology.FEW_ROW,
 		// MatrixTypology.LARGE,
 		// MatrixTypology.SINGLE_COL,
 		// MatrixTypology.SINGLE_ROW,
@@ -258,7 +261,7 @@ public abstract class CompressedTestBase extends TestBase {
 				TestUtils.compareMatrices(org, deCompressed, lossyTolerance, this.toString());
 			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
 				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(org, deCompressed, 8192, 124, this.toString());
+				TestUtils.compareMatricesBitAvgDistance(org, deCompressed, 32768, 124, this.toString());
 			else
 				TestUtils.compareMatricesBitAvgDistance(org, deCompressed, 5, 1, this.toString());
 
@@ -499,13 +502,13 @@ public abstract class CompressedTestBase extends TestBase {
 			}
 			else {
 				if(rows > 65000)
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.99, compressionSettings.toString());
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.99, this.toString());
 				else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
 					overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
 					overlappingType == OverLapping.COL)
 					TestUtils.compareMatricesBitAvgDistance(d1, d2, 1600000, 1000, this.toString());
 				else
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 10000, 500, compressionSettings.toString());
+					TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 500, this.toString());
 
 			}
 		}

@@ -174,6 +174,12 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+			// for(double[] row : d1) {
+			// 	LOG.error(Arrays.toString(row));
+			// }
+			// for(double[] row : d2) {
+			// 	LOG.error(Arrays.toString(row));
+			// }
 			int dim1 = (aggType == AggType.ROWSUMS || aggType == AggType.ROWSUMSSQ || aggType == AggType.ROWMAXS ||
 				aggType == AggType.ROWMINS || aggType == AggType.ROWMEAN) ? rows : 1;
 			int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||
@@ -211,9 +217,9 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			else {
 				if(aggType == AggType.ROWMEAN)
 					TestUtils.compareMatrices(d1, d2, 0.0001, css);
-				else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
+				else if(overlappingType == OverLapping.COL || overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
 					overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX)
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 8192, 128, css);
+					TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 128, css);
 				else
 					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 128, css);
 			}

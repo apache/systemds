@@ -202,7 +202,7 @@ public class LibRelationalOp {
             }
         }
         else {
-            final int blkz = 65536 / ret.getNumColumns();
+            final int blkz = CompressionSettings.BITMAP_BLOCK_SZ / ret.getNumColumns();
             ExecutorService pool = CommonThreadPool.get(k);
             ArrayList<RelationalTask> tasks = new ArrayList<>();
             try {

@@ -107,7 +107,6 @@ public class FrameCastingTest extends AutomatedTestBase
 					for( int j=0; j<schema.length; j++ )
 						row1[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]);
 					frame1.appendRow(row1);
-					System.out.println(Arrays.toString(row1));
 				}
 
 				MatrixBlock mb = DataConverter.convertToMatrixBlock(frame1);

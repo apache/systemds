@@ -89,42 +89,37 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		if(getNumValues() > 1) {
-			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-			final int numCols = getNumCols();
-			final int numVals = getNumValues();
 
-			// cache blocking config and position array
-			int[] apos = skipScan(numVals, rl);
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
 
-			// cache conscious append via horizontal scans
-			for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz) {
-				for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					
-					if(bix >= blen)
-						continue;
-					int len = _data[boff + bix];
-					int pos = boff + bix + 1;
-					for(int i = pos; i < pos + len; i++) {
-						int row = bi + _data[i];
-						if(row >= rl && row < ru){
-							int rix = row - (rl - offT);
-								for(int j = 0; j < numCols; j++) {
-									double v = target.quickGetValue(rix, _colIndexes[j]);
-									target.setValue(rix, _colIndexes[j], values[off + j] + v);
-								}
+		// cache blocking config and position array
+		int[] apos = skipScan(numVals, rl);
+
+		// cache conscious append via horizontal scans
+		for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz) {
+			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+
+				if(bix >= blen)
+					continue;
+				int len = _data[boff + bix];
+				int pos = boff + bix + 1;
+				for(int i = pos; i < pos + len; i++) {
+					int row = bi + _data[i];
+					if(row >= rl && row < ru) {
+						int rix = row - (rl - offT);
+						for(int j = 0; j < numCols; j++) {
+							double v = target.quickGetValue(rix, _colIndexes[j]);
+							target.setValue(rix, _colIndexes[j], values[off + j] + v);
 						}
 					}
-					apos[k] += len + 1;
 				}
+				apos[k] += len + 1;
 			}
-		}
-		else {
-			// call generic decompression with decoder
-			super.decompressToBlock(target, rl, ru, offT, values);
 		}
 	}
 

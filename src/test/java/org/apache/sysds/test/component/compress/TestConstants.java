@@ -24,8 +24,8 @@ package org.apache.sysds.test.component.compress;
  */
 public class TestConstants {
 
-	private static final int rows[] = {4, 2008, 1283, 5, 1, 100, 5000, 100000, 64000*2};
-	private static final int cols[] = {20, 20, 13, 998, 321, 1, 5, 1, 1};
+	private static final int rows[] = {4, 2008, 1283, 500, 1, 100, 5000, 100000, 64000*2};
+	private static final int cols[] = {20, 20, 13, 1, 321, 1, 5, 1, 1};
 	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0, 1.0};
 
 	private static final int[] mins = {-10, -127 * 2};
@@ -56,7 +56,7 @@ public class TestConstants {
 	}
 
 	public enum ValueRange {
-		SMALL, LARGE, BYTE
+		SMALL, LARGE, BYTE, BOOLEAN
 	}
 
 	public enum OverLapping{
@@ -88,6 +88,8 @@ public class TestConstants {
 				return mins[1];
 			case BYTE:
 				return -127;
+			case BOOLEAN:
+				return 0;
 			default:
 				throw new RuntimeException("Invalid range value enum type");
 		}
@@ -101,6 +103,8 @@ public class TestConstants {
 				return maxs[1];
 			case BYTE:
 				return 127;
+			case BOOLEAN:
+				return 1;
 			default:
 				throw new RuntimeException("Invalid range value enum type");
 		}

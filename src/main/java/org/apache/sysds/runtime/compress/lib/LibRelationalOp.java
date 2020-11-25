@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -29,17 +28,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.Dictionary;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Equals;
@@ -71,16 +66,20 @@ public class LibRelationalOp {
         }
     };
 
-    public static MatrixBlock relationalOperation(ScalarOperator sop, CompressedMatrixBlock m1,
-        CompressedMatrixBlock ret, boolean overlapping) {
+    public static MatrixBlock relationalOperation(ScalarOperator sop, CompressedMatrixBlock m1, boolean overlapping) {
 
         List<ColGroup> colGroups = m1.getColGroups();
         if(overlapping) {
             if(sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan ||
-                sop.fn instanceof GreaterThanEquals || sop.fn instanceof Equals || sop.fn instanceof NotEquals)
-                return overlappingRelativeRelationalOperation(sop, m1, ret);
+                sop.fn instanceof GreaterThanEquals || sop.fn instanceof Equals || sop.fn instanceof NotEquals) {
+                return overlappingRelativeRelationalOperation(sop, m1);
+            }
+            else {
+                throw new DMLCompressionException("Invalid arguments to relational Operation");
+            }
         }
         else {
+            CompressedMatrixBlock ret = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns(), true);
             List<ColGroup> newColGroups = new ArrayList<>();
             for(ColGroup grp : colGroups) {
                 newColGroups.add(grp.scalarOperation(sop));
@@ -88,13 +87,12 @@ public class LibRelationalOp {
             ret.allocateColGroupList(newColGroups);
             ret.setNonZeros(-1);
             ret.setOverlapping(false);
+            return (MatrixBlock) ret;
         }
 
-        return ret;
     }
 
-    private static MatrixBlock overlappingRelativeRelationalOperation(ScalarOperator sop, CompressedMatrixBlock m1,
-        CompressedMatrixBlock ret) {
+    private static MatrixBlock overlappingRelativeRelationalOperation(ScalarOperator sop, CompressedMatrixBlock m1) {
 
         List<ColGroup> colGroups = m1.getColGroups();
         boolean less = ((sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals) &&
@@ -102,7 +100,6 @@ public class LibRelationalOp {
             (sop instanceof RightScalarOperator &&
                 (sop.fn instanceof GreaterThan || sop.fn instanceof GreaterThanEquals));
         double v = sop.getConstant();
-        // Queue<Pair<Double, ColGroup>> pq = new PriorityQueue<>();
         MinMaxGroup[] minMax = new MinMaxGroup[colGroups.size()];
         double maxS = 0.0;
         double minS = 0.0;
@@ -125,120 +122,109 @@ public class LibRelationalOp {
 
         if(v < minS || v > maxS) {
             if(sop.fn instanceof Equals) {
-                return makeConstZero(ret);
+                return makeConstZero(m1.getNumRows(), m1.getNumColumns());
             }
             else if(sop.fn instanceof NotEquals) {
-                return makeConstOne(ret);
+                return makeConstOne(m1.getNumRows(), m1.getNumColumns());
             }
             else if(less) {
                 if(v < minS || ((sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan) && v <= minS))
-                    return makeConstOne(ret);
+                    return makeConstOne(m1.getNumRows(), m1.getNumColumns());
                 else
-                    return makeConstZero(ret);
-
+                    return makeConstZero(m1.getNumRows(), m1.getNumColumns());
             }
             else {
                 if(v > minS || ((sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan) && v >= minS))
-                    return makeConstOne(ret);
+                    return makeConstOne(m1.getNumRows(), m1.getNumColumns());
                 else
-                    return makeConstZero(ret);
+                    return makeConstZero(m1.getNumRows(), m1.getNumColumns());
             }
         }
         else {
-            return processNonConstant(sop, ret, minMax, minS, maxS, less);
+            return processNonConstant(sop, minMax, minS, maxS, m1.getNumRows(), m1.getNumColumns(), less);
         }
 
     }
 
-    private static MatrixBlock makeConstOne(CompressedMatrixBlock ret) {
+    private static MatrixBlock makeConstOne(int rows, int cols) {
         List<ColGroup> newColGroups = new ArrayList<>();
-        int[] colIndexes = new int[ret.getNumColumns()];
+        int[] colIndexes = new int[cols];
         for(int i = 0; i < colIndexes.length; i++) {
             colIndexes[i] = i;
         }
-        double[] values = new double[ret.getNumColumns()];
+        double[] values = new double[cols];
         Arrays.fill(values, 1);
 
-        newColGroups.add(new ColGroupConst(colIndexes, ret.getNumRows(), new Dictionary(values)));
+        newColGroups.add(new ColGroupConst(colIndexes, rows, new Dictionary(values)));
+        CompressedMatrixBlock ret = new CompressedMatrixBlock(rows, cols, true);
         ret.allocateColGroupList(newColGroups);
-        ret.setNonZeros(ret.getNumColumns() * ret.getNumRows());
+        ret.setNonZeros(cols * rows);
         ret.setOverlapping(false);
         return ret;
     }
 
-    private static MatrixBlock makeConstZero(CompressedMatrixBlock ret) {
-        MatrixBlock sb = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), true, 0);
+    private static MatrixBlock makeConstZero(int rows, int cols) {
+        MatrixBlock sb = new MatrixBlock(rows, cols, true, 0);
         return sb;
     }
 
-    private static MatrixBlock processNonConstant(ScalarOperator sop, CompressedMatrixBlock ret, MinMaxGroup[] minMax,
-        double minS, double maxS, boolean less) {
+    private static MatrixBlock processNonConstant(ScalarOperator sop, MinMaxGroup[] minMax, double minS, double maxS,
+        final int rows, final int cols, boolean less) {
 
-        BitSet res = new BitSet(ret.getNumColumns() * ret.getNumRows());
+        // BitSet res = new BitSet(ret.getNumColumns() * ret.getNumRows());
+        MatrixBlock res = new MatrixBlock(rows, cols, true, 0).allocateBlock();
         int k = OptimizerUtils.getConstrainedNumThreads(-1);
-        int outRows = ret.getNumRows();
-
+        int outRows = rows;
+        long nnz = 0;
         if(k == 1) {
-            final int b = CompressionSettings.BITMAP_BLOCK_SZ / ret.getNumColumns();
+            final int b = CompressionSettings.BITMAP_BLOCK_SZ / cols;
             final int blkz = (outRows < b) ? outRows : b;
 
-            MatrixBlock tmp = new MatrixBlock(blkz, ret.getNumColumns(), false, -1).allocateBlock();
+            MatrixBlock tmp = new MatrixBlock(blkz, cols, false, -1).allocateBlock();
             for(int i = 0; i * blkz < outRows; i++) {
-
-                // LOG.error(mmg.g.getClass());
                 for(MinMaxGroup mmg : minMax) {
-                    mmg.g.decompressToBlock(tmp, i * blkz, Math.min((i + 1) * blkz, mmg.g.getNumRows()), 0, mmg.values);
-                    // minS -= mmg.min;
-                    // maxS -= mmg.max;
+                    mmg.g.decompressToBlock(tmp, i * blkz, Math.min((i + 1) * blkz, rows), 0, mmg.values);
                 }
-                for(int row = 0; row < blkz && row < ret.getNumRows() - i * blkz; row++) {
-                    int off = (row + i * blkz) * ret.getNumColumns();
-                    for(int col = 0; col < ret.getNumColumns(); col++, off++) {
-                        if(sop.executeScalar(tmp.quickGetValue(row, col)) != 0.0)
-                            res.set(off);
+                for(int row = 0; row < blkz && row < rows - i * blkz; row++) {
+                    int off = (row + i * blkz);
+                    for(int col = 0; col < cols; col++) {
+                        res.quickSetValue(off, col, sop.executeScalar(tmp.quickGetValue(row, col)));
+                        if(res.quickGetValue(off, col) != 0) {
+                            nnz++;
+                        }
                     }
                 }
-                tmp.reset();
             }
+            tmp.reset();
+            res.setNonZeros(nnz);
         }
         else {
-            final int blkz = CompressionSettings.BITMAP_BLOCK_SZ / ret.getNumColumns();
+            final int blkz = CompressionSettings.BITMAP_BLOCK_SZ / cols;
             ExecutorService pool = CommonThreadPool.get(k);
             ArrayList<RelationalTask> tasks = new ArrayList<>();
+
             try {
                 for(int i = 0; i * blkz < outRows; i++) {
-                    RelationalTask rt = new RelationalTask(minMax, i, blkz, res, ret.getNumRows(), ret.getNumColumns(),
-                        sop);
+                    RelationalTask rt = new RelationalTask(minMax, i, blkz, res, rows, cols, sop);
                     tasks.add(rt);
                 }
                 List<Future<Object>> futures = pool.invokeAll(tasks);
                 pool.shutdown();
                 for(Future<Object> f : futures)
                     f.get();
-                memPool.remove();
             }
             catch(InterruptedException | ExecutionException e) {
+                e.printStackTrace();
                 throw new DMLRuntimeException(e);
             }
-        }
 
-        int[] colIndexes = new int[ret.getNumColumns()];
-        for(int i = 0; i < colIndexes.length; i++) {
-            colIndexes[i] = i;
         }
-        CompressionSettings cs = new CompressionSettingsBuilder().setTransposeInput(false).create();
-        ABitmap bm = BitmapEncoder.extractBitmap(colIndexes, ret.getNumRows(), res, cs);
+        memPool.remove();
 
-        ColGroup resGroup = ColGroupFactory.compress(colIndexes, ret.getNumRows(), bm, CompressionType.DDC, cs, null);
-        List<ColGroup> newColGroups = new ArrayList<>();
-        newColGroups.add(resGroup);
-        ret.allocateColGroupList(newColGroups);
-        ret.setNonZeros(ret.getNumColumns() * ret.getNumRows());
-        ret.setOverlapping(false);
-        return ret;
+        return res;
     }
 
-    protected static class MinMaxGroup {
+    protected static class MinMaxGroup implements Comparable<MinMaxGroup> {
         double min;
         double max;
         ColGroup g;
@@ -250,18 +236,34 @@ public class LibRelationalOp {
             this.g = g;
             this.values = g.getValues();
         }
+
+        @Override
+        public int compareTo(MinMaxGroup o) {
+            double t = max - min;
+            double ot = o.max - o.min;
+            return Double.compare(t, ot);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("MMG: ");
+            sb.append("[" + min + "," + max + "]");
+            sb.append(" " + g.getClass().getSimpleName());
+            return sb.toString();
+        }
     }
 
     private static class RelationalTask implements Callable<Object> {
         private final MinMaxGroup[] _minMax;
         private final int _i;
         private final int _blkz;
-        private final BitSet _res;
+        private final MatrixBlock _res;
         private final int _rows;
         private final int _cols;
         private final ScalarOperator _sop;
 
-        protected RelationalTask(MinMaxGroup[] minMax, int i, int blkz, BitSet res, int rows, int cols,
+        protected RelationalTask(MinMaxGroup[] minMax, int i, int blkz, MatrixBlock res, int rows, int cols,
             ScalarOperator sop) {
             _minMax = minMax;
             _i = i;
@@ -286,17 +288,13 @@ public class LibRelationalOp {
 
             for(MinMaxGroup mmg : _minMax) {
                 mmg.g.decompressToBlock(tmp, _i * _blkz, Math.min((_i + 1) * _blkz, mmg.g.getNumRows()), 0, mmg.values);
-                // minS -= mmg.min;
-                // maxS -= mmg.max;
-            }
-            for(int row = 0; row < _blkz && row < _rows - _i * _blkz; row++) {
-                int off = (row + _i * _blkz) * _cols;
-                for(int col = 0; col < _cols; col++, off++) {
-                    if(_sop.executeScalar(tmp.quickGetValue(row, col)) != 0.0)
-                        _res.set(off);
-                }
             }
 
+            for(int row = 0, off = _i * _blkz; row < _blkz && row < _rows - _i * _blkz; row++, off++) {
+                for(int col = 0; col < _cols; col++) {
+                    _res.appendValue(off, col, _sop.executeScalar(tmp.quickGetValue(row, col)));
+                }
+            }
             return null;
         }
     }

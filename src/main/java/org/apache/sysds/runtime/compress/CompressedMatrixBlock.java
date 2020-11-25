@@ -62,6 +62,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
@@ -115,11 +116,13 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	/**
 	 * Main constructor for building a block from scratch.
 	 * 
+	 * Use with caution, since it constructs an empty matrix block with nothing inside.
+	 * 
 	 * @param rl     number of rows in the block
 	 * @param cl     number of columns
 	 * @param sparse true if the UNCOMPRESSED representation of the block should be sparse
 	 */
-	protected CompressedMatrixBlock(int rl, int cl, boolean sparse) {
+	public CompressedMatrixBlock(int rl, int cl, boolean sparse) {
 		super(rl, cl, sparse);
 	}
 
@@ -371,26 +374,26 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	@Override
 	public MatrixBlock scalarOperations(ScalarOperator sop, MatrixValue result) {
 		// Special case handling of overlapping relational operations
-		if(sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan ||
-			sop.fn instanceof GreaterThanEquals || sop.fn instanceof Equals || sop.fn instanceof NotEquals) {
-			CompressedMatrixBlock ret = null;
-			if(result == null || !(result instanceof CompressedMatrixBlock))
-				ret = new CompressedMatrixBlock(getNumRows(), getNumColumns(), sparse);
-			return LibRelationalOp.relationalOperation(sop, this, ret, overlappingColGroups);
+		if(isOverlapping() &&
+			(sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan ||
+				sop.fn instanceof GreaterThanEquals || sop.fn instanceof Equals || sop.fn instanceof NotEquals)) {
+			MatrixBlock ret = LibRelationalOp.relationalOperation(sop, this, isOverlapping());
+
+			result = ret;
+			return ret;
 		}
 
-		if(overlappingColGroups &&
-			(!(sop.fn instanceof Multiply || sop.fn instanceof Plus || sop.fn instanceof Minus))) {
+		if(isOverlapping() && (!(sop.fn instanceof Multiply || sop.fn instanceof Divide 
+			|| sop.fn instanceof Plus || sop.fn instanceof Minus))) {
 			LOG.warn("scalar overlapping not supported for op: " + sop.fn);
 			MatrixBlock m1d = decompress(sop.getNumThreads());
 			return m1d.scalarOperations(sop, result);
-
 		}
 
 		CompressedMatrixBlock ret = null;
 		if(result == null || !(result instanceof CompressedMatrixBlock))
 			ret = new CompressedMatrixBlock(getNumRows(), getNumColumns(), sparse);
-		return LibScalar.scalarOperations(sop, this, ret, overlappingColGroups);
+		return LibScalar.scalarOperations(sop, this, ret, isOverlapping());
 	}
 
 	@Override
@@ -402,20 +405,22 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 				+ "x" + this.clen + " vs " + that.getNumRows() + "x" + that.getNumColumns());
 		}
 
-		if(LibMatrixBincell.getBinaryAccessType(this, that) == BinaryAccessType.MATRIX_COL_VECTOR ||
-			(this.getNumColumns() == 1 && that.getNumColumns() == 1 && that.getNumRows() != 1) ||
-			!(op.fn instanceof Multiply || op.fn instanceof Plus || op.fn instanceof Minus ||
-				op.fn instanceof MinusMultiply || op.fn instanceof PlusMultiply)) {
-			// case MATRIX_COL_VECTOR:
-			// TODO make partial decompress and do operation.
-			// TODO support more of the operations... since it is possible.
+		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(this, that);
+
+		if(atype == BinaryAccessType.MATRIX_COL_VECTOR || atype == BinaryAccessType.MATRIX_MATRIX ) {
+			MatrixBlock ret = LibBinaryCellOp.binaryMVPlusCol(this, that, op);
+			result = ret;
+			return ret;
+		}
+		else if(!(op.fn instanceof Multiply || op.fn instanceof Divide || op.fn instanceof Plus || op.fn instanceof Minus ||
+			op.fn instanceof MinusMultiply || op.fn instanceof PlusMultiply)) {
+			LOG.warn("Decompressing since Binary Ops" + op.fn + " is not supported compressed");
 			MatrixBlock m2 = getUncompressed(this);
 			MatrixBlock ret = m2.binaryOperations(op, thatValue, result);
 			result = ret;
 			return ret;
 		}
 		else {
-
 			CompressedMatrixBlock ret = null;
 			if(result == null || !(result instanceof CompressedMatrixBlock))
 				ret = new CompressedMatrixBlock(getNumRows(), getNumColumns(), sparse);
@@ -608,9 +613,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			return LibCompAgg.aggregateUnaryOverlapping(this, ret, op, blen, indexesIn, inCP);
 		}
 
-		ret = LibCompAgg.aggregateUnary(this, ret, op, blen, indexesIn, inCP);
-
-		return ret;
+		return LibCompAgg.aggregateUnary(this, ret, op, blen, indexesIn, inCP);
 	}
 
 	@Override
@@ -732,7 +735,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	}
 
 	public boolean isOverlapping() {
-		return overlappingColGroups;
+		return _colGroups.size() != 1 && overlappingColGroups;
 	}
 
 	public void setOverlapping(boolean overlapping) {

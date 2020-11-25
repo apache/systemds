@@ -124,6 +124,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
+	@Ignore
 	public void testCountDistinct() {
 		try {
 			// Counting distinct is potentially wrong in cases with overlapping, resulting in a few to many or few

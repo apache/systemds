@@ -70,6 +70,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		// compact bitmaps to linearized representation
 		createCompressedBitmaps(numVals, totalLen, lbitmaps);
 
+		// LOG.error(this);
 	}
 
 	protected ColGroupRLE(int[] colIndices, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
@@ -91,43 +92,37 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		if(getNumValues() > 1) {
-			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-			final int numCols = getNumCols();
-			final int numVals = getNumValues();
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
 
-			// position and start offset arrays
-			int[] astart = new int[numVals];
-			int[] apos = skipScan(numVals, rl, astart);
+		// position and start offset arrays
+		int[] astart = new int[numVals];
+		int[] apos = skipScan(numVals, rl, astart);
 
-			// cache conscious append via horizontal scans
-			for(int bi = rl; bi < ru; bi += blksz) {
-				int bimax = Math.min(bi + blksz, ru);
-				for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					int start = astart[k];
-					for(; bix < blen & start < bimax; bix += 2) {
-						start += _data[boff + bix];
-						int len = _data[boff + bix + 1];
-						for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++)
-							for(int j = 0; j < numCols; j++) {
-								if(values[off + j] != 0) {
-									double v = target.quickGetValue(i, _colIndexes[j]);
-									target.quickSetValue(i, _colIndexes[j], values[off + j] + v);
-								}
+		// cache conscious append via horizontal scans
+		for(int bi = rl; bi < ru; bi += blksz) {
+			int bimax = Math.min(bi + blksz, ru);
+			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				int start = astart[k];
+				for(; bix < blen & start < bimax; bix += 2) {
+					start += _data[boff + bix];
+					int len = _data[boff + bix + 1];
+					for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++)
+						for(int j = 0; j < numCols; j++) {
+							if(values[off + j] != 0) {
+								double v = target.quickGetValue(i, _colIndexes[j]);
+								target.quickSetValue(i, _colIndexes[j], values[off + j] + v);
 							}
-						start += len;
-					}
-					apos[k] = bix;
-					astart[k] = start;
+						}
+					start += len;
 				}
+				apos[k] = bix;
+				astart[k] = start;
 			}
-		}
-		else {
-			// call generic decompression with decoder
-			super.decompressToBlock(target, rl, ru, offT, values);
 		}
 	}
 
@@ -183,7 +178,6 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int colpos) {
-		// LOG.error("Does not work");
 		final int blksz = 128 * 1024;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();

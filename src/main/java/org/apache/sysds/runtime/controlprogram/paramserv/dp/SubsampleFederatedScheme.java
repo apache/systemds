@@ -31,11 +31,16 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import java.util.List;
 import java.util.concurrent.Future;
 
-public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
+public class SubsampleFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
+
+		int min_rows = Integer.MAX_VALUE;
+		for (MatrixObject pFeature : pFeatures) {
+			min_rows = (pFeature.getNumRows() < min_rows) ? Math.toIntExact(pFeature.getNumRows()) : min_rows;
+		}
 
 		for(int i = 0; i < pFeatures.size(); i++) {
 			// Works, because the map contains a single entry
@@ -43,34 +48,41 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 			FederatedData labelsData = (FederatedData) pLabels.get(i).getFedMapping().getFRangeFDataMap().values().toArray()[0];
 
 			Future<FederatedResponse> udfResponse = featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					featuresData.getVarID(), new shuffleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()})));
+					featuresData.getVarID(), new subsampleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, min_rows)));
 
 			try {
 				FederatedResponse response = udfResponse.get();
 				if(!response.isSuccessful())
-					throw new DMLRuntimeException("FederatedDataPartitioner ShuffleFederatedScheme: shuffle UDF returned fail");
+					throw new DMLRuntimeException("FederatedDataPartitioner SubsampleFederatedScheme: subsample UDF returned fail");
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("FederatedDataPartitioner ShuffleFederatedScheme: executing shuffle UDF failed" + e.getMessage());
+				throw new DMLRuntimeException("FederatedDataPartitioner SubsampleFederatedScheme: executing subsample UDF failed" + e.getMessage());
 			}
 		}
 		return new Result(pFeatures, pLabels, pFeatures.size());
 	}
 
 	/**
-	 * Shuffle UDF executed on the federated worker
+	 * Subsample UDF executed on the federated worker
 	 */
-	private static class shuffleDataOnFederatedWorker extends FederatedUDF {
-		protected shuffleDataOnFederatedWorker(long[] inIDs) {
+	private static class subsampleDataOnFederatedWorker extends FederatedUDF {
+		int _min_rows;
+		protected subsampleDataOnFederatedWorker(long[] inIDs, int min_rows) {
 			super(inIDs);
+			_min_rows = min_rows;
 		}
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixObject features = (MatrixObject) data[0];
 			MatrixObject labels = (MatrixObject) data[1];
-			shuffle(features);
-			shuffle(labels);
+
+			// subsample down to minimum
+			if(features.getNumRows() > _min_rows) {
+				subsampleTo(features, _min_rows);
+				subsampleTo(labels, _min_rows);
+			}
+
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
 	}

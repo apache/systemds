@@ -60,11 +60,11 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		return Arrays.asList(new Object[][] {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update
 			// type, update frequency
-			{"TwoNN", 2, 4, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
-			{"CNN", 2, 4, 1, 5, 0.01, "BSP", "BATCH", "SHUFFLE"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, "BSP", "BATCH", "REPLICATE"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, "ASP", "BATCH", "SUBSAMPLE"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, "BSP", "EPOCH", "BALANCE"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, "ASP", "EPOCH", "SHUFFLE"},
+			{"CNN", 2, 4, 1, 5, 0.01, "BSP", "BATCH", "KEEP_DATA_ON_WORKER"},
 			{"CNN", 2, 4, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
 			{"CNN", 2, 4, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
 			{"CNN", 2, 4, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
@@ -97,10 +97,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		federatedParamserv(ExecMode.SINGLE_NODE);
 	}
 
+	/*
 	@Test
 	public void federatedParamservHybrid() {
 		federatedParamserv(ExecMode.HYBRID);
 	}
+	*/
 
 	private void federatedParamserv(ExecMode mode) {
 		// config
@@ -128,8 +130,10 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			String featuresName = "X_" + _numFederatedWorkers;
 			String labelsName = "y_" + _numFederatedWorkers;
 
-			federateBalancedAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports);
-			federateBalancedAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports);
+			federateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports,
+					generateBalancedFederatedRanges(_numFederatedWorkers, features.length));
+			federateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports,
+					generateBalancedFederatedRanges(_numFederatedWorkers, labels.length));
 
 			try {
 				Thread.sleep(2000);

@@ -35,6 +35,15 @@ public class FederatedDataPartitioner {
 			case SHUFFLE:
 				_scheme = new ShuffleFederatedScheme();
 				break;
+			case REPLICATE:
+				_scheme = new ReplicateFederatedScheme();
+				break;
+			case SUBSAMPLE:
+				_scheme = new SubsampleFederatedScheme();
+				break;
+			case BALANCE:
+				_scheme = new BalanceFederatedScheme();
+				break;
 			default:
 				throw new DMLRuntimeException(String.format("FederatedDataPartitioner: not support data partition scheme '%s'", scheme));
 		}

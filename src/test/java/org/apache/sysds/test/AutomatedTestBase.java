@@ -595,8 +595,8 @@ public abstract class AutomatedTestBase {
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 	}
 
-	protected void federateBalancedAndWriteInputMatrixWithMTD(String name, double[][] matrix, int numFederatedWorkers,
-															  List<Integer> ports) {
+	protected void federateLocallyAndWriteInputMatrixWithMTD(String name, double[][] matrix, int numFederatedWorkers,
+															  List<Integer> ports, double[][] addresses) {
 		// check matrix non empty
 		if(matrix.length == 0 || matrix[0].length == 0)
 			return;
@@ -611,13 +611,11 @@ public abstract class AutomatedTestBase {
 				Types.FileFormat.BINARY)
 		);
 
-		// write parts balanced and generate FederationMap
+		// write parts and generate FederationMap
 		HashMap<FederatedRange, FederatedData> fedHashMap = new HashMap<>();
-		double examplesPerWorker = ceil( (double) nrows / (double) numFederatedWorkers);
-
 		for(int i = 0; i < numFederatedWorkers; i++) {
-			double lowerBound = examplesPerWorker * i;
-			double upperBound = Math.min(examplesPerWorker * (i + 1), nrows);
+			double lowerBound = addresses[i][0];
+			double upperBound = addresses[i][1];
 			double examplesForWorkerI = upperBound - lowerBound;
 			String path = name + "_" + (i + 1);
 
@@ -638,6 +636,16 @@ public abstract class AutomatedTestBase {
 		federatedMatrixObject.getFedMapping().setType(FederationMap.FType.ROW);
 
 		writeInputFederatedWithMTD(name, federatedMatrixObject, null);
+	}
+
+	protected double[][] generateBalancedFederatedRanges(int numFederatedWorkers, int dataSetSize) {
+		double[][] addresses = new double[numFederatedWorkers][2];
+		double examplesPerWorker = ceil( (double) dataSetSize / (double) numFederatedWorkers);
+		for(int i = 0; i < numFederatedWorkers; i++) {
+			addresses[i][0] = examplesPerWorker * i;
+			addresses[i][1] = Math.min(examplesPerWorker * (i + 1), dataSetSize);
+		}
+		return addresses;
 	}
 
 	/**

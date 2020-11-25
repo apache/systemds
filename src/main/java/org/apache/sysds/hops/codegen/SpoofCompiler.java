@@ -512,20 +512,20 @@ public class SpoofCompiler {
 				
 				if( cla == null ) {
 					String src = "";
+					String src_cuda = "";
 					boolean native_compiled_successfully = false;
+					src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
+					cla = CodegenUtils.compileClass("codegen."+ tmp.getValue().getClassname(), src);
 
 					if(API == GeneratorAPI.CUDA && tmp.getValue().isSupported(API)) {
-						src = tmp.getValue().codegen(false, GeneratorAPI.CUDA);
-						native_compiled_successfully = compile_cuda(tmp.getValue().getVarname(), src);
+						src_cuda = tmp.getValue().codegen(false, GeneratorAPI.CUDA);
+						native_compiled_successfully = compile_cuda(tmp.getValue().getVarname(), src_cuda);
 						if (native_compiled_successfully)
 							CodegenUtils.putNativeOpData(new SpoofCUDA(tmp.getValue()));
-						else
+						else {
 							LOG.warn("CUDA compilation failed, falling back to JAVA");
-					}
-
-					if(API == GeneratorAPI.JAVA || !native_compiled_successfully) {
-							src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
-							cla = CodegenUtils.compileClass("codegen."+ tmp.getValue().getClassname(), src);
+							tmp.getValue().setGeneratorAPI(GeneratorAPI.JAVA);
+						}
 					}
 
 					//explain debug output cplans or generated source code
@@ -536,9 +536,15 @@ public class SpoofCompiler {
 							+ Explain.explainCPlan(cplan.getValue().getValue()));
 					}
 					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
-						LOG.info("Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() + 
+						LOG.info("JAVA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
 							", line "+tmp.getValue().getBeginLine() + ", hash="+tmp.getValue().hashCode()+"):");
 						LOG.info(src);
+						
+						if(API == GeneratorAPI.CUDA) {
+							LOG.info("CUDA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
+									", line " + tmp.getValue().getBeginLine() + ", hash=" + tmp.getValue().hashCode() + "):");
+							LOG.info(src_cuda);
+						}
 					}
 
 					//maintain plan cache
@@ -547,10 +553,15 @@ public class SpoofCompiler {
 				}
 				else if( DMLScript.STATISTICS ) {
 					Statistics.incrementCodegenOpCacheHits();
+					if(CodegenUtils.getNativeOpData(cla.getName()) != null) {
+						tmp.getValue().setGeneratorAPI(CodegenUtils.getNativeOpData(cla.getName())
+								.getCNodeTemplate().getGeneratorAPI());
+						tmp.getValue().setVarName(cla.getName());
+					}
 				}
 				
 				//make class available and maintain hits
-				if(cla != null || API != GeneratorAPI.JAVA)
+				if(cla != null)
 					clas.put(cplan.getKey(), new Pair<Hop[],Class<?>>(tmp.getKey(),cla));
 				if( DMLScript.STATISTICS )
 					Statistics.incrementCodegenOpCacheTotal();

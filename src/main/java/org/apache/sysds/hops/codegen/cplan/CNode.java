@@ -83,7 +83,6 @@ public abstract class CNode
 
 	public String getVarname(GeneratorAPI api) { return getVarname(); }
 
-
 	public String getVectorLength() {
 		if( getVarname().startsWith("a") )
 			return "len";
@@ -264,4 +263,6 @@ public abstract class CNode
 	}
 
 	public abstract boolean isSupported(GeneratorAPI api);
+	
+	public void setVarName(String name) { _genVar = name; }
 }

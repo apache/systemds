@@ -186,7 +186,7 @@ public class NaryOp extends Hop {
 	@Override
 	@SuppressWarnings("incomplete-switch")
 	protected DataCharacteristics inferOutputCharacteristics(MemoTable memo) {
-		if( !getDataType().isScalar() ) {
+		if( !getDataType().isScalar() && !getDataType().isFrame()) {
 			DataCharacteristics[] dc = memo.getAllInputStats(getInput());
 			
 			switch( _op ) {

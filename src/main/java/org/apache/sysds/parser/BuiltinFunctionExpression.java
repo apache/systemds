@@ -727,11 +727,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		case CAST_AS_FRAME:
 			checkNumParameters(1);
-			checkMatrixScalarParam(getFirstExpr());
+			checkDataTypeParam(getFirstExpr(),
+			DataType.SCALAR, DataType.MATRIX, DataType.LIST);
 			output.setDataType(DataType.FRAME);
 			output.setDimensions(id.getDim1(), id.getDim2());
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
 				output.setDimensions(1, 1); //correction scalars
+			if( getFirstExpr().getOutput().getDataType()==DataType.LIST )
+				output.setDimensions(-1, -1); //correction list: arbitrary object
 			output.setBlocksize(id.getBlocksize());
 			output.setValueType(id.getValueType());
 			break;

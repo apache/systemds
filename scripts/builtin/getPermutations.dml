@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
+# This built-in will generate all possible permutation for a given set of values
+
+
+s_getPermutations = function(Frame[String] opt)
+return(Frame[String] output)
+{
+  idx = seq(1, ncol(opt))
+  # get the indexes of columns for recode transformation
+  index = vectorToCsv(idx)
+  # recode logical pipelines for easy handling
+  jspecR = "{ids:true, recode:["+index+"]}";
+  [X, M] = transformencode(target=opt, spec=jspecR);
+  X = replace(target= X, pattern = NaN, replacement = 0)
+  # initialize output matrix
+  n = nrow(opt)
+  d = ncol(opt)
+  outC = matrix(0, n^d, d)
+ 
+  parfor(i in 1 : d) {
+    # matrix for storing rows of ith columns
+    outR = matrix(0, 0, 1)
+    j = n^i
+    rowIdx = 1
+    for(k in 1:j) {
+      valDup = matrix(as.scalar(X[rowIdx, i]), n^(d-i), 1)
+      outR = rbind(outR, valDup)
+      rowIdx = rowIdx + 1
+      rowIdx = ifelse(((rowIdx)%%(n+1)) == 0, 1, rowIdx)
+    }  
+    outC[,i] = outR
+  }
+  computeInvalid = rowMins(outC) == 0 
+  outC = removeEmpty(target = outC,  margin = "rows", select = computeInvalid == 0)
+  output = transformdecode(target=outC, spec=jspecR, meta=M);
+}

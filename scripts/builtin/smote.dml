@@ -55,7 +55,7 @@ return (Matrix[Double] Y) {
   # matrix to keep the index of KNN for each minority sample
   knn_index = matrix(0,k,nrow(X))
   # find nearest neighbour
-  parfor(i in 1:nrow(X))
+  for(i in 1:nrow(X))
   {
     knn = nn(X, X[i, ], k)
     knn_index[, i] = knn

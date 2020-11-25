@@ -1,0 +1,3 @@
+schema,INT32,INT32,INT32,INT32,INT32,INT32,INT32,INT32,INT32,INT32,INT32,INT32,INT32,INT32
+mask,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+evaluation,multilogReg,,,,,,,,,,,,,

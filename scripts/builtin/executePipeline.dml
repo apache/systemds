@@ -19,25 +19,88 @@
 #
 #-------------------------------------------------------------
 
-s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X, 
-  List[Unknown] hyperParameters, Boolean verbose)
-  return (Matrix[Double] X)
+s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask,
+  Frame[Unknown] schema, List[Unknown] hyperParameters, Boolean verbose)
+  return (Matrix[Double] X, Matrix[Double] Y)
 {
-  for(i in 1: ncol(pipeline)) {
-    hp = matrixToList(X, as.matrix(hyperParameters[i]))
-    X = eval(as.scalar(pipeline[1,i]), hp)
+
+  print("PIPELINE EXECUTION START ... ")
+  if(verbose) {
+    print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
+    print("pipeline in execution "+toString(pipeline))
+    print("pipeline hps "+toString(hyperParameters))
+    print("mask "+toString(mask))
+    print("col max"+toString(colMaxs(X)))
+    while(FALSE){}
   }
+  for(i in 1:ncol(pipeline)) {
+    op = as.scalar(pipeline[1,i])
+    [hp, withClass] = matrixToList(X, Y, mask, as.matrix(hyperParameters[i]), op)
+    X = eval(op, hp)
+
+    if(withClass)
+    {
+      Y = X[, ncol(X)]
+      X = X[, 1:ncol(X) - 1]
+    }
+
+    X = confirmMeta(X, mask)
+  }
+  while(FALSE){}
 }
 
 # This function will convert the matrix row-vector into list
-matrixToList = function(Matrix[Double] X, Matrix[Double] p)
-  return (List[Unknown] l)
+matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask, Matrix[Double] p, String op)
+  return (List[Unknown] l, Boolean hasY)
 {
-  l = list()
-  l = append(l, X)
-  if(sum(p) != -1) {
-    for(i in 1:ncol(p))
+  hasY = FALSE
+  hasVerbose = as.scalar(p[1, ncol(p)])
+  yFlag = as.scalar(p[1, ncol(p) - 1])
+  l = list(X)
+  if(yFlag == 1) {
+    l = append(l, Y)
+    hasY = TRUE
+  }  
+  
+  if(ncol(p) > 2) {
+    if(op  == "mice")
+      l = append(l, mask)
+    if(op == "pca") {
+      ratio = as.scalar(p[1,1])
+      p[1, 1] = as.integer(ncol(X) - ratio)
+    }
+    for(i in 1:ncol(p)-2)
       l = append(l, as.scalar(p[1,i]))
   }
-  l = append(l, FALSE) #verbose parameter value
+  
+  if(hasVerbose == 1)
+    l = append(l, FALSE)
+
+   # print(toString(l, rows=2))
+}
+
+confirmMeta = function(Matrix[Double] X, Matrix[Double] mask)
+return (Matrix[Double] X)
+{
+  if(sum(mask) > 0)
+  {
+    # get  the max + 1 for nan replacement
+    nanMask = is.na(X)
+    # replace nan
+    X = replace(target = X, pattern = NaN, replacement = 9999)
+    # take categorical out
+    cat = removeEmpty(target=X, margin="cols", select = mask)
+    # round categorical (if there is any floating  point)
+    cat = ceil(cat)
+    print("cat less than zero")
+    print(sum(cat <= 0))
+    # reconstruct original X
+    X = X * (mask == 0)
+    q = table(seq(1, ncol(cat)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
+      select=t(mask)), ncol(cat), ncol(X))
+    X = (cat %*% q) + X 
+    # put nan back
+    nanMask = replace(target = nanMask, pattern = 1, replacement = NaN)
+    X = X + nanMask
+  }
 }

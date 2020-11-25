@@ -46,6 +46,10 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boole
   if(ncol(X) < 2)
     stop("MICE can not be applied on single vectors.
          expected number of columns > 1 found: "+ncol(X))
+  
+  if(ncol(cMask) != ncol(X))
+    stop("Dimension mismatch: the columns in X != columns in mask")
+  
     
   lastIndex = ncol(X);
   sumMax = sum(cMask);
@@ -100,12 +104,14 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boole
     inverseMask = Mask1 == 0
     # OHE of categorical features
     [dX, dM] = transformencode(target=as.frame(X1), spec=jspecDC);
-    dist = (colMaxs(X1) * cMask) + (cMask == 0) # number of distinct items in categorical features
+    dist = colDist(X1, cMask) # number of distinct items in categorical features
+    while(FALSE){}
     i=1; j=1; in_c=1;
 
     while(i < ncol(dX))
     {
       j = (i + as.scalar(dist[1,in_c])) - 1 # index value for iterating OHE columns
+      
       if(sum(Mask1[, in_c]) > 0 & as.scalar(cMask[, in_c]) == 0) # impute numeric features
       {
         # construct column selector
@@ -123,7 +129,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boole
         slice2a = removeEmpty(target = X1, margin = "rows", select = Mask1[,in_c])
         test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
         test_Y = slice2a[,in_c]
-     
+
         # learn a regression line
         beta = lm(X=train_X, y=train_Y, verbose=FALSE, icpt=1, reg = 1e-7, tol = 1e-7);
         # predicting missing values 
@@ -145,17 +151,22 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boole
         slice1a = removeEmpty(target = X1, margin = "rows", select = inverseMask[,in_c])
         train_X = removeEmpty(target = slice1, margin = "cols", select = selX);
         train_Y = slice1a[,in_c]
-
         # prepare score data set X and Y for imputing Y
         slice2 = removeEmpty(target = dX, margin = "rows", select = Mask1[,in_c])
         slice2a = removeEmpty(target = X1, margin = "rows", select = Mask1[,in_c])
         test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
         test_Y = slice2a[,in_c]
-        
         # train classification model
-        beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.00000001, reg = 0.001, maxi = 100, maxii=0, verbose=FALSE)
-        # predicting missing values 
-        [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
+        if(min(train_Y) == max(train_Y))
+          pred = matrix(min(train_Y), nrow(test_Y), 1)
+        else {
+          beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.00001, reg = 0.00001, maxi = 50, maxii=50, verbose=FALSE)
+          # predicting missing values 
+          [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
+        }
+        # beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.00001, reg = 0.00001, maxi = 50, maxii=50, verbose=FALSE)
+        # # predicting missing values 
+        # [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
         # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
         R = removeEmpty(target=Mask_Filled[,in_c] * seq(1,n), margin="rows");
         #TODO modify removeEmpty to return zero row and n columns
@@ -175,9 +186,22 @@ colMode = function (Matrix[Double] X) return (Matrix[Double] colMode) {
   n = nrow(X)
   colMode = matrix(0, 1, ncol(X))
   # compute column wise mode
-  parfor(i in 1: d) {
+  for(i in 1: d) {
     X_c = removeEmpty(target=X, margin = "rows", select=(rowSums(X != 0)==d))
     cat_counts = table(X_c[, i], 1, n, 1);  # counts for each category
     colMode[1,i] = as.scalar(rowIndexMax(t(cat_counts))) # mode
+  }
+}
+
+colDist= function(Matrix[Double] X, Matrix[Double] mask)
+return (Matrix[Double] dist){
+  dist = matrix(1, 1, ncol(X))
+  for(i in 1:ncol(X))
+  {
+    if(as.scalar(mask[,i]) == 1)
+    {
+      distT = table(X[, i], 1)
+      dist[1, i] = sum(distT != 0)
+    }
   }
 }

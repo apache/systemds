@@ -24,7 +24,7 @@
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # P               Double  ---         vector of Predictions
-# Y               Double  ---         vector of Golden standard One Hot Encoded
+# Y               Double  ---         vector of Golden standard One Hot Encoded; the one hot encoded vector of actual labels
 # ---------------------------------------------------------------------------------------------
 # OUTPUT:
 # ---------------------------------------------------------------------------------------------

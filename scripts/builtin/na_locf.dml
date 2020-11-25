@@ -41,7 +41,7 @@ m_na_locf = function(Matrix[Double] X, String option = "locf", Boolean verbose =
   return(Matrix[Double] output)
 {
   output = X
-  if(sum(is.nan(X)) > 0) {
+  if(sum(is.na(X)) > 0) {
     if(option == "locf")
       output = locf(X)
     else

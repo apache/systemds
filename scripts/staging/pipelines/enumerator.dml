@@ -19,9 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# import
-source("./scripts/staging/pipelines/permutations.dml") as perm;
-source("./scripts/staging/pipelines/utils.dml") as utils;
 
 enumerator = function(Matrix[Double] X, Matrix[Double] Y, Frame[String] logical, Frame[String] outlierPrimitives, 
                Frame[String] mviPrimitives, Frame[String] param, Integer k, Boolean verbose = TRUE)
@@ -37,7 +34,7 @@ return(Frame[String] Kpipeline)
         operator = cbind(operator, mviPrimitives);
     }
     operator = operator[,2:ncol(operator)]
-    intermediates = perm::getPermutations(operator) # get the all possible combination of physical primitives
+    intermediates = getPermutations(operator) # get the all possible combination of physical primitives
                                                    # for ith logical pipeline 
     if(verbose)
       print(" pipelines \n"+toString(intermediates))
@@ -213,7 +210,7 @@ return (Frame[String] pipeline)
   allParam = cbind(pipeline, as.frame(hparameter))
   # get the indexes of columns for recode transformation
   idx = seq(1, ncol(pipeline))
-  index = utils::vectorToCsv(idx)
+  index = vectorToCsv(idx)
   # encoding categorical columns using recode transformation
   jspecR = "{ids:true, recode:["+index+"]}";
   [X, M] = transformencode(target=allParam, spec=jspecR);  
@@ -286,8 +283,8 @@ return (Double accuracy)
 # Enumeration call
 ##################################################################################
 X = read($1, data_type="matrix", format="csv", header=TRUE);
-Y = X[,1]+1
-X = X[,2:ncol(X)]
+Y = X[,ncol(X)]+1
+X = X[,1:ncol(X)-1]
 L = read($2, data_type="frame", format="csv");
 OP = read($3, data_type="frame", format="csv");
 MVIP = read($4, data_type="frame", format="csv");

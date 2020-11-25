@@ -2001,7 +2001,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	public FrameBlock dropInvalidType(FrameBlock schema) {
 		//sanity checks
 		if(this.getNumColumns() != schema.getNumColumns())
-			throw new DMLException("mismatch in number of columns in frame and its schema ");
+			throw new DMLException("mismatch in number of columns in frame and its schema "+this.getNumColumns()+" != "+schema.getNumColumns());
 
 		String[] schemaString = schema.getStringRowIterator().next(); // extract the schema in String array
 		for (int i = 0; i < this.getNumColumns(); i++) {
@@ -2026,8 +2026,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 				String dataValue = obj.get(j).toString().trim().replace("\"", "").toLowerCase() ;
 
 				ValueType dataType = isType(dataValue);
-				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type == "INT")){
-					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " index: " + i + "," +j);
+
+				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type == "INT") &&  !(dataType == ValueType.BOOLEAN && type == "FP")){
+					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " + (i+1) + ", row:" +(j+1));
 
 					this.set(j,i,null);
 				}

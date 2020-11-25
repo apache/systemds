@@ -196,7 +196,8 @@ public class LibCompAgg {
             // compute all compressed column groups
             ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
             ArrayList<UnaryAggregateOverlappingTask> tasks = new ArrayList<>();
-            final int blklen = CompressionSettings.BITMAP_BLOCK_SZ / m1.getNumColumns();
+            final int blklen = Math.min(m1.getNumRows() /op.getNumThreads(), CompressionSettings.BITMAP_BLOCK_SZ) ;
+            // final int blklen = CompressionSettings.BITMAP_BLOCK_SZ ;/// m1.getNumColumns();
 
             for(int i = 0; i * blklen < m1.getNumRows(); i++) {
                 tasks.add(new UnaryAggregateOverlappingTask(m1.getColGroups(), ret, i * blklen,
@@ -228,7 +229,6 @@ public class LibCompAgg {
                 ret.recomputeNonZeros();
             }
             else if(op.indexFn instanceof ReduceCol) {
-                // LOG.error("Here");
                 long nnz = 0;
                 for(int i = 0; i * blklen < m1.getNumRows(); i++) {
                     MatrixBlock tmp = rtasks.get(i).get();
@@ -248,11 +248,11 @@ public class LibCompAgg {
                             Plus.getPlusFnObject()) : op.aggOp.increOp);
                 }
             }
+            memPool.remove();
         }
         catch(InterruptedException | ExecutionException e) {
             throw new DMLRuntimeException(e);
         }
-
         if(op.aggOp.existsCorrection() && inCP)
             ret.dropLastRowsOrColumns(op.aggOp.correction);
 

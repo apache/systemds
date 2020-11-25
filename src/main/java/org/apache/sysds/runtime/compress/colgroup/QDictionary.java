@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
@@ -123,7 +124,7 @@ public class QDictionary extends ADictionary {
 	@Override
 	public QDictionary apply(ScalarOperator op) {
 
-		if(op.fn instanceof Multiply) {
+		if(op.fn instanceof Multiply || op.fn instanceof Divide) {
 			_scale = op.executeScalar(_scale);
 			return this;
 			// return new QDictionary(_values, op.executeScalar(_scale));

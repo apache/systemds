@@ -21,17 +21,26 @@ package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.Dictionary;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -42,6 +51,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class LibBinaryCellOp {
 
@@ -63,7 +73,10 @@ public class LibBinaryCellOp {
 			m2 = m2.scalarOperations(sop, new MatrixBlock());
 			return LibBinaryCellOp.bincellOp(m1, m2, ret, new BinaryOperator(Plus.getPlusFnObject()));
 		}
-		if(m1.isOverlapping() && !(op.fn instanceof Multiply)) {
+
+		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, m2);
+
+		if(m1.isOverlapping() && !(op.fn instanceof Multiply || op.fn instanceof Divide)) {
 			if(op.fn instanceof Plus || op.fn instanceof Minus) {
 				return binaryMVPlusStack(m1, m2, ret, op);
 			}
@@ -73,7 +86,6 @@ public class LibBinaryCellOp {
 
 		}
 		else {
-			BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, m2);
 			switch(atype) {
 				case MATRIX_ROW_VECTOR:
 					// Verify if it is okay to include all OuterVectorVector ops here.
@@ -149,5 +161,74 @@ public class LibBinaryCellOp {
 		ret.setOverlapping(true);
 		ret.setNonZeros(-1);
 		return ret;
+	}
+
+	public static MatrixBlock binaryMVPlusCol(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op) {
+		MatrixBlock ret = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false, -1).allocateBlock();
+
+		final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
+		int k = OptimizerUtils.getConstrainedNumThreads(-1);
+		ExecutorService pool = CommonThreadPool.get(k);
+		ArrayList<BinaryMVColTask> tasks = new ArrayList<>();
+
+		try {
+			for(int i = 0; i * blkz < m1.getNumRows(); i++) {
+				BinaryMVColTask rt = new BinaryMVColTask(m1.getColGroups(), m2, ret, i * blkz,
+					Math.min(m1.getNumRows(), (i + 1) * blkz), op);
+				tasks.add(rt);
+			}
+			List<Future<Integer>> futures = pool.invokeAll(tasks);
+			pool.shutdown();
+			long nnz = 0;
+			for(Future<Integer> f : futures)
+				nnz += f.get();
+			ret.setNonZeros(nnz);
+		}
+		catch(InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
+
+		return ret;
+	}
+
+	private static class BinaryMVColTask implements Callable<Integer> {
+		private final List<ColGroup> _groups;
+		private final int _rl;
+		private final int _ru;
+		private final MatrixBlock _m2;
+		private final MatrixBlock _ret;
+		private final BinaryOperator _op;
+
+		protected BinaryMVColTask(List<ColGroup> groups, MatrixBlock m2, MatrixBlock ret, int rl, int ru,
+			BinaryOperator op) {
+			_groups = groups;
+			_m2 = m2;
+			_ret = ret;
+			_op = op;
+			_rl = rl;
+			_ru = ru;
+		}
+
+		@Override
+		public Integer call() {
+
+			for(ColGroup g : _groups) {
+				g.decompressToBlock(_ret, _rl, _ru, _rl, g.getValues());
+			}
+
+			int nnz = 0;
+			DenseBlock db = _ret.getDenseBlock();
+			for(int row = _rl; row < _ru; row++) {
+				double vr = _m2.quickGetValue(row, 0);
+				for(int col = 0; col < _ret.getNumColumns(); col++) {
+					double v = _op.fn.execute(_ret.quickGetValue(row, col), vr);
+					nnz += (v != 0) ? 1 : 0;
+					db.set(row, col, v);
+				}
+			}
+
+			return nnz;
+		}
 	}
 }

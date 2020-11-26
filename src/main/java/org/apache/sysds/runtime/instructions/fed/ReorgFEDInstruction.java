@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,60 +97,18 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()).transpose());
 		}
 		else if (instOpcode.equals("rdiag")) {
-			FederationMap fedMap = mo1.getFedMapping();
-			boolean rowFed = mo1.isFederated(FederationMap.FType.ROW);
-
-			long varID = FederationUtils.getNextFedDataID();
-			Map<FederatedRange, int[]> dcs = new HashMap<>();
-			FederationMap diagFedMap;
+			AbstractMap.SimpleEntry<FederationMap, Map<FederatedRange, int[]>> result;
 			// diag(diag(X))
 			if (mo1.getNumColumns() == 1 && mo1.getNumRows() != 1) {
-				diagFedMap = fedMap.mapParallel(varID, (range, data) -> {
-					try {
-						FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
-							FederatedRequest.RequestType.EXEC_UDF,
-							-1,
-							new ReorgFEDInstruction.DiagMatrix(data.getVarID(),
-								varID, r_op,
-								rowFed ? (new int[] {range.getBeginDimsInt()[0], range.getEndDimsInt()[0]}) :
-									new int[] {range.getBeginDimsInt()[1], range.getEndDimsInt()[1]},
-								rowFed, (int) mo1.getNumRows()))).get();
-						if(!response.isSuccessful())
-							response.throwExceptionFromResponse();
-						int[] subRangeCharacteristics = (int[]) response.getData()[0];
-						synchronized(dcs) {
-							dcs.put(range, subRangeCharacteristics);
-						}
-						return null;
-					}
-					catch(Exception e) {
-						throw new DMLRuntimeException(e);
-					}
-				});
+				result = rdiagV2M(mo1, r_op);
 			} else {
-				diagFedMap = fedMap.mapParallel(varID, (range, data) -> {
-					try {
-						FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
-							FederatedRequest.RequestType.EXEC_UDF, -1,
-							new ReorgFEDInstruction.Rdiag(data.getVarID(), varID, r_op,
-								rowFed ? (new int[] {range.getBeginDimsInt()[0], range.getEndDimsInt()[0]}) :
-									new int[] {range.getBeginDimsInt()[1], range.getEndDimsInt()[1]},
-								rowFed))).get();
-						if(!response.isSuccessful())
-							response.throwExceptionFromResponse();
-						int[] subRangeCharacteristics = (int[]) response.getData()[0];
-						synchronized(dcs) {
-							dcs.put(range, subRangeCharacteristics);
-						}
-						return null;
-					}
-					catch(Exception e) {
-						throw new DMLRuntimeException(e);
-					}
-				});
+				result = rdiagM2V(mo1, r_op);
 			}
 
+			FederationMap diagFedMap = result.getKey();
+			Map<FederatedRange, int[]> dcs = result.getValue();
 
+			//update fed ranges
 			for(int i = 0; i < diagFedMap.getFederatedRanges().length; i++) {
 				int[] newRange = dcs.get(diagFedMap.getFederatedRanges()[i]);
 
@@ -172,6 +131,69 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 					(int) mo1.getBlocksize());
 			rdiag.setFedMapping(diagFedMap);
 		}
+	}
+
+	private AbstractMap.SimpleEntry<FederationMap, Map<FederatedRange, int[]>> rdiagV2M (MatrixObject mo1, ReorgOperator r_op) {
+		FederationMap fedMap = mo1.getFedMapping();
+		boolean rowFed = mo1.isFederated(FederationMap.FType.ROW);
+
+		long varID = FederationUtils.getNextFedDataID();
+		Map<FederatedRange, int[]> dcs = new HashMap<>();
+		FederationMap diagFedMap;
+
+		diagFedMap = fedMap.mapParallel(varID, (range, data) -> {
+			try {
+				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
+					FederatedRequest.RequestType.EXEC_UDF, -1,
+					new ReorgFEDInstruction.DiagMatrix(data.getVarID(),
+						varID, r_op,
+						rowFed ? (new int[] {range.getBeginDimsInt()[0], range.getEndDimsInt()[0]}) :
+							new int[] {range.getBeginDimsInt()[1], range.getEndDimsInt()[1]},
+						rowFed, (int) mo1.getNumRows()))).get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+				int[] subRangeCharacteristics = (int[]) response.getData()[0];
+				synchronized(dcs) {
+					dcs.put(range, subRangeCharacteristics);
+				}
+				return null;
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		});
+		return new AbstractMap.SimpleEntry<>(diagFedMap, dcs);
+	}
+
+	private AbstractMap.SimpleEntry<FederationMap, Map<FederatedRange, int[]>> rdiagM2V (MatrixObject mo1, ReorgOperator r_op) {
+		FederationMap fedMap = mo1.getFedMapping();
+		boolean rowFed = mo1.isFederated(FederationMap.FType.ROW);
+
+		long varID = FederationUtils.getNextFedDataID();
+		Map<FederatedRange, int[]> dcs = new HashMap<>();
+		FederationMap diagFedMap;
+
+		diagFedMap = fedMap.mapParallel(varID, (range, data) -> {
+			try {
+				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
+					FederatedRequest.RequestType.EXEC_UDF, -1,
+					new ReorgFEDInstruction.Rdiag(data.getVarID(), varID, r_op,
+						rowFed ? (new int[] {range.getBeginDimsInt()[0], range.getEndDimsInt()[0]}) :
+							new int[] {range.getBeginDimsInt()[1], range.getEndDimsInt()[1]},
+						rowFed))).get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+				int[] subRangeCharacteristics = (int[]) response.getData()[0];
+				synchronized(dcs) {
+					dcs.put(range, subRangeCharacteristics);
+				}
+				return null;
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		});
+		return new AbstractMap.SimpleEntry<>(diagFedMap, dcs);
 	}
 
 	private static class Rdiag extends FederatedUDF {

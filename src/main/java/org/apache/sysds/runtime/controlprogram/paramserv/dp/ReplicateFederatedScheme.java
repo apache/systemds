@@ -26,7 +26,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.List;
 import java.util.concurrent.Future;
@@ -58,6 +61,11 @@ public class ReplicateFederatedScheme extends DataPartitionFederatedScheme {
 			catch(Exception e) {
 				throw new DMLRuntimeException("FederatedDataPartitioner ReplicateFederatedScheme: executing replicate UDF failed" + e.getMessage());
 			}
+
+			DataCharacteristics update = pFeatures.get(i).getDataCharacteristics().setRows(max_rows);
+			pFeatures.get(i).updateDataCharacteristics(update);
+			update = pLabels.get(i).getDataCharacteristics().setRows(max_rows);
+			pLabels.get(i).updateDataCharacteristics(update);
 		}
 		return new Result(pFeatures, pLabels, pFeatures.size());
 	}
@@ -79,8 +87,11 @@ public class ReplicateFederatedScheme extends DataPartitionFederatedScheme {
 
 			// replicate up to the max
 			if(features.getNumRows() < _max_rows) {
-				replicateTo(features, _max_rows);
-				replicateTo(labels, _max_rows);
+				int num_rows_needed = _max_rows - Math.toIntExact(features.getNumRows());
+				// generate replication matrix
+				MatrixBlock replicateMatrixBlock = ParamservUtils.generateReplicationMatrix(num_rows_needed, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				replicateTo(features, replicateMatrixBlock);
+				replicateTo(labels, replicateMatrixBlock);
 			}
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);

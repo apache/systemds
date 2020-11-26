@@ -26,7 +26,9 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.List;
 import java.util.concurrent.Future;
@@ -69,8 +71,11 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixObject features = (MatrixObject) data[0];
 			MatrixObject labels = (MatrixObject) data[1];
-			shuffle(features);
-			shuffle(labels);
+
+			// generate permutation matrix
+			MatrixBlock permutationMatrixBlock = ParamservUtils.generatePermutation(Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+			shuffle(features, permutationMatrixBlock);
+			shuffle(labels, permutationMatrixBlock);
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
 	}

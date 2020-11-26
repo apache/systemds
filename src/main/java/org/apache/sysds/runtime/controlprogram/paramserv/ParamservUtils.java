@@ -222,11 +222,11 @@ public class ParamservUtils {
 	 * @return subsample matrix
 	 */
 	public static MatrixBlock generateSubsampleMatrix(int nsamples, int nrows, long seed) {
-		MatrixBlock seq = new MatrixBlock(nsamples, 1, false);
+		MatrixBlock seq = new MatrixBlock(nsamples, nrows, false);
 		// No replacement to preserve as much of the original data as possible
 		MatrixBlock sample = MatrixBlock.sampleOperations(nrows, nsamples, false, seed);
 		return seq.ctableSeqOperations(sample, 1.0,
-				new MatrixBlock(nsamples, nrows, true));
+				new MatrixBlock(nsamples, nrows, true), false);
 	}
 
 	/**
@@ -237,11 +237,11 @@ public class ParamservUtils {
 	 * @return replication matrix
 	 */
 	public static MatrixBlock generateReplicationMatrix(int nsamples, int nrows, long seed) {
-		MatrixBlock seq = new MatrixBlock(nsamples, 1, false);
+		MatrixBlock seq = new MatrixBlock(nsamples, nrows, false);
 		// Replacement set to true to provide random replication
 		MatrixBlock sample = MatrixBlock.sampleOperations(nrows, nsamples, true, seed);
 		return seq.ctableSeqOperations(sample, 1.0,
-				new MatrixBlock(nsamples, nrows, true));
+				new MatrixBlock(nsamples, nrows, true), false);
 	}
 
 	public static ExecutionContext createExecutionContext(ExecutionContext ec,

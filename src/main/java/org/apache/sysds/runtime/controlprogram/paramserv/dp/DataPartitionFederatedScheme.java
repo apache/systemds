@@ -91,14 +91,13 @@ public abstract class DataPartitionFederatedScheme {
 	}
 
 	/**
-	 * Takes a MatrixObjects and shuffles it
+	 * Just a mat multiply used to shuffle with a provided shuffle matrixBlock
 	 *
 	 * @param m the input matrix object
+	 * @param permutationMatrixBlock the shuffle matrix block
 	 */
-	static void shuffle(MatrixObject m) {
-		// generate permutation matrix
-		MatrixBlock permutationMatrixBlock = ParamservUtils.generatePermutation(Math.toIntExact(m.getNumRows()), System.currentTimeMillis());
-		// matrix multiplies
+	static void shuffle(MatrixObject m, MatrixBlock permutationMatrixBlock) {
+		// matrix multiply
 		m.acquireModify(permutationMatrixBlock.aggregateBinaryOperations(
 				permutationMatrixBlock, m.acquireReadAndRelease(), new MatrixBlock(),
 				new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()))
@@ -111,11 +110,8 @@ public abstract class DataPartitionFederatedScheme {
 	 *
 	 * @param m the input matrix object
 	 */
-	static void replicateTo(MatrixObject m, int rows) {
-		int num_rows_needed = rows - Math.toIntExact(m.getNumRows());
-		// generate replication matrix
-		MatrixBlock replicateMatrixBlock = ParamservUtils.generateReplicationMatrix(num_rows_needed, Math.toIntExact(m.getNumRows()), System.currentTimeMillis());
-		// matrix multiplies and append
+	static void replicateTo(MatrixObject m, MatrixBlock replicateMatrixBlock) {
+		// matrix multiply and append
 		MatrixBlock replicatedFeatures = replicateMatrixBlock.aggregateBinaryOperations(
 				replicateMatrixBlock, m.acquireReadAndRelease(), new MatrixBlock(),
 				new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject())));
@@ -125,14 +121,13 @@ public abstract class DataPartitionFederatedScheme {
 	}
 
 	/**
-	 * Takes a MatrixObjects and shrinks it to the given number of rows by subsampling
+	 * Just a mat multiply used to subsample with a provided subsample matrixBlock
 	 *
 	 * @param m the input matrix object
+	 * @param subsampleMatrixBlock the subsample matrix block
 	 */
-	static void subsampleTo(MatrixObject m, int rows) {
-		// generate subsampling matrix
-		MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(rows, Math.toIntExact(m.getNumRows()), System.currentTimeMillis());
-		// matrix multiplies
+	static void subsampleTo(MatrixObject m, MatrixBlock subsampleMatrixBlock) {
+		// matrix multiply
 		m.acquireModify(subsampleMatrixBlock.aggregateBinaryOperations(
 				subsampleMatrixBlock, m.acquireReadAndRelease(), new MatrixBlock(),
 				new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()))

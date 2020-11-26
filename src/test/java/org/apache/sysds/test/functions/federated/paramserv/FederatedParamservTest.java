@@ -53,6 +53,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final String _utype;
 	private final String _freq;
 	private final String _scheme;
+	private final String _data_distribution;
 
 	// parameters
 	@Parameterized.Parameters
@@ -60,21 +61,21 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		return Arrays.asList(new Object[][] {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update
 			// type, update frequency
-			{"TwoNN", 2, 4, 1, 5, 0.01, "BSP", "BATCH", "REPLICATE"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, "ASP", "BATCH", "SUBSAMPLE"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, "BSP", "EPOCH", "BALANCE"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, "ASP", "EPOCH", "SHUFFLE"},
-			{"CNN", 2, 4, 1, 5, 0.01, "BSP", "BATCH", "KEEP_DATA_ON_WORKER"},
-			{"CNN", 2, 4, 1, 5, 0.01, "ASP", "BATCH", "KEEP_DATA_ON_WORKER"},
-			{"CNN", 2, 4, 1, 5, 0.01, "BSP", "EPOCH", "SHUFFLE"},
-			{"CNN", 2, 4, 1, 5, 0.01, "ASP", "EPOCH", "KEEP_DATA_ON_WORKER"},
-			{"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH", "SHUFFLE"},
-			{"CNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH", "KEEP_DATA_ON_WORKER"}
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE",		 	"IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, 		"BSP", "BATCH", "SUBSAMPLE", 			"IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, 		"BSP", "BATCH", "BALANCE", 				"IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 5, 0.01, 		"ASP", "EPOCH", "SHUFFLE", 				"IMBALANCED"},
+			/*{"CNN", 2, 4, 1, 5, 0.01, 			"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BALANCED"},
+			{"CNN", 2, 4, 1, 5, 0.01, 			"ASP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BALANCED"},
+			{"CNN", 2, 4, 1, 5, 0.01, 			"BSP", "EPOCH", "SHUFFLE", 				"BALANCED"},
+			{"CNN", 2, 4, 1, 5, 0.01, 			"ASP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"BALANCED"},
+			{"TwoNN", 5, 1000, 200, 2, 0.01, 	"BSP", "BATCH", "SHUFFLE", 				"BALANCED"},
+			{"CNN", 5, 1000, 200, 2, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"BALANCED"}*/
 		});
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
-		int epochs, double eta, String utype, String freq, String scheme) {
+		int epochs, double eta, String utype, String freq, String scheme, String data_distribution) {
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_dataSetSize = dataSetSize;
@@ -84,6 +85,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		_utype = utype;
 		_freq = freq;
 		_scheme = scheme;
+		_data_distribution = data_distribution;
 	}
 
 	@Override
@@ -111,7 +113,6 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		setOutputBuffering(true);
 
 		int C = 1, Hin = 28, Win = 28;
-		int numFeatures = C * Hin * Win;
 		int numLabels = 10;
 
 		ExecMode platformOld = setExecMode(mode);
@@ -125,15 +126,27 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
 			}
 
+			// generate test data
 			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
 			double[][] labels = generateDummyMNISTLabels(_dataSetSize, numLabels);
-			String featuresName = "X_" + _numFederatedWorkers;
-			String labelsName = "y_" + _numFederatedWorkers;
+			String featuresName = "";
+			String labelsName = "";
 
-			federateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports,
-					generateBalancedFederatedRanges(_numFederatedWorkers, features.length));
-			federateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports,
-					generateBalancedFederatedRanges(_numFederatedWorkers, labels.length));
+			// federate test data balanced or imbalanced
+			if(_data_distribution.equals("IMBALANCED")) {
+				featuresName = "X_IMBALANCED_" + _numFederatedWorkers;
+				labelsName = "y_IMBALANCED_" + _numFederatedWorkers;
+				double[][] ranges = {{0,1}, {1,4}};
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
+			}
+			else {
+				featuresName = "X_BALANCED_" + _numFederatedWorkers;
+				labelsName = "y_BALANCED_" + _numFederatedWorkers;
+				double[][] ranges = generateBalancedFederatedRowRanges(_numFederatedWorkers, features.length);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
+			}
 
 			try {
 				Thread.sleep(2000);

@@ -26,7 +26,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.List;
 import java.util.concurrent.Future;
@@ -58,6 +61,11 @@ public class SubsampleFederatedScheme extends DataPartitionFederatedScheme {
 			catch(Exception e) {
 				throw new DMLRuntimeException("FederatedDataPartitioner SubsampleFederatedScheme: executing subsample UDF failed" + e.getMessage());
 			}
+
+			DataCharacteristics update = pFeatures.get(i).getDataCharacteristics().setRows(min_rows);
+			pFeatures.get(i).updateDataCharacteristics(update);
+			update = pLabels.get(i).getDataCharacteristics().setRows(min_rows);
+			pLabels.get(i).updateDataCharacteristics(update);
 		}
 		return new Result(pFeatures, pLabels, pFeatures.size());
 	}
@@ -79,8 +87,10 @@ public class SubsampleFederatedScheme extends DataPartitionFederatedScheme {
 
 			// subsample down to minimum
 			if(features.getNumRows() > _min_rows) {
-				subsampleTo(features, _min_rows);
-				subsampleTo(labels, _min_rows);
+				// generate subsampling matrix
+				MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(_min_rows, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				subsampleTo(features, subsampleMatrixBlock);
+				subsampleTo(labels, subsampleMatrixBlock);
 			}
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);

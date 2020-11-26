@@ -27,7 +27,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.List;
 import java.util.concurrent.Future;
@@ -38,7 +41,7 @@ public class BalanceFederatedScheme extends DataPartitionFederatedScheme {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
 
-		int average_num_rows = (int) pFeatures.stream().map(CacheableData::getNumRows).mapToInt(Long::intValue).average().orElse(Double.NaN);
+		int average_num_rows = (int) Math.round(pFeatures.stream().map(CacheableData::getNumRows).mapToInt(Long::intValue).average().orElse(Double.NaN));
 
 		for(int i = 0; i < pFeatures.size(); i++) {
 			// Works, because the map contains a single entry
@@ -56,6 +59,11 @@ public class BalanceFederatedScheme extends DataPartitionFederatedScheme {
 			catch(Exception e) {
 				throw new DMLRuntimeException("FederatedDataPartitioner BalanceFederatedScheme: executing balance UDF failed" + e.getMessage());
 			}
+
+			DataCharacteristics update = pFeatures.get(i).getDataCharacteristics().setRows(average_num_rows);
+			pFeatures.get(i).updateDataCharacteristics(update);
+			update = pLabels.get(i).getDataCharacteristics().setRows(average_num_rows);
+			pLabels.get(i).updateDataCharacteristics(update);
 		}
 		return new Result(pFeatures, pLabels, pFeatures.size());
 	}
@@ -76,14 +84,17 @@ public class BalanceFederatedScheme extends DataPartitionFederatedScheme {
 			MatrixObject labels = (MatrixObject) data[1];
 
 			if(features.getNumRows() > _average_num_rows) {
-				// subsample down to average
-				subsampleTo(features, _average_num_rows);
-				subsampleTo(labels, _average_num_rows);
+				// generate subsampling matrix
+				MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(_average_num_rows, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				subsampleTo(features, subsampleMatrixBlock);
+				subsampleTo(labels, subsampleMatrixBlock);
 			}
 			else if(features.getNumRows() < _average_num_rows) {
-				// replicate up to the average
-				replicateTo(features, _average_num_rows);
-				replicateTo(labels, _average_num_rows);
+				int num_rows_needed = _average_num_rows - Math.toIntExact(features.getNumRows());
+				// generate replication matrix
+				MatrixBlock replicateMatrixBlock = ParamservUtils.generateReplicationMatrix(num_rows_needed, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				replicateTo(features, replicateMatrixBlock);
+				replicateTo(labels, replicateMatrixBlock);
 			}
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);

@@ -595,8 +595,22 @@ public abstract class AutomatedTestBase {
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 	}
 
-	protected void federateLocallyAndWriteInputMatrixWithMTD(String name, double[][] matrix, int numFederatedWorkers,
-															  List<Integer> ports, double[][] addresses) {
+	/**
+	 * <p>
+	 * Takes a matrix (double[][]) and writes it in parts locally. Then it creates a federated MatrixObject
+	 * containing the local paths and the given ports. This federated MO is also written to disk with the provided name
+	 * When running federated workers locally on the specified ports this federated Matrix can then be used
+	 * for testing purposes. Just use read on input(name)
+	 * </p>
+	 *
+	 * @param name name of the matrix when writing to disk
+	 * @param matrix two dimensional matrix
+	 * @param numFederatedWorkers the number of federated workers
+	 * @param ports a list of port the length of the number of federated workers
+	 * @param ranges an array containing arrays of length to with the upper and lower bound (rows) for the slices
+	 */
+	protected void rowFederateLocallyAndWriteInputMatrixWithMTD(String name, double[][] matrix, int numFederatedWorkers,
+															  List<Integer> ports, double[][] ranges) {
 		// check matrix non empty
 		if(matrix.length == 0 || matrix[0].length == 0)
 			return;
@@ -614,8 +628,8 @@ public abstract class AutomatedTestBase {
 		// write parts and generate FederationMap
 		HashMap<FederatedRange, FederatedData> fedHashMap = new HashMap<>();
 		for(int i = 0; i < numFederatedWorkers; i++) {
-			double lowerBound = addresses[i][0];
-			double upperBound = addresses[i][1];
+			double lowerBound = ranges[i][0];
+			double upperBound = ranges[i][1];
 			double examplesForWorkerI = upperBound - lowerBound;
 			String path = name + "_" + (i + 1);
 
@@ -638,14 +652,14 @@ public abstract class AutomatedTestBase {
 		writeInputFederatedWithMTD(name, federatedMatrixObject, null);
 	}
 
-	protected double[][] generateBalancedFederatedRanges(int numFederatedWorkers, int dataSetSize) {
-		double[][] addresses = new double[numFederatedWorkers][2];
+	protected double[][] generateBalancedFederatedRowRanges(int numFederatedWorkers, int dataSetSize) {
+		double[][] ranges = new double[numFederatedWorkers][2];
 		double examplesPerWorker = ceil( (double) dataSetSize / (double) numFederatedWorkers);
 		for(int i = 0; i < numFederatedWorkers; i++) {
-			addresses[i][0] = examplesPerWorker * i;
-			addresses[i][1] = Math.min(examplesPerWorker * (i + 1), dataSetSize);
+			ranges[i][0] = examplesPerWorker * i;
+			ranges[i][1] = Math.min(examplesPerWorker * (i + 1), dataSetSize);
 		}
-		return addresses;
+		return ranges;
 	}
 
 	/**

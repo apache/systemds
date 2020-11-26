@@ -156,11 +156,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		MatrixObject out = ec.getMatrixObject(output);
 
 		boolean marginRow = params.get("margin").equals("rows");
-		boolean k = ((marginRow && mo.getFedMapping().getType().isColPartitioned()) ||
+		boolean isNotAligned = ((marginRow && mo.getFedMapping().getType().isColPartitioned()) ||
 			(!marginRow && mo.getFedMapping().getType().isRowPartitioned()));
 
 		MatrixBlock s = new MatrixBlock();
-		if(select == null && k) {
+		if(select == null && isNotAligned) {
 			List<MatrixBlock> colSums = new ArrayList<>();
 			mo.getFedMapping().forEachParallel((range, data) -> {
 				try {
@@ -209,7 +209,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			mo.getFedMapping().execute(getTID(), true, fr1);
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
 		}
-		else if (!k) {
+		else if (!isNotAligned) {
 			//construct commands: broadcast , fed rmempty, clean broadcast
 			FederatedRequest[] fr1 = mo.getFedMapping().broadcastSliced(select, !marginRow);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString,

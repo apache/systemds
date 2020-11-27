@@ -1,0 +1,212 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# TODO Question: Is there a tool/template to generate the function documentation? Who updates the documentation on the website?
+
+m_statsNA = function(Matrix[Double] X, Integer bins = 4, Boolean print_result = TRUE)
+  return(Integer length_series,
+         Double number_nans,
+         Double percentage_nans,
+         Double number_nan_gaps,
+         Double average_size_nan_gaps,
+         Integer longest_nan_gap,
+         Integer most_frequent_nan_gap,
+         Integer most_weighty_nan_gap
+         )
+{
+    #TODO Question: Do we need to check if the input matrix is a vector? and if yes in with direction should it go?
+    if(ncol(X) != 1) {
+       stop("CONFUSION MATRIX: expect a matrix with only one column");
+    }
+
+    # Count total entries
+    # TODO Question: Why returns length a double and not an integer?
+    length_series = length(X);
+
+    # TODO Question: What should happen when the input matrix is empty?
+    if (length_series == 0) {
+       stop("EMPTY MATRIX")
+    }
+
+    # TODO Question: What should happen when the number of bins is higher than length of the input matrix?
+    if (length_series < bins) {
+        bins = length_series;
+    }
+
+    # Count NaNs
+    # TODO Question: Is there a style guide for private or return variables?
+    # TODO Question: Why didn't I find any documentation for "is.nan" ?
+    p_position_nans = replace(target= X * 0, pattern = NaN, replacement = 1)
+    number_nans = sum(p_position_nans);
+
+    # Calculate percentage of NaNs
+    percentage_nans = number_nans / length_series;
+
+    # Create Vector with numbers of gas
+    p_gaps_vector = matrix(0, length_series, 1);
+    p_length_of_gap = 0;
+     for (i in 1:length_series) {
+        #TODO Question: Is there a way to compare these two values without as.scalar?
+         if (as.scalar(p_position_nans[i,1]) == 1) {
+            p_length_of_gap += 1;
+         } else if (p_length_of_gap != 0){
+            p_gaps_vector[p_length_of_gap, 1] += 1;
+            p_length_of_gap = 0;
+         }
+     }
+     # The last element can also be a NaN but the loop will not update our vector map, so this workaround is needed.
+     if(p_length_of_gap > 0) {
+        p_gaps_vector[p_length_of_gap, 1] += 1;
+     }
+
+
+    # Count number of gaps
+    number_nan_gaps = sum(p_gaps_vector);
+
+    # Calculate average gap size
+    # WTF 1/0 is Infinity and 0/0 is NaN
+    average_size_nan_gaps = number_nans / number_nan_gaps
+
+    # Find longest gap
+    longest_nan_gap = NaN
+    # TODO Question: Why is there no "break" keyword?
+    # TODO Question: refactor into a while loop
+    for(i in 1:length_series){
+        if (as.scalar(p_gaps_vector[i,1]) > 0) {
+            longest_nan_gap = i;
+        }
+    }
+
+    # TODO Question: is the compiler smart enough that these two for loops can be merged? Does this even matter in our case?
+    # Find most frequent gap size
+    most_frequent_nan_gap = 0;
+    p_most_frequent_nan_gap_max_number = 0;
+    # TODO Question: Is there something like argmax? https://numpy.org/doc/stable/reference/generated/numpy.argmax.html
+    for(i in 1:length_series) {
+        tmp_value = as.scalar(p_gaps_vector[i,1]);
+        if(tmp_value > p_most_frequent_nan_gap_max_number) {
+            p_most_frequent_nan_gap_max_number = tmp_value;
+            most_frequent_nan_gap = i;
+        }
+    }
+
+    # Gap size that has most NaNs
+    most_weighty_nan_gap = 0;
+    p_most_weighty_nan_gap_max_number = 0;
+    tmp_value = 0
+    for(i in 1:length_series) {
+        tmp_value = as.scalar(p_gaps_vector[i,1]) * 1;
+        if(tmp_value > p_most_weighty_nan_gap_max_number) {
+            p_most_weighty_nan_gap_max_number = tmp_value;
+            most_weighty_nan_gap = i;
+        }
+    }
+
+    # Calculate bins
+    #---
+    bins_start = matrix(0, bins, 1);
+    bins_end = matrix(0, bins, 1);
+    bins_nans = matrix(0, bins, 1);
+    bins_percentage = matrix(0, bins, 1);
+
+    bin_length = ceiling(length_series / bins)
+
+    # Calculate where a bin starts and ends
+    tmp_splitter = 0
+    for(i in 1:bins) {
+        bins_start[i,1] = tmp_splitter + 1;
+        tmp_splitter = tmp_splitter + bin_length;
+        bins_end[i,1] = tmp_splitter;
+    }
+
+    for(i in 1:bins) {
+        start = as.scalar(bins_start[i,1]);
+        end = as.scalar(bins_end[i,1]);
+        tmp_nans = sum(p_position_nans[start:end, 1]);
+
+        bins_nans[i,1] = tmp_nans;
+        bins_percentage[i,1] = tmp_nans / bin_length;
+    }
+    #---
+
+    # Print results
+    #---
+    if (print_result) {
+        print("-------------------------")
+        print("Length of time series:");
+        print(length_series);
+        print("-------------------------");
+
+        print("Number of Missing Values:");
+        print(number_nans);
+        print("-------------------------");
+
+        print("Percentage of Missing Values:");
+        print("%3.2f %%", percentage_nans);
+        print("-------------------------");
+
+        print("Number of Gaps:");
+        print(number_nan_gaps);
+        print("-------------------------");
+
+        print("Average Gap Size:");
+        print("%3.2f %%", average_size_nan_gaps);
+        print("-------------------------");
+
+        print("Longest NA gap (series of consecutive NAs)");
+        print(longest_nan_gap);
+        print("-------------------------");
+
+        print("Most frequent gap size (series of consecutive NA series)");
+        print(most_frequent_nan_gap);
+        print("-------------------------");
+
+        print("Gap size accounting for most NAs");
+        print(most_weighty_nan_gap);
+        print("-------------------------");
+
+        if(bins > 0) {
+            print("Stats for Bins")
+            for (i in 1:bins) {
+                l = bin_length
+                s = as.scalar(bins_start[i,1]);
+                e = as.scalar(bins_end[i,1]);
+                n = as.scalar(bins_nans[i,1]);
+                p = as.scalar(bins_percentage[i,1]);
+
+                print("  Bin %d (%2.0f values from %2.0f to %2.0f):%5.0f NAs (%3.2f %%)", i,l,s,e,n,p);
+            }
+            print("-------------------------")
+        }
+        print("Stats for Bins")
+        for (i in 1:bins) {
+            v = as.scalar(p_gaps_vector[i,1]);
+            if(v > 0) {
+                # TODO Question: What is the differences between NA and NaN?
+                print(" %.0f NA in a row: %d times", v, i);
+            }
+        }
+        print("-------------------------")
+    }
+    #---
+}
+
+

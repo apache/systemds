@@ -189,6 +189,7 @@ public enum Builtins {
 	SMOTE("smote", true),
 	SOLVE("solve", false),
 	SPLIT("split", true),
+	STATSNA("statsNA", true),
 	SQRT("sqrt", false),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),

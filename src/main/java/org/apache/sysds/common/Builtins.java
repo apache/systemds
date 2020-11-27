@@ -138,6 +138,7 @@ public enum Builtins {
 	KMEANSPREDICT("kmeansPredict", true),
 	KNNBF("knnbf", true),
 	KNN("knn", true),
+	DECISIONTREE("decisionTree", true),
 	L2SVM("l2svm", true),
 	LASSO("lasso", true),
 	LENGTH("length", false),

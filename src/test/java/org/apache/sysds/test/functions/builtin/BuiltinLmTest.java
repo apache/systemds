@@ -47,7 +47,7 @@ public class BuiltinLmTest extends AutomatedTestBase
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
 	}
 
 	@Test

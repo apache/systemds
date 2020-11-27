@@ -129,6 +129,7 @@ public enum Builtins {
 	ISINF("is.infinite", false),
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),
+	DECISIONTREE("decisionTree", true),
 	L2SVM("l2svm", true),
 	LASSO("lasso", true),
 	LENGTH("length", false),

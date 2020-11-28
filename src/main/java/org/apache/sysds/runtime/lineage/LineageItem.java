@@ -183,6 +183,7 @@ public class LineageItem {
 		return ret;
 	}
 	
+	@SuppressWarnings("unused")
 	private boolean equalsLI(LineageItem that) {
 		if (isVisited() || this == that)
 			return true;

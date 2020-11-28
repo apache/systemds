@@ -49,6 +49,18 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		indexes = new int[capacity];
 	}
 	
+	public SparseRowVector(int nnz, double[] v, int vlen) {
+		values = new double[nnz];
+		indexes = new int[nnz];
+		for(int i=0, pos=0; i<vlen; i++)
+			if( v[i] != 0 ) {
+				values[pos] = v[i];
+				indexes[pos] = i;
+				pos++;
+			}
+		size = nnz;
+	}
+	
 	public SparseRowVector(int estnnz, int maxnnz) {
 		if( estnnz > initialCapacity )
 			estimatedNzs = estnnz;

@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
@@ -819,8 +820,8 @@ public class LibMatrixReorg
 		
 		if( out.rlen == 1 ) //VECTOR-VECTOR
 		{
-			c.allocate(0, (int)in.nonZeros); 
-			c.setIndexRange(0, 0, m, a.valuesAt(0), 0, m);
+			//allocate row once by nnz, copy non-zeros
+			c.set(0, new SparseRowVector((int)in.nonZeros, a.valuesAt(0), m), false);
 		}
 		else //general case: MATRIX-MATRIX
 		{

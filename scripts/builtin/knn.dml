@@ -1,0 +1,70 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# THIS SCRIPT IMPLEMENTS KNN( K Nearest Neighbor ) ALGORITHM
+#
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT     OPTIONAL     MEANING
+# ---------------------------------------------------------------------------------------------
+# X                     Matrix   ---    N   The input matrix as features
+# T                     Matrix   ---    N   The input matrix for nearest neighbor search
+# Y                     Matrix   ---    Y   The input matrix as target
+# Y_T                   Integer  0      Y   The target type of matrix Y whether
+#                                           columns in Y are continuous ( =1 ) or
+#                                           categorical ( =2 ) or
+#                                           not specified ( =0 )
+# trans_continuous      Boolean  FALSE  Y   Option flag for continuous feature transformed to [-1,1]:
+#                                           FALSE = do not transform continuous variable;
+#                                           TRUE = transform continuous variable;
+# select_k              Boolean  FALSE  Y   Use k selection algorithm to estimate k
+#                                           ( TRUE means yes )
+# k_min                 int      1      Y   Min k value(  available if select_k = 1 )
+# k_max                 int      100    Y   Max k value(  available if select_k = 1 )
+# select_feature        Boolean  FALSE  Y   Use feature selection algorithm to select feature
+#                                           ( TRUE means yes )
+
+
+# TODO: what type should that parameter have?
+# START_SELECTED        Matrix   ---    Y   feature selection initinal value
+
+
+# feature_max           int      10     Y   Max feature selection
+# interval              int      1000   Y   Interval value for K selecting (  available if select_k = 1 )
+# feature_importance    Boolean  FALSE      Y   Use feature importance algorithm to estimate each feature
+#                                           ( TRUE means yes )
+# k_value               int      5      Y   k value for KNN, ignore if select_k enable
+# predict_con_tg        int      0      Y   Continuous  target predict function: mean(=0) or
+#                                           median(=1)
+# fmt                   String   "text" Y   Matrix output format for MB, ML, usually "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: Matrix PR, Matrix NNR, Matrix FEATURE_IMPORTANCE_VALUE
+#
+
+m_knn = function(Matrix[Double] X, Matrix[Double] T, Matrix[Double] Y, Integer Y_T = 0,
+    Boolean trans_continuous = FALSE, Boolean select_k = FALSE, Integer k_min = 1, Integer k_max = 100,
+    Boolean select_feature = FALSE, Matrix[Double] START_SELECTED = [0], Integer feature_max = 10,
+    Integer interval = 1000, Boolean feature_importance = FALSE, Integer k_value = 5,
+    Integer predict_con_tg = 0, String fmt = "text")
+  return (Matrix[Double] PR, Matrix[Double] NNR, Matrix[Double] FEATURE_IMPORTANCE_VALUE)
+{
+
+}

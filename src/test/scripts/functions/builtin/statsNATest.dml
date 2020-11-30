@@ -1,0 +1,5 @@
+input_matrix = read($X);
+# replace zeros with NaN
+dataWithNa = replace(target=input_matrix, pattern = 0, replacement = NaN)
+B = m_statsNA(dataWithNa, bins, print_result)
+write(B, $O);

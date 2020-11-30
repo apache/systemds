@@ -11,7 +11,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class BuiltinStatsNATest extends AutomatedTestBase {
-    private final static String TEST_NAME = "split";
+    private final static String TEST_NAME = "statsNATest";
     private final static String TEST_DIR = "functions/builtin/";
     private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinSplitTest.class.getSimpleName() + "/";
     private final static int rows = 10;

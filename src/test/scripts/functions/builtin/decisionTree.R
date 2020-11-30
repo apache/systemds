@@ -27,7 +27,7 @@ args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")));
-R = round(as.matrix(dist(X)), 3);
-diag(R) = 0;
+X <- as.matrix(readMM(paste(args[1], "A.mtx", sep="")));
+R <- round(as.matrix(dist(X)), 3);
+diag(R) <- 0;
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "B", sep=""));

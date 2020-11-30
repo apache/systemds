@@ -98,7 +98,7 @@
 #
 # while (featureStack.isNotEmpty) {
 #
-#   currentDataFrame = featureStack.getAndRemoveFirst()             --------|
+#   currentDataFrame = featureStack.getAndRemoveFirst()             --------| // Col and Row indices
 #   currentNode = nodeStack.getAndRemoveFirst()                             |
 #   currentMisclassified = misclassifiedStack.getAndRemoveFirst()           | - Could be one Class, if this was an Object Oriented Language
 #   parentImpurity = impurityStack.getAndRemoveFirst()                      |

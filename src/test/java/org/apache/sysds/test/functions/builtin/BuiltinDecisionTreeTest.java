@@ -14,7 +14,7 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
 {
     private final static String TEST_NAME = "decisionTree";
     private final static String TEST_DIR = "functions/builtin/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinDistTest.class.getSimpleName() + "/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinDecisionTreeTest.class.getSimpleName() + "/OnlyScalarTest/";
 
     private final static double eps = 1e-3;
     private final static int rows = 1765;
@@ -22,7 +22,7 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
 
     @Override
     public void setUp() {
-        addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"}));
     }
 
     @Test
@@ -43,7 +43,7 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
 
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[]{"-args", input("A"), output("B") };
+            programArgs = new String[]{"-args", input("A"), output("B")};
             fullRScriptName = HOME + TEST_NAME + ".R";
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 

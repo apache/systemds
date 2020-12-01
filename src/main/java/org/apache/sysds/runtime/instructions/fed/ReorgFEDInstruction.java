@@ -97,7 +97,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()).transpose());
 		}
 		else if (instOpcode.equals("rdiag")) {
-			AbstractMap.SimpleEntry<FederationMap, Map<FederatedRange, int[]>> result;
+			RdiagResult result;
 			// diag(diag(X))
 			if (mo1.getNumColumns() == 1 && mo1.getNumRows() != 1) {
 				result = rdiagV2M(mo1, r_op);
@@ -105,8 +105,8 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				result = rdiagM2V(mo1, r_op);
 			}
 
-			FederationMap diagFedMap = result.getKey();
-			Map<FederatedRange, int[]> dcs = result.getValue();
+			FederationMap diagFedMap = result.getFedMap();
+			Map<FederatedRange, int[]> dcs = result.getDcs();
 
 			//update fed ranges
 			for(int i = 0; i < diagFedMap.getFederatedRanges().length; i++) {
@@ -133,7 +133,25 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		}
 	}
 
-	private AbstractMap.SimpleEntry<FederationMap, Map<FederatedRange, int[]>> rdiagV2M (MatrixObject mo1, ReorgOperator r_op) {
+	private class RdiagResult {
+		FederationMap fedMap;
+		Map<FederatedRange, int[]> dcs;
+
+		public RdiagResult(FederationMap fedMap, Map<FederatedRange, int[]> dcs) {
+			this.fedMap = fedMap;
+			this.dcs = dcs;
+		}
+
+		public FederationMap getFedMap() {
+			return fedMap;
+		}
+
+		public Map<FederatedRange, int[]> getDcs() {
+			return dcs;
+		}
+	}
+
+	private RdiagResult rdiagV2M (MatrixObject mo1, ReorgOperator r_op) {
 		FederationMap fedMap = mo1.getFedMapping();
 		boolean rowFed = mo1.isFederated(FederationMap.FType.ROW);
 
@@ -162,10 +180,10 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				throw new DMLRuntimeException(e);
 			}
 		});
-		return new AbstractMap.SimpleEntry<>(diagFedMap, dcs);
+		return new RdiagResult(diagFedMap, dcs);
 	}
 
-	private AbstractMap.SimpleEntry<FederationMap, Map<FederatedRange, int[]>> rdiagM2V (MatrixObject mo1, ReorgOperator r_op) {
+	private RdiagResult rdiagM2V (MatrixObject mo1, ReorgOperator r_op) {
 		FederationMap fedMap = mo1.getFedMapping();
 		boolean rowFed = mo1.isFederated(FederationMap.FType.ROW);
 
@@ -193,7 +211,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				throw new DMLRuntimeException(e);
 			}
 		});
-		return new AbstractMap.SimpleEntry<>(diagFedMap, dcs);
+		return new RdiagResult(diagFedMap, dcs);
 	}
 
 	private static class Rdiag extends FederatedUDF {

@@ -63,6 +63,7 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 		federatedLmPipeline(Types.ExecMode.SINGLE_NODE, false, TEST_NAME1);
 	}
 
+	@Test
 	public void federatedLmPipelineSampled4Workers() {
 		federatedLmPipeline(Types.ExecMode.SINGLE_NODE, false, TEST_NAME2);
 	}

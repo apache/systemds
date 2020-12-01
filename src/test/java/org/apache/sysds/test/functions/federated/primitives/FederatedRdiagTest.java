@@ -53,8 +53,8 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-//			{12, 12},
-			{12,1}
+			{1000, 1000},
+			{1000,1}
 		});
 	}
 
@@ -130,7 +130,7 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 		// compare all sums via files
 		compareResults(0.01);
 
-//		Assert.assertTrue(heavyHittersContainsString("fed_rdiag"));
+		Assert.assertTrue(heavyHittersContainsString("fed_rdiag"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

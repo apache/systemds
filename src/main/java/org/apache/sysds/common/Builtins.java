@@ -187,6 +187,7 @@ public enum Builtins {
 	SAMPLE("sample", false),
 	SD("sd", false),
 	SEQ("seq", false),
+	SHERLOCK("sherlock", true),
 	SIGMOID("sigmoid", true),   // 1 / (1 + exp(-X))
 	SIGN("sign", false),
 	SIN("sin", false),

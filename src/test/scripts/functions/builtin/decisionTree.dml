@@ -20,5 +20,10 @@
 #-------------------------------------------------------------
 
 X = read($1);
-Y = decisionTree(X);
-write(Y, $2);
+Y = read($2);
+R = matrix(1, rows = 0, cols= 0)
+if ($3 != " ") {
+    R = read($3)
+}
+M = decisionTree(X = X, Y = Y, R = R);
+write(M, $3);

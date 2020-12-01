@@ -65,13 +65,6 @@
 
 
 
-
-
-
-
-
-
-
 # ----------------------------------------------------------------------------------------------------------------------
 # Pseudo Code:
 # All ignoring NULL Features/COLUMNS/ROWS
@@ -89,33 +82,33 @@
 # labels = read(Y)
 # inputLabels = (R == " ")? USE_SCALAR : read(R) USE_IT_TO_DETERMINE_IF_FEATURE_IS_SCALE_OR_LABELED
 #
-# featureStack = [inputData]
-# nodeStack = [1]
-# misclassifiedStack = [-1]
-# impurityStack = [1.0]
-# depthStack = [0]
+# featureQueue = [inputData]
+# nodeQueue = [1]
+# misclassifiedQueue = [-1]
+# impurityQueue = [1.0]
+# depthQueue = [0]
 # decisionTreeOutputMatrix = [[]]
 #
-# while (featureStack.isNotEmpty) {
+# while (featureQueue.isNotEmpty) {
 #
-#   currentDataFrame = featureStack.getAndRemoveFirst()             --------| // Col and Row indices
-#   currentNode = nodeStack.getAndRemoveFirst()                             |
-#   currentMisclassified = misclassifiedStack.getAndRemoveFirst()           | - Could be one Class, if this was an Object Oriented Language
-#   parentImpurity = impurityStack.getAndRemoveFirst()                      |
-#   parentDepth = depthStack.getAndRemoveFirst()                    --------|
+#   currentDataFrame = featureQueue.getAndRemoveFirst()             --------| // Col and Row indices
+#   currentNode = nodeQueue.getAndRemoveFirst()                             |
+#   currentMisclassified = misclassifiedQueue.getAndRemoveFirst()           | - Could be one Class, if this was an Object Oriented Language
+#   parentImpurity = impurityQueue.getAndRemoveFirst()                      |
+#   parentDepth = depthQueue.getAndRemoveFirst()                    --------|
 #
 #   impurity, splittingCriteria = calcBestSplittingCriteria(currentDataFrame, labels)
 #   if (impurity < parentImpurity AND parentDepth + 1 <= depth) {
 #     #------------------------------------IS NODE!------------------------------------#
 #     numMisclassifiedFalse, falseFrame, numMisclassifiedTrue, trueFrame = splitData(currentDataFrame, splittingCriteria)
-#     featureStack.putAll(falseFrame, trueFrame)
-#     misclassifiedStack.putAll(numMisclassifiedFalse, numMisclassifiedTrue)
-#     nodeStack.putAll(calcLeftNode(currentNode), calcLeftNode(currentNode) + 1)
-#     impurityStack.putAll(impurity, impurity)
-#     depthStack.putAll(parentDepth + 1, parentDepth + 1)
+#     featureQueue.putAll(falseFrame, trueFrame)
+#     misclassifiedQueue.putAll(numMisclassifiedFalse, numMisclassifiedTrue)
+#     nodeQueue.putAll(calcLeftNode(currentNode), calcLeftNode(currentNode) + 1)
+#     impurityQueue.putAll(impurity, impurity)
+#     depthQueue.putAll(parentDepth + 1, parentDepth + 1)
 #
 #     decisionTreeOutputMatrix.addColumn( [id = currentNode,
-#                                          offset = length(featureStack) - 1,
+#                                          offset = length(featureQueue) - 1,
 #                                          featureIndex = splittingCriteria.Column,
 #                                          featureType = splittingCriteria.Type,                # 1 for scale and 2 for categorical features
 #                                          numCategories = length(splittingCriteria.threshold), # look at description on the top of the page
@@ -131,3 +124,68 @@
 #                                          $1 if currentNode is impure and the number of samples at currentDataFrame > threshold, otherwise 0$])
 #   }
 # }
+
+#---------------------- Encapsulates the queue functions ---------------------------------------------------------------
+dataQueuePop = function(Double index, Matrix[Double] vector)  return (Double new_index, Double node) {
+    new_index = index + 1
+    node = as.scalar(vector[1, index])
+}
+
+dataQueueGet = function(Double index, Matrix[Double] vector)  return (Double node) {
+    node = as.scalar(vector[1, index])
+}
+
+dataQueuePush = function(Double left, Double right, Matrix[Double] vector)  return (Matrix[Double] new_vector) {
+    new_vector = cbind(vector, matrix(left, rows=1, cols=1), matrix(right, rows=1, cols=1))
+}
+
+dataQueueLength = function(Double index, Matrix[Double] vector)  return (Double len) {
+    len = length(vector) - index + 1 # Indices are starting with 1
+}
+#-----------------------------------------------------------------------------------------------------------------------
+
+calculateChildNodes = function(Double node)  return(Double left, Double right) {
+    left = node * 2
+    right = left + 1
+}
+
+# --------------------- Missuses matrix as a queue for vectors ---------------------------------------------------------
+featureQueueGet = function(Double index, Matrix[Double] queue)  return(Matrix[Double] features) {
+    features = queue[index,]
+}
+
+featureQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Double] queue)  return(Matrix[Double] new_queue) {
+    new_queue = rbind(queue, left, right)
+}
+#-----------------------------------------------------------------------------------------------------------------------
+
+m_decisionTree = function(
+    Matrix[Double] X,
+    Matrix[Double] Y,
+    Matrix[Double] R,
+    int bins = 20,
+    int depth = 25,
+    int num_leaf = 10,
+    int num_samples = 3000,
+    String impurity = "Gini",
+    String fmt = "text"
+)  return (Matrix[Double] M) {
+
+    queue_index = 1
+    node_vector = matrix(1, rows=1, cols=1)             # Add first Node
+    queue_length = 1
+    while (queue_length > 0) {
+        [queue_index, node] = dataQueuePop(queue_index, node_vector)
+        if (node <= 3) {
+            [left, right] = calculateChildNodes(node)
+            node_vector = dataQueuePush(left, right, node_vector)
+        }
+        print(node)
+
+        queue_length = dataQueueLength(queue_index, node_vector)
+        # -- user-defined function calls not supported in relational expressions
+        # INSERT SPONGEBOB MEME
+    }
+
+    M = X
+}

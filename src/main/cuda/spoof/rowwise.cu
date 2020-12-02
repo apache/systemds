@@ -45,8 +45,9 @@ struct SpoofRowwiseOp {
 };
 
 template<typename T>
-__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {
+//__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {
+__global__ void %TMP% (T* a, uint ai, T** b, T* scalars, T* c, uint ci, uint len, long grix, uint rix)
 	%AGG_OP%<T> agg_op;
 	SpoofRowwiseOp<T> spoof_op(b, scalars, m, n, grix);
-	%TYPE%<T, %AGG_OP%<T>, SpoofCellwiseOp<T>>(a, c, m, n, %INITIAL_VALUE%, agg_op, spoof_op);
+	%TYPE%<T, %AGG_OP%<T>, SpoofRowwiseOp<T>>(a, c, m, n, %INITIAL_VALUE%, agg_op, spoof_op);
 };

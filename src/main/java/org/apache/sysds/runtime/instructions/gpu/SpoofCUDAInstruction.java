@@ -88,15 +88,16 @@ public class SpoofCUDAInstruction extends GPUInstruction implements LineageTrace
 
 		// set the output dimensions to the hop node matrix dimensions
 		if( _out.getDataType() == Types.DataType.MATRIX) {
-			long rows = inputs.get(0).getNumRows();
-			long cols = inputs.get(0).getNumColumns();
+			long out_rows = ec.getMatrixObject(_out.getName()).getNumRows(); 
+			long out_cols = ec.getMatrixObject(_out.getName()).getNumColumns();
+			
 			if(_op.getSpoofTemplateType().contains("CW"))
 				if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.COL_AGG)
-					rows = 1;
+					out_rows = 1;
 				else if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.ROW_AGG)
-					cols = 1;
+					out_cols = 1;
 
-			MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), rows, cols).getKey();
+			MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey();
 			ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
 			_op.execute(inputs, scalars, out_obj, ec);
 			ec.releaseMatrixOutputForGPUInstruction(_out.getName());

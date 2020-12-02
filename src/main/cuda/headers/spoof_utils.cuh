@@ -91,4 +91,12 @@ __device__ float bwAnd(float a, float b) {
 	return toInt32(a) & toInt32(b);
 }
 
+template<typename T>
+__device_ T dotProduct();
+
+template<>
+__device double dotProduct(double* a, double* b, uint ai, uint bi, uint len) {
+
+}
+
 #endif // SPOOF_UTILS_CUH

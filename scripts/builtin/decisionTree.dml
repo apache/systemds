@@ -126,34 +126,85 @@
 # }
 
 # --------------------- Missuses matrix as a queue for vectors ---------------------------------------------------------
+dataQueueLength = function(Matrix[Double] queue)  return (Double len) {
+    len = ncol(queue)
+}
+
 dataQueuePop = function(Matrix[Double] queue)  return (Matrix[Double] new_queue, Matrix[Double] node) {
-    #print("Rows: " + nrow(queue) + " Cols: " + ncol(queue))
-
-    node = matrix(queue[,1], rows=nrow(queue), cols=1)
-
-    if (ncol(queue) < 2) {
+    node = matrix(queue[,1], rows=1, cols=nrow(queue))     # reshape to force the creation of a new object
+    node = matrix(node, rows=nrow(queue), cols=1)          # reshape to force the creation of a new object
+    len = dataQueueLength(queue)
+    if (len < 2) {
         new_queue = matrix(0,0,0)
     } else {
-        new_queue = matrix(queue[1:1,2:ncol(queue)], rows=nrow(queue), cols=ncol(queue)-1)
+        new_queue = matrix(queue[,2:ncol(queue)], rows=nrow(queue), cols=ncol(queue)-1)
     }
 }
 
 dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Double] queue)  return (Matrix[Double] new_queue) {
-    if(ncol(queue) <= 0) {
+    len = dataQueueLength(queue)
+    if(len <= 0) {
         new_queue = cbind(left, right)
     } else {
-        new_queue = cbind(queue, left, right)       #Dafuq meme
+        new_queue = cbind(queue, left, right)
     }
 }
 
-dataQueueLength = function(Matrix[Double] queue)  return (Double len) {
-    len = ncol(queue)
+#-----------------------------------------------------------------------------------------------------------------------
+# --------------------- Missuses matrix as a vectors for Doubles -------------------------------------------------------
+dataVectorLength = function(Matrix[Double] vector)  return (Double len) {
+    len = nrow(vector)
+}
+
+dataVectorGet = function(Matrix[Double] vector, Double index)  return (Double value) {
+    value = as.scalar(vector[index, 1])
 }
 #-----------------------------------------------------------------------------------------------------------------------
+
+calculateNodeDepth = function(Matrix[Double] node)  return(Double depth) {
+    depth = log(as.scalar(node), 2) + 1
+}
 
 calculateChildNodes = function(Matrix[Double] node)  return(Matrix[Double] left, Matrix[Double] right) {
     left = node * 2.0
     right = node * 2.0 + 1.0
+}
+
+getTypeOfCol = function(Matrix[Double] R, Double col)  return(Double type) {    # 1..scalar,    2..categorical
+    type = 1
+}
+
+calcImpurity = function() return (Double impurity, Matrix[Double] threshold) { #TODO IMPLEMENT
+    impurity = as.scalar(rand(rows=1, cols=1, min=0, max=1, pdf="uniform", sparsity=1))
+    threshold = rand(rows=1, cols=1, min=0, max=100, pdf="uniform", sparsity=1)
+}
+
+calcBestSplittingCriteria = function(
+    Matrix[Double] X,
+    Matrix[Double] Y,
+    Matrix[Double] R,
+    Matrix[Double] use_rows_vector,
+    Matrix[Double] use_cols_vector)  return (Double impurity, Double used_col, Matrix[Double] threshold, Double type) {
+
+    impurity = 1
+    used_col = 1
+    threshold = matrix(0, 1, 1)
+    type = 1
+    # -- user-defined function calls not supported for iterable predicates
+    len = dataVectorLength(use_cols_vector)
+    for (c_col in 1:len) {
+        use_feature = dataVectorGet(use_cols_vector, c_col)
+        if (use_feature != 0) {
+            c_type = getTypeOfCol(R, c_col)
+            [c_impurity, c_threshold] = calcImpurity()
+            if(c_impurity < impurity) {
+                impurity = c_impurity
+                used_col = c_col
+                threshold = c_threshold
+                type = c_type
+            }
+        }
+    }
 }
 
 m_decisionTree = function(
@@ -161,7 +212,7 @@ m_decisionTree = function(
     Matrix[Double] Y,
     Matrix[Double] R,
     int bins = 20,
-    int depth = 25,
+    int depth = 3,
     int num_leaf = 10,
     int num_samples = 3000,
     String impurity = "Gini",
@@ -169,24 +220,40 @@ m_decisionTree = function(
 )  return (Matrix[Double] M) {
 
     node_queue = matrix(1, rows=1, cols=1)             # Add first Node
+    impurity_queue = matrix(1, rows=1, cols=1)
+    use_cols_queue = matrix(1, rows=ncol(X), cols=1)   # Add fist bool Vector with all cols <=> (use all cols)
+    use_rows_queue = matrix(1, rows=nrow(X), cols=1)   # Add fist bool Vector with all rows <=> (use all rows)
+    # featureQueue = [inputData]
+    # misclassifiedQueue = [-1]
+    # depthQueue = [0]
     queue_length = 1
 
     while (queue_length > 0) {
+        print("-------------------------------------------------------------------------------------------------------")
         [node_queue, node] = dataQueuePop(node_queue)
+        print("Popped Node:        " + as.scalar(node))
+        [use_rows_queue, use_rows_vector] = dataQueuePop(use_rows_queue)
+        [use_cols_queue, use_cols_vector] = dataQueuePop(use_cols_queue)
 
-        if (as.scalar(node) <= 3) {
+        [impurity, used_col, threshold, type] = calcBestSplittingCriteria(X, Y, R, use_rows_vector, use_cols_vector)
+        print("Current impurity:   " + impurity)
+        print("Current column:     " + used_col)
+        print("Current threshold:  " + as.scalar(threshold[1,1])) #TODO IMPLEMENT PRINT MATRIX
+        print("Current type:       " + type)
+        node_depth = calculateNodeDepth(node)
+        if (node_depth < depth) {
             [left, right] = calculateChildNodes(node)
             node_queue = dataQueuePush(left, right, node_queue)
 
+            #TODO SPLIT
+            use_rows_queue = dataQueuePush(use_rows_vector, use_rows_vector, use_rows_queue)
+            use_cols_queue = dataQueuePush(use_cols_vector, use_cols_vector, use_cols_queue)
         }
-        queue_length = dataQueueLength(node_queue)
-        # -- user-defined function calls not supported in relational expressions
-        print("-------------------------------------------------------------------------------------------------------")
-        print("Popped Node:  " + as.scalar(node))
-        print("New QueueLen: " + queue_length)
+        queue_length = dataQueueLength(node_queue)# -- user-defined function calls not supported in relational expressions
+
+        print("New QueueLen:       " + queue_length)
         print("-------------------------------------------------------------------------------------------------------")
         print(" ")
-
     }
 
     M = X

@@ -125,39 +125,36 @@
 #   }
 # }
 
-#---------------------- Encapsulates the queue functions ---------------------------------------------------------------
-dataQueuePop = function(Double index, Matrix[Double] vector)  return (Double new_index, Double node) {
-    new_index = index + 1
-    node = as.scalar(vector[1, index])
-}
-
-dataQueueGet = function(Double index, Matrix[Double] vector)  return (Double node) {
-    node = as.scalar(vector[1, index])
-}
-
-dataQueuePush = function(Double left, Double right, Matrix[Double] vector)  return (Matrix[Double] new_vector) {
-    new_vector = cbind(vector, matrix(left, rows=1, cols=1), matrix(right, rows=1, cols=1))
-}
-
-dataQueueLength = function(Double index, Matrix[Double] vector)  return (Double len) {
-    len = length(vector) - index + 1 # Indices are starting with 1
-}
-#-----------------------------------------------------------------------------------------------------------------------
-
-calculateChildNodes = function(Double node)  return(Double left, Double right) {
-    left = node * 2
-    right = left + 1
-}
-
 # --------------------- Missuses matrix as a queue for vectors ---------------------------------------------------------
-featureQueueGet = function(Double index, Matrix[Double] queue)  return(Matrix[Double] features) {
-    features = queue[index,]
+dataQueuePop = function(Matrix[Double] queue)  return (Matrix[Double] new_queue, Matrix[Double] node) {
+    #print("Rows: " + nrow(queue) + " Cols: " + ncol(queue))
+
+    node = matrix(queue[,1], rows=nrow(queue), cols=1)
+
+    if (ncol(queue) < 2) {
+        new_queue = matrix(0,0,0)
+    } else {
+        new_queue = matrix(queue[1:1,2:ncol(queue)], rows=nrow(queue), cols=ncol(queue)-1)
+    }
 }
 
-featureQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Double] queue)  return(Matrix[Double] new_queue) {
-    new_queue = rbind(queue, left, right)
+dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Double] queue)  return (Matrix[Double] new_queue) {
+    if(ncol(queue) <= 0) {
+        new_queue = cbind(left, right)
+    } else {
+        new_queue = cbind(queue, left, right)       #Dafuq meme
+    }
+}
+
+dataQueueLength = function(Matrix[Double] queue)  return (Double len) {
+    len = ncol(queue)
 }
 #-----------------------------------------------------------------------------------------------------------------------
+
+calculateChildNodes = function(Matrix[Double] node)  return(Matrix[Double] left, Matrix[Double] right) {
+    left = node * 2.0
+    right = node * 2.0 + 1.0
+}
 
 m_decisionTree = function(
     Matrix[Double] X,
@@ -171,20 +168,25 @@ m_decisionTree = function(
     String fmt = "text"
 )  return (Matrix[Double] M) {
 
-    queue_index = 1
-    node_vector = matrix(1, rows=1, cols=1)             # Add first Node
+    node_queue = matrix(1, rows=1, cols=1)             # Add first Node
     queue_length = 1
-    while (queue_length > 0) {
-        [queue_index, node] = dataQueuePop(queue_index, node_vector)
-        if (node <= 3) {
-            [left, right] = calculateChildNodes(node)
-            node_vector = dataQueuePush(left, right, node_vector)
-        }
-        print(node)
 
-        queue_length = dataQueueLength(queue_index, node_vector)
+    while (queue_length > 0) {
+        [node_queue, node] = dataQueuePop(node_queue)
+
+        if (as.scalar(node) <= 3) {
+            [left, right] = calculateChildNodes(node)
+            node_queue = dataQueuePush(left, right, node_queue)
+
+        }
+        queue_length = dataQueueLength(node_queue)
         # -- user-defined function calls not supported in relational expressions
-        # INSERT SPONGEBOB MEME
+        print("-------------------------------------------------------------------------------------------------------")
+        print("Popped Node:  " + as.scalar(node))
+        print("New QueueLen: " + queue_length)
+        print("-------------------------------------------------------------------------------------------------------")
+        print(" ")
+
     }
 
     M = X

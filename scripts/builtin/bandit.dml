@@ -615,3 +615,14 @@ return (Matrix[Double] X_filled)
   X_filled = X
 }
 
+#######################################################################
+# Wrapper of na_lof to call inside eval as a function
+# Output: filled matrix X
+#######################################################################
+
+forward_fill = function(Matrix[Double] X, Boolean op, Boolean verbose)
+return (Matrix[Double] X_filled)
+{ 
+  option = ifelse(op, "locf", "nocb")
+  X_filled = na_locf(X=X, option=option, verbose=verbose)
+}

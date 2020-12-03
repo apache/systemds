@@ -28,45 +28,85 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 public class CleaningTest extends AutomatedTestBase {
-	private final static String TEST_NAME = "cleaning";
-	private final static String TEST_DIR = "pipelines/";
-	protected static final String SCRIPT_DIR = "./scripts/staging/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + CleaningTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME1 = "mainScript";
+	private final static String TEST_NAME2 = "compareAccuracy";
+
+	protected static final String SCRIPT_DIR = "./scripts/pipelines/";
+	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTest.class.getSimpleName() + "/";
 
 
-	protected static final String DATA_DIR = "./scripts/staging/pipelines/";
-	private final static String DATASET = DATA_DIR+ "heart.csv";
-	private final static String META = DATA_DIR+ "meta_heart.csv";
-	private final static String PARAM = DATA_DIR+ "param.csv";
-	private final static String PRIMITIVES = DATA_DIR+ "primitives.csv";
+	protected static final String DATA_DIR = SCRIPT_DIR+"/data/";
+
+	private final static String DIRTY = DATA_DIR+ "dirty.csv";
+	private final static String CLEAN = DATA_DIR+ "clean.csv";
+	private final static String META = SCRIPT_DIR+ "meta/meta_census.csv";
+	private final static String OUTPUT = SCRIPT_DIR+ "intermediates/";
+
+	protected static final String PARAM_DIR = SCRIPT_DIR + "/properties/";
+	private final static String PARAM = PARAM_DIR + "param.csv";
+	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 	}
+
 
 	@Ignore
-	public void testCP() {
-		runCleaningTest(Types.ExecMode.SINGLE_NODE);
+	public void testCP1() {
+		runFindPipelineTest(1.0, 5,10, 2,
+			true, Types.ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testCP2() {
+		runCleanAndCompareTest( Types.ExecMode.SINGLE_NODE);
 	}
 
 
-	private void runCleaningTest(Types.ExecMode et) {
+	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
+		boolean weightedAccuracy, Types.ExecMode et) {
+
+		setOutputBuffering(true);
+		String HOME = SCRIPT_DIR+"scripts/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
+			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 
-			programArgs = new String[] {"-stats", "-exec", "singlenode", "-args", DATASET, META, PRIMITIVES, PARAM, output("R")};
+			programArgs = new String[] {"-stats", "-exec", "singlenode", "-args", DIRTY, META, PRIMITIVES,
+				PARAM, String.valueOf(sample), String.valueOf(topk), String.valueOf(resources),
+				String.valueOf(crossfold), String.valueOf(weightedAccuracy), output("O"), OUTPUT };
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
 			//expected loss smaller than default invocation
-			Assert.assertTrue(TestUtils.readDMLBoolean(output("R")));
+			Assert.assertTrue(TestUtils.readDMLBoolean(output("O")));
 		}
 		finally {
 			resetExecMode(modeOld);
 		}
 	}
+
+	private void runCleanAndCompareTest( Types.ExecMode et) {
+
+		String HOME = SCRIPT_DIR+"scripts/" ;
+		Types.ExecMode modeOld = setExecMode(et);
+		try {
+			loadTestConfiguration(getTestConfiguration(TEST_NAME2));
+			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
+
+			programArgs = new String[] {"-stats", "-exec", "singlenode", "-args", DIRTY, CLEAN, META, OUTPUT, output("O")};
+
+			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+
+			//expected loss smaller than default invocation
+			Assert.assertTrue(TestUtils.readDMLBoolean(output("O")));
+		}
+		finally {
+			resetExecMode(modeOld);
+		}
+	}
+
 }

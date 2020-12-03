@@ -1,0 +1,6 @@
+OTLR,MVI,NR,CI,DIM,DUMMY,SCALE
+winsorize,imputeByMean,abstain,SMOTE,pca,dummycoding,scale
+outlierBySd,imputeByMedian,,,,,
+outlierByIQR,mice,,,,,
+,fillDefault,,,,,
+,forward_fill,,,,,

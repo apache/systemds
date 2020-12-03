@@ -1,5 +1,5 @@
 
-package org.apache.sysds.test.functions.federated;
+package org.apache.sysds.test.functions.federated.quaternary;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -23,7 +23,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   private final static Log LOG = LogFactory.getLog(FederatedWeightedCrossEntropyTest.class.getName());
 
   private final static String TEST_NAME = "FederatedWCeMMTest";
-  private final static String TEST_DIR = "functions/federated/";
+  private final static String TEST_DIR = "functions/federated/quaternary/";
   private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWeightedCrossEntropyTest.class.getSimpleName() + "/";
 
   private final static int blocksize = 1024;
@@ -70,6 +70,12 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     boolean spark_config_old = DMLScript.USE_LOCAL_SPARK_CONFIG;
     ExecMode platform_old = rtplatform;
 
+    rtplatform = execMode;
+    if(rtplatform == ExecMode.SPARK)
+    {
+      DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+    }
+
     // TODO: ...
 
     getAndLoadTestConfiguration(TEST_NAME);
@@ -79,8 +85,11 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     int fed_cols = cols;
 
     // generate dataset
+    // one matrix handled by a single federated worker
     double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 3);
+    // another matrix handled by a single federated worker
     double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 7);
+
     writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
     writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 
@@ -91,24 +100,19 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     Thread thread1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
     Thread thread2 = startLocalFedWorkerThread(port2);
 
-    rtplatform = execMode;
-    if(rtplatform == ExecMode.SPARK)
-    {
-      DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-    }
-
-    TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
+    getAndLoadTestConfiguration(TEST_NAME);
 
     // Run reference fml script with normal matrix
     fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-    // TODO: specify the program arguments according to the reference script
-    programArgs = new String[] {};
+    programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
+    "in_U=" + input("U"), "in_V=" + input("V"), "out_Z=" + expected("Z")};
     LOG.debug(runTest());
 
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
-    // TODO: specify the program arguments according to the test script
-    programArgs = new String[] {};
+    programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+      "in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "in_U=" + input("U"), "in_V=" + input("V"),
+      "rows=" + rows, "cols=" + cols, "out_Z=" + output("Z")};
     LOG.debug(runTest());
 
     // compare the results via files

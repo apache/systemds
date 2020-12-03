@@ -1,0 +1,82 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the  License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+gridSearchMLR = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Double] Xtest,
+    Matrix[Double] ytest, String train, String predict,	List[String] params, List[Unknown] paramValues,
+    Boolean verbose = TRUE) 
+
+  return (Matrix[Double] opt, Matrix[Double] Rloss) 
+{
+  # replace null with zeros
+  Xtrain = replace(target=Xtrain, pattern=NaN, replacement=0)
+  Xtest = replace(target=Xtest, pattern=NaN, replacement=0)
+  # Step 0) preparation of parameters, lengths, and values in convenient form
+  numParams = length(params);
+  paramLens = matrix(0, numParams, 1);
+  for( j in 1:numParams ) {
+    vect = as.matrix(paramValues[j,1]);
+    paramLens[j,1] = nrow(vect);
+  }
+  paramVals = matrix(0, numParams, max(paramLens));
+  for( j in 1:numParams ) {
+    vect = as.matrix(paramValues[j,1]);
+    paramVals[j,1:nrow(vect)] = t(vect);
+  }
+  cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
+  numConfigs = prod(paramLens);
+  
+  # Step 1) materialize hyper-parameter combinations 
+  # (simplify debugging and compared to compute negligible)
+  HP = matrix(0, numConfigs, numParams);
+  parfor( i in 1:nrow(HP) ) {
+    for( j in 1:numParams )
+      HP[i,j] = paramVals[j,as.scalar(((i-1)/cumLens[j,1])%%paramLens[j,1]+1)];
+  }
+
+  if( verbose )
+    print("GridSeach: Hyper-parameter combinations: \n"+toString(HP));
+
+  # Step 2) training/scoring of parameter combinations
+  # TODO integrate cross validation
+ 
+  Rloss = matrix(0, nrow(HP), 3);
+  arguments1 = list(X=Xtrain, Y=ytrain, icpt=1, reg=-1, tol=1e-9, maxi=-1, maxii=0, verbose=FALSE);
+
+  parfor( i in 1:nrow(HP)) {
+    # a) replace training arguments
+    largs1 = arguments1;
+
+    for( j in 1:numParams ) {
+      largs1[as.scalar(params[j])] = as.scalar(HP[i,j]);
+    }
+    # b) core training/scoring and write-back
+    # TODO investigate rmvar handling with explicit binding (lbeta)
+    Rbeta1 = eval(train, largs1);
+    Rloss[i,1] = eval(predict, list(Xtest, ytest, Rbeta1));
+  }
+
+  # Step 3) select best parameter combination
+  ix = as.scalar(rowIndexMin(t(Rloss[,2])));
+  opt = HP[ix,]; # optimal hyper-parameters
+ 
+}
+
+

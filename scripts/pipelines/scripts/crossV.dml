@@ -1,0 +1,103 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+classifyDirty = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Double] opt, 
+  Matrix[Double] mask, Boolean isWeighted = TRUE, Integer cv)
+  return (Double accuracy)
+{
+  # classify without cleaning fill with edfault values 1
+  Xtrain = replace(target = Xtrain, pattern = NaN, replacement=1)
+  
+  dX_train = dummycoding(Xtrain, mask)
+
+  accuracy = crossV(Xtrain, ytrain, cv, mask, opt, isWeighted)
+  accuracy = mean(accuracy)
+
+  # # learn model
+  # B = multiLogReg(X=dX_train, Y=ytrain, icpt=2, reg=as.scalar(opt[1,1]), maxi = as.scalar(opt[1,2]), maxii= 0, verbose=FALSE);
+  # [M,pred,accuracy] = multiLogRegPredict(X=dX_test, B=B, Y=ytest, verbose=FALSE);
+
+  # if(isWeighted) 
+    # accuracy = getAccuracy(y=ytest, yhat=pred, isWeighted=isWeighted)
+  print("cross validated dirty accuracy "+accuracy)
+}
+
+
+crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] mask,
+  Matrix[Double] MLhp, Boolean isWeighted) 
+return (Matrix[Double] accuracyMatrix)
+{
+
+  accuracyMatrix = matrix(0, k, 1)
+
+  dataList = list()
+  testL = list()
+  data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+  classes = table(data[, 1], 1)
+  ins_per_fold = classes/k
+  start_fold = matrix(1, rows=nrow(ins_per_fold), cols=1)
+  fold_idxes = cbind(start_fold, ins_per_fold)
+
+  start_i = 0; end_i = 0; idx_fold = 1;;
+  for(i in 1:k)
+  {
+    fold_i = matrix(0, 0, ncol(data))
+    start=0; end=0; 
+    for(j in 1:nrow(classes))
+    {
+      idx = as.scalar(classes[j, 1])
+      start = end + 1;
+      end = end + idx
+      class_j =  data[start:end, ]
+
+
+      start_i = as.scalar(fold_idxes[j, 1]);
+      end_i = as.scalar(fold_idxes[j, 2])
+
+      fold_i = rbind(fold_i, class_j[start_i:end_i, ])
+    }
+
+    dataList = append(dataList, fold_i)
+    fold_idxes[, 1] = fold_idxes[, 2] + 1
+    fold_idxes[, 2] += ins_per_fold
+    while(FALSE){}
+  }
+
+  for(i in seq(1,k))
+  {
+      [trainList, hold_out] = remove(dataList, i)
+      trainset = rbind(trainList)
+      testset = as.matrix(hold_out)
+      trainX = trainset[, 2:ncol(trainset)]
+      trainy = trainset[, 1]
+      testX = testset[, 2:ncol(testset)]
+      testy = testset[, 1]
+      beta = multiLogReg(X=trainX, Y=trainy, icpt=1, reg=as.scalar(MLhp[1,1]), tol= 1e-9, 
+      maxi=as.scalar(MLhp[1,2]), maxii= 50, verbose=FALSE);
+      [prob, yhat, a] = multiLogRegPredict(testX, beta, testy, FALSE)
+      accuracy = getAccuracy(testy, yhat, isWeighted)
+      accuracyMatrix[i] = accuracy
+  }
+
+}
+
+
+

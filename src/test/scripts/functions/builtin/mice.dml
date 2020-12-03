@@ -36,7 +36,7 @@ if(sum(Mask) == ncol(F))
   jspecR = "{ids:true, recode:["+s+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
   # call mice
-  dataset = mice(X=X,cMask=Mask, iter=$iteration, verbose = FALSE )
+  dataset = mice(X=X,cMask=Mask, iter=$iteration, threshold=0.8, verbose = FALSE )
   # decode data back to original format
   output = as.matrix(transformdecode(target=dataset, spec=jspecR, meta=M));
   # cherry picking columns to compare with R results

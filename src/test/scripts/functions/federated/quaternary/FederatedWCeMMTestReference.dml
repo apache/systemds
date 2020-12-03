@@ -1,0 +1,8 @@
+
+X = rbind(read($in_X1), read($in_X2))
+U = read($in_U)
+V = read($in_V)
+
+Z = as.matrix(sum(X * log(U %*% t(V))))
+
+write(Z, %out_Z)

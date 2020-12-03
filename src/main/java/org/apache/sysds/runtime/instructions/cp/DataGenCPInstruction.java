@@ -29,12 +29,14 @@ import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
@@ -42,6 +44,9 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Random;
 
 public class DataGenCPInstruction extends UnaryCPInstruction {
 	private static final Log LOG = LogFactory.getLog(DataGenCPInstruction.class.getName());
@@ -52,7 +57,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	private boolean minMaxAreDoubles;
 	private final String minValueStr, maxValueStr;
 	private final double minValue, maxValue, sparsity;
-	private final String pdf, pdfParams;
+	private final String pdf, pdfParams, frame_data, schema;
 	private final long seed;
 	private Long runtimeSeed;
 
@@ -70,7 +75,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, 
 			CPOperand rows, CPOperand cols, CPOperand dims, int blen, String minValue, String maxValue, double sparsity, long seed,
 			String probabilityDensityFunction, String pdfParams, int k, 
-			CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, boolean replace, String opcode, String istr) {
+			CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, boolean replace, String data, String schema, String opcode, String istr) {
 		super(CPType.Rand, op, in, out, opcode, istr);
 		this.method = mthd;
 		this.rows = rows;
@@ -107,29 +112,42 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		this.seq_to = seqTo;
 		this.seq_incr = seqIncr;
 		this.replace = replace;
+		this.frame_data = data;
+		this.schema = schema;
 	}
 	
 	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
 			CPOperand dims, int blen, String minValue, String maxValue, double sparsity, long seed,
-			String probabilityDensityFunction, String pdfParams, int k, String opcode, String istr) {
+			String probabilityDensityFunction, String pdfParams, int k,  String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, dims, blen, minValue, maxValue, sparsity, seed,
-			probabilityDensityFunction, pdfParams, k, null, null, null, false, opcode, istr);
+			probabilityDensityFunction, pdfParams, k, null, null, null,
+			false, null, null, opcode, istr);
 	}
 
 	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
 			CPOperand dims, int blen, String maxValue, boolean replace, long seed, String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, dims, blen, "0", maxValue, 1.0, seed,
-			null, null, 1, null, null, null, replace, opcode, istr);
+			null, null, 1, null, null, null, replace,
+			null, null, opcode, istr);
 	}
 
 	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
 			CPOperand dims, int blen, CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, dims, blen, "0", "1", 1.0, -1,
-			null, null, 1, seqFrom, seqTo, seqIncr, false, opcode, istr);
+			null, null, 1, seqFrom, seqTo, seqIncr, false,
+			null, null, opcode, istr);
 	}
 	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand out, String opcode, String istr) {
 		this(op, mthd, null, out, null, null, null, 0, "0", "0", 0, 0,
-			null, null, 1, null, null, null, false, opcode, istr);
+			null, null, 1, null, null, null,
+			false, null, null, opcode, istr);
+	}
+
+	public DataGenCPInstruction(Operator op, OpOpDG method,  CPOperand out, CPOperand rows, CPOperand cols, String data,
+			String schema, String opcode, String str) {
+		this(op, method, null, out, rows, cols, null, 0, "0", "0", 0, 0,
+			null, null, 1, null, null, null, false,
+				data, schema, opcode, str);
 	}
 
 	public long getRows() {
@@ -217,6 +235,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			// 1 operand: outvar
 			InstructionUtils.checkNumFields ( s, 1 ); 
 		}
+		else if ( opcode.equalsIgnoreCase(DataGen.FRAME_OPCODE) ) {
+			method = OpOpDG.FRAMEINIT;
+			InstructionUtils.checkNumFields ( s, 5 );
+		}
 		
 		CPOperand out = new CPOperand(s[s.length-1]);
 		Operator op = null;
@@ -247,14 +269,22 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			return new DataGenCPInstruction(op, method, null, out, rows, cols, dims, blen,
 				s[5 - missing], s[6 - missing], sparsity, seed, pdf, pdfParams, k, opcode, str);
 		}
-		else if ( method == OpOpDG.SEQ) 
+		else if ( method == OpOpDG.SEQ)
 		{
 			int blen = Integer.parseInt(s[3]);
 			CPOperand from = new CPOperand(s[4]);
 			CPOperand to = new CPOperand(s[5]);
 			CPOperand incr = new CPOperand(s[6]);
-			
+
 			return new DataGenCPInstruction(op, method, null, out, null, null, null, blen, from, to, incr, opcode, str);
+		}
+		else if ( method == OpOpDG.FRAMEINIT)
+		{
+			String data = s[1];
+			CPOperand rows = new CPOperand(s[2]);
+			CPOperand cols = new CPOperand(s[3]);
+			String valueType = s[4];
+			return new DataGenCPInstruction(op, method,  out, rows, cols, data, valueType,  opcode, str);
 		}
 		else if ( method == OpOpDG.SAMPLE) 
 		{
@@ -282,6 +312,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		MatrixBlock soresBlock = null;
 		TensorBlock tensorBlock = null;
 		ScalarObject soresScalar = null;
+		FrameBlock soresFrame = null;
 		
 		//process specific datagen operator
 		if ( method == OpOpDG.RAND ) {
@@ -369,7 +400,48 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		else if ( method == OpOpDG.TIME ) {
 			soresScalar = new IntObject(System.nanoTime());
 		}
-		
+		else if(method == OpOpDG.FRAMEINIT)
+		{
+			int lrows = (int) ec.getScalarInput(rows).getLongValue();
+			int lcols = (int) ec.getScalarInput(cols).getLongValue();
+			ValueType[] vt;
+			String schemaValues[] = schema.split(DataExpression.DELIM_NA_STRING_SEP);
+
+			if(schemaValues[0].equals(DataExpression.DEFAULT_SCHEMAPARAM))
+				vt = UtilFunctions.nCopies(lcols, ValueType.STRING);
+			else
+				vt = UtilFunctions.stringToValueType(schemaValues);
+
+			int schemaLength = vt.length;
+
+			if(schemaLength != lcols)
+				throw new DMLRuntimeException("schema-dimension mismatch");
+
+			if(frame_data.equals("")) {
+				soresFrame = UtilFunctions.generateRandomFrameBlock(lrows, lcols, vt, new Random(10));
+			}
+			else
+			{
+				String[] data = frame_data.split(DataExpression.DELIM_NA_STRING_SEP);
+				if(data.length != schemaLength && data.length > 1)
+					throw new DMLRuntimeException("data values should be equal to number of columns," +
+						" or a single values for all columns");
+				if(data.length > 1) {
+					soresFrame = new FrameBlock(vt);
+					for(int i = 0; i < lrows; i++)
+						soresFrame.appendRow(data);
+				}
+				else {
+					System.out.println("data "+frame_data);
+					soresFrame = new FrameBlock(vt);
+					String[] data1 = new String[lcols];
+					Arrays.fill(data1, frame_data);
+					for(int i = 0; i < lrows; i++)
+						soresFrame.appendRow(data1);
+
+				}
+			}
+		}
 		if( output.isMatrix() ) {
 			//guarded sparse block representation change
 			if( soresBlock.getInMemorySize() < OptimizerUtils.SAFE_REP_CHANGE_THRES )
@@ -386,6 +458,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		}
 		else if( output.isScalar() )
 			ec.setScalarOutput(output.getName(), soresScalar);
+		else if (output.isFrame())
+			ec.setFrameOutput(output.getName(), soresFrame);
 	}
 	
 	private static void checkValidDimensions(long rows, long cols) {
@@ -444,4 +518,5 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				new CPOperand(ec.getScalarInput(op)).getLineageLiteral());
 		return inst;
 	}
+
 }

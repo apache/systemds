@@ -125,7 +125,10 @@ public class DataExpression extends DataIdentifier
 	
 	public static final Set<String> RESHAPE_VALID_PARAM_NAMES = new HashSet<>(
 		Arrays.asList(RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS));
-	
+
+	public static final Set<String> FRAME_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(SCHEMAPARAM, RAND_DATA, RAND_ROWS, RAND_COLS));
+
 	public static final Set<String> SQL_VALID_PARAM_NAMES = new HashSet<>(
 		Arrays.asList(SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY));
 	
@@ -156,7 +159,8 @@ public class DataExpression extends DataIdentifier
 	public static final double  DEFAULT_DELIM_FILL_VALUE = 0.0;
 	public static final boolean DEFAULT_DELIM_SPARSE = false;
 	public static final String  DEFAULT_NA_STRINGS = "";
-	
+	public static final String  DEFAULT_SCHEMAPARAM = "NULL";
+
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
 	private boolean _strInit = false; //string initialize
@@ -268,6 +272,7 @@ public class DataExpression extends DataIdentifier
 					namedParamCount++;
 			}
 
+
 			// check whether named or unnamed parameters are used
 			if (passedParamExprs.size() < 3){
 				errorListener.validationError(parseInfo, "for matrix statement, must specify at least 3 arguments: data, rows, cols");
@@ -324,6 +329,72 @@ public class DataExpression extends DataIdentifier
 			}
 			dataExpr.setMatrixDefault();
 		}
+
+		else if (functionName.equals("frame")) {
+			dop = Expression.DataOp.FRAME;
+			dataExpr = new DataExpression(dop, new HashMap<String, Expression>(), parseInfo);
+
+			int namedParamCount = 0, unnamedParamCount = 0;
+			for (ParameterExpression currExpr : passedParamExprs) {
+				if (currExpr.getName() == null)
+					unnamedParamCount++;
+				else
+					namedParamCount++;
+			}
+
+			// check whether named or unnamed parameters are used
+			if (passedParamExprs.size() < 3) { // it will generate a frame with string schema
+				errorListener.validationError(parseInfo, "for frame statement, must specify at least 3 arguments: data, rows and cols");
+				return null;
+			}
+
+			if (unnamedParamCount > 1) {
+
+				if (namedParamCount > 0) {
+					errorListener.validationError(parseInfo, "for frame statement, cannot mix named and unnamed parameters");
+					return null;
+				}
+
+				if (unnamedParamCount < 3) {
+					errorListener.validationError(parseInfo, "for frame statement, must specify at least 3 arguments: rows, cols");
+					return null;
+				}
+				// assume: data, rows, cols, [Schema]
+				dataExpr.addFrameExprParam(DataExpression.RAND_DATA, passedParamExprs.get(0).getExpr());
+				dataExpr.addFrameExprParam(DataExpression.RAND_ROWS, passedParamExprs.get(1).getExpr());
+				dataExpr.addFrameExprParam(DataExpression.RAND_COLS, passedParamExprs.get(2).getExpr());
+
+				if (unnamedParamCount == 3)
+					dataExpr.addFrameExprParam(DataExpression.SCHEMAPARAM, passedParamExprs.get(3).getExpr());
+
+				if (unnamedParamCount > 3) {
+					errorListener.validationError(parseInfo, "for frame  statement, at most 4 arguments supported: data, rows, cols, schema");
+					return null;
+				}
+
+			} else {
+				// handle first parameter, which is data and may be unnamed
+				ParameterExpression firstParam = passedParamExprs.get(0);
+				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.RAND_DATA)){
+					errorListener.validationError(parseInfo, "frame method must have data parameter as first parameter or unnamed parameter");
+					return null;
+				} else {
+					dataExpr.addFrameExprParam(DataExpression.RAND_DATA, passedParamExprs.get(0).getExpr());
+				}
+
+				for (int i=1; i<passedParamExprs.size(); i++){
+					if (passedParamExprs.get(i).getName() == null){
+						errorListener.validationError(parseInfo, "for frame statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+						return null;
+					} else {
+						dataExpr.addFrameExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr());
+					}
+				}
+			}
+			dataExpr.setFrameDefault();
+		}
+
+
 		else if (functionName.equals("tensor")){
 			dop = Expression.DataOp.TENSOR;
 			dataExpr = new DataExpression(dop, new HashMap<String, Expression>(), parseInfo);
@@ -544,6 +615,32 @@ public class DataExpression extends DataIdentifier
 		paramValue.setParseInfo(this);
 		addVarParam(paramName,paramValue);
 	}
+	public void addFrameExprParam(String paramName, Expression paramValue)
+	{
+		// check name is valid
+		boolean found = FRAME_VALID_PARAM_NAMES.contains(paramName);
+
+		if (!found){
+			raiseValidateError("unexpected parameter \"" + paramName +
+				"\". Legal parameters for  frame statement are "
+				+ "(capitalization-sensitive): " + RAND_DATA + ", " + RAND_ROWS
+				+ ", " + RAND_COLS + ", " + SCHEMAPARAM);
+		}
+		if (getVarParam(paramName) != null) {
+			raiseValidateError("attempted to add frame statement parameter " + paramValue + " more than once");
+		}
+//		TODO convert double Matrix to String Frame
+		// Process the case where user provides double values to rows or cols
+//		if (paramName.equals(RAND_ROWS) && paramValue instanceof StringIdentifier) {
+//			paramValue = new IntIdentifier((long) ((DoubleIdentifier) paramValue).getValue(), this);
+//		} else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier) {
+//			paramValue = new IntIdentifier((long) ((DoubleIdentifier) paramValue).getValue(), this);
+//		}
+
+		// add the parameter to expression list
+		paramValue.setParseInfo(this);
+		addVarParam(paramName,paramValue);
+	}
 
 	public void addTensorExprParam(String paramName, Expression paramValue)
 	{
@@ -639,6 +736,13 @@ public class DataExpression extends DataIdentifier
 	public void setMatrixDefault(){
 		if (getVarParam(RAND_BY_ROW) == null)
 			addVarParam(RAND_BY_ROW, new BooleanIdentifier(true, this));
+	}
+
+	public void setFrameDefault(){
+		if(getVarParam(RAND_DATA) == null)
+			addVarParam(RAND_DATA, new StringIdentifier(null, this));
+		if (getVarParam(SCHEMAPARAM) == null)
+			addVarParam(SCHEMAPARAM, new StringIdentifier(DEFAULT_SCHEMAPARAM, this));
 	}
 
 	public void setTensorDefault(){
@@ -792,7 +896,7 @@ public class DataExpression extends DataIdentifier
 			}
 			inputParamExpr.validateExpression(ids, currConstVars, conditional);
 			if (s != null && !s.equals(RAND_DATA) && !s.equals(RAND_DIMS) && !s.equals(FED_ADDRESSES) && !s.equals(FED_RANGES)
-					&& !s.equals(DELIM_NA_STRINGS) && getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
+					&& !s.equals(DELIM_NA_STRINGS) && !s.equals(SCHEMAPARAM) && getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
 				raiseValidateError("Non-scalar data types are not supported for data expression.", conditional,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
@@ -804,10 +908,10 @@ public class DataExpression extends DataIdentifier
 		// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
 		Expression dataParam1 = getVarParam(RAND_DATA);
 		if (dataParam1 == null && (getOpCode().equals(DataOp.MATRIX) || getOpCode().equals(DataOp.TENSOR))){
-			raiseValidateError("for matrix or tensor, must defined data parameter", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("for matrix, frame or tensor, must defined data parameter", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		// We need to remember the operation if we replace the OpCode by rand so we have the correct output
-		if (dataParam1 != null && dataParam1.getOutput().getDataType() == DataType.SCALAR &&
+		if (dataParam1 != null && dataParam1 instanceof ConstIdentifier  && dataParam1.getOutput().getDataType() == DataType.SCALAR &&
 				(_opcode == DataOp.MATRIX || _opcode == DataOp.TENSOR)/*&& dataParam instanceof ConstIdentifier*/ ){
 			//MB: note we should not check for const identifiers here, because otherwise all matrix constructors with
 			//variable input are routed to a reshape operation (but it works only on matrices and hence, crashes)
@@ -816,8 +920,8 @@ public class DataExpression extends DataIdentifier
 			// replace data parameter with min / max within Rand case below
 			this.setOpCode(DataOp.RAND);
 		}
-		
-		
+
+
 		// IMPORTANT: for each operation, one must handle unnamed parameters
 		
 		switch (this.getOpCode()) {
@@ -1804,6 +1908,208 @@ public class DataExpression extends DataIdentifier
 			
 			break;
 
+		case FRAME:
+
+				//handle default and input arguments
+				setFrameDefault();
+				validateParams(conditional, FRAME_VALID_PARAM_NAMES,
+					"Legal parameters for frame statement are (case-sensitive): "
+						+ RAND_DATA + ", " + RAND_ROWS	+ ", " + RAND_COLS + ", " + SCHEMAPARAM);
+
+				//validate correct value types
+
+				if (getVarParam(RAND_ROWS) != null && (getVarParam(RAND_ROWS) instanceof StringIdentifier || getVarParam(RAND_ROWS) instanceof BooleanIdentifier)){
+					raiseValidateError("for frame statement " + RAND_ROWS + " has incorrect value type", conditional);
+				}
+				if (getVarParam(RAND_COLS) != null && (getVarParam(RAND_COLS) instanceof StringIdentifier || getVarParam(RAND_COLS) instanceof BooleanIdentifier)){
+					raiseValidateError("for frame statement " + RAND_COLS + " has incorrect value type", conditional);
+				}
+//				if (getVarParam(SCHEMAPARAM) == null){
+//					addVarParam(SCHEMAPARAM, new StringIdentifier(DEFAULT_SCHEMAPARAM, this));
+//				}
+//				else {
+//					if ((getVarParam(SCHEMAPARAM) instanceof ConstIdentifier)
+//						&& (! (getVarParam(SCHEMAPARAM) instanceof StringIdentifier)))
+//					{
+//						raiseValidateError("For frames '" + getVarParam(SCHEMAPARAM) + "' must be a string value ", conditional);
+//					}
+//					LOG.info("Replacing :" + _varParams.get(SCHEMAPARAM) + " with STRING");
+//				}
+
+				//validate general data expression
+				getVarParam(RAND_DATA).validateExpression(ids, currConstVars, conditional);
+
+				rowsLong = -1L;
+				colsLong = -1L;
+
+				///////////////////////////////////////////////////////////////////
+				// HANDLE ROWS
+				///////////////////////////////////////////////////////////////////
+				rowsExpr = getVarParam(RAND_ROWS);
+				if (rowsExpr != null){
+					if (rowsExpr instanceof IntIdentifier) {
+						if  (((IntIdentifier)rowsExpr).getValue() >= 1 ) {
+							rowsLong = ((IntIdentifier)rowsExpr).getValue();
+						}
+						else {
+							raiseValidateError("In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue(), conditional);
+						}
+					}
+					else if (rowsExpr instanceof DoubleIdentifier) {
+						if  (((DoubleIdentifier)rowsExpr).getValue() >= 1 ) {
+							rowsLong = Double.valueOf((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
+						}
+						else {
+							raiseValidateError("In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString(), conditional);
+						}
+					}
+					else if (rowsExpr instanceof DataIdentifier && !(rowsExpr instanceof IndexedIdentifier)) {
+
+						// check if the DataIdentifier variable is a ConstIdentifier
+						String identifierName = ((DataIdentifier)rowsExpr).getName();
+						if (currConstVars.containsKey(identifierName)){
+
+							// handle int constant
+							ConstIdentifier constValue = currConstVars.get(identifierName);
+							if (constValue instanceof IntIdentifier){
+
+								// check rows is >= 1 --- throw exception
+								if (((IntIdentifier)constValue).getValue() < 1){
+									raiseValidateError("In matrix statement, can only assign rows a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+								}
+								// update row expr with new IntIdentifier
+								long roundedValue = ((IntIdentifier)constValue).getValue();
+								rowsExpr = new IntIdentifier(roundedValue, this);
+								addVarParam(RAND_ROWS, rowsExpr);
+								rowsLong = roundedValue;
+							}
+							// handle double constant
+							else if (constValue instanceof DoubleIdentifier){
+
+								if (((DoubleIdentifier)constValue).getValue() < 1.0){
+									raiseValidateError("In matrix statement, can only assign rows a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+								}
+								// update row expr with new IntIdentifier (rounded down)
+								long roundedValue = Double.valueOf(Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+								rowsExpr = new IntIdentifier(roundedValue, this);
+								addVarParam(RAND_ROWS, rowsExpr);
+								rowsLong = roundedValue;
+
+							}
+							else {
+								// exception -- rows must be integer or double constant
+								raiseValidateError("In matrix statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+							}
+						}
+						else {
+							// handle general expression
+							rowsExpr.validateExpression(ids, currConstVars, conditional);
+						}
+					}
+					else {
+						// handle general expression
+						rowsExpr.validateExpression(ids, currConstVars, conditional);
+					}
+				}
+
+				///////////////////////////////////////////////////////////////////
+				// HANDLE COLUMNS
+				///////////////////////////////////////////////////////////////////
+
+				colsExpr = getVarParam(RAND_COLS);
+				if (colsExpr != null){
+					if (colsExpr instanceof IntIdentifier) {
+						if  (((IntIdentifier)colsExpr).getValue() >= 1 ) {
+							colsLong = ((IntIdentifier)colsExpr).getValue();
+						}
+						else {
+							raiseValidateError("In matrix statement, can only assign cols a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString(), conditional);
+						}
+					}
+					else if (colsExpr instanceof DoubleIdentifier) {
+						if  (((DoubleIdentifier)colsExpr).getValue() >= 1 ) {
+							colsLong = Double.valueOf((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
+						}
+						else {
+							raiseValidateError("In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString(), conditional);
+						}
+					}
+					else if (colsExpr instanceof DataIdentifier && !(colsExpr instanceof IndexedIdentifier)) {
+
+						// check if the DataIdentifier variable is a ConstIdentifier
+						String identifierName = ((DataIdentifier)colsExpr).getName();
+						if (currConstVars.containsKey(identifierName)){
+
+							// handle int constant
+							ConstIdentifier constValue = currConstVars.get(identifierName);
+							if (constValue instanceof IntIdentifier){
+
+								// check cols is >= 1 --- throw exception
+								if (((IntIdentifier)constValue).getValue() < 1){
+									raiseValidateError("In matrix statement, can only assign cols a long " +
+										"(integer) value >= 1 -- attempted to assign value: "
+										+ constValue.toString(), conditional);
+								}
+								// update col expr with new IntIdentifier
+								long roundedValue = ((IntIdentifier)constValue).getValue();
+								colsExpr = new IntIdentifier(roundedValue, this);
+								addVarParam(RAND_COLS, colsExpr);
+								colsLong = roundedValue;
+							}
+							// handle double constant
+							else if (constValue instanceof DoubleIdentifier){
+
+								if (((DoubleIdentifier)constValue).getValue() < 1){
+									raiseValidateError("In matrix statement, can only assign cols a long " +
+										"(integer) value >= 1 -- attempted to assign value: "
+										+ constValue.toString(), conditional);
+								}
+								// update col expr with new IntIdentifier (rounded down)
+								long roundedValue = Double.valueOf(Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+								colsExpr = new IntIdentifier(roundedValue, this);
+								addVarParam(RAND_COLS, colsExpr);
+								colsLong = roundedValue;
+
+							}
+							else {
+								// exception -- rows must be integer or double constant
+								raiseValidateError("In matrix statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
+							}
+						}
+						else {
+							// handle general expression
+							colsExpr.validateExpression(ids, currConstVars, conditional);
+						}
+
+					}
+					else {
+						// handle general expression
+						colsExpr.validateExpression(ids, currConstVars, conditional);
+					}
+				}
+				getOutput().setFileFormat(FileFormat.BINARY);
+				getOutput().setDataType(DataType.FRAME);
+				getOutput().setValueType(ValueType.UNKNOWN);
+				getOutput().setDimensions(rowsLong, colsLong);
+
+				if (getOutput() instanceof IndexedIdentifier){
+					((IndexedIdentifier) getOutput()).setOriginalDimensions(getOutput().getDim1(), getOutput().getDim2());
+				}
+				//getOutput().computeDataType();
+
+				if (getOutput() instanceof IndexedIdentifier){
+					LOG.warn(this.printWarningLocation() + "Output for frame Statement may have incorrect size information");
+				}
+
+				break;
 		case TENSOR:
 			//handle default and input arguments
 			setTensorDefault();
@@ -1842,7 +2148,9 @@ public class DataExpression extends DataIdentifier
 			}
 
 			break;
-			
+
+
+
 		case SQL:
 			//handle default and input arguments
 			setSqlDefault();

@@ -835,5 +835,77 @@ public class UtilFunctions {
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
 	}
 
+	/**
+	 * <p>
+	 *     Generates a random FrameBlock with given parameters.
+	 * </p>
+	 */
+	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random){
+		String[] names = new String[cols];
+		for(int i = 0; i < cols; i++)
+			names[i] = schema[i].toString();
+		FrameBlock frameBlock = new FrameBlock(schema, names);
+		frameBlock.ensureAllocatedColumns(rows);
+		for(int row = 0; row < rows; row++)
+			for(int col = 0; col < cols; col++)
+				frameBlock.set(row, col, generateRandomValueFromValueType(schema[col], random));
+		return frameBlock;
+	}
 
+	/**
+	 * <p>
+	 *     Generates a random value for a given Value Type
+	 * </p>
+	 *
+	 * @param valueType
+	 * 				the ValueType of which to generate the value
+	 * @param random
+	 * 				random Object
+	 */
+	public static Object generateRandomValueFromValueType(ValueType valueType, Random random){
+		switch (valueType){
+			case FP32:	  return random.nextFloat();
+			case FP64:    return random.nextDouble();
+			case INT32:   return random.nextInt();
+			case INT64:   return random.nextLong();
+			case BOOLEAN: return random.nextBoolean();
+			case STRING:
+				return random.ints('a', 'z' + 1)
+					.limit(10)
+					.collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+					.toString();
+			default:
+				return null;
+		}
+	}
+	/**
+	 * <p>
+	 *     Generates a ValueType array from a String array
+	 * </p>
+	 *
+	 * @param schemaValues
+	 * 				the string schema of which to generate the ValueType
+	 */
+	public static ValueType[] stringToValueType(String[] schemaValues)
+	{
+		ValueType[] vt = new ValueType[schemaValues.length];
+		for(int i=0; i < schemaValues.length; i++)
+		{
+			if(schemaValues[i].equalsIgnoreCase("STRING"))
+				vt[i] = ValueType.STRING;
+			else if (schemaValues[i].equalsIgnoreCase("FP64"))
+				vt[i] = ValueType.FP64;
+			else if (schemaValues[i].equalsIgnoreCase("FP32"))
+				vt[i] = ValueType.FP32;
+			else if (schemaValues[i].equalsIgnoreCase("INT64"))
+				vt[i] = ValueType.INT64;
+			else if (schemaValues[i].equalsIgnoreCase("INT32"))
+				vt[i] = ValueType.INT32;
+			else if (schemaValues[i].equalsIgnoreCase("BOOLEAN"))
+				vt[i] = ValueType.BOOLEAN;
+			else
+				throw new DMLRuntimeException("Invalid column schema. Allowed values are STRING, FP64, FP32, INT64, INT32 and Boolean");
+		}
+		return vt;
+	}
 }

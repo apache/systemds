@@ -1399,6 +1399,9 @@ public class Recompiler
 			else if (d.getOp() == OpOpDG.TIME) {
 				d.refreshSizeInformation();
 			}
+			else if (d.getOp() == OpOpDG.FRAMEINIT) {
+				d.refreshSizeInformation();
+			}
 			else {
 				throw new DMLRuntimeException("Unexpected data generation method: " + d.getOp());
 			}

@@ -284,7 +284,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPType.Rand);
 		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPType.Rand);
 		String2SPInstructionType.put( DataGen.SAMPLE_OPCODE, SPType.Rand);
-		
+		String2SPInstructionType.put( DataGen.FRAME_OPCODE, SPType.Rand);
+
 		//ternary instruction opcodes
 		String2SPInstructionType.put( "ctable", SPType.Ctable);
 		String2SPInstructionType.put( "ctableexpand", SPType.Ctable);

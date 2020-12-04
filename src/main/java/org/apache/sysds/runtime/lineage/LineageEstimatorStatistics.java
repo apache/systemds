@@ -27,7 +27,7 @@ import org.apache.sysds.utils.Statistics;
 public class LineageEstimatorStatistics {
 	private static final LongAdder _ctimeSaved      = new LongAdder(); //in nano sec
 	private static int INSTCOUNT = 10;
-	
+
 	public static void reset() {
 		_ctimeSaved.reset();
 	}
@@ -37,7 +37,7 @@ public class LineageEstimatorStatistics {
 		// TODO: Handle overflow
 		_ctimeSaved.add(delta);
 	}
-	
+
 	public static String displayComputeTime() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("%.3f", ((double)Statistics.getRunTime())*1e-9)); //in sec
@@ -45,7 +45,7 @@ public class LineageEstimatorStatistics {
 		sb.append(String.format("%.3f", ((double)_ctimeSaved.longValue())/1000000000)); //in sec
 		return sb.toString();
 	}
-	
+
 	public static String displaySize() {
 		//size of all cached reusable intermediates/size of reused intermediates//cache size
 		StringBuilder sb = new StringBuilder();
@@ -56,7 +56,7 @@ public class LineageEstimatorStatistics {
 		sb.append(String.format("%.3f", ((double)LineageEstimator.CACHE_LIMIT)/(1024*1024))); //in MB
 		return sb.toString();
 	}
-	
+
 	public static String displayReusableInsts() {
 		// Total time saved and reuse counts per opcode, ordered by saved time
 		StringBuilder sb = new StringBuilder();
@@ -66,9 +66,9 @@ public class LineageEstimatorStatistics {
 			MutableTriple<String, Long, Double> op = LineageEstimator.computeSavingInst.poll();
 			int tl = String.valueOf(op.getRight()*1e-3).indexOf(".");
 			if (op != null && op.getRight() > 0)
-				sb.append(String.valueOf(i) 
+				sb.append(String.valueOf(i)
 					+ String.format("%"+(4-String.valueOf(i).length())+"s", "") // 4-length(i) spaces
-					+ op.getLeft() 
+					+ op.getLeft()
 					+ String.format("%"+(15-op.getLeft().length())+"s", "") // 15 - length(opcode) spaces
 					+ String.format("%.3f", op.getRight()*1e-3)
 					+ String.format("%"+(8-(tl+3))+"s", "") // 8 - length(time upto '.') spaces
@@ -76,7 +76,7 @@ public class LineageEstimatorStatistics {
 		}
 		return sb.toString();
 	}
-	
+
 	public static String displayLineageEstimates() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Compute Time (Elapsed/Saved): \t" + displayComputeTime() + " sec.\n");

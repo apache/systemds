@@ -21,7 +21,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <limits>
+//#include <limits>
 
 // Use this method in templates to fetch the maximum value for a given datatype
 template<typename T>
@@ -30,11 +30,13 @@ __forceinline__ __device__ T MAX() {
 }
 template<>
 __forceinline__ __device__ float MAX<float>() {
-	return std::numeric_limits<float>::max();
+	//return std::numeric_limits<float>::max();
+	return 9999999999999999.0f;
 }
 template<>
 __forceinline__ __device__ double MAX<double>() {
-	return std::numeric_limits<double>::max();
+	//return std::numeric_limits<double>::max();
+	return 9999999999999999.0;
 }
 
 /**

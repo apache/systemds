@@ -29,25 +29,24 @@
 
 template<typename T>
 struct SpoofRowwiseOp {
-	T**b; T* scalars;
-	int m, n, grix_;
+	T* a;
+	T**b;
+	T* c;
+	T* scalars;
+	int len, grix_;
 
-	SpoofRowwiseOp(T** b, T* scalars, int m, int n, int grix) : b(b), scalars(scalars), m(m), n(n), grix_(grix) {}
+	SpoofRowwiseOp(T* a, T** b, T* scalars, T* c, int len, int grix) : a(a), b(b), c(c), scalars(scalars), len(len), grix_(grix) {}
 
-	__device__  __forceinline__ T operator()(T a, int idx) const {
-		int rix = idx / n;
-		int cix = idx % n;
-		int grix = grix_ + rix;
-
+	__device__  __forceinline__ void operator()(int ai, int ci, int rix) const {
+		
 %BODY_dense%
-		return %OUT%;
 	}
 };
 
 template<typename T>
-//__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {
-__global__ void %TMP% (T* a, uint ai, T** b, T* scalars, T* c, uint ci, uint len, long grix, uint rix)
-	%AGG_OP%<T> agg_op;
-	SpoofRowwiseOp<T> spoof_op(b, scalars, m, n, grix);
-	%TYPE%<T, %AGG_OP%<T>, SpoofRowwiseOp<T>>(a, c, m, n, %INITIAL_VALUE%, agg_op, spoof_op);
+__global__ void %TMP% (T* a, T** b, T* scalars, T* c, uint c_n, int len, int grix) {
+	SpoofRowwiseOp<T> spoof_op(a, b, scalars, c, len, grix);
+	int ai = blockIdx.x * len;
+	int ci = blockIdx.x * c_n;
+	spoof_op(ai, ci, blockIdx.x);
 };

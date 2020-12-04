@@ -92,11 +92,40 @@ __device__ float bwAnd(float a, float b) {
 }
 
 template<typename T>
-__device_ T dotProduct();
+__device__ T dotProduct(T* a, T* b, int ai, int bi, int len);
 
 template<>
-__device double dotProduct(double* a, double* b, uint ai, uint bi, uint len) {
+__device__ double dotProduct(double* a, double* b, int ai, int bi, int len) {
+	int tid = threadIdx.x;
+	auto sdata = shared_memory_proxy<double>();
 
+	double result = 0.0;
+	if(tid < len)
+	{
+		sdata[tid] = a[ai + tid] * b[bi + tid];
+	}
+	__syncthreads();
+	if (tid == 0)
+	{
+		for(int i = 0; i < blockDim.x; i++)
+            result += sdata[i];
+		printf("dot: %f\n", result);
+	}
+    return result;
+}
+
+template<typename T>
+__device__ void vectMultAdd(T* a, T b, T* c, int ai, int bi, int len);
+
+template<>
+__device__ void vectMultAdd(double* a, double b, double* c, int ai, int bi, int len) {
+	if(threadIdx.x == 0)
+		for(int i = bi; i < len ; i++) {
+			//c[i] += a[ai + i] * b;
+			double* addr = &(c[i]);
+			atomicAdd(addr, a[ai + i] * b);
+			printf("block %d adding %f to c[%d]\n",blockIdx.x, b, i);
+		}
 }
 
 #endif // SPOOF_UTILS_CUH

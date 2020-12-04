@@ -95,47 +95,62 @@ bool SpoofCUDAContext::compile_cuda(const std::string &src,
   std::cout << "cuda_path: " << cuda_include_path << std::endl;
 #endif
 
-  SpoofOperator::AggType type = SpoofOperator::AggType::NONE;
-  SpoofOperator::AggOp op = SpoofOperator::AggOp::NONE;
+	SpoofOperator::AggType agg_type= SpoofOperator::AggType::NONE;
+	SpoofOperator::AggOp agg_op = SpoofOperator::AggOp::NONE;
+	SpoofOperator::OpType op_type = SpoofOperator::OpType::NONE;
 
-  auto pos = 0;
-  if((pos = src.find("CellType")) != std::string::npos) {
-      if(src.substr(pos, pos+30).find("FULL_AGG") != std::string::npos)
-          type = SpoofOperator::AggType::FULL_AGG;
-      else if(src.substr(pos, pos+30).find("ROW_AGG") != std::string::npos)
-          type = SpoofOperator::AggType::ROW_AGG;
-      else if(src.substr(pos, pos+30).find("COL_AGG") != std::string::npos)
-          type = SpoofOperator::AggType::COL_AGG;
-      else if(src.substr(pos, pos+30).find("NO_AGG") != std::string::npos)
-          type = SpoofOperator::AggType::NO_AGG;
-      else {
-          std::cerr << "error: unknown aggregation type" << std::endl;
-          return false;
-      }
+	auto pos = 0;
+	
+	if((pos = src.find("SpoofCellwiseOp")) != std::string::npos)
+		op_type = SpoofOperator::OpType::CW;
+    else if((pos = src.find("SpoofRowwiseOp")) != std::string::npos)
+		op_type = SpoofOperator::OpType::RA;
+	else {
+        std::cerr << "error: unknown spoof operator" << std::endl;
+		return false;
+	}
 
-      if(type != SpoofOperator::AggType::NO_AGG) {
-          if((pos = src.find("AggOp")) != std::string::npos) {
-              if(src.substr(pos, pos+30).find("AggOp.SUM") != std::string::npos)
-                  op = SpoofOperator::AggOp::SUM;
-              else if(src.substr(pos, pos+30).find("AggOp.SUM_SQ") != std::string::npos)
-                  op = SpoofOperator::AggOp::SUM_SQ;
-              else if(src.substr(pos, pos+30).find("AggOp.MIN") != std::string::npos)
-                  op = SpoofOperator::AggOp::MIN;
-              else if(src.substr(pos, pos+30).find("AggOp.MAX") != std::string::npos)
-                  op = SpoofOperator::AggOp::MAX;
-              else {
-                std::cerr << "error: unknown aggregation operator" << std::endl;
-                return false;
-              }
-          }
-      }
-  }
 
-  std::stringstream s1, s2, s3;
-  s1 << "-I" << resource_path << "/cuda/headers";
-  s2 << "-I" << resource_path << "/cuda/spoof";
+	
+	if(((pos = src.find("CellType")) != std::string::npos) || ((pos = src.find("RowType")) != std::string::npos)){
+		if(src.substr(pos, pos+30).find("FULL_AGG") != std::string::npos)
+			agg_type= SpoofOperator::AggType::FULL_AGG;
+		else if(src.substr(pos, pos+30).find("ROW_AGG") != std::string::npos)
+			agg_type= SpoofOperator::AggType::ROW_AGG;
+		else if(src.substr(pos, pos+30).find("COL_AGG") != std::string::npos)
+			agg_type= SpoofOperator::AggType::COL_AGG;
+		else if(src.substr(pos, pos+30).find("NO_AGG") != std::string::npos)
+			agg_type= SpoofOperator::AggType::NO_AGG;
+		else if(src.substr(pos, pos+30).find("COL_AGG_T") != std::string::npos)
+			agg_type= SpoofOperator::AggType::COL_AGG_T;
+		else {
+			std::cerr << "error: unknown aggregation type" << std::endl;
+			return false;
+		}
 
-  jitify::Program program = kernel_cache.program(src, 0, {s1.str(), s2.str(), cuda_include_path});
-  ops.insert(std::make_pair(name, SpoofOperator({std::move(program), type, op})));
-  return true;
+		if((agg_type!= SpoofOperator::AggType::NO_AGG) && (op_type == SpoofOperator::OpType::CW)) {
+			if((pos = src.find("AggOp")) != std::string::npos) {
+				if(src.substr(pos, pos+30).find("AggOp.SUM") != std::string::npos)
+					agg_op = SpoofOperator::AggOp::SUM;
+				else if(src.substr(pos, pos+30).find("AggOp.SUM_SQ") != std::string::npos)
+					agg_op = SpoofOperator::AggOp::SUM_SQ;
+				else if(src.substr(pos, pos+30).find("AggOp.MIN") != std::string::npos)
+					agg_op = SpoofOperator::AggOp::MIN;
+				else if(src.substr(pos, pos+30).find("AggOp.MAX") != std::string::npos)
+					agg_op = SpoofOperator::AggOp::MAX;
+				else {
+			        std::cerr << "error: unknown aggregation operator" << std::endl;
+					return false;
+				}
+			}
+		}
+	}
+
+	std::stringstream s1, s2, s3;
+	s1 << "-I" << resource_path << "/cuda/headers";
+	s2 << "-I" << resource_path << "/cuda/spoof";
+
+	jitify::Program program = kernel_cache.program(src, 0, {s1.str(), s2.str(), cuda_include_path});
+	ops.insert(std::make_pair(name, SpoofOperator({std::move(program), agg_type, agg_op, op_type, name})));
+	return true;
 }

@@ -65,7 +65,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		super(colIndices, numRows, ubm, cs);
 	}
 
-	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict){
+	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict) {
 		super(colIndices, numRows, dict);
 		_zeros = zeros;
 	}
@@ -94,33 +94,8 @@ public abstract class ColGroupOffset extends ColGroupValue {
 			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), _colIndexes.length, 0, 0, isLossy());
 		}
 		else {
-			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), getValues().length, _ptr.length, _data.length, isLossy());
-		}
-	}
-
-	// generic decompression for OLE/RLE, to be overwritten for performance
-	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-		int[] colIndices = getColIndices();
-		final double[] values = getValues();
-
-		// Run through the bitmaps for this column group
-		for(int i = 0; i < numVals; i++) {
-			Iterator<Integer> decoder = getIterator(i);
-			int valOff = i * numCols;
-
-			while(decoder.hasNext()) {
-				int row = decoder.next();
-				if(row < rl)
-					continue;
-				if(row > ru)
-					break;
-
-				for(int colIx = 0; colIx < numCols; colIx++)
-					target.appendValue(row, colIndices[colIx], values[valOff + colIx]);
-			}
+			return ColGroupSizes
+				.estimateInMemorySizeOffset(getNumCols(), getValues().length, _ptr.length, _data.length, isLossy());
 		}
 	}
 
@@ -207,8 +182,8 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	protected final double mxxValues(int bitmapIx, Builtin builtin, double[] values) {
 		final int numCols = getNumCols();
 		final int valOff = bitmapIx * numCols;
-		double val = (builtin.getBuiltinCode() == BuiltinCode.MAX) ?
-			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+		double val = (builtin
+			.getBuiltinCode() == BuiltinCode.MAX) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		for(int i = 0; i < numCols; i++)
 			val = builtin.execute(val, values[valOff + i]);
 
@@ -249,15 +224,15 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		super.readFields(in);
-		
+
 		// read bitmaps
 		_ptr = new int[in.readInt()];
-		for(int i = 0; i< _ptr.length; i++){
+		for(int i = 0; i < _ptr.length; i++) {
 			_ptr[i] = in.readInt();
 		}
 		int totalLen = in.readInt();
 		_data = new char[totalLen];
-		for(int i = 0; i< totalLen; i++){
+		for(int i = 0; i < totalLen; i++) {
 			_data[i] = in.readChar();
 		}
 	}
@@ -267,11 +242,11 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		super.write(out);
 		// write bitmaps (lens and data, offset later recreated)
 		out.writeInt(_ptr.length);
-		for(int i = 0; i < _ptr.length; i++){
+		for(int i = 0; i < _ptr.length; i++) {
 			out.writeInt(_ptr[i]);
 		}
 		out.writeInt(_data.length);
-		for(int i = 0; i < _data.length; i++){
+		for(int i = 0; i < _data.length; i++) {
 			out.writeChar(_data[i]);
 		}
 
@@ -286,7 +261,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		ret += 4; // _data list
 		ret += 2 * _data.length;
 		// for(int i = 0; i < getNumValues(); i++)
-		// 	ret += 4 + 2 * len(i);
+		// ret += 4 + 2 * len(i);
 
 		return ret;
 	}
@@ -320,9 +295,9 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s%5d ", "Pointers:" , this._ptr.length ));
+		sb.append(String.format("\n%15s%5d ", "Pointers:", this._ptr.length));
 		sb.append(Arrays.toString(this._ptr));
-		sb.append(String.format("\n%15s%5d ", "Data:" , this._data.length));
+		sb.append(String.format("\n%15s%5d ", "Data:", this._data.length));
 		sb.append("[");
 		for(int x = 0; x < _data.length; x++) {
 			sb.append(((int) _data[x]));
@@ -365,7 +340,8 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		public IJV next() {
 			if(!hasNext())
 				throw new RuntimeException("No more offset entries.");
-			_buff.set(_rpos, _colIndexes[_cpos],
+			_buff.set(_rpos,
+				_colIndexes[_cpos],
 				(_vpos >= getNumValues()) ? 0 : _dict.getValue(_vpos * getNumCols() + _cpos));
 			getNextValue();
 			return _buff;
@@ -481,7 +457,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		public IJV next() {
 			if(!hasNext())
 				throw new RuntimeException("No more offset entries.");
-			_ret.set(_rpos, _colIndexes[_cpos], (_vpos < 0) ? 0 : _dict.getValue(_vpos *getNumCols()  + _cpos));
+			_ret.set(_rpos, _colIndexes[_cpos], (_vpos < 0) ? 0 : _dict.getValue(_vpos * getNumCols() + _cpos));
 			getNextValue();
 			return _ret;
 		}
@@ -505,7 +481,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 					return;
 				_cpos++;
 			}
-			while(!_inclZeros && (_vpos < 0 ||  _dict.getValue(_vpos *getNumCols()  + _cpos) == 0));
+			while(!_inclZeros && (_vpos < 0 || _dict.getValue(_vpos * getNumCols() + _cpos) == 0));
 		}
 	}
 }

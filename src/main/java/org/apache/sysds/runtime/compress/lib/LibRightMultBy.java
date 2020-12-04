@@ -60,6 +60,11 @@ public class LibRightMultBy {
 	public static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v, boolean allowOverlap) {
 
+		if(that instanceof CompressedMatrixBlock){
+			LOG.info("Decompression Right matrix");
+		}
+		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress() : that;
+
 		boolean containsUncompressable = false;
 		int distinctCount = 0;
 		for(ColGroup g : colGroups) {
@@ -72,7 +77,7 @@ public class LibRightMultBy {
 		}
 		int rl = colGroups.get(0).getNumRows();
 		int cl = that.getNumColumns();
-		if(!allowOverlap || (containsUncompressable || distinctCount >= rl / 2)) {
+		if(!allowOverlap || (containsUncompressable || distinctCount >= rl )) {
 			if(ret == null)
 				ret = new MatrixBlock(rl, cl, false, rl * cl);
 			else if(!(ret.getNumColumns() == cl && ret.getNumRows() == rl && ret.isAllocated()))
@@ -375,7 +380,6 @@ public class LibRightMultBy {
 	private static MatrixBlock rightMultBySparseMatrixCompressed(List<ColGroup> colGroups, MatrixBlock that,
 		CompressedMatrixBlock ret, int k, Pair<Integer, int[]> v) {
 
-		// long StartTime = System.currentTimeMillis();
 		SparseBlock sb = that.getSparseBlock();
 
 		for(ColGroup grp : colGroups) {

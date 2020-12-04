@@ -68,6 +68,7 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -80,7 +81,6 @@ import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -1568,33 +1568,25 @@ public class Recompiler
 			&& !OptimizerUtils.exceedsCachingThreshold(dc.getCols(), OptimizerUtils.estimateSize(dc));
 	}
 	
-	public static void executeInMemoryMatrixReblock(ExecutionContext ec, String varin, String varout) {
-		MatrixObject in = ec.getMatrixObject(varin);
-		MatrixObject out = ec.getMatrixObject(varout);
+	@SuppressWarnings("unchecked")
+	public static void executeInMemoryReblock(ExecutionContext ec, String varin, String varout) {
+		CacheableData<CacheBlock> in = (CacheableData<CacheBlock>) ec.getCacheableData(varin);
+		CacheableData<CacheBlock> out = (CacheableData<CacheBlock>) ec.getCacheableData(varout);
 
-		//read text input matrix (through buffer pool, matrix object carries all relevant
-		//information including additional arguments for csv reblock)
-		MatrixBlock mb = in.acquireRead(); 
-		
-		//set output (incl update matrix characteristics)
-		out.acquireModify( mb );
-		out.release();
-		in.release();
-	}
-	
-	public static void executeInMemoryFrameReblock(ExecutionContext ec, String varin, String varout) 
-	{
-		FrameObject in = ec.getFrameObject(varin);
-		FrameObject out = ec.getFrameObject(varout);
-
-		//read text input frame (through buffer pool, frame object carries all relevant
-		//information including additional arguments for csv reblock)
-		FrameBlock fb = in.acquireRead(); 
-		
-		//set output (incl update matrix characteristics)
-		out.acquireModify( fb );
-		out.release();
-		in.release();
+		if( in.isFederated() ) {
+			out.setMetaData(in.getMetaData());
+			out.setFedMapping(in.getFedMapping());
+		}
+		else {
+			//read text input matrix (through buffer pool, matrix object carries all relevant
+			//information including additional arguments for csv reblock)
+			CacheBlock mb = in.acquireRead();
+			
+			//set output (incl update matrix characteristics)
+			out.acquireModify(mb);
+			out.release();
+			in.release();
+		}
 	}
 	
 	private static void tryReadMetaDataFileDataCharacteristics( DataOp dop )

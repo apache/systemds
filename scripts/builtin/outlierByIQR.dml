@@ -46,8 +46,8 @@
 m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1, 
   Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y) 
 {
-  sumPrevious =0
-  sumNext = 1
+  sumPrevious = as.double(0)
+  sumNext = as.double(1)
   counter = 0
 
   while( max_iterations == 0 | counter < max_iterations )

@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -28,6 +26,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -53,7 +52,7 @@ import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 
 public class FEDInstructionUtils {
-	private static final Log LOG = LogFactory.getLog(FEDInstructionUtils.class.getName());
+	// private static final Log LOG = LogFactory.getLog(FEDInstructionUtils.class.getName());
 
 	// This is currently a rather simplistic to our solution of replacing instructions with their correct federated
 	// counterpart, since we do not propagate the information that a matrix is federated, therefore we can not decide
@@ -103,7 +102,6 @@ public class FEDInstructionUtils {
 				&& ec.containsVariable(instruction.input1)) {
 				
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
-				
 				if(instruction.getOpcode().equalsIgnoreCase("cm") && mo1.isFederated()) {
 					fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
 				} else if(inst.getOpcode().equalsIgnoreCase("qsort") && mo1.isFederated()) {
@@ -152,13 +150,11 @@ public class FEDInstructionUtils {
 			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
 			if(inst.getOpcode().equalsIgnoreCase("rightIndex")
 				&& minst.input1.isMatrix() && ec.getCacheableData(minst.input1).isFederated()) {
-				LOG.info("Federated Right Indexing");
 				fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());
 			}
 		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
-
 			if(ins.getVariableOpcode() == VariableOperationCode.Write 
 				&& ins.getInput1().isMatrix()
 				&& ins.getInput3().getName().contains("federated")){
@@ -173,6 +169,13 @@ public class FEDInstructionUtils {
 				&& ins.getInput1().isFrame() 
 				&& ec.getCacheableData(ins.getInput1()).isFederated()){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
+			}
+		}
+		else if(inst instanceof AggregateTernaryCPInstruction){
+			AggregateTernaryCPInstruction ins = (AggregateTernaryCPInstruction) inst;
+			if(ins.input1.isMatrix() && ec.getCacheableData(ins.input1).isFederated() && ins.input2.isMatrix() &&
+				ec.getCacheableData(ins.input2).isFederated()) {
+				fedinst = AggregateTernaryFEDInstruction.parseInstruction(ins);
 			}
 		}
 

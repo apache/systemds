@@ -225,7 +225,7 @@ public class LineageCache
 	public static boolean probe(LineageItem key) {
 		//TODO problematic as after probe the matrix might be kicked out of cache
 		boolean p = _cache.containsKey(key);  // in cache or in disk
-		if (!p && DMLScript.STATISTICS && LineageCacheEviction._removelist.contains(key))
+		if (!p && DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(key))
 			// The sought entry was in cache but removed later 
 			LineageCacheStatistics.incrementDelHits();
 		return p;
@@ -307,9 +307,13 @@ public class LineageCache
 					else if (data instanceof ScalarObject)
 						centry.setValue((ScalarObject)data, computetime);
 
+					if (DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(centry._key)) {
+						// Add to missed compute time
+						LineageCacheStatistics.incrementMissedComputeTime(centry._computeTime);
+					}
+
 					//maintain order for eviction
 					LineageCacheEviction.addEntry(centry);
-
 				}
 			}
 		}
@@ -388,10 +392,13 @@ public class LineageCache
 		// This method is called only when entry is present either in cache or in local FS.
 		LineageCacheEntry e = _cache.get(key);
 		if (e != null && e.getCacheStatus() != LineageCacheStatus.SPILLED) {
+			if (DMLScript.STATISTICS) {
+				// Increment hit count and saved computation time.
+				LineageCacheStatistics.incrementMemHits();
+				LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
+			}
 			// Maintain order for eviction
 			LineageCacheEviction.getEntry(e);
-			if (DMLScript.STATISTICS)
-				LineageCacheStatistics.incrementMemHits();
 			return e;
 		}
 		else
@@ -422,6 +429,10 @@ public class LineageCache
 				e._nextEntry = oe._nextEntry;
 				oe._nextEntry = e;
 			}
+
+			if (DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(e._key))
+				// Add to missed compute time
+				LineageCacheStatistics.incrementMissedComputeTime(e._computeTime);
 			
 			//maintain order for eviction
 			LineageCacheEviction.addEntry(e);

@@ -106,9 +106,10 @@ public class FrameCastingTest extends AutomatedTestBase
 						row1[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]);
 					frame1.appendRow(row1);
 				}
-				
+
 				MatrixBlock mb = DataConverter.convertToMatrixBlock(frame1);
 				frame = DataConverter.convertToFrameBlock(mb);
+
 			}
 			else if( ctype == CastType.M2F_G )
 			{
@@ -130,7 +131,10 @@ public class FrameCastingTest extends AutomatedTestBase
 			for( int i=0; i<rows; i++ ) 
 				for( int j=0; j<lschema.length; j++ )	{
 					double tmp = UtilFunctions.objectToDouble(lschema[j], frame.get(i, j));
-					if( tmp != A[i][j] )
+					double tmpm = Double.isNaN(A[i][j]) ? 0.0: A[i][j];
+					tmp = Double.isNaN(tmp) ? 0.0 : tmp;
+
+					if( tmp != tmpm)
 						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		
 		}

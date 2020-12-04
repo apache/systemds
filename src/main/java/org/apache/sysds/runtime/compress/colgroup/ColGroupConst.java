@@ -110,14 +110,13 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		final int ncol = getNumCols();
-		final double[] values = getValues();
 
-		for(int i = rl; i < ru; i++)
+		for(int i = rl; i < ru; i++, offT++)
 			for(int j = 0; j < ncol; j++) {
-				double v = target.quickGetValue(i, _colIndexes[j]);
-				target.setValue(i, _colIndexes[j], values[j] + v);
+				double v = target.quickGetValue(offT, _colIndexes[j]);
+				target.setValue(offT, _colIndexes[j], values[j] + v);
 			}
 	}
 

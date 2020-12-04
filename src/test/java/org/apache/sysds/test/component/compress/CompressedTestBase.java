@@ -36,7 +36,11 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
+import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysds.runtime.functionobjects.LessThan;
 import org.apache.sysds.runtime.functionobjects.LessThanEquals;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -58,6 +62,7 @@ import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -68,24 +73,30 @@ public abstract class CompressedTestBase extends TestBase {
 		// SparsityType.FULL,
 		SparsityType.DENSE,
 		// SparsityType.SPARSE,
-		SparsityType.ULTRA_SPARSE,
+		// SparsityType.ULTRA_SPARSE,
 		// SparsityType.EMPTY
 	};
 
 	protected static ValueType[] usedValueTypes = new ValueType[] {
 		// ValueType.RAND,
 		// ValueType.CONST,
-		ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE,
+		ValueType.RAND_ROUND, 
+		// ValueType.OLE_COMPRESSIBLE,
 		// ValueType.RLE_COMPRESSIBLE,
 	};
 
-	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL,
+	protected static ValueRange[] usedValueRanges = new ValueRange[] {
+		ValueRange.SMALL,
 		// ValueRange.LARGE,
-		// ValueRange.BYTE
+		// ValueRange.BYTE,
+		ValueRange.BOOLEAN,
 	};
 
-	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.COL, OverLapping.MATRIX,
-		OverLapping.NONE, OverLapping.MATRIX_PLUS, OverLapping.MATRIX_MULT_NEGATIVE};
+	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.COL,
+		// OverLapping.MATRIX,
+		OverLapping.NONE, OverLapping.MATRIX_PLUS,
+		// OverLapping.MATRIX_MULT_NEGATIVE
+	};
 
 	private static final int compressionSeed = 7;
 
@@ -128,12 +139,13 @@ public abstract class CompressedTestBase extends TestBase {
 	};
 
 	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
-		// MatrixTypology.SMALL, MatrixTypology.FEW_COL,
+		// MatrixTypology.SMALL,
+		MatrixTypology.FEW_COL,
 		// MatrixTypology.FEW_ROW,
 		// MatrixTypology.LARGE,
-		// MatrixTypology.SINGLE_COL,
+		// // MatrixTypology.SINGLE_COL,
 		// MatrixTypology.SINGLE_ROW,
-		MatrixTypology.L_ROWS,
+		// MatrixTypology.L_ROWS,
 		// MatrixTypology.XL_ROWS,
 		// MatrixTypology.SINGLE_COL_L
 	};
@@ -253,7 +265,7 @@ public abstract class CompressedTestBase extends TestBase {
 				TestUtils.compareMatrices(org, deCompressed, lossyTolerance, this.toString());
 			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
 				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(org, deCompressed, 8192, 124, this.toString());
+				TestUtils.compareMatricesBitAvgDistance(org, deCompressed, 32768, 124, this.toString());
 			else
 				TestUtils.compareMatricesBitAvgDistance(org, deCompressed, 5, 1, this.toString());
 
@@ -494,13 +506,13 @@ public abstract class CompressedTestBase extends TestBase {
 			}
 			else {
 				if(rows > 65000)
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.99, compressionSettings.toString());
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.99, this.toString());
 				else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
 					overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
 					overlappingType == OverLapping.COL)
 					TestUtils.compareMatricesBitAvgDistance(d1, d2, 1600000, 1000, this.toString());
 				else
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 10000, 500, compressionSettings.toString());
+					TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 500, this.toString());
 
 			}
 		}
@@ -535,8 +547,7 @@ public abstract class CompressedTestBase extends TestBase {
 				}
 				else {
 					if(rows > 50000) {
-						TestUtils
-							.compareMatricesPercentageDistance(d1, d2, 0.99, 0.999, this.toString());
+						TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.999, this.toString());
 					}
 					else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
 						overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
@@ -562,6 +573,14 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
+	public void testScalarOpRightDivide() {
+		double mult = 0.2;
+		ScalarOperator sop = new RightScalarOperator(Divide.getDivideFnObject(), mult, _k);
+		testScalarOperations(sop, lossyTolerance * 7);
+	}
+
+
+	@Test
 	public void testScalarOpRightMultiplyNegative() {
 		double mult = -7;
 		ScalarOperator sop = new RightScalarOperator(Multiply.getMultiplyFnObject(), mult, _k);
@@ -585,6 +604,13 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testScalarRightOpLess() {
 		double addValue = 0.11;
+		ScalarOperator sop = new RightScalarOperator(LessThan.getLessThanFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarRightOpLessThanEqual() {
+		double addValue = -50;
 		ScalarOperator sop = new RightScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), addValue);
 		testScalarOperations(sop, lossyTolerance + 0.1);
 	}
@@ -593,6 +619,13 @@ public abstract class CompressedTestBase extends TestBase {
 	public void testScalarRightOpGreater() {
 		double addValue = 0.11;
 		ScalarOperator sop = new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarRightOpEquals() {
+		double addValue = 1.0;
+		ScalarOperator sop = new RightScalarOperator(Equals.getEqualsFnObject(), addValue);
 		testScalarOperations(sop, lossyTolerance + 0.1);
 	}
 
@@ -634,7 +667,35 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testScalarLeftOpLess() {
 		double addValue = 0.11;
+		ScalarOperator sop = new LeftScalarOperator(LessThan.getLessThanFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarLeftOpLessSmallValue() {
+		double addValue = -1000000.11;
 		ScalarOperator sop = new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarLeftOpLessThanEqualSmallValue() {
+		double addValue = -1000000.11;
+		ScalarOperator sop = new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarLeftOpGreaterThanEqualsSmallValue() {
+		double addValue = -1001310000.11;
+		ScalarOperator sop = new LeftScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarLeftOpGreaterThanLargeValue() {
+		double addValue = 10132400000.11;
+		ScalarOperator sop = new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), addValue);
 		testScalarOperations(sop, lossyTolerance + 0.1);
 	}
 
@@ -642,6 +703,21 @@ public abstract class CompressedTestBase extends TestBase {
 	public void testScalarLeftOpGreater() {
 		double addValue = 0.11;
 		ScalarOperator sop = new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	public void testScalarLeftOpEqual() {
+		double addValue = 1.0;
+		ScalarOperator sop = new LeftScalarOperator(Equals.getEqualsFnObject(), addValue);
+		testScalarOperations(sop, lossyTolerance + 0.1);
+	}
+
+	@Test
+	@Ignore
+	public void testScalarLeftOpDivide() {
+		double addValue = 14.0;
+		ScalarOperator sop = new LeftScalarOperator(Divide.getDivideFnObject(), addValue);
 		testScalarOperations(sop, lossyTolerance + 0.1);
 	}
 
@@ -684,41 +760,90 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
-	public void testBinaryMVAddition() {
-
+	public void testBinaryMVAdditionROW() {
 		ValueFunction vf = Plus.getPlusFnObject();
-		testBinaryMV(vf);
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(1, cols, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector);
 	}
 
 	@Test
-	public void testBinaryMVMultiply() {
+	public void testBinaryMVAdditionCOL() {
+		ValueFunction vf = Plus.getPlusFnObject();
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector);
+	}
+
+	@Test
+	public void testBinaryMVMultiplyROW() {
 		ValueFunction vf = Multiply.getMultiplyFnObject();
-		testBinaryMV(vf);
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(1, cols, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector);
 	}
 
 	@Test
-	public void testBinaryMVMinus() {
+	public void testBinaryMVDivideROW() {
+		ValueFunction vf = Divide.getDivideFnObject();
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(1, cols, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector);
+	}
+
+	@Test
+	@Ignore
+	public void testBinaryMVDivideROWLeft() {
+		ValueFunction vf = Divide.getDivideFnObject();
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(1, cols, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector, false);
+	}
+
+	@Test
+	public void testBinaryMVMultiplyCOL() {
+		ValueFunction vf = Multiply.getMultiplyFnObject();
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector);
+	}
+
+	@Test
+	public void testBinaryMVMinusROW() {
 		ValueFunction vf = Minus.getMinusFnObject();
-		testBinaryMV(vf);
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(1, cols, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector);
 	}
 
 	@Test
-	public void testBinaryMVXor() {
+	public void testBinaryMVXorROW() {
 		ValueFunction vf = Xor.getXorFnObject();
-		testBinaryMV(vf);
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(1, cols, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector);
 	}
 
-	public void testBinaryMV(ValueFunction vf) {
+	public void testBinaryMV(ValueFunction vf, MatrixBlock vector) {
+		testBinaryMV(vf, vector, true);
+	}
+
+	public void testBinaryMV(ValueFunction vf, MatrixBlock vector, boolean right) {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
 
 			BinaryOperator bop = new BinaryOperator(vf);
-			MatrixBlock vector = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(1, cols, -1.0, 1.5, 1.0, 3));
-
-			MatrixBlock ret1 = mb.binaryOperations(bop, vector, new MatrixBlock());
-			MatrixBlock ret2 = cmb.binaryOperations(bop, vector, new MatrixBlock());
+			MatrixBlock ret1, ret2;
+			if(right) {
+				ret1 = mb.binaryOperations(bop, vector, new MatrixBlock());
+				ret2 = cmb.binaryOperations(bop, vector, new MatrixBlock());
+			}
+			else {
+				ret1 = vector.binaryOperations(bop, mb, new MatrixBlock());
+				ret2 = vector.binaryOperations(bop, cmb, new MatrixBlock());
+			}
+			// LOG.error(ret2);
 			if(ret2 instanceof CompressedMatrixBlock)
 				ret2 = ((CompressedMatrixBlock) ret2).decompress();
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
@@ -739,40 +864,4 @@ public abstract class CompressedTestBase extends TestBase {
 		}
 	}
 
-	@Test
-	public void testBinaryVMMultiply() {
-		ValueFunction vf = Multiply.getMultiplyFnObject();
-		testBinaryVM(vf);
-	}
-
-	public void testBinaryVM(ValueFunction vf) {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-			// NOTE THIS METHOD DECOMPRESSES AND MULTIPLIES
-
-			BinaryOperator bop = new BinaryOperator(vf);
-			MatrixBlock vector = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, -1.0, 1.5, 1.0, 3));
-
-			MatrixBlock ret1 = mb.binaryOperations(bop, vector, new MatrixBlock());
-			MatrixBlock ret2 = cmb.binaryOperations(bop, vector, new MatrixBlock());
-
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-
-			if(compressionSettings.lossy)
-				TestUtils.compareMatrices(d1, d2, lossyTolerance * 2, this.toString());
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 65536, 512, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 150, 1, this.toString());
-
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
 }

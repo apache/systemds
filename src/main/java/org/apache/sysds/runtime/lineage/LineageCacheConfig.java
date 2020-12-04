@@ -40,7 +40,7 @@ public class LineageCacheConfig
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
 		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
-		"qpick", "transformapply"
+		"qpick", "transformapply", "uarmax", "n+"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -285,6 +285,10 @@ public class LineageCacheConfig
 	public static boolean isTimeBased() {
 		// Check the LRU component of weights array.
 		return (WEIGHTS[1] > 0);
+	}
+	
+	public static boolean isCostNsize() {
+		return (WEIGHTS[0] > 0);
 	}
 
 	public static boolean isDagHeightBased() {

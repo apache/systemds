@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.Dictionary;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -50,9 +51,8 @@ public class LibScalar {
 	// private static final Log LOG = LogFactory.getLog(LibScalar.class.getName());
 	private static final int MINIMUM_PARALLEL_SIZE = 8096;
 
-	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1,
-		CompressedMatrixBlock ret, boolean overlapping)
-	{
+	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1, CompressedMatrixBlock ret,
+		boolean overlapping) {
 		if(sop instanceof LeftScalarOperator) {
 			if(sop.fn instanceof Minus) {
 				m1 = (CompressedMatrixBlock) scalarOperations(new RightScalarOperator(Multiply.getMultiplyFnObject(),
@@ -62,28 +62,16 @@ public class LibScalar {
 					ret,
 					overlapping);
 			}
+			else if(sop.fn instanceof Divide){
+				throw new DMLCompressionException("Not supported left hand side divide Compressed");
+			}
 			else if(sop.fn instanceof Power2) {
 				throw new DMLCompressionException("Left Power does not make sense.");
-				// List<ColGroup> newColGroups = new ArrayList<>();
-				// double v = sop.executeScalar(0);
-
-				// double[] values = new double[m1.getNumColumns()];
-				// Arrays.fill(values, v);
-
-				// int[] colIndexes = new int[m1.getNumColumns()];
-				// for(int i = 0; i < colIndexes.length; i++) {
-					// colIndexes[i] = i;
-				// }
-				// newColGroups.add(new ColGroupConst(colIndexes, ret.getNumRows(), new Dictionary(values)));
-				// ret.allocateColGroupList(newColGroups);
-				// ret.setNonZeros(ret.getNumColumns() * ret.getNumRows());
-				// return ret;
 			}
-
 		}
 
 		List<ColGroup> colGroups = m1.getColGroups();
-		if(overlapping && !(sop.fn instanceof Multiply)) {
+		if(overlapping && !(sop.fn instanceof Multiply || sop.fn instanceof Divide)) {
 			if(sop.fn instanceof Plus || sop.fn instanceof Minus) {
 
 				// If the colGroup is overlapping we know there are no incompressable colGroups.
@@ -103,7 +91,6 @@ public class LibScalar {
 			}
 		}
 		else {
-
 			if(sop.getNumThreads() > 1) {
 				parallelScalarOperations(sop, colGroups, ret, sop.getNumThreads());
 			}

@@ -272,7 +272,8 @@ public class SpoofCompiler {
 	
 			while (files_in_jar.hasMoreElements()) {
 				JarEntry in_file = files_in_jar.nextElement();
-				if (in_file.getName().startsWith("cuda/") && !in_file.isDirectory()) {
+				if ((in_file.getName().startsWith("cuda/") || in_file.getName().startsWith("java/")) &&
+						!in_file.isDirectory()) {
 					File out_file = new File(resource_path, in_file.getName());
 					out_file.deleteOnExit();
 					File parent = out_file.getParentFile();

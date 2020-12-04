@@ -167,7 +167,7 @@ public class Binary extends CodeTemplate {
 			switch(type) {
 				case DOT_PRODUCT:
 //					return sparseLhs ? "	T %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" : "	T %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
-					return sparseLhs ? "		T %TMP% = dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" : "		T %TMP% = dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+					return sparseLhs ? "		T %TMP% = dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" : "		T %TMP% = dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n		__syncthreads();\n";
 				
 				case VECT_MATRIXMULT:
 					return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, len);\n" : "	T[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";

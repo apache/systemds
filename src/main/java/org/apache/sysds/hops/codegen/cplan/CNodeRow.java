@@ -76,7 +76,9 @@ public class CNodeRow extends CNodeTpl
 	}
 	
 	@Override
-	public String codegen(boolean sparse, GeneratorAPI api) {
+	public String codegen(boolean sparse, GeneratorAPI _api) {
+		api = _api;
+		
 		// note: ignore sparse flag, generate both
 		String tmp = getLanguageTemplate(this, api);
 
@@ -84,6 +86,8 @@ public class CNodeRow extends CNodeTpl
 		String tmpDense = _output.codegen(false, api) + getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
 		String tmpSparse = _output.codegen(true, api) + getOutputStatement(_output.getVarname());
+		_output.resetGenerated();
+		
 		tmp = tmp.replace("%TMP%", createVarname());
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		tmp = tmp.replace("%BODY_sparse%", tmpSparse);

@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
+import org.apache.sysds.runtime.lineage.LineageEstimatorStatistics;
 import org.apache.sysds.utils.Statistics;
 
 public class ScriptExecutorUtils {
@@ -120,6 +121,9 @@ public class ScriptExecutorUtils {
 			Statistics.stopRunTimer();
 			System.out.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
 					statisticsMaxHeavyHitters : DMLScript.STATISTICS_COUNT));
+			
+			if (DMLScript.LINEAGE_ESTIMATE)
+				System.out.println(LineageEstimatorStatistics.displayLineageEstimates());
 		}
 	}
 

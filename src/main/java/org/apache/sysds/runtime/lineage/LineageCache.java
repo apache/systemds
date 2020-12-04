@@ -154,6 +154,9 @@ public class LineageCache
 	public static boolean reuse(List<String> outNames, List<DataIdentifier> outParams, 
 			int numOutputs, LineageItem[] liInputs, String name, ExecutionContext ec)
 	{
+		if (DMLScript.LINEAGE_ESTIMATE && !name.startsWith("SB"))
+			LineageEstimator.stopEstimator(outParams, liInputs, name);
+		
 		if( !LineageCacheConfig.isMultiLevelReuse())
 			return false;
 		
@@ -253,6 +256,10 @@ public class LineageCache
 	}
 	
 	public static void putValue(Instruction inst, ExecutionContext ec, long starttime) {
+		if (DMLScript.LINEAGE_ESTIMATE)
+			//forward to estimator
+			LineageEstimator.processSingleInst(inst, ec, starttime);
+
 		if (ReuseCacheType.isNone())
 			return;
 		long computetime = System.nanoTime() - starttime;
@@ -322,6 +329,10 @@ public class LineageCache
 	public static void putValue(List<DataIdentifier> outputs,
 		LineageItem[] liInputs, String name, ExecutionContext ec, long computetime)
 	{
+		if (LineageCacheConfig.isEstimator())
+			//forward to estimator
+			LineageEstimator.processFunc(outputs, liInputs, name, ec, computetime);
+
 		if (!LineageCacheConfig.isMultiLevelReuse())
 			return;
 

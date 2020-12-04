@@ -40,7 +40,7 @@ public class LineageCacheConfig
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
 		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
-		"qpick", "transformapply", "uarmax", "n+"
+		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -70,6 +70,7 @@ public class LineageCacheConfig
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
 	private static boolean _compilerAssistedRW = false;
+	private static boolean _onlyEstimate = false;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -280,6 +281,14 @@ public class LineageCacheConfig
 
 	public static LineageCachePolicy getCachePolicy() {
 		return _cachepolicy;
+	}
+	
+	public static void setEstimator(boolean onlyEstimator) { 
+		_onlyEstimate = onlyEstimator;
+	}
+	
+	public static boolean isEstimator() {
+		return _onlyEstimate;
 	}
 	
 	public static boolean isTimeBased() {

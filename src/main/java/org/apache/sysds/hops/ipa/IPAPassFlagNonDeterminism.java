@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
@@ -50,7 +51,7 @@ public class IPAPassFlagNonDeterminism extends IPAPass {
 	@Override
 	public boolean rewriteProgram (DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) 
 	{
-		if (!LineageCacheConfig.isMultiLevelReuse())
+		if (!LineageCacheConfig.isMultiLevelReuse() && !DMLScript.LINEAGE_ESTIMATE)
 			return false;
 		
 		try {

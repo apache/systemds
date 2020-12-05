@@ -37,13 +37,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Parameterized.Parameter(3)
   public int epsilon_tolerance;
 
-  // TODO: needed?
-  // String testname, boolean sparse, boolean rewrites, boolean replication, ExecType instType
-  // @Parameterized.Parameter(3)
-  // public int replicate;
-  // private final static double spSparse = ;
-  // private final static double spDense = ;
-
   @Override
   public void setUp()
   {
@@ -76,8 +69,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
       DMLScript.USE_LOCAL_SPARK_CONFIG = true;
     }
 
-    // TODO: ...
-
     getAndLoadTestConfiguration(TEST_NAME);
     String HOME = SCRIPT_DIR + TEST_DIR;
 
@@ -106,14 +97,14 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
     programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
     "in_U=" + input("U"), "in_V=" + input("V"), "out_Z=" + expected("Z")};
-    LOG.debug(runTest());
+    LOG.debug(runTest(true, false, null, -1));
 
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
     programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
       "in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "in_U=" + input("U"), "in_V=" + input("V"),
       "rows=" + rows, "cols=" + cols, "out_Z=" + output("Z")};
-    LOG.debug(runTest());
+    LOG.debug(runTest(true, false, null, -1));
 
     // compare the results via files
     compareResults(epsilon_tolerance);
@@ -126,8 +117,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     DMLScript.USE_LOCAL_SPARK_CONFIG = spark_config_old;
     rtplatform = platform_old;
-
-    assert false: "Not implemented yet!\n";
   }
 
 }

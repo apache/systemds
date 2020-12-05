@@ -1,11 +1,9 @@
 
-
 X = federated(addresses= list($in_X1, $in_X2),
       ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
 U = read($in_U)
 V = read($in_V)
 
-# TODO: not sure if this is correct, check it!
 Z = as.matrix(sum(X * log(U %*% t(V))));
 
 write(Z, $out_Z)

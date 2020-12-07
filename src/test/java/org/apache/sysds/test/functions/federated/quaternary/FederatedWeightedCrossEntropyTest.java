@@ -73,6 +73,16 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     });
   }
 
+  @Parameterized.Parameters
+  public static Collection<Object[]> data()
+  {
+    // rows have to be even
+    return Arrays.asList(new Object[][] {
+      // {rows, cols, epsilon_tolerance}
+      {2000, 50, 0}
+    });
+  }
+
   @BeforeClass
   public static void init()
   {

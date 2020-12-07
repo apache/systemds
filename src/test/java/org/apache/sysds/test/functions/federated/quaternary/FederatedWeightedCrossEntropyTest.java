@@ -34,6 +34,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
@@ -63,6 +66,16 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Z"}));
   }
 
+  @Parameterized.Parameters
+  public static Collection<Object[]> data()
+  {
+    // rows have to be even
+    return Arrays.asList(new Object[][] {
+      // {rows, cols, epsilon_tolerance}
+      {2000, 50, 0}
+    });
+  }
+
   @BeforeClass
   public static void init()
   {
@@ -75,17 +88,11 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE);
   }
 
-  public void federatedWeightedCrossEntropy(ExecMode execMode)
+  public void federatedWeightedCrossEntropy(ExecMode exec_mode)
   {
     // store the previous spark config and platform config to restore it after the test
-    boolean spark_config_old = DMLScript.USE_LOCAL_SPARK_CONFIG;
-    ExecMode platform_old = rtplatform;
-
-    rtplatform = execMode;
-    if(rtplatform == ExecMode.SPARK)
-    {
-      DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-    }
+    // and set the new execution mode
+    ExecMode platform_old = setExecMode(exec_mode);
 
     getAndLoadTestConfiguration(TEST_NAME);
     String HOME = SCRIPT_DIR + TEST_DIR;
@@ -102,7 +109,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
     writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 
-
+    // empty script name because we don't execute any script, just start the worker
     fullDMLScriptName = "";
     int port1 = getRandomAvailablePort();
     int port2 = getRandomAvailablePort();
@@ -127,14 +134,13 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     // compare the results via files
     compareResults(epsilon_tolerance);
 
+    TestUtils.shutdownThreads(thread1, thread2);
+
     // check that federated input files are still existing
     Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
     Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 
-    TestUtils.shutdownThreads(thread1, thread2);
-
-    DMLScript.USE_LOCAL_SPARK_CONFIG = spark_config_old;
-    rtplatform = platform_old;
+    resetExecMode(platform_old);
   }
 
 }

@@ -61,8 +61,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Override
   public void setUp()
   {
-    TestUtils.clearAssertionInformation();
-
     addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Z"}));
   }
 
@@ -128,7 +126,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
     programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
       "in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "in_U=" + input("U"), "in_V=" + input("V"),
-      "rows=" + rows, "cols=" + cols, "out_Z=" + output("Z")};
+      "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output("Z")};
     LOG.debug(runTest(true, false, null, -1));
 
     // compare the results via files

@@ -4,9 +4,11 @@ package org.apache.sysds.runtime.instructions.fed;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import java.util.concurrent.Future;
 
 public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 {
@@ -37,9 +39,12 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
         new long[]{matrix_object_1.getFedMapping().getID(), fed_req_1.getID(), fed_req_2.getID()});
       FederatedRequest fed_req_4 = matrix_object_1.getFedMapping().cleanup(getTID(), fed_req_1.getID());
       FederatedRequest fed_req_5 = matrix_object_1.getFedMapping().cleanup(getTID(), fed_req_2.getID());
-      matrix_object_1.getFedMapping().execute(getTID(), true, fed_req_1, fed_req_2, fed_req_3, fed_req_4, fed_req_5);
 
-      // TODO: continue here
+      // execute federated instructions
+      Future<FederatedResponse>[] tmp = matrix_object_1.getFedMapping().execute(getTID(), true, fed_req_1, fed_req_2, fed_req_3, fed_req_4, fed_req_5);
+
+      // TODO: do something with the output
+
     }
 
     assert false: "Not implemented yet!\n";

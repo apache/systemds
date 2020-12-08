@@ -19,9 +19,11 @@
 #
 #-------------------------------------------------------------
 
-#function to train
+# function to train
 
-#function to predict
+# function to predict
+
+# build_features(matrix A)
 
 # extract_bag_of_characters_features(raw_sample, n_values), ignore_index=True)
 
@@ -31,9 +33,34 @@
 
 # extract_bag_of_words_features(raw_sample), ignore_index=True)
 
+# Frame[] load_file (Input: csv)
+# Rows and columns index from 1. (-.-)
+# no variables are possible to define the filepath of the read() function
+# every *.csv file needs a *.csv.mtd file with following content:
+#{
+#  "data_type": "frame",
+#  "value_type": "string",
+#  "format": "csv",
+#  "header": true,
+#  "sep": ",",
+#  "author": "local",
+#  "created": "2020-12-07 00:00:01 UTC"
+#}
+load_file = function(string file) return () {
+  print("load file: " + file)
+  tableSchema = "string,string";
+  data = read("/home/cfindenig/5.Semester/Data_Integration_And_Large_Scale_analysis/sherlock-project/data/data/raw/train_values.csv",
+              schema=tableSchema
+              )
+  print(toString(data[2,2]))
+  lines = nrow(data) # doesn't return the correct result
+  cols = ncol(data)
+  print("loaded file " + file + "with " + lines + " lines and " + cols + " columns")
+}
 
 m_sherlock = function (matrix[double] A) return (double m) {
   m = sum(A)/nrow(A)
+  load_file("/home/cfindenig/5.Semester/Data_Integration_And_Large_Scale_analysis/sherlock-project/data/data/processed/y_test.csv")
 }
 
 

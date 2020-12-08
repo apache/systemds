@@ -20,12 +20,26 @@
 #-------------------------------------------------------------
 
 
-X = federated(addresses=list($in_X1, $in_X2),
-    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
+# X = federated(addresses=list($in_X1, $in_X2),
+#  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)))
+#
+# U = read($in_U)
+# V = read($in_V)
+#
+# Z = as.matrix(sum(X * log(U %*% t(V))));
+#
+# write(Z, $out_Z)
+
+
+X1 = federated(addresses=list($in_X1),
+  ranges = list(list(0, 0), list($rows, $cols)))
+X2 = federated(addresses=list($in_X2),
+  ranges = list(list(0, 0), list($rows, $cols)))
 
 U = read($in_U)
 V = read($in_V)
 
-Z = as.matrix(sum(X * log(U %*% t(V))));
+Z1 = as.matrix(sum(X1 * log(U %*% t(V))))
+Z2 = as.matrix(sum(X2 * log(U %*% t(V))))
 
-write(Z, $out_Z)
+write(Z1, $out_Z)

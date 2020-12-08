@@ -46,21 +46,20 @@
 #  "author": "local",
 #  "created": "2020-12-07 00:00:01 UTC"
 #}
-load_file = function(string file) return () {
-  print("load file: " + file)
+load_raw_train_values = function() return (frame[string] data) {
   tableSchema = "string,string";
-  data = read("/home/cfindenig/5.Semester/Data_Integration_And_Large_Scale_analysis/sherlock-project/data/data/raw/train_values.csv",
+  data = read("../sherlock-project/data/data/raw/train_values.csv",
               schema=tableSchema
               )
   print(toString(data[2,2]))
-  lines = nrow(data) # doesn't return the correct result
+  rows = nrow(data)
   cols = ncol(data)
-  print("loaded file " + file + "with " + lines + " lines and " + cols + " columns")
+  print("loaded train_values.csv with " + rows + " rows and " + cols + " columns")
 }
 
 m_sherlock = function (matrix[double] A) return (double m) {
   m = sum(A)/nrow(A)
-  load_file("/home/cfindenig/5.Semester/Data_Integration_And_Large_Scale_analysis/sherlock-project/data/data/processed/y_test.csv")
+  data = load_raw_train_values()
 }
 
 

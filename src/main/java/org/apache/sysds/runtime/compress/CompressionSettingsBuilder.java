@@ -23,6 +23,7 @@ import java.util.EnumSet;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 
@@ -30,18 +31,17 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
  * Builder pattern for Compression Settings. See CompressionSettings for details on values.
  */
 public class CompressionSettingsBuilder {
-	private double samplingRatio = 1.0;
+	private double samplingRatio;
 	private boolean allowSharedDictionary = false;
-	private boolean transposeInput = true;
+	private String transposeInput;
 	private boolean skipList = true;
 	private int seed = -1;
 	private boolean investigateEstimate = false;
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
 	private boolean sortValuesByLength = false;
-	private PartitionerType columnPartitioner = PartitionerType.COST;
-	// private PartitionerType columnPartitioner = PartitionerType.STATIC;
-	private int maxStaticColGroupCoCode = 1;
+	private PartitionerType columnPartitioner;
+	private int maxStaticColGroupCoCode = 10;
 
 	public CompressionSettingsBuilder() {
 
@@ -49,10 +49,13 @@ public class CompressionSettingsBuilder {
 		this.lossy = conf.getBooleanValue(DMLConfig.COMPRESSED_LOSSY);
 		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED);
 		String[] validCompressionsString = conf.getTextValue(DMLConfig.COMPRESSED_VALID_COMPRESSIONS).split(",");
-		;
 		for(String comp : validCompressionsString) {
 			validCompressions.add(CompressionType.valueOf(comp));
 		}
+		samplingRatio = conf.getDoubleValue(DMLConfig.COMPRESSED_SAMPLING_RATIO);
+		columnPartitioner = PartitionerType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COCODE));
+
+		transposeInput = conf.getTextValue(DMLConfig.COMPRESSED_TRANSPOSE);
 	}
 
 	/**
@@ -120,11 +123,19 @@ public class CompressionSettingsBuilder {
 	 * Specify if the input matrix should be transposed before compression. This improves cache efficiency while
 	 * compression the input matrix
 	 * 
-	 * @param transposeInput boolean specifying if the input should be transposed before compression
+	 * @param transposeInput string specifying if the input should be transposed before compression, should be one of "auto", "true" or "false"
 	 * @return The CompressionSettingsBuilder
 	 */
-	public CompressionSettingsBuilder setTransposeInput(boolean transposeInput) {
-		this.transposeInput = transposeInput;
+	public CompressionSettingsBuilder setTransposeInput(String transposeInput) {
+		switch(transposeInput){
+			case "auto":
+			case "true":
+			case "false":
+				this.transposeInput = transposeInput;
+				break;
+			default:
+				throw new DMLCompressionException("Invalid transpose technique");
+		}
 		return this;
 	}
 

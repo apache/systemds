@@ -275,11 +275,11 @@ public class LinearAlgebraUtils {
 				int row = (ix < i) ? ix : i;
 				int col = (ix < i) ? i : ix;
 				// if(row == col) {
-					c.set(row, col, a[i]);
+				c.set(row, col, a[i]);
 				// }
 				// else {
-					// double v = c.get(row, col);
-					// c.set(row, col, a[i] + v);
+				// double v = c.get(row, col);
+				// c.set(row, col, a[i] + v);
 				// }
 			}
 	}

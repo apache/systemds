@@ -50,7 +50,6 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.COVOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
-import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -82,6 +81,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 
 	/**
 	 * Create a potentially overlapping Compressed Matrix Block.
+	 * 
 	 * @param overLapping boolean specifying if the matrix blocks columns are overlapping.
 	 */
 	public AbstractCompressedMatrixBlock(boolean overLapping) {
@@ -173,13 +173,6 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection) {
 		throw new DMLRuntimeException("CompressedMatrixBlock: incrementalAggregate not supported.");
-	}
-
-	@Override
-	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
-		printDecompressWarning("reorgOperations");
-		MatrixBlock tmp = decompress();
-		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}
 
 	@Override
@@ -395,13 +388,6 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
-		printDecompressWarning("replaceOperations");
-		MatrixBlock tmp = decompress();
-		return tmp.replaceOperations(result, pattern, replacement);
-	}
-
-	@Override
 	public void ctableOperations(Operator op, double scalar, MatrixValue that, CTableMap resultMap,
 		MatrixBlock resultBlock) {
 		printDecompressWarning("ctableOperations");
@@ -507,8 +493,9 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		return(mb instanceof CompressedMatrixBlock);
 	}
 
-	protected static MatrixBlock getUncompressed(MatrixValue mVal) {
-		return isCompressed((MatrixBlock) mVal) ? ((CompressedMatrixBlock) mVal).decompress(OptimizerUtils.getConstrainedNumThreads(-1)) : (MatrixBlock) mVal;
+	public static MatrixBlock getUncompressed(MatrixValue mVal) {
+		return isCompressed((MatrixBlock) mVal) ? ((CompressedMatrixBlock) mVal)
+			.decompress(OptimizerUtils.getConstrainedNumThreads(-1)) : (MatrixBlock) mVal;
 	}
 
 	protected void printDecompressWarning(String operation) {

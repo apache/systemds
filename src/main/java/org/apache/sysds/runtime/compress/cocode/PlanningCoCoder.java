@@ -70,7 +70,7 @@ public class PlanningCoCoder {
 		for(int i = 0; i < numCols; i++) {
 			int colIx = cols.get(i);
 			int cardinality = colGroups[colIx].getEstCard();
-			double weight = ((double)cardinality) / numRows;
+			double weight = ((double) cardinality) / numRows;
 			groupCols.add(colIx);
 			groupColsInfo.put(colIx, new GroupableColInfo(weight, colGroups[colIx].getMinSize(), cardinality));
 		}
@@ -78,8 +78,8 @@ public class PlanningCoCoder {
 		// use column group partitioner to create partitions of columns
 		List<int[]> bins = createColumnGroupPartitioner(cs.columnPartitioner)
 			.partitionColumns(groupCols, groupColsInfo, cs);
-		
-		if (cs.columnPartitioner == PartitionerType.COST){
+
+		if(cs.columnPartitioner == PartitionerType.COST) {
 			return bins;
 		}
 

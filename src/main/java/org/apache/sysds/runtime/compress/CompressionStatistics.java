@@ -49,7 +49,7 @@ public class CompressionStatistics {
 	}
 
 	/**
-	 * Set array of counts regarding col group types. 
+	 * Set array of counts regarding col group types.
 	 * 
 	 * The position corresponds with the enum ordinal.
 	 * 

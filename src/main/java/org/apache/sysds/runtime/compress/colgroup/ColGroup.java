@@ -29,6 +29,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.IJV;
@@ -201,6 +202,20 @@ public abstract class ColGroup implements Serializable {
 	 * @param offT   The offset into the target matrix block to decompress to.
 	 */
 	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT);
+
+	/**
+	 * Decompress the contents of this column group into the specified full matrix block without managing the number of
+	 * non zeros.
+	 * 
+	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
+	 * @param rl     row lower
+	 * @param ru     row upper
+	 * @param offT   Offset into target to assign from
+	 * @param values The Values materialized in the dictionary
+	 * @param safe   If the number of non zeros should be ignored.
+	 */
+	public abstract void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values,
+		boolean safe);
 
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block.
@@ -378,21 +393,16 @@ public abstract class ColGroup implements Serializable {
 	/**
 	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
 	 * 
-	 * @param spNrVals        the Number of sparse values (since the number of indexes does not align with number of
-	 *                        values)
-	 * @param indexes         the indexes for the sparse values in the given row.
-	 * @param sparseV         the sparse values.
-	 * @param result          the linearized output matrix
-	 * @param numVals         the number of values in the dictionary
-	 * @param values          the dictionary values materialized
-	 * @param numRows         the number of rows in the left hand side input matrix (the sparse one)
-	 * @param numCols         the number of columns in the compression.
-	 * @param row             the row index of the sparse row to multiply with.
-	 * @param MaterializedRow The sparse row materialized (should only be done if needed for the specific type of
-	 *                        ColumnGroup)
+	 * @param sb              The sparse block to multiply with
+	 * @param result          The linearized output matrix
+	 * @param values          The dictionary values materialized
+	 * @param numRows         The number of rows in the left hand side input matrix (the sparse one)
+	 * @param numCols         The number of columns in the compression.
+	 * @param row             The row index of the sparse row to multiply with.
+	 * @param MaterializedRow A Temporary dense row vector to materialize the sparse values into used for OLE
 	 */
-	public abstract void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] result,
-		int numVals, double[] values, int numRows, int numCols, int row, double[] MaterializedRow);
+	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows,
+		int numCols, int row, double[] MaterializedRow);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual
@@ -420,7 +430,7 @@ public abstract class ColGroup implements Serializable {
 	 * @param op The operator used
 	 * @param c  Rhe output matrix block.
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c);
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c);
 
 	/**
 	 * Compute the max / min value contained in the dictionary.
@@ -440,7 +450,7 @@ public abstract class ColGroup implements Serializable {
 	 * @param rl The Starting Row to do aggregation from
 	 * @param ru The last Row to do aggregation to (not included)
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru);
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c, int rl, int ru);
 
 	/**
 	 * Create a column group iterator for a row index range.
@@ -487,4 +497,14 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract boolean isLossy();
 
+	/**
+	 * Is dense, signals that the entire column group is allocated an processed. This is useful in Row wise min and max
+	 * for instance, to avoid having to scan through each row to look for empty rows.
+	 * 
+	 * an example where it is true is DDC, Const and Uncompressed.
+	 * examples where false is OLE and RLE.
+	 * 
+	 * @return returns if the colgroup is allocated in a dense fashion.
+	 */
+	public abstract boolean isDense();
 }

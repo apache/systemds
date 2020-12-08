@@ -21,6 +21,8 @@ package org.apache.sysds.utils;
 
 public class DMLCompressionStatistics {
 
+	// Compute transpose of input
+	private static double Phase0 = 0.0;
 	// Compute compressed size info
 	private static double Phase1 = 0.0;
 	// Co-code columns
@@ -39,6 +41,9 @@ public class DMLCompressionStatistics {
 
 	public static void addCompressionTime(double time, int phase) {
 		switch(phase) {
+			case 0:
+				Phase0 += time;
+				break;
 			case 1:
 				Phase1 += time;
 				break;
@@ -78,8 +83,10 @@ public class DMLCompressionStatistics {
 	}
 
 	public static void display(StringBuilder sb) {
+		
 		sb.append(String.format(
-			"CLA Compression Phases (classify, group, compress, share, clean) :\t%.3f/%.3f/%.3f/%.3f/%.3f\n",
+			"CLA Compression Phases (transpose, classify, group, compress, share, clean) :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n",
+			Phase0 / 1000,
 			Phase1 / 1000,
 			Phase2 / 1000,
 			Phase3 / 1000,

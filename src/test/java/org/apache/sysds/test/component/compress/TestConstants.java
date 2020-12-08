@@ -28,8 +28,8 @@ public class TestConstants {
 	private static final int cols[] = {20, 20, 13, 1, 321, 1, 5, 1, 1};
 	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0, 1.0};
 
-	private static final int[] mins = {-10, -127 * 2};
-	private static final int[] maxs = {10, 127};
+	private static final int[] mins = {-4, -127 * 2};
+	private static final int[] maxs = {5, 127};
 
 	public enum SparsityType {
 		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL

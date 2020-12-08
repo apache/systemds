@@ -170,7 +170,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			MatrixBlock ret1 = mb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, true);
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, true);
-
+			// LOG.error(cmb);
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);

@@ -42,7 +42,7 @@ public class IntArrayList {
 		appendValue(value);
 	}
 
-	public IntArrayList(int[] values){
+	public IntArrayList(int[] values) {
 		_data = values;
 		_size = values.length;
 	}
@@ -101,18 +101,19 @@ public class IntArrayList {
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		
-		if(_size == 1){
+
+		if(_size == 1) {
 			sb.append(_val0);
-		} else{
+		}
+		else {
 			sb.append("[");
 			int i = 0;
-			for(; i < _size-1; i++){
+			for(; i < _size - 1; i++) {
 				sb.append(_data[i] + ",");
 			}
-			sb.append(_data[i]+"]");
+			sb.append(_data[i] + "]");
 		}
 		return sb.toString();
 	}

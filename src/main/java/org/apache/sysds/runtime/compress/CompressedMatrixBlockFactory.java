@@ -27,6 +27,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
@@ -46,11 +47,10 @@ import org.apache.sysds.utils.DMLCompressionStatistics;
 public class CompressedMatrixBlockFactory {
 
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlockFactory.class.getName());
-	private static final CompressionSettings defaultCompressionSettings = new CompressionSettingsBuilder().create();
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb) {
 		// Default sequential execution of compression
-		return compress(mb, 1, defaultCompressionSettings);
+		return compress(mb, 1, new CompressionSettingsBuilder().create());
 	}
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb,
@@ -59,8 +59,9 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k) {
-		return compress(mb, k, defaultCompressionSettings);
+		return compress(mb, k, new CompressionSettingsBuilder().create());
 	}
+
 
 	/**
 	 * The main method for compressing the input matrix.
@@ -85,40 +86,36 @@ public class CompressedMatrixBlockFactory {
 		}
 
 		Timing time = new Timing(true);
+
 		CompressionStatistics _stats = new CompressionStatistics();
+		CompressedMatrixBlock res = null;
 
 		// Prepare basic meta data and deep copy / transpose input
 		int numRows = mb.getNumRows();
 		int numCols = mb.getNumColumns();
-		boolean sparse = mb.isInSparseFormat();
-
-		// Transpose the MatrixBlock if the TransposeInput flag is set.
-		// This gives better cache consciousness, at a small upfront cost.
-		MatrixBlock rawBlock = !compSettings.transposeInput ? new MatrixBlock(mb) : LibMatrixReorg
-			.transpose(mb, new MatrixBlock(numCols, numRows, sparse), k);
-
-		// Construct sample-based size estimator
-		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory.getSizeEstimator(rawBlock, compSettings);
+		int phase = 0;
 
 		// --------------------------------------------------
-		// PHASE 1: Classify columns by compression type
+		// PHASE : Classify columns by compression type
 		// Start by determining which columns are amenable to compression
 
 		// Classify columns according to ratio (size uncompressed / size compressed),
 		// where a column is compressible if ratio > 1.
-
+		MatrixBlock shallowCopy = new MatrixBlock().copyShallow(mb);
+		// Construct sample-based size estimator
+		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory
+			.getSizeEstimator(shallowCopy, compSettings, false);
 		CompressedSizeInfo sizeInfos = sizeEstimator.computeCompressedSizeInfos(k);
 
 		if(compSettings.investigateEstimate)
 			_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 
 		_stats.setNextTimePhase(time.stop());
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 1);
 		}
-		if(LOG.isDebugEnabled()){
-			LOG.debug("Compression statistics:");
-			LOG.debug("--compression phase 1: " + _stats.getLastTimePhase());
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("--compression phase " + phase++ + " Classify  : " + _stats.getLastTimePhase());
 		}
 
 		if(sizeInfos.colsC.isEmpty()) {
@@ -126,31 +123,59 @@ public class CompressedMatrixBlockFactory {
 			return new ImmutablePair<>(new MatrixBlock().copyShallow(mb), _stats);
 		}
 		// --------------------------------------------------
-
+		if(sizeInfos.colsC.size() != mb.getNumColumns()){
+			throw new DMLCompressionException("Invalid number of columns is:" +  sizeInfos.colsC.size() + " and should be: " + mb.getNumColumns());
+		}
 		// --------------------------------------------------
-		// PHASE 2: Grouping columns
+		// PHASE : Grouping columns
 		// Divide the columns into column groups.
 		List<int[]> coCodeColGroups = PlanningCoCoder
 			.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
 		_stats.setNextTimePhase(time.stop());
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 2);
 		}
 		if(LOG.isDebugEnabled()) {
-			LOG.debug("--compression phase 2: " + _stats.getLastTimePhase());
+			LOG.debug("--compression phase " + phase++ + " Grouping  : " + _stats.getLastTimePhase());
 			StringBuilder sb = new StringBuilder();
 			for(int[] group : coCodeColGroups)
 				sb.append(Arrays.toString(group));
 			LOG.debug(sb.toString());
 		}
-
-		// TODO: Make second estimate of memory usage if the ColGroups are as above?
-		// This should already be done inside the PlanningCoCoder, and therefore this information
-		// should be returned there, and not estimated twice.
-		// if(INVESTIGATE_ESTIMATES) {
-		// _stats.estimatedSizeColGroups = memoryEstimateIfColsAre(coCodeColGroups);
-		// }
 		// --------------------------------------------------
+
+		// Heuristic to decide if we should transpose the entire matrix input.
+		switch(compSettings.transposeInput) {
+			case "true":
+				compSettings.transposed = true;
+				break;
+			case "false":
+				compSettings.transposed = false;
+				break;
+			default:
+				compSettings.transposed = numRows > 1000000 || coCodeColGroups.size() > numCols / 2;
+		}
+
+		// -------------------------------------------------
+		// PHASE : transpose input matrix
+		// Transpose the matrix, to give more cache friendly access to reading row by row values.
+
+		// Transpose the MatrixBlock if the TransposeInput flag is set.
+		// This gives better cache consciousness, at a small upfront cost.
+
+		boolean sparse = mb.isInSparseFormat();
+		MatrixBlock rawBlock = compSettings.transposed ? LibMatrixReorg.transpose(mb,
+			new MatrixBlock(numCols, numRows, sparse),
+			k) : new MatrixBlock(numRows, numCols, sparse).copyShallow(mb);
+
+		_stats.setNextTimePhase(time.stop());
+		if(DMLScript.STATISTICS) {
+			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 0);
+		}
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("Compression statistics:");
+			LOG.debug("--compression phase " + phase++ + " Transpose : " + _stats.getLastTimePhase());
+		}
 
 		// --------------------------------------------------
 		// PHASE 3: Compress and correct sample-based decisions
@@ -158,17 +183,17 @@ public class CompressedMatrixBlockFactory {
 			.compressColGroups(rawBlock, sizeInfos.compRatios, coCodeColGroups, compSettings, k);
 
 		// Make Compression happen!
-		CompressedMatrixBlock res = new CompressedMatrixBlock(mb);
+		res = new CompressedMatrixBlock(mb);
 		List<ColGroup> colGroupList = ColGroupFactory.assignColumns(numCols, colGroups, rawBlock, compSettings);
 		res.allocateColGroupList(colGroupList);
 		_stats.setNextTimePhase(time.stop());
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 3);
 		}
 		if(LOG.isDebugEnabled()) {
-			LOG.debug("Hash overlap count:" + DblArrayIntListHashMap.hashMissCount);
+			LOG.debug("--compression phase " + phase++ + " Compress  : " + _stats.getLastTimePhase());
+			LOG.debug("--compression Hash collisions:" + DblArrayIntListHashMap.hashMissCount);
 			DblArrayIntListHashMap.hashMissCount = 0;
-			LOG.debug("--compression phase 3: " + _stats.getLastTimePhase());
 		}
 		// --------------------------------------------------
 
@@ -181,11 +206,11 @@ public class CompressedMatrixBlockFactory {
 		// res._sharedDDC1Dict = true;
 		// }
 		_stats.setNextTimePhase(time.stop());
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 4);
 		}
 		if(LOG.isDebugEnabled()) {
-			LOG.debug("--compression phase 4: " + _stats.getLastTimePhase());
+			LOG.debug("--compression phase " + phase++ + " Share     : " + _stats.getLastTimePhase());
 		}
 		// --------------------------------------------------
 
@@ -197,6 +222,8 @@ public class CompressedMatrixBlockFactory {
 		_stats.ratio = _stats.originalSize / (double) _stats.size;
 
 		if(_stats.ratio < 1) {
+			LOG.info("--compressed size: " + _stats.size);
+			LOG.info("--compression ratio: " + _stats.ratio);
 			LOG.info("Abort block compression because compression ratio is less than 1.");
 			return new ImmutablePair<>(new MatrixBlock().copyShallow(mb), _stats);
 		}
@@ -208,27 +235,33 @@ public class CompressedMatrixBlockFactory {
 		_stats.setNextTimePhase(time.stop());
 		_stats.setColGroupsCounts(colGroupList);
 
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 5);
 		}
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("--num col groups: " + colGroupList.size() + ", -- num input cols: " + numCols);
-			LOG.debug("--compression phase 5: " + _stats.getLastTimePhase());
+			LOG.debug("--compression phase " + phase++ + " Cleanup   : " + _stats.getLastTimePhase());
 			LOG.debug("--col groups types " + _stats.getGroupsTypesString());
 			LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
 			LOG.debug("--compressed size: " + _stats.size);
 			LOG.debug("--compression ratio: " + _stats.ratio);
+			int[] lengths = new int[colGroupList.size()];
+			int i = 0;
+			for(ColGroup colGroup : colGroupList) {
+				if(colGroup.getValues() != null)
+					lengths[i++] = colGroup.getValues().length / colGroup.getColIndices().length;
+			}
+			LOG.debug("--compressed colGroup dictionary sizes: " + Arrays.toString(lengths));
 
 			if(LOG.isTraceEnabled()) {
 				for(ColGroup colGroup : colGroupList) {
 					LOG.trace("--colGroups colIndexes : " + Arrays.toString(colGroup.getColIndices()));
 					LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName());
-					LOG.trace("--colGroups Values     : " + Arrays.toString(colGroup.getValues()));
+					// LOG.trace("--colGroups Values : " + Arrays.toString(colGroup.getValues()));
 				}
 			}
 		}
 
-		
 		return new ImmutablePair<>(res, _stats);
 		// --------------------------------------------------
 	}

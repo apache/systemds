@@ -33,13 +33,10 @@ public abstract class ReaderColumnSelection {
 
 	private DblArray nonZeroReturn;
 
-	protected CompressionSettings _compSettings;
-
-	protected ReaderColumnSelection(int[] colIndexes, int numRows, CompressionSettings compSettings) {
+	protected ReaderColumnSelection(int[] colIndexes, int numRows) {
 		_colIndexes = colIndexes;
 		_numRows = numRows;
 		_lastRow = -1;
-		_compSettings = compSettings;
 	}
 
 	/**

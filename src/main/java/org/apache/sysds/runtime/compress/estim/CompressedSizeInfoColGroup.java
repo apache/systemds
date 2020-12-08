@@ -123,4 +123,13 @@ public class CompressedSizeInfoColGroup {
 		}
 		return size;
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(_bestCompressionType);
+		sb.append("\n" + _sizes);
+		return sb.toString();
+	}
 }

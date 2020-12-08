@@ -29,8 +29,8 @@ public class ReaderColumnSelectionBitSet extends ReaderColumnSelection {
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionBitSet(BitSet data, int rows, int[] colIndices, CompressionSettings compSettings) {
-		super(colIndices, rows, compSettings);
+	public ReaderColumnSelectionBitSet(BitSet data, int rows, int[] colIndices) {
+		super(colIndices, rows);
 		_data = data;
 		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);

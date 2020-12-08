@@ -27,11 +27,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.Dictionary;
@@ -62,7 +64,7 @@ public class LibScalar {
 					ret,
 					overlapping);
 			}
-			else if(sop.fn instanceof Divide){
+			else if(sop.fn instanceof Divide) {
 				throw new DMLCompressionException("Not supported left hand side divide Compressed");
 			}
 			else if(sop.fn instanceof Power2) {
@@ -91,8 +93,10 @@ public class LibScalar {
 			}
 		}
 		else {
-			if(sop.getNumThreads() > 1) {
-				parallelScalarOperations(sop, colGroups, ret, sop.getNumThreads());
+			int threadsAvailable = (sop.getNumThreads() > 1) ? sop.getNumThreads() : OptimizerUtils
+				.getConstrainedNumThreads(-1);
+			if(threadsAvailable > 1) {
+				parallelScalarOperations(sop, colGroups, ret, threadsAvailable);
 			}
 			else {
 				// Apply the operation to each of the column groups.
@@ -140,7 +144,7 @@ public class LibScalar {
 			}
 			else {
 				int nv = ((ColGroupValue) grp).getNumValues() * grp.getColIndices().length;
-				if(nv < MINIMUM_PARALLEL_SIZE) {
+				if(nv < MINIMUM_PARALLEL_SIZE && !(grp instanceof ColGroupOLE)) {
 					small.add(grp);
 				}
 				else {

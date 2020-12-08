@@ -26,7 +26,6 @@ import java.io.IOException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -81,7 +80,7 @@ public abstract class ADictionary {
 	 * 
 	 * @return an integer of count of values.
 	 */
-	public abstract int getValuesLength();
+	public abstract int size();
 
 	/**
 	 * Applies the scalar operation on the dictionary. Note that this operation modifies the underlying data, and
@@ -110,6 +109,8 @@ public abstract class ADictionary {
 	 */
 	public abstract ADictionary clone();
 
+	public abstract ADictionary cloneAndExtend(int len);
+
 	/**
 	 * Aggregates the columns into the target double array provided.
 	 * 
@@ -120,7 +121,7 @@ public abstract class ADictionary {
 	 */
 	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
 		int ncol = colIndexes.length;
-		int vlen = getValuesLength() / ncol;
+		int vlen = size() / ncol;
 		// double[] ret = init;
 		// System.out.println(c.length + " " + ncol);
 		for(int k = 0; k < vlen; k++)
@@ -178,27 +179,24 @@ public abstract class ADictionary {
 	 * Note if the number of columns is one the actual dictionaries values are simply returned.
 	 * 
 	 * @param kplus     The function to apply to each value in the rows
-	 * @param kbuff     The buffer to use to aggregate the value.
 	 * @param nrColumns The number of columns in the ColGroup to know how to get the values from the dictionary.
 	 * @return a double array containing the row sums from this dictionary.
 	 */
-	protected abstract double[] sumAllRowsToDouble(KahanFunction kplus, KahanObject kbuff, int nrColumns);
+	protected abstract double[] sumAllRowsToDouble(KahanFunction kplus, int nrColumns);
 
 	/**
 	 * Sum the values at a specific row.
 	 * 
 	 * @param k         The row index to sum
 	 * @param kplus     The operator to use
-	 * @param kbuff     The buffer to aggregate inside.
 	 * @param nrColumns The number of columns
 	 * @return The sum of the row.
 	 */
-	protected abstract double sumRow(int k, KahanFunction kplus, KahanObject kbuff, int nrColumns);
-
+	protected abstract double sumRow(int k, KahanFunction kplus, int nrColumns);
 
 	protected abstract void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus);
 
-	protected abstract double sum(int[] counts, int ncol,  KahanFunction kplus);
-	
+	protected abstract double sum(int[] counts, int ncol, KahanFunction kplus);
+
 	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
 }

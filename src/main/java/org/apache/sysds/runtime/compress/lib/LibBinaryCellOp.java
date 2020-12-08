@@ -38,8 +38,10 @@ import org.apache.sysds.runtime.compress.colgroup.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.Dictionary;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -48,9 +50,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class LibBinaryCellOp {
@@ -68,11 +68,6 @@ public class LibBinaryCellOp {
 	 */
 	public static MatrixBlock bincellOp(CompressedMatrixBlock m1, MatrixBlock m2, CompressedMatrixBlock ret,
 		BinaryOperator op) {
-		if(op.fn instanceof Minus) {
-			ScalarOperator sop = new RightScalarOperator(Multiply.getMultiplyFnObject(), -1);
-			m2 = m2.scalarOperations(sop, new MatrixBlock());
-			return LibBinaryCellOp.bincellOp(m1, m2, ret, new BinaryOperator(Plus.getPlusFnObject()));
-		}
 
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, m2);
 
@@ -114,31 +109,55 @@ public class LibBinaryCellOp {
 		// Apply the operation to each of the column groups.
 		// Most implementations will only modify metadata.
 		List<ColGroup> oldColGroups = m1.getColGroups();
-		List<ColGroup> newColGroups = new ArrayList<>(oldColGroups.size());
 		double[] v = m2.getDenseBlockValues();
+		if(v == null) {
+			SparseBlock sb = m2.getSparseBlock();
+			if(sb == null) {
+				throw new DMLRuntimeException("Unknown matrix block type");
+			}
+			else {
+				// make the row a dense vector...
+				double[] spV = sb.values(0);
+				int[] spI = sb.indexes(0);
+				v = new double[m2.getNumColumns()];
+				for(int i = sb.pos(0); i < sb.size(0); i++) {
+					v[spI[i]] = spV[i];
+				}
+			}
+		}
 		boolean sparseSafe = true;
 		for(double x : v) {
-			if(op.fn.execute(x, 0.0) != 0.0) {
+			if(op.fn.execute(0.0, x) != 0.0) {
 				sparseSafe = false;
 				break;
 			}
 		}
 
-		for(ColGroup grp : oldColGroups) {
-			if(grp instanceof ColGroupUncompressed) {
-				throw new DMLCompressionException("Not supported Binary MV");
-			}
-			else {
-				if(grp.getNumCols() == 1) {
-					ScalarOperator sop = new LeftScalarOperator(op.fn, m2.getValue(0, grp.getColIndices()[0]), 1);
-					newColGroups.add(grp.scalarOperation(sop));
+		List<ColGroup> newColGroups = new ArrayList<>(oldColGroups.size());
+		int k = OptimizerUtils.getConstrainedNumThreads(-1);
+		ExecutorService pool = CommonThreadPool.get(k);
+		ArrayList<BinaryMVRowTask> tasks = new ArrayList<>();
+		try {
+			for(ColGroup grp : oldColGroups) {
+				if(grp instanceof ColGroupUncompressed) {
+					throw new DMLCompressionException("Not supported uncompressed Col Group for Binary MV");
 				}
 				else {
-					ColGroup ncg = grp.binaryRowOp(op, v, sparseSafe);
-					newColGroups.add(ncg);
+					tasks.add(new BinaryMVRowTask(grp, v, sparseSafe, op));
+
 				}
 			}
+
+			for(Future<ColGroup> f : pool.invokeAll(tasks))
+				newColGroups.add(f.get());
+
+			pool.shutdown();
 		}
+		catch(InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
+
 		ret.allocateColGroupList(newColGroups);
 		ret.setNonZeros(m1.getNumColumns() * m1.getNumRows());
 		return ret;
@@ -148,15 +167,27 @@ public class LibBinaryCellOp {
 	protected static CompressedMatrixBlock binaryMVPlusStack(CompressedMatrixBlock m1, MatrixBlock m2,
 		CompressedMatrixBlock ret, BinaryOperator op) {
 		List<ColGroup> oldColGroups = m1.getColGroups();
-		List<ColGroup> newColGroups = new ArrayList<>(oldColGroups.size() + 1);
+
+		List<ColGroup> newColGroups = (m2.isEmpty()) ? new ArrayList<>(oldColGroups.size()) : new ArrayList<>(
+			oldColGroups.size() + 1);
+		boolean foundConst = false;
 		for(ColGroup grp : m1.getColGroups()) {
-			newColGroups.add(grp);
+			if(!m2.isEmpty() && !foundConst && grp instanceof ColGroupConst) {
+				ADictionary newDict = ((ColGroupValue) grp).applyBinaryRowOp(op.fn, m2.getDenseBlockValues(), false);
+				newColGroups.add(new ColGroupConst(grp.getColIndices(), m1.getNumRows(), newDict));
+				foundConst = true;
+			}
+			else {
+				newColGroups.add(grp);
+			}
 		}
-		int[] colIndexes = oldColGroups.get(0).getColIndices();
-		double[] v = m2.getDenseBlockValues();
-		ADictionary newDict = new Dictionary(new double[colIndexes.length]);
-		newDict = newDict.applyBinaryRowOp(op.fn, v, true, colIndexes);
-		newColGroups.add(new ColGroupConst(colIndexes, m1.getNumRows(), newDict));
+		if(!m2.isEmpty() && !foundConst) {
+			int[] colIndexes = oldColGroups.get(0).getColIndices();
+			double[] v = m2.getDenseBlockValues();
+			ADictionary newDict = new Dictionary(new double[colIndexes.length]);
+			newDict = newDict.applyBinaryRowOp(op.fn, v, true, colIndexes);
+			newColGroups.add(new ColGroupConst(colIndexes, m1.getNumRows(), newDict));
+		}
 		ret.allocateColGroupList(newColGroups);
 		ret.setOverlapping(true);
 		ret.setNonZeros(-1);
@@ -164,8 +195,12 @@ public class LibBinaryCellOp {
 	}
 
 	public static MatrixBlock binaryMVPlusCol(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op) {
-		MatrixBlock ret = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false, -1).allocateBlock();
+		if(m1.getNumRows() != m2.getNumRows())
+			throw new DMLRuntimeException("Invalid number of rows in input. Should be equal for m1 and m2 but are : "
+				+ m1.getNumRows() + " " + m2.getNumRows());
 
+		MatrixBlock ret = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false, -1).allocateBlock();
+		// LOG.error(Arrays.toString(m2.getDenseBlockValues()));
 		final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
 		int k = OptimizerUtils.getConstrainedNumThreads(-1);
 		ExecutorService pool = CommonThreadPool.get(k);
@@ -173,16 +208,14 @@ public class LibBinaryCellOp {
 
 		try {
 			for(int i = 0; i * blkz < m1.getNumRows(); i++) {
-				BinaryMVColTask rt = new BinaryMVColTask(m1.getColGroups(), m2, ret, i * blkz,
-					Math.min(m1.getNumRows(), (i + 1) * blkz), op);
-				tasks.add(rt);
+				tasks.add(new BinaryMVColTask(m1.getColGroups(), m2, ret, i * blkz,
+					Math.min(m1.getNumRows(), (i + 1) * blkz), op));
 			}
-			List<Future<Integer>> futures = pool.invokeAll(tasks);
-			pool.shutdown();
 			long nnz = 0;
-			for(Future<Integer> f : futures)
+			for(Future<Integer> f : pool.invokeAll(tasks))
 				nnz += f.get();
 			ret.setNonZeros(nnz);
+			pool.shutdown();
 		}
 		catch(InterruptedException | ExecutionException e) {
 			e.printStackTrace();
@@ -212,23 +245,47 @@ public class LibBinaryCellOp {
 
 		@Override
 		public Integer call() {
-
+			List<Integer> columns = new ArrayList<>();
 			for(ColGroup g : _groups) {
-				g.decompressToBlock(_ret, _rl, _ru, _rl, g.getValues());
+				// unsafe decompress, since we count nonzeros afterwards.
+				g.decompressToBlockSafe(_ret, _rl, _ru, _rl, g.getValues(), false);
+				for(int i: g.getColIndices()){
+					columns.add(i);
+				}
 			}
 
 			int nnz = 0;
 			DenseBlock db = _ret.getDenseBlock();
 			for(int row = _rl; row < _ru; row++) {
 				double vr = _m2.quickGetValue(row, 0);
-				for(int col = 0; col < _ret.getNumColumns(); col++) {
+				for(int col : columns) {
 					double v = _op.fn.execute(_ret.quickGetValue(row, col), vr);
 					nnz += (v != 0) ? 1 : 0;
 					db.set(row, col, v);
 				}
+
 			}
 
 			return nnz;
+		}
+	}
+
+	private static class BinaryMVRowTask implements Callable<ColGroup> {
+		private final ColGroup _group;
+		private final double[] _v;
+		private final boolean _sparseSafe;
+		private final BinaryOperator _op;
+
+		protected BinaryMVRowTask(ColGroup group, double[] v, boolean sparseSafe, BinaryOperator op) {
+			_group = group;
+			_v = v;
+			_op = op;
+			_sparseSafe = sparseSafe;
+		}
+
+		@Override
+		public ColGroup call() {
+			return _group.binaryRowOp(_op, _v, _sparseSafe);
 		}
 	}
 }

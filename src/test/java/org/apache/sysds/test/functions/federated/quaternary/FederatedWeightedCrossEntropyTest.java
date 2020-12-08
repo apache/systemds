@@ -134,7 +134,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
       "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
       "in_U=" + input("U"),
       "in_V=" + input("V"),
-      "rows=" + rows, "cols=" + cols, "out_Z=" + output("Z")};
+      "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output("Z")};
     LOG.debug(runTest(true, false, null, -1));
 
     // compare the results via files

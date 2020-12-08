@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.federated.quaternary;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -70,7 +69,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     // rows have to be even
     return Arrays.asList(new Object[][] {
       // {rows, cols, epsilon_tolerance}
-      {2000, 50, 0}
+      {2000, 50, 10, 0}
     });
   }
 
@@ -104,8 +103,14 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     // another matrix handled by a single federated worker
     double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 7);
 
+    double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);
+    double[][] V = getRandomMatrix(cols, rank, 0, 1, 1, 5040);
+
     writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
     writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
+
+    writeInputMatrixWithMTD("U", U, true);
+    writeInputMatrixWithMTD("V", V, true);
 
     // empty script name because we don't execute any script, just start the worker
     fullDMLScriptName = "";
@@ -124,9 +129,12 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
-    programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-      "in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "in_U=" + input("U"), "in_V=" + input("V"),
-      "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output("Z")};
+    programArgs = new String[] {"-stats", "-nvargs",
+      "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+      "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+      "in_U=" + input("U"),
+      "in_V=" + input("V"),
+      "rows=" + rows, "cols=" + cols, "out_Z=" + output("Z")};
     LOG.debug(runTest(true, false, null, -1));
 
     // compare the results via files

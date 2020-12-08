@@ -141,6 +141,12 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public Dictionary cloneAndExtend(int len){
+		double[] ret = Arrays.copyOf(_values, _values.length + len);
+		return new Dictionary(ret);
+	}
+
+	@Override
 	public int getValuesLength() {
 		return _values.length;
 	}
@@ -172,7 +178,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected double[] sumAllRowsToDouble(KahanFunction kplus, KahanObject kbuff, int nrColumns) {
+	protected double[] sumAllRowsToDouble(KahanFunction kplus, int nrColumns) {
 		if(nrColumns == 1 && kplus instanceof KahanPlus)
 			return getValues(); // shallow copy of values
 
@@ -180,19 +186,28 @@ public class Dictionary extends ADictionary {
 		final int numVals = _values.length / nrColumns;
 		double[] ret = ColGroupValue.allocDVector(numVals, false);
 		for(int k = 0; k < numVals; k++) {
-			ret[k] = sumRow(k, kplus, kbuff, nrColumns);
+			ret[k] = sumRow(k, kplus, nrColumns);
 		}
 
 		return ret;
 	}
 
 	@Override
-	protected double sumRow(int k, KahanFunction kplus, KahanObject kbuff, int nrColumns) {
-		kbuff.set(0, 0);
+	protected double sumRow(int k, KahanFunction kplus, int nrColumns) {
+		
 		int valOff = k * nrColumns;
-		for(int i = 0; i < nrColumns; i++)
-			kplus.execute2(kbuff, _values[valOff + i]);
-		return kbuff._sum;
+		double res = 0.0;
+		if(kplus instanceof KahanPlus) {
+			for(int i = 0; i < nrColumns; i++) {
+				res += _values[valOff + i];
+			}
+		}
+		else {
+			// kSquare
+			for(int i = 0; i < nrColumns; i++)
+				res += _values[valOff + i] * _values[valOff + i];
+			}
+		return res;
 	}
 
 	@Override

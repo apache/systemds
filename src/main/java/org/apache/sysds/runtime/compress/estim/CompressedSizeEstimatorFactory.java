@@ -19,17 +19,32 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressedSizeEstimatorFactory {
+	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorFactory.class.getName());
 
 	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
 		long elements = compSettings.transposeInput ? data.getNumColumns() : data.getNumRows();
 		elements = data.getNonZeros() / (compSettings.transposeInput ? data.getNumRows() : data.getNumColumns());
+		CompressedSizeEstimator est;
+		if(compSettings.samplingRatio >= 1.0 || elements < 1000) {
+			est = new CompressedSizeEstimatorExact(data, compSettings);
+			LOG.debug("Using Exact estimator for compression");
+		}
+		else {
+			int sampleSize = Math.max((int) Math.ceil(elements * compSettings.samplingRatio), 10000);
+			int[] sampleRows = CompressedSizeEstimatorSample
+				.getSortedUniformSample(compSettings.transposeInput ? data.getNumColumns(): data.getNumRows(), sampleSize, compSettings.seed);
+			est = new CompressedSizeEstimatorSample(data, compSettings, sampleRows);
+			if(LOG.isDebugEnabled()) {
 
-		return (compSettings.samplingRatio >= 1.0 || elements < 1000) ? new CompressedSizeEstimatorExact(data,
-			compSettings) : new CompressedSizeEstimatorSample(data, compSettings,
-				(int) Math.ceil(elements * compSettings.samplingRatio));
+				LOG.debug("Using Sampled estimator for compression with sample size: " + sampleSize);
+			}
+		}
+		return est;
 	}
 }

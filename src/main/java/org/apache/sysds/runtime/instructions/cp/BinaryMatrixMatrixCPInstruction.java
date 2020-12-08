@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.AbstractCompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -26,6 +30,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
+	private static final Log LOG = LogFactory.getLog(BinaryMatrixMatrixCPInstruction.class.getName());
 
 	protected BinaryMatrixMatrixCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			String opcode, String istr) {
@@ -40,16 +45,28 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 			ec.setMatrixOutput(output.getName(), solution);
 			ec.releaseMatrixInput(input1.getName());
 			ec.releaseMatrixInput(input2.getName());
+			
 			return;
 		}
 		
 		// Read input matrices
 		MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName());
-		
+
 		// Perform computation using input matrices, and produce the result matrix
 		BinaryOperator bop = (BinaryOperator) _optr;
-		MatrixBlock retBlock = inBlock1.binaryOperations (bop, inBlock2, new MatrixBlock());
+		MatrixBlock retBlock;
+
+		if(inBlock1 instanceof CompressedMatrixBlock && inBlock2 instanceof CompressedMatrixBlock){
+			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+		} else if(inBlock2 instanceof CompressedMatrixBlock){
+			LOG.error("Binary CP instruction decompressing " + bop);
+			LOG.error("inBlock2 stats: " + inBlock2.getNumRows() + "  " +inBlock2.getNumColumns());
+			inBlock2 = AbstractCompressedMatrixBlock.getUncompressed(inBlock2);
+			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+		} else {
+			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+		}
 		
 		// Release the memory occupied by input matrices
 		ec.releaseMatrixInput(input1.getName(), input2.getName());

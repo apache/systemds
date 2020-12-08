@@ -103,6 +103,7 @@ public class BitmapEncoder {
 	 */
 	private static Bitmap extractBitmap(int colIndex, MatrixBlock rawBlock, CompressionSettings compSettings) {
 		// probe map for distinct items (for value or value groups)
+		
 		DoubleIntListHashMap distinctVals = new DoubleIntListHashMap();
 
 		// scan rows and probe/build distinct items

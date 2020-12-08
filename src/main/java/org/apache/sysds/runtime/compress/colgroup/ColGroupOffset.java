@@ -65,8 +65,8 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		super(colIndices, numRows, ubm, cs);
 	}
 
-	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict) {
-		super(colIndices, numRows, dict);
+	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] cachedCounts) {
+		super(colIndices, numRows, dict, cachedCounts);
 		_zeros = zeros;
 	}
 

@@ -37,6 +37,6 @@ update = function(matrix[double] X, matrix[double] dX, double lr)
    * Outputs:
    *  - X: Updated parameters `X`, of same shape as input `X`.
    */
-  X = X - lr*dX
+  X = X - dX * lr
 }
 

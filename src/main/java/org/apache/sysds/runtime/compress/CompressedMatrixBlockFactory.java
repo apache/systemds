@@ -92,13 +92,23 @@ public class CompressedMatrixBlockFactory {
 		int numCols = mb.getNumColumns();
 		boolean sparse = mb.isInSparseFormat();
 
+		// -------------------------------------------------
+		// PHASE 0: transpose input matrix
+		// Transpose the matrix, to give more cache friendly access to reading row by row values.
+
 		// Transpose the MatrixBlock if the TransposeInput flag is set.
 		// This gives better cache consciousness, at a small upfront cost.
-		MatrixBlock rawBlock = !compSettings.transposeInput ? new MatrixBlock(mb) : LibMatrixReorg
+		MatrixBlock rawBlock = !compSettings.transposeInput ? mb : LibMatrixReorg
 			.transpose(mb, new MatrixBlock(numCols, numRows, sparse), k);
 
-		// Construct sample-based size estimator
-		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory.getSizeEstimator(rawBlock, compSettings);
+		_stats.setNextTimePhase(time.stop());
+		if(DMLScript.STATISTICS) {
+			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 0);
+		}
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("Compression statistics:");
+			LOG.debug("--compression phase 0 Transpose : " + _stats.getLastTimePhase());
+		}
 
 		// --------------------------------------------------
 		// PHASE 1: Classify columns by compression type
@@ -107,18 +117,19 @@ public class CompressedMatrixBlockFactory {
 		// Classify columns according to ratio (size uncompressed / size compressed),
 		// where a column is compressible if ratio > 1.
 
+		// Construct sample-based size estimator
+		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory.getSizeEstimator(rawBlock, compSettings);
 		CompressedSizeInfo sizeInfos = sizeEstimator.computeCompressedSizeInfos(k);
 
 		if(compSettings.investigateEstimate)
 			_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 
 		_stats.setNextTimePhase(time.stop());
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 1);
 		}
-		if(LOG.isDebugEnabled()){
-			LOG.debug("Compression statistics:");
-			LOG.debug("--compression phase 1: " + _stats.getLastTimePhase());
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("--compression phase 1 Classify  : " + _stats.getLastTimePhase());
 		}
 
 		if(sizeInfos.colsC.isEmpty()) {
@@ -133,11 +144,11 @@ public class CompressedMatrixBlockFactory {
 		List<int[]> coCodeColGroups = PlanningCoCoder
 			.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
 		_stats.setNextTimePhase(time.stop());
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 2);
 		}
 		if(LOG.isDebugEnabled()) {
-			LOG.debug("--compression phase 2: " + _stats.getLastTimePhase());
+			LOG.debug("--compression phase 2 Grouping  : " + _stats.getLastTimePhase());
 			StringBuilder sb = new StringBuilder();
 			for(int[] group : coCodeColGroups)
 				sb.append(Arrays.toString(group));
@@ -162,13 +173,13 @@ public class CompressedMatrixBlockFactory {
 		List<ColGroup> colGroupList = ColGroupFactory.assignColumns(numCols, colGroups, rawBlock, compSettings);
 		res.allocateColGroupList(colGroupList);
 		_stats.setNextTimePhase(time.stop());
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 3);
 		}
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("Hash overlap count:" + DblArrayIntListHashMap.hashMissCount);
 			DblArrayIntListHashMap.hashMissCount = 0;
-			LOG.debug("--compression phase 3: " + _stats.getLastTimePhase());
+			LOG.debug("--compression phase 3 Compress  : " + _stats.getLastTimePhase());
 		}
 		// --------------------------------------------------
 
@@ -181,11 +192,11 @@ public class CompressedMatrixBlockFactory {
 		// res._sharedDDC1Dict = true;
 		// }
 		_stats.setNextTimePhase(time.stop());
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 4);
 		}
 		if(LOG.isDebugEnabled()) {
-			LOG.debug("--compression phase 4: " + _stats.getLastTimePhase());
+			LOG.debug("--compression phase 4 Share     : " + _stats.getLastTimePhase());
 		}
 		// --------------------------------------------------
 
@@ -208,7 +219,7 @@ public class CompressedMatrixBlockFactory {
 		_stats.setNextTimePhase(time.stop());
 		_stats.setColGroupsCounts(colGroupList);
 
-		if (DMLScript.STATISTICS ){
+		if(DMLScript.STATISTICS) {
 			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), 5);
 		}
 		if(LOG.isDebugEnabled()) {
@@ -218,17 +229,22 @@ public class CompressedMatrixBlockFactory {
 			LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
 			LOG.debug("--compressed size: " + _stats.size);
 			LOG.debug("--compression ratio: " + _stats.ratio);
+			int[] lengths = new int[colGroupList.size()];
+			int i = 0;
+			for(ColGroup colGroup : colGroupList) {
+				lengths[i++] = colGroup.getValues().length / colGroup.getColIndices().length;
+			}
+			LOG.debug("--compressed colGroup dictionary sizes: " + Arrays.toString(lengths));
 
 			if(LOG.isTraceEnabled()) {
 				for(ColGroup colGroup : colGroupList) {
 					LOG.trace("--colGroups colIndexes : " + Arrays.toString(colGroup.getColIndices()));
 					LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName());
-					LOG.trace("--colGroups Values     : " + Arrays.toString(colGroup.getValues()));
+					// LOG.trace("--colGroups Values : " + Arrays.toString(colGroup.getValues()));
 				}
 			}
 		}
 
-		
 		return new ImmutablePair<>(res, _stats);
 		// --------------------------------------------------
 	}

@@ -49,21 +49,21 @@ public class LibRightMultBy {
 	 * Right multiply by matrix. Meaning a left hand side compressed matrix is multiplied with a right hand side
 	 * uncompressed matrix.
 	 * 
-	 * @param colGroups	All Column groups in the compression
-	 * @param that		 The right hand side matrix
-	 * @param ret		  The MatrixBlock to return.
-	 * @param k			The parallelization degree to use.
-	 * @param v			The Precalculated counts and Maximum number of tuple entries in the column groups.
+	 * @param colGroups    All Column groups in the compression
+	 * @param that         The right hand side matrix
+	 * @param ret          The MatrixBlock to return.
+	 * @param k            The parallelization degree to use.
+	 * @param v            The Precalculated counts and Maximum number of tuple entries in the column groups.
 	 * @param allowOverlap Allow the multiplication to return an overlapped matrix.
 	 * @return The Result Matrix, modified from the ret parameter.
 	 */
 	public static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v, boolean allowOverlap) {
 
-		if(that instanceof CompressedMatrixBlock){
+		if(that instanceof CompressedMatrixBlock) {
 			LOG.info("Decompression Right matrix");
 		}
-		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress() : that;
+		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
 
 		boolean containsUncompressable = false;
 		int distinctCount = 0;
@@ -77,7 +77,8 @@ public class LibRightMultBy {
 		}
 		int rl = colGroups.get(0).getNumRows();
 		int cl = that.getNumColumns();
-		if(!allowOverlap || (containsUncompressable || distinctCount >= rl )) {
+		if(!allowOverlap || (containsUncompressable || distinctCount >= rl / 4)) {
+			LOG.info("outputting non overlapping matrix right mm");
 			if(ret == null)
 				ret = new MatrixBlock(rl, cl, false, rl * cl);
 			else if(!(ret.getNumColumns() == cl && ret.getNumRows() == rl && ret.isAllocated()))
@@ -88,14 +89,13 @@ public class LibRightMultBy {
 			}
 			else {
 				ret = rightMultByDenseMatrix(colGroups, that, ret, k, v);
-
 			}
 			ret.setNonZeros(ret.getNumColumns() * ret.getNumRows());
 		}
 		else {
+			LOG.debug("Outputting Overlapping Matrix");
 			// Create an overlapping compressed Matrix Block.
 			ret = new CompressedMatrixBlock(true);
-
 			ret.setNumColumns(cl);
 			ret.setNumRows(rl);
 			CompressedMatrixBlock retC = (CompressedMatrixBlock) ret;
@@ -116,10 +116,10 @@ public class LibRightMultBy {
 	 * Multi-threaded version of rightMultByVector.
 	 * 
 	 * @param colGroups The Column groups used int the multiplication
-	 * @param vector	matrix block vector to multiply with
-	 * @param result	matrix block result to modify in the multiplication
-	 * @param k		 number of threads to use
-	 * @param v		 The Precalculated counts and Maximum number of tuple entries in the column groups
+	 * @param vector    matrix block vector to multiply with
+	 * @param result    matrix block result to modify in the multiplication
+	 * @param k         number of threads to use
+	 * @param v         The Precalculated counts and Maximum number of tuple entries in the column groups
 	 */
 	public static void rightMultByVector(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result, int k,
 		Pair<Integer, int[]> v) {
@@ -171,7 +171,7 @@ public class LibRightMultBy {
 	 * 
 	 * @param vector right-hand operand of the multiplication
 	 * @param result buffer to hold the result; must have the appropriate size already
-	 * @param v	  The Precalculated counts and Maximum number of tuple entries in the column groups.
+	 * @param v      The Precalculated counts and Maximum number of tuple entries in the column groups.
 	 */
 	private static void rightMultByVector(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
 		Pair<Integer, int[]> v) {
@@ -253,12 +253,12 @@ public class LibRightMultBy {
 		}
 
 		if(k == 1) {
-			ColGroupValue.setupThreadLocalMemory((v.getLeft()));
+			int colBlockSize = 128;
+			ColGroupValue.setupThreadLocalMemory(colBlockSize * v.getLeft());
 			for(int b = 0; b < db.numBlocks(); b++) {
 				// int blockSize = db.blockSize(b);
 				thatV = db.valuesAt(b);
 				for(int j = 0; j < colGroups.size(); j++) {
-					int colBlockSize = 128;
 					for(int i = 0; i < that.getNumColumns(); i += colBlockSize) {
 						if(colGroups.get(j) instanceof ColGroupValue) {
 							double[] preAggregatedB = ((ColGroupValue) colGroups.get(j)).preaggValues(v.getRight()[j],
@@ -284,7 +284,6 @@ public class LibRightMultBy {
 			ColGroupValue.cleanupThreadLocalMemory();
 		}
 		else {
-
 			thatV = db.valuesAt(0);
 			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<RightMatrixMultTask> tasks = new ArrayList<>();
@@ -299,7 +298,7 @@ public class LibRightMultBy {
 				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
 					RightMatrixMultTask rmmt = new RightMatrixMultTask(colGroups, retV, ag, v, that.getNumColumns(),
 						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), 0, that.getNumColumns(),
-						false, false);
+						false);
 					tasks.add(rmmt);
 				}
 				blklenRows += (blklenRows % blkz != 0) ? blkz - blklenRows % blkz : 0;
@@ -307,7 +306,7 @@ public class LibRightMultBy {
 				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
 					RightMatrixMultTask rmmt = new RightMatrixMultTask(colGroups, retV, ag, v, that.getNumColumns(),
 						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), 0, that.getNumColumns(),
-						false, true);
+						true);
 					tasks.add(rmmt);
 				}
 				for(Future<Object> future : pool.invokeAll(tasks))
@@ -381,6 +380,10 @@ public class LibRightMultBy {
 		CompressedMatrixBlock ret, int k, Pair<Integer, int[]> v) {
 
 		SparseBlock sb = that.getSparseBlock();
+		if(sb == null) {
+			throw new DMLRuntimeException(
+				"right Mult By sparse Matrix compressed should only be called with an sparse input");
+		}
 
 		for(ColGroup grp : colGroups) {
 			if(grp instanceof ColGroupUncompressed) {
@@ -397,7 +400,7 @@ public class LibRightMultBy {
 		if(k == 1) {
 			for(int j = 0; j < colGroups.size(); j++) {
 				ColGroupValue g = (ColGroupValue) colGroups.get(j);
-				double[] preAggregatedB = g.preaggValues(v.getRight()[j],
+				double[] preAggregatedB = g.preaggValues(v.getRight()[j]/g.getNumCols(),
 					sb,
 					colGroups.get(j).getValues(),
 					0,
@@ -444,7 +447,7 @@ public class LibRightMultBy {
 		preTask.clear();
 		for(int h = 0; h < colGroups.size(); h++) {
 			RightMatrixPreAggregateSparseTask pAggT = new RightMatrixPreAggregateSparseTask(
-				(ColGroupValue) colGroups.get(h), v.getRight()[h], sb, colGroups.get(h).getValues(), 0,
+				(ColGroupValue) colGroups.get(h), v.getRight()[h]/colGroups.get(h).getNumCols(), sb, colGroups.get(h).getValues(), 0,
 				that.getNumColumns(), that.getNumColumns());
 			preTask.add(pAggT);
 		}
@@ -501,11 +504,10 @@ public class LibRightMultBy {
 		private final int _ru;
 		private final int _cl;
 		private final int _cu;
-		private final boolean _mem;
 		private final boolean _skipOle;
 
 		protected RightMatrixMultTask(List<ColGroup> groups, double[] retV, List<Future<double[]>> aggB,
-			Pair<Integer, int[]> v, int numColumns, int rl, int ru, int cl, int cu, boolean mem, boolean skipOle) {
+			Pair<Integer, int[]> v, int numColumns, int rl, int ru, int cl, int cu, boolean skipOle) {
 			_colGroups = groups;
 			// _thatV = thatV;
 			_retV = retV;
@@ -516,15 +518,13 @@ public class LibRightMultBy {
 			_ru = ru;
 			_cl = cl;
 			_cu = cu;
-			_mem = mem;
 			_skipOle = skipOle;
 		}
 
 		@Override
 		public Object call() {
 			try {
-				if(_mem)
-					ColGroupValue.setupThreadLocalMemory((_v.getLeft()));
+				ColGroupValue.setupThreadLocalMemory((_v.getLeft()));
 				for(int j = 0; j < _colGroups.size(); j++) {
 					if(_colGroups.get(j) instanceof ColGroupOLE) {
 						if(_skipOle) {
@@ -539,8 +539,7 @@ public class LibRightMultBy {
 						}
 					}
 				}
-				if(_mem)
-					ColGroupValue.cleanupThreadLocalMemory();
+				ColGroupValue.cleanupThreadLocalMemory();
 				return null;
 			}
 			catch(Exception e) {

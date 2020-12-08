@@ -220,6 +220,12 @@ public class QDictionary extends ADictionary {
 		return new QDictionary(_values.clone(), _scale);
 	}
 
+	@Override
+	public QDictionary cloneAndExtend(int len){
+		byte[] ret = Arrays.copyOf(_values, _values.length + len);
+		return new QDictionary(ret, _scale);
+	}
+
 	public static QDictionary read(DataInput in) throws IOException {
 		double scale = in.readDouble();
 		int numVals = in.readInt();
@@ -249,34 +255,35 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected double[] sumAllRowsToDouble(KahanFunction kplus, KahanObject kbuff, int nrColumns) {
+	protected double[] sumAllRowsToDouble(KahanFunction kplus, int nrColumns) {
 		if(nrColumns == 1 && kplus instanceof KahanPlus)
 			return getValues(); // shallow copy of values
 
 		final int numVals = _values.length / nrColumns;
 		double[] ret = ColGroupValue.allocDVector(numVals, false);
 		for(int k = 0; k < numVals; k++) {
-			ret[k] = sumRow(k, kplus, kbuff, nrColumns);
+			ret[k] = sumRow(k, kplus, nrColumns);
 		}
 
 		return ret;
 	}
 
 	@Override
-	protected double sumRow(int k, KahanFunction kplus, KahanObject kbuff, int nrColumns) {
+	protected double sumRow(int k, KahanFunction kplus, int nrColumns) {
 		int valOff = k * nrColumns;
 		if(kplus instanceof KahanPlus) {
-			short res = 0;
+			int res = 0;
 			for(int i = 0; i < nrColumns; i++) {
 				res += _values[valOff + i];
 			}
 			return res * _scale;
 		}
 		else {
-			kbuff.set(0, 0);
+			// kSquare
+			double res = 0.0;
 			for(int i = 0; i < nrColumns; i++)
-				kplus.execute2(kbuff, _values[valOff + i] * _scale);
-			return kbuff._sum;
+				res += (int)(_values[valOff + i] * _values[valOff+i]) * _scale * _scale;
+			return res;
 		}
 	}
 

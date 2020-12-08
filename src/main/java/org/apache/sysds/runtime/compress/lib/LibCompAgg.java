@@ -26,6 +26,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -52,7 +54,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class LibCompAgg {
 
-    // private static final Log LOG = LogFactory.getLog(LibCompAgg.class.getName());
+    private static final Log LOG = LogFactory.getLog(LibCompAgg.class.getName());
 
     /** Threshold for when to parallelize the aggregation functions. */
     private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024 * 1024; // 8MB
@@ -88,18 +90,18 @@ public class LibCompAgg {
                 ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();
                 if(op.indexFn instanceof ReduceCol && grpParts.length > 0) {
                     final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
-                    int blklen = (int) Math.ceil((double) m1.getNumRows() / op.getNumThreads());
+                    int blklen = Math.min((int) Math.ceil((double) m1.getNumRows() / op.getNumThreads()), blkz/2);
                     blklen += (blklen % blkz != 0) ? blkz - blklen % blkz : 0;
                     for(int i = 0; i < op.getNumThreads() & i * blklen < m1.getNumRows(); i++) {
                         tasks.add(new UnaryAggregateTask(grpParts[0], ret, i * blklen,
-                            Math.min((i + 1) * blklen, m1.getNumRows()), op));
+                            Math.min((i + 1) * blklen, m1.getNumRows()), op, m1.getNumColumns()));
 
                     }
                 }
                 else
                     for(ArrayList<ColGroup> grp : grpParts) {
                         if(grp != null)
-                            tasks.add(new UnaryAggregateTask(grp, ret, 0, m1.getNumRows(), op));
+                            tasks.add(new UnaryAggregateTask(grp, ret, 0, m1.getNumRows(), op, m1.getNumColumns()));
                     }
                 List<Future<MatrixBlock>> rtasks = pool.invokeAll(tasks);
                 pool.shutdown();
@@ -142,20 +144,20 @@ public class LibCompAgg {
                 for(ColGroup grp : m1.getColGroups())
                     if(grp instanceof ColGroupUncompressed)
                         ((ColGroupUncompressed) grp).unaryAggregateOperations(op, ret);
-                aggregateUnaryOperations(op, m1.getColGroups(), ret, 0, m1.getNumRows());
+                aggregateUnaryOperations(op, m1.getColGroups(), ret, 0, m1.getNumRows(), m1.getNumColumns());
             }
         }
 
         // special handling zeros for rowmins/rowmax
-        if(op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin) {
-            int[] rnnz = new int[m1.getNumRows()];
-            for(ColGroup grp : m1.getColGroups())
-                grp.countNonZerosPerRow(rnnz, 0, m1.getNumRows());
-            Builtin builtin = (Builtin) op.aggOp.increOp.fn;
-            for(int i = 0; i < m1.getNumRows(); i++)
-                if(rnnz[i] < m1.getNumColumns())
-                    ret.quickSetValue(i, 0, builtin.execute(ret.quickGetValue(i, 0), 0));
-        }
+        // if(op.getNumThreads() == 1 && op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin) {
+        // int[] rnnz = new int[m1.getNumRows()];
+        // for(ColGroup grp : m1.getColGroups())
+        // grp.countNonZerosPerRow(rnnz, 0, m1.getNumRows());
+        // Builtin builtin = (Builtin) op.aggOp.increOp.fn;
+        // for(int i = 0; i < m1.getNumRows(); i++)
+        // if(rnnz[i] < m1.getNumColumns())
+        // ret.quickSetValue(i, 0, builtin.execute(ret.quickGetValue(i, 0), 0));
+        // }
 
         // special handling of mean
         if(op.aggOp.increOp.fn instanceof Mean) {
@@ -196,8 +198,8 @@ public class LibCompAgg {
             // compute all compressed column groups
             ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
             ArrayList<UnaryAggregateOverlappingTask> tasks = new ArrayList<>();
-            final int blklen = Math.min(m1.getNumRows() /op.getNumThreads(), CompressionSettings.BITMAP_BLOCK_SZ) ;
-            // final int blklen = CompressionSettings.BITMAP_BLOCK_SZ ;/// m1.getNumColumns();
+            final int blklen = Math.min(m1.getNumRows() / op.getNumThreads(), CompressionSettings.BITMAP_BLOCK_SZ);
+            LOG.error("BlockSize : " + blklen);
 
             for(int i = 0; i * blklen < m1.getNumRows(); i++) {
                 tasks.add(new UnaryAggregateOverlappingTask(m1.getColGroups(), ret, i * blklen,
@@ -228,17 +230,17 @@ public class LibCompAgg {
 
                 ret.recomputeNonZeros();
             }
-            else if(op.indexFn instanceof ReduceCol) {
-                long nnz = 0;
-                for(int i = 0; i * blklen < m1.getNumRows(); i++) {
-                    MatrixBlock tmp = rtasks.get(i).get();
-                    for(int row = 0, off = i * blklen; row < tmp.getNumRows(); row++, off++) {
-                        ret.quickSetValue(off, 0, tmp.quickGetValue(row, 0));
-                        nnz += ret.quickGetValue(off, 0) == 0 ? 0 : 1;
-                    }
-                }
-                ret.setNonZeros(nnz);
-            }
+            // else if(op.indexFn instanceof ReduceCol) {
+                // long nnz = 0;
+                // for(int i = 0; i * blklen < m1.getNumRows(); i++) {
+                //     MatrixBlock tmp = rtasks.get(i).get();
+                //     for(int row = 0, off = i * blklen; row < tmp.getNumRows(); row++, off++) {
+                //         ret.quickSetValue(off, 0, tmp.quickGetValue(row, 0));
+                //         nnz += ret.quickGetValue(off, 0) == 0 ? 0 : 1;
+                //     }
+                // }
+                // ret.setNonZeros(nnz);
+            // }
             else {
                 for(Future<MatrixBlock> rtask : rtasks) {
                     LibMatrixBincell.bincellOp(rtask.get(),
@@ -285,13 +287,29 @@ public class LibCompAgg {
     }
 
     private static void aggregateUnaryOperations(AggregateUnaryOperator op, List<ColGroup> groups, MatrixBlock ret,
-        int rl, int ru) {
+        int rl, int ru, int numColumns) {
 
         // note: UC group never passed into this function
-        double[] c = ret.getDenseBlockValues();
+        // double[] c = ret.getDenseBlockValues();
+        int[] rnnz = (op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin) ? new int[ru -
+            rl] : null;
+
         for(ColGroup grp : groups)
-            if(grp != null && !(grp instanceof ColGroupUncompressed))
-                grp.unaryAggregateOperations(op, c, rl, ru);
+            if(grp != null && !(grp instanceof ColGroupUncompressed)) {
+                grp.unaryAggregateOperations(op, ret, rl, ru);
+                if(op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin) {
+                    grp.countNonZerosPerRow(rnnz, rl, ru);
+                }
+            }
+
+        if(op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin) {
+            for(int row = rl; row < ru; row++) {
+                if(rnnz[row] < numColumns) {
+                    ret.quickSetValue(row, 0, op.aggOp.increOp.fn.execute(ret.quickGetValue(row, 0), 0.0));
+                }
+            }
+
+        }
 
     }
 
@@ -300,14 +318,16 @@ public class LibCompAgg {
         private final int _rl;
         private final int _ru;
         private final MatrixBlock _ret;
+        private final int _numColumns;
         private final AggregateUnaryOperator _op;
 
-        protected UnaryAggregateTask(List<ColGroup> groups, MatrixBlock ret, int rl, int ru,
-            AggregateUnaryOperator op) {
+        protected UnaryAggregateTask(List<ColGroup> groups, MatrixBlock ret, int rl, int ru, AggregateUnaryOperator op,
+            int numColumns) {
             _groups = groups;
             _op = op;
             _rl = rl;
             _ru = ru;
+            _numColumns = numColumns;
 
             if(_op.indexFn instanceof ReduceAll) { // sum
                 _ret = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
@@ -326,7 +346,7 @@ public class LibCompAgg {
 
         @Override
         public MatrixBlock call() {
-            aggregateUnaryOperations(_op, _groups, _ret, _rl, _ru);
+            aggregateUnaryOperations(_op, _groups, _ret, _rl, _ru, _numColumns);
             return _ret;
         }
     }
@@ -349,7 +369,7 @@ public class LibCompAgg {
                 _ret.allocateDenseBlock();
             }
             else if(_op.indexFn instanceof ReduceCol) {
-                _ret = new MatrixBlock(ru - rl, ret.getNumColumns(), false);
+                _ret = new MatrixBlock(ru - rl, 1, false);
                 _ret.allocateDenseBlock();
             }
             else {
@@ -376,7 +396,7 @@ public class LibCompAgg {
             }
 
             for(ColGroup g : _groups) {
-                g.decompressToBlock(tmp, _rl, _ru, 0, g.getValues());
+                g.decompressToBlockSafe(tmp, _rl, _ru, 0, g.getValues(), false);
             }
 
             LibMatrixAgg.aggregateUnaryMatrix(tmp, _ret, _op);

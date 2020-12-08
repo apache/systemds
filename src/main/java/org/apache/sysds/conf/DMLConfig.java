@@ -70,6 +70,9 @@ public class DMLConfig
 	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg"; //auto, cost, true, false
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
 	public static final String COMPRESSED_VALID_COMPRESSIONS = "sysds.compressed.valid.compressions";
+	public static final String COMPRESSED_OVERLAPPING = "sysds.compressed.overlapping"; // true, false
+	public static final String COMPRESSED_SAMPLING_RATIO = "sysds.compressed.sampling.ratio"; // 0.1
+	public static final String COMPRESSED_COCODE    = "sysds.compressed.cocode"; // COST
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
 	public static final String CODEGEN              = "sysds.codegen.enabled"; //boolean
@@ -121,6 +124,9 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.AUTO.name() );
 		_defaultVals.put(COMPRESSED_LOSSY,       "false" );
 		_defaultVals.put(COMPRESSED_VALID_COMPRESSIONS, "DDC,OLE,RLE");
+		_defaultVals.put(COMPRESSED_OVERLAPPING, "false" );
+		_defaultVals.put(COMPRESSED_SAMPLING_RATIO, "0.01");
+		_defaultVals.put(COMPRESSED_COCODE,      "COST");
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,		     GeneratorAPI.JAVA.name() );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
@@ -385,7 +391,8 @@ public class DMLConfig
 		String[] tmpConfig = new String[] { 
 			LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL, DEFAULT_BLOCK_SIZE,
 			CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
-			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS,
+			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
+			COMPRESSED_SAMPLING_RATIO, COMPRESSED_COCODE,
 			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 			STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO,
 			AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, 

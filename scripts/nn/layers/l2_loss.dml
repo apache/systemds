@@ -49,7 +49,7 @@ forward = function(matrix[double] pred, matrix[double] y)
    *  - loss: Average loss.
    */
   N = nrow(y)
-  losses = 0.5 * rowSums((pred-y)^2)
+  losses = 0.5 * rowSums((-y + pred)^2)
   loss = sum(losses) / N
 }
 
@@ -67,5 +67,5 @@ backward = function(matrix[double] pred, matrix[double] y)
    *  - dpred: Gradient wrt `pred`, of shape (N, M).
    */
   N = nrow(y)
-  dpred = (pred-y) / N
+  dpred = (-y + pred) / N
 }

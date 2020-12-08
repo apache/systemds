@@ -232,6 +232,11 @@ public class ColGroupUncompressed extends ColGroup {
 			}
 		}
 	}
+	@Override
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values,  boolean safe) {
+		decompressToBlock(target,rl,ru,offT, values);
+	}
+
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
@@ -343,7 +348,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] c, int numVals,
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] c,
 		double[] values, int numRows, int numCols, int row, double[] MaterializedRow) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
@@ -404,7 +409,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] result, int rl, int ru) {
+	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) {
 		throw new NotImplementedException("Unimplemented Specific Sub ColGroup Aggregation Operation");
 	}
 

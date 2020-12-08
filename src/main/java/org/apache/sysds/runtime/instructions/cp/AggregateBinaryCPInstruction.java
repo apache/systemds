@@ -22,46 +22,97 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
+	// private static final Log LOG = LogFactory.getLog(AggregateBinaryCPInstruction.class.getName());
 
-	private AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+	public boolean transposeLeft;
+	public boolean transposeRight;
+
+	private AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+		String istr) {
 		super(CPType.AggregateBinary, op, in1, in2, out, opcode, istr);
 	}
 
-	public static AggregateBinaryCPInstruction parseInstruction( String str ) {
+	private AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+		String istr, boolean transposeLeft, boolean transposeRight) {
+		super(CPType.AggregateBinary, op, in1, in2, out, opcode, istr);
+		this.transposeLeft = transposeLeft;
+		this.transposeRight = transposeRight;
+	}
+
+	public static AggregateBinaryCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if ( !opcode.equalsIgnoreCase("ba+*")) {
+		if(!opcode.equalsIgnoreCase("ba+*")) {
 			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
-		
-		InstructionUtils.checkNumFields(parts, 4);
-		CPOperand in1 = new CPOperand(parts[1]);
-		CPOperand in2 = new CPOperand(parts[2]);
-		CPOperand out = new CPOperand(parts[3]);
-		int k = Integer.parseInt(parts[4]);
-		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(k);
-		return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
+		int numFields = parts.length - 1;
+		if(numFields == 4) {
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand out = new CPOperand(parts[3]);
+			int k = Integer.parseInt(parts[4]);
+			AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(k);
+			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
+		}
+		else if(numFields == 6) {
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand out = new CPOperand(parts[3]);
+			int k = Integer.parseInt(parts[4]);
+			boolean isLeftTransposed = Boolean.parseBoolean(parts[5]);
+			boolean isRightTransposed = Boolean.parseBoolean(parts[6]);
+			AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(k);
+			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str, isLeftTransposed,
+				isRightTransposed);
+		}
+		else {
+			throw new DMLRuntimeException("NumFields expected number  (" + 4 + " or " + 6
+				+ ") != is not equal to actual number (" + numFields + ").");
+		}
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		//get inputs
+		// get inputs
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
-		
-		//compute matrix multiplication
+
+		// compute matrix multiplication
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-		MatrixBlock main = (matBlock2 instanceof CompressedMatrixBlock) ? matBlock2 : matBlock1;
-		MatrixBlock ret = main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
-		
-		//release inputs/outputs
+		MatrixBlock ret;
+
+		if(matBlock1 instanceof CompressedMatrixBlock) {
+			CompressedMatrixBlock main = (CompressedMatrixBlock) matBlock1;
+			ret = main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op, transposeLeft, transposeRight);
+		}
+		else if(matBlock2 instanceof CompressedMatrixBlock) {
+			CompressedMatrixBlock main = (CompressedMatrixBlock) matBlock2;
+			ret = main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op, transposeLeft, transposeRight);
+		}
+		else {
+			// todo move rewrite rule here. to do 
+			// t(x) %*% y -> t(t(y) %*% x)
+			if(transposeLeft){
+				ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), ab_op.getNumThreads());
+				matBlock1 = matBlock1.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+			}
+			if(transposeRight){
+				ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), ab_op.getNumThreads());
+				matBlock2 = matBlock2.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+			}
+			ret = matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
+		}
+
+		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(input2.getName());
 		ec.setMatrixOutput(output.getName(), ret);

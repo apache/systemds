@@ -31,36 +31,36 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
-	private int[] _sampleRows = null;
+	private final int[] _sampleRows;
 	private HashMap<Integer, Double> _solveCache = null;
 
 	/**
 	 * CompressedSizeEstimatorSample, samples from the input data and estimates the size of the compressed matrix.
 	 * 
-	 * @param data         The input data sampled from
+	 * @param data         The input data toSample from
 	 * @param compSettings The Settings used for the sampling, and compression, contains information such as seed.
-	 * @param sampleSize   Size of the sampling used
+	 * @param sampleRows   The rows sampled
 	 */
-	public CompressedSizeEstimatorSample(MatrixBlock data, CompressionSettings compSettings, int sampleSize) {
-		super(data, compSettings);
-
-		_sampleRows = getSortedUniformSample(_numRows, sampleSize, _compSettings.seed);
-
-		// Override the _data Matrix block with the sampled matrix block.
-		MatrixBlock select = new MatrixBlock(_numRows, 1, false);
-		for(int i = 0; i < sampleSize; i++)
-			select.quickSetValue(_sampleRows[i], 0, 1);
-		_data = _data.removeEmptyOperations(new MatrixBlock(), !_compSettings.transposeInput, true, select);
-
-		// establish estimator-local cache for numeric solve
+	public CompressedSizeEstimatorSample(MatrixBlock data, CompressionSettings compSettings, int[] sampleRows) {
+		super(sampleData(data, compSettings, sampleRows), compSettings);
+		_sampleRows = sampleRows;
 		_solveCache = new HashMap<>();
+	}
+
+	protected static MatrixBlock sampleData(MatrixBlock data, CompressionSettings compSettings, int[] sampleRows) {
+		// Override the _data Matrix block with the sampled matrix block.
+		MatrixBlock select = compSettings.transposeInput ? new MatrixBlock(data.getNumColumns(), 1,
+			true) : new MatrixBlock(data.getNumRows(), 1, true);
+		for(int i = 0; i < sampleRows.length; i++)
+			select.appendValue(sampleRows[i], 0, 1);
+		return data.removeEmptyOperations(new MatrixBlock(), !compSettings.transposeInput, true, select);
+
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
 		int sampleSize = _sampleRows.length;
 		int numCols = colIndexes.length;
-		int[] sampleRows = _sampleRows;
 
 		// extract statistics from sample
 		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _data, _compSettings);
@@ -68,9 +68,9 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 		// estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
 		// TODO Replace this with lib matrix/data/LibMatrixCountDistinct
-		int totalCardinality = getNumDistinctValues(ubm, _numRows, sampleRows, _solveCache);
+		int totalCardinality = getNumDistinctValues(ubm, _numRows, sampleSize, _solveCache);
 		totalCardinality = Math.max(totalCardinality, fact.numVals);
-		totalCardinality =  _compSettings.lossy ? Math.min(totalCardinality, numCols * 127) : totalCardinality;
+		totalCardinality = _compSettings.lossy ? Math.min(totalCardinality, numCols * 127) : totalCardinality;
 		totalCardinality = Math.min(totalCardinality, _numRows);
 
 		// Number of unseen values
@@ -88,7 +88,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		// estimate number of segments and number of runs incl correction for
 		// empty segments and empty runs (via expected mean of offset value)
 		// int numUnseenSeg = (int) (unseenVals * Math.ceil((double) _numRows / BitmapEncoder.BITMAP_BLOCK_SZ / 2));
-		int totalNumRuns = ubm.getNumValues() > 0 ? getNumRuns(ubm, sampleSize, _numRows, sampleRows) : 0;
+		int totalNumRuns = ubm.getNumValues() > 0 ? getNumRuns(ubm, sampleSize, _numRows, _sampleRows) : 0;
 
 		boolean containsZero = numZeros > 0;
 
@@ -99,9 +99,9 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		return new CompressedSizeInfoColGroup(totalFacts, _compSettings.validCompressions);
 	}
 
-	private static int getNumDistinctValues(ABitmap ubm, int numRows, int[] sampleRows,
+	private static int getNumDistinctValues(ABitmap ubm, int numRows, int sampleSize,
 		HashMap<Integer, Double> solveCache) {
-		return HassAndStokes.haasAndStokes(ubm, numRows, sampleRows.length, solveCache);
+		return HassAndStokes.haasAndStokes(ubm, numRows, sampleSize, solveCache);
 	}
 
 	private static int getNumRuns(ABitmap ubm, int sampleSize, int totalNumRows, int[] sampleRows) {
@@ -269,7 +269,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	 * @param smplSize sample size
 	 * @return sorted array of integers
 	 */
-	private static int[] getSortedUniformSample(int range, int smplSize, long seed) {
+	protected static int[] getSortedUniformSample(int range, int smplSize, long seed) {
 		return UtilFunctions.getSortedSampleIndexes(range, smplSize, seed);
 	}
 }

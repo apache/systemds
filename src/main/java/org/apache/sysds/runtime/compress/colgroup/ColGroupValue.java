@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
@@ -41,7 +42,6 @@ import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -99,19 +99,20 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		}
 	}
 
-	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict) {
+	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
 		super(colIndices, numRows);
 		_dict = dict;
+		counts = cachedCounts;
 	}
-	
+
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		decompressToBlock(target,rl,ru,rl);
+		decompressToBlock(target, rl, ru, rl);
 	}
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
-		decompressToBlock(target,rl,ru,offT, getValues());
+		decompressToBlock(target, rl, ru, offT, getValues());
 	}
 
 	/**
@@ -175,6 +176,10 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		}
 	}
 
+	public final int[] getCachedCounts() {
+		return counts;
+	}
+
 	/**
 	 * Returns the counts of values inside the MatrixBlock returned in getValuesAsBlock Throws an exception if the
 	 * getIfCountsType is false.
@@ -224,13 +229,15 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	}
 
 	protected final double sumValuesSparse(int valIx, SparseRow[] rows, double[] dictVals, int rowsIndex) {
-		final int numCols = getNumCols();
-		final int valOff = valIx * numCols;
-		double val = 0;
-		for(int i = 0; i < numCols; i++) {
-			val += dictVals[valOff + i] * rows[i].values()[rowsIndex];
-		}
-		return val;
+		throw new NotImplementedException("This Method was implemented incorrectly");
+		// final int numCols = getNumCols();
+		// final int valOff = valIx * numCols;
+		// double val = 0;
+		// for(int i = 0; i < numCols; i++) {
+		// // TODO FIX ?
+		// val += dictVals[valOff + i] * rows[i].values()[rowsIndex];
+		// }
+		// return val;
 	}
 
 	protected final double[] preaggValues(int numVals, double[] b, double[] dictVals) {
@@ -294,7 +301,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	public double[] preaggValues(final int numVals, final double[] b, double[] dictVals, final int cl, final int cu,
 		final int cut) {
 
-		final double[] ret = allocDVector(numVals * (cu - cl), true);
+		final double[] ret = new double[numVals * (cu - cl)];
 
 		return preaggValues(numVals, b, dictVals, cl, cu, cut, ret);
 	}
@@ -302,25 +309,30 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	public double[] preaggValues(final int numVals, final SparseBlock b, double[] dictVals, final int cl, final int cu,
 		final int cut, final double[] ret) {
 
-		final int retRows = (cu - cl);
-		for(int h = 0; h < _colIndexes.length; h++) {
-			SparseRow row = b.get(_colIndexes[h]);
-			// SparseRow row = b[_colIndexes[h]];
-			for(int i = 0; i < row.size(); i++) {
-				double v = row.values()[i];
-				for(int k = h, off = row.indexes()[i];
-					k < numVals * _colIndexes.length;
-					k += _colIndexes.length, off += retRows) {
-					ret[off] += dictVals[k] * v;
+		final int retCols = (cu - cl);
+
+		for(int j = 0; j < numVals; j++) {
+			int offOrg = j * _colIndexes.length;
+			int offNew = j * retCols;
+			for(int h = 0; h < _colIndexes.length; h++) {
+				for(int sbr = 0; sbr < b.numRows(); sbr++) {
+					if(!b.isEmpty(sbr)) {
+						double[] sValues = b.values(sbr);
+						int[] sIndexes = b.indexes(sbr);
+						for(int i = b.pos(sbr); i < b.size(sbr); i++) {
+							ret[offNew + sIndexes[i]] += dictVals[offOrg + h] * sValues[i];
+						}
+					}
 				}
 			}
 		}
+
 		return ret;
 	}
 
 	public double[] preaggValues(final int numVals, final SparseBlock b, double[] dictVals, final int cl, final int cu,
 		final int cut) {
-		return preaggValues(numVals, b, dictVals, cl, cu, cut, allocDVector(numVals * (cu - cl), true));
+		return preaggValues(numVals, b, dictVals, cl, cu, cut, new double[numVals * (cu - cl)]);
 	}
 
 	protected final double[] preaggValue(int k, double[] b, double[] dictVals, int cl, int cu, int cut) {
@@ -402,18 +414,18 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	 * @param sparseSafe Specify if the operation is sparseSafe. if false then allocate a new tuple.
 	 * @return The new Dictionary with values.
 	 */
-	protected ADictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe) {
+	public ADictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe) {
 		return sparseSafe ? _dict.clone().applyBinaryRowOp(fn, v, sparseSafe, _colIndexes) : _dict
 			.applyBinaryRowOp(fn, v, sparseSafe, _colIndexes);
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c) {
+	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c) {
 		unaryAggregateOperations(op, c, 0, _numRows);
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
+	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c, int rl, int ru) {
 		// sum and sumsq (reduceall/reducerow over tuples and counts)
 		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq ||
 			op.aggOp.increOp.fn instanceof Mean) {
@@ -423,11 +435,11 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 			boolean mean = op.aggOp.increOp.fn instanceof Mean;
 
 			if(op.indexFn instanceof ReduceAll)
-				computeSum(c, kplus);
+				computeSum(c.getDenseBlockValues(), kplus);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, kplus, rl, ru, mean);
+				computeRowSums(c.getDenseBlockValues(), kplus, rl, ru, mean);
 			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(c, kplus);
+				computeColSums(c.getDenseBlockValues(), kplus);
 		}
 		// min and max (reduceall/reducerow over tuples only)
 		else if(op.aggOp.increOp.fn instanceof Builtin &&
@@ -436,22 +448,27 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
 
 			if(op.indexFn instanceof ReduceAll)
-				c[0] = computeMxx(c[0], builtin);
+				c.getDenseBlockValues()[0] = computeMxx(c.getDenseBlockValues()[0], builtin);
 			else if(op.indexFn instanceof ReduceCol)
 				computeRowMxx(c, builtin, rl, ru);
 			else if(op.indexFn instanceof ReduceRow)
-				computeColMxx(c, builtin);
+				computeColMxx(c.getDenseBlockValues(), builtin);
 		}
 		else {
 			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
 		}
 	}
 
-	protected void setandExecute(double[] c, KahanObject kbuff, KahanPlus kplus2, double val, int rix) {
-		kbuff.set(c[rix], c[rix + 1]);
-		kplus2.execute2(kbuff, val);
-		c[rix] = kbuff._sum;
-		c[rix + 1] = kbuff._correction;
+	protected void setandExecute(double[] c, KahanPlus kplus2, double val, int rix) {
+		if(kplus2 instanceof KahanPlus) {
+			// normal plus
+			// kbuff.set(c[rix], c[rix + 1]);
+			// kplus2.execute2(kbuff, val);
+			c[rix] += val;
+		}
+		else {
+			c[rix] += val * val;
+		}
 	}
 
 	public static void setupThreadLocalMemory(int len) {
@@ -469,8 +486,10 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		Pair<int[], double[]> p = memPool.get();
 
 		// sanity check for missing setup
-		if(p.getValue() == null)
+		if(p.getValue() == null) {
+			LOG.error("Mempool was not allocated!!!");
 			return new double[len];
+		}
 
 		// get and reset if necessary
 		double[] tmp = p.getValue();
@@ -566,7 +585,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 
 	protected abstract void computeColSums(double[] c, KahanFunction kplus);
 
-	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru);
+	protected abstract void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru);
 
 	protected Object clone() throws CloneNotSupportedException {
 		return super.clone();

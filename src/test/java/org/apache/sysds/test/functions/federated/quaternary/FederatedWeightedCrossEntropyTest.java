@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.federated.quaternary;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -33,6 +32,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -58,9 +60,17 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Override
   public void setUp()
   {
-    TestUtils.clearAssertionInformation();
-
     addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Z"}));
+  }
+
+  @Parameterized.Parameters
+  public static Collection<Object[]> data()
+  {
+    // rows have to be even
+    return Arrays.asList(new Object[][] {
+      // {rows, cols, epsilon_tolerance}
+      {2000, 50, 10, 0}
+    });
   }
 
   @BeforeClass
@@ -75,17 +85,11 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE);
   }
 
-  public void federatedWeightedCrossEntropy(ExecMode execMode)
+  public void federatedWeightedCrossEntropy(ExecMode exec_mode)
   {
     // store the previous spark config and platform config to restore it after the test
-    boolean spark_config_old = DMLScript.USE_LOCAL_SPARK_CONFIG;
-    ExecMode platform_old = rtplatform;
-
-    rtplatform = execMode;
-    if(rtplatform == ExecMode.SPARK)
-    {
-      DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-    }
+    // and set the new execution mode
+    ExecMode platform_old = setExecMode(exec_mode);
 
     getAndLoadTestConfiguration(TEST_NAME);
     String HOME = SCRIPT_DIR + TEST_DIR;
@@ -99,10 +103,16 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     // another matrix handled by a single federated worker
     double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 7);
 
+    double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);
+    double[][] V = getRandomMatrix(cols, rank, 0, 1, 1, 5040);
+
     writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
     writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 
+    writeInputMatrixWithMTD("U", U, true);
+    writeInputMatrixWithMTD("V", V, true);
 
+    // empty script name because we don't execute any script, just start the worker
     fullDMLScriptName = "";
     int port1 = getRandomAvailablePort();
     int port2 = getRandomAvailablePort();
@@ -119,22 +129,24 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
-    programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-      "in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "in_U=" + input("U"), "in_V=" + input("V"),
-      "rows=" + rows, "cols=" + cols, "out_Z=" + output("Z")};
+    programArgs = new String[] {"-stats", "-nvargs",
+      "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+      "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+      "in_U=" + input("U"),
+      "in_V=" + input("V"),
+      "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output("Z")};
     LOG.debug(runTest(true, false, null, -1));
 
     // compare the results via files
     compareResults(epsilon_tolerance);
 
+    TestUtils.shutdownThreads(thread1, thread2);
+
     // check that federated input files are still existing
     Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
     Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 
-    TestUtils.shutdownThreads(thread1, thread2);
-
-    DMLScript.USE_LOCAL_SPARK_CONFIG = spark_config_old;
-    rtplatform = platform_old;
+    resetExecMode(platform_old);
   }
 
 }

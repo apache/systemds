@@ -199,7 +199,7 @@ public class LibRelationalOp {
             res.setNonZeros(nnz);
         }
         else {
-            final int blkz = CompressionSettings.BITMAP_BLOCK_SZ / cols;
+            final int blkz = CompressionSettings.BITMAP_BLOCK_SZ / 2;
             ExecutorService pool = CommonThreadPool.get(k);
             ArrayList<RelationalTask> tasks = new ArrayList<>();
 
@@ -287,7 +287,12 @@ public class LibRelationalOp {
             }
 
             for(MinMaxGroup mmg : _minMax) {
-                mmg.g.decompressToBlock(tmp, _i * _blkz, Math.min((_i + 1) * _blkz, mmg.g.getNumRows()), 0, mmg.values);
+                mmg.g.decompressToBlockSafe(tmp,
+                    _i * _blkz,
+                    Math.min((_i + 1) * _blkz, mmg.g.getNumRows()),
+                    0,
+                    mmg.values,
+                    false);
             }
 
             for(int row = 0, off = _i * _blkz; row < _blkz && row < _rows - _i * _blkz; row++, off++) {

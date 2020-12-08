@@ -49,11 +49,14 @@ public class CompressionSettings {
 	/** Share DDC Dictionaries between ColGroups. */
 	public final boolean allowSharedDictionary;
 
+	/** Boolean specifying which transpose setting is used, can be auto, true or false */
+	public final String transposeInput;
+
 	/**
-	 * Transpose input matrix, to optimize performance, this reallocate the matrix to a more cache conscious allocation
-	 * for iteration in columns.
+	 * Transpose input matrix, to optimize access when extracting bitmaps.
+	 * This setting is changed inside the script based on the transposeInput setting.
 	 */
-	public final boolean transposeInput;
+	public boolean transposed = false;
 
 	/**
 	 * Boolean specifying if the OLE and RLE should construct skip to enable skipping large amounts of rows.
@@ -82,7 +85,7 @@ public class CompressionSettings {
 	 */
 	public final EnumSet<CompressionType> validCompressions;
 
-	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, boolean transposeInput,
+	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput,
 		boolean skipList, int seed, boolean investigateEstimate, boolean lossy,
 		EnumSet<CompressionType> validCompressions, boolean sortValuesByLength, PartitionerType columnPartitioner,
 		int maxStaticColGroupCoCode) {

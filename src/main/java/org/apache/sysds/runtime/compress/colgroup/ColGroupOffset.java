@@ -65,8 +65,8 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		super(colIndices, numRows, ubm, cs);
 	}
 
-	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict) {
-		super(colIndices, numRows, dict);
+	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] cachedCounts) {
+		super(colIndices, numRows, dict, cachedCounts);
 		_zeros = zeros;
 	}
 
@@ -90,13 +90,13 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	@Override
 	public long estimateInMemorySize() {
 		// Could use a ternary operator, but it looks odd with our code formatter here.
-		if(_data == null) {
-			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), _colIndexes.length, 0, 0, isLossy());
-		}
-		else {
-			return ColGroupSizes
-				.estimateInMemorySizeOffset(getNumCols(), getValues().length, _ptr.length, _data.length, isLossy());
-		}
+
+		return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(),
+			getValues() == null ? 0 : getValues().length,
+			_ptr == null ? 0 : _ptr.length,
+			_data == null ? 0 : _data.length,
+			isLossy());
+
 	}
 
 	// generic decompression for OLE/RLE, to be overwritten for performance
@@ -483,5 +483,10 @@ public abstract class ColGroupOffset extends ColGroupValue {
 			}
 			while(!_inclZeros && (_vpos < 0 || _dict.getValue(_vpos * getNumCols() + _cpos) == 0));
 		}
+	}
+
+	@Override
+	public boolean isDense(){
+		return false;
 	}
 }

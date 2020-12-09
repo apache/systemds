@@ -170,6 +170,7 @@ public class Lineage {
 		LineageItem.resetIDSequence();
 		LineageCache.resetCache();
 		LineageCacheStatistics.reset();
+		LineageEstimator.resetEstimatorCache();
 	}
 	
 	public static void setLinReusePartial() {

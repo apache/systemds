@@ -93,6 +93,7 @@ public enum Builtins {
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
 	DIST("dist", true),
+	DMV("dmv", true), // disguised missing values
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),

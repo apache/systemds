@@ -1,0 +1,26 @@
+
+
+
+print("Start-testscript");
+
+# test matrix
+#A = matrix(1, rows=2,cols=3)
+
+path = "data/haberman.csv"
+ncols = 3
+nrows =2
+
+B = read(path, format="csv", header=FALSE, rows=nrows, cols=ncols); # can not read strings
+
+X = read(path, format="csv", header=FALSE, rows=nrows, cols=ncols, data_type="frame");
+
+print("NORMAL TABLE:")
+print("%s", toString(B))
+print("FRAME TABLE:")
+print("%s", toString(X))
+
+
+#re = dmv(X=B);
+
+
+print("End-testscript");

@@ -27,8 +27,12 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 
 import java.util.List;
 import java.util.concurrent.Future;
@@ -56,7 +60,8 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 				throw new DMLRuntimeException("FederatedDataPartitioner ShuffleFederatedScheme: executing shuffle UDF failed" + e.getMessage());
 			}
 		}
-		return new Result(pFeatures, pLabels, pFeatures.size());
+
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
 	}
 
 	/**
@@ -74,8 +79,20 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 
 			// generate permutation matrix
 			MatrixBlock permutationMatrixBlock = ParamservUtils.generatePermutation(Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
-			shuffle(features, permutationMatrixBlock);
-			shuffle(labels, permutationMatrixBlock);
+
+			// matrix multiplies
+			features.acquireModify(permutationMatrixBlock.aggregateBinaryOperations(
+					permutationMatrixBlock, features.acquireReadAndRelease(), new MatrixBlock(),
+					new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()))
+			));
+			features.release();
+
+			labels.acquireModify(permutationMatrixBlock.aggregateBinaryOperations(
+					permutationMatrixBlock, labels.acquireReadAndRelease(), new MatrixBlock(),
+					new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()))
+			));
+			labels.release();
+
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
 	}

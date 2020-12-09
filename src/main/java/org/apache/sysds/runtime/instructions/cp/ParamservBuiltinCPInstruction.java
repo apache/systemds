@@ -131,9 +131,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// partition federated data
 		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme)
 				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
-		List<MatrixObject> pFeatures = result.pFeatures;
-		List<MatrixObject> pLabels = result.pLabels;
-		int workerNum = result.workerNum;
+		List<MatrixObject> pFeatures = result._pFeatures;
+		List<MatrixObject> pLabels = result._pLabels;
+		int workerNum = result._workerNum;
 
 		// setup threading
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()

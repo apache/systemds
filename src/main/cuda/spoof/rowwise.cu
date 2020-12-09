@@ -20,7 +20,6 @@
  */
 
 // RowType: %TYPE%
-// AggOp: %AGG_OP_NAME%
 
 #include "agg_ops.cuh"
 #include "reduction.cuh"

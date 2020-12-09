@@ -92,40 +92,98 @@ __device__ float bwAnd(float a, float b) {
 }
 
 template<typename T>
-__device__ T dotProduct(T* a, T* b, int ai, int bi, int len);
+__device__ T BLOCK_DOT(T *a, T *b, int len, SumOp<T> reduction_op) {
+    auto sdata = shared_memory_proxy<T>();
 
-template<>
-__device__ double dotProduct(double* a, double* b, int ai, int bi, int len) {
-	int tid = threadIdx.x;
-	auto sdata = shared_memory_proxy<double>();
+    uint tid = threadIdx.x;
+    if(tid >= len)
+        return 0;
 
-	double result = 0.0;
-	if(tid < len)
-	{
-		sdata[tid] = a[ai + tid] * b[bi + tid];
-	}
-	__syncthreads();
-	if (tid == 0)
-	{
-		for(int i = 0; i < blockDim.x; i++)
-            result += sdata[i];
-		printf("dot: %f\n", result);
-	}
-    return result;
+    uint i = tid;
+
+    T v = 0;
+    while (i < len) {
+        v = reduction_op(v, a[i] * b[i]);
+        i += blockDim.x;
+    }
+
+    // each thread puts its local sum into shared memory
+    sdata[tid] = v;
+    __syncthreads();
+
+    // do reduction in shared mem
+    if (blockDim.x >= 1024) {
+        if (tid < 512) {
+            sdata[tid] = v = reduction_op(v, sdata[tid + 512]);
+        }
+        __syncthreads();
+    }
+    if (blockDim.x >= 512) {
+        if (tid < 256) {
+            sdata[tid] = v = reduction_op(v, sdata[tid + 256]);
+        }
+        __syncthreads();
+    }
+    if (blockDim.x >= 256) {
+        if (tid < 128) {
+            sdata[tid] = v = reduction_op(v, sdata[tid + 128]);
+        }
+        __syncthreads();
+    }
+    if (blockDim.x >= 128) {
+        if (tid < 64) {
+            sdata[tid] = v = reduction_op(v, sdata[tid + 64]);
+        }
+        __syncthreads();
+    }
+
+    if (tid < 32) {
+        // now that we are using warp-synchronous programming (below)
+        // we need to declare our shared memory volatile so that the compiler
+        // doesn't reorder stores to it and induce incorrect behavior.
+        volatile T *smem = sdata;
+        if (blockDim.x >= 64) {
+            smem[tid] = v = reduction_op(v, smem[tid + 32]);
+        }
+        if (blockDim.x >= 32) {
+            smem[tid] = v = reduction_op(v, smem[tid + 16]);
+        }
+        if (blockDim.x >= 16) {
+            smem[tid] = v = reduction_op(v, smem[tid + 8]);
+        }
+        if (blockDim.x >= 8) {
+            smem[tid] = v = reduction_op(v, smem[tid + 4]);
+        }
+        if (blockDim.x >= 4) {
+            smem[tid] = v = reduction_op(v, smem[tid + 2]);
+        }
+        if (blockDim.x >= 2) {
+            smem[tid] = v = reduction_op(v, smem[tid + 1]);
+        }
+    }
+
+    __syncthreads();
+    return sdata[0];
 }
 
 template<typename T>
-__device__ void vectMultAdd(T* a, T b, T* c, int ai, int bi, int len);
+__device__ T dotProduct(T* a, T* b, int ai, int bi, int len) {
+    SumOp<T> agg_op;
+    return BLOCK_DOT(&a[ai], &b[bi], len, agg_op);
+}
 
-template<>
-__device__ void vectMultAdd(double* a, double b, double* c, int ai, int bi, int len) {
-	if(threadIdx.x == 0)
-		for(int i = bi; i < len ; i++) {
-			//c[i] += a[ai + i] * b;
-			double* addr = &(c[i]);
-			atomicAdd(addr, a[ai + i] * b);
-			printf("block %d adding %f to c[%d]\n",blockIdx.x, b, i);
-		}
+template<typename T>
+__device__ void vectMultAdd_atomic(T* a, T b, T* c, int ai, int ci, int len) {
+    uint tid = threadIdx.x;
+    if(tid >= len)
+        return;
+    uint i = tid;
+
+    while (i < len) {
+        atomicAdd(&(c[ci + i]), a[ai + i] * b);
+//        printf("block %d adding %f to c[%d]\n",blockIdx.x, b, tid);
+        i += blockDim.x;
+    }
 }
 
 #endif // SPOOF_UTILS_CUH

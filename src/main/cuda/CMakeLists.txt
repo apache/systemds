@@ -89,8 +89,12 @@ set(SPOOF_HEADERS
 set(SPOOF_SOURCES 
 	spoof-launcher/jni_bridge.cpp
 	spoof-launcher/SpoofCUDAContext.cpp)
-
-add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_SOURCES} )
+set(SPOOF_CUDA_HEADERS
+	headers/agg_ops.cuh
+	headers/reduction.cuh
+	headers/spoof_utils.cuh
+	headers/utils.cuh)
+add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_CUDA_HEADERS} ${SPOOF_SOURCES} )
 
 target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify")
 target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)

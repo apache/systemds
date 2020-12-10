@@ -44,7 +44,7 @@ struct SpoofRowwiseOp {
 
 template<typename T>
 __global__ void %TMP% (T* a, T** b, T* scalars, T* c, uint c_n, int len, int grix) {
-	SpoofRowwiseOp<T> spoof_op(a, b, scalars, c, len, grix);
+	SpoofRowwiseOp<T> spoof_op(a, b, scalars, c, len, grix + blockIdx.x);
 	int ai = blockIdx.x * len;
 	int ci = blockIdx.x * c_n;
 	spoof_op(ai, ci, blockIdx.x);

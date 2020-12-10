@@ -244,7 +244,7 @@ __device__ void vectWrite_atomic(double* a, double* c, int ai, int ci, int len, 
     while (i < len) {
 
         double old = __longlong_as_double(atomicExch(reinterpret_cast<unsigned long long int*>(&(c[ci + i])), __double_as_longlong(op(a[ai + i], a[i]))));
-        printf("bid=%d, tid=%d, c[%d]=\n", blockIdx.x, threadIdx.x, old);
+        printf("bid=%d, tid=%d, old=%f, c[%d]=%f, a[%d]=%f]\n", blockIdx.x, threadIdx.x, old, ci+i, c[ci+i], ai+i,a[ai + i]);
 
         i += blockDim.x;
     }
@@ -270,14 +270,14 @@ __device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
 
 template<typename T>
 __device__ void vectCbindWrite(T* a, T b, T* c, int ai, int ci, int len) {
-
-    IdentityOp<T> op;
-    vectWrite_atomic<IdentityOp<T>>(a, c, ai, ci, len, op);
-    if(threadIdx.x == 0) {
-        printf("block %d thread %d, b=%f, ai=%d, ci=%d, len=%d, ci*(len+1)+len+1=%d]\n",blockIdx.x, threadIdx.x, b, ai, ci, len, (ci * (len+1) + len + 1));
-
-        c[ci * (len+1) + len + 1] = b;
+    if(threadIdx.x < len) {
+//        printf("block %d thread %d, b=%f, ci=%d, len=%d, a[%d]=%f\n",blockIdx.x, threadIdx.x, b, ci, len, ai, a[ai]);
+		c[ci * (len+1) + threadIdx.x] = a[ai + threadIdx.x];
     }
+    if(threadIdx.x == len) {
+//		printf("---> block %d thread %d, b=%f, ci=%d, len=%d, a[%d]=%f\n",blockIdx.x, threadIdx.x, b, ci, len, ai, a[ai]);
+		c[ci * (len+1) + threadIdx.x] = b;
+	}
 }
 
 #endif // SPOOF_UTILS_CUH

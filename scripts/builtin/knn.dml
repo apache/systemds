@@ -778,10 +778,21 @@ return(
 #   Do data prepare - [-1,1] transform for continues variable
 # Argument:
 # in_m_data                     input matrix as features
-prepareKNNData = function (matrix[double] in_m_data)
+prepareKNNData = function(matrix[double] in_m_data)
   return(matrix[double] out_m_data)
 {
-    m_colmax = colMaxs(in_m_data);
-    m_colmin = colMins(in_m_data);
-    out_m_data = 2*( in_m_data - m_colmin )/( m_colmax - m_colmin ) - 1;
+  m_colmax = colMaxs(in_m_data);
+  m_colmin = colMins(in_m_data);
+  out_m_data = 2 * (in_m_data - m_colmin ) / ( m_colmax - m_colmin ) - 1;
+}
+
+getKNeighbor = function(matrix[double] in_m_data,
+    matrix[double] in_m_test_data,
+    matrix[double] in_m_cl,
+    integer in_i_k_max)
+  return (matrix[double] out_m_neighbor_value)
+{
+  # to naive
+  m_search_result = naiveKNNsearchForPredict(in_m_data, in_m_test_data, in_m_cl, in_i_k_max + 1)
+  out_m_neighbor_value = m_search_result[ , 2 : in_i_k_max + 1]
 }

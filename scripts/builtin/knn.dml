@@ -824,3 +824,28 @@ getErr_k = function(matrix[double] in_m_neighbor_value,
   }
   # return err for each record and each k ( belong to range 1~max  );
 }
+
+
+# eliminateModel:
+#   returns a boolean which indicates whether to eliminate a model or not
+# Argument:
+# * s_err_mean                    the mean of the model errors
+# * s_err_variance                the variance of the model errors
+# * i_row                         row number
+eliminateModel = function(double s_err_mean, double s_err_variance, integer i_row)
+  return (boolean out_b_inactived)
+{
+  out_b_inactived = FALSE;
+
+  # alpha, beta, gamma, delta
+  d_gamma = 0.001;
+  d_delta = 0.001;
+
+  tmp_d_delta = cdf(
+    target = (-d_gamma - s_err_mean) / s_err_variance, dist = "t", df = i_row - 1
+  );
+  if( tmp_d_delta < d_delta  ){
+    out_b_inactived = TRUE;
+  }
+  # else it remains FALSE
+}

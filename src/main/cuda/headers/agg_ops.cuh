@@ -42,6 +42,10 @@ struct SumOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
 		return a + b;
 	}
+
+    __device__  __forceinline__ static T init() {
+	    return 0;
+	}
 };
 
 /**
@@ -103,6 +107,17 @@ struct ProductOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
 		return a * b;
 	}
+};
+
+/**
+ * Functor op for division operation
+ */
+template<typename T>
+struct DivOp {
+    __device__  __forceinline__ T operator()(T a, T b) const {
+        ProductOp<T> prod_op;
+        return prod_op(a, 1 / b);
+    }
 };
 
 /**

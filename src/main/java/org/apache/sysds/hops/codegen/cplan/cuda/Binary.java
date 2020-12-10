@@ -196,7 +196,7 @@ public class Binary extends CodeTemplate {
 						return sparseLhs ? "	LibSpoofPrimitives.vect" + vectName + "Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, alen, %LEN%);\n" : "	LibSpoofPrimitives.vect" + vectName + "Add(%IN1%, %IN2%, %OUT%, %POS2%, %POSOUT%, %LEN%);\n";
 					else
 //						return sparseLhs ? "	LibSpoofPrimitives.vect" + vectName + "Add(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, alen, %LEN%);\n" : "	LibSpoofPrimitives.vect" + vectName + "Add(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
-						return sparseLhs ? "		vect" + vectName + "Add_atomic(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, alen, %LEN%);\n" : "		vect" + vectName + "Add_atomic(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
+						return sparseLhs ? "		vect" + vectName + "Add(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, alen, %LEN%);\n" : "		vect" + vectName + "Add(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
 				}
 
 				//vector-scalar operations
@@ -226,8 +226,8 @@ public class Binary extends CodeTemplate {
 					if(scalarInput)
 						return "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%);\n";
 					else
-						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
-
+//						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
+						return sparseLhs ? "	T[] %TMP% = vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		vectCbindWrite(%IN1%, %IN2%, c, %POS1%, ci, %LEN%);\n";
 					//vector-vector operations
 				case VECT_MULT:
 				case VECT_DIV:

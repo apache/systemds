@@ -32,9 +32,9 @@ struct SpoofRowwiseOp {
 	T**b;
 	T* c;
 	T* scalars;
-	int len, grix_;
+	int len, grix;
 
-	SpoofRowwiseOp(T* a, T** b, T* scalars, T* c, int len, int grix) : a(a), b(b), c(c), scalars(scalars), len(len), grix_(grix) {}
+	SpoofRowwiseOp(T* a, T** b, T* scalars, T* c, int len, int grix) : a(a), b(b), c(c), scalars(scalars), len(len), grix(grix) {}
 
 	__device__  __forceinline__ void operator()(int ai, int ci, int rix) const {
 		

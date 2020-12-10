@@ -114,7 +114,10 @@ public class CNodeRow extends CNodeTpl
 			case NO_AGG:
 			case NO_AGG_B1:
 			case NO_AGG_CONST:
-				return TEMPLATE_NOAGG_OUT.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+".length");
+				if(api == GeneratorAPI.JAVA)
+					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+".length");
+				else
+					return "";
 			case FULL_AGG:
 				return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
 			case ROW_AGG:

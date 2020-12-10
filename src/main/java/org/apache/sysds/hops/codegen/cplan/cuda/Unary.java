@@ -139,8 +139,12 @@ public class Unary extends CodeTemplate {
 				case ROW_MEANS:
 				case ROW_COUNTNNZS: {
 					String vectName = StringUtils.capitalize(type.name().substring(4, type.name().length()-1).toLowerCase());
-					return sparse ? "	T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
-						"	T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
+//					return sparse ? "	T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
+//						"	T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
+
+					return sparse ? "	T %TMP% = vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
+						"	T %TMP% = vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
+					
 				}
 
 				case VECT_EXP:

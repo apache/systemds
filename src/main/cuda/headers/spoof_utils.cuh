@@ -91,8 +91,8 @@ __device__ float bwAnd(float a, float b) {
 	return toInt32(a) & toInt32(b);
 }
 
-template<typename T>
-__device__ T BLOCK_DOT(T *a, T *b, int len, SumOp<T> reduction_op) {
+template<typename T, typename AggOp, typename LoadOp>
+__device__ T BLOCK_ROW_AGG(T *a, T *b, int len, AggOp agg_op, LoadOp load_op) {
     auto sdata = shared_memory_proxy<T>();
 
     uint tid = threadIdx.x;
@@ -101,9 +101,9 @@ __device__ T BLOCK_DOT(T *a, T *b, int len, SumOp<T> reduction_op) {
 
     uint i = tid;
 
-    T v = 0;
+    T v = AggOp::init();
     while (i < len) {
-        v = reduction_op(v, a[i] * b[i]);
+        v = agg_op(v, load_op(a[i], b[i]));
         i += blockDim.x;
     }
 
@@ -114,25 +114,25 @@ __device__ T BLOCK_DOT(T *a, T *b, int len, SumOp<T> reduction_op) {
     // do reduction in shared mem
     if (blockDim.x >= 1024) {
         if (tid < 512) {
-            sdata[tid] = v = reduction_op(v, sdata[tid + 512]);
+            sdata[tid] = v = agg_op(v, sdata[tid + 512]);
         }
         __syncthreads();
     }
     if (blockDim.x >= 512) {
         if (tid < 256) {
-            sdata[tid] = v = reduction_op(v, sdata[tid + 256]);
+            sdata[tid] = v = agg_op(v, sdata[tid + 256]);
         }
         __syncthreads();
     }
     if (blockDim.x >= 256) {
         if (tid < 128) {
-            sdata[tid] = v = reduction_op(v, sdata[tid + 128]);
+            sdata[tid] = v = agg_op(v, sdata[tid + 128]);
         }
         __syncthreads();
     }
     if (blockDim.x >= 128) {
         if (tid < 64) {
-            sdata[tid] = v = reduction_op(v, sdata[tid + 64]);
+            sdata[tid] = v = agg_op(v, sdata[tid + 64]);
         }
         __syncthreads();
     }
@@ -143,22 +143,22 @@ __device__ T BLOCK_DOT(T *a, T *b, int len, SumOp<T> reduction_op) {
         // doesn't reorder stores to it and induce incorrect behavior.
         volatile T *smem = sdata;
         if (blockDim.x >= 64) {
-            smem[tid] = v = reduction_op(v, smem[tid + 32]);
+            smem[tid] = v = agg_op(v, smem[tid + 32]);
         }
         if (blockDim.x >= 32) {
-            smem[tid] = v = reduction_op(v, smem[tid + 16]);
+            smem[tid] = v = agg_op(v, smem[tid + 16]);
         }
         if (blockDim.x >= 16) {
-            smem[tid] = v = reduction_op(v, smem[tid + 8]);
+            smem[tid] = v = agg_op(v, smem[tid + 8]);
         }
         if (blockDim.x >= 8) {
-            smem[tid] = v = reduction_op(v, smem[tid + 4]);
+            smem[tid] = v = agg_op(v, smem[tid + 4]);
         }
         if (blockDim.x >= 4) {
-            smem[tid] = v = reduction_op(v, smem[tid + 2]);
+            smem[tid] = v = agg_op(v, smem[tid + 2]);
         }
         if (blockDim.x >= 2) {
-            smem[tid] = v = reduction_op(v, smem[tid + 1]);
+            smem[tid] = v = agg_op(v, smem[tid + 1]);
         }
     }
 
@@ -169,20 +169,114 @@ __device__ T BLOCK_DOT(T *a, T *b, int len, SumOp<T> reduction_op) {
 template<typename T>
 __device__ T dotProduct(T* a, T* b, int ai, int bi, int len) {
     SumOp<T> agg_op;
-    return BLOCK_DOT(&a[ai], &b[bi], len, agg_op);
+    ProductOp<T> load_op;
+    return BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
 }
 
 template<typename T>
-__device__ void vectMultAdd_atomic(T* a, T b, T* c, int ai, int ci, int len) {
+__device__ T vectSum(T* a, int ai, int len) {
+    SumOp<T> agg_op;
+    IdentityOp<T> load_op;
+    return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
+}
+
+//template<typename T>
+//__device__ void vectMultAdd_atomic(T* a, T b, T* c, int ai, int ci, int len) {
+//    uint tid = threadIdx.x;
+//    if(tid >= len)
+//        return;
+//    uint i = tid;
+//
+//    while (i < len) {
+//        atomicAdd(&(c[ci + i]), a[ai + i] * b);
+////        printf("block %d adding %f to c[%d]\n",blockIdx.x, b, tid);
+//        i += blockDim.x;
+//    }
+//}
+
+//template<typename T>
+//__device__ void vectDivAdd_atomic(T* a, T b, T* c, int ai, int ci, int len) {
+//    uint tid = threadIdx.x;
+//    if(tid >= len)
+//        return;
+//    uint i = tid;
+//
+//    while (i < len) {
+//        atomicAdd(&(c[ci + i]), a[ai + i] / b);
+////        printf("block %d adding %f to c[%d]\n",blockIdx.x, b, tid);
+//        i += blockDim.x;
+//    }
+//}
+
+template<typename T, typename Op>
+__device__ void vectAdd_atomic(T* a, T b, T* c, int ai, int ci, int len, Op op) {
     uint tid = threadIdx.x;
     if(tid >= len)
         return;
     uint i = tid;
 
     while (i < len) {
-        atomicAdd(&(c[ci + i]), a[ai + i] * b);
-//        printf("block %d adding %f to c[%d]\n",blockIdx.x, b, tid);
+        atomicAdd(&(c[ci + i]), op(a[ai + i], b));
         i += blockDim.x;
+    }
+}
+
+template<typename T, typename Op>
+__device__ void vectWrite_atomic(T* a, T* c, int ai, int ci, int len, Op op);// {
+//    uint tid = threadIdx.x;
+//    if(tid >= len)
+//        return;
+//    uint i = tid;
+//
+//    while (i < len) {
+//        atomicExch(&(c[ci + i]), op(a[ai + i], a[i]));
+//        i += blockDim.x;
+//    }
+//}
+
+template<typename Op>
+__device__ void vectWrite_atomic(double* a, double* c, int ai, int ci, int len, Op op) {
+    uint tid = threadIdx.x;
+    if(tid >= len)
+        return;
+    uint i = tid;
+
+    while (i < len) {
+
+        double old = __longlong_as_double(atomicExch(reinterpret_cast<unsigned long long int*>(&(c[ci + i])), __double_as_longlong(op(a[ai + i], a[i]))));
+        printf("bid=%d, tid=%d, c[%d]=\n", blockIdx.x, threadIdx.x, old);
+
+        i += blockDim.x;
+    }
+}
+
+template<typename T>
+__device__ void vectMultAdd(T* a, T b, T* c, int ai, int ci, int len) {
+    ProductOp<T> op;
+    vectAdd_atomic<T, ProductOp<T>>(a, b, c, ai, ci, len, op);
+}
+
+template<typename T>
+__device__ void vectDivAdd(T* a, T b, T* c, int ai, int ci, int len) {
+    DivOp<T> op;
+    vectAdd_atomic<T, DivOp<T>>(a, b, c, ai, ci, len, op);
+}
+
+template<typename T>
+__device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
+    IdentityOp<T> op;
+    vectWrite_atomic<T, DivOp<T>>(a, c, ai, ci, len, op);
+}
+
+template<typename T>
+__device__ void vectCbindWrite(T* a, T b, T* c, int ai, int ci, int len) {
+
+    IdentityOp<T> op;
+    vectWrite_atomic<IdentityOp<T>>(a, c, ai, ci, len, op);
+    if(threadIdx.x == 0) {
+        printf("block %d thread %d, b=%f, ai=%d, ci=%d, len=%d, ci*(len+1)+len+1=%d]\n",blockIdx.x, threadIdx.x, b, ai, ci, len, (ci * (len+1) + len + 1));
+
+        c[ci * (len+1) + len + 1] = b;
     }
 }
 

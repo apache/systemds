@@ -133,6 +133,7 @@ dataQueueLength = function(Matrix[Double] queue)  return (Double len) {
 dataQueuePop = function(Matrix[Double] queue)  return (Matrix[Double] new_queue, Matrix[Double] node) {
     node = matrix(queue[,1], rows=1, cols=nrow(queue))     # reshape to force the creation of a new object
     node = matrix(node, rows=nrow(queue), cols=1)          # reshape to force the creation of a new object
+    #node = queue[,1]
     len = dataQueueLength(queue)
     if (len < 2) {
         new_queue = matrix(0,0,0)
@@ -159,6 +160,21 @@ dataVectorLength = function(Matrix[Double] vector)  return (Double len) {
 dataVectorGet = function(Matrix[Double] vector, Double index)  return (Double value) {
     value = as.scalar(vector[index, 1])
 }
+
+dataVectorSet = function(Matrix[Double] vector, Double index, Double data) return (Matrix[Double] new_vector) {
+    vector[index, 1] = data
+    new_vector = vector
+}
+
+printVector = function(String leading, Matrix[Double] vector) {
+    len = dataVectorLength(vector)
+    vector_string = leading + "|"
+    for (index in 1:len) {
+        element = dataVectorGet(vector, index)
+        vector_string = vector_string + element + "|"
+    }
+    print(vector_string)
+}
 #-----------------------------------------------------------------------------------------------------------------------
 
 calculateNodeDepth = function(Matrix[Double] node)  return(Double depth) {
@@ -174,7 +190,55 @@ getTypeOfCol = function(Matrix[Double] R, Double col)  return(Double type) {    
     type = 1
 }
 
-calcImpurity = function() return (Double impurity, Matrix[Double] threshold) { #TODO IMPLEMENT
+extrapolateOrderedScalarFeatures = function(
+    Matrix[Double] X,
+    Matrix[Double] use_rows_vector,
+    Double col) return (Matrix[Double] feature_vector) {
+    feature_vector = matrix(1, rows = 1, cols = 1)
+    len = nrow(X)
+    first_time = TRUE
+    for(row in 1:len) {
+        use_feature = dataVectorGet(use_rows_vector, row)
+        if (use_feature != 0) {
+            if(first_time) {
+                feature_vector[1,1] = X[row, col]
+                first_time = FALSE
+            } else {
+                feature_vector = rbind(feature_vector, X[row, col])
+            }
+        }
+    }
+    feature_vector = order(target=feature_vector, by=1, decreasing=FALSE, index.return=FALSE)
+}
+
+calcPossibleThresholds = function(
+    Matrix[Double] X,
+    Matrix[Double] use_rows_vector,
+    Double col) return (Matrix[Double] thresholds) {
+    ordered_features = extrapolateOrderedScalarFeatures(X, use_rows_vector, col)
+    ordered_features_len = dataVectorLength(ordered_features)
+    thresholds = matrix(1, rows = ordered_features_len - 1, cols = 1)
+    if (ordered_features_len > 1) {
+        for (index in 1:(ordered_features_len - 1)) {
+            mean = (dataVectorGet(ordered_features, index) + dataVectorGet(ordered_features, index + 1)) / 2
+            thresholds = dataVectorSet(thresholds, index, mean)
+        }
+    }
+}
+
+calcImpurity = function(
+    Matrix[Double] X,
+    Matrix[Double] use_rows_vector,
+    Double col,
+    Double type) return (Double impurity, Matrix[Double] threshold) {
+
+    is_scalar_type = typeIsScalar(type)
+    if (is_scalar_type) {
+        possible_thresholds = calcPossibleThresholds(X, use_rows_vector, col)
+    } else {
+        #TODO categorical
+    }
+
     impurity = as.scalar(rand(rows=1, cols=1, min=0, max=1, pdf="uniform", sparsity=1))
     threshold = rand(rows=1, cols=1, min=0, max=100, pdf="uniform", sparsity=1)
 }
@@ -196,7 +260,7 @@ calcBestSplittingCriteria = function(
         use_feature = dataVectorGet(use_cols_vector, c_col)
         if (use_feature != 0) {
             c_type = getTypeOfCol(R, c_col)
-            [c_impurity, c_threshold] = calcImpurity()
+            [c_impurity, c_threshold] = calcImpurity(X, use_rows_vector, c_col, c_type)
             if(c_impurity < impurity) {
                 impurity = c_impurity
                 used_col = c_col
@@ -207,12 +271,48 @@ calcBestSplittingCriteria = function(
     }
 }
 
+typeIsScalar = function(Double type) return(Boolean b) {
+    b = type == 1.0
+}
+
+splitData = function(
+    Matrix[Double] X,
+    Matrix[Double] use_rows_vector,
+    Matrix[Double] use_cols_vector,
+    Double col,
+    Matrix[Double] threshold,
+    Double type
+) return (Matrix[Double] new_use_cols_vector, Matrix[Double] left_use_rows_vector, Matrix[Double] right_use_rows_vector) {
+    new_use_cols_vector = dataVectorSet(use_cols_vector, col, 0.0)
+
+    type_is_scalar = typeIsScalar(type)
+    left_use_rows_vector = use_rows_vector
+    right_use_rows_vector = use_rows_vector
+
+    if (type_is_scalar) {
+        scalar_threshold = as.scalar(threshold[1,1])
+        len = dataVectorLength(use_rows_vector)
+        for (c_row in 1:len) {
+            row_enabled = dataVectorGet(use_rows_vector, c_row)
+            if (row_enabled != 0) {
+                if (as.scalar(X[c_row, col]) > scalar_threshold) {
+                    left_use_rows_vector = dataVectorSet(left_use_rows_vector, c_row, 0.0)
+                } else {
+                    right_use_rows_vector = dataVectorSet(right_use_rows_vector, c_row, 0.0)
+                }
+            }
+        }
+    } else {
+        #TODO categorical handling
+    }
+}
+
 m_decisionTree = function(
     Matrix[Double] X,
     Matrix[Double] Y,
     Matrix[Double] R,
     int bins = 20,
-    int depth = 3,
+    int depth = 4,
     int num_leaf = 10,
     int num_samples = 3000,
     String impurity = "Gini",
@@ -229,25 +329,27 @@ m_decisionTree = function(
     queue_length = 1
 
     while (queue_length > 0) {
-        print("-------------------------------------------------------------------------------------------------------")
+       print("-------------------------------------------------------------------------------------------------------")
         [node_queue, node] = dataQueuePop(node_queue)
         print("Popped Node:        " + as.scalar(node))
         [use_rows_queue, use_rows_vector] = dataQueuePop(use_rows_queue)
+        printVector("Rows:               ", use_rows_vector)
         [use_cols_queue, use_cols_vector] = dataQueuePop(use_cols_queue)
+        printVector("Cols:               ", use_cols_vector)
 
         [impurity, used_col, threshold, type] = calcBestSplittingCriteria(X, Y, R, use_rows_vector, use_cols_vector)
         print("Current impurity:   " + impurity)
         print("Current column:     " + used_col)
-        print("Current threshold:  " + as.scalar(threshold[1,1])) #TODO IMPLEMENT PRINT MATRIX
+        printVector("Current threshold:  ", threshold)
         print("Current type:       " + type)
         node_depth = calculateNodeDepth(node)
-        if (node_depth < depth) {
+        if (node_depth < depth) { #TODO available #cols >= 1 AND available #rows >= 2
             [left, right] = calculateChildNodes(node)
             node_queue = dataQueuePush(left, right, node_queue)
 
-            #TODO SPLIT
-            use_rows_queue = dataQueuePush(use_rows_vector, use_rows_vector, use_rows_queue)
-            use_cols_queue = dataQueuePush(use_cols_vector, use_cols_vector, use_cols_queue)
+            [new_use_cols_vector, left_use_rows_vector, right_use_rows_vector] = splitData(X, use_rows_vector, use_cols_vector, used_col, threshold, type)
+            use_rows_queue = dataQueuePush(left_use_rows_vector, right_use_rows_vector, use_rows_queue)
+            use_cols_queue = dataQueuePush(new_use_cols_vector, new_use_cols_vector, use_cols_queue)
         }
         queue_length = dataQueueLength(node_queue)# -- user-defined function calls not supported in relational expressions
 

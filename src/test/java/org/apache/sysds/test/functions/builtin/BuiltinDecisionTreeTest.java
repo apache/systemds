@@ -48,9 +48,9 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "  + expectedDir();
 
             //generate actual dataset
-            double[][] A = getRandomMatrix(rows, 2, 0, 1, spDense, 7);
+            double[][] A = getRandomMatrix(rows, 10, 0, 100, 1.0, 7);
             writeInputMatrixWithMTD("A", A, true);
-            double[][] B = getRandomMatrix(rows, 1, 0, 10, 1.0, 3);
+            double[][] B = getRandomMatrix(rows, 1, 0, 1, 1.0, 3);
             writeInputMatrixWithMTD("B", B, true);
 
             runTest(true, false, null, -1);

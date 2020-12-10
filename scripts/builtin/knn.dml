@@ -832,10 +832,12 @@ getErr_k = function(matrix[double] in_m_neighbor_value,
 # * s_err_mean                    the mean of the model errors
 # * s_err_variance                the variance of the model errors
 # * i_row                         row number
+# Return:
+# * out_b_inactive                boolean value
 eliminateModel = function(double s_err_mean, double s_err_variance, integer i_row)
   return (boolean out_b_inactived)
 {
-  out_b_inactived = FALSE;
+  out_b_inactive = FALSE;
 
   # alpha, beta, gamma, delta
   d_gamma = 0.001;
@@ -844,8 +846,139 @@ eliminateModel = function(double s_err_mean, double s_err_variance, integer i_ro
   tmp_d_delta = cdf(
     target = (-d_gamma - s_err_mean) / s_err_variance, dist = "t", df = i_row - 1
   );
-  if( tmp_d_delta < d_delta  ){
-    out_b_inactived = TRUE;
+  if(tmp_d_delta < d_delta)
+  {
+    out_b_inactive = TRUE;
   }
   # else it remains FALSE
+}
+
+# getSelectedKBase:
+#   k selection algorithm with simple KNN algorithm.
+# Argument:
+# * in_m_data                     input matrix as features
+# * in_m_data_target              input matrix as target value
+# * in_i_is_categorical           1 = category , 0 = continuous
+# * k_min                         minimum k
+# * k_max                         maximum k
+# * interval                      block size
+#
+# Return:
+# * k                             output k value for k selection
+getSelectedKBase = function(matrix[double] in_m_data,
+    matrix[double] in_m_data_target,
+    integer in_i_is_categorical, # 1 = category, 0 = continuous
+    integer k_min,
+    integer k_max,
+    integer interval)
+  return (integer k)
+{
+  b_continue_loop = TRUE;
+  i_iter = 1;
+  i_record  = nrow(in_m_data);
+
+  i_active_model_number = k_max - k_min + 1;
+  m_active_flag = matrix(0, 1, i_active_model_number);
+
+  m_iter_err_sum = matrix(0, 1, k_max - k_min + 1);
+  m_iter_err_sum_squared = matrix(0, 1, k_max - k_min + 1);
+  while(b_continue_loop)
+  {
+    # 1.build k-d tree? , or use hash method
+    # 2.search data to get k_max nearest neighbor
+    i_process_item = i_iter * interval;
+    if(i_process_item >= i_record)
+    {
+      i_process_item = i_record;
+      b_continue_loop = FALSE;
+    }
+    i_process_begin_item = ((i_iter - 1) * interval) + 1;
+    i_process_end_item = i_process_item;
+
+    m_neighbor_value = getKNeighbor(in_m_data, in_m_data[i_process_begin_item : i_process_end_item, ], in_m_data_target, k_max);
+    # 3.get matrix of err from k_min to k_max
+    m_err = getErr_k(m_neighbor_value, in_m_data_target[i_process_begin_item : i_process_end_item, ], in_i_is_categorical, k_min);
+
+    # 4.check this matrix to drop unnessary record
+    m_active_flag_tmp = matrix(0, 1, ncol(m_err));
+
+    s_rows_number = i_process_item;
+
+    m_iter_err_sum = colSums(m_err) + m_iter_err_sum;
+    m_iter_err_sum_squared = colSums(m_err ^ 2) + m_iter_err_sum_squared;
+
+    m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number;
+    m_err_vars = ( m_err_mean ^2 * s_rows_number -
+      2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1);
+    m_err_vars = sqrt(m_err_vars);
+
+    parfor(i in 1 : ncol(m_err))
+    {
+      # m_err_i = m_err - m_err[,i];
+      # m_err_i_mean = colMeans(m_err_i);
+      # m_err_i_vars = colVars(m_err_i);
+      parfor(j in 1 : ncol(m_err), check = 0)
+      {
+        b_execute_block = TRUE;
+        if(j == i) b_execute_block = FALSE;
+        if( as.scalar(m_active_flag_tmp[1, i]) == 1)
+        {
+          # i has dropped, ignore this case
+          b_execute_block = FALSE;
+        }
+        if(as.scalar(m_active_flag_tmp[1, j]) == 1)
+        {
+          # j has dropped, ignore this case
+          b_execute_block = FALSE;
+        }
+        if(b_execute_block)
+        {
+          b_flag = eliminateModel(as.scalar(m_err_mean[i, j]), as.scalar(m_err_vars[i, j]), s_rows_number);
+          if(b_flag == TRUE)
+          {
+            m_active_flag_tmp[1, i] = 1;
+          }
+        }
+      }
+    }
+
+    # m_tmp = ppred(colSums(m_active_flag_tmp), 1, ">=");
+    m_active_flag =  ((m_active_flag + m_active_flag_tmp) >= 1);
+    i_active_model_number = -sum(m_active_flag - 1);
+
+    # 5.break while check
+    if(i_active_model_number <= 1)
+    {
+      b_continue_loop = FALSE;
+    }
+    i_iter = i_iter + 1;
+    print("i_iter" + i_iter)
+  }
+
+  k = 0;
+  if(i_active_model_number == 0)
+  {
+    print("All k kick out, use min of range " + k_min);
+    k = k_min;
+  }
+  else if(i_active_model_number == 1)
+  {
+    k = k_min + as.integer(as.scalar(rowIndexMin(m_active_flag))) - 1;
+    print( "Get k, which value is " + k  );
+  }
+  else
+  {
+    m_err_for_order =
+      cbind(t(m_iter_err_sum), matrix(seq(k_min, k_max, 1), k_max - k_min + 1, 1));
+    m_err_for_order = removeEmpty(
+      target = m_err_for_order * t(m_active_flag == 0), margin = "rows");
+    for(i in 1 : nrow(m_err_for_order))
+    {
+      print("k:" + as.scalar(m_err_for_order[i, 2]) +
+        ", err:" + as.scalar(m_err_for_order[i, 1]));
+    }
+    m_err_order = order(target = m_err_for_order, by = 1, decreasing = FALSE, index.return = FALSE);
+    k = as.integer(as.scalar(m_err_order[1, 2]));
+    print("Get minimum LOOCV error, which value is " + k);
+  }
 }

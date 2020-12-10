@@ -65,7 +65,8 @@ public class BalanceFederatedScheme extends DataPartitionFederatedScheme {
 			update = pLabels.get(i).getDataCharacteristics().setRows(average_num_rows);
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
-		return new Result(pFeatures, pLabels, pFeatures.size());
+
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
 	}
 
 	/**

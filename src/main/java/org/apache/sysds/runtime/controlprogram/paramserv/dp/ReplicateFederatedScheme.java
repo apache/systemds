@@ -67,7 +67,8 @@ public class ReplicateFederatedScheme extends DataPartitionFederatedScheme {
 			update = pLabels.get(i).getDataCharacteristics().setRows(max_rows);
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
-		return new Result(pFeatures, pLabels, pFeatures.size());
+
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
 	}
 
 	/**

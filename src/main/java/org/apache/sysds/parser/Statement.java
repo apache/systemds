@@ -87,6 +87,10 @@ public abstract class Statement implements ParseInfo
 	public enum PSFrequency {
 		BATCH, EPOCH
 	}
+	public static final String PS_RUNTIME_BALANCING = "runtime_balancing";
+	public enum PSRuntimeBalancing {
+		NONE, CYCLE
+	}
 	public static final String PS_EPOCHS = "epochs";
 	public static final String PS_BATCH_SIZE = "batchsize";
 	public static final String PS_PARALLELISM = "k";

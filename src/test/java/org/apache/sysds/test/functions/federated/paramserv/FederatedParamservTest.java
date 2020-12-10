@@ -53,6 +53,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final String _utype;
 	private final String _freq;
 	private final String _scheme;
+	private final String _runtime_balancing;
 	private final String _data_distribution;
 
 	// parameters
@@ -61,21 +62,26 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		return Arrays.asList(new Object[][] {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update
 			// type, update frequency
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE",		 	"IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, 		"BSP", "BATCH", "SUBSAMPLE", 			"IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, 		"BSP", "BATCH", "BALANCE", 				"IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 5, 0.01, 		"ASP", "EPOCH", "SHUFFLE", 				"IMBALANCED"},
-			/*{"CNN", 2, 4, 1, 5, 0.01, 			"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BALANCED"},
-			{"CNN", 2, 4, 1, 5, 0.01, 			"ASP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BALANCED"},
-			{"CNN", 2, 4, 1, 5, 0.01, 			"BSP", "EPOCH", "SHUFFLE", 				"BALANCED"},
-			{"CNN", 2, 4, 1, 5, 0.01, 			"ASP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"BALANCED"},
-			{"TwoNN", 5, 1000, 200, 2, 0.01, 	"BSP", "BATCH", "SHUFFLE", 				"BALANCED"},
-			{"CNN", 5, 1000, 200, 2, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"BALANCED"}*/
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"ASP", "EPOCH", "KEEP_DATA_ON_WORKER",	"NONE" , "BALANCED"},
+			{"CNN", 2, 4, 1, 1, 0.01, 			"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
+			{"CNN", 2, 4, 1, 1, 0.01, 			"ASP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
+			/*{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER",	"CYCLE" , "IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE" , "IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE",		 	"NONE" , "IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SUBSAMPLE", 			"NONE" , "IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE", 				"NONE" , "IMBALANCED"},
+			{"CNN", 2, 4, 1, 5, 0.01, 			"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"" , "BALANCED"},
+			{"CNN", 2, 4, 1, 5, 0.01, 			"ASP", "BATCH", "KEEP_DATA_ON_WORKER", 	"" , "BALANCED"},
+			{"CNN", 2, 4, 1, 5, 0.01, 			"BSP", "EPOCH", "SHUFFLE", 				"" , "BALANCED"},
+			{"CNN", 2, 4, 1, 5, 0.01, 			"ASP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"" , "BALANCED"},
+			{"TwoNN", 5, 1000, 200, 2, 0.01, 	"BSP", "BATCH", "SHUFFLE", 				"" , "BALANCED"},
+			{"CNN", 5, 1000, 200, 2, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"" , "BALANCED"}*/
 		});
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
-		int epochs, double eta, String utype, String freq, String scheme, String data_distribution) {
+		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String data_distribution) {
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_dataSetSize = dataSetSize;
@@ -85,6 +91,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		_utype = utype;
 		_freq = freq;
 		_scheme = scheme;
+		_runtime_balancing = runtime_balancing;
 		_data_distribution = data_distribution;
 	}
 
@@ -168,6 +175,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"utype=" + _utype,
 					"freq=" + _freq,
 					"scheme=" + _scheme,
+					"runtime_balancing=" + _runtime_balancing,
 					"network_type=" + _networkType,
 					"channels=" + C,
 					"hin=" + Hin,

@@ -27,9 +27,9 @@ features = read($features)
 labels = read($labels)
 
 if($network_type == "TwoNN") {
-  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), $epochs, $utype, $freq, $batch_size, $scheme, $eta, $seed)
+  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $eta, $seed)
 }
 else {
-  model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), $epochs, $utype, $freq, $batch_size, $scheme, $eta, $channels, $hin, $win, $seed)
+  model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $eta, $channels, $hin, $win, $seed)
 }
 print(toString(model))

@@ -67,7 +67,8 @@ public class SubsampleFederatedScheme extends DataPartitionFederatedScheme {
 			update = pLabels.get(i).getDataCharacteristics().setRows(min_rows);
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
-		return new Result(pFeatures, pLabels, pFeatures.size());
+
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
 	}
 
 	/**

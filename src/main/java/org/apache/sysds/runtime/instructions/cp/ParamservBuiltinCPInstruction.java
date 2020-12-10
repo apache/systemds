@@ -19,20 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
-import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
-import static org.apache.sysds.parser.Statement.PS_EPOCHS;
-import static org.apache.sysds.parser.Statement.PS_FEATURES;
-import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
-import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
-import static org.apache.sysds.parser.Statement.PS_LABELS;
-import static org.apache.sysds.parser.Statement.PS_MODE;
-import static org.apache.sysds.parser.Statement.PS_MODEL;
-import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
-import static org.apache.sysds.parser.Statement.PS_SCHEME;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -52,6 +38,7 @@ import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
 import org.apache.sysds.parser.Statement.PSModeType;
 import org.apache.sysds.parser.Statement.PSScheme;
@@ -80,12 +67,15 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
 
+import static org.apache.sysds.parser.Statement.*;
+
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
 	
 	private static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
+	private static final PSRuntimeBalancing DEFAULT_RUNTIME_BALANCING = PSRuntimeBalancing.NONE;
 	private static final FederatedPSScheme DEFAULT_FEDERATED_SCHEME = FederatedPSScheme.KEEP_DATA_ON_WORKER;
 	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
 	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
@@ -124,6 +114,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// get inputs
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
+		PSRuntimeBalancing runtimeBalancing = getRuntimeBalancing();
 		FederatedPSScheme federatedPSScheme = getFederatedScheme();
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
@@ -153,7 +144,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
 		// Create the local workers
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
-				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
+				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
 				.collect(Collectors.toList());
 
 		if(workerNum != threads.size()) {
@@ -376,6 +367,18 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		} catch (IllegalArgumentException e) {
 			throw new DMLRuntimeException(String.format("Paramserv function: "
 				+ "not support '%s' update frequency.", getParam(PS_FREQUENCY)));
+		}
+	}
+
+	private PSRuntimeBalancing getRuntimeBalancing() {
+		if (!getParameterMap().containsKey(PS_RUNTIME_BALANCING)) {
+			return DEFAULT_RUNTIME_BALANCING;
+		}
+		try {
+			return PSRuntimeBalancing.valueOf(getParam(PS_RUNTIME_BALANCING));
+		} catch (IllegalArgumentException e) {
+			throw new DMLRuntimeException(String.format("Paramserv function: "
+					+ "not support '%s' runtime balancing.", getParam(PS_FREQUENCY)));
 		}
 	}
 

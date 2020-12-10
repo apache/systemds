@@ -53,15 +53,17 @@ import static org.apache.sysds.runtime.util.ProgramConverter.*;
 
 public class FederatedPSControlThread extends PSWorker implements Callable<Void> {
 	private static final long serialVersionUID = 6846648059569648791L;
+	Statement.PSRuntimeBalancing _runtimeBalancing;
 	FederatedData _featuresData;
 	FederatedData _labelsData;
 	final long _batchCounterVarID;
 	final long _modelVarID;
 	int _totalNumBatches;
 
-	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
+	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq, Statement.PSRuntimeBalancing runtimeBalancing, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
-		
+
+		_runtimeBalancing = runtimeBalancing;
 		// generate the IDs for model and batch counter. These get overwritten on the federated worker each time
 		_batchCounterVarID = FederationUtils.getNextFedDataID();
 		_modelVarID = FederationUtils.getNextFedDataID();
@@ -245,6 +247,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				case EPOCH:
 					computeEpoch();
 					break;
+				/*case NBATCH:
+					break;*/
 				default:
 					throw new DMLRuntimeException(String.format("%s not support update frequency %s", getWorkerName(), _freq));
 			}

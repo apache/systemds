@@ -9462,163 +9462,162 @@ BB75_35:
 )
 {
 	.reg .pred 	%p<20>;
-	.reg .b32 	%r<14>;
+	.reg .b32 	%r<72>;
 	.reg .f64 	%fd<58>;
-	.reg .b64 	%rd<10>;
+	.reg .b64 	%rd<9>;
 
 
-	ld.param.u64 	%rd2, [reduce_row_mean_d_param_0];
-	ld.param.u64 	%rd3, [reduce_row_mean_d_param_1];
-	ld.param.u32 	%r9, [reduce_row_mean_d_param_2];
-	ld.param.u32 	%r8, [reduce_row_mean_d_param_3];
-	mov.u32 	%r1, %ctaid.x;
-	setp.ge.u32	%p1, %r1, %r9;
+	ld.param.u64 	%rd1, [reduce_row_mean_d_param_0];
+	ld.param.u64 	%rd2, [reduce_row_mean_d_param_1];
+	ld.param.u32 	%r5, [reduce_row_mean_d_param_2];
+	ld.param.u32 	%r4, [reduce_row_mean_d_param_3];
+	mov.u32 	%r6, %ctaid.x;
+	setp.ge.u32	%p1, %r6, %r5;
 	@%p1 bra 	BB76_35;
 
-	mov.u32 	%r2, %tid.x;
-	mul.lo.s32 	%r3, %r1, %r8;
-	mov.u32 	%r4, %ntid.x;
-	cvta.to.global.u64 	%rd1, %rd2;
+	mov.u32 	%r71, %tid.x;
 	mov.f64 	%fd6, 0d0000000000000000;
-	setp.ge.u32	%p2, %r2, %r8;
+	setp.ge.u32	%p2, %r71, %r4;
 	@%p2 bra 	BB76_4;
 
-	mov.u32 	%r13, %r2;
+	cvta.to.global.u64 	%rd3, %rd1;
 
 BB76_3:
-	add.s32 	%r10, %r13, %r3;
-	mul.wide.u32 	%rd4, %r10, 8;
-	add.s64 	%rd5, %rd1, %rd4;
+	mad.lo.s32 	%r8, %r6, %r4, %r71;
+	mul.wide.u32 	%rd4, %r8, 8;
+	add.s64 	%rd5, %rd3, %rd4;
 	ld.global.f64 	%fd28, [%rd5];
 	add.f64 	%fd6, %fd6, %fd28;
-	add.s32 	%r13, %r4, %r13;
-	setp.lt.u32	%p3, %r13, %r8;
+	mov.u32 	%r9, %ntid.x;
+	add.s32 	%r71, %r9, %r71;
+	setp.lt.u32	%p3, %r71, %r4;
 	@%p3 bra 	BB76_3;
 
 BB76_4:
-	shl.b32 	%r11, %r2, 3;
+	mov.u32 	%r10, %tid.x;
+	shl.b32 	%r11, %r10, 3;
 	mov.u32 	%r12, memory;
-	add.s32 	%r7, %r12, %r11;
-	st.shared.f64 	[%r7], %fd6;
+	add.s32 	%r13, %r12, %r11;
+	st.shared.f64 	[%r13], %fd6;
 	bar.sync 	0;
-	setp.lt.u32	%p4, %r4, 1024;
+	mov.u32 	%r14, %ntid.x;
+	setp.lt.u32	%p4, %r14, 1024;
 	@%p4 bra 	BB76_8;
 
-	setp.gt.u32	%p5, %r2, 511;
+	setp.gt.u32	%p5, %r10, 511;
 	@%p5 bra 	BB76_7;
 
-	ld.shared.f64 	%fd29, [%r7+4096];
+	ld.shared.f64 	%fd29, [%r13+4096];
 	add.f64 	%fd6, %fd6, %fd29;
-	st.shared.f64 	[%r7], %fd6;
+	st.shared.f64 	[%r13], %fd6;
 
 BB76_7:
 	bar.sync 	0;
 
 BB76_8:
-	setp.lt.u32	%p6, %r4, 512;
+	setp.lt.u32	%p6, %r14, 512;
 	@%p6 bra 	BB76_12;
 
-	setp.gt.u32	%p7, %r2, 255;
+	setp.gt.u32	%p7, %r10, 255;
 	@%p7 bra 	BB76_11;
 
-	ld.shared.f64 	%fd30, [%r7+2048];
+	ld.shared.f64 	%fd30, [%r13+2048];
 	add.f64 	%fd6, %fd6, %fd30;
-	st.shared.f64 	[%r7], %fd6;
+	st.shared.f64 	[%r13], %fd6;
 
 BB76_11:
 	bar.sync 	0;
 
 BB76_12:
-	setp.lt.u32	%p8, %r4, 256;
+	setp.lt.u32	%p8, %r14, 256;
 	@%p8 bra 	BB76_16;
 
-	setp.gt.u32	%p9, %r2, 127;
+	setp.gt.u32	%p9, %r10, 127;
 	@%p9 bra 	BB76_15;
 
-	ld.shared.f64 	%fd31, [%r7+1024];
+	ld.shared.f64 	%fd31, [%r13+1024];
 	add.f64 	%fd6, %fd6, %fd31;
-	st.shared.f64 	[%r7], %fd6;
+	st.shared.f64 	[%r13], %fd6;
 
 BB76_15:
 	bar.sync 	0;
 
 BB76_16:
-	setp.lt.u32	%p10, %r4, 128;
+	setp.lt.u32	%p10, %r14, 128;
 	@%p10 bra 	BB76_20;
 
-	setp.gt.u32	%p11, %r2, 63;
+	setp.gt.u32	%p11, %r10, 63;
 	@%p11 bra 	BB76_19;
 
-	ld.shared.f64 	%fd32, [%r7+512];
+	ld.shared.f64 	%fd32, [%r13+512];
 	add.f64 	%fd6, %fd6, %fd32;
-	st.shared.f64 	[%r7], %fd6;
+	st.shared.f64 	[%r13], %fd6;
 
 BB76_19:
 	bar.sync 	0;
 
 BB76_20:
-	setp.gt.u32	%p12, %r2, 31;
+	setp.gt.u32	%p12, %r10, 31;
 	@%p12 bra 	BB76_33;
 
-	setp.lt.u32	%p13, %r4, 64;
+	setp.lt.u32	%p13, %r14, 64;
 	@%p13 bra 	BB76_23;
 
-	ld.volatile.shared.f64 	%fd33, [%r7+256];
+	ld.volatile.shared.f64 	%fd33, [%r13+256];
 	add.f64 	%fd6, %fd6, %fd33;
-	st.volatile.shared.f64 	[%r7], %fd6;
+	st.volatile.shared.f64 	[%r13], %fd6;
 
 BB76_23:
-	setp.lt.u32	%p14, %r4, 32;
+	setp.lt.u32	%p14, %r14, 32;
 	@%p14 bra 	BB76_25;
 
-	ld.volatile.shared.f64 	%fd34, [%r7+128];
+	ld.volatile.shared.f64 	%fd34, [%r13+128];
 	add.f64 	%fd6, %fd6, %fd34;
-	st.volatile.shared.f64 	[%r7], %fd6;
+	st.volatile.shared.f64 	[%r13], %fd6;
 
 BB76_25:
-	setp.lt.u32	%p15, %r4, 16;
+	setp.lt.u32	%p15, %r14, 16;
 	@%p15 bra 	BB76_27;
 
-	ld.volatile.shared.f64 	%fd35, [%r7+64];
+	ld.volatile.shared.f64 	%fd35, [%r13+64];
 	add.f64 	%fd6, %fd6, %fd35;
-	st.volatile.shared.f64 	[%r7], %fd6;
+	st.volatile.shared.f64 	[%r13], %fd6;
 
 BB76_27:
-	setp.lt.u32	%p16, %r4, 8;
+	setp.lt.u32	%p16, %r14, 8;
 	@%p16 bra 	BB76_29;
 
-	ld.volatile.shared.f64 	%fd36, [%r7+32];
+	ld.volatile.shared.f64 	%fd36, [%r13+32];
 	add.f64 	%fd6, %fd6, %fd36;
-	st.volatile.shared.f64 	[%r7], %fd6;
+	st.volatile.shared.f64 	[%r13], %fd6;
 
 BB76_29:
-	setp.lt.u32	%p17, %r4, 4;
+	setp.lt.u32	%p17, %r14, 4;
 	@%p17 bra 	BB76_31;
 
-	ld.volatile.shared.f64 	%fd37, [%r7+16];
+	ld.volatile.shared.f64 	%fd37, [%r13+16];
 	add.f64 	%fd6, %fd6, %fd37;
-	st.volatile.shared.f64 	[%r7], %fd6;
+	st.volatile.shared.f64 	[%r13], %fd6;
 
 BB76_31:
-	setp.lt.u32	%p18, %r4, 2;
+	setp.lt.u32	%p18, %r14, 2;
 	@%p18 bra 	BB76_33;
 
-	ld.volatile.shared.f64 	%fd38, [%r7+8];
+	ld.volatile.shared.f64 	%fd38, [%r13+8];
 	add.f64 	%fd39, %fd6, %fd38;
-	st.volatile.shared.f64 	[%r7], %fd39;
+	st.volatile.shared.f64 	[%r13], %fd39;
 
 BB76_33:
-	setp.ne.s32	%p19, %r2, 0;
+	setp.ne.s32	%p19, %r10, 0;
 	@%p19 bra 	BB76_35;
 
 	ld.shared.f64 	%fd40, [memory];
-	cvt.u64.u32	%rd6, %r8;
-	cvt.rn.f64.s64	%fd41, %rd6;
+	cvt.rn.f64.s32	%fd41, %r4;
 	div.rn.f64 	%fd42, %fd40, %fd41;
-	cvta.to.global.u64 	%rd7, %rd3;
-	mul.wide.u32 	%rd8, %r1, 8;
-	add.s64 	%rd9, %rd7, %rd8;
-	st.global.f64 	[%rd9], %fd42;
+	cvta.to.global.u64 	%rd6, %rd2;
+	mul.wide.u32 	%rd7, %r6, 8;
+	add.s64 	%rd8, %rd6, %rd7;
+	st.global.f64 	[%rd8], %fd42;
 
 BB76_35:
 	ret;
@@ -9634,162 +9633,161 @@ BB76_35:
 {
 	.reg .pred 	%p<20>;
 	.reg .f32 	%f<58>;
-	.reg .b32 	%r<14>;
-	.reg .b64 	%rd<10>;
+	.reg .b32 	%r<72>;
+	.reg .b64 	%rd<9>;
 
 
-	ld.param.u64 	%rd2, [reduce_row_mean_f_param_0];
-	ld.param.u64 	%rd3, [reduce_row_mean_f_param_1];
-	ld.param.u32 	%r9, [reduce_row_mean_f_param_2];
-	ld.param.u32 	%r8, [reduce_row_mean_f_param_3];
-	mov.u32 	%r1, %ctaid.x;
-	setp.ge.u32	%p1, %r1, %r9;
+	ld.param.u64 	%rd1, [reduce_row_mean_f_param_0];
+	ld.param.u64 	%rd2, [reduce_row_mean_f_param_1];
+	ld.param.u32 	%r5, [reduce_row_mean_f_param_2];
+	ld.param.u32 	%r4, [reduce_row_mean_f_param_3];
+	mov.u32 	%r6, %ctaid.x;
+	setp.ge.u32	%p1, %r6, %r5;
 	@%p1 bra 	BB77_35;
 
-	mov.u32 	%r2, %tid.x;
-	mul.lo.s32 	%r3, %r1, %r8;
-	mov.u32 	%r4, %ntid.x;
-	cvta.to.global.u64 	%rd1, %rd2;
+	mov.u32 	%r71, %tid.x;
 	mov.f32 	%f6, 0f00000000;
-	setp.ge.u32	%p2, %r2, %r8;
+	setp.ge.u32	%p2, %r71, %r4;
 	@%p2 bra 	BB77_4;
 
-	mov.u32 	%r13, %r2;
+	cvta.to.global.u64 	%rd3, %rd1;
 
 BB77_3:
-	add.s32 	%r10, %r13, %r3;
-	mul.wide.u32 	%rd4, %r10, 4;
-	add.s64 	%rd5, %rd1, %rd4;
+	mad.lo.s32 	%r8, %r6, %r4, %r71;
+	mul.wide.u32 	%rd4, %r8, 4;
+	add.s64 	%rd5, %rd3, %rd4;
 	ld.global.f32 	%f28, [%rd5];
 	add.f32 	%f6, %f6, %f28;
-	add.s32 	%r13, %r4, %r13;
-	setp.lt.u32	%p3, %r13, %r8;
+	mov.u32 	%r9, %ntid.x;
+	add.s32 	%r71, %r9, %r71;
+	setp.lt.u32	%p3, %r71, %r4;
 	@%p3 bra 	BB77_3;
 
 BB77_4:
-	shl.b32 	%r11, %r2, 2;
+	mov.u32 	%r10, %tid.x;
+	shl.b32 	%r11, %r10, 2;
 	mov.u32 	%r12, memory;
-	add.s32 	%r7, %r12, %r11;
-	st.shared.f32 	[%r7], %f6;
+	add.s32 	%r13, %r12, %r11;
+	st.shared.f32 	[%r13], %f6;
 	bar.sync 	0;
-	setp.lt.u32	%p4, %r4, 1024;
+	mov.u32 	%r14, %ntid.x;
+	setp.lt.u32	%p4, %r14, 1024;
 	@%p4 bra 	BB77_8;
 
-	setp.gt.u32	%p5, %r2, 511;
+	setp.gt.u32	%p5, %r10, 511;
 	@%p5 bra 	BB77_7;
 
-	ld.shared.f32 	%f29, [%r7+2048];
+	ld.shared.f32 	%f29, [%r13+2048];
 	add.f32 	%f6, %f6, %f29;
-	st.shared.f32 	[%r7], %f6;
+	st.shared.f32 	[%r13], %f6;
 
 BB77_7:
 	bar.sync 	0;
 
 BB77_8:
-	setp.lt.u32	%p6, %r4, 512;
+	setp.lt.u32	%p6, %r14, 512;
 	@%p6 bra 	BB77_12;
 
-	setp.gt.u32	%p7, %r2, 255;
+	setp.gt.u32	%p7, %r10, 255;
 	@%p7 bra 	BB77_11;
 
-	ld.shared.f32 	%f30, [%r7+1024];
+	ld.shared.f32 	%f30, [%r13+1024];
 	add.f32 	%f6, %f6, %f30;
-	st.shared.f32 	[%r7], %f6;
+	st.shared.f32 	[%r13], %f6;
 
 BB77_11:
 	bar.sync 	0;
 
 BB77_12:
-	setp.lt.u32	%p8, %r4, 256;
+	setp.lt.u32	%p8, %r14, 256;
 	@%p8 bra 	BB77_16;
 
-	setp.gt.u32	%p9, %r2, 127;
+	setp.gt.u32	%p9, %r10, 127;
 	@%p9 bra 	BB77_15;
 
-	ld.shared.f32 	%f31, [%r7+512];
+	ld.shared.f32 	%f31, [%r13+512];
 	add.f32 	%f6, %f6, %f31;
-	st.shared.f32 	[%r7], %f6;
+	st.shared.f32 	[%r13], %f6;
 
 BB77_15:
 	bar.sync 	0;
 
 BB77_16:
-	setp.lt.u32	%p10, %r4, 128;
+	setp.lt.u32	%p10, %r14, 128;
 	@%p10 bra 	BB77_20;
 
-	setp.gt.u32	%p11, %r2, 63;
+	setp.gt.u32	%p11, %r10, 63;
 	@%p11 bra 	BB77_19;
 
-	ld.shared.f32 	%f32, [%r7+256];
+	ld.shared.f32 	%f32, [%r13+256];
 	add.f32 	%f6, %f6, %f32;
-	st.shared.f32 	[%r7], %f6;
+	st.shared.f32 	[%r13], %f6;
 
 BB77_19:
 	bar.sync 	0;
 
 BB77_20:
-	setp.gt.u32	%p12, %r2, 31;
+	setp.gt.u32	%p12, %r10, 31;
 	@%p12 bra 	BB77_33;
 
-	setp.lt.u32	%p13, %r4, 64;
+	setp.lt.u32	%p13, %r14, 64;
 	@%p13 bra 	BB77_23;
 
-	ld.volatile.shared.f32 	%f33, [%r7+128];
+	ld.volatile.shared.f32 	%f33, [%r13+128];
 	add.f32 	%f6, %f6, %f33;
-	st.volatile.shared.f32 	[%r7], %f6;
+	st.volatile.shared.f32 	[%r13], %f6;
 
 BB77_23:
-	setp.lt.u32	%p14, %r4, 32;
+	setp.lt.u32	%p14, %r14, 32;
 	@%p14 bra 	BB77_25;
 
-	ld.volatile.shared.f32 	%f34, [%r7+64];
+	ld.volatile.shared.f32 	%f34, [%r13+64];
 	add.f32 	%f6, %f6, %f34;
-	st.volatile.shared.f32 	[%r7], %f6;
+	st.volatile.shared.f32 	[%r13], %f6;
 
 BB77_25:
-	setp.lt.u32	%p15, %r4, 16;
+	setp.lt.u32	%p15, %r14, 16;
 	@%p15 bra 	BB77_27;
 
-	ld.volatile.shared.f32 	%f35, [%r7+32];
+	ld.volatile.shared.f32 	%f35, [%r13+32];
 	add.f32 	%f6, %f6, %f35;
-	st.volatile.shared.f32 	[%r7], %f6;
+	st.volatile.shared.f32 	[%r13], %f6;
 
 BB77_27:
-	setp.lt.u32	%p16, %r4, 8;
+	setp.lt.u32	%p16, %r14, 8;
 	@%p16 bra 	BB77_29;
 
-	ld.volatile.shared.f32 	%f36, [%r7+16];
+	ld.volatile.shared.f32 	%f36, [%r13+16];
 	add.f32 	%f6, %f6, %f36;
-	st.volatile.shared.f32 	[%r7], %f6;
+	st.volatile.shared.f32 	[%r13], %f6;
 
 BB77_29:
-	setp.lt.u32	%p17, %r4, 4;
+	setp.lt.u32	%p17, %r14, 4;
 	@%p17 bra 	BB77_31;
 
-	ld.volatile.shared.f32 	%f37, [%r7+8];
+	ld.volatile.shared.f32 	%f37, [%r13+8];
 	add.f32 	%f6, %f6, %f37;
-	st.volatile.shared.f32 	[%r7], %f6;
+	st.volatile.shared.f32 	[%r13], %f6;
 
 BB77_31:
-	setp.lt.u32	%p18, %r4, 2;
+	setp.lt.u32	%p18, %r14, 2;
 	@%p18 bra 	BB77_33;
 
-	ld.volatile.shared.f32 	%f38, [%r7+4];
+	ld.volatile.shared.f32 	%f38, [%r13+4];
 	add.f32 	%f39, %f6, %f38;
-	st.volatile.shared.f32 	[%r7], %f39;
+	st.volatile.shared.f32 	[%r13], %f39;
 
 BB77_33:
-	setp.ne.s32	%p19, %r2, 0;
+	setp.ne.s32	%p19, %r10, 0;
 	@%p19 bra 	BB77_35;
 
 	ld.shared.f32 	%f40, [memory];
-	cvt.u64.u32	%rd6, %r8;
-	cvt.rn.f32.s64	%f41, %rd6;
+	cvt.rn.f32.s32	%f41, %r4;
 	div.rn.f32 	%f42, %f40, %f41;
-	cvta.to.global.u64 	%rd7, %rd3;
-	mul.wide.u32 	%rd8, %r1, 4;
-	add.s64 	%rd9, %rd7, %rd8;
-	st.global.f32 	[%rd9], %f42;
+	cvta.to.global.u64 	%rd6, %rd2;
+	mul.wide.u32 	%rd7, %r6, 4;
+	add.s64 	%rd8, %rd6, %rd7;
+	st.global.f32 	[%rd8], %f42;
 
 BB77_35:
 	ret;
@@ -9806,7 +9804,7 @@ BB77_35:
 	.reg .pred 	%p<4>;
 	.reg .b32 	%r<11>;
 	.reg .f64 	%fd<11>;
-	.reg .b64 	%rd<10>;
+	.reg .b64 	%rd<9>;
 
 
 	ld.param.u64 	%rd2, [reduce_col_mean_d_param_0];
@@ -9838,13 +9836,12 @@ BB78_3:
 	@%p3 bra 	BB78_3;
 
 BB78_4:
-	cvt.u64.u32	%rd6, %r5;
-	cvt.rn.f64.s64	%fd7, %rd6;
+	cvt.rn.f64.s32	%fd7, %r5;
 	div.rn.f64 	%fd8, %fd10, %fd7;
-	cvta.to.global.u64 	%rd7, %rd3;
-	mul.wide.u32 	%rd8, %r1, 8;
-	add.s64 	%rd9, %rd7, %rd8;
-	st.global.f64 	[%rd9], %fd8;
+	cvta.to.global.u64 	%rd6, %rd3;
+	mul.wide.u32 	%rd7, %r1, 8;
+	add.s64 	%rd8, %rd6, %rd7;
+	st.global.f64 	[%rd8], %fd8;
 
 BB78_5:
 	ret;
@@ -9861,7 +9858,7 @@ BB78_5:
 	.reg .pred 	%p<4>;
 	.reg .f32 	%f<11>;
 	.reg .b32 	%r<11>;
-	.reg .b64 	%rd<10>;
+	.reg .b64 	%rd<9>;
 
 
 	ld.param.u64 	%rd2, [reduce_col_mean_f_param_0];
@@ -9893,13 +9890,12 @@ BB79_3:
 	@%p3 bra 	BB79_3;
 
 BB79_4:
-	cvt.u64.u32	%rd6, %r5;
-	cvt.rn.f32.s64	%f7, %rd6;
+	cvt.rn.f32.s32	%f7, %r5;
 	div.rn.f32 	%f8, %f10, %f7;
-	cvta.to.global.u64 	%rd7, %rd3;
-	mul.wide.u32 	%rd8, %r1, 4;
-	add.s64 	%rd9, %rd7, %rd8;
-	st.global.f32 	[%rd9], %f8;
+	cvta.to.global.u64 	%rd6, %rd3;
+	mul.wide.u32 	%rd7, %r1, 4;
+	add.s64 	%rd8, %rd6, %rd7;
+	st.global.f32 	[%rd8], %f8;
 
 BB79_5:
 	ret;

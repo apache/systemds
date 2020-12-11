@@ -40,6 +40,8 @@ struct IdentityOp {
 template<typename T>
 struct SumOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
+		// if(blockIdx.x==0 && threadIdx.x ==0)
+		// 	printf("a=%f + b=%f => %f\n", a, b, a+b);
 		return a + b;
 	}
 

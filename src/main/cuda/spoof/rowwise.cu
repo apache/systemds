@@ -39,8 +39,8 @@ struct SpoofRowwiseOp {
 	__device__  __forceinline__ void operator()(int ai, int ci, int rix) const {
 		
 %BODY_dense%
-		if(threadIdx.x==0)
-			printf("bid=%d, tid=%d, TMP8=\n", blockIdx.x, threadIdx.x, TMP8);
+		// if(threadIdx.x==0)
+			// printf("bid=%d, tid=%d, TMP7=%f\n", blockIdx.x, threadIdx.x, TMP7);
 	}
 };
 

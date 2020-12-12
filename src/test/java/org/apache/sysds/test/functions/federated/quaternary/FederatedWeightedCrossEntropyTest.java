@@ -60,7 +60,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Override
   public void setUp()
   {
-    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Z"}));
+    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Z.mtd"}));
   }
 
   @Parameterized.Parameters
@@ -82,7 +82,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Test
   public void federatedWeightedCrossEntropySingleNode()
   {
-    federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE);
+    federatedWeightedCrossEntropy(ExecMode.SPARK);
   }
 
   public void federatedWeightedCrossEntropy(ExecMode exec_mode)
@@ -94,7 +94,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     getAndLoadTestConfiguration(TEST_NAME);
     String HOME = SCRIPT_DIR + TEST_DIR;
 
-    int fed_rows = rows / 2;
+    int fed_rows = rows;
     int fed_cols = cols;
 
     // generate dataset
@@ -121,12 +121,14 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     getAndLoadTestConfiguration(TEST_NAME);
 
+    System.out.println("Running refercence test");
     // Run reference fml script with normal matrix
     fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
     programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
     "in_U=" + input("U"), "in_V=" + input("V"), "out_Z=" + expected("Z")};
     LOG.debug(runTest(true, false, null, -1));
 
+    System.out.println("Running actual test");
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
     programArgs = new String[] {"-stats", "-nvargs",

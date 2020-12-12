@@ -91,7 +91,9 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 
   protected static void checkDataTypes(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4)
   {
-    if(in1.getDataType() != DataType.MATRIX || in2.getDataType() != DataType.MATRIX || in3.getDataType() != DataType.MATRIX || in4.getDataType() != DataType.MATRIX)
+    // TODO: check input4 as soon as included
+    // if(in1.getDataType() != DataType.MATRIX || in2.getDataType() != DataType.MATRIX || in3.getDataType() != DataType.MATRIX || in4.getDataType() != DataType.MATRIX)
+    if(in1.getDataType() != DataType.MATRIX || in2.getDataType() != DataType.MATRIX || in3.getDataType() != DataType.MATRIX)
     {
       throw new DMLRuntimeException("Federated quaternary operations supported with matrices only yet");
     }

@@ -21,6 +21,8 @@
 
 // RowType: %TYPE%
 
+__device__ double TEMP_STORAGE[2048];
+
 #include "agg_ops.cuh"
 #include "reduction.cuh"
 #include "spoof_utils.cuh"
@@ -39,8 +41,12 @@ struct SpoofRowwiseOp {
 	__device__  __forceinline__ void operator()(int ai, int ci, int rix) const {
 		
 %BODY_dense%
-		// if(threadIdx.x==0)
-			// printf("bid=%d, tid=%d, TMP7=%f\n", blockIdx.x, threadIdx.x, TMP7);
+		// if(blockIdx.x == 0 && threadIdx.x==0) {
+		// 	printf("bid=%d, tid=%d, TMP9=%f, TMP11=%f\nTMP10[len=%d]:", blockIdx.x, threadIdx.x, TMP9, TMP11, len);
+		// 	for(auto i = 0; i < len; ++i)
+		// 		printf(" %f", TMP10[i]);
+		// 	printf("\n");
+		// }
 	}
 };
 

@@ -21,6 +21,7 @@ package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
@@ -84,6 +85,11 @@ public abstract class CNode
 	public String getVarname(GeneratorAPI api) { return getVarname(); }
 
 	public String getVectorLength() {
+		
+		if(SpoofCompiler.API == GeneratorAPI.CUDA) {
+			return "len";
+		}
+		else
 		if( getVarname().startsWith("a") )
 			return "len";
 		else if( getVarname().startsWith("b") )

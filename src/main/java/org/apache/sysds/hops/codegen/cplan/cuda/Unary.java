@@ -143,7 +143,7 @@ public class Unary extends CodeTemplate {
 //						"	T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
 
 					return sparse ? "	T %TMP% = vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
-						"	T %TMP% = vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
+						"		T %TMP% = vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
 					
 				}
 

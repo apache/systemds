@@ -1,12 +1,43 @@
-﻿#pragma once
+﻿/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+#ifndef INTELLISENSE_CUDA_INTRINSICS_H
+#define INTELLISENSE_CUDA_INTRINSICS_H
+#pragma once
 
+#if 1
+	#define __INTELLISENSE__
+#endif
 
 #ifdef __INTELLISENSE__
 
-#include <cuda.h>
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include <cmath>
+#include <cstdio>
+#include <corecrt_math.h>
 
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+
+#define CUDART_INF 0.0
+#define CUDART_INF_F 0.0f
+#define CUDART_NAN
+#define CUDART_NAN_F
 
 //    Reverse the bit order of a 32 bit unsigned integer. 
 __device__ unsigned int __brev(unsigned int  x) {};
@@ -180,3 +211,5 @@ template <typename T>
 T __shfl_xor_sync(unsigned mask, T var, int laneMask, int width = warpSize) {};
 
 #endif // __INTELLISENSE__
+
+#endif // INTELLISENSE_CUDA_INTRINSICS_H

@@ -33,6 +33,7 @@ public class CNodeRow extends CNodeTpl
 	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rix] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
 	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, ci, %LEN%);\n";
+	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "    vectWrite(%IN%, c, ci, %LEN%);\n";
 	
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);
@@ -117,7 +118,8 @@ public class CNodeRow extends CNodeTpl
 				if(api == GeneratorAPI.JAVA)
 					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+".length");
 				else
-					return "";
+//					return "";
+					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName) .replace("%LEN%", "len");
 			case FULL_AGG:
 				return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
 			case ROW_AGG:

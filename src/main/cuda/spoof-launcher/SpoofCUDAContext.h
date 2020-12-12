@@ -29,9 +29,9 @@
 #ifdef _DEBUG
 #define __DEBUG
 #endif
-#ifdef __DEBUG
-    #define JITIFY_PRINT_ALL 1
-#endif
+// #ifdef __DEBUG
+    // #define JITIFY_PRINT_ALL 1
+// #endif
 
 #include <jitify.hpp>
 
@@ -40,7 +40,7 @@
 using jitify::reflection::type_of;
 
 struct SpoofOperator {
-	enum class AggType : int { NO_AGG, ROW_AGG, COL_AGG, FULL_AGG, COL_AGG_T, NONE };
+	enum class AggType : int { NO_AGG, NO_AGG_CONST, ROW_AGG, COL_AGG, FULL_AGG, COL_AGG_T, NONE };
 	enum class AggOp : int {SUM, SUM_SQ, MIN, MAX, NONE };
 	enum class OpType : int { CW, RA, MA, OP, NONE };
 	
@@ -298,8 +298,10 @@ public:
 		{
 		case(SpoofOperator::AggType::COL_AGG_T):
 			NB = n;
+			break;
 		default:
 			NB = m;
+			break;
 		}
 		
 		dim3 grid(NB, 1, 1);

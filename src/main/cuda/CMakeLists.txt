@@ -94,7 +94,13 @@ set(SPOOF_CUDA_HEADERS
 	headers/reduction.cuh
 	headers/spoof_utils.cuh
 	headers/utils.cuh)
-add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_CUDA_HEADERS} ${SPOOF_SOURCES} )
+		#headers/intellisense_cuda_intrinsics.h
+set(SPOOF_TEMPLATES
+	spoof/cellwise.cu    
+	spoof/rowwise.cu)
+source_group("SPOOF Templates" FILES ${SPOOF_TEMPLATES})
+set_source_files_properties( ${SPOOF_TEMPLATES} PROPERTIES HEADER_FILE_ONLY ON)
+add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_CUDA_HEADERS} ${SPOOF_SOURCES} ${SPOOF_TEMPLATES})
 
 target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify")
 target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)

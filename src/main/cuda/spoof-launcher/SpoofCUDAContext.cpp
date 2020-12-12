@@ -121,6 +121,8 @@ bool SpoofCUDAContext::compile_cuda(const std::string &src,
 			agg_type= SpoofOperator::AggType::COL_AGG;
 		else if(src.substr(pos, pos+30).find("NO_AGG") != std::string::npos)
 			agg_type= SpoofOperator::AggType::NO_AGG;
+		else if(src.substr(pos, pos+30).find("NO_AGG_CONST") != std::string::npos)
+			agg_type= SpoofOperator::AggType::NO_AGG_CONST;
 		else if(src.substr(pos, pos+30).find("COL_AGG_T") != std::string::npos)
 			agg_type= SpoofOperator::AggType::COL_AGG_T;
 		else {

@@ -39,7 +39,8 @@ X2 = federated(addresses=list($in_X2),
 U = read($in_U)
 V = read($in_V)
 
-Z1 = as.matrix(sum(X1 * log(U %*% t(V))))
-Z2 = as.matrix(sum(X2 * log(U %*% t(V))))
+Z1 = sum(X1 * log(U %*% t(V)))
+Z2 = sum(X2 * log(U %*% t(V)))
 
+Z = as.matrix(Z1 + Z2)
 write(Z1, $out_Z)

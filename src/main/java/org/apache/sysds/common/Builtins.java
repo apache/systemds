@@ -164,6 +164,8 @@ public enum Builtins {
 	OUTLIER_SD("outlierBySd", true),
 	OUTLIER_IQR("outlierByIQR", true),
 	PCA("pca", true),
+	PCAINVERSE("pcaInverse", true),
+	PCATRANSFORM("pcaTransform", true),
 	PNMF("pnmf", true),
 	PPCA("ppca", true),
 	PPRED("ppred", false),

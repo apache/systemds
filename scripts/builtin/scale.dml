@@ -19,29 +19,50 @@
 #
 #-------------------------------------------------------------
 
-# Scale and center individual features in the input matrix 
-# (column-wise) using z-score to scale the values.
-# -----------------------------------------------------------------------------
-# NAME   TYPE    DEFAULT  MEANING
-# -----------------------------------------------------------------------------
-# X      Matrix  ---      Input feature matrix
-# center Boolean TRUE     Indicates whether or not to center the feature matrix
-# scale  Boolean TRUE     Indicates whether or not to scale the feature matrix
-# -----------------------------------------------------------------------------
-# Y            Matrix ---  Output feature matrix with K columns
-# -----------------------------------------------------------------------------
+# Scale and center individual features in the input matrix (column wise.) using z-score to scale the values.
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X            Matrix    ---      Input feature matrix
+# Center       Boolean   TRUE     Indicates whether or not to center the feature matrix
+# Scale        Boolean   TRUE     Indicates whether or not to scale the feature matrix
+# ---------------------------------------------------------------------------------------------
+# Y            Matrix    ---      Output feature matrix with K columns
+# ColMean      Matrix    ---      The column means of the input, subtracted if Center was TRUE
+# ScaleFactor  Matrix    ---      The Scaling of the values, to make each dimension have similar value ranges
+# ---------------------------------------------------------------------------------------------
 
-m_scale = function(Matrix[Double] X, Boolean center, Boolean scale) return (Matrix[Double] Y) {
-  if( center )
-    X = X - colMeans(X);
+m_scale = function(Matrix[Double] X, Boolean center, Boolean scale) 
+  return (Matrix[Double] Y, Matrix[Double] ColMean, Matrix[Double] ScaleFactor) 
+{
+  if(center){
+    ColMean = colMeans(X)
+    X =  X - ColMean
+  }
+  else {
+    # Allocate the ColMean as an empty matrix,
+    # to return something on the function call.
+    ColMean = matrix(0,rows=0,cols=0)
+  }
 
   if (scale) {
-    cvars = colSums(X^2)/(nrow(X)-1);
+    N = nrow(X)
 
-    #scale by std-dev and replace NaNs with 0's
-    X = replace(target=X/sqrt(cvars),
-      pattern=NaN, replacement=0);
+    ScaleFactor = sqrt(colSums(X^2)/(N-1))
+
+    # Replace entries in the scale factor that are 0 with 1.
+    # To avoid division by 0, introducing NaN to the ouput.
+    ScaleFactor = replace(target=ScaleFactor,
+      pattern=0, replacement=1);
+    
+    X = X/ScaleFactor
+
   }
-  
-  Y = X;
+  else{
+    # Allocate the Scale factor as an empty matrix,
+    # to return something on the function call.
+    ScaleFactor = matrix(0, rows= 0, cols=0)
+  }
+
+  Y = X
 }

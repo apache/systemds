@@ -24,6 +24,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -834,6 +836,40 @@ public class UtilFunctions {
 		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
 	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+	// Disguised missing value imputation:
+	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
+
+	public static final char DIGIT = 'd';
+	public static final char LOWER = 'l';
+	public static final char UPPER = 'u';
+	public static final char ALPHA = 'a';
+	public static final char SPACE = 's';
+	public static final char NOT_IMPLEMENTED = '#';
+
+	public static String processData (String input) {
+		System.out.println("Processing: " + input + "..");
+		char[] chars = input.toCharArray();
+
+		StringBuilder tmp = new StringBuilder();
+		for (char ch : chars) {
+			tmp.append(getCharClass(ch));
+		}
+
+		return tmp.toString();
+	}
+
+	private static char getCharClass (char c)
+	{
+		if(Character.isDigit(c)) return DIGIT;
+		if(Character.isLowerCase(c)) return LOWER;
+		if(Character.isUpperCase(c)) return UPPER;
+
+		LOG.warn("you are currently trying to process undefined input"); //logger enabled?
+		return NOT_IMPLEMENTED;
+	}
+	// -----------------------------------------------------------------------------------------------------------------
 
 
 }

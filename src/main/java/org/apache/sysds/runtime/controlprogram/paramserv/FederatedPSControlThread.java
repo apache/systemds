@@ -87,6 +87,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			_numBatchesPerGlobalEpoch = _possibleBatchesPerLocalEpoch;
 		}
 
+		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH || _runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
+			System.out.println("ERROR: Not implemented yet!");
+			return;
+		}
+
 		// serialize program
 		// create program blocks for the instruction filtering
 		String programSerialized;
@@ -232,7 +237,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.removeVariable(Statement.PS_FED_BATCHCOUNTER_VARID);
 			ec.removeVariable(Statement.PS_FED_MODEL_VARID);
 			ParamservUtils.cleanupListObject(ec, Statement.PS_HYPER_PARAMS);
-			ParamservUtils.cleanupListObject(ec, Statement.PS_GRADIENTS);
 			
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
@@ -304,7 +308,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 * Computes all epochs and updates after N batches
 	 */
 	protected void computeWithNBatchUpdates() {
-		System.out.println("Not implemented yet");
+		System.out.println("ERROR: Not implemented yet!");
 	}
 
 	/**
@@ -449,7 +453,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				ListObject gradients = ec.getListObject(gradientsOutput.getName());
 
 				// accrue the computed gradients - In the single batch case this is just a list copy
-				// TODO: is this equivalent for momentum based and AMS prob?
+				// is this equivalent for momentum based and AMS prob?
 				accGradients = ParamservUtils.accrueGradients(accGradients, gradients, false);
 
 				// update the local model with gradients if needed
@@ -462,18 +466,18 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					// Set new model in execution context
 					ec.setVariable(Statement.PS_MODEL, model);
 					// clean up gradients and result
-					ParamservUtils.cleanupListObject(ec, Statement.PS_GRADIENTS);
 					ParamservUtils.cleanupListObject(ec, aggregationOutput.getName());
 				}
 
-				// clean up sliced batch
-				ec.removeVariable(ec.getVariable(Statement.PS_FED_BATCHCOUNTER_VARID).toString());
+				// clean up
+				ParamservUtils.cleanupListObject(ec, gradientsOutput.getName());
 				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
 				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
+				ec.removeVariable(ec.getVariable(Statement.PS_FED_BATCHCOUNTER_VARID).toString());
 				System.out.println("[+]" + " completed batch " + localBatchNum);
 			}
 
-			// model clean up - doing this twice is not an issue
+			// model clean up
 			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
 			ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL);
 

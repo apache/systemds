@@ -60,25 +60,31 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> parameters() {
 		return Arrays.asList(new Object[][] {
-			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update
-			// type, update frequency
-			{"TwoNN", 2, 4, 1, 2, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , "IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 2, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , "IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , "IMBALANCED"},
-			{"CNN", 2, 4, 1, 1, 0.01, 			"ASP", "BATCH", "KEEP_DATA_ON_WORKER",	"NONE" , "BALANCED"},
-			{"CNN", 2, 4, 1, 1, 0.01, 			"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"ASP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
-			/*{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER",	"CYCLE" , "IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE" , "IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE",		 	"NONE" , "IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SUBSAMPLE", 			"NONE" , "IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE", 				"NONE" , "IMBALANCED"},
-			{"CNN", 2, 4, 1, 5, 0.01, 			"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"" , "BALANCED"},
-			{"CNN", 2, 4, 1, 5, 0.01, 			"ASP", "BATCH", "KEEP_DATA_ON_WORKER", 	"" , "BALANCED"},
-			{"CNN", 2, 4, 1, 5, 0.01, 			"BSP", "EPOCH", "SHUFFLE", 				"" , "BALANCED"},
-			{"CNN", 2, 4, 1, 5, 0.01, 			"ASP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"" , "BALANCED"},
-			{"TwoNN", 5, 1000, 200, 2, 0.01, 	"BSP", "BATCH", "SHUFFLE", 				"" , "BALANCED"},
-			{"CNN", 5, 1000, 200, 2, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"" , "BALANCED"}*/
+			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
+
+			// basic functionality
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
+			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE" , 		"IMBALANCED"},
+			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"RUN_MIN" , 	"IMBALANCED"},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX" , 	"IMBALANCED"},
+
+			// runtime balancing
+			/*{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
+
+			// data partitioning
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE_AVG" , 	"IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE_TO_MAX",	 	"NONE" , 		"IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SUBSAMPLE_TO_MIN",		"NONE" , 		"IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE_TO_AVG",		"NONE" , 		"IMBALANCED"},
+
+			// complex balanced tests
+			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"BALANCED"},
+			{"CNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"BALANCED"}*/
 		});
 	}
 
@@ -108,12 +114,10 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		federatedParamserv(ExecMode.SINGLE_NODE);
 	}
 
-	/*
 	@Test
 	public void federatedParamservHybrid() {
 		federatedParamserv(ExecMode.HYBRID);
 	}
-	*/
 
 	private void federatedParamserv(ExecMode mode) {
 		// config

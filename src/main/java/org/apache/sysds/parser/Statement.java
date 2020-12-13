@@ -99,7 +99,7 @@ public abstract class Statement implements ParseInfo
 		DISJOINT_CONTIGUOUS, DISJOINT_ROUND_ROBIN, DISJOINT_RANDOM, OVERLAP_RESHUFFLE
 	}
 	public enum FederatedPSScheme {
-		KEEP_DATA_ON_WORKER, SHUFFLE, REPLICATE, SUBSAMPLE, BALANCE
+		KEEP_DATA_ON_WORKER, SHUFFLE, REPLICATE_TO_MAX, SUBSAMPLE_TO_MIN, BALANCE_TO_AVG
 	}
 	public static final String PS_HYPER_PARAMS = "hyperparams";
 	public static final String PS_CHECKPOINTING = "checkpointing";

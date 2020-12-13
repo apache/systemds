@@ -35,13 +35,13 @@ public class FederatedDataPartitioner {
 			case SHUFFLE:
 				_scheme = new ShuffleFederatedScheme();
 				break;
-			case REPLICATE:
+			case REPLICATE_TO_MAX:
 				_scheme = new ReplicateFederatedScheme();
 				break;
-			case SUBSAMPLE:
+			case SUBSAMPLE_TO_MIN:
 				_scheme = new SubsampleFederatedScheme();
 				break;
-			case BALANCE:
+			case BALANCE_TO_AVG:
 				_scheme = new BalanceFederatedScheme();
 				break;
 			default:

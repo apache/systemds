@@ -112,7 +112,6 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_FED_BATCH_SIZE = "1701-NCC-batch_size";
 	public static final String PS_FED_DATA_SIZE = "1701-NCC-data_size";
 	public static final String PS_FED_POSS_BATCHES_LOCAL = "1701-NCC-poss_batches_local";
-	public static final String PS_FED_NUM_BATCHES_GLOBAL = "1701-NCC-num_batches_global";
 	public static final String PS_FED_NAMESPACE = "1701-NCC-namespace";
 	public static final String PS_FED_GRADIENTS_FNAME = "1701-NCC-gradients_fname";
 	public static final String PS_FED_AGGREGATION_FNAME = "1701-NCC-aggregation_fname";

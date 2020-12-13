@@ -26,7 +26,7 @@ import org.apache.sysds.utils.Statistics;
 
 public class LineageEstimatorStatistics {
 	private static final LongAdder _ctimeSaved      = new LongAdder(); //in nano sec
-	private static int maxInsts = 10;
+	private static int INSTCOUNT = 10;
 	
 	public static void reset() {
 		_ctimeSaved.reset();
@@ -61,7 +61,8 @@ public class LineageEstimatorStatistics {
 		// Total time saved and reuse counts per opcode, ordered by saved time
 		StringBuilder sb = new StringBuilder();
 		sb.append("# Instrunction\t" + "  "+"Time(s)  Count \n");
-		for (int i=1; i<=maxInsts; i++) {
+		int instCount = Math.min(INSTCOUNT, LineageEstimator.computeSavingInst.size());
+		for (int i=1; i<=instCount; i++) {
 			MutableTriple<String, Long, Double> op = LineageEstimator.computeSavingInst.poll();
 			int tl = String.valueOf(op.getRight()*1e-3).indexOf(".");
 			if (op != null && op.getRight() > 0)

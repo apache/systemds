@@ -89,7 +89,7 @@ public abstract class Statement implements ParseInfo
 	}
 	public static final String PS_RUNTIME_BALANCING = "runtime_balancing";
 	public enum PSRuntimeBalancing {
-		NONE, CYCLE
+		NONE, RUN_MIN, CYCLE_AVG, CYCLE_MAX, SCALE_BATCH, SCALE_BATCH_AND_WEIGH
 	}
 	public static final String PS_EPOCHS = "epochs";
 	public static final String PS_BATCH_SIZE = "batchsize";
@@ -111,7 +111,8 @@ public abstract class Statement implements ParseInfo
 	// prefixed with code: "1701-NCC-" to not overwrite anything
 	public static final String PS_FED_BATCH_SIZE = "1701-NCC-batch_size";
 	public static final String PS_FED_DATA_SIZE = "1701-NCC-data_size";
-	public static final String PS_FED_NUM_BATCHES = "1701-NCC-num_batches";
+	public static final String PS_FED_POSS_BATCHES_LOCAL = "1701-NCC-poss_batches_local";
+	public static final String PS_FED_NUM_BATCHES_GLOBAL = "1701-NCC-num_batches_global";
 	public static final String PS_FED_NAMESPACE = "1701-NCC-namespace";
 	public static final String PS_FED_GRADIENTS_FNAME = "1701-NCC-gradients_fname";
 	public static final String PS_FED_AGGREGATION_FNAME = "1701-NCC-aggregation_fname";

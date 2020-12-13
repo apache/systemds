@@ -62,10 +62,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		return Arrays.asList(new Object[][] {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update
 			// type, update frequency
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"ASP", "EPOCH", "KEEP_DATA_ON_WORKER",	"NONE" , "BALANCED"},
-			{"CNN", 2, 4, 1, 1, 0.01, 			"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
-			{"CNN", 2, 4, 1, 1, 0.01, 			"ASP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
+			{"TwoNN", 2, 4, 1, 2, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , "IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 2, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , "IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , "IMBALANCED"},
+			{"CNN", 2, 4, 1, 1, 0.01, 			"ASP", "BATCH", "KEEP_DATA_ON_WORKER",	"NONE" , "BALANCED"},
+			{"CNN", 2, 4, 1, 1, 0.01, 			"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
+			{"TwoNN", 2, 4, 1, 1, 0.01, 		"ASP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , "BALANCED"},
 			/*{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER",	"CYCLE" , "IMBALANCED"},
 			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE" , "IMBALANCED"},
 			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE",		 	"NONE" , "IMBALANCED"},
@@ -183,7 +185,9 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"seed=" + 25));
 
 			programArgs = programArgsList.toArray(new String[0]);
-			LOG.debug(runTest(null));
+			// TODO: Switch back
+			//LOG.debug(runTest(null));
+			System.out.println(runTest(null));
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			
 			// shut down threads

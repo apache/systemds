@@ -126,6 +126,16 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		List<MatrixObject> pLabels = result._pLabels;
 		int workerNum = result._workerNum;
 
+		// calculate runtime balancing
+		int numBatchesPerEpoch = 0;
+		if(runtimeBalancing == PSRuntimeBalancing.RUN_MIN) {
+			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._minRows / (float) getBatchSize());
+		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG) {
+			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._avgRows / (float) getBatchSize());
+ 		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
+			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._maxRows / (float) getBatchSize());
+		}
+
 		// setup threading
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
 				.namingPattern("workers-pool-thread-%d").build();
@@ -143,8 +153,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
 		// Create the local workers
+		int finalNumBatchesPerEpoch = numBatchesPerEpoch;
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
-				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
+				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
 				.collect(Collectors.toList());
 
 		if(workerNum != threads.size()) {
@@ -378,7 +389,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			return PSRuntimeBalancing.valueOf(getParam(PS_RUNTIME_BALANCING));
 		} catch (IllegalArgumentException e) {
 			throw new DMLRuntimeException(String.format("Paramserv function: "
-					+ "not support '%s' runtime balancing.", getParam(PS_FREQUENCY)));
+					+ "not support '%s' runtime balancing.", getParam(PS_RUNTIME_BALANCING)));
 		}
 	}
 

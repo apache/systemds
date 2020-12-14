@@ -78,7 +78,7 @@ public:
 
 	template <typename T>
 	T execute_kernel(const std::string &name, T **in_ptrs, int num_inputs, T **side_ptrs, int num_sides, T *out_ptr, 
-			T *scalars_ptr, int num_scalars, int m, int n, int grix) {
+			T *scalars_ptr, int num_scalars, int m, int n, int out_len, int grix) {
 		
 		T result = 0.0;
 		size_t dev_buf_size;
@@ -106,7 +106,7 @@ public:
 		        result = launch_cw_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
 		        break;
 		    case SpoofOperator::OpType::RA:
-				result = launch_ra_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
+				result = launch_ra_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, out_len, grix);
 		        break;
 		    default:
 				std::cerr << "error: unknown spoof operator" << std::endl;
@@ -289,22 +289,12 @@ public:
 	}
 
 	template<typename T>
-	T launch_ra_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, T** d_sides, T* d_scalars, int m, int n, int grix) {
+	T launch_ra_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, T** d_sides, T* d_scalars, int in_rows, int row_len, int out_len, int grix) {
 
 		T result = 0.0;
 		T *d_temp_agg_buf = nullptr;
-		int NB;
-		switch(op->agg_type)
-		{
-		case(SpoofOperator::AggType::COL_AGG_T):
-			NB = n;
-			break;
-		default:
-			NB = m;
-			break;
-		}
-		
-		dim3 grid(NB, 1, 1);
+
+		dim3 grid(in_rows, 1, 1);
 		dim3 block(NT, 1, 1);
 		unsigned int shared_mem_size = NT * sizeof(T);
 
@@ -317,7 +307,7 @@ public:
 		CHECK_CUDA(op->program.kernel(op->name)
 				.instantiate(type_of(result))
 				.configure(grid, block, shared_mem_size)
-				.launch(in_ptrs[0], d_sides, d_scalars, out_ptr, 1, n, grix));
+				.launch(in_ptrs[0], d_sides, d_scalars, out_ptr, out_len, row_len, grix));
 		
 		return result;
 	}

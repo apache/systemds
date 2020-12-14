@@ -59,7 +59,7 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
 JNIEXPORT jdouble JNICALL
 Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
-    jlongArray side_ptrs, jlong out_ptr, jdoubleArray scalars_, jlong m, jlong n, jlong grix) {
+    jlongArray side_ptrs, jlong out_ptr, jdoubleArray scalars_, jlong m, jlong n, jlong out_len, jlong grix) {
 
   SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
   const char *cstr_name = env->GetStringUTFChars(name, NULL);
@@ -70,7 +70,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 
   double result = ctx_->execute_kernel(
       cstr_name, inputs, env->GetArrayLength(in_ptrs), sides, env->GetArrayLength(side_ptrs),
-      reinterpret_cast<double*>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, grix);
+      reinterpret_cast<double*>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, out_len, grix);
 
   RELEASE_ARRAY(env, in_ptrs, inputs);
   RELEASE_ARRAY(env, side_ptrs, sides);
@@ -85,7 +85,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 JNIEXPORT jfloat JNICALL
 Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
-    jlongArray side_ptrs, jlong out_ptr, jfloatArray scalars_, jlong m, jlong n, jlong grix) {
+    jlongArray side_ptrs, jlong out_ptr, jfloatArray scalars_, jlong m, jlong n, jlong out_len, jlong grix) {
 
   SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
 
@@ -97,7 +97,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
 
   float result = ctx_->execute_kernel(
       cstr_name, inputs, env->GetArrayLength(in_ptrs), sides, env->GetArrayLength(side_ptrs),
-      reinterpret_cast<float *>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, grix);
+      reinterpret_cast<float *>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, out_len, grix);
 
   RELEASE_ARRAY(env, in_ptrs, inputs);
   RELEASE_ARRAY(env, side_ptrs, sides);

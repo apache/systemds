@@ -93,7 +93,7 @@ set(SPOOF_CUDA_HEADERS
 	headers/agg_ops.cuh
 	headers/reduction.cuh
 	headers/spoof_utils.cuh
-	headers/utils.cuh)
+	headers/utils.cuh headers/operators.cuh)
 		#headers/intellisense_cuda_intrinsics.h
 set(SPOOF_TEMPLATES
 	spoof/cellwise.cu    

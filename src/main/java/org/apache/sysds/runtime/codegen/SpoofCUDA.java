@@ -96,14 +96,15 @@ public class SpoofCUDA extends SpoofOperator {
 
 			// ToDo: handle float
 		   ret = execute_f(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
-					in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
+					in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), out_obj.getNumColumns(),0);
 
 		}
 		else {
 			double[] scalars = prepInputScalars(scalarObjects);
 
 			ret = execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
-					in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
+					in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 
+					out_obj.getNumColumns(),0);
 		}
 		return ret;
 	}
@@ -115,8 +116,8 @@ public class SpoofCUDA extends SpoofOperator {
 	}
 
 	private native float execute_f(long ctx, String name, long[] in_ptr, long[] side_ptr,
-								   long out_ptr, float[] scalars, long m, long n, long grix);
+								   long out_ptr, float[] scalars, long m, long n, long out_len, long grix);
 
 	private native double execute_d(long ctx, String name, long[] in_ptr, long[] side_ptr,
-									long out_ptr, double[] scalars, long m, long n, long grix);
+									long out_ptr, double[] scalars, long m, long n, long out_len, long grix);
 }

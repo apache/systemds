@@ -38,7 +38,7 @@ public class CNodeRow extends CNodeTpl
 	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rix] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
 	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, ci, %LEN%);\n";
-	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "    vectWrite(%IN%, c, ci, %LEN%);\n";
+	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c, ci, ci, %LEN%);\n";
 	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0)\n\t\t\tc[rix] = %IN%;\n";
 	
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
@@ -118,24 +118,15 @@ public class CNodeRow extends CNodeTpl
 			String dType = isSinglePrecision() ? "float" : "double";
 			StringBuilder declarations = new StringBuilder();
 			Arrays.stream(tmp.split("\\r?\\n")).forEach(line -> {
-				if(line.contains("_STORAGE")) {
-					System.out.println(line);
-					declarations.append("__device__ " + dType + " " + line.substring(line.indexOf("&TMP") + 1, line.indexOf("[0];")) + "[2048];\n");
-				}
+				if(line.contains("_STORAGE"))
+					declarations.append("__device__ " + dType + " " + 
+						line.substring(line.indexOf("&TMP") + 1, line.indexOf("[0];")) + "[2048];\n");
 				});
 			
-			
-			if(!declarations.toString().isEmpty()) {
+			if(!declarations.toString().isEmpty()) 
 				tmp = tmp.replace("%TMP_MEM%", declarations.toString());
-			}
-			
-//			String declarations = Arrays.stream(tmp.split("\\r?\\n"))
-//				.filter(line -> line.contains("_STORAGE"))
-//				.map(line -> { 
-//					Matcher matcher(line);
-//					return null;
-//				})
-//				.collect(Collectors.joining(";"));
+			else
+				tmp = tmp.replace("%TMP_MEM%", "");
 		}
 		return tmp;
 	}

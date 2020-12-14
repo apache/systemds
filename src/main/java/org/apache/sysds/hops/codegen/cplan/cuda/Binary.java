@@ -256,11 +256,11 @@ public class Binary extends CodeTemplate {
 
 				//scalar-scalar operations
 				case MULT:
-					return "	T %TMP% = %IN1% * %IN2%;\n";
+					return "		T %TMP% = %IN1% * %IN2%;\n";
 				case DIV:
 					return "	T %TMP% = %IN1% / %IN2%;\n";
 				case PLUS:
-					return "	T %TMP% = %IN1% + %IN2%;\n";
+					return "		T %TMP% = %IN1% + %IN2%;\n";
 				case MINUS:
 					return "	T %TMP% = %IN1% - %IN2%;\n";
 				case MODULUS:

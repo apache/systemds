@@ -21,8 +21,8 @@
 #ifndef SPOOF_UTILS_CUH
 #define SPOOF_UTILS_CUH
 
-
 #include <math_constants.h>
+#include "operaturs.cuh"
 // #include "intellisense_cuda_intrinsics.h"
 
 __constant__ double DOUBLE_EPS = 1.11022E-16; // 2 ^ -53
@@ -98,22 +98,9 @@ __device__ T BLOCK_ROW_AGG(T *a, T *b, int len, AggOp agg_op, LoadOp load_op) {
 	auto sdata = shared_memory_proxy<T>();
 	uint tid = threadIdx.x;
 
-	// sdata[tid] = AggOp::init();
-	// __syncthreads();
-
-			// if(blockIdx.x == 0 && threadIdx.x == 0)
-		 //  printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
-	
 	// Initalize shared mem and leave if tid > row length. 
 	if(tid >= len) { return sdata[tid] = AggOp::init();; }
 
-	// sdata[tid+128] = AggOp::init();
-	// sdata[tid+64] = AggOp::init();
-	// sdata[tid+32] = AggOp::init();
-	// sdata[tid+16] = AggOp::init();
-	// sdata[tid+8] = AggOp::init();
-	// sdata[tid+4] = AggOp::init();
-	// sdata[tid+2] = AggOp::init();
 	__syncthreads();
 	
 			// if(blockIdx.x == 0 && threadIdx.x == 0)
@@ -239,34 +226,6 @@ __device__ T vectMin(T* a, int ai, int len) {
 	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
 }
 
-//template<typename T>
-//__device__ void vectMultAdd_atomic(T* a, T b, T* c, int ai, int ci, int len) {
-//    uint tid = threadIdx.x;
-//    if(tid >= len)
-//        return;
-//    uint i = tid;
-//
-//    while (i < len) {
-//        atomicAdd(&(c[ci + i]), a[ai + i] * b);
-////        printf("block %d adding %f to c[%d]\n",blockIdx.x, b, tid);
-//        i += blockDim.x;
-//    }
-//}
-
-//template<typename T>
-//__device__ void vectDivAdd_atomic(T* a, T b, T* c, int ai, int ci, int len) {
-//    uint tid = threadIdx.x;
-//    if(tid >= len)
-//        return;
-//    uint i = tid;
-//
-//    while (i < len) {
-//        atomicAdd(&(c[ci + i]), a[ai + i] / b);
-////        printf("block %d adding %f to c[%d]\n",blockIdx.x, b, tid);
-//        i += blockDim.x;
-//    }
-//}
-
 template<typename T, typename Op>
 __device__ void vectAdd_atomic(T* a, T b, T* c, int ai, int ci, int len, Op op) {
 	uint tid = threadIdx.x;
@@ -279,36 +238,6 @@ __device__ void vectAdd_atomic(T* a, T b, T* c, int ai, int ci, int len, Op op) 
 		i += blockDim.x;
 	}
 }
-
-template<typename T, typename Op>
-__device__ void vectWrite_atomic(T* a, T* c, int ai, int ci, int len, Op op) {
-    uint tid = threadIdx.x;
-    if(tid >= len)
-        return;
-    uint i = tid;
-
-    while (i < len) {
-        // atomicExch(&(c[ci + i]), op(a[ai + i], a[i]));
-    	c[ci + i] = op(a[ai + i], a[i]);
-        i += blockDim.x;
-    }
-}
-
-// template<typename Op>
-// __device__ void vectWrite_atomic(double* a, double* c, int ai, int ci, int len, Op op) {
-// 	uint tid = threadIdx.x;
-// 	if(tid >= len)
-// 		return;
-// 	uint i = tid;
-//
-// 	while (i < len) {
-//
-// 		double old = __longlong_as_double(atomicExch(reinterpret_cast<unsigned long long int*>(&(c[ci + i])), __double_as_longlong(op(a[ai + i], a[i]))));
-// 		// printf("bid=%d, tid=%d, old=%f, c[%d]=%f, a[%d]=%f]\n", blockIdx.x, threadIdx.x, old, ci+i, c[ci+i], ai+i,a[ai + i]);
-//
-// 		i += blockDim.x;
-// 	}
-// }
 
 template<typename T>
 __device__ void vectMultAdd(T* a, T b, T* c, int ai, int ci, int len) {
@@ -323,19 +252,13 @@ __device__ void vectDivAdd(T* a, T b, T* c, int ai, int ci, int len) {
 }
 
 template<typename T>
-__device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
-	IdentityOp<T> op;
-	vectWrite_atomic<T, DivOp<T>>(a, c, ai, ci, len, op);
-}
-
-template<typename T>
 __device__ int vectCbindWrite(T* a, T b, T* c, int ai, int len) {
 	if(threadIdx.x < len) {
 //		 if(blockIdx.x==0 && threadIdx.x ==0)
 		 	printf("vecCbindWrite: bid=%d, tid=%d, ai=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, len, ai * len + threadIdx.x, a[ai * len + threadIdx.x]);
 //        printf("block %d thread %d, b=%f, ci=%d, len=%d, a[%d]=%f\n",blockIdx.x, threadIdx.x, b, ci, len, ai, a[ai]);
 //		TEMP_STORAGE[blockIdx.x * (len) + threadIdx.x] = a[ai * len + threadIdx.x];
-        c[blockIdx.x * (len) + threadIdx.x] = a[ai * len + threadIdx.x];
+        c[blockIdx.x * (len+1) + threadIdx.x] = a[ai * len + threadIdx.x];
 //		TEMP_STORAGE[ai + blockIdx.x * (len+1) + threadIdx.x] = a[ai + threadIdx.x];
 		// __longlong_as_double(atomicExch(reinterpret_cast<unsigned long long int*>(&(c[ci * (len+1) + threadIdx.x])), __double_as_longlong(a[ai + threadIdx.x])));
 	}
@@ -350,26 +273,6 @@ __device__ int vectCbindWrite(T* a, T b, T* c, int ai, int len) {
     return len+1;
 }
 
-template<typename T>
-struct GreaterEqualOp {
-    __device__  __forceinline__ static T execute(T a, T b) {
-        return (a >= b) ? 1.0 : 0.0;
-    }
-};
-
-template<typename T>
-struct LessEqualOp {
-	__device__  __forceinline__ static T execute(T a, T b) {
-		return (a <= b) ? 1.0 : 0.0;
-	}
-};
-
-template<typename T>
-struct GreaterOp {
-	__device__  __forceinline__ static T execute(T a, T b) {
-		return (a > b) ? 1.0 : 0.0;
-	}
-};
 
 template<typename T, typename OP>
 __device__ void vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
@@ -382,13 +285,24 @@ __device__ void vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
 
     while (i < len) {
         // atomicExch(&(c[ci + i]), op(a[ai + i], a[i]));
-        if(blockIdx.x == 0 && i < 2)
-		    printf("vecWrite: bid=%d, tid=%d, ai=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, len, bid * len + i, a[bid * len + i]);
+        if(blockIdx.x == 2 && i < 2)
+		    printf("vecWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, bid * len + i, a[bid * len + i]);
 
-		c[ci + bid * len + i] = OP::execute(a[bid * len + i], b);
+		c[ci + i] = OP::execute(a[ai + i], b);
         i += blockDim.x;
     }
 }
+
+template<typename T>
+__device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
+    vectWrite_<T, IdentityOp<T>>(a, SumNeutralElement<T>::get(), c, ai, ci, len);
+}
+
+template<typename T>
+__device__ void vectWrite(T* a, T* c, int ci, int len) {
+    vectWrite(a, c, 0, ci, len);
+}
+
 template<typename T>
 T* vectLessequalWrite(T* a, T b, int ai, int len) {
 	vectWrite_<T, LessEqualOp<T>>(a, b, &TEMP_STORAGE[0], ai, 0, len);
@@ -399,11 +313,6 @@ template<typename T>
 int vectGreaterequalWrite(T* a, T b, T* c, int ai, int len) {
     vectWrite_<T, GreaterEqualOp<T>>(a, b, c, ai, 0, len);
     return len;
-}
-
-template<typename T>
-__device__ void vectWrite(T* a, T* c, int ci, int len) {
-	vectWrite_<T, IdentityOp<T>>(a, 0, c, 0, ci, len);
 }
 
 template<typename T>

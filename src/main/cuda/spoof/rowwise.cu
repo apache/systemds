@@ -29,6 +29,16 @@
 #include "utils.cuh"
 
 template<typename T>
+__device__ void printArray(T* a, int len) {
+    if(blockIdx.x == 0 && threadIdx.x==0) {
+        printf("block=%d, thread=%d, array[len=%d]:\n", blockIdx.x, threadIdx.x, len);
+        for(auto i = 0; i < (blockIdx.x + 10); ++i)
+            printf(" %f", a[i]);
+        printf("\n");
+    }
+}
+
+template<typename T>
 struct SpoofRowwiseOp {
 	T* a;
 	T**b;
@@ -41,13 +51,7 @@ struct SpoofRowwiseOp {
 	__device__  __forceinline__ void operator()(int ai, int ci, int rix) const {
 		
 %BODY_dense%
-//        if(blockIdx.x == 1 && threadIdx.x==0) {
-//		 	printf("bid=%d, tid=%d, TMP5=%f\nTMP6[len=%d]:", blockIdx.x, threadIdx.x, TMP5, TMP6_len);
-//		 	for(auto i = blockIdx.x; i < (blockIdx.x + TMP6_len); ++i)
-//		 		printf(" %f", TMP6[i]);
-//		 	printf("\n");
-//		 }
-
+//    printArray(TMP6, TMP6_len);
 //        if(blockIdx.x == 0 && threadIdx.x==0) {
 //            printf("c[len=%d]:", 10);
 //            for(auto i = 0; i < 10; ++i)

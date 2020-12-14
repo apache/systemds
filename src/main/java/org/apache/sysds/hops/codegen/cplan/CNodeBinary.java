@@ -181,12 +181,12 @@ public class CNodeBinary extends CNode {
 		//replace length information (e.g., after matrix mult)
 		if( _type == BinType.VECT_OUTERMULT_ADD ) {
 			for( int j=0; j<2; j++ )
-				tmp = tmp.replace("%LEN"+(j+1)+"%", _inputs.get(j).getVectorLength());
+				tmp = tmp.replace("%LEN"+(j+1)+"%", _inputs.get(j).getVectorLength(api));
 		}
 		else { //general case 
 			CNode mInput = getIntermediateInputVector();
 			if( mInput != null )
-				tmp = tmp.replace("%LEN%", mInput.getVectorLength());
+				tmp = tmp.replace("%LEN%", mInput.getVectorLength(api));
 		}
 		
 		sb.append(tmp);

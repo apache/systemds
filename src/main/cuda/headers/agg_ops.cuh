@@ -189,6 +189,12 @@ struct DivOp {
         ProductOp<T> prod_op;
         return prod_op(a, 1 / b);
     }
+
+    __device__  __forceinline__ static T execute(T a, T b) {
+        ProductOp<T> prod_op;
+        return prod_op(a, 1 / b);
+    }
+
 	__device__  __forceinline__ static T init() {
 	    return 1.0;
 	}

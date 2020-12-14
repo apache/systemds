@@ -20,6 +20,9 @@
 package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
@@ -28,12 +31,15 @@ import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 
+import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
+
 public class CNodeRow extends CNodeTpl
 {
 	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rix] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
 	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, ci, %LEN%);\n";
 	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "    vectWrite(%IN%, c, ci, %LEN%);\n";
+	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0)\n\t\t\tc[rix] = %IN%;\n";
 	
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);
@@ -107,6 +113,30 @@ public class CNodeRow extends CNodeTpl
 			TemplateUtils.containsBinary(_output, BinType.VECT_MATRIXMULT)));
 		tmp = tmp.replace("%VECT_MEM%", String.valueOf(_numVectors));
 		
+		// replace temp storage occurrences in CUDA code
+		if(api == GeneratorAPI.CUDA) {
+			String dType = isSinglePrecision() ? "float" : "double";
+			StringBuilder declarations = new StringBuilder();
+			Arrays.stream(tmp.split("\\r?\\n")).forEach(line -> {
+				if(line.contains("_STORAGE")) {
+					System.out.println(line);
+					declarations.append("__device__ " + dType + " " + line.substring(line.indexOf("&TMP") + 1, line.indexOf("[0];")) + "[2048];\n");
+				}
+				});
+			
+			
+			if(!declarations.toString().isEmpty()) {
+				tmp = tmp.replace("%TMP_MEM%", declarations.toString());
+			}
+			
+//			String declarations = Arrays.stream(tmp.split("\\r?\\n"))
+//				.filter(line -> line.contains("_STORAGE"))
+//				.map(line -> { 
+//					Matcher matcher(line);
+//					return null;
+//				})
+//				.collect(Collectors.joining(";"));
+		}
 		return tmp;
 	}
 	
@@ -119,11 +149,14 @@ public class CNodeRow extends CNodeTpl
 					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+".length");
 				else
 //					return "";
-					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName) .replace("%LEN%", "len");
+					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+"_len");
 			case FULL_AGG:
 				return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
 			case ROW_AGG:
-				return TEMPLATE_ROWAGG_OUT.replace("%IN%", varName);
+				if(api == GeneratorAPI.JAVA)
+					return TEMPLATE_ROWAGG_OUT.replace("%IN%", varName);
+				else
+					return TEMPLATE_ROWAGG_OUT_CUDA.replace("%IN%", varName);
 			default:
 				return ""; //_type.isColumnAgg()
 		}

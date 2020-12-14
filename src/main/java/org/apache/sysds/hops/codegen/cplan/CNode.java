@@ -84,18 +84,19 @@ public abstract class CNode
 
 	public String getVarname(GeneratorAPI api) { return getVarname(); }
 
-	public String getVectorLength() {
-		
-		if(SpoofCompiler.API == GeneratorAPI.CUDA) {
-			return "len";
-		}
-		else
+	public String getVectorLength(GeneratorAPI api) {
 		if( getVarname().startsWith("a") )
 			return "len";
-		else if( getVarname().startsWith("b") )
-			return getVarname()+".clen";
-		else if( _dataType==DataType.MATRIX )
-			return getVarname()+".length";
+		
+		if(api == GeneratorAPI.CUDA) {
+			return getVarname()+"_len";
+		}
+		else {
+			if(getVarname().startsWith("b"))
+				return getVarname() + ".clen";
+			else if(_dataType == DataType.MATRIX)
+				return getVarname() + ".length";
+		}
 		return "";
 	}
 	
@@ -215,7 +216,7 @@ public abstract class CNode
 			&& _literal == cthat._literal;
 	}
 	
-	protected String replaceUnaryPlaceholders(String tmp, String varj, boolean vectIn) {
+	protected String replaceUnaryPlaceholders(String tmp, String varj, boolean vectIn, GeneratorAPI api) {
 		//replace sparse and dense inputs
 		tmp = tmp.replace("%IN1v%", varj+"vals");
 		tmp = tmp.replace("%IN1i%", varj+"ix");
@@ -233,7 +234,7 @@ public abstract class CNode
 		
 		//replace length
 		if( _inputs.get(0).getDataType().isMatrix() )
-			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
+			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength(api));
 		
 		return tmp;
 	}

@@ -21,7 +21,7 @@
 
 // RowType: %TYPE%
 
-__device__ double TEMP_STORAGE[2048];
+%TMP_MEM%
 
 #include "agg_ops.cuh"
 #include "reduction.cuh"
@@ -34,26 +34,34 @@ struct SpoofRowwiseOp {
 	T**b;
 	T* c;
 	T* scalars;
-	int len, grix;
+	int len, grix, c_len;
 
 	SpoofRowwiseOp(T* a, T** b, T* scalars, T* c, int len, int grix) : a(a), b(b), c(c), scalars(scalars), len(len), grix(grix) {}
 
 	__device__  __forceinline__ void operator()(int ai, int ci, int rix) const {
 		
 %BODY_dense%
-		// if(blockIdx.x == 0 && threadIdx.x==0) {
-		// 	printf("bid=%d, tid=%d, TMP9=%f, TMP11=%f\nTMP10[len=%d]:", blockIdx.x, threadIdx.x, TMP9, TMP11, len);
-		// 	for(auto i = 0; i < len; ++i)
-		// 		printf(" %f", TMP10[i]);
-		// 	printf("\n");
-		// }
+//        if(blockIdx.x == 1 && threadIdx.x==0) {
+//		 	printf("bid=%d, tid=%d, TMP5=%f\nTMP6[len=%d]:", blockIdx.x, threadIdx.x, TMP5, TMP6_len);
+//		 	for(auto i = blockIdx.x; i < (blockIdx.x + TMP6_len); ++i)
+//		 		printf(" %f", TMP6[i]);
+//		 	printf("\n");
+//		 }
+
+//        if(blockIdx.x == 0 && threadIdx.x==0) {
+//            printf("c[len=%d]:", 10);
+//            for(auto i = 0; i < 10; ++i)
+//                printf(" %f", c[i]);
+//            printf("\n");
+//        }
 	}
 };
 
 template<typename T>
-__global__ void %TMP% (T* a, T** b, T* scalars, T* c, uint c_n, int len, int grix) {
+__global__ void %TMP% (T* a, T** b, T* scalars, T* c, uint c_len, int len, int grix) {
 	SpoofRowwiseOp<T> spoof_op(a, b, scalars, c, len, grix + blockIdx.x);
+	spoof_op.c_len = c_len;
 	int ai = blockIdx.x * len;
-	int ci = blockIdx.x * c_n;
+	int ci = blockIdx.x * c_len;
 	spoof_op(ai, ci, blockIdx.x);
 };

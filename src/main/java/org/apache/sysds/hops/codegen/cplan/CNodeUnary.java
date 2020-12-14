@@ -110,12 +110,12 @@ public class CNodeUnary extends CNode
 			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
 		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparse);
-		tmp = tmp.replace("%TMP%", var);
+		tmp = tmp.replaceAll("%TMP%", var);
 		
 		//replace sparse and dense inputs
 		String varj = _inputs.get(0).getVarname();
 		boolean vectIn = varj.startsWith("b") && !_type.isScalarLookup();
-		tmp = replaceUnaryPlaceholders(tmp, varj, vectIn);
+		tmp = replaceUnaryPlaceholders(tmp, varj, vectIn, api);
 		
 		sb.append(tmp);
 		

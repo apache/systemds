@@ -115,7 +115,7 @@ public class CNodeNary extends CNode
 	public String codegen(boolean sparse, GeneratorAPI api) {
 		if( isGenerated() )
 			return "";
-		
+				
 		StringBuilder sb = new StringBuilder();
 		
 		//generate children
@@ -134,8 +134,8 @@ public class CNodeNary extends CNode
 		String varj1 = _inputs.get(0).getVarname();
 		String varj2 = _inputs.get(1).getVarname();
 		tmp = (_type == NaryType.VECT_CONV2DMM) ?
-			replaceBinaryPlaceholders(tmp, new String[]{varj1,varj2}, false) :
-			replaceUnaryPlaceholders(tmp, varj1, false);
+			replaceBinaryPlaceholders(tmp, new String[]{varj1,varj2}, false, api) :
+			replaceUnaryPlaceholders(tmp, varj1, false, api);
 		
 		sb.append(tmp);
 		
@@ -251,7 +251,7 @@ public class CNodeNary extends CNode
 	}
 	
 
-	private String replaceBinaryPlaceholders(String tmp, String[] vars, boolean vectIn) {
+	private String replaceBinaryPlaceholders(String tmp, String[] vars, boolean vectIn, GeneratorAPI api) {
 		//replace sparse and dense inputs
 		for( int j=0; j<2; j++ ) {
 			String varj = vars[j];
@@ -270,7 +270,7 @@ public class CNodeNary extends CNode
 		
 		//replace length
 		if( _inputs.get(0).getDataType().isMatrix() )
-			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
+			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength(api));
 		
 		return tmp;
 	}

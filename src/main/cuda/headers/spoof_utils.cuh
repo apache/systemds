@@ -272,6 +272,15 @@ __device__ int vectCbindWrite(T* a, T b, T* c, int ai, int len) {
 	return len+1;
 }
 
+template<typename T>
+__device__ int vectCbindWrite(T a, T b, T* c) {
+	if (threadIdx.x == 0) {
+		c[blockIdx.x * 2] = a;
+		c[blockIdx.x * 2 + 1] = b;
+	}
+	return 2;
+}
+
 // vect-vect
 template<typename T, typename OP>
 __device__ int vectWrite_(T* a, T* b, T* c, int ai, int ci, int len) {

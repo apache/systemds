@@ -219,7 +219,7 @@ public class Unary extends CodeTemplate {
 				case SQRT:
 					return "	T %TMP% = sqrt(%IN1%);\n";
 				case LOG:
-					return "	T %TMP% = log(%IN1%);\n";
+					return "		T %TMP% = log(%IN1%);\n";
 				case ROUND:
 					return "	T %TMP% = round(%IN1%);\n";
 				case CEIL:

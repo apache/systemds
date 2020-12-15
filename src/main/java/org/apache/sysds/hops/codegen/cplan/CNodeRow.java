@@ -41,7 +41,9 @@ public class CNodeRow extends CNodeTpl
 	private static final String TEMPLATE_NOAGG_CONST_OUT_CUDA   = "\t\tvectWrite(%IN%, c, rix * %LEN%, ci, %LEN%);\n";
 	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c, 0, ci, %LEN%);\n";
 	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0)\n\t\t\tc[rix] = %IN%;\n";
-	
+	private static final String TEMPLATE_FULLAGG_OUT_CUDA = "\t\tif(threadIdx.x == 0)\n\t\t\tatomicAdd(&c[0], %IN%);\n";
+
+
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);
 	}
@@ -145,7 +147,10 @@ public class CNodeRow extends CNodeTpl
 //					return "";
 					return TEMPLATE_NOAGG_CONST_OUT_CUDA.replace("%IN%", varName) .replaceAll("%LEN%", _output.getVarname()+"_len");
 			case FULL_AGG:
-				return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
+				if(api == GeneratorAPI.JAVA)
+					return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
+				else
+					return TEMPLATE_FULLAGG_OUT_CUDA.replace("%IN%", varName);
 			case ROW_AGG:
 				if(api == GeneratorAPI.JAVA)
 					return TEMPLATE_ROWAGG_OUT.replace("%IN%", varName);

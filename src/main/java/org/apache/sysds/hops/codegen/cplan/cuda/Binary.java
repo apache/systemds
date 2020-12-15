@@ -87,7 +87,7 @@ public class Binary extends CodeTemplate {
 
 				case VECT_CBIND:
 					if(scalarInput)
-						return "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%);\n";
+						return "		T* %TMP%;\n\t\tint %TMP%_len = vectCbindWrite(%IN1%, %IN2%, %TMP%);\n";
 					else
 //						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		T* %TMP%;\n\t\tint %TMP%_len = vectCbindWrite(%IN1%, %IN2%, %TMP%, %POS1%, %LEN%);\n";
@@ -226,7 +226,7 @@ public class Binary extends CodeTemplate {
 
 				case VECT_CBIND:
 					if(scalarInput)
-						return "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%);\n";
+						return "		T* %TMP% = &%TMP%_STORAGE[0];\n\t\tint %TMP%_len = vectCbindWrite(%IN1%, %IN2%, %TMP%);\n";
 					else
 //						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 //						return sparseLhs ? "	T[] %TMP% = vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		T* %TMP% = vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";

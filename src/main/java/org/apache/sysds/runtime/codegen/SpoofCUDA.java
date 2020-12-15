@@ -102,9 +102,11 @@ public class SpoofCUDA extends SpoofOperator {
 		else {
 			double[] scalars = prepInputScalars(scalarObjects);
 
+			long out_cols = out_obj == null ? 1 : out_obj.getNumColumns();
+
 			ret = execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
 					in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 
-					out_obj.getNumColumns(),0);
+					out_cols,0);
 		}
 		return ret;
 	}

@@ -19,11 +19,17 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.spark.sql.execution.columnar.INT;
+import org.apache.spark.sql.sources.In;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -82,27 +88,25 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		if (output.getDataType() == Types.DataType.MATRIX) {
 			MatrixObject mo1 = ec.getMatrixObject(input1);
-
 			BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), Types.ValueType.BOOLEAN, _opByRow.isLiteral());
 			int rows = (int) ec.getScalarInput(_opRows).getLongValue();
 			int cols = (int) ec.getScalarInput(_opCols).getLongValue();
-
-			// TODO aligned in ranges
-			boolean isAligned = (byRow.getBooleanValue() && rows % mo1.getNumColumns() == 0) ||
-				(!byRow.getBooleanValue() && cols % mo1.getNumRows() == 0);
-
 
 			if( !mo1.isFederated() )
 				throw new DMLRuntimeException("Federated Rshape: "
 					+ "Federated input expected, but invoked w/ "+mo1.isFederated());
 
-			if(! (rows * cols == mo1.getNumRows() * mo1.getNumColumns()))
+			if( mo1.getNumColumns() * mo1.getNumRows() != rows * cols)
 				throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells ("
 					+mo1.getNumRows()+":"+mo1.getNumColumns()+", "+rows+":"+cols+").");
 
+			boolean isNotAligned = Arrays.stream(mo1.getFedMapping().getFederatedRanges())
+				.map(e -> e.getSize() % (byRow.getBooleanValue() ? cols : rows) == 0).collect(Collectors.toList()).contains(false);
 
-			// FIXME different instructions with really different instructions,
-			//  works with array of same instructions
+			if(isNotAligned)
+				throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells for each worker.");
+//				processNotAligned(mo1.getFedMapping());
+
 			String[] newInstString = getNewInstString(mo1, instString, rows, cols, byRow.getBooleanValue());
 
 			//execute at federated site
@@ -141,12 +145,32 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 		}
 	}
 
+//	private FederationMap processNotAligned(MatrixObject mo1, boolean byRow, int rows, int cols) {
+//		Map<Integer, int[]> indices = new HashMap<>();
+//		FederatedRange[] fedRanges = mo1.getFedMapping().getFederatedRanges();
+//		String[] instStrings = new String[mo1.getFedMapping().getSize()];
+//
+//		boolean prevFull = true;
+//		for(int i = 0; i < mo1.getFedMapping().getFederatedRanges().length; i++) {
+//			// for byRow
+//			if(fedRanges[i].getSize() % rows != 0 || !prevFull)
+//
+//
+//
+//			String oldInstStringPart = byRow ? instString.split("°")[3] : instString.split("°")[4];
+//			String newInstStringPart = byRow ? oldInstStringPart.replace(String.valueOf(rows),
+//				String.valueOf(mo1.getFedMapping().getFederatedRanges()[i].getSize() / cols)) : oldInstStringPart
+//				.replace(String.valueOf(cols), String.valueOf(mo1.getFedMapping().getFederatedRanges()[i].getSize() / rows));
+//			instStrings[i] = instString.replace(oldInstStringPart, newInstStringPart);
+//		}
+//
+//		return fedMap;
+//	}
 
 	// replace old reshape values for each worker
 	private String[] getNewInstString(MatrixObject mo1, String instString, int rows, int cols, boolean byRow) {
 		String[] instStrings = new String[mo1.getFedMapping().getSize()];
 
-		Arrays.stream(mo1.getFedMapping().getFederatedRanges()).forEach(federatedRange -> System.out.println(federatedRange.getSize()));
 		int sameFedSize = Arrays.stream(mo1.getFedMapping().getFederatedRanges()).map(FederatedRange::getSize).collect(Collectors.toSet()).size();
 		sameFedSize = sameFedSize == 1 ? 1 : mo1.getFedMapping().getSize();
 
@@ -163,7 +187,6 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 
 		return instStrings;
 	}
-
 
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {

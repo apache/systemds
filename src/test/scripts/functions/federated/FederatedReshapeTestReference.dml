@@ -21,5 +21,4 @@
 
 A = rbind(read($1), read($2), read($3), read($4));
 s = matrix(A, rows=$6, cols=$7);
-print(toString(s))
 write(s, $5);

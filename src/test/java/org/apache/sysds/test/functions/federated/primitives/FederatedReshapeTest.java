@@ -60,6 +60,7 @@ public class FederatedReshapeTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
 			{12, 12, 144, 1}
+//			{20, 5, 50, 2}
 		});
 	}
 
@@ -70,13 +71,13 @@ public class FederatedReshapeTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedRdiagCP() { federatedRdiag(Types.ExecMode.SINGLE_NODE); }
+	public void federatedReshapeCP() { federatedReshape(Types.ExecMode.SINGLE_NODE); }
 
 	@Test
 	@Ignore
-	public void federatedRdiagSP() { federatedRdiag(Types.ExecMode.SPARK); }
+	public void federatedReshapeSP() { federatedReshape(Types.ExecMode.SPARK); }
 
-	public void federatedRdiag(Types.ExecMode execMode) {
+	public void federatedReshape(Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
@@ -94,7 +95,7 @@ public class FederatedReshapeTest extends AutomatedTestBase {
 //		writeInputMatrixWithMTD("X2", X2, false, mc);
 //		writeInputMatrixWithMTD("X3", X3, false, mc);
 //		writeInputMatrixWithMTD("X4", X4, false, mc);
-
+//
 		double[][] X1 = getRandomMatrix(2, cols, 1, 5, 1, 3);
 		double[][] X2 = getRandomMatrix(2, cols, 1, 5, 1, 7);
 		double[][] X3 = getRandomMatrix(6, cols, 1, 5, 1, 8);

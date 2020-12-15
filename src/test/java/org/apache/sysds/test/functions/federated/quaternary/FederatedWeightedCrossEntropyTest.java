@@ -60,7 +60,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Override
   public void setUp()
   {
-    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Z.mtd"}));
+    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Z"}));
   }
 
   @Parameterized.Parameters
@@ -82,7 +82,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Test
   public void federatedWeightedCrossEntropySingleNode()
   {
-    federatedWeightedCrossEntropy(ExecMode.SPARK);
+    federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE);
   }
 
   public void federatedWeightedCrossEntropy(ExecMode exec_mode)
@@ -121,14 +121,30 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     getAndLoadTestConfiguration(TEST_NAME);
 
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
     System.out.println("Running refercence test");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
     // Run reference fml script with normal matrix
     fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
     programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
     "in_U=" + input("U"), "in_V=" + input("V"), "out_Z=" + expected("Z")};
     LOG.debug(runTest(true, false, null, -1));
 
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
     System.out.println("Running actual test");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
+    System.out.println("*****************************************************");
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
     programArgs = new String[] {"-stats", "-nvargs",

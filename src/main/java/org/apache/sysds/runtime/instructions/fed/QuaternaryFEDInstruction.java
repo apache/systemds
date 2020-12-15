@@ -52,19 +52,21 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
     String opcode = parts[0];
 
     // TODO: can we assume the same opcodes as for quaternarySP?
-    if(!InstructionUtils.isDistQuaternaryOpcode(opcode))
-    {
-      throw new DMLRuntimeException("QuaternaryFED.parseInstruction(): Unknown opcode " + opcode);
-    }
+    // if(!InstructionUtils.isDistQuaternaryOpcode(opcode))
+    // {
+    //   throw new DMLRuntimeException("QuaternaryFED.parseInstruction(): Unknown opcode " + opcode);
+    // }
 
-    int add_input_4 = (opcode.endsWith("wcemm")) ? 1 : 0;
+    // int add_input_4 = (opcode.endsWith("wcemm")) ? 1 : 0;
 
     CPOperand in1 = new CPOperand(parts[1]);
     CPOperand in2 = new CPOperand(parts[2]);
     CPOperand in3 = new CPOperand(parts[3]);
-    CPOperand out = new CPOperand(parts[4] + add_input_4);
+    // CPOperand out = new CPOperand(parts[4] + add_input_4);
+    CPOperand out = new CPOperand(parts[5]);
 
-    InstructionUtils.checkNumFields(parts, 5 + add_input_4);
+    // InstructionUtils.checkNumFields(parts, 5 + add_input_4);
+    InstructionUtils.checkNumFields(parts, 7);
 
     // TODO: can the output data type be checked here?
 

@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
@@ -179,6 +180,15 @@ public class FEDInstructionUtils {
 				fedinst = AggregateTernaryFEDInstruction.parseInstruction(ins);
 			}
 		}
+    else if(inst instanceof QuaternaryCPInstruction)
+    {
+      QuaternaryCPInstruction instruction = (QuaternaryCPInstruction) inst;
+      Data data = ec.getVariable(instruction.input1);
+      if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+      {
+        fedinst = QuaternaryFEDInstruction.parseInstruction(instruction.getInstructionString());
+      }
+    }
 
 		//set thread id for federated context management
 		if( fedinst != null ) {

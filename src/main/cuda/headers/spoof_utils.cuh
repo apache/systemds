@@ -305,6 +305,18 @@ __device__ int vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
     return len;
 }
 
+// scalar-vector
+template<typename T, typename OP>
+__device__ int vectWrite_(T a, T* b, T* c, int ai, int ci, int len) {
+	uint i = threadIdx.x;
+
+	while (i < len) {
+		c[ci + i] = OP::exec(a, b[ai + i]);
+		i += blockDim.x;
+	}
+	return len;
+}
+
 template<typename T>
 __device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
 	if(blockIdx.x == 3 && threadIdx.x < 2)
@@ -334,6 +346,11 @@ int vectDivWrite(T* a, T b, T* c, int ai, int len) {
 }
 
 template<typename T>
+int vectDivWrite(T a, T* b, T* c, int ai, int len) {
+	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T>
 int vectMultWrite(T* a, T b, T* c, int ai, int len) {
 	return vectWrite_<T, ProductOp<T>>(a, b, c, ai, 0, len);
 }
@@ -350,6 +367,11 @@ int vectMinusWrite(T* a, T* b, T* c, int ai, int ci, int len) {
 
 template<typename T>
 int vectMinusWrite(T* a, T b, T* c, int ai, int len) {
+	return vectWrite_<T, MinusOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T>
+int vectMinusWrite(T a, T* b, T* c, int ai, int len) {
 	return vectWrite_<T, MinusOp<T>>(a, b, c, ai, 0, len);
 }
 

@@ -106,6 +106,24 @@ struct SumOp {
 };
 
 /**
+ * Functor op for difference operation
+ */
+template<typename T>
+struct MinusOp {
+	__device__  __forceinline__ T operator()(T a, T b) const {
+		return a - b;
+	}
+
+	__device__  __forceinline__ static T exec(T const& a, T const& b) {
+		return a - b;
+	}
+
+	__device__  __forceinline__ static T init() {
+		return SumNeutralElement<T>::get();
+	}
+};
+
+/**
  * Functor op for sum of squares operation (returns a + b * b)
  */
 template<typename T>
@@ -193,6 +211,10 @@ struct MaxOp<float> {
 template<typename T>
 struct ProductOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
+		return a * b;
+	}
+
+	__device__  __forceinline__ static T exec(T const& a, T const& b) {
 		return a * b;
 	}
 

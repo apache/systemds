@@ -300,8 +300,8 @@ public:
 
 #ifdef __DEBUG
 			// ToDo: connect output to SystemDS logging facilities
-			std::cout << "launching spoof rowwise kernel " << op->name << " with " << NT * NB << " threads in " << NB
-				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << m << " rows" << std::endl;
+			std::cout << "launching spoof rowwise kernel " << op->name << " with " << NT * in_rows << " threads in " << in_rows
+				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << row_len << " cols processed by " << NT << " threads per row " << std::endl;
 #endif
 		
 		CHECK_CUDA(op->program.kernel(op->name)

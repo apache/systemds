@@ -62,6 +62,13 @@ struct CeilOp {
 };
 
 template<typename T>
+struct ExpOp {
+	__device__  __forceinline__ static T exec(T a, T b) {
+		return expf(a);
+	}
+};
+
+template<typename T>
 struct GreaterEqualOp {
     __device__  __forceinline__ static T exec(T a, T b) {
         return (a >= b) ? 1.0 : 0.0;

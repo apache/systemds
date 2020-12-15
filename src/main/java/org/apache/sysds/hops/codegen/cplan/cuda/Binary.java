@@ -251,7 +251,7 @@ public class Binary extends CodeTemplate {
 				case VECT_GREATEREQUAL: {
 					String vectName = type.getVectorPrimitiveName();
 //					return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" : sparseRhs ? "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
-					return sparseLhs ? "	T[] %TMP% = vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" : sparseRhs ? "	T[] %TMP% = vect" + vectName + "Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" : "		vect" + vectName + "Write(%IN1%, %IN2%, c, %POS1%, %POS2%, ci, %LEN%);\n";
+					return sparseLhs ? "	T[] %TMP% = vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" : sparseRhs ? "	T[] %TMP% = vect" + vectName + "Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" : "		T* %TMP% = &%TMP%_STORAGE[0];\n\t\tint %TMP%_len = vect" + vectName + "Write(%IN1%, %IN2%, %TMP%, %POS1%, %POS2%, %LEN%);\n";
 				}
 
 				//scalar-scalar operations

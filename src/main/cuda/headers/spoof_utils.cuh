@@ -226,6 +226,13 @@ __device__ T vectMin(T* a, int ai, int len) {
 	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
 }
 
+template<typename T>
+__device__ T vectMax(T* a, int ai, int len) {
+	MaxOp<T> agg_op;
+	IdentityOp<T> load_op;
+	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
+}
+
 template<typename T, typename Op>
 __device__ void vectAdd_atomic(T* a, T b, T* c, int ai, int ci, int len, Op op) {
 	uint tid = threadIdx.x;
@@ -265,7 +272,19 @@ __device__ int vectCbindWrite(T* a, T b, T* c, int ai, int len) {
 	return len+1;
 }
 
+// vect-vect
+template<typename T, typename OP>
+__device__ int vectWrite_(T* a, T* b, T* c, int ai, int ci, int len) {
+	uint i = threadIdx.x;
 
+	while (i < len) {
+		c[ci + i] = OP::exec(a[ai + i], b[ai + i]);
+		i += blockDim.x;
+	}
+	return len;
+}
+
+// vect-scalar
 template<typename T, typename OP>
 __device__ int vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
     uint i = threadIdx.x;
@@ -306,8 +325,23 @@ int vectDivWrite(T* a, T b, T* c, int ai, int len) {
 }
 
 template<typename T>
+int vectMultWrite(T* a, T b, T* c, int ai, int len) {
+	return vectWrite_<T, ProductOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T>
 int vectPlusWrite(T* a, T b, T* c, int ai, int len) {
 	return vectWrite_<T, SumOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T>
+int vectMinusWrite(T* a, T* b, T* c, int ai, int ci, int len) {
+	return vectWrite_<T, MinusOp<T>>(a, b, c, ai, ci, len);
+}
+
+template<typename T>
+int vectMinusWrite(T* a, T b, T* c, int ai, int len) {
+	return vectWrite_<T, MinusOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
@@ -321,8 +355,13 @@ int vectAbsWrite(T* a, T* c, int ai, int len) {
 }
 
 template<typename T>
+int vectExpWrite(T* a, T* c, int ai, int len) {
+	return vectWrite_<T, ExpOp<T>>(a, 0.0, c, ai, 0, len);
+}
+
+template<typename T>
 int vectRoundWrite(T* a, T* c, int ai, int len) {
-	return vectWrite_<T, RoundOp<T>>(a, 0, c, ai, 0, len);
+	return vectWrite_<T, RoundOp<T>>(a, 0.0, c, ai, 0, len);
 }
 
 template<typename T>

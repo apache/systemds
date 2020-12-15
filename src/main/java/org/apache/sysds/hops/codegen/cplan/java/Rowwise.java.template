@@ -30,7 +30,9 @@ public final class %TMP% extends SpoofRowwise {
 
 	protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, 
 			int ci, int len, long grix, int rix) {	 		 
-%BODY_dense% 		//System.out.println("TMP0=" + TMP0);
+%BODY_dense% 		//System.out.println("TMP3=" + TMP3);
+		//for(int i=1; i<=TMP2.length; i++)
+          //  System.out.println(" " + TMP2[i]);
 	}
 
 	protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int ci, 

@@ -22,7 +22,7 @@
 #define SPOOF_UTILS_CUH
 
 #include <math_constants.h>
-#include "operaturs.cuh"
+#include "operators.cuh"
 // #include "intellisense_cuda_intrinsics.h"
 
 __constant__ double DOUBLE_EPS = 1.11022E-16; // 2 ^ -53
@@ -207,8 +207,8 @@ __device__ T dotProduct(T* a, T* b, int ai, int bi, int len) {
 	SumOp<T> agg_op;
 	ProductOp<T> load_op;
 	T ret =  BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
-	if(blockIdx.x < 4 && threadIdx.x == 0)
-		printf("bid=%d, tid=%d, dot=%f\n", blockIdx.x, threadIdx.x, ret);
+//	if(blockIdx.x < 4 && threadIdx.x == 0)
+//		printf("bid=%d, tid=%d, dot=%f\n", blockIdx.x, threadIdx.x, ret);
 	return ret;
 }
 
@@ -255,47 +255,34 @@ template<typename T>
 __device__ int vectCbindWrite(T* a, T b, T* c, int ai, int len) {
 	if(threadIdx.x < len) {
 //		 if(blockIdx.x==0 && threadIdx.x ==0)
-		 	printf("vecCbindWrite: bid=%d, tid=%d, ai=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, len, ai * len + threadIdx.x, a[ai * len + threadIdx.x]);
-//        printf("block %d thread %d, b=%f, ci=%d, len=%d, a[%d]=%f\n",blockIdx.x, threadIdx.x, b, ci, len, ai, a[ai]);
-//		TEMP_STORAGE[blockIdx.x * (len) + threadIdx.x] = a[ai * len + threadIdx.x];
-        c[blockIdx.x * (len+1) + threadIdx.x] = a[ai * len + threadIdx.x];
-//		TEMP_STORAGE[ai + blockIdx.x * (len+1) + threadIdx.x] = a[ai + threadIdx.x];
-		// __longlong_as_double(atomicExch(reinterpret_cast<unsigned long long int*>(&(c[ci * (len+1) + threadIdx.x])), __double_as_longlong(a[ai + threadIdx.x])));
+//		 	printf("vecCbindWrite: bid=%d, tid=%d, ai=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, len, ai * len + threadIdx.x, a[ai * len + threadIdx.x]);
+        c[blockIdx.x * (len+1) + threadIdx.x] = a[ai + threadIdx.x];
 	}
 	if(threadIdx.x == len) {
-		printf("---> block %d thread %d, b=%f,, len=%d, a[%d]=%f\n",blockIdx.x, threadIdx.x, b, len, ai, a[ai]);
-//		TEMP_STORAGE[ai * (len+1) + threadIdx.x] = b;
-//		TEMP_STORAGE[blockIdx.x * (len+1) + threadIdx.x] = b;
+//		printf("---> block %d thread %d, b=%f,, len=%d, a[%d]=%f\n",blockIdx.x, threadIdx.x, b, len, ai, a[ai]);
         c[blockIdx.x * (len+1) + threadIdx.x] = b;
 	}
-
-//	return &TEMP_STORAGE[0];
-    return len+1;
+	return len+1;
 }
 
 
 template<typename T, typename OP>
-__device__ void vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
-
-	uint tid = threadIdx.x;
-	uint bid = blockIdx.x;
-//    if(tid >= len)
-//        return;
-    uint i = tid;
+__device__ int vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
+    uint i = threadIdx.x;
 
     while (i < len) {
-        // atomicExch(&(c[ci + i]), op(a[ai + i], a[i]));
-        if(blockIdx.x == 2 && i < 2)
-		    printf("vecWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, bid * len + i, a[bid * len + i]);
-
-		c[ci + i] = OP::execute(a[ai + i], b);
+		c[ci + i] = OP::exec(a[ai + i], b);
         i += blockDim.x;
     }
+    return len;
 }
 
 template<typename T>
 __device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
-    vectWrite_<T, IdentityOp<T>>(a, SumNeutralElement<T>::get(), c, ai, ci, len);
+	if(blockIdx.x == 3 && threadIdx.x < 2)
+		printf("vecWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ai + threadIdx.x, a[ai + threadIdx.x]);
+
+	vectWrite_<T, IdentityOp<T>>(a, SumNeutralElement<T>::get(), c, ai, ci, len);
 }
 
 template<typename T>
@@ -304,44 +291,83 @@ __device__ void vectWrite(T* a, T* c, int ci, int len) {
 }
 
 template<typename T>
-T* vectLessequalWrite(T* a, T b, int ai, int len) {
-	vectWrite_<T, LessEqualOp<T>>(a, b, &TEMP_STORAGE[0], ai, 0, len);
-	return &TEMP_STORAGE[0];
+int vectLessequalWrite(T* a, T b, T* c, int ai, int len) {
+	return vectWrite_<T, LessEqualOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
 int vectGreaterequalWrite(T* a, T b, T* c, int ai, int len) {
-    vectWrite_<T, GreaterEqualOp<T>>(a, b, c, ai, 0, len);
-    return len;
+    return vectWrite_<T, GreaterEqualOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
 int vectDivWrite(T* a, T b, T* c, int ai, int len) {
-	vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
-	return len;
-}
-
-template<typename T, typename OP>
-__device__ void vectAdd_atomic_(T* a, T b, T* c, int ai, int ci, int len) {
-    uint tid = threadIdx.x;
-    if(tid >= len)
-        return;
-    uint i = tid;
-
-    while (i < len) {
-        atomicAdd(&(c[ci + i]), OP::execute(a[ai + i], b));
-        i += blockDim.x;
-    }
+	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
-T* vectGreaterAdd(T* a, T b, int ai, int len) {
-	vectAdd_atomic_<T, GreaterOp<T>>(a, b, &TEMP_STORAGE[0], ai, 0, len);
-	return &TEMP_STORAGE[0];
+int vectPlusWrite(T* a, T b, T* c, int ai, int len) {
+	return vectWrite_<T, SumOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T>
+int vectSignWrite(T* a, T* c, int ai, int len) {
+	return vectWrite_<T, SignOp<T>>(a, 0, c, ai, 0, len);
+}
+
+template<typename T>
+int vectAbsWrite(T* a, T* c, int ai, int len) {
+	return vectWrite_<T, AbsOp<T>>(a, 0, c, ai, 0, len);
+}
+
+template<typename T>
+int vectRoundWrite(T* a, T* c, int ai, int len) {
+	return vectWrite_<T, RoundOp<T>>(a, 0, c, ai, 0, len);
+}
+
+template<typename T>
+int vectFloorWrite(T* a, T* c, int ai, int len) {
+	return vectWrite_<T, FloorOp<T>>(a, 0, c, ai, 0, len);
+}
+
+template<typename T>
+int vectMinWrite(T* a, T b, T* c, int ai, int len) {
+	return vectWrite_<T, MinOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T>
+int vectMaxWrite(T* a, T b, T* c, int ai, int len) {
+	return vectWrite_<T, MaxOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T, typename OP>
+__device__ int vectAdd_atomic_(T* a, T b, T* c, int ai, int ci, int len) {
+    uint i = threadIdx.x;
+    while (i < len) {
+        atomicAdd(&(c[ci + i]), OP::exec(a[ai + i], b));
+        i += blockDim.x;
+    }
+    return len;
+}
+
+template<typename T>
+T* vectGreaterAdd(T* a, T b, T* c, int ai, int len) {
+	vectAdd_atomic_<T, GreaterOp<T>>(a, b, c, ai, 0, len);
+	return c;
 }
 
 template<typename T>
 void vectGreaterAdd(T* a, T b, T* c, int ai, int ci, int len) {
     vectAdd_atomic_<T, GreaterOp<T>>(a, b, c, ai, ci, len);
+}
+
+template<typename T>
+int vectMinAdd(T* a, T b, T* c, int ai, int ci, int len) {
+	return vectAdd_atomic_<T, MinOp<T>>(a, b, c, ai, ci, len);
+}
+
+template<typename T>
+int vectMaxAdd(T* a, T b, T* c, int ai, int ci, int len) {
+	return vectAdd_atomic_<T, MaxOp<T>>(a, b, c, ai, ci, len);
 }
 #endif // SPOOF_UTILS_CUH

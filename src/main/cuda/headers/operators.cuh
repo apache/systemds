@@ -21,24 +21,63 @@
 #ifndef SYSTEMDS_OPERATORS_CUH
 #define SYSTEMDS_OPERATORS_CUH
 
+template<typename T>
+struct SignOp {
+	__device__  __forceinline__ static T exec(T a, T b) {
+		return signbit(a) == 0 ? 1.0 : -1.0;;
+	}
+};
+
+template<typename T>
+struct AbsOp {
+	__device__  __forceinline__ static T exec(T a, T b);
+};
+
+template<>
+struct AbsOp<double> {
+	__device__  __forceinline__ static double exec(double a, double b) {
+		return fabs(a);
+	}
+};
+
+template<typename T>
+struct RoundOp {
+	__device__  __forceinline__ static T exec(T a, T b) {
+		return round(a);
+	}
+};
+
+template<typename T>
+struct FloorOp {
+	__device__  __forceinline__ static T exec(T a, T b) {
+		return floor(a);
+	}
+};
+
+template<typename T>
+struct CeilOp {
+	__device__  __forceinline__ static T exec(T a, T b) {
+		return ceil(a);
+	}
+};
 
 template<typename T>
 struct GreaterEqualOp {
-    __device__  __forceinline__ static T execute(T a, T b) {
+    __device__  __forceinline__ static T exec(T a, T b) {
         return (a >= b) ? 1.0 : 0.0;
     }
 };
 
 template<typename T>
 struct LessEqualOp {
-    __device__  __forceinline__ static T execute(T a, T b) {
+    __device__  __forceinline__ static T exec(T a, T b) {
         return (a <= b) ? 1.0 : 0.0;
     }
 };
 
 template<typename T>
 struct GreaterOp {
-    __device__  __forceinline__ static T execute(T a, T b) {
+    __device__  __forceinline__ static T exec(T a, T b) {
         return (a > b) ? 1.0 : 0.0;
     }
 };

@@ -38,7 +38,8 @@ public class CNodeRow extends CNodeTpl
 	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rix] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
 	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, ci, %LEN%);\n";
-	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c, ci, ci, %LEN%);\n";
+	private static final String TEMPLATE_NOAGG_CONST_OUT_CUDA   = "\t\tvectWrite(%IN%, c, rix * %LEN%, ci, %LEN%);\n";
+	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c, 0, ci, %LEN%);\n";
 	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0)\n\t\t\tc[rix] = %IN%;\n";
 	
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
@@ -134,13 +135,15 @@ public class CNodeRow extends CNodeTpl
 	private String getOutputStatement(String varName) {
 		switch( _type ) {
 			case NO_AGG:
+				if(api == GeneratorAPI.CUDA)
+					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName) .replaceAll("%LEN%", _output.getVarname()+"_len");
 			case NO_AGG_B1:
 			case NO_AGG_CONST:
 				if(api == GeneratorAPI.JAVA)
 					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+".length");
 				else
 //					return "";
-					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+"_len");
+					return TEMPLATE_NOAGG_CONST_OUT_CUDA.replace("%IN%", varName) .replaceAll("%LEN%", _output.getVarname()+"_len");
 			case FULL_AGG:
 				return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
 			case ROW_AGG:

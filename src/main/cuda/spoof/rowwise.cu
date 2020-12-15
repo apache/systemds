@@ -30,7 +30,7 @@
 
 template<typename T>
 __device__ void printArray(T* a, int len) {
-    if(blockIdx.x == 0 && threadIdx.x==0) {
+    if(blockIdx.x == 1 && threadIdx.x==0) {
         printf("block=%d, thread=%d, array[len=%d]:\n", blockIdx.x, threadIdx.x, len);
         for(auto i = 0; i < (blockIdx.x + 10); ++i)
             printf(" %f", a[i]);
@@ -51,12 +51,9 @@ struct SpoofRowwiseOp {
 	__device__  __forceinline__ void operator()(int ai, int ci, int rix) const {
 		
 %BODY_dense%
-//    printArray(TMP6, TMP6_len);
-//        if(blockIdx.x == 0 && threadIdx.x==0) {
-//            printf("c[len=%d]:", 10);
-//            for(auto i = 0; i < 10; ++i)
-//                printf(" %f", c[i]);
-//            printf("\n");
+//    printArray(TMP27, TMP27_len);
+//        if(blockIdx.x == 1 && threadIdx.x==0) {
+//			printf("TMP26=%f\n", TMP26);
 //        }
 	}
 };

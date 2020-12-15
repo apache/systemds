@@ -172,8 +172,10 @@ public class Unary extends CodeTemplate {
 				case VECT_SPROP:
 				case VECT_SIGMOID: {
 					String vectName = type.getVectorPrimitiveName();
+//					return sparse ? "	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
+//						"	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
 					return sparse ? "	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
-						"	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
+						"		T* %TMP% = &%TMP%_STORAGE[0];\n\t\tint %TMP%_len = vect"+vectName+"Write(%IN1%, %TMP%, %POS1%, %LEN%);\n";
 				}
 
 				case EXP:
@@ -213,7 +215,7 @@ public class Unary extends CodeTemplate {
 				case TANH:
 					return "	T %TMP% = tanh(%IN1%);\n";
 				case SIGN:
-					return "	T %TMP% = signbit(%IN1%) == 0 ? 1.0f : -1.0f;\n";
+					return "	T %TMP% = signbit(%IN1%) == 0 ? 1.0 : -1.0;\n";
 				case SQRT:
 					return "	T %TMP% = sqrt(%IN1%);\n";
 				case LOG:

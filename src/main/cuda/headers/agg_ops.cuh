@@ -80,7 +80,7 @@ struct IdentityOp {
 	__device__  __forceinline__ T operator()(T a, int idx = 0) const {
 		return a;
 	}
-	__device__  __forceinline__ static T execute(T a, T b) {
+	__device__  __forceinline__ static T exec(T a, T b) {
 		return a;
 	}
 };
@@ -93,6 +93,10 @@ struct SumOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
 		// if(blockIdx.x==0 && threadIdx.x ==0)
 		// 	printf("a=%f + b=%f => %f\n", a, b, a+b);
+		return a + b;
+	}
+
+	__device__  __forceinline__ static T exec(T const & a, T const & b) {
 		return a + b;
 	}
 
@@ -119,7 +123,11 @@ struct MinOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
 		return a < b ? a : b;
 	}
-	
+
+	__device__  __forceinline__ static T exec(T const & a, T const & b) {
+		return a < b ? a : b;
+	}
+
     __device__  __forceinline__ static T init() {
 	    return MinNeutralElement<T>::get();
 	}
@@ -131,6 +139,10 @@ struct MinOp<double> {
 		// if(blockIdx.x==0 && threadIdx.x == 0)
 		// if(threadIdx.x == 0)
 			// printf("bid=%d, tid=%d, a=%f, b=%f =min=> %f\n", blockIdx.x, threadIdx.x, a, b, fmin(a, b));
+		return fmin(a, b);
+	}
+
+	__device__  __forceinline__ static double exec(double const & a, double const & b) {
 		return fmin(a, b);
 	}
 
@@ -158,6 +170,14 @@ struct MaxOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
 		return fmax(a, b);
 	}
+
+	__device__  __forceinline__ static T exec(T const & a, T const & b) {
+		return fmax(a, b);
+	}
+
+	__device__  __forceinline__ static T init() {
+		return MaxNeutralElement<T>::get();
+	}
 };
 
 template<>
@@ -175,6 +195,7 @@ struct ProductOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
 		return a * b;
 	}
+
 	__device__  __forceinline__ static T init() {
 	    return 1.0;
 	}
@@ -190,13 +211,13 @@ struct DivOp {
         return prod_op(a, 1 / b);
     }
 
-    __device__  __forceinline__ static T execute(T a, T b) {
+    __device__  __forceinline__ static T exec(T a, T b) {
         ProductOp<T> prod_op;
         return prod_op(a, 1 / b);
     }
 
 	__device__  __forceinline__ static T init() {
-	    return 1.0;
+	    return ProdNeutralElement<T>::get();
 	}
 };
 

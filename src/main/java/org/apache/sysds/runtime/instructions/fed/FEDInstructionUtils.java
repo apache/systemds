@@ -117,12 +117,20 @@ public class FEDInstructionUtils {
 			BinaryCPInstruction instruction = (BinaryCPInstruction) inst;
 			if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated())
 				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()) ) {
-				if(instruction.getOpcode().equals("append") )
-					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
-				else if(instruction.getOpcode().equals("qpick"))
-					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
-				else
-					fedinst = BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+				switch(instruction.getOpcode()) {
+					case "append":
+						fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
+						break;
+					case "qpick":
+						fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
+						break;
+					case "cov":
+						fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
+						break;
+					default:
+						fedinst = BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+						break;
+				}
 			}
 		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {

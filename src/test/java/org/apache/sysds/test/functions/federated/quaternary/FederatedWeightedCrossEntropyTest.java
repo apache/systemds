@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.lang.Math;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -106,6 +107,8 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);
     double[][] V = getRandomMatrix(cols, rank, 0, 1, 1, 5040);
 
+    double log_epsilon_tolerance = Math.log(epsilon_tolerance);
+
     writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
     writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 
@@ -152,6 +155,8 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
       "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
       "in_U=" + input("U"),
       "in_V=" + input("V"),
+      // TODO: input of W is not working yet
+      "in_W=" + Double.toString(log_epsilon_tolerance),
       "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output("Z")};
     LOG.debug(runTest(true, false, null, -1));
 

@@ -22,10 +22,15 @@ package org.apache.sysds.runtime.instructions.fed;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+
+import java.util.concurrent.Future;
 
 public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 {
@@ -50,21 +55,35 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 
     if(matrix_object_1.isFederated() && !matrix_object_2.isFederated() && !matrix_object_3.isFederated())
     {
-      FederatedRequest fed_req_init_1 = matrix_object_1.getFedMapping().broadcast(matrix_object_2);
-      FederatedRequest fed_req_init_2 = matrix_object_1.getFedMapping().broadcast(matrix_object_3);
-      // FederatedRequest fed_req_init_3 = matrix_object_1.getFedMapping().broadcast(matrix_object_4);
-      FederatedRequest fed_req_init_3 = matrix_object_1.getFedMapping().broadcast(scalar_object_4);
+      FederationMap federation_mapping = matrix_object_1.getFedMapping();
+      FederatedRequest fed_req_init_1 = federation_mapping.broadcast(matrix_object_2);
+      FederatedRequest fed_req_init_2 = federation_mapping.broadcast(matrix_object_3);
+      // FederatedRequest fed_req_init_3 = federation_mapping.broadcast(matrix_object_4);
+      FederatedRequest fed_req_init_3 = federation_mapping.broadcast(scalar_object_4);
       FederatedRequest fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
         new CPOperand[]{input1, input2, input3, _input4},
-        new long[]{matrix_object_1.getFedMapping().getID(), fed_req_init_1.getID(), fed_req_init_2.getID(), fed_req_init_3.getID()});
-      FederatedRequest fed_req_cleanup_1 = matrix_object_1.getFedMapping().cleanup(getTID(), fed_req_init_1.getID());
-      FederatedRequest fed_req_cleanup_2 = matrix_object_1.getFedMapping().cleanup(getTID(), fed_req_init_2.getID());
-      FederatedRequest fed_req_cleanup_3 = matrix_object_1.getFedMapping().cleanup(getTID(), fed_req_init_3.getID());
+        new long[]{federation_mapping.getID(), fed_req_init_1.getID(), fed_req_init_2.getID(), fed_req_init_3.getID()});
+      FederatedRequest fed_req_cleanup_1 = federation_mapping.cleanup(getTID(), fed_req_init_1.getID());
+      FederatedRequest fed_req_cleanup_2 = federation_mapping.cleanup(getTID(), fed_req_init_2.getID());
+      FederatedRequest fed_req_cleanup_3 = federation_mapping.cleanup(getTID(), fed_req_init_3.getID());
 
       // execute federated instructions
-      matrix_object_1.getFedMapping().execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_init_3, fed_req_compute_1, fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3);
+      Future<FederatedResponse>[] response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_init_3, fed_req_compute_1, fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3);
 
-      // TODO: do something with the output
+      try
+      {
+        for(Future<FederatedResponse> tmp : response)
+        {
+          if(!tmp.get().isSuccessful())
+          {
+            tmp.get().throwExceptionFromResponse();
+          }
+        }
+      }
+      catch(Exception e)
+      {
+        throw new DMLRuntimeException(e);
+      }
 
     }
   }

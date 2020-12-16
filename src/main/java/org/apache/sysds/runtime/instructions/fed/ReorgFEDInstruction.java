@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
+import org.apache.sysds.runtime.functionobjects.RevIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -69,6 +70,10 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		}
+		else if ( opcode.equalsIgnoreCase("rev") ) {
+			parseUnaryInstruction(str, in, out); //max 2 operands
+			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
+		}
 		else {
 			throw new DMLRuntimeException("ReorgFEDInstruction: unsupported opcode: "+opcode);
 		}
@@ -95,6 +100,21 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			MatrixObject out = ec.getMatrixObject(output);
 			out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()).transpose());
+		}
+		else if(instOpcode.equalsIgnoreCase("rev")) {
+			//execute transpose at federated site
+			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
+				output,
+				new CPOperand[] {input1},
+				new long[] {mo1.getFedMapping().getID()});
+			mo1.getFedMapping().execute(getTID(), true, fr1);
+
+			if(mo1.isFederated(FederationMap.FType.ROW))
+				mo1.getFedMapping().reverseFedMap();
+			//drive output federated mapping
+			MatrixObject out = ec.getMatrixObject(output);
+			out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
+			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
 		}
 		else if (instOpcode.equals("rdiag")) {
 			RdiagResult result;

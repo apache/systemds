@@ -384,6 +384,21 @@ public class FederationMap {
 				Arrays.stream(frset).forEach(fr -> fr.setTID(tid));
 	}
 
+	public void reverseFedMap() {
+		FederatedRange[] fedRanges = this.getFederatedRanges();
+
+		for(int i = 0; i < Math.floor(fedRanges.length / 2.0); i++) {
+			FederatedData data1 = _fedMap.get(fedRanges[i]);
+			FederatedData data2 = _fedMap.get(fedRanges[fedRanges.length-1-i]);
+
+			_fedMap.remove(fedRanges[i]);
+			_fedMap.remove(fedRanges[fedRanges.length-1-i]);
+
+			_fedMap.put(fedRanges[i], data2);
+			_fedMap.put(fedRanges[fedRanges.length-1-i], data1);
+		}
+	}
+
 	private static class MappingTask implements Callable<Void> {
 		private final FederatedRange _range;
 		private final FederatedData _data;

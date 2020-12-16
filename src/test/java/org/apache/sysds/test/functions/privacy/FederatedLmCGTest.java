@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedWorkerHandler;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
@@ -36,9 +37,9 @@ import java.util.HashMap;
 
 public class FederatedLmCGTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "lm";
+	private final static String TEST_NAME = "lmCGFederated";
 	private final static String TEST_DIR = "functions/privacy/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + "FederatedLmCG" + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedLmCGTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-10;
 	private final static int rows = 10;
@@ -49,7 +50,7 @@ public class FederatedLmCGTest extends AutomatedTestBase
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"C"}));
 	}
 
 	@Test
@@ -73,11 +74,13 @@ public class FederatedLmCGTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void testLmMatrixDenseSPlmCG() {
 		runLmTest(false, ExecType.SPARK, true);
 	}
 
 	@Test
+	@Ignore
 	public void testLmMatrixSparseSPlmCG() {
 		runLmTest(true, ExecType.SPARK, true);
 	}
@@ -131,21 +134,15 @@ public class FederatedLmCGTest extends AutomatedTestBase
 			//generate actual dataset
 			int halfRows = rows / 2;
 			double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, sparsity, 7);
-			//writeInputMatrixWithMTD("X1", X1, new DataCharacteristics(), new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.PrivateAggregation));
-			writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, (long) sparsity), new PrivacyConstraint(
-				PrivacyConstraint.PrivacyLevel.PrivateAggregation));
-			//writeInputMatrixWithMTD("X1", X1, false);
+			writeInputMatrixWithMTD("X1", X1, false);
 			double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, sparsity, 8);
-			//writeInputMatrixWithMTD("X2", X2, false);
-			writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, (long) sparsity), new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.PrivateAggregation));
+			writeInputMatrixWithMTD("X2", X2, false);
 
 			if ( doubleFederated ){
 				double[][] y1 = getRandomMatrix(halfRows, 1, 0, 10, 1.0, 3);
 				double[][] y2 = getRandomMatrix(halfRows, 1, 0, 10, 1.0, 4);
-				writeInputMatrixWithMTD("y1", y1, false, new MatrixCharacteristics(halfRows, 1), new PrivacyConstraint(
-					PrivacyConstraint.PrivacyLevel.PrivateAggregation));
-				writeInputMatrixWithMTD("y2", y2, false, new MatrixCharacteristics(halfRows, 1), new PrivacyConstraint(
-					PrivacyConstraint.PrivacyLevel.PrivateAggregation));
+				writeInputMatrixWithMTD("y1", y1, false);
+				writeInputMatrixWithMTD("y2", y2, false);
 			} else {
 				double[][] y = getRandomMatrix(rows, 1, 0, 10, 1.0, 3);
 				writeInputMatrixWithMTD("y", y, false);

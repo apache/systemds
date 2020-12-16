@@ -293,7 +293,11 @@ public:
 
 		T result = 0.0;
 		T *d_temp_agg_buf = nullptr;
-
+		size_t out_buf_size = 0;
+		if(out_ptr == nullptr) {
+			out_buf_size = sizeof(T) * 1;
+			CHECK_CUDART(cudaMalloc((void **) &out_ptr, out_buf_size));
+		}
 		dim3 grid(in_rows, 1, 1);
 		dim3 block(NT, 1, 1);
 		unsigned int shared_mem_size = NT * sizeof(T);
@@ -308,7 +312,12 @@ public:
 				.instantiate(type_of(result))
 				.configure(grid, block, shared_mem_size)
 				.launch(in_ptrs[0], d_sides, d_scalars, out_ptr, out_len, row_len, grix));
-		
+
+		if(out_buf_size != 0) {
+			CHECK_CUDART(cudaMemcpy(&result, out_ptr, sizeof(T), cudaMemcpyDeviceToHost));
+			CHECK_CUDART(cudaFree(out_ptr));
+		}
+
 		return result;
 	}
 };

@@ -165,6 +165,9 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     TestUtils.shutdownThreads(thread1, thread2);
 
+    // check for federated operations
+    Assert.assertTrue(heavyHittersContainsString("fed_wcemm"));
+
     // check that federated input files are still existing
     Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
     Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));

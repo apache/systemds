@@ -135,6 +135,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeCommand(FederatedRequest request) {
 		RequestType method = request.getType();
+		System.out.println(request.toString());
 		try {
 			switch(method) {
 				case READ_VAR:

@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
@@ -84,6 +85,10 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
       {
         throw new DMLRuntimeException(e);
       }
+
+      // TODO: set the output
+      // NOTE: this is only a test if setting the output would work like this
+      execution_context.setVariable(output.getName(), new DoubleObject(13));
 
     }
   }

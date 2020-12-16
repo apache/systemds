@@ -58,7 +58,7 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		else
 			throw new DMLRuntimeException("Federated binary operations not yet supported:" + opcode);
 	}
-	
+
 	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) {
 		// check for valid data type of output
 		if( (in1.getDataType() == DataType.MATRIX || in2.getDataType() == DataType.MATRIX) && out.getDataType() != DataType.MATRIX )

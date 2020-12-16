@@ -29,6 +29,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -84,6 +85,15 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   public void federatedWeightedCrossEntropySingleNode()
   {
     federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE);
+  }
+
+  // TODO: Not implemented yet
+  @Test
+  @Ignore
+  public void federatedWeightedCrossEntropySpark()
+  {
+    federatedWeightedCrossEntropy(ExecMode.SPARK);
+    assert false: "Not implemented yet!";
   }
 
   public void federatedWeightedCrossEntropy(ExecMode exec_mode)

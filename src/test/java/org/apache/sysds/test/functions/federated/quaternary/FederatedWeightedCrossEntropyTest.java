@@ -48,6 +48,8 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   private final static String TEST_DIR = "functions/federated/quaternary/";
   private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWeightedCrossEntropyTest.class.getSimpleName() + "/";
 
+  private final static double TEST_TOLERANCE = 1e-9;
+
   private final static int blocksize = 1024;
 
   private String test_name;
@@ -59,6 +61,9 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   public int rank;
   @Parameterized.Parameter(3)
   public double epsilon;
+  @Parameterized.Parameter(4)
+  public double sparsity;
+
 
   @Override
   public void setUp()
@@ -70,9 +75,11 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Parameterized.Parameters
   public static Collection<Object[]> data()
   {
+    // rows must be even
     return Arrays.asList(new Object[][] {
-      // {rows, cols, rank, epsilon}
-      {2000, 50, 10, 0.01}
+      // {rows, cols, rank, epsilon, sparsity}
+      {2000, 50, 10, 0.01, 0.01},
+      {2000, 50, 10, 0.01, 0.9}
     });
   }
 
@@ -122,14 +129,14 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     getAndLoadTestConfiguration(test_name);
     String HOME = SCRIPT_DIR + TEST_DIR;
 
-    int fed_rows = rows;
+    int fed_rows = rows / 2;
     int fed_cols = cols;
 
     // generate dataset
     // one matrix handled by a single federated worker
-    double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 3);
+    double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 3);
     // another matrix handled by a single federated worker
-    double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 7);
+    double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 7);
 
     double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);
     double[][] V = getRandomMatrix(cols, rank, 0, 1, 1, 5040);
@@ -149,15 +156,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     getAndLoadTestConfiguration(test_name);
 
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("Running refercence test");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
     // Run reference fml script with normal matrix
     fullDMLScriptName = HOME + test_name + "Reference.dml";
     if(!epsilon_flag)
@@ -172,15 +170,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     }
     LOG.debug(runTest(true, false, null, -1));
 
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("Running actual test");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
-    System.out.println("*****************************************************");
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + test_name + ".dml";
     programArgs = new String[] {"-stats", "-nvargs",
@@ -193,7 +182,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     LOG.debug(runTest(true, false, null, -1));
 
     // compare the results via files
-    compareResults();
+    compareResults(TEST_TOLERANCE);
 
     TestUtils.shutdownThreads(thread1, thread2);
 

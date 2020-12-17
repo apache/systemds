@@ -19,12 +19,10 @@
 #
 #-------------------------------------------------------------
 
-# X = rbind(read($in_X1), read($in_X2))
-X1 = read($in_X1)
-X2 = read($in_X2)
+X = rbind(read($in_X1), read($in_X2))
 U = read($in_U)
 V = read($in_V)
 
-Z = as.matrix(sum(X1 * log(U %*% t(V))) + sum(X2 * log(U %*% t(V))))
+Z = as.matrix(sum(X * log(U %*% t(V))))
 
 write(Z, $out_Z)

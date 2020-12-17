@@ -113,3 +113,4 @@ src/main/cpp/bin
 
 # Performance Test artifacts
 scripts/perftest/results
+scripts/perftest/in

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,11 +19,9 @@
 #
 #-------------------------------------------------------------
 
-
-# Micro Benchmarks:
-
-./scripts/perftest/MatrixMult.sh
-./scripts/perftest/MatrixTranspose.sh
-
-# Algorithms Benchmarks:
-
+x = read($1)
+print(sum(x)) # Sum here to force read time into the sum operator
+for(i in 1:$2) {
+    res = t(x) 
+}
+print(sum(res))

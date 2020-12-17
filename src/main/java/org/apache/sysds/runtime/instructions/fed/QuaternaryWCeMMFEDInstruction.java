@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -30,6 +31,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
 import java.util.concurrent.Future;
 
@@ -48,28 +50,62 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
   @Override
   public void processInstruction(ExecutionContext execution_context)
   {
+    QuaternaryOperator qop = (QuaternaryOperator) _optr;
+
     MatrixObject matrix_object_1 = execution_context.getMatrixObject(input1);
     MatrixObject matrix_object_2 = execution_context.getMatrixObject(input2);
     MatrixObject matrix_object_3 = execution_context.getMatrixObject(input3);
-    // MatrixObject matrix_object_4 = execution_context.getMatrixObject(_input4);
-    ScalarObject scalar_object_4 = execution_context.getScalarInput(_input4);
+    ScalarObject scalar_object_4 = null;
+    if(qop.hasFourInputs())
+    {
+      if(_input4.getDataType() == DataType.SCALAR)
+      {
+        scalar_object_4 = execution_context.getScalarInput(_input4);
+      }
+      else
+      {
+        scalar_object_4 = new DoubleObject(execution_context.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
+      }
+    }
 
     if(matrix_object_1.isFederated() && !matrix_object_2.isFederated() && !matrix_object_3.isFederated())
     {
       FederationMap federation_mapping = matrix_object_1.getFedMapping();
       FederatedRequest fed_req_init_1 = federation_mapping.broadcast(matrix_object_2);
       FederatedRequest fed_req_init_2 = federation_mapping.broadcast(matrix_object_3);
-      // FederatedRequest fed_req_init_3 = federation_mapping.broadcast(matrix_object_4);
-      FederatedRequest fed_req_init_3 = federation_mapping.broadcast(scalar_object_4);
-      FederatedRequest fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
-        new CPOperand[]{input1, input2, input3, _input4},
-        new long[]{federation_mapping.getID(), fed_req_init_1.getID(), fed_req_init_2.getID(), fed_req_init_3.getID()});
+      FederatedRequest fed_req_init_3 = null;
+      FederatedRequest fed_req_compute_1 = null;
+
+      // broadcast the scalar epsilon if there are four inputs
+      if(scalar_object_4 != null)
+      {
+        fed_req_init_3 = federation_mapping.broadcast(scalar_object_4);
+        fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
+          new CPOperand[]{input1, input2, input3, _input4},
+          new long[]{federation_mapping.getID(), fed_req_init_1.getID(), fed_req_init_2.getID(), fed_req_init_3.getID()});
+      }
+      else
+      {
+        fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
+        new CPOperand[]{input1, input2, input3},
+        new long[]{federation_mapping.getID(), fed_req_init_1.getID(), fed_req_init_2.getID()});
+      }
       FederatedRequest fed_req_cleanup_1 = federation_mapping.cleanup(getTID(), fed_req_init_1.getID());
       FederatedRequest fed_req_cleanup_2 = federation_mapping.cleanup(getTID(), fed_req_init_2.getID());
-      FederatedRequest fed_req_cleanup_3 = federation_mapping.cleanup(getTID(), fed_req_init_3.getID());
 
-      // execute federated instructions
-      Future<FederatedResponse>[] response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_init_3, fed_req_compute_1, fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3);
+      Future<FederatedResponse>[] response;
+      if(fed_req_init_3 != null)
+      {
+        FederatedRequest fed_req_cleanup_3 = federation_mapping.cleanup(getTID(), fed_req_init_3.getID());
+        // execute federated instructions
+        response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_init_3, fed_req_compute_1, fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3);
+      }
+      else
+      {
+        // execute federated instructions
+        response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_compute_1, fed_req_cleanup_1, fed_req_cleanup_2);
+      }
+
 
       try
       {

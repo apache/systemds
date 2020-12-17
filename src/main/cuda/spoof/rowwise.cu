@@ -27,6 +27,7 @@
 #include "reduction.cuh"
 #include "spoof_utils.cuh"
 #include "utils.cuh"
+#include "Matrix.h"
 
 template<typename T>
 __device__ void printArray(T* a, int len) {
@@ -41,12 +42,12 @@ __device__ void printArray(T* a, int len) {
 template<typename T>
 struct SpoofRowwiseOp {
 	T* a;
-	T**b;
+	Matrix<T>* b;
 	T* c;
 	T* scalars;
 	int len, grix, c_len;
 
-	SpoofRowwiseOp(T* a, T** b, T* scalars, T* c, int len, int grix) : a(a), b(b), c(c), scalars(scalars), len(len), grix(grix) {}
+	SpoofRowwiseOp(T* a, Matrix<T>* b, T* scalars, T* c, int len, int grix) : a(a), b(b), c(c), scalars(scalars), len(len), grix(grix) {}
 
 	__device__  __forceinline__ void operator()(int ai, int ci, int rix) const {
 		
@@ -59,7 +60,7 @@ struct SpoofRowwiseOp {
 };
 
 template<typename T>
-__global__ void %TMP% (T* a, T** b, T* scalars, T* c, uint c_len, int len, int grix) {
+__global__ void %TMP% (T* a, Matrix<T>* b, T* scalars, T* c, uint c_len, int len, int grix) {
 	SpoofRowwiseOp<T> spoof_op(a, b, scalars, c, len, grix + blockIdx.x);
 	spoof_op.c_len = c_len;
 	int ai = blockIdx.x * len;

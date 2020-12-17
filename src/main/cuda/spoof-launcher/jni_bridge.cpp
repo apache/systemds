@@ -82,28 +82,28 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
   return result;
 }
 
-JNIEXPORT jfloat JNICALL
-Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
-    JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
-    jlongArray side_ptrs, jlong out_ptr, jfloatArray scalars_, jlong m, jlong n, jlong out_len, jlong grix) {
-
-  SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
-
-  const char *cstr_name = env->GetStringUTFChars(name, NULL);
-
-  float **inputs = reinterpret_cast<float**>(GET_ARRAY(env, in_ptrs));
-  float **sides = reinterpret_cast<float **>(GET_ARRAY(env, side_ptrs));
-  float *scalars = reinterpret_cast<float *>(GET_ARRAY(env, scalars_));
-
-  float result = ctx_->execute_kernel(
-      cstr_name, inputs, env->GetArrayLength(in_ptrs), sides, env->GetArrayLength(side_ptrs),
-      reinterpret_cast<float *>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, out_len, grix);
-
-  RELEASE_ARRAY(env, in_ptrs, inputs);
-  RELEASE_ARRAY(env, side_ptrs, sides);
-  RELEASE_ARRAY(env, scalars_, scalars);
-
-  // FIXME: that release causes an error
-  env->ReleaseStringUTFChars(name, cstr_name);
-  return result;
-}
+//JNIEXPORT jfloat JNICALL
+//Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
+//    JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
+//    jlongArray side_ptrs, jlong out_ptr, jfloatArray scalars_, jlong m, jlong n, jlong out_len, jlong grix) {
+//
+//  SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
+//
+//  const char *cstr_name = env->GetStringUTFChars(name, NULL);
+//
+//  float **inputs = reinterpret_cast<float**>(GET_ARRAY(env, in_ptrs));
+//  float **sides = reinterpret_cast<float **>(GET_ARRAY(env, side_ptrs));
+//  float *scalars = reinterpret_cast<float *>(GET_ARRAY(env, scalars_));
+//
+//  float result = ctx_->execute_kernel(
+//      cstr_name, inputs, env->GetArrayLength(in_ptrs), sides, env->GetArrayLength(side_ptrs),
+//      reinterpret_cast<float *>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, out_len, grix);
+//
+//  RELEASE_ARRAY(env, in_ptrs, inputs);
+//  RELEASE_ARRAY(env, side_ptrs, sides);
+//  RELEASE_ARRAY(env, scalars_, scalars);
+//
+//  // FIXME: that release causes an error
+//  env->ReleaseStringUTFChars(name, cstr_name);
+//  return result;
+//}

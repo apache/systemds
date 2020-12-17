@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include "Matrix.h"
 
 #ifdef _DEBUG
 #define __DEBUG
@@ -82,7 +83,7 @@ public:
 		
 		T result = 0.0;
 		size_t dev_buf_size;
-		T **d_sides = nullptr;
+		IMatrix *d_sides = nullptr;
 		T *d_scalars = nullptr;
 
 		auto o = ops.find(name);
@@ -90,9 +91,15 @@ public:
 			SpoofOperator *op = &(o->second);
 
 			if (num_sides > 0) {
-				dev_buf_size = sizeof(T *) * num_sides;
+			    std::vector<IMatrix*> h_sides(num_sides);
+			    for(auto i = 0; i < num_sides; i++)
+			        h_sides[i] = new DenseMatrix(static_cast<uint32_t>(m), static_cast<uint32_t>(n), side_ptrs[i], nullptr, nullptr);
+
+				dev_buf_size = sizeof(IMatrix) * num_sides;
 				CHECK_CUDART(cudaMalloc((void **)&d_sides, dev_buf_size));
-				CHECK_CUDART(cudaMemcpy(d_sides, side_ptrs, dev_buf_size, cudaMemcpyHostToDevice));
+				CHECK_CUDART(cudaMemcpy(d_sides, &h_sides[0], dev_buf_size, cudaMemcpyHostToDevice));
+				for(auto i = 0; i < num_sides; i++)
+					delete h_sides[i];
 			}
 
 			if (num_scalars > 0) {
@@ -102,9 +109,9 @@ public:
 			}
 			
 		    switch(op->op_type) {
-		    case SpoofOperator::OpType::CW:
-		        result = launch_cw_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
-		        break;
+//		    case SpoofOperator::OpType::CW:
+//		        result = launch_cw_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
+//		        break;
 		    case SpoofOperator::OpType::RA:
 				result = launch_ra_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, out_len, grix);
 		        break;
@@ -289,7 +296,7 @@ public:
 	}
 
 	template<typename T>
-	T launch_ra_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, T** d_sides, T* d_scalars, int in_rows, int row_len, int out_len, int grix) {
+	T launch_ra_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, DenseMatrix* d_sides, T* d_scalars, int in_rows, int row_len, int out_len, int grix) {
 
 		T result = 0.0;
 		T *d_temp_agg_buf = nullptr;

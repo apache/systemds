@@ -65,14 +65,14 @@ JNIEXPORT jdouble JNICALL
 Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
     JNIEnv *, jobject, jlong, jstring, jlongArray, jlongArray, jlong, jdoubleArray, jlong, jlong, jlong, jlong);
 
-/*
- * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofCUDAInstruction
- * Method:    execute_f
- * Signature: (...)Z
- */
-JNIEXPORT jfloat JNICALL
-Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
-    JNIEnv *, jobject, jlong, jstring, jlongArray, jlongArray, jlong, jfloatArray, jlong, jlong, jlong, jlong);
+///*
+// * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofCUDAInstruction
+// * Method:    execute_f
+// * Signature: (...)Z
+// */
+//JNIEXPORT jfloat JNICALL
+//Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
+//    JNIEnv *, jobject, jlong, jstring, jlongArray, jlongArray, jlong, jfloatArray, jlong, jlong, jlong, jlong);
 
 #ifdef __cplusplus
 }

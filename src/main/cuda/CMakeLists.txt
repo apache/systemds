@@ -85,7 +85,7 @@ endif()
 
 set(SPOOF_HEADERS 
 	spoof-launcher/jni_bridge.h
-	spoof-launcher/SpoofCUDAContext.h)
+	spoof-launcher/SpoofCUDAContext.h headers/Matrix.h)
 set(SPOOF_SOURCES 
 	spoof-launcher/jni_bridge.cpp
 	spoof-launcher/SpoofCUDAContext.cpp)
@@ -93,7 +93,7 @@ set(SPOOF_CUDA_HEADERS
 	headers/agg_ops.cuh
 	headers/reduction.cuh
 	headers/spoof_utils.cuh
-	headers/utils.cuh headers/operators.cuh)
+	headers/utils.cuh headers/operators.cuh headers/Matrix.h)
 		#headers/intellisense_cuda_intrinsics.h
 set(SPOOF_TEMPLATES
 	spoof/cellwise.cu    
@@ -102,7 +102,7 @@ source_group("SPOOF Templates" FILES ${SPOOF_TEMPLATES})
 set_source_files_properties( ${SPOOF_TEMPLATES} PROPERTIES HEADER_FILE_ONLY ON)
 add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_CUDA_HEADERS} ${SPOOF_SOURCES} ${SPOOF_TEMPLATES})
 
-target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify")
+target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify" headers)
 target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)
 target_compile_features(spoof_cuda PUBLIC cxx_std_11)
 set_target_properties(spoof_cuda PROPERTIES POSITION_INDEPENDENT_CODE ON)

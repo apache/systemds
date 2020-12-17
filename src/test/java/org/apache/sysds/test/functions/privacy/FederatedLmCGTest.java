@@ -95,7 +95,7 @@ public class FederatedLmCGTest extends AutomatedTestBase
 			
 			if (doubleFederated){
 				programArgs = new String[]{
-					"-explain", "-nvargs",
+					"-explain", "-stats", "-nvargs",
 					"X1="+TestUtils.federatedAddress(port1, input("X1")),
 					"X2="+TestUtils.federatedAddress(port2, input("X2")),
 					"y1=" + TestUtils.federatedAddress(port1, input("y1")),
@@ -104,7 +104,7 @@ public class FederatedLmCGTest extends AutomatedTestBase
 					"r=" + rows, "c=" + cols};
 			} else {
 				programArgs = new String[]{
-					"-explain", "-nvargs",
+					"-explain", "-stats", "-nvargs",
 					"X1="+TestUtils.federatedAddress(port1, input("X1")),
 					"X2="+TestUtils.federatedAddress(port2, input("X2")),
 					"y=" + input("y"),
@@ -132,7 +132,8 @@ public class FederatedLmCGTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 
 			//check expected operations
-			Assert.assertTrue(heavyHittersContainsString("fed_mmchain"));
+			if( instType == ExecType.CP )
+				Assert.assertTrue(heavyHittersContainsString("fed_mmchain"));
 			
 			TestUtils.shutdownThreads(t1, t2);
 		}

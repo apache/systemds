@@ -237,9 +237,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			frameObject.acquireRead();
 			frameObject.refreshMetaData(); // get block schema
 			frameObject.release();
-			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema()});
+			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
 		}
-		return new FederatedResponse(ResponseType.SUCCESS, id);
+		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
 	}
 
 	private FederatedResponse putVariable(FederatedRequest request) {

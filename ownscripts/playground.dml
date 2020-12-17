@@ -2,6 +2,9 @@ path = "ownscripts/data/tiny.csv"
 X = read(path, data_type = "frame", format = "csv", header = FALSE)
 print("RAW FRAME:")
 print("%s", toString(X))
-Z = map(X, "x -> UtilFunctions.processData(x)")
+
+# any function call without '->' goes to our UtilFunctions.calculateAttributeTypes() - hardcoded in der map funktion (FrameBlock 2135)
+Z = map(X, "UtilFunctions.calculateAttributeTypes()")
+
 print("MODIFIED FRAME:")
 print("%s", toString(Z))

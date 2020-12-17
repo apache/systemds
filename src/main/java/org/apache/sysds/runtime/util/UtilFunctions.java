@@ -27,6 +27,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.sysds.api.mlcontext.Frame;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -857,6 +858,7 @@ public class UtilFunctions {
 			tmp.append(getCharClass(ch));
 		}
 
+
 		return tmp.toString();
 	}
 
@@ -869,6 +871,19 @@ public class UtilFunctions {
 		LOG.warn("you are currently trying to process undefined input"); //logger enabled?
 		return NOT_IMPLEMENTED;
 	}
+
+
+
+	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
+
+		System.out.println("## Start analyzing Frame and do some crazy stuff  - because we are awesome programmers");
+
+
+		String[][] output = new String[frame.getNumRows()][frame.getNumColumns()];
+		return new FrameBlock(UtilFunctions.nCopies(frame.getNumColumns(), ValueType.STRING), output);
+	}
+
+
 	// -----------------------------------------------------------------------------------------------------------------
 
 

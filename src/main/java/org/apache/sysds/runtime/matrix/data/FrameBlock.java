@@ -2100,7 +2100,13 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public FrameBlock map(String lambdaExpr) {
-		return map(getCompiledFunction(lambdaExpr));
+		FrameMapFunction ret = getCompiledFunction(lambdaExpr);
+		if(ret == null) { // if it is executed on whole Frameblock with only the function to call "Utils.xxx()" wihtout lamda -> and parameters
+			System.out.println("## We now execute our modified UtilFunctions  hardcoded - because we are so cool");
+			return UtilFunctions.calculateAttributeTypes(this);
+		}
+
+		return map(ret);
 	}
 	
 	public FrameBlock map(FrameMapFunction lambdaExpr) {
@@ -2120,21 +2126,45 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 	public static FrameMapFunction getCompiledFunction(String lambdaExpr) {
 		// split lambda expression
-		String[] parts = lambdaExpr.split("->");
-		if( parts.length != 2 )
-			throw new DMLRuntimeException("Unsupported lambda expression: "+lambdaExpr);
-		String varname = parts[0].trim();
-		String expr = parts[1].trim();
-		
-		// construct class code
+		String varname;
+		String expr;
+
 		String cname = "StringProcessing"+CLASS_ID.getNextID();
 		StringBuilder sb = new StringBuilder();
-		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
-		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction;\n");
-		sb.append("public class "+cname+" extends FrameMapFunction {\n");
-		sb.append("@Override\n");
-		sb.append("public String apply(String "+varname+") {\n");
-		sb.append("  return String.valueOf("+expr+"); }}\n");
+
+		if(!lambdaExpr.contains("->")) { // call of a UtilFunction direct, without argument on the frame
+			varname = null;
+			expr = lambdaExpr;
+			// hier soll die funktion tortzdem mit der apply aufgerufen werdne, aber ohen parameter und dafür FrameBlock as return value
+			System.out.println("## Checkin compiling without '->' ");
+
+			// construct class code - TODO: does not work
+//			sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
+//			sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameBlockMapFunction;\n");
+//			sb.append("public class "+cname+" extends FrameBlockMapFunction {\n");
+//			sb.append("@Override\n");
+//			sb.append("public String apply() {\n");
+//			sb.append("System.out.println(\"Start analyzing Frame\")");
+//			sb.append("  return "+expr+"; }}\n");
+
+			return null;
+
+		} else {
+			String[] parts = lambdaExpr.split("->");
+			if( parts.length != 2 )
+				throw new DMLRuntimeException("Unsupported lambda expression: "+lambdaExpr);
+			varname = parts[0].trim();
+			expr = parts[1].trim();
+
+			// construct class code
+			sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
+			sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction;\n");
+			sb.append("public class "+cname+" extends FrameMapFunction {\n");
+			sb.append("@Override\n");
+			sb.append("public String apply(String "+varname+") {\n");
+			sb.append("  return String.valueOf("+expr+"); }}\n");
+		}
+
 
 		// compile class, and create FrameMapFunction object
 		try {
@@ -2149,5 +2179,10 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	public static abstract class FrameMapFunction implements Serializable {
 		private static final long serialVersionUID = -8398572153616520873L;
 		public abstract String apply(String input);
+	}
+
+	public static abstract class FrameBlockMapFunction implements Serializable {
+		private static final long serialVersionUID = -8398572153616520873L;
+		public abstract String apply();
 	}
 }

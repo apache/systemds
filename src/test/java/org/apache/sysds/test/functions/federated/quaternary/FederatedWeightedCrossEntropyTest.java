@@ -34,7 +34,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.lang.Math;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -44,12 +43,14 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 {
   private final static Log LOG = LogFactory.getLog(FederatedWeightedCrossEntropyTest.class.getName());
 
-  private final static String TEST_NAME = "FederatedWCeMMTest";
+  private final static String STD_TEST_NAME = "FederatedWCeMMTest";
+  private final static String EPS_TEST_NAME = "FederatedWCeMMEpsTest";
   private final static String TEST_DIR = "functions/federated/quaternary/";
   private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWeightedCrossEntropyTest.class.getSimpleName() + "/";
 
   private final static int blocksize = 1024;
 
+  private String test_name;
   @Parameterized.Parameter()
   public int rows;
   @Parameterized.Parameter(1)
@@ -57,21 +58,21 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Parameterized.Parameter(2)
   public int rank;
   @Parameterized.Parameter(3)
-  public int epsilon_tolerance;
+  public double epsilon;
 
   @Override
   public void setUp()
   {
-    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Z"}));
+    addTestConfiguration(STD_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, STD_TEST_NAME, new String[]{"Z"}));
+    addTestConfiguration(EPS_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, EPS_TEST_NAME, new String[]{"Z"}));
   }
 
   @Parameterized.Parameters
   public static Collection<Object[]> data()
   {
-    // rows have to be even
     return Arrays.asList(new Object[][] {
-      // {rows, cols, epsilon_tolerance}
-      {2000, 50, 10, 0}
+      // {rows, cols, rank, epsilon}
+      {2000, 50, 10, 0.01}
     });
   }
 
@@ -84,6 +85,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Test
   public void federatedWeightedCrossEntropySingleNode()
   {
+    test_name = STD_TEST_NAME;
     federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE);
   }
 
@@ -92,17 +94,32 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Ignore
   public void federatedWeightedCrossEntropySpark()
   {
+    test_name = STD_TEST_NAME;
     federatedWeightedCrossEntropy(ExecMode.SPARK);
     assert false: "Not implemented yet!";
   }
 
+  @Test
+  public void federatedWeightedCrossEntropySingleNodeEpsilon()
+  {
+    test_name = EPS_TEST_NAME;
+    federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE, true);
+  }
+
+// -----------------------------------------------------------------------------
+
   public void federatedWeightedCrossEntropy(ExecMode exec_mode)
+  {
+    federatedWeightedCrossEntropy(exec_mode, false);
+  }
+
+  public void federatedWeightedCrossEntropy(ExecMode exec_mode, boolean epsilon_flag)
   {
     // store the previous spark config and platform config to restore it after the test
     // and set the new execution mode
     ExecMode platform_old = setExecMode(exec_mode);
 
-    getAndLoadTestConfiguration(TEST_NAME);
+    getAndLoadTestConfiguration(test_name);
     String HOME = SCRIPT_DIR + TEST_DIR;
 
     int fed_rows = rows;
@@ -117,8 +134,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);
     double[][] V = getRandomMatrix(cols, rank, 0, 1, 1, 5040);
 
-    double log_epsilon_tolerance = Math.log(epsilon_tolerance);
-
     writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
     writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 
@@ -132,7 +147,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     Thread thread1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
     Thread thread2 = startLocalFedWorkerThread(port2);
 
-    getAndLoadTestConfiguration(TEST_NAME);
+    getAndLoadTestConfiguration(test_name);
 
     System.out.println("*****************************************************");
     System.out.println("*****************************************************");
@@ -144,9 +159,17 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     System.out.println("*****************************************************");
     System.out.println("*****************************************************");
     // Run reference fml script with normal matrix
-    fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-    programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
-    "in_U=" + input("U"), "in_V=" + input("V"), "out_Z=" + expected("Z")};
+    fullDMLScriptName = HOME + test_name + "Reference.dml";
+    if(!epsilon_flag)
+    {
+      programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
+      "in_U=" + input("U"), "in_V=" + input("V"), "out_Z=" + expected("Z")};
+    }
+    else
+    {
+      programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
+      "in_U=" + input("U"), "in_V=" + input("V"), "in_W=" + Double.toString(epsilon), "out_Z=" + expected("Z")};
+    }
     LOG.debug(runTest(true, false, null, -1));
 
     System.out.println("*****************************************************");
@@ -159,19 +182,18 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     System.out.println("*****************************************************");
     System.out.println("*****************************************************");
     // Run actual dml script with federated matrix
-    fullDMLScriptName = HOME + TEST_NAME + ".dml";
+    fullDMLScriptName = HOME + test_name + ".dml";
     programArgs = new String[] {"-stats", "-nvargs",
       "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
       "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
       "in_U=" + input("U"),
       "in_V=" + input("V"),
-      // TODO: input of W is not working yet
-      "in_W=" + Double.toString(log_epsilon_tolerance),
+      "in_W=" + Double.toString(epsilon),
       "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output("Z")};
     LOG.debug(runTest(true, false, null, -1));
 
     // compare the results via files
-    compareResults(epsilon_tolerance);
+    compareResults();
 
     TestUtils.shutdownThreads(thread1, thread2);
 

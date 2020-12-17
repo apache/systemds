@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.Mean;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -302,13 +303,20 @@ public class FederationUtils {
 		if(!(aop.aggOp.increOp.fn instanceof KahanFunction || (aop.aggOp.increOp.fn instanceof Builtin &&
 			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN
 			|| ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)
-			|| aop.aggOp.increOp.fn instanceof Mean ))) {
+			|| aop.aggOp.increOp.fn instanceof Mean
+			|| aop.aggOp.increOp.fn instanceof Multiply))) {
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
 				+ aop.aggOp.increOp.getClass().getSimpleName());
 		}
 
 		try {
-			if(aop.aggOp.increOp.fn instanceof Builtin){
+			if(aop.aggOp.increOp.fn instanceof Multiply){
+				double mult = 1; //prod *
+				for( Future<FederatedResponse> fr : ffr )
+					mult *= ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
+				return new DoubleObject(mult);
+			}
+			else if(aop.aggOp.increOp.fn instanceof Builtin){
 				// then we know it is a Min or Max based on the previous check.
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
 				return new DoubleObject(aggMinMax(ffr, isMin, true,  Optional.empty()).getValue(0,0));

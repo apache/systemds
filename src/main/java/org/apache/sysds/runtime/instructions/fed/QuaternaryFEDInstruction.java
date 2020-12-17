@@ -38,7 +38,6 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
   protected QuaternaryFEDInstruction(FEDInstruction.FEDType type, Operator operator,
     CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str)
   {
-    // TODO: there are only 3 inputs in ComputationFEDInstruction. Add one?
     super(type, operator, in1, in2, in3, out, opcode, instruction_str);
     _input4 = in4;
     // TODO: assign the following variables when adding cache

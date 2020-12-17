@@ -76,7 +76,12 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();
-		
+
+		if(instString.contains("uarimin") && in.isFederated(FederationMap.FType.COL))
+			instString = instString.replace(getOpcode(), getOpcode().replace("uarimin", "fuarimin"));
+		else if (instString.contains("uarimax") && in.isFederated(FederationMap.FType.COL))
+			instString = instString.replace(getOpcode(), getOpcode().replace("uarimax", "fuarimax"));
+		System.out.println(instString);
 		//create federated commands for aggregation
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});

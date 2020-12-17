@@ -171,6 +171,30 @@ public class FederationUtils {
 		}
 	}
 
+	public static MatrixBlock aggMinMaxIndex(Future<FederatedResponse>[] ffr, boolean isMin, FederationMap map) {
+		try {
+			MatrixBlock prev = (MatrixBlock) ffr[0].get().getData()[0];
+			int size = 0;
+			for(int i = 1; i < ffr.length; i++) {
+				MatrixBlock next = (MatrixBlock) ffr[i].get().getData()[0];
+				size = map.getFederatedRanges()[i-1].getEndDimsInt()[1];
+				for(int j = 0; j < prev.getNumRows(); j++) {
+					next.setValue(j, 0, next.getValue(j, 0) + size);
+					if((prev.getValue(j, 1) > next.getValue(j, 1) && !isMin) ||
+						(prev.getValue(j, 1) < next.getValue(j, 1) && isMin)) {
+						next.setValue(j, 0, prev.getValue(j, 0));
+						next.setValue(j, 1, prev.getValue(j, 1));
+					}
+				}
+				prev = next;
+			}
+			return prev.slice(0, prev.getNumRows()-1, 0,0, true, new MatrixBlock());
+		}
+		catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
 	public static MatrixBlock aggVar(Future<FederatedResponse>[] ffr, Future<FederatedResponse>[] meanFfr, FederationMap map, boolean isRowAggregate, boolean isScalar) {
 		try {
 			FederatedRange[] ranges = map.getFederatedRanges();
@@ -346,12 +370,21 @@ public class FederationUtils {
 			return aggAdd(ffr);
 		else if( aop.aggOp.increOp.fn instanceof Mean )
 			return aggMean(ffr, map);
-		else if (aop.aggOp.increOp.fn instanceof Builtin &&
-			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
+		else if (aop.aggOp.increOp.fn instanceof Builtin) {
+			if ((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
 				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)) {
-			boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
-			return aggMinMax(ffr,isMin,false, Optional.of(map.getType()));
-		} else
+				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
+				return aggMinMax(ffr,isMin,false, Optional.of(map.getType()));
+			}
+			else if((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MININDEX)
+				|| (((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAXINDEX)) {
+				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MININDEX;
+				return aggMinMaxIndex(ffr,isMin, map);
+			}
+			else throw new DMLRuntimeException("Unsupported aggregation operator: "
+					+ aop.aggOp.increOp.fn.getClass().getSimpleName());
+		}
+		else
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
 				+ aop.aggOp.increOp.fn.getClass().getSimpleName());
 	}

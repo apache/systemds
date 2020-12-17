@@ -113,6 +113,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uacdap"  , CPType.AggregateUnary);
 
 		String2CPInstructionType.put( "uaggouterchain", CPType.UaggOuterChain);
+
+		String2CPInstructionType.put( "fuarimax", CPType.AggregateUnary);
+		String2CPInstructionType.put( "fuarimin", CPType.AggregateUnary);
 		
 		// Arithmetic Instruction Opcodes 
 		String2CPInstructionType.put( "+"    , CPType.Binary);

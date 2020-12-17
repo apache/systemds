@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 public class InitFEDInstruction extends FEDInstruction {
 
@@ -236,9 +237,16 @@ public class InitFEDInstruction extends FEDInstruction {
 		try {
 			int timeout = ConfigurationManager.getDMLConfig()
 				.getIntValue(DMLConfig.DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT);
-			LOG.debug("Federated Initialization with timeout: " + timeout);
-			for(Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses)
-				idResponse.getRight().get(timeout, TimeUnit.SECONDS); // wait for initialization
+			if( LOG.isDebugEnabled() )
+				LOG.debug("Federated Initialization with timeout: " + timeout);
+			for(Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses) {
+				// wait for initialization and check dimensions
+				FederatedResponse re = idResponse.getRight().get(timeout, TimeUnit.SECONDS);
+				DataCharacteristics dc = (DataCharacteristics) re.getData()[1];
+				if( dc.getRows() > output.getNumRows() || dc.getCols() > output.getNumColumns() )
+					throw new DMLRuntimeException("Invalid federated meta data: "
+						+ output.getDataCharacteristics()+" vs federated response: "+dc);
+			}
 		}
 		catch(TimeoutException e) {
 			throw new DMLRuntimeException("Federated Initialization timeout exceeded", e);
@@ -294,6 +302,10 @@ public class InitFEDInstruction extends FEDInstruction {
 				FederatedResponse response = idResponse.getRight().getRight().get();
 				int startCol = idResponse.getRight().getLeft();
 				handleFedFrameResponse(schema, fedData, response, startCol);
+				DataCharacteristics dc = (DataCharacteristics) response.getData()[2];
+				if( dc.getRows() > output.getNumRows() || dc.getCols() > output.getNumColumns() )
+					throw new DMLRuntimeException("Invalid federated meta data: "
+						+ output.getDataCharacteristics()+" vs federated response: "+dc);
 			}
 		}
 		catch(Exception e) {
@@ -315,7 +327,7 @@ public class InitFEDInstruction extends FEDInstruction {
 			// Index 0 is the varID, Index 1 is the schema of the frame
 			Object[] data = response.getData();
 			federatedData.setVarID((Long) data[0]);
-			// copy the
+			// copy the schema
 			Types.ValueType[] range_schema = (Types.ValueType[]) data[1];
 			for(int i = 0; i < range_schema.length; i++) {
 				Types.ValueType vType = range_schema[i];

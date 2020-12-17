@@ -19,15 +19,13 @@
 #
 #-------------------------------------------------------------
 
-X1 = federated(addresses=list($in_X1),
-  ranges = list(list(0, 0), list($rows, $cols)))
-X2 = federated(addresses=list($in_X2),
-  ranges = list(list(0, 0), list($rows, $cols)))
+X = federated(addresses=list($in_X1, $in_X2),
+  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)))
 
 U = read($in_U)
 V = read($in_V)
 epsilon = $in_W
 
-Z = as.matrix(sum(X1 * log(U %*% t(V) + epsilon)) + sum(X2 * log(U %*% t(V) + epsilon)))
+Z = as.matrix(sum(X * log(U %*% t(V) + epsilon)))
 
 write(Z, $out_Z)

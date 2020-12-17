@@ -119,7 +119,7 @@ public class FederationUtils {
 			long size = 0;
 			for(int i=0; i<ffr.length; i++) {
 				Object input = ffr[i].get().getData()[0];
-				MatrixBlock tmp = (input instanceof ScalarObject) ? 
+				MatrixBlock tmp = (input instanceof ScalarObject) ?
 					new MatrixBlock(((ScalarObject)input).getDoubleValue()) : (MatrixBlock) input;
 				size += ranges[i].getSize(0);
 				sop1 = sop1.setConstant(ranges[i].getSize(0));
@@ -317,6 +317,10 @@ public class FederationUtils {
 		}
 	}
 
+  public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr) {
+    return aggScalar(aop, ffr, null);
+  }
+
 	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, FederationMap map) {
 		if(!(aop.aggOp.increOp.fn instanceof KahanFunction || (aop.aggOp.increOp.fn instanceof Builtin &&
 			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN
@@ -366,7 +370,7 @@ public class FederationUtils {
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
 				+ aop.aggOp.increOp.fn.getClass().getSimpleName());
 	}
-	
+
 	public static FederationMap federateLocalData(CacheableData<?> data) {
 		long id = FederationUtils.getNextFedDataID();
 		FederatedLocalData federatedLocalData = new FederatedLocalData(id, data);

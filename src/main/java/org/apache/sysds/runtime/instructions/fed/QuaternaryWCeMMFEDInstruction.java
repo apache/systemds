@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -71,7 +74,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
     if(matrix_object_1.isFederated() && !matrix_object_2.isFederated() && !matrix_object_3.isFederated())
     {
       FederationMap federation_mapping = matrix_object_1.getFedMapping();
-      FederatedRequest fed_req_init_1 = federation_mapping.broadcast(matrix_object_2);
+      FederatedRequest[] fed_req_init_1 = federation_mapping.broadcastSliced(matrix_object_2, false);
       FederatedRequest fed_req_init_2 = federation_mapping.broadcast(matrix_object_3);
       FederatedRequest fed_req_init_3 = null;
       FederatedRequest fed_req_compute_1 = null;
@@ -82,50 +85,39 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
         fed_req_init_3 = federation_mapping.broadcast(scalar_object_4);
         fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
           new CPOperand[]{input1, input2, input3, _input4},
-          new long[]{federation_mapping.getID(), fed_req_init_1.getID(), fed_req_init_2.getID(), fed_req_init_3.getID()});
+          new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID(), fed_req_init_3.getID()});
       }
       else
       {
         fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
         new CPOperand[]{input1, input2, input3},
-        new long[]{federation_mapping.getID(), fed_req_init_1.getID(), fed_req_init_2.getID()});
+        new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID()});
       }
-      FederatedRequest fed_req_cleanup_1 = federation_mapping.cleanup(getTID(), fed_req_init_1.getID());
-      FederatedRequest fed_req_cleanup_2 = federation_mapping.cleanup(getTID(), fed_req_init_2.getID());
+      FederatedRequest fed_req_get_1 = new FederatedRequest(RequestType.GET_VAR, fed_req_compute_1.getID());
+      FederatedRequest fed_req_cleanup_1 = federation_mapping.cleanup(getTID(), fed_req_compute_1.getID());
+      FederatedRequest fed_req_cleanup_2 = federation_mapping.cleanup(getTID(), fed_req_init_1[0].getID());
+      FederatedRequest fed_req_cleanup_3 = federation_mapping.cleanup(getTID(), fed_req_init_2.getID());
 
       Future<FederatedResponse>[] response;
       if(fed_req_init_3 != null)
       {
-        FederatedRequest fed_req_cleanup_3 = federation_mapping.cleanup(getTID(), fed_req_init_3.getID());
+        FederatedRequest fed_req_cleanup_4 = federation_mapping.cleanup(getTID(), fed_req_init_3.getID());
         // execute federated instructions
-        response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_init_3, fed_req_compute_1, fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3);
+        response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_init_3,
+          fed_req_compute_1, fed_req_get_1,
+          fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3, fed_req_cleanup_4);
       }
       else
       {
         // execute federated instructions
-        response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_compute_1, fed_req_cleanup_1, fed_req_cleanup_2);
+        response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2,
+          fed_req_compute_1, fed_req_get_1,
+          fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3);
       }
 
+      AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 
-      try
-      {
-        for(Future<FederatedResponse> tmp : response)
-        {
-          if(!tmp.get().isSuccessful())
-          {
-            tmp.get().throwExceptionFromResponse();
-          }
-        }
-      }
-      catch(Exception e)
-      {
-        throw new DMLRuntimeException(e);
-      }
-
-      // TODO: set the output
-      // NOTE: this is only a test if setting the output would work like this
-      execution_context.setVariable(output.getName(), new DoubleObject(13));
-
+      execution_context.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
     }
   }
 

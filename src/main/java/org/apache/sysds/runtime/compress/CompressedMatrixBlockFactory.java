@@ -90,16 +90,21 @@ public class CompressedMatrixBlockFactory {
 		// Prepare basic meta data and deep copy / transpose input
 		int numRows = mb.getNumRows();
 		int numCols = mb.getNumColumns();
-		boolean sparse = mb.isInSparseFormat();
-
+		
 		// -------------------------------------------------
 		// PHASE 0: transpose input matrix
 		// Transpose the matrix, to give more cache friendly access to reading row by row values.
-
+		
 		// Transpose the MatrixBlock if the TransposeInput flag is set.
 		// This gives better cache consciousness, at a small upfront cost.
+
+		// boolean sparse = mb.isInSparseFormat();
+		// MatrixBlock rawBlock = !compSettings.transposeInput ? mb : LibMatrixReorg
+		// 	.transpose(mb, new MatrixBlock(numCols, numRows, sparse), 1);
+
 		MatrixBlock rawBlock = !compSettings.transposeInput ? mb : LibMatrixReorg
-			.transpose(mb, new MatrixBlock(numCols, numRows, sparse), k);
+				.transposeInPlace(mb, k);
+
 
 		_stats.setNextTimePhase(time.stop());
 		if(DMLScript.STATISTICS) {

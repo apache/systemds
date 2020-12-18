@@ -532,6 +532,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public DenseBlock getDenseBlock() {
 		return denseBlock;
 	}
+
+	public void setDenseBlock(DenseBlock dblock){
+		denseBlock = dblock;
+	}
 	
 	public double[] getDenseBlockValues() {
 		//this method is used as a short-hand for all operations that

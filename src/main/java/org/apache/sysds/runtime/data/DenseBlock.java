@@ -49,12 +49,7 @@ public abstract class DenseBlock implements Serializable
 	private double[] _reuse;
 	
 	protected DenseBlock(int[] dims) {
-		long odims = UtilFunctions.prod(dims, 1);
-		if( odims > Integer.MAX_VALUE )
-			throw new DMLRuntimeException("Invalid dims: "+Arrays.toString(dims));
-		_rlen = dims[0];
-		//materialize dim offsets (reverse cumprod)
-		_odims = createDimOffsets(dims);
+		setDims(dims);
 	}
 
 	/**
@@ -159,6 +154,20 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public abstract void reset(int rlen, int[] odims, double v);
 	
+
+	/**
+	 * Set the dimensions of the dense MatrixBlock.
+	 * @param dims The dimensions to set, first dimension is rows, second cols.
+	 */
+	public void setDims(int[] dims){
+		long odims = UtilFunctions.prod(dims, 1);
+		if( odims > Integer.MAX_VALUE )
+			throw new DMLRuntimeException("Invalid dims: "+Arrays.toString(dims));
+		_rlen = dims[0];
+		//materialize dim offsets (reverse cumprod)
+		_odims = createDimOffsets(dims);
+	}
+
 	/**
 	 * Get the number of rows.
 	 * 

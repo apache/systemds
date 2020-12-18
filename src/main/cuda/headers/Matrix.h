@@ -79,7 +79,9 @@ public:
 	
 private:
 	uint32_t len_dense() {
-		return _mat->cols;
+		// ToDo: fix in SideInput upload
+		return _mat->cols == 1 ? _mat->rows : _mat->cols;
+//		return _mat->cols;
 	}
 	
 	uint32_t pos_dense(uint32_t rix) {
@@ -91,7 +93,8 @@ private:
 	}
 	
 	T* val_dense_row(uint32_t rix) {
-		return &(_mat->data[_mat->cols * rix]);
+//		return &(_mat->data[_mat->cols * rix]);
+		return &(_mat->data[rix]);
 	}
 	
 	//ToDo sparse accessors

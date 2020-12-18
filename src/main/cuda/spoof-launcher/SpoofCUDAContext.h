@@ -314,14 +314,14 @@ public:
 		dim3 block(NT, 1, 1);
 		unsigned int shared_mem_size = NT * sizeof(T);
 
-#ifdef __DEBUG
+//#ifdef __DEBUG
 			// ToDo: connect output to SystemDS logging facilities
 			std::cout << "launching spoof rowwise kernel " << op->name << " with " << NT * in_rows << " threads in " << in_rows
 				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << row_len << " cols processed by " << NT << " threads per row " << std::endl;
-#endif
+//#endif
 		
 		CHECK_CUDA(op->program.kernel(op->name)
-				.instantiate(type_of(result), num_sides)
+				.instantiate(type_of(result), std::max(1u, num_sides))
 				.configure(grid, block, shared_mem_size)
 				.launch(in_ptrs[0], d_sides, d_scalars, out_ptr, out_len, row_len, grix));
 

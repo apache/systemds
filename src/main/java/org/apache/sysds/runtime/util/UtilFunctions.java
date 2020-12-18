@@ -837,8 +837,18 @@ public class UtilFunctions {
 
 	/**
 	 * <p>
-	 *     Generates a random FrameBlock with given parameters.
+	 *        Generates a random FrameBlock with given parameters.
 	 * </p>
+	 *
+	 * @param rows
+	 * 				frame rows
+	 * @param cols
+	 * 				frame cols
+	 * @param schema
+	 *
+	 * @param random
+	 *
+	 * @return FrameBlock
 	 */
 	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random){
 		String[] names = new String[cols];
@@ -861,6 +871,7 @@ public class UtilFunctions {
 	 * 				the ValueType of which to generate the value
 	 * @param random
 	 * 				random Object
+	 * @return Object
 	 */
 	public static Object generateRandomValueFromValueType(ValueType valueType, Random random){
 		switch (valueType){
@@ -885,6 +896,7 @@ public class UtilFunctions {
 	 *
 	 * @param schemaValues
 	 * 				the string schema of which to generate the ValueType
+	 * @return ValueType[]
 	 */
 	public static ValueType[] stringToValueType(String[] schemaValues)
 	{

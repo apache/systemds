@@ -19,6 +19,22 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -38,20 +54,6 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
 /**
  * MB:
  * Library for selected matrix reorg operations including special cases
@@ -65,8 +67,10 @@ import java.util.stream.Collectors;
  *  - rmempty (remove empty)
  *  - rexpand (outer/table-seq expansion)
  */
-public class LibMatrixReorg 
-{
+public class LibMatrixReorg {
+
+	// private static final Log LOG = LogFactory.getLog(LibMatrixReorg.class.getName());
+
 	//minimum number of elements for multi-threaded execution
 	public static final long PAR_NUMCELL_THRESHOLD = 1024*1024; //1M
 	
@@ -126,6 +130,19 @@ public class LibMatrixReorg
 		}
 	}
 
+	public static MatrixBlock reorgInPlace(MatrixBlock in, ReorgOperator op){
+		ReorgType type = getReorgType(op);
+		switch (type){
+			case TRANSPOSE:
+				return transposeInPlace(in, op.getNumThreads());
+			case REV:
+			case SORT:
+				throw new DMLRuntimeException("Not implemented inplace: " + op.fn.getClass().getSimpleName());
+			default:
+				throw new DMLRuntimeException("Unsupported inplace reorg operator: " + op.fn.getClass().getSimpleName());
+		}
+	}
+
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) {
 		//sparse-safe operation
 		if( in.isEmptyBlock(false) )
@@ -143,7 +160,7 @@ public class LibMatrixReorg
 			return out;
 		}
 		
-		//Timing time = new Timing(true);
+		// Timing time = new Timing(true);
 		
 		//allocate output arrays (if required)
 		if( out.sparse )
@@ -162,7 +179,7 @@ public class LibMatrixReorg
 		else
 			transposeDenseToSparse( in, out );
 		
-		//System.out.println("r' ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
+		// System.out.println("r' ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
 		return out;
 	}
@@ -177,7 +194,7 @@ public class LibMatrixReorg
 			return transpose(in, out);
 		}
 		
-		//Timing time = new Timing(true);
+		// Timing time = new Timing(true);
 		
 		//set meta data and allocate output arrays (if required)
 		out.nonZeros = in.nonZeros;
@@ -217,9 +234,24 @@ public class LibMatrixReorg
 			throw new DMLRuntimeException(ex);
 		}
 		
-		//System.out.println("r' k="+k+" ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
+		// System.out.println("r' k="+k+" ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
 		return out;
+	}
+
+
+	public static MatrixBlock transposeInPlace(MatrixBlock in, int k){
+		// If input is sparse return to default implementation
+		// and allocate a new matrix.
+		if(in.sparse){
+			return transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), true), k);
+		}
+
+		// Timing time = new Timing(true);
+		transposeInPlaceDense(in, k);
+		// System.out.println("r' in place k="+k+" ("+in.rlen+", "+in.clen+") in "+time.stop()+" ms.");
+		
+		return in;
 	}
 
 	public static MatrixBlock rev( MatrixBlock in, MatrixBlock out ) {
@@ -976,6 +1008,621 @@ public class LibMatrixReorg
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Using C2R & R2C algorithm from PPOP 2014.
+	 * 
+	 * https://dl.acm.org/doi/pdf/10.1145/2692916.2555253
+	 * 
+	 * @param in The matrix to transpose in place.
+	 * @param k  The number of threads allowed to be used.
+	 */
+	private static void transposeInPlaceDense(MatrixBlock in, int k){
+		DenseBlock values = in.getDenseBlock();
+		if(values.numBlocks()>1)
+			throw new NotImplementedException("Not Implemented in place transpose with more than one block");
+		int cols = in.getNumRows();
+		int rows = in.getNumColumns();
+
+	
+		if(cols == 1 || rows == 1){
+			// do nothing
+		}
+		else if(cols == rows){
+			// If the number of rows equals the number of columns simply swap each element along the diagonal.
+			// This only results in half - number of diagonal elements swaps.
+			transposeInPlaceTrivial(in.getDenseBlockValues(), cols, k);
+		}else{
+			if(cols<rows){
+				c2r(in, k);
+				values.setDims(new int[]{rows,cols});
+				in.setNumColumns(cols);
+				in.setNumRows(rows);
+			}
+			else{
+				values.setDims(new int[]{rows,cols});
+				in.setNumColumns(cols);
+				in.setNumRows(rows);
+				r2c(in, k);
+			}
+		}
+
+		
+	}
+
+	/** Thread local temporary double array.. */
+	private static ThreadLocal<double[]> memPool = new ThreadLocal<double[]>() {
+        @Override
+        protected double[] initialValue() {
+            return null;
+        }
+    };
+
+	/**
+	 * Only use if the number of rows and cols are equal
+	 * @param values The values in the dense matrix.
+	 * @param rowAndCols The number of rows & cols.
+	 * @param k The number of threads allowed to be used.
+	 */
+	private static void transposeInPlaceTrivial(double[] values, int rowAndCols, int k){
+		if(rowAndCols > 15){
+			try{
+				ExecutorService pool = CommonThreadPool.get(k);
+				ArrayList<TransposeInPlaceTrivialTask> tasks = new ArrayList<>();
+				int blklen = 128;
+				for(int i = 0; i * blklen < rowAndCols; i++){
+					for(int j = i; j * blklen < rowAndCols; j++){
+						tasks.add(new TransposeInPlaceTrivialTask(
+							i * blklen, Math.min((i+1) * blklen,rowAndCols),
+							j * blklen, Math.min((j+1) * blklen,rowAndCols), rowAndCols, values));
+					}
+				}
+	
+				List<Future<Object>> rtasks = pool.invokeAll(tasks);
+				pool.shutdown();
+				for(Future<Object> rt : rtasks)
+					rt.get();
+			}
+			catch(InterruptedException | ExecutionException ex) {
+				throw new DMLRuntimeException("Failed parallel transpose in place with equal number col and rows.", ex);
+			}
+		}else{
+			for(int rowidx = 0; rowidx < rowAndCols; rowidx++){
+				for(int colidx = rowidx+1; colidx < rowAndCols; colidx++){
+					swap(values, rowidx * rowAndCols + colidx, colidx * rowAndCols + rowidx);
+				}
+			}
+		}
+	}
+
+	private static class TransposeInPlaceTrivialTask implements Callable<Object>{
+		private final int _rowStart;
+		private final int _rowStop;
+		private final int _colStart;
+		private final int _colStop;
+		private final int _rowAndCols;
+		private final double[] _values;
+
+		TransposeInPlaceTrivialTask(int rowStart, int rowStop, int colStart, int colStop, int rowAndCols, double[] values){
+			_rowStart = rowStart;
+			_rowStop = rowStop;
+			_colStart = colStart;
+			_colStop = colStop;
+			_rowAndCols = rowAndCols;
+			_values = values;
+		}
+
+		@Override
+		public Object call() {
+			for(int rowidx = _rowStart; rowidx < _rowStop; rowidx++){
+				for(int colidx = Math.max(rowidx+1, _colStart); colidx < _colStop; colidx++){
+					swap(_values, rowidx * _rowAndCols + colidx, colidx * _rowAndCols + rowidx);
+				}
+			}
+			return null;
+		}
+	}
+
+	private static void swap(double[] values, int from, int to){
+		double tmp = values[from];
+		values[from] = values[to];
+		values[to] = tmp;
+	}
+
+	private static void c2r(MatrixBlock in, int k){
+		double[] A = in.getDenseBlockValues();
+		int m = in.getNumRows();
+		int n = in.getNumColumns();
+		int c = gcd(m,n);
+		int a = m/c;
+		int b = n/c;
+
+		// LOG.error("c2r");
+
+		double[] tmp = memPool.get();
+        if(tmp == null) {
+            memPool.set(new double[Math.max(m,n)]);
+            tmp = memPool.get();
+        }
+		
+		ExecutorService pool = CommonThreadPool.get(k);
+		ArrayList<Callable<Object>> tasks = new ArrayList<>();
+
+		// Column rotate Gather
+		if(c> 1){
+			if(m > 10 && n > 100){
+				try{
+					int blkz = Math.max((n - c)/k, 1);
+					for(int j = c; j * blkz< n; j++){
+						tasks.add(new rTask(A,j*blkz,Math.min((j+1) * blkz,n),b,n,m));
+					}
+					for(Future<Object> rt : pool.invokeAll(tasks))
+						rt.get();
+					tasks.clear();
+				}
+				catch(InterruptedException | ExecutionException ex) {
+					throw new DMLRuntimeException("Failed parallel c2r transpose in column rotate step", ex);
+				}
+			}
+			else {
+				for(int j = c; j< n; j++){
+					rj(tmp, A, j, b, n, m);
+				}
+			}
+		}
+
+		// Row shuffle Scatter
+		if(m > 10 && n > 100){
+			try{
+				int blkz = Math.max(m/k, 1);
+				for(int i = 0; i * blkz< m; i++){
+					tasks.add(new dTask(A,i*blkz,Math.min((i+1) * blkz,m),b,n,m));
+				}
+				for(Future<Object> rt : pool.invokeAll(tasks))
+					rt.get();
+				tasks.clear();
+			}
+			catch(InterruptedException | ExecutionException ex) {
+				throw new DMLRuntimeException("Failed parallel c2r transpose in row shuffle step", ex);
+			}
+		}
+		else{
+			for (int i = 0; i< m; i++){
+				di(tmp, A, i ,b, n, m);
+			}
+		}
+
+
+		// Column shuffle Gather
+		if(m > 10 && n > 100){
+			try{
+				int blkz = Math.max(n/k,1);
+				for(int j = 0; j * blkz< n; j++){
+					tasks.add(new sTask(A,j*blkz,Math.min((j+1) * blkz,n),a,n,m));
+				}
+				for(Future<Object> rt : pool.invokeAll(tasks))
+					rt.get();
+				tasks.clear();
+			}
+			catch(InterruptedException | ExecutionException ex) {
+				throw new DMLRuntimeException("Failed parallel c2r transpose in column shuffle", ex);
+			}
+		}
+		else {
+
+			for(int j = 0; j< n; j++){
+				sj(tmp, A, j, a, n, m);
+			}
+		}
+		memPool.remove();
+	}
+
+	private static void rj(double[] tmp, double[] A, int j, int b, int n, int m){
+		int part = j / b;
+		for (int i = 0; i< m; i++){
+			int rj = (i+part) % m;
+			tmp[i] = A[rj*n + j];
+		}
+		
+		for (int i = j, off = 0; i< m*n; i+= n, off++){
+			A[i] = tmp[off];
+		}
+	}
+
+	private static class rTask implements Callable<Object> {
+		final double[] _A;
+
+		final int _jStart;
+		final int _jEnd;
+		final int _b;
+		final int _n;
+		final int _m;
+
+		rTask(double[] A, int jStart, int jEnd, int b, int n, int m){
+			_A = A;
+			_jStart = jStart;
+			_jEnd = jEnd;
+			_b = b;
+			_n = n;
+			_m = m;
+		}
+
+		@Override
+		public Object call(){
+			double[] tmp = memPool.get();
+			if(tmp == null) {
+				memPool.set(new double[Math.max(_m,_n)]);
+				tmp = memPool.get();
+			}
+			for( int j = _jStart; j< _jEnd; j++){
+
+				rj(tmp, _A, j, _b, _n, _m);
+			}
+			return null;
+		}
+	}
+
+	private static void di(double[] tmp, double[] A, int i, int b, int n, int m){
+		int off = i*n;
+		for(int j = 0; j< n; j++, off++){
+			int dij =((i + j/b) % m + j*m) % n;
+			tmp[dij] = A[off];
+		}
+		
+		System.arraycopy(tmp, 0, A, i*n, n);
+
+	}
+
+	private static class dTask implements Callable<Object>{
+		final double[] _A;
+
+		final int _iStart;
+		final int _iEnd;
+		final int _b;
+		final int _n;
+		final int _m;
+
+		dTask(double[] A, int iStart, int iEnd, int b, int n, int m){
+			_A = A;
+			_iStart = iStart;
+			_iEnd = iEnd;
+			_b = b;
+			_n = n;
+			_m = m;
+		}
+
+		@Override
+		public Object call(){
+			double[] tmp = memPool.get();
+			if(tmp == null) {
+				memPool.set(new double[Math.max(_m,_n)]);
+				tmp = memPool.get();
+			}
+
+			for (int i = _iStart; i< _iEnd; i++){
+
+				di(tmp, _A, i, _b, _n, _m);
+			}
+			return null;
+		}
+	}
+
+	private static void sj(double[] tmp, double[] A, int j, int a, int n, int m){
+
+		for (int i = 0; i< m; i++){
+			int sji = ((j + i*n - i/a) % m )* n;
+			tmp[i] = A[sji + j];
+		}
+
+		for (int i = j, off = 0; i< m * n; i += n, off ++){
+			A[i] = tmp[off];
+			
+		}
+	}
+
+	private static class sTask implements Callable<Object>{
+		final double[] _A;
+
+		// final int _j;
+		final int _jStart;
+		final int _jEnd;
+		final int _a;
+		final int _n;
+		final int _m;
+
+		sTask(double[] A, int jStart, int jEnd, int a, int n, int m){
+			_A = A;
+			_jStart = jStart;
+			_jEnd = jEnd;
+			_a = a;
+			_n = n;
+			_m = m;
+		}
+
+		@Override
+		public Object call(){
+			double[] tmp = memPool.get();
+			if(tmp == null) {
+				memPool.set(new double[Math.max(_m,_n)]);
+				tmp = memPool.get();
+			}
+			for( int j = _jStart; j< _jEnd; j++){
+
+				sj(tmp, _A, j, _a, _n, _m);
+			}
+			return null;
+		}
+	}
+
+	private static void r2c(MatrixBlock in, int k){
+		double[] A = in.getDenseBlockValues();
+		int m = in.getNumRows();
+		int n = in.getNumColumns();
+		int c = gcd(m,n);
+		int a = m/c;
+		int b = n/c;
+		int a_inv = modInverse(a,b);
+
+		double[] tmp = memPool.get();
+        if(tmp == null) {
+            memPool.set(new double[Math.max(m,n)]);
+            tmp = memPool.get();
+        }
+
+		ExecutorService pool = CommonThreadPool.get(k);
+		ArrayList<Callable<Object>> tasks = new ArrayList<>();
+
+		if(m > 10 && n > 100){
+			try{
+				int blkz = Math.max(n/k,1);
+				for(int j = 0; j * blkz< n; j++){
+					tasks.add(new s_invTask(A,j*blkz,Math.min((j+1) * blkz,n),a,n,m));
+				}
+				for(Future<Object> rt : pool.invokeAll(tasks))
+					rt.get();
+				tasks.clear();
+			}
+			catch(InterruptedException | ExecutionException ex) {
+				throw new DMLRuntimeException("Failed parallel r2c transpose in place in inverse colum shuffle.", ex);
+			}
+		}
+		else {
+			for(int j = 0; j< n; j++){
+				sj_inv(tmp, A, j, a, n, m);
+			}
+		}
+
+		if(m > 10 && n > 100){
+			try{
+				int blkz = Math.max(m/k,1);
+				for(int i = 0; i * blkz< m; i++){
+					tasks.add(new d_invTask(A,i*blkz,Math.min((i+1) * blkz,m), a_inv, b, c, n, m));
+				}
+				for(Future<Object> rt : pool.invokeAll(tasks))
+					rt.get();
+				tasks.clear();
+			}
+			catch(InterruptedException | ExecutionException ex) {
+				throw new DMLRuntimeException("Failed parallel r2c transpose in placein inverse row shuffle step.", ex);
+			}
+		}
+		else{
+			if( b * b < 0){
+				// if there is a risk for overflow use the safe method.
+				for (int i = 0; i< m; i++)
+					di_inv_safe(tmp, A, i, a_inv, b, c, n, m);
+			}
+			else{
+				for (int i = 0; i< m; i++)
+					di_inv(tmp, A, i, a_inv, b, c, n, m);
+			}
+
+		}
+
+		if(c > 1){
+			if(m > 10 && n > 100){
+				try{
+					int blkz = Math.max((n - c)/k,1);
+					for(int j = c; j * blkz< n; j++){
+						tasks.add(new r_invTask(A,j*blkz,Math.min((j+1) * blkz,n),b,n,m));
+					}
+					for(Future<Object> rt : pool.invokeAll(tasks))
+						rt.get();
+					tasks.clear();
+				}
+				catch(InterruptedException | ExecutionException ex) {
+					throw new DMLRuntimeException("Failed parallel r2c transpose in place inverse column rotate step.", ex);
+				}
+			}
+			else {
+
+				for(int j = c; j< n; j++){
+					rj_inv(tmp, A, j, b, n,m);
+				}
+			}
+		}
+
+		memPool.remove();
+	}
+
+	private static void sj_inv(double[] tmp, double[] A, int j, int a, int n, int m){
+			// This deviate from the paper, since this implementation
+			// is leveraging the location switch by not assigning into 
+			// the temp array, in order, but based on which elements to shift.
+			for (int i = 0, off = 0; i< m * n; i+= n, off++){
+				int sji = ((j + i - (off/a)) % m );
+				tmp[sji] = A[i + j];
+			}
+			// LOG.error(Arrays.toString(sjiList));
+			for (int i = j, off = 0; i< m * n; i+= n, off++){
+				A[i] = tmp[off];
+			}
+	}
+
+	private static class s_invTask implements Callable<Object>{
+		final double[] _A;
+
+		// final int _j;
+		final int _jStart;
+		final int _jEnd;
+		final int _a;
+		final int _n;
+		final int _m;
+
+		s_invTask(double[] A, int jStart, int jEnd, int a, int n, int m){
+			_A = A;
+			_jStart = jStart;
+			_jEnd = jEnd;
+			_a = a;
+			_n = n;
+			_m = m;
+		}
+
+		@Override
+		public Object call(){
+			double[] tmp = memPool.get();
+			if(tmp == null) {
+				memPool.set(new double[Math.max(_m,_n)]);
+				tmp = memPool.get();
+			}
+			for( int j = _jStart; j< _jEnd; j++){
+
+				sj_inv(tmp, _A, j, _a, _n, _m);
+			}
+			return null;
+		}
+	}
+
+	private static void di_inv(double[] tmp, double[] A, int i, int a_inv, int b, int c, int n, int m){
+		int off = i*n;
+		final int tmpIC = i + c;
+		final int tmpIN = i * (n - 1);
+		for(int j = 0; j < n; j++, off++){
+			int f = (tmpIC - (j % c ) <= m) ? j + tmpIN : j + tmpIN +  m;
+			int dij_inverse = ((a_inv % b)  * ((f/c) % b)) % b  + (f % c) * b;
+
+			tmp[dij_inverse] = A[off];
+		}
+	
+		System.arraycopy(tmp, 0, A, i*n, n);
+	}
+
+	private static void di_inv_safe(double[] tmp, double[] A, int i, int a_inv, int b, int c, int n, int m){
+		int off = i*n;
+		final int tmpIC = i + c;
+		final int tmpIN = i * (n - 1);
+		for(int j = 0; j < n; j++, off++){
+			int f = (tmpIC - (j % c ) <= m) ? j + tmpIN : j + tmpIN +  m;
+			int dij_inverse = ((int)((((long)(a_inv % b) * ((f/c) % b)) % b)) + (f % c) * b);
+			
+			tmp[dij_inverse] = A[off];
+		}
+
+		System.arraycopy(tmp, 0, A, i*n, n);
+	}
+
+	private static class d_invTask implements Callable<Object>{
+		final double[] _A;
+
+		final int _iStart;
+		final int _iEnd;
+		final int _a_inv;
+		final int _b;
+		final int _c;
+		final int _n;
+		final int _m;
+
+		d_invTask(double[] A, int iStart, int iEnd, int a_inv, int b, int c, int n, int m){
+			_A = A;
+			_iStart = iStart;
+			_iEnd = iEnd;
+			_a_inv = a_inv;
+			_b = b;
+			_c = c;
+			_n = n;
+			_m = m;
+		}
+
+		@Override
+		public Object call(){
+			double[] tmp = memPool.get();
+			if(tmp == null) {
+				memPool.set(new double[Math.max(_m,_n)]);
+				tmp = memPool.get();
+			}
+			// if( _b * _b < 0){
+				// if there is a risk for overflow use the safe method.
+				for (int i = _iStart; i< _iEnd; i++)
+					di_inv_safe(tmp, _A, i,_a_inv, _b, _c, _n, _m);
+			// }else{
+			// 	for (int i = _iStart; i< _iEnd; i++)
+			// 		di_inv(tmp, _A, i,_a_inv, _b, _c, _n, _m);
+			// }
+			return null;
+		}
+	}
+
+	private static void rj_inv(double[] tmp, double[] A, int j, int b, int n, int m){
+		int part = j/ b;
+		for (int i = 0; i< m; i++){
+			int rj = (i-part) % m;
+			if(rj < 0)
+				rj += m;
+			tmp[i] = A[rj*n + j];
+		}
+		for (int i = j, off = 0; i< m * n; i+= n, off++){
+			A[i] = tmp[off];
+		}
+	}
+
+	private static class r_invTask implements Callable<Object>{
+		final double[] _A;
+
+		// final int _j;
+		final int _jStart;
+		final int _jEnd;
+		final int _b;
+		final int _n;
+		final int _m;
+
+		r_invTask(double[] A, int jStart, int jEnd, int b, int n, int m){
+			_A = A;
+			_jStart = jStart;
+			_jEnd = jEnd;
+			_b = b;
+			_n = n;
+			_m = m;
+		}
+
+		@Override
+		public Object call(){
+			double[] tmp = memPool.get();
+			if(tmp == null) {
+				memPool.set(new double[Math.max(_m,_n)]);
+				tmp = memPool.get();
+			}
+			for( int j = _jStart; j< _jEnd; j++){
+				rj_inv(tmp, _A, j, _b, _n, _m);
+			}
+			return null;
+		}
+	}
+
+	private static int modInverse(int a , int m){
+		a = a % m; 
+        for (int x = 1; x < m; x++) 
+            if ((a * x) % m == 1) 
+                return x; 
+		return 1; 
+		// TODO use optimized mod inverse operation.
+		// This makes little differnece on overall algorithm performance
+		// performance of algorithm.
+
+	}
+
+	private static int gcd(int a, int b){
+		return a == 0 ? b : gcd(b % a, a);
 	}
 
 	static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len ) {

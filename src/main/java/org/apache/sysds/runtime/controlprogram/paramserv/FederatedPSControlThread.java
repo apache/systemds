@@ -58,7 +58,7 @@ import static org.apache.sysds.runtime.util.ProgramConverter.*;
 public class FederatedPSControlThread extends PSWorker implements Callable<Void> {
 	private static final long serialVersionUID = 6846648059569648791L;
 	protected static final Log LOG = LogFactory.getLog(ParamServer.class.getName());
-	
+
 	Statement.PSRuntimeBalancing _runtimeBalancing;
 	FederatedData _featuresData;
 	FederatedData _labelsData;
@@ -68,7 +68,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	int _possibleBatchesPerLocalEpoch;
 	boolean _cycleStartAt0 = false;
 
-	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq, Statement.PSRuntimeBalancing runtimeBalancing, int epochs, long batchSize, int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps) {
+	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq,
+									Statement.PSRuntimeBalancing runtimeBalancing, int epochs, long batchSize,
+									int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
 
 		_numBatchesPerGlobalEpoch = numBatchesPerGlobalEpoch;
@@ -86,16 +88,26 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		_featuresData = (FederatedData) _features.getFedMapping().getMap().values().toArray()[0];
 		_labelsData = (FederatedData) _labels.getFedMapping().getMap().values().toArray()[0];
 
-		// calculate number of batches and get data size
+		// different runtime balancing calculations
 		long dataSize = _features.getNumRows();
 		_possibleBatchesPerLocalEpoch = (int) Math.ceil((double) dataSize / _batchSize);
-		if(!(_runtimeBalancing == Statement.PSRuntimeBalancing.RUN_MIN 
-			|| _runtimeBalancing == Statement.PSRuntimeBalancing.CYCLE_AVG 
-			|| _runtimeBalancing == Statement.PSRuntimeBalancing.CYCLE_MAX)) {
+
+		// calculate scaled batch size if balancing via batch size. If the number of rows on a worker is lower than the
+		// the numBatchesPerGlobalEpoch cycling will occur.
+		// In this case, the cycling will always start fresh over epochs.
+		// Example: numBatchesPerGlobalEpoch = 2, dataSize = 1 => batchSize will be 1 and therefore cycle once.
+		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH
+				|| _runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
+			_batchSize = (int) Math.ceil((double) dataSize / _numBatchesPerGlobalEpoch);
+			_cycleStartAt0 = true;
+		}
+		// If no runtime balancing is specified, just run possible number of batches
+		// WARNING: Will get stuck on miss match
+		else if(_runtimeBalancing == Statement.PSRuntimeBalancing.NONE) {
 			_numBatchesPerGlobalEpoch = _possibleBatchesPerLocalEpoch;
 		}
 
-		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH 
+		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH
 			|| _runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
 			throw new NotImplementedException();
 		}
@@ -115,16 +127,14 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			programBlocks.add(aggProgramBlock);
 		}
 
-		StringBuilder sb = new StringBuilder();
-		sb.append(PROG_BEGIN);
-		sb.append( NEWLINE );
-		sb.append(ProgramConverter.serializeProgram(_ec.getProgram(),
-				programBlocks,
-				new HashMap<>(),
-				false
-		));
-		sb.append(PROG_END);
-		programSerialized = sb.toString();
+		programSerialized = PROG_BEGIN +
+				NEWLINE +
+				ProgramConverter.serializeProgram(_ec.getProgram(),
+						programBlocks,
+						new HashMap<>(),
+						false
+				) +
+				PROG_END;
 
 		// write program and meta data to worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(
@@ -333,7 +343,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ListObject model = pullModel();
 			ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerGlobalEpoch, localStartBatchNum, true);
 			pushGradients(gradients);
-			
+
 			if( LOG.isInfoEnabled() )
 				LOG.info("[+] " + this.getWorkerName() + " completed epoch " + epochCounter);
 			ParamservUtils.cleanupListObject(model);

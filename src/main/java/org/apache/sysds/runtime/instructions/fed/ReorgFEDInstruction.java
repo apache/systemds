@@ -111,7 +111,8 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 			if(mo1.isFederated(FederationMap.FType.ROW))
 				mo1.getFedMapping().reverseFedMap();
-			//drive output federated mapping
+
+			//derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(output);
 			out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));

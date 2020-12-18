@@ -191,9 +191,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"seed=" + 25));
 
 			programArgs = programArgsList.toArray(new String[0]);
-			// TODO: Switch back
-			//LOG.debug(runTest(null));
-			System.out.println(runTest(null));
+			LOG.debug(runTest(null));
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			
 			// shut down threads

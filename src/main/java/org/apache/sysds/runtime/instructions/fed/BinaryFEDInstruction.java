@@ -32,11 +32,6 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		super(type, op, in1, in2, out, opcode, istr);
 	}
 
-	public BinaryFEDInstruction(FEDInstruction.FEDType type, Operator op,
-		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
-		super(type, op, in1, in2, in3, out, opcode, istr);
-	}
-
 	public static BinaryFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(parts, 3);
@@ -62,29 +57,6 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 			return new BinaryMatrixScalarFEDInstruction(operator, in1, in2, out, opcode, str);
 		else
 			throw new DMLRuntimeException("Federated binary operations not yet supported:" + opcode);
-	}
-
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
-		InstructionUtils.checkNumFields ( parts, 3 );
-		String opcode = parts[0];
-		in1.split(parts[1]);
-		in2.split(parts[2]);
-		out.split(parts[3]);
-		return opcode;
-	}
-
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
-		InstructionUtils.checkNumFields ( parts, 4 );
-
-		String opcode = parts[0];
-		in1.split(parts[1]);
-		in2.split(parts[2]);
-		in3.split(parts[3]);
-		out.split(parts[4]);
-
-		return opcode;
 	}
 
 	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) {

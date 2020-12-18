@@ -259,8 +259,11 @@ public class CNodeNary extends CNode
 			//replace sparse and dense inputs
 			tmp = tmp.replace("%IN"+(j+1)+"v%", varj+"vals");
 			tmp = tmp.replace("%IN"+(j+1)+"i%", varj+"ix");
-			tmp = tmp.replace("%IN"+(j+1)+"%", 
-				varj.startsWith("b") ? varj + ".values(rix)" : varj );
+//			tmp = tmp.replace("%IN"+(j+1)+"%", 
+//				varj.startsWith("b") ? varj + ".values(rix)" : varj );
+			tmp = tmp.replace("%IN"+(j+1)+"%",
+				varj.startsWith("b") ? ((api == GeneratorAPI.JAVA) ? varj + ".values(rix)" :
+					varj + ".val(rix)") : varj);
 			
 			//replace start position of main input
 			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 

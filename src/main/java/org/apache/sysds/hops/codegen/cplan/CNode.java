@@ -89,7 +89,10 @@ public abstract class CNode
 			return "len";
 		
 		if(api == GeneratorAPI.CUDA) {
-			return getVarname()+"_len";
+			if(getVarname().startsWith("b"))
+				return getVarname()+".len()";
+			else				
+				return getVarname()+"_len";
 		}
 		else {
 			if(getVarname().startsWith("b"))
@@ -221,8 +224,10 @@ public abstract class CNode
 		tmp = tmp.replace("%IN1v%", varj+"vals");
 		tmp = tmp.replace("%IN1i%", varj+"ix");
 		tmp = tmp.replace("%IN1%", 
-			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? varj + ".values(rix)" :
-			(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? varj + ".values(0)" : varj));
+			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? 
+				((api == GeneratorAPI.JAVA) ? varj + ".values(rix)" : varj + ".val(rix)" ) :
+				(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? 
+					((api == GeneratorAPI.JAVA) ? varj + ".values(0)" : varj + ".val(0)") : varj));
 		
 		//replace start position of main input
 		String spos = (_inputs.get(0) instanceof CNodeData 

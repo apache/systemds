@@ -25,6 +25,8 @@
 #include "operators.cuh"
 // #include "intellisense_cuda_intrinsics.h"
 
+using uint32_t = unsigned int;
+
 __constant__ double DOUBLE_EPS = 1.11022E-16; // 2 ^ -53
 __constant__ double FLOAT_EPS = 1.49012E-08; // 2 ^ -26
 __constant__ double EPSILON = 1E-11; // margin for comparisons ToDo: make consistent use of it
@@ -214,6 +216,14 @@ __device__ T dotProduct(T* a, T* b, int ai, int bi, int len) {
 
 template<typename T>
 __device__ T vectSum(T* a, int ai, int len) {
+	SumOp<T> agg_op;
+	IdentityOp<T> load_op;
+	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
+}
+
+
+template<typename T>
+__device__ T vectSum(T* a, uint32_t ai, uint32_t len) {
 	SumOp<T> agg_op;
 	IdentityOp<T> load_op;
 	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);

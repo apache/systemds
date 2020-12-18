@@ -83,7 +83,7 @@ public:
 		
 		T result = 0.0;
 		size_t dev_buf_size;
-		IMatrix *d_sides = nullptr;
+		Matrix<T>* d_sides;
 		T *d_scalars = nullptr;
 
 		auto o = ops.find(name);
@@ -91,15 +91,19 @@ public:
 			SpoofOperator *op = &(o->second);
 
 			if (num_sides > 0) {
-			    std::vector<IMatrix*> h_sides(num_sides);
+				dev_buf_size = sizeof(Matrix<T>) * num_sides;
+			    std::vector<Matrix<T>> h_sides;
+			    
 			    for(auto i = 0; i < num_sides; i++)
-			        h_sides[i] = new DenseMatrix(static_cast<uint32_t>(m), static_cast<uint32_t>(n), side_ptrs[i], nullptr, nullptr);
+//			        h_sides.push_back(Matrix<T>(static_cast<uint32_t>(m), static_cast<uint32_t>(n), side_ptrs[i], nullptr, nullptr));
+					h_sides.push_back(Matrix<T>{side_ptrs[i], 0, 0, m, n, m*n});
+			    
 
-				dev_buf_size = sizeof(IMatrix) * num_sides;
 				CHECK_CUDART(cudaMalloc((void **)&d_sides, dev_buf_size));
 				CHECK_CUDART(cudaMemcpy(d_sides, &h_sides[0], dev_buf_size, cudaMemcpyHostToDevice));
-				for(auto i = 0; i < num_sides; i++)
-					delete h_sides[i];
+
+//				for(auto i = 0; i < num_sides; i++)
+//					delete h_sides[i];
 			}
 
 			if (num_scalars > 0) {
@@ -113,7 +117,7 @@ public:
 //		        result = launch_cw_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
 //		        break;
 		    case SpoofOperator::OpType::RA:
-				result = launch_ra_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, out_len, grix);
+				result = launch_ra_kernel(op, in_ptrs, out_ptr, d_sides, num_sides, d_scalars, m, n, out_len, grix);
 		        break;
 		    default:
 				std::cerr << "error: unknown spoof operator" << std::endl;
@@ -296,7 +300,8 @@ public:
 	}
 
 	template<typename T>
-	T launch_ra_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, DenseMatrix* d_sides, T* d_scalars, int in_rows, int row_len, int out_len, int grix) {
+	T launch_ra_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, Matrix<T>* d_sides, uint32_t num_sides,
+			T* d_scalars, int in_rows, int row_len, int out_len, int grix) {
 
 		T result = 0.0;
 		T *d_temp_agg_buf = nullptr;
@@ -316,7 +321,7 @@ public:
 #endif
 		
 		CHECK_CUDA(op->program.kernel(op->name)
-				.instantiate(type_of(result))
+				.instantiate(type_of(result), num_sides)
 				.configure(grid, block, shared_mem_size)
 				.launch(in_ptrs[0], d_sides, d_scalars, out_ptr, out_len, row_len, grix));
 

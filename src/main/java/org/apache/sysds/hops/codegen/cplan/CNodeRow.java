@@ -40,7 +40,7 @@ public class CNodeRow extends CNodeTpl
 	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, ci, %LEN%);\n";
 	private static final String TEMPLATE_NOAGG_CONST_OUT_CUDA   = "\t\tvectWrite(%IN%, c, rix * %LEN%, ci, %LEN%);\n";
 	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c, 0, ci, %LEN%);\n";
-	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0)\n\t\t\tc[rix] = %IN%;\n";
+	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0){\n\t\t\tc[blockIdx.x] = %IN%;\nprintf(\"rix=%d write=%f\\n\",rix,%IN%);\n}\n";
 	private static final String TEMPLATE_FULLAGG_OUT_CUDA =
 		"\t\tif(threadIdx.x == 0) {\n\t\t\tT old = atomicAdd(&c[0], %IN%);\n\t\t\t//printf(\"bid=%d full_agg add %f to %f\\n\",blockIdx.x, %IN%, old);\n\t\t}\n";
 

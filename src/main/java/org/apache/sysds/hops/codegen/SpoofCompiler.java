@@ -544,7 +544,15 @@ public class SpoofCompiler {
 						if(API == GeneratorAPI.CUDA) {
 							LOG.info("CUDA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
 									", line " + tmp.getValue().getBeginLine() + ", hash=" + tmp.getValue().hashCode() + "):");
-							LOG.info(src_cuda);
+							
+//							LOG.info(src_cuda);
+							Scanner scanner = new Scanner(src_cuda);
+							int line_count  = 0;
+							while (scanner.hasNextLine()) {
+								String line = scanner.nextLine();
+								System.out.println(line_count++ + ": " + line);
+							}
+							scanner.close();
 						}
 					}
 

@@ -92,29 +92,4 @@ perf stat -d -d -d -r $repeatScript \
 echo $LogName
 cat $LogName | grep -E '  r. |Total elapsed time|-----------| instructions |  cycles | CPUs utilized ' | tee $LogName.log
 
-###########################
-## From disk experiment:
-###########################
 
-repeatScript=2
-methodRepeat=2
-
-LogName="scripts/perftest/results/transpose-large-fromdisk.log"
-rm -f $LogName
-
-if [[ ! -f "scripts/perftest/in/transposeIn.data.mtd" ]]; then
-    systemds scripts/perftest/scripts/write.dml \
-        -config scripts/perftest/conf/std.xml \
-        -args 15000000 30 0.8 "scripts/perftest/in/transposeIn.data" \
-        >>/dev/null 2>&1
-fi
-
-perf stat -d -d -d -r $repeatScript \
-    systemds scripts/perftest/scripts/transposeFromDisk.dml \
-    -config scripts/perftest/conf/std.xml \
-    -stats \
-    -args "scripts/perftest/in/transposeIn.data" $methodRepeat \
-    >>$LogName 2>&1
-
-echo $LogName
-cat $LogName | grep -E '  r. |Total elapsed time|-----------| instructions |  cycles | CPUs utilized ' | tee $LogName.log

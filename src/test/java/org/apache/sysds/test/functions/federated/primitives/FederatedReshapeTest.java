@@ -59,7 +59,9 @@ public class FederatedReshapeTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{12, 12, 144, 1}
+			{12, 12, 144, 1},
+			{12, 12, 24, 6},
+			{12, 12, 48, 3}
 //			{20, 5, 50, 2}
 		});
 	}

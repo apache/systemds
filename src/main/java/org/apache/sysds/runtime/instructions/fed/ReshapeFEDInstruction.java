@@ -19,39 +19,24 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.spark.sql.execution.columnar.INT;
-import org.apache.spark.sql.sources.In;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.data.LibTensorReorg;
-import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.cp.ReshapeCPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.util.DataConverter;
 
 public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 	private final CPOperand _opRows;
@@ -59,8 +44,8 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 	private final CPOperand _opDims;
 	private final CPOperand _opByRow;
 
-	private ReshapeFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3,
-		CPOperand in4, CPOperand in5, CPOperand out, String opcode, String istr) {
+	private ReshapeFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
+		CPOperand in5, CPOperand out, String opcode, String istr) {
 		super(FEDInstruction.FEDType.Reshape, op, in1, out, opcode, istr);
 		_opRows = in2;
 		_opCols = in3;
@@ -68,9 +53,9 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 		_opByRow = in5;
 	}
 
-	public static ReshapeFEDInstruction parseInstruction (String str ) {
+	public static ReshapeFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields( parts, 6 );
+		InstructionUtils.checkNumFields(parts, 6);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
@@ -84,34 +69,35 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 			return new ReshapeFEDInstruction(new Operator(true), in1, in2, in3, in4, in5, out, opcode, str);
 	}
 
-	@Override
-	public void processInstruction(ExecutionContext ec) {
-		if (output.getDataType() == Types.DataType.MATRIX) {
+	@Override public void processInstruction(ExecutionContext ec) {
+		if(output.getDataType() == Types.DataType.MATRIX) {
 			MatrixObject mo1 = ec.getMatrixObject(input1);
-			BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), Types.ValueType.BOOLEAN, _opByRow.isLiteral());
+			BooleanObject byRow = (BooleanObject) ec
+				.getScalarInput(_opByRow.getName(), Types.ValueType.BOOLEAN, _opByRow.isLiteral());
 			int rows = (int) ec.getScalarInput(_opRows).getLongValue();
 			int cols = (int) ec.getScalarInput(_opCols).getLongValue();
 
-			if( !mo1.isFederated() )
-				throw new DMLRuntimeException("Federated Rshape: "
-					+ "Federated input expected, but invoked w/ "+mo1.isFederated());
+			if(!mo1.isFederated())
+				throw new DMLRuntimeException("Federated Rshape: " + "Federated input expected, but invoked w/ " + mo1
+					.isFederated());
 
-			if( mo1.getNumColumns() * mo1.getNumRows() != rows * cols)
-				throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells ("
-					+mo1.getNumRows()+":"+mo1.getNumColumns()+", "+rows+":"+cols+").");
+			if(mo1.getNumColumns() * mo1.getNumRows() != rows * cols)
+				throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells (" + mo1
+					.getNumRows() + ":" + mo1.getNumColumns() + ", " + rows + ":" + cols + ").");
 
 			boolean isNotAligned = Arrays.stream(mo1.getFedMapping().getFederatedRanges())
-				.map(e -> e.getSize() % (byRow.getBooleanValue() ? cols : rows) == 0).collect(Collectors.toList()).contains(false);
+				.map(e -> e.getSize() % (byRow.getBooleanValue() ? cols : rows) == 0).collect(Collectors.toList())
+				.contains(false);
 
 			if(isNotAligned)
-				throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells for each worker.");
-//				processNotAligned(mo1.getFedMapping());
+				throw new DMLRuntimeException(
+					"Reshape matrix requires consistent numbers of input/output cells for each worker.");
 
 			String[] newInstString = getNewInstString(mo1, instString, rows, cols, byRow.getBooleanValue());
 
 			//execute at federated site
-			FederatedRequest[] fr1 = FederationUtils.callInstruction(
-				newInstString, output,
+			FederatedRequest[] fr1 = FederationUtils.callInstruction(newInstString,
+				output,
 				new CPOperand[] {input1},
 				new long[] {mo1.getFedMapping().getID()});
 			mo1.getFedMapping().executeDifferentInstructions(getTID(), true, fr1);
@@ -120,77 +106,57 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 			FederationMap reshapedFedMap = mo1.getFedMapping();
 			for(int i = 0; i < reshapedFedMap.getFederatedRanges().length; i++) {
 				long cells = reshapedFedMap.getFederatedRanges()[i].getSize();
-				long row = byRow.getBooleanValue() ? cells/cols: rows;
-				long col = byRow.getBooleanValue() ? cols : cells/rows;
+				long row = byRow.getBooleanValue() ? cells / cols : rows;
+				long col = byRow.getBooleanValue() ? cols : cells / rows;
 
 				reshapedFedMap.getFederatedRanges()[i].setBeginDim(0,
-					(reshapedFedMap.getFederatedRanges()[i].getBeginDims()[0] == 0 ||
-						i == 0) ? 0 : reshapedFedMap.getFederatedRanges()[i - 1].getEndDims()[0]);
-				reshapedFedMap.getFederatedRanges()[i].setEndDim(0,
-					reshapedFedMap.getFederatedRanges()[i].getBeginDims()[0] + row);
+					(reshapedFedMap.getFederatedRanges()[i].getBeginDims()[0] == 0 || i == 0) ? 0 : reshapedFedMap
+						.getFederatedRanges()[i - 1].getEndDims()[0]);
+				reshapedFedMap.getFederatedRanges()[i]
+					.setEndDim(0, reshapedFedMap.getFederatedRanges()[i].getBeginDims()[0] + row);
 				reshapedFedMap.getFederatedRanges()[i].setBeginDim(1,
-					(reshapedFedMap.getFederatedRanges()[i].getBeginDims()[1] == 0 ||
-						i == 0) ? 0 : reshapedFedMap.getFederatedRanges()[i - 1].getEndDims()[1]);
-				reshapedFedMap.getFederatedRanges()[i].setEndDim(1,
-					reshapedFedMap.getFederatedRanges()[i].getBeginDims()[1] + col);
+					(reshapedFedMap.getFederatedRanges()[i].getBeginDims()[1] == 0 || i == 0) ? 0 : reshapedFedMap
+						.getFederatedRanges()[i - 1].getEndDims()[1]);
+				reshapedFedMap.getFederatedRanges()[i]
+					.setEndDim(1, reshapedFedMap.getFederatedRanges()[i].getBeginDims()[1] + col);
 			}
 
 			//derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(output);
 			out.getDataCharacteristics().set(rows, cols, (int) mo1.getBlocksize(), mo1.getNnz());
 			out.setFedMapping(reshapedFedMap.copyWithNewID(fr1[0].getID()));
-		} else {
+		}
+		else {
 			// TODO support tensor out, frame and list
 			throw new DMLRuntimeException("Federated Reshape Instruction only supports matrix as output.");
 		}
 	}
 
-//	private FederationMap processNotAligned(MatrixObject mo1, boolean byRow, int rows, int cols) {
-//		Map<Integer, int[]> indices = new HashMap<>();
-//		FederatedRange[] fedRanges = mo1.getFedMapping().getFederatedRanges();
-//		String[] instStrings = new String[mo1.getFedMapping().getSize()];
-//
-//		boolean prevFull = true;
-//		for(int i = 0; i < mo1.getFedMapping().getFederatedRanges().length; i++) {
-//			// for byRow
-//			if(fedRanges[i].getSize() % rows != 0 || !prevFull)
-//
-//
-//
-//			String oldInstStringPart = byRow ? instString.split("°")[3] : instString.split("°")[4];
-//			String newInstStringPart = byRow ? oldInstStringPart.replace(String.valueOf(rows),
-//				String.valueOf(mo1.getFedMapping().getFederatedRanges()[i].getSize() / cols)) : oldInstStringPart
-//				.replace(String.valueOf(cols), String.valueOf(mo1.getFedMapping().getFederatedRanges()[i].getSize() / rows));
-//			instStrings[i] = instString.replace(oldInstStringPart, newInstStringPart);
-//		}
-//
-//		return fedMap;
-//	}
-
 	// replace old reshape values for each worker
 	private String[] getNewInstString(MatrixObject mo1, String instString, int rows, int cols, boolean byRow) {
 		String[] instStrings = new String[mo1.getFedMapping().getSize()];
 
-		int sameFedSize = Arrays.stream(mo1.getFedMapping().getFederatedRanges()).map(FederatedRange::getSize).collect(Collectors.toSet()).size();
+		int sameFedSize = Arrays.stream(mo1.getFedMapping().getFederatedRanges()).map(FederatedRange::getSize)
+			.collect(Collectors.toSet()).size();
 		sameFedSize = sameFedSize == 1 ? 1 : mo1.getFedMapping().getSize();
 
 		for(int i = 0; i < sameFedSize; i++) {
 			String oldInstStringPart = byRow ? instString.split("°")[3] : instString.split("°")[4];
 			String newInstStringPart = byRow ? oldInstStringPart.replace(String.valueOf(rows),
 				String.valueOf(mo1.getFedMapping().getFederatedRanges()[i].getSize() / cols)) : oldInstStringPart
-				.replace(String.valueOf(cols), String.valueOf(mo1.getFedMapping().getFederatedRanges()[i].getSize() / rows));
+				.replace(String.valueOf(cols),
+					String.valueOf(mo1.getFedMapping().getFederatedRanges()[i].getSize() / rows));
 			instStrings[i] = instString.replace(oldInstStringPart, newInstStringPart);
 		}
 
-		if (sameFedSize == 1)
+		if(sameFedSize == 1)
 			Arrays.fill(instStrings, instStrings[0]);
 
 		return instStrings;
 	}
 
-	@Override
-	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-		return Pair.of(output.getName(), new LineageItem(getOpcode(),
-			LineageItemUtils.getLineage(ec, input1, _opRows, _opCols, _opDims, _opByRow)));
+	@Override public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(output.getName(),
+			new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, input1, _opRows, _opCols, _opDims, _opByRow)));
 	}
 }

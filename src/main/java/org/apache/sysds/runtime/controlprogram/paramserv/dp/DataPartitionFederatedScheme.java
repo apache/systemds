@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
-import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -27,6 +26,11 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
@@ -61,12 +65,10 @@ public abstract class DataPartitionFederatedScheme {
 	 */
 	static List<MatrixObject> sliceFederatedMatrix(MatrixObject fedMatrix) {
 		if (fedMatrix.isFederated(FederationMap.FType.ROW)) {
-
 			List<MatrixObject> slices = Collections.synchronizedList(new ArrayList<>());
 			fedMatrix.getFedMapping().forEachParallel((range, data) -> {
 				// Create sliced matrix object
 				MatrixObject slice = new MatrixObject(fedMatrix.getValueType(), Dag.getNextUniqueVarname(Types.DataType.MATRIX));
-				// Warning needs MetaDataFormat instead of MetaData
 				slice.setMetaData(new MetaDataFormat(
 						new MatrixCharacteristics(range.getSize(0), range.getSize(1)),
 						Types.FileFormat.BINARY)
@@ -120,5 +122,50 @@ public abstract class DataPartitionFederatedScheme {
 			this._avgRows = avgRows;
 			this._maxRows = maxRows;
 		}
+	}
+
+	/**
+	 * Just a mat multiply used to shuffle with a provided shuffle matrixBlock
+	 *
+	 * @param m the input matrix object
+	 * @param permutationMatrixBlock the shuffle matrix block
+	 */
+	static void shuffle(MatrixObject m, MatrixBlock permutationMatrixBlock) {
+		// matrix multiply
+		m.acquireModify(permutationMatrixBlock.aggregateBinaryOperations(
+				permutationMatrixBlock, m.acquireReadAndRelease(), new MatrixBlock(),
+				new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()))
+		));
+		m.release();
+	}
+
+	/**
+	 * Takes a MatrixObjects and extends it to the chosen number of rows by random replication
+	 *
+	 * @param m the input matrix object
+	 */
+	static void replicateTo(MatrixObject m, MatrixBlock replicateMatrixBlock) {
+		// matrix multiply and append
+		MatrixBlock replicatedFeatures = replicateMatrixBlock.aggregateBinaryOperations(
+				replicateMatrixBlock, m.acquireReadAndRelease(), new MatrixBlock(),
+				new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject())));
+
+		m.acquireModify(m.acquireReadAndRelease().append(replicatedFeatures, new MatrixBlock(), false));
+		m.release();
+	}
+
+	/**
+	 * Just a mat multiply used to subsample with a provided subsample matrixBlock
+	 *
+	 * @param m the input matrix object
+	 * @param subsampleMatrixBlock the subsample matrix block
+	 */
+	static void subsampleTo(MatrixObject m, MatrixBlock subsampleMatrixBlock) {
+		// matrix multiply
+		m.acquireModify(subsampleMatrixBlock.aggregateBinaryOperations(
+				subsampleMatrixBlock, m.acquireReadAndRelease(), new MatrixBlock(),
+				new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()))
+		));
+		m.release();
 	}
 }

@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import java.util.List;
 import java.util.concurrent.Future;
 
-public class BalanceFederatedScheme extends DataPartitionFederatedScheme {
+public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);

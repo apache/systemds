@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import java.util.List;
 import java.util.concurrent.Future;
 
-public class SubsampleFederatedScheme extends DataPartitionFederatedScheme {
+public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);

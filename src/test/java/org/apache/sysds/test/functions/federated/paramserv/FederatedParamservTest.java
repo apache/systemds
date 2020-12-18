@@ -67,24 +67,26 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE" , 		"IMBALANCED"},
 			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"RUN_MIN" , 	"IMBALANCED"},
 			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX" , 	"IMBALANCED"},
-
-			// runtime balancing
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
-
-			// data partitioning
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE_AVG" , 	"IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE_TO_MAX",	 	"NONE" , 		"IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SUBSAMPLE_TO_MIN",		"NONE" , 		"IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE_TO_AVG",		"NONE" , 		"IMBALANCED"},
-
-			// complex balanced tests
 			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"BALANCED"},
-			{"CNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"BALANCED"}
+
+			/*
+				// runtime balancing
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
+
+				// data partitioning
+				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE_AVG" , 	"IMBALANCED"},
+				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE_TO_MAX",	 	"NONE" , 		"IMBALANCED"},
+				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SUBSAMPLE_TO_MIN",		"NONE" , 		"IMBALANCED"},
+				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE_TO_AVG",		"NONE" , 		"IMBALANCED"},
+
+				// balanced tests
+				{"CNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"BALANCED"}
+			 */
 		});
 	}
 

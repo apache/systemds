@@ -60,7 +60,7 @@ public abstract class Expression implements ParseInfo
 	 * Data operators.
 	 */
 	public enum DataOp {
-		READ, WRITE, RAND, MATRIX, TENSOR, SQL, FEDERATED
+		READ, WRITE, RAND, MATRIX, FRAME, TENSOR, SQL, FEDERATED
 	}
 
 	/**

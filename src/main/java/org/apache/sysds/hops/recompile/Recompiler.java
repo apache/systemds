@@ -1357,7 +1357,7 @@ public class Recompiler
 			DataGenOp d = (DataGenOp) hop;
 			HashMap<String,Integer> params = d.getParamIndexMap();
 			if (   d.getOp() == OpOpDG.RAND || d.getOp()==OpOpDG.SINIT 
-				|| d.getOp() == OpOpDG.SAMPLE ) 
+				|| d.getOp() == OpOpDG.SAMPLE || d.getOp() == OpOpDG.FRAMEINIT ) 
 			{
 				boolean initUnknown = !d.dimsKnown();
 				// TODO refresh tensor size information

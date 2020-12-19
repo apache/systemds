@@ -38,19 +38,24 @@ public class BuiltinDBSCANTest extends AutomatedTestBase
 
 	private final static double eps = 1e-3;
 	private final static int rows = 1700;
-	//private final static double spDense = 0.99;
 
 	private final static double epsDBSCAN = 1;
 	private final static int minPts = 5;
 
 	@Override
-	public void setUp() { addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); }
+	public void setUp() { 
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
+	}
 
 	@Test
-	public void testDBSCANDefaultCP() { runDBSCAN(true, ExecType.CP); }
+	public void testDBSCANDefaultCP() {
+		runDBSCAN(true, ExecType.CP);
+	}
 
 	@Test
-	public void testDBSCANDefaultSP() { runDBSCAN(true, ExecType.SPARK); }
+	public void testDBSCANDefaultSP() {
+		runDBSCAN(true, ExecType.SPARK);
+	}
 
 	private void runDBSCAN(boolean defaultProb, ExecType instType)
 	{

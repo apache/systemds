@@ -12,21 +12,12 @@ public class testclass1 {
         System.out.println("starting java test");
         //UtilFunctions.processData(x);
 
+        FrameBlock f = new FrameBlock();
+        f.appendColumn(new String[]{"1","2","3","4","5"});
+        f.appendColumn(new String[]{"1","1","1","1","2"});
+        f.appendColumn(new String[]{"Hllo","asdasd","asd","asd","asd"});
 
-        FrameBlock f = new FrameBlock(4, Types.ValueType.fromExternalString("STRING"));
-        int[] col1 = new int[MAX_SIZE];
-        int[] col2 = new int[MAX_SIZE];
-        int[] col3 = new int[MAX_SIZE];
-        for(int i = 0; i < MAX_SIZE; i++)  {
-            col1[i] = i;
-            col2[i] = i + 10;
-            col3[i] = i + 100;
-        }
-
-        f.appendColumn(col1);
-        f.appendColumn(col2);
-        f.appendColumn(col3);
-        FrameBlock new_block = f.map("");
+        UtilFunctions.calculateAttributeTypes(f);
 
 
         System.out.println("finish testing");

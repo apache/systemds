@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.util;
 
+import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -27,8 +28,8 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.RandomDataGenerator;
-import org.apache.sysds.api.mlcontext.Frame;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.protobuf.SysdsProtos;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
@@ -847,9 +848,54 @@ public class UtilFunctions {
 	public static final char UPPER = 'u';
 	public static final char ALPHA = 'a';
 	public static final char SPACE = 's';
+	public static final char DOT = 't';
+	public static final char Hash = 'h';
+	public static final char PUNCTUATION = 'p';
+	public static final char ENCLOSURES = 'e';
 	public static final char NOT_IMPLEMENTED = '#';
 
-	public static String processData (String input) {
+	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
+		int numCols = frame.getNumColumns();
+		int numRows = frame.getNumRows();
+		ArrayList<Map<String, Integer>> tableHist = new ArrayList(numCols);
+		int idx;
+
+		for (idx = 0; idx < numCols; idx++) {
+			Object c = frame.getColumnData(idx);
+			String[] column = (String[]) c;
+			String key = "";
+			for (String attr : column) {
+				if (attr.isEmpty()) key = "NULL";
+				else key = attr;
+				addDistinctValueOrIncrementCounter(tableHist, key, idx);
+			}
+		}
+
+
+		System.out.println("got executed..");
+
+
+		String[][] output = new String[frame.getNumRows()][frame.getNumColumns()];
+		return new FrameBlock(UtilFunctions.nCopies(frame.getNumColumns(), ValueType.STRING), output);
+	}
+
+	private static void addDistinctValueOrIncrementCounter(ArrayList<Map<String, Integer>> maps, String key, Integer idx) {
+		if (maps.size() == idx) {
+			HashMap<String, Integer> m = new HashMap<>();
+			m.put(key, 1);
+
+			maps.add(m);
+			return;
+		}
+
+		if (!(maps.get(idx).containsKey(key))) {
+			maps.get(idx).put(key, 1);
+		} else {
+			maps.get(idx).compute(key, (k, v) -> v + 1);
+		}
+	}
+
+	public static String processData(String input) {
 		System.out.println("Processing: " + input + "..");
 		char[] chars = input.toCharArray();
 
@@ -862,25 +908,13 @@ public class UtilFunctions {
 		return tmp.toString();
 	}
 
-	private static char getCharClass (char c)
-	{
-		if(Character.isDigit(c)) return DIGIT;
-		if(Character.isLowerCase(c)) return LOWER;
-		if(Character.isUpperCase(c)) return UPPER;
+	private static char getCharClass(char c) {
+		if (Character.isDigit(c)) return DIGIT;
+		if (Character.isLowerCase(c)) return LOWER;
+		if (Character.isUpperCase(c)) return UPPER;
 
 		LOG.warn("you are currently trying to process undefined input"); //logger enabled?
 		return NOT_IMPLEMENTED;
-	}
-
-
-
-	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
-
-		System.out.println("## Start analyzing Frame and do some crazy stuff  - because we are awesome programmers");
-
-
-		String[][] output = new String[frame.getNumRows()][frame.getNumColumns()];
-		return new FrameBlock(UtilFunctions.nCopies(frame.getNumColumns(), ValueType.STRING), output);
 	}
 
 

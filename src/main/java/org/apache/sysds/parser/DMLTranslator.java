@@ -2093,6 +2093,12 @@ public class DMLTranslator
 			currBuiltinOp = new DataGenOp(method, target, paramHops);
 			break;
 
+		case FRAME:
+			// We limit RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, and RAND_PDF to be constants
+			method = OpOpDG.FRAMEINIT;
+			currBuiltinOp = new DataGenOp(method, target, paramHops);
+			break;
+
 		case TENSOR:
 		case MATRIX:
 			ArrayList<Hop> tmpMatrix = new ArrayList<>();

@@ -448,7 +448,7 @@ public class Types
 	}
 	
 	public enum OpOpDG {
-		RAND, SEQ, SINIT, SAMPLE, TIME
+		RAND, SEQ, FRAMEINIT, SINIT, SAMPLE, TIME
 	}
 	
 	public enum OpOpData {

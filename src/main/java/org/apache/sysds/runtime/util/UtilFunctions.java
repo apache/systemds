@@ -852,6 +852,7 @@ public class UtilFunctions {
 	public static final char ENCLOSURES = 'e';
 	public static final char NOT_IMPLEMENTED = '#';
 
+	//TODO[David]: Better name - (ExecuteSynPat(FramBlock frame) ?
 	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
 
 		// Preparation
@@ -873,14 +874,17 @@ public class UtilFunctions {
 			}
 		}
 
-		// Pattern creation
-		for(Map<String, Integer> colHist : tableHist)
-		{
+		// Syntactic Pattern Discovery
+		for (Map<String, Integer> colHist : tableHist) {
 			Level1(colHist, patterns_list, patterns_hist);
-			System.out.println("Finished Level 1");
+			System.out.println("------------------------");
 		}
 
 
+		// Aggregation
+		// tbd
+
+		// TODO: Remove..
 		String[][] output = new String[frame.getNumRows()][frame.getNumColumns()];
 		return new FrameBlock(UtilFunctions.nCopies(frame.getNumColumns(), ValueType.STRING), output);
 	}
@@ -889,7 +893,6 @@ public class UtilFunctions {
 		if (maps.size() == idx) {
 			HashMap<String, Integer> m = new HashMap<>();
 			m.put(key, 1);
-
 			maps.add(m);
 			return;
 		}
@@ -900,11 +903,25 @@ public class UtilFunctions {
 			maps.get(idx).compute(key, (k, v) -> v + 1);
 		}
 	}
+
 	private static void addDistinctValueOrIncrementCounter(Map<String, Integer> map, String key) {
 		if (!(map.containsKey(key))) {
 			map.put(key, 1);
 		} else {
 			map.compute(key, (k, v) -> v + 1);
+		}
+	}
+
+	private static void Level1(Map<String, Integer> colHist, List<String> patterns_list, Map<String, Integer> patterns_hist) {
+		Iterator it = colHist.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			String value = (String) pair.getKey();
+
+			String encodedValue = processData(value);
+			addDistinctValueOrIncrementCounter(patterns_hist, encodedValue);
+			patterns_list.add(encodedValue);
+			System.out.println("Value:" + encodedValue);
 		}
 	}
 
@@ -916,41 +933,39 @@ public class UtilFunctions {
 			tmp.append(getCharClass(ch));
 		}
 
-
-		return tmp.toString();
+		return getFrequencyOfEachConsecutiveChar(tmp.toString());
 	}
 
 	private static char getCharClass(char c) {
-
-		//TODO:
-		// "1990" should return d4 and NOT dddd
-
 		if (Character.isDigit(c)) return DIGIT;
 		if (Character.isLowerCase(c)) return LOWER;
 		if (Character.isUpperCase(c)) return UPPER;
+		if (Character.isSpaceChar(c)) return SPACE;
+		// TODO: Expand mappings..
 
-		LOG.warn("you are currently trying to process undefined input"); //logger enabled?
 		return NOT_IMPLEMENTED;
 	}
 
-
-	private static void Level1(Map<String, Integer> colHist, List<String> patterns_list, Map<String, Integer> patterns_hist)
-	{
-		Iterator it = colHist.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry)it.next();
-			String value =  (String)pair.getKey();
-
-			String encodedValue =  processData(value);
-			addDistinctValueOrIncrementCounter(patterns_hist, encodedValue);
-			patterns_list.add(encodedValue);
+	static String getFrequencyOfEachConsecutiveChar(String s) {
+		StringBuilder retval = new StringBuilder();
+		for (int i = 0; i < s.length(); i++) {
+			int count = 1;
+			while (i + 1 < s.length()
+					&& s.charAt(i)
+					== s.charAt(i + 1)) {
+				i++;
+				count++;
+			}
+			retval.append(s.charAt(i));
+			retval.append(Integer.toString(count));
 		}
+		return retval.toString();
 	}
 
 	public static void printMap(Map mp) {
 		Iterator it = mp.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry)it.next();
+			Map.Entry pair = (Map.Entry) it.next();
 			System.out.println(pair.getKey() + " = " + pair.getValue());
 		}
 	}

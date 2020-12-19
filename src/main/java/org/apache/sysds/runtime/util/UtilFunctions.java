@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.util;
 
-import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -29,7 +28,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.protobuf.SysdsProtos;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
@@ -855,9 +853,13 @@ public class UtilFunctions {
 	public static final char NOT_IMPLEMENTED = '#';
 
 	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
+
+		// Preparation
 		int numCols = frame.getNumColumns();
 		int numRows = frame.getNumRows();
 		ArrayList<Map<String, Integer>> tableHist = new ArrayList(numCols);
+		Map<String, Integer> patterns_hist = new HashMap();
+		List<String> patterns_list = new ArrayList<>(); // maybe expand to list of list later..
 		int idx;
 
 		for (idx = 0; idx < numCols; idx++) {
@@ -871,8 +873,12 @@ public class UtilFunctions {
 			}
 		}
 
-
-		System.out.println("got executed..");
+		// Pattern creation
+		for(Map<String, Integer> colHist : tableHist)
+		{
+			Level1(colHist, patterns_list, patterns_hist);
+			System.out.println("Finished Level 1");
+		}
 
 
 		String[][] output = new String[frame.getNumRows()][frame.getNumColumns()];
@@ -894,9 +900,15 @@ public class UtilFunctions {
 			maps.get(idx).compute(key, (k, v) -> v + 1);
 		}
 	}
+	private static void addDistinctValueOrIncrementCounter(Map<String, Integer> map, String key) {
+		if (!(map.containsKey(key))) {
+			map.put(key, 1);
+		} else {
+			map.compute(key, (k, v) -> v + 1);
+		}
+	}
 
 	public static String processData(String input) {
-		System.out.println("Processing: " + input + "..");
 		char[] chars = input.toCharArray();
 
 		StringBuilder tmp = new StringBuilder();
@@ -909,6 +921,10 @@ public class UtilFunctions {
 	}
 
 	private static char getCharClass(char c) {
+
+		//TODO:
+		// "1990" should return d4 and NOT dddd
+
 		if (Character.isDigit(c)) return DIGIT;
 		if (Character.isLowerCase(c)) return LOWER;
 		if (Character.isUpperCase(c)) return UPPER;
@@ -918,6 +934,26 @@ public class UtilFunctions {
 	}
 
 
+	private static void Level1(Map<String, Integer> colHist, List<String> patterns_list, Map<String, Integer> patterns_hist)
+	{
+		Iterator it = colHist.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry)it.next();
+			String value =  (String)pair.getKey();
+
+			String encodedValue =  processData(value);
+			addDistinctValueOrIncrementCounter(patterns_hist, encodedValue);
+			patterns_list.add(encodedValue);
+		}
+	}
+
+	public static void printMap(Map mp) {
+		Iterator it = mp.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry)it.next();
+			System.out.println(pair.getKey() + " = " + pair.getValue());
+		}
+	}
 	// -----------------------------------------------------------------------------------------------------------------
 
 

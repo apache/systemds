@@ -72,24 +72,25 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	Statement.PSRuntimeBalancing _runtimeBalancing;
 	int _numBatchesPerGlobalEpoch;
 	int _possibleBatchesPerLocalEpoch;
-	boolean _scale = false;
-	double _scalingFactor = 1;
+	boolean _weighing;
+	double _weighingFactor = 1;
 	boolean _cycleStartAt0 = false;
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq,
-									Statement.PSRuntimeBalancing runtimeBalancing, int epochs, long batchSize,
+									Statement.PSRuntimeBalancing runtimeBalancing, boolean weighing, int epochs, long batchSize,
 									int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
 
 		_numBatchesPerGlobalEpoch = numBatchesPerGlobalEpoch;
 		_runtimeBalancing = runtimeBalancing;
+		_weighing = weighing;
 		// generate the IDs for model and batch counter. These get overwritten on the federated worker each time
 		_localStartBatchNumVarID = FederationUtils.getNextFedDataID();
 		_modelVarID = FederationUtils.getNextFedDataID();
 	}
 
-	public void setScalingFactor(double scalingFactor) {
-		_scalingFactor = scalingFactor;
+	public void setWeighingFactor(double weighingFactor) {
+		_weighingFactor = weighingFactor;
 	}
 
 	/**
@@ -106,7 +107,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// calculate scaled batch size if balancing via batch size.
 		// Floor or Ceil: In some cases either not use some data or cycle a few batches
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH) {
-			// _batchSize = (int) Math.ceil((double) dataSize / _numBatchesPerGlobalEpoch);
 			double batchSizeTmp = (double) dataSize / _numBatchesPerGlobalEpoch;
 			_batchSize = (int) ((Math.floor(batchSizeTmp) > 0) ? Math.floor(batchSizeTmp) : Math.ceil(batchSizeTmp));
 			_cycleStartAt0 = true;
@@ -312,12 +312,12 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	protected void scaleAndPushGradients(ListObject gradients) {
 		// scale gradients - must only include MatrixObjects
-		if(_scale && _scalingFactor != 1) {
+		if(_weighing && _weighingFactor != 1) {
 			gradients.getData().parallelStream().forEach((matrix) -> {
 				MatrixObject matrixObject = (MatrixObject) matrix;
 				matrixObject.acquireModify(
 						matrixObject.acquireReadAndRelease().scalarOperations(
-								new RightScalarOperator(Multiply.getMultiplyFnObject(), _scalingFactor), new MatrixBlock())
+								new RightScalarOperator(Multiply.getMultiplyFnObject(), _weighingFactor), new MatrixBlock())
 				);
 				matrixObject.release();
 			});

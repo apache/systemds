@@ -70,6 +70,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_AGGREGATION_FUN = "agg";
 	public static final String PS_MODE = "mode";
 	public static final String PS_GRADIENTS = "gradients";
+	public static final String PS_SEED = "seed";
 	public enum PSModeType {
 		FEDERATED, LOCAL, REMOTE_SPARK
 	}

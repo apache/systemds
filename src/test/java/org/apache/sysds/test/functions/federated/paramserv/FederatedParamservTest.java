@@ -56,6 +56,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final String _runtime_balancing;
 	private final boolean _weighing;
 	private final String _data_distribution;
+	private final int _seed;
 
 	// parameters
 	@Parameterized.Parameters
@@ -64,11 +65,11 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
 
 			// basic functionality
-			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"SCALE_BATCH" ,	false,	"IMBALANCED"},
-			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE" , 		false,	"IMBALANCED"},
-			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"RUN_MIN" , 	false,	"IMBALANCED"},
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX" , 	false,	"IMBALANCED"},
-			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		false,	"BALANCED"},
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"SCALE_BATCH" ,	false,	"IMBALANCED",	200},
+			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE" , 		false,	"IMBALANCED", 	200},
+			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"RUN_MIN" , 	false,	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX" , 	false,	"IMBALANCED",	200},
+			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		false,	"BALANCED",		200},
 
 			/*
 				// runtime balancing
@@ -92,7 +93,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
-		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, boolean weighing, String data_distribution) {
+		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, boolean weighing, String data_distribution, int seed) {
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_dataSetSize = dataSetSize;
@@ -105,6 +106,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		_runtime_balancing = runtime_balancing;
 		_weighing = weighing;
 		_data_distribution = data_distribution;
+		_seed = seed;
 	}
 
 	@Override
@@ -192,7 +194,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"channels=" + C,
 					"hin=" + Hin,
 					"win=" + Win,
-					"seed=" + 25));
+					"seed=" + _seed));
 
 			programArgs = programArgsList.toArray(new String[0]);
 			LOG.debug(runTest(null));

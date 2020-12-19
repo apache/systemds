@@ -36,7 +36,7 @@ import java.util.concurrent.Future;
 
 public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
-	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
+	public Result partition(MatrixObject features, MatrixObject labels, int seed) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
 		List<Double> scalingFactors = getScalingFactors(pFeatures, getBalanceMetrics(pFeatures));
@@ -52,7 +52,7 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 			FederatedData labelsData = (FederatedData) pLabels.get(i).getFedMapping().getMap().values().toArray()[0];
 
 			Future<FederatedResponse> udfResponse = featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					featuresData.getVarID(), new subsampleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, min_rows)));
+					featuresData.getVarID(), new subsampleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, seed, min_rows)));
 
 			try {
 				FederatedResponse response = udfResponse.get();
@@ -77,10 +77,12 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 	 */
 	private static class subsampleDataOnFederatedWorker extends FederatedUDF {
 		private static final long serialVersionUID = 2213790859544004286L;
+		private final int _seed;
 		private final int _min_rows;
-		
-		protected subsampleDataOnFederatedWorker(long[] inIDs, int min_rows) {
+
+		protected subsampleDataOnFederatedWorker(long[] inIDs, int seed, int min_rows) {
 			super(inIDs);
+			_seed = seed;
 			_min_rows = min_rows;
 		}
 
@@ -92,7 +94,7 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 			// subsample down to minimum
 			if(features.getNumRows() > _min_rows) {
 				// generate subsampling matrix
-				MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(_min_rows, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(_min_rows, Math.toIntExact(features.getNumRows()), _seed);
 				subsampleTo(features, subsampleMatrixBlock);
 				subsampleTo(labels, subsampleMatrixBlock);
 			}

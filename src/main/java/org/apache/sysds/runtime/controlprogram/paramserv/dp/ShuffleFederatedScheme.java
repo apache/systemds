@@ -35,7 +35,7 @@ import java.util.concurrent.Future;
 
 public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
-	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
+	public Result partition(MatrixObject features, MatrixObject labels, int seed) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
 		BalanceMetrics balanceMetrics = getBalanceMetrics(pFeatures);
@@ -47,7 +47,7 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 			FederatedData labelsData = (FederatedData) pLabels.get(i).getFedMapping().getMap().values().toArray()[0];
 
 			Future<FederatedResponse> udfResponse = featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					featuresData.getVarID(), new shuffleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()})));
+					featuresData.getVarID(), new shuffleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, seed)));
 
 			try {
 				FederatedResponse response = udfResponse.get();
@@ -67,9 +67,11 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 	 */
 	private static class shuffleDataOnFederatedWorker extends FederatedUDF {
 		private static final long serialVersionUID = 3228664618781333325L;
+		private final int _seed;
 
-		protected shuffleDataOnFederatedWorker(long[] inIDs) {
+		protected shuffleDataOnFederatedWorker(long[] inIDs, int seed) {
 			super(inIDs);
+			_seed = seed;
 		}
 
 		@Override
@@ -78,7 +80,7 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 			MatrixObject labels = (MatrixObject) data[1];
 
 			// generate permutation matrix
-			MatrixBlock permutationMatrixBlock = ParamservUtils.generatePermutation(Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+			MatrixBlock permutationMatrixBlock = ParamservUtils.generatePermutation(Math.toIntExact(features.getNumRows()), _seed);
 			shuffle(features, permutationMatrixBlock);
 			shuffle(labels, permutationMatrixBlock);
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);

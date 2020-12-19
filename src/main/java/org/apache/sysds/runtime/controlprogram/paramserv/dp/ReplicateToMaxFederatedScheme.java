@@ -36,7 +36,7 @@ import java.util.concurrent.Future;
 
 public class ReplicateToMaxFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
-	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
+	public Result partition(MatrixObject features, MatrixObject labels, int seed) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
 		List<Double> scalingFactors = getScalingFactors(pFeatures, getBalanceMetrics(pFeatures));
@@ -52,7 +52,7 @@ public class ReplicateToMaxFederatedScheme extends DataPartitionFederatedScheme 
 			FederatedData labelsData = (FederatedData) pLabels.get(i).getFedMapping().getMap().values().toArray()[0];
 
 			Future<FederatedResponse> udfResponse = featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					featuresData.getVarID(), new replicateDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, max_rows)));
+					featuresData.getVarID(), new replicateDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, seed, max_rows)));
 
 			try {
 				FederatedResponse response = udfResponse.get();
@@ -77,10 +77,12 @@ public class ReplicateToMaxFederatedScheme extends DataPartitionFederatedScheme 
 	 */
 	private static class replicateDataOnFederatedWorker extends FederatedUDF {
 		private static final long serialVersionUID = -6930898456315100587L;
+		private final int _seed;
 		private final int _max_rows;
-		
-		protected replicateDataOnFederatedWorker(long[] inIDs, int max_rows) {
+
+		protected replicateDataOnFederatedWorker(long[] inIDs, int seed, int max_rows) {
 			super(inIDs);
+			_seed = seed;
 			_max_rows = max_rows;
 		}
 
@@ -93,7 +95,7 @@ public class ReplicateToMaxFederatedScheme extends DataPartitionFederatedScheme 
 			if(features.getNumRows() < _max_rows) {
 				int num_rows_needed = _max_rows - Math.toIntExact(features.getNumRows());
 				// generate replication matrix
-				MatrixBlock replicateMatrixBlock = ParamservUtils.generateReplicationMatrix(num_rows_needed, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				MatrixBlock replicateMatrixBlock = ParamservUtils.generateReplicationMatrix(num_rows_needed, Math.toIntExact(features.getNumRows()), _seed);
 				replicateTo(features, replicateMatrixBlock);
 				replicateTo(labels, replicateMatrixBlock);
 			}

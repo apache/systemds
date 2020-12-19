@@ -24,7 +24,7 @@ import java.util.List;
 
 public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
-	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
+	public Result partition(MatrixObject features, MatrixObject labels, int seed) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
 		BalanceMetrics balanceMetrics = getBalanceMetrics(pFeatures);

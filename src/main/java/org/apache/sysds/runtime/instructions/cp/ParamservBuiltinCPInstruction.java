@@ -19,21 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
-import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
-import static org.apache.sysds.parser.Statement.PS_EPOCHS;
-import static org.apache.sysds.parser.Statement.PS_FEATURES;
-import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
-import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
-import static org.apache.sysds.parser.Statement.PS_LABELS;
-import static org.apache.sysds.parser.Statement.PS_MODE;
-import static org.apache.sysds.parser.Statement.PS_MODEL;
-import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
-import static org.apache.sysds.parser.Statement.PS_SCHEME;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
-import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -81,6 +66,8 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
+
+import static org.apache.sysds.parser.Statement.*;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
@@ -133,7 +120,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 
 		// partition federated data
-		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme)
+		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme, getSeed())
 				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
 		List<MatrixObject> pFeatures = result._pFeatures;
 		List<MatrixObject> pLabels = result._pLabels;
@@ -169,7 +156,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Create the local workers
 		int finalNumBatchesPerEpoch = numBatchesPerEpoch;
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
-				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
+				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, getWeighing(),
+						getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
 				.collect(Collectors.toList());
 
 		if(workerNum != threads.size()) {
@@ -180,7 +168,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		for (int i = 0; i < threads.size(); i++) {
 			threads.get(i).setFeatures(pFeatures.get(i));
 			threads.get(i).setLabels(pLabels.get(i));
-			threads.get(i).setScalingFactor(result._scalingFactors.get(i));
+			threads.get(i).setWeighingFactor(result._scalingFactors.get(i));
 			threads.get(i).setup();
 		}
 
@@ -508,5 +496,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			}
 		}
 		return federated_scheme;
+	}
+
+	private boolean getWeighing() {
+		return getParameterMap().containsKey(PS_FED_WEIGHING) && Boolean.parseBoolean(getParam(PS_FED_WEIGHING));
+	}
+
+	private int getSeed() {
+		return (getParameterMap().containsKey(PS_SEED)) ? Integer.parseInt(getParam(PS_SEED)) : (int) System.currentTimeMillis();
 	}
 }

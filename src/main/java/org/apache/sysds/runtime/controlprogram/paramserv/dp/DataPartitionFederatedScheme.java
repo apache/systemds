@@ -69,7 +69,7 @@ public abstract class DataPartitionFederatedScheme {
 		}
 	}
 
-	public abstract Result doPartitioning(MatrixObject features, MatrixObject labels);
+	public abstract Result partition(MatrixObject features, MatrixObject labels, int seed);
 
 	/**
 	 * Takes a row federated Matrix and slices it into a matrix for each worker

@@ -99,14 +99,14 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// different runtime balancing calculations
 		long dataSize = _features.getNumRows();
 
-		// calculate scaled batch size if balancing via batch size. Some cycling may occur if the rows are not
-		// divisible by the _numBatchesPerGlobalEpoch
-		// In this case, the cycling will always start fresh over epochs.
-		// Example: numBatchesPerGlobalEpoch = 2, dataSize = 1 => batchSize will be 1 and therefore cycle once.
+		// calculate scaled batch size if balancing via batch size.
+		// Floor or Ceil: In some cases either not use some data or cycle a few batches
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH
 				|| _runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
 			long batchSizeNonScaled = _batchSize;
-			_batchSize = (int) Math.ceil((double) dataSize / _numBatchesPerGlobalEpoch);
+			// _batchSize = (int) Math.ceil((double) dataSize / _numBatchesPerGlobalEpoch);
+			double batchSizeTmp = (double) dataSize / _numBatchesPerGlobalEpoch;
+			_batchSize = (int) ((Math.floor(batchSizeTmp) > 0) ? Math.floor(batchSizeTmp) : Math.ceil(batchSizeTmp));
 			_cycleStartAt0 = true;
 
 			// calculate weighing factor

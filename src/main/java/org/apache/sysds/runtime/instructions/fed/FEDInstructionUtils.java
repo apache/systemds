@@ -107,6 +107,8 @@ public class FEDInstructionUtils {
 				} else if(inst.getOpcode().equalsIgnoreCase("qsort") && mo1.isFederated()) {
 					if(mo1.getFedMapping().getFederatedRanges().length == 1)
 						fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
+				} else if(inst.getOpcode().equalsIgnoreCase("rshape") && mo1.isFederated()) {
+					fedinst = ReshapeFEDInstruction.parseInstruction(inst.getInstructionString());
 				} else if(inst instanceof AggregateUnaryCPInstruction  && mo1.isFederated() &&
 					((AggregateUnaryCPInstruction) instruction).getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT) {
 					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());

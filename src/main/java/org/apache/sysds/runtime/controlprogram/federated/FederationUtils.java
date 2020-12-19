@@ -78,6 +78,25 @@ public class FederationUtils {
 		return new FederatedRequest(RequestType.EXEC_INST, id, linst);
 	}
 
+	public static FederatedRequest[] callInstruction(String[] inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {
+		long id = getNextFedDataID();
+		String[] linst = inst;
+		FederatedRequest[] fr = new FederatedRequest[inst.length];
+		for(int j=0; j<inst.length; j++) {
+			for(int i = 0; i < varOldIn.length; i++) {
+				linst[j] = linst[j].replace(ExecType.SPARK.name(), ExecType.CP.name());
+				linst[j] = linst[j].replace(Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR + String.valueOf(id) + Lop.DATATYPE_PREFIX);
+
+				if(varOldIn[i] != null) {
+					linst[j] = linst[j].replace(Lop.OPERAND_DELIMITOR + varOldIn[i].getName() + Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR + String.valueOf(varNewIn[i]) + Lop.DATATYPE_PREFIX);
+					linst[j] = linst[j].replace("=" + varOldIn[i].getName(), "=" + String.valueOf(varNewIn[i])); //parameterized
+				}
+			}
+			fr[j] = new FederatedRequest(RequestType.EXEC_INST, id, (Object) linst[j]);
+		}
+		return fr;
+	}
+
 	public static MatrixBlock aggAdd(Future<FederatedResponse>[] ffr) {
 		try {
 			SimpleOperator op = new SimpleOperator(Plus.getPlusFnObject());

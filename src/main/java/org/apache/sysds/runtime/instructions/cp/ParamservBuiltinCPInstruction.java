@@ -32,7 +32,7 @@ import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
 import static org.apache.sysds.parser.Statement.PS_SCHEME;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
-import static org.apache.sysds.parser.Statement.PS_RUNTIME_BALANCING;
+import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -144,8 +144,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		if(runtimeBalancing == PSRuntimeBalancing.RUN_MIN) {
 			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._minRows / (float) getBatchSize());
 		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG
-				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH
-				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
+				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH) {
 			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._avgRows / (float) getBatchSize());
  		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
 			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._maxRows / (float) getBatchSize());
@@ -181,6 +180,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		for (int i = 0; i < threads.size(); i++) {
 			threads.get(i).setFeatures(pFeatures.get(i));
 			threads.get(i).setLabels(pLabels.get(i));
+			threads.get(i).setScalingFactor(result._scalingFactors.get(i));
 			threads.get(i).setup();
 		}
 
@@ -397,14 +397,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private PSRuntimeBalancing getRuntimeBalancing() {
-		if (!getParameterMap().containsKey(PS_RUNTIME_BALANCING)) {
+		if (!getParameterMap().containsKey(PS_FED_RUNTIME_BALANCING)) {
 			return DEFAULT_RUNTIME_BALANCING;
 		}
 		try {
-			return PSRuntimeBalancing.valueOf(getParam(PS_RUNTIME_BALANCING));
+			return PSRuntimeBalancing.valueOf(getParam(PS_FED_RUNTIME_BALANCING));
 		} catch (IllegalArgumentException e) {
 			throw new DMLRuntimeException(String.format("Paramserv function: "
-					+ "not support '%s' runtime balancing.", getParam(PS_RUNTIME_BALANCING)));
+					+ "not support '%s' runtime balancing.", getParam(PS_FED_RUNTIME_BALANCING)));
 		}
 	}
 

@@ -38,6 +38,8 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
+		BalanceMetrics balanceMetrics = getBalanceMetrics(pFeatures);
+		List<Double> scalingFactors = getScalingFactors(pFeatures, balanceMetrics);
 
 		for(int i = 0; i < pFeatures.size(); i++) {
 			// Works, because the map contains a single entry
@@ -57,7 +59,7 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 			}
 		}
 
-		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
+		return new Result(pFeatures, pLabels, pFeatures.size(), balanceMetrics, scalingFactors);
 	}
 
 	/**

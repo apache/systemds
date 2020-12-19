@@ -40,8 +40,10 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
+		BalanceMetrics balanceMetricsBefore = getBalanceMetrics(pFeatures);
+		List<Double> scalingFactors = getScalingFactors(pFeatures, balanceMetricsBefore);
 
-		int average_num_rows = (int) Math.round(pFeatures.stream().map(CacheableData::getNumRows).mapToInt(Long::intValue).average().orElse(Double.NaN));
+		int average_num_rows = (int) balanceMetricsBefore._avgRows;
 
 		for(int i = 0; i < pFeatures.size(); i++) {
 			// Works, because the map contains a single entry
@@ -66,7 +68,7 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
 
-		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), scalingFactors);
 	}
 
 	/**

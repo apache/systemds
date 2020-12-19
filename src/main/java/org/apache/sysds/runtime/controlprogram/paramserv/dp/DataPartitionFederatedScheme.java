@@ -45,12 +45,27 @@ public abstract class DataPartitionFederatedScheme {
 		public final List<MatrixObject> _pLabels;
 		public final int _workerNum;
 		public final BalanceMetrics _balanceMetrics;
+		public final List<Double> _scalingFactors;
 
-		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum, BalanceMetrics balanceMetrics) {
-			this._pFeatures = pFeatures;
-			this._pLabels = pLabels;
-			this._workerNum = workerNum;
-			this._balanceMetrics = balanceMetrics;
+
+		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum, BalanceMetrics balanceMetrics, List<Double> scalingFactors) {
+			_pFeatures = pFeatures;
+			_pLabels = pLabels;
+			_workerNum = workerNum;
+			_balanceMetrics = balanceMetrics;
+			_scalingFactors = scalingFactors;
+		}
+	}
+
+	public static final class BalanceMetrics {
+		public final long _minRows;
+		public final long _avgRows;
+		public final long _maxRows;
+
+		public BalanceMetrics(long minRows, long avgRows, long maxRows) {
+			_minRows = minRows;
+			_avgRows = avgRows;
+			_maxRows = maxRows;
 		}
 	}
 
@@ -110,16 +125,12 @@ public abstract class DataPartitionFederatedScheme {
 		return new BalanceMetrics(minRows, sum / slices.size(), maxRows);
 	}
 
-	public static final class BalanceMetrics {
-		public final long _minRows;
-		public final long _avgRows;
-		public final long _maxRows;
-
-		public BalanceMetrics(long minRows, long avgRows, long maxRows) {
-			this._minRows = minRows;
-			this._avgRows = avgRows;
-			this._maxRows = maxRows;
-		}
+	static List<Double> getScalingFactors(List<MatrixObject> pFeatures, BalanceMetrics balanceMetrics) {
+		List<Double> scalingFactors = new ArrayList<>();
+		pFeatures.forEach((feature) -> {
+			scalingFactors.add((double) feature.getNumRows() / balanceMetrics._avgRows);
+		});
+		return scalingFactors;
 	}
 
 	/**

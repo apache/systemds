@@ -27,6 +27,8 @@ public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedSchem
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
-		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
+		BalanceMetrics balanceMetrics = getBalanceMetrics(pFeatures);
+		List<Double> scalingFactors = getScalingFactors(pFeatures, balanceMetrics);
+		return new Result(pFeatures, pLabels, pFeatures.size(), balanceMetrics, scalingFactors);
 	}
 }

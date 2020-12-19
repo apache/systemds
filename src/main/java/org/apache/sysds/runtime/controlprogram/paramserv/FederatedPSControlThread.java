@@ -88,6 +88,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		_modelVarID = FederationUtils.getNextFedDataID();
 	}
 
+	public void setScalingFactor(double scalingFactor) {
+		_scalingFactor = scalingFactor;
+	}
+
 	/**
 	 * Sets up the federated worker and control thread
 	 */
@@ -101,22 +105,16 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		// calculate scaled batch size if balancing via batch size.
 		// Floor or Ceil: In some cases either not use some data or cycle a few batches
-		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH
-				|| _runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
-			long batchSizeNonScaled = _batchSize;
+		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH) {
 			// _batchSize = (int) Math.ceil((double) dataSize / _numBatchesPerGlobalEpoch);
 			double batchSizeTmp = (double) dataSize / _numBatchesPerGlobalEpoch;
 			_batchSize = (int) ((Math.floor(batchSizeTmp) > 0) ? Math.floor(batchSizeTmp) : Math.ceil(batchSizeTmp));
 			_cycleStartAt0 = true;
-
-			// calculate weighing factor
-			if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
-				_scale = true;
-				_scalingFactor = (double) _batchSize / batchSizeNonScaled;
-			}
 		}
+
 		// Calculate possible batches with batch size
 		_possibleBatchesPerLocalEpoch = (int) Math.ceil((double) dataSize / _batchSize);
+
 		// If no runtime balancing is specified, just run possible number of batches
 		// WARNING: Will get stuck on miss match
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.NONE) {

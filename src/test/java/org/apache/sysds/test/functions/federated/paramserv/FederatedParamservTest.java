@@ -54,6 +54,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final String _freq;
 	private final String _scheme;
 	private final String _runtime_balancing;
+	private final boolean _weighing;
 	private final String _data_distribution;
 
 	// parameters
@@ -63,11 +64,11 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
 
 			// basic functionality
-			{"TwoNN", 2, 4, 1, 4, 0.01,       "BSP", "BATCH", "KEEP_DATA_ON_WORKER", "CYCLE_AVG", "IMBALANCED"},
-			{"CNN",   2, 4, 1, 4, 0.01,       "BSP", "EPOCH", "SHUFFLE",             "NONE" ,     "IMBALANCED"},
-			{"CNN",   2, 4, 1, 4, 0.01,       "ASP", "BATCH", "REPLICATE_TO_MAX",    "RUN_MIN" ,  "IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 4, 0.01,       "ASP", "EPOCH", "BALANCE_TO_AVG",      "CYCLE_MAX", "IMBALANCED"},
-			{"TwoNN", 5, 1000, 100, 2, 0.01,  "BSP", "BATCH", "KEEP_DATA_ON_WORKER", "NONE" ,     "BALANCED"},
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"SCALE_BATCH" ,	false,	"IMBALANCED"},
+			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE" , 		false,	"IMBALANCED"},
+			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"RUN_MIN" , 	false,	"IMBALANCED"},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX" , 	false,	"IMBALANCED"},
+			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		false,	"BALANCED"},
 
 			/*
 				// runtime balancing
@@ -91,7 +92,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
-		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String data_distribution) {
+		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, boolean weighing, String data_distribution) {
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_dataSetSize = dataSetSize;
@@ -102,6 +103,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		_freq = freq;
 		_scheme = scheme;
 		_runtime_balancing = runtime_balancing;
+		_weighing = weighing;
 		_data_distribution = data_distribution;
 	}
 
@@ -185,6 +187,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"freq=" + _freq,
 					"scheme=" + _scheme,
 					"runtime_balancing=" + _runtime_balancing,
+					"weighing=" + _weighing,
 					"network_type=" + _networkType,
 					"channels=" + C,
 					"hin=" + Hin,

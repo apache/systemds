@@ -19,30 +19,25 @@
 
 package org.apache.sysds.test.functions.indexing;
 
-import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
+
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
 
-public class LeftIndexingScalarTest extends AutomatedTestBase
+public class IndexedAdditionAssignmentTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/indexing/";
-	private final static String TEST_NAME = "LeftIndexingScalarTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + LeftIndexingScalarTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "IndexedAdditionTest";
 	
-	private final static double epsilon=0.0000000001;
+	private final static String TEST_CLASS_DIR = TEST_DIR + IndexedAdditionAssignmentTest.class.getSimpleName() + "/";
+	
 	private final static int rows = 1279;
 	private final static int cols = 1050;
-
-	private final static double sparsity = 0.7;
-	private final static int min = 0;
-	private final static int max = 100;
 	
 	@Override
 	public void setUp() {
@@ -50,42 +45,44 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testLeftIndexingScalarCP() {
-		runLeftIndexingTest(ExecType.CP);
+	public void testIndexedAssignmentAddScalarCP() {
+		runIndexedAdditionAssignment(true, ExecType.CP);
 	}
 	
 	@Test
-	public void testLeftIndexingScalarSP() {
-		runLeftIndexingTest(ExecType.SPARK);
+	public void testIndexedAssignmentAddMatrixCP() {
+		runIndexedAdditionAssignment(false, ExecType.CP);
 	}
 	
-	private void runLeftIndexingTest( ExecType instType ) 
-	{
+	@Test
+	public void testIndexedAssignmentAddScalarSpark() {
+		runIndexedAdditionAssignment(true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testIndexedAssignmentAddMatrixSpark() {
+		runIndexedAdditionAssignment(false, ExecType.SPARK);
+	}
+	
+	private void runIndexedAdditionAssignment(boolean scalar, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 	
-		try
-		{
+		try {
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
+			//test is adding or subtracting 7 to area 1x1 or 10x10
+			//of an initially constraint (3) matrix and sums it up
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain" , "-args",  input("A"), 
-				Long.toString(rows), Long.toString(cols), output("A")};
+			programArgs = new String[]{"-explain" , "-args",
+				Long.toString(rows), Long.toString(cols),
+				String.valueOf(scalar).toUpperCase(), output("A")};
 			
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
-			
-			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
-			writeInputMatrix("A", A, true);
-
 			runTest(true, false, null, -1);
-			runRScript(true);
 			
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("A");
-			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("A");
-			TestUtils.compareMatrices(dmlfile, rfile, epsilon, "A-DML", "A-R");
-			checkDMLMetaDataFile("A", new MatrixCharacteristics(rows,cols,1,1));
+			Double ret = readDMLMatrixFromOutputDir("A").get(new CellIndex(1,1));
+			Assert.assertEquals(new Double(3*rows*cols + 7*(scalar?1:100)),  ret);
 		}
 		finally {
 			resetExecMode(platformOld);

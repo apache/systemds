@@ -143,7 +143,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		int numBatchesPerEpoch = 0;
 		if(runtimeBalancing == PSRuntimeBalancing.RUN_MIN) {
 			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._minRows / (float) getBatchSize());
-		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG || runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH) {
+		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG
+				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH
+				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
 			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._avgRows / (float) getBatchSize());
  		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
 			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._maxRows / (float) getBatchSize());

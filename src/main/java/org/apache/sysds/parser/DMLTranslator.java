@@ -1137,11 +1137,8 @@ public class DMLTranslator
 					if (!(target instanceof IndexedIdentifier)) {
 						//process right hand side and accumulation
 						Hop ae = processExpression(source, target, ids);
-						if( ((AssignmentStatement)current).isAccumulator() ) {
-							DataIdentifier accum = liveIn.getVariable(target.getName());
-							if( accum == null )
-								throw new LanguageException("Invalid accumulator assignment "
-									+ "to non-existing variable "+target.getName()+".");
+						if( as.isAccumulator() ) {
+							DataIdentifier accum = getAccumulatorData(liveIn, target.getName());
 							ae = HopRewriteUtils.createBinary(ids.get(target.getName()), ae, OpOp2.PLUS);
 							target.setProperties(accum.getOutput());
 						}
@@ -1169,6 +1166,15 @@ public class DMLTranslator
 					// CASE: target is indexed identifier (left-hand side indexed expression)
 					else {
 						Hop ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, ids);
+						
+						if( as.isAccumulator() ) {
+							DataIdentifier accum = getAccumulatorData(liveIn, target.getName());
+							Hop rix = processIndexingExpression((IndexedIdentifier)target, null, ids);
+							Hop rhs = processExpression(source, null, ids);
+							Hop binary = HopRewriteUtils.createBinary(rix, rhs, OpOp2.PLUS);
+							HopRewriteUtils.replaceChildReference(ae, ae.getInput(1), binary);
+							target.setProperties(accum.getOutput());
+						}
 						
 						ids.put(target.getName(), ae);
 						
@@ -1298,7 +1304,14 @@ public class DMLTranslator
 		}
 		sb.updateLiveVariablesOut(updatedLiveOut);
 		sb.setHops(output);
-
+	}
+	
+	private static DataIdentifier getAccumulatorData(VariableSet liveIn, String varname) {
+		DataIdentifier accum = liveIn.getVariable(varname);
+		if( accum == null )
+			throw new LanguageException("Invalid accumulator assignment "
+				+ "to non-existing variable "+varname+".");
+		return accum;
 	}
 	
 	private void appendDefaultArguments(FunctionStatement fstmt, List<String> inputNames, List<Hop> inputs, HashMap<String, Hop> ids) {
@@ -1630,41 +1643,9 @@ public class DMLTranslator
 		return processExpression(source, tmpOut, hops );
 	}
 	
-	private Hop processLeftIndexedExpression(Expression source, IndexedIdentifier target, HashMap<String, Hop> hops)  
-	{
+	private Hop processLeftIndexedExpression(Expression source, IndexedIdentifier target, HashMap<String, Hop> hops) {
 		// process target indexed expressions
-		Hop rowLowerHops = null, rowUpperHops = null, colLowerHops = null, colUpperHops = null;
-		
-		if (target.getRowLowerBound() != null)
-			rowLowerHops = processExpression(target.getRowLowerBound(),null,hops);
-		else
-			rowLowerHops = new LiteralOp(1);
-		
-		if (target.getRowUpperBound() != null)
-			rowUpperHops = processExpression(target.getRowUpperBound(),null,hops);
-		else
-		{
-			if ( target.getDim1() != -1 ) 
-				rowUpperHops = new LiteralOp(target.getOrigDim1());
-			else {
-				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hops.get(target.getName()));
-				rowUpperHops.setParseInfo(target);
-			}
-		}
-		if (target.getColLowerBound() != null)
-			colLowerHops = processExpression(target.getColLowerBound(),null,hops);
-		else
-			colLowerHops = new LiteralOp(1);
-		
-		if (target.getColUpperBound() != null)
-			colUpperHops = processExpression(target.getColUpperBound(),null,hops);
-		else
-		{
-			if ( target.getDim2() != -1 ) 
-				colUpperHops = new LiteralOp(target.getOrigDim2());
-			else
-				colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hops.get(target.getName()));
-		}
+		Hop[] ixRange = getIndexingBounds(target, hops, true);
 		
 		// process the source expression to get source Hops
 		Hop sourceOp = processExpression(source, target, hops);
@@ -1678,12 +1659,11 @@ public class DMLTranslator
 		if( sourceOp.getDataType().isMatrix() && source.getOutput().getDataType().isScalar() )
 			sourceOp.setDataType(DataType.SCALAR);
 		
-		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), ValueType.FP64, 
-				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops, 
-				target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
+		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(),
+			ValueType.FP64, targetOp, sourceOp, ixRange[0], ixRange[1], ixRange[2], ixRange[3],
+			target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
 		
 		setIdentifierParams(leftIndexOp, target);
-	
 		leftIndexOp.setParseInfo(target);
 		leftIndexOp.setDim1(target.getOrigDim1());
 		leftIndexOp.setDim2(target.getOrigDim2());
@@ -1694,38 +1674,7 @@ public class DMLTranslator
 	
 	private Hop processIndexingExpression(IndexedIdentifier source, DataIdentifier target, HashMap<String, Hop> hops) {
 		// process Hops for indexes (for source)
-		Hop rowLowerHops = null, rowUpperHops = null, colLowerHops = null, colUpperHops = null;
-		
-		if (source.getRowLowerBound() != null)
-			rowLowerHops = processExpression(source.getRowLowerBound(),null,hops);
-		else
-			rowLowerHops = new LiteralOp(1);
-		
-		if (source.getRowUpperBound() != null)
-			rowUpperHops = processExpression(source.getRowUpperBound(),null,hops);
-		else
-		{
-			if ( source.getOrigDim1() != -1 ) 
-				rowUpperHops = new LiteralOp(source.getOrigDim1());
-			else {
-				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hops.get(source.getName()));
-				rowUpperHops.setParseInfo(source);
-			}
-		}
-		if (source.getColLowerBound() != null)
-			colLowerHops = processExpression(source.getColLowerBound(),null,hops);
-		else
-			colLowerHops = new LiteralOp(1);
-		
-		if (source.getColUpperBound() != null)
-			colUpperHops = processExpression(source.getColUpperBound(),null,hops);
-		else
-		{
-			if ( source.getOrigDim2() != -1 ) 
-				colUpperHops = new LiteralOp(source.getOrigDim2());
-			else
-				colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hops.get(source.getName()));
-		}
+		Hop[] ixRange = getIndexingBounds(source, hops, false);
 		
 		if (target == null) {
 			target = createTarget(source);
@@ -1735,13 +1684,41 @@ public class DMLTranslator
 		target.setNnz(-1); 
 		
 		Hop indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
-				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops,
-				source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
+			hops.get(source.getName()), ixRange[0], ixRange[1], ixRange[2], ixRange[3],
+			source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 	
 		indexOp.setParseInfo(target);
 		setIdentifierParams(indexOp, target);
 		
 		return indexOp;
+	}
+	
+	private Hop[] getIndexingBounds(IndexedIdentifier ix, HashMap<String, Hop> hops, boolean lix) {
+		Hop rowLowerHops = (ix.getRowLowerBound() != null) ?
+			processExpression(ix.getRowLowerBound(),null, hops) : new LiteralOp(1);
+		Hop colLowerHops = (ix.getColLowerBound() != null) ?
+			processExpression(ix.getColLowerBound(),null, hops) : new LiteralOp(1);
+		
+		Hop rowUpperHops = null, colUpperHops = null;
+		if (ix.getRowUpperBound() != null)
+			rowUpperHops = processExpression(ix.getRowUpperBound(),null,hops);
+		else {
+			rowUpperHops = ((lix ? ix.getDim1() : ix.getOrigDim1()) != -1) ?
+				new LiteralOp(ix.getOrigDim1()) :
+				new UnaryOp(ix.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hops.get(ix.getName()));
+			rowUpperHops.setParseInfo(ix);
+		}
+		
+		if (ix.getColUpperBound() != null)
+			colUpperHops = processExpression(ix.getColUpperBound(),null,hops);
+		else {
+			colUpperHops = ((lix ? ix.getDim2() : ix.getOrigDim2()) != -1) ?
+				new LiteralOp(ix.getOrigDim2()) :
+				new UnaryOp(ix.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hops.get(ix.getName()));
+			colUpperHops.setParseInfo(ix);
+		}
+		
+		return new Hop[] {rowLowerHops, rowUpperHops, colLowerHops, colUpperHops};
 	}
 	
 	

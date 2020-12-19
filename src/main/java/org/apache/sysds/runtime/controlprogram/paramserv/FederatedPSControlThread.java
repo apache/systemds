@@ -70,7 +70,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	// runtime balancing
 	Statement.PSRuntimeBalancing _runtimeBalancing;
-	int _numBatchesPerGlobalEpoch;
+	int _numBatchesPerEpoch;
 	int _possibleBatchesPerLocalEpoch;
 	boolean _weighing;
 	double _weighingFactor = 1;
@@ -81,7 +81,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 									int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
 
-		_numBatchesPerGlobalEpoch = numBatchesPerGlobalEpoch;
+		_numBatchesPerEpoch = numBatchesPerGlobalEpoch;
 		_runtimeBalancing = runtimeBalancing;
 		_weighing = weighing;
 		// generate the IDs for model and batch counter. These get overwritten on the federated worker each time
@@ -107,7 +107,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// calculate scaled batch size if balancing via batch size.
 		// Floor or Ceil: In some cases either not use some data or cycle a few batches
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH) {
-			double batchSizeTmp = (double) dataSize / _numBatchesPerGlobalEpoch;
+			double batchSizeTmp = (double) dataSize / _numBatchesPerEpoch;
 			_batchSize = (int) ((Math.floor(batchSizeTmp) > 0) ? Math.floor(batchSizeTmp) : Math.ceil(batchSizeTmp));
 			_cycleStartAt0 = true;
 		}
@@ -118,7 +118,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// If no runtime balancing is specified, just run possible number of batches
 		// WARNING: Will get stuck on miss match
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.NONE) {
-			_numBatchesPerGlobalEpoch = _possibleBatchesPerLocalEpoch;
+			_numBatchesPerEpoch = _possibleBatchesPerLocalEpoch;
 		}
 
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH
@@ -336,9 +336,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 */
 	protected void computeWithBatchUpdates() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
-			int currentLocalBatchNumber = (_cycleStartAt0) ? 0 : _numBatchesPerGlobalEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
+			int currentLocalBatchNumber = (_cycleStartAt0) ? 0 : _numBatchesPerEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
 
-			for (int batchCounter = 0; batchCounter < _numBatchesPerGlobalEpoch; batchCounter++) {
+			for (int batchCounter = 0; batchCounter < _numBatchesPerEpoch; batchCounter++) {
 				int localStartBatchNum = getNextLocalBatchNum(currentLocalBatchNumber++, _possibleBatchesPerLocalEpoch);
 				ListObject model = pullModel();
 				ListObject gradients = computeGradientsForNBatches(model, 1, localStartBatchNum);
@@ -363,11 +363,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 */
 	protected void computeWithEpochUpdates() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
-			int localStartBatchNum = (_cycleStartAt0) ? 0 : _numBatchesPerGlobalEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
+			int localStartBatchNum = (_cycleStartAt0) ? 0 : _numBatchesPerEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
 
 			// Pull the global parameters from ps
 			ListObject model = pullModel();
-			ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerGlobalEpoch, localStartBatchNum, true);
+			ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerEpoch, localStartBatchNum, true);
 			scaleAndPushGradients(gradients);
 
 			if( LOG.isInfoEnabled() )

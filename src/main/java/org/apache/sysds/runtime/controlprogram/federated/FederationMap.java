@@ -242,10 +242,17 @@ public class FederationMap {
 	}
 
 	private static FederatedRequest[] addAll(FederatedRequest a, FederatedRequest[] b) {
-		FederatedRequest[] ret = new FederatedRequest[b.length + 1];
-		ret[0] = a;
-		System.arraycopy(b, 0, ret, 1, b.length);
-		return ret;
+		// empty b array
+		if( b == null || b.length==0 ) {
+			return new FederatedRequest[] {a};
+		}
+		// concat with b array
+		else {
+			FederatedRequest[] ret = new FederatedRequest[b.length + 1];
+			ret[0] = a;
+			System.arraycopy(b, 0, ret, 1, b.length);
+			return ret;
+		}
 	}
 
 	public FederationMap identCopy(long tid, long id) {

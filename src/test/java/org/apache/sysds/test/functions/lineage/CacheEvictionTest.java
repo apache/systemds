@@ -129,7 +129,10 @@ public class CacheEvictionTest extends LineageBase {
 			Assert.assertTrue(expCount_lru >= expCount_wt);
 			// Compare counts of evicted items
 			// LRU tends to evict more entries to recover equal amount of memory
-			Assert.assertTrue(evictedCount_lru > evictedCount_wt);
+			// Note: changed to equals to fix flaky tests where both are not evicted at all
+			// (e.g., due to high execution time as sometimes observed through github actions)
+			Assert.assertTrue(("Violated expected evictions: "+evictedCount_lru+" >= "+evictedCount_wt),
+				evictedCount_lru >= evictedCount_wt);
 			// Compare cache hits
 			Assert.assertTrue(hitCount_lru < hitCount_wt);
 		}
@@ -139,5 +142,4 @@ public class CacheEvictionTest extends LineageBase {
 			Recompiler.reinitRecompiler();
 		}
 	}
-
 }

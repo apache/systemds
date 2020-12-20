@@ -61,7 +61,7 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 		
 		//modify federated ranges in place
 		Map<FederatedRange, IndexRange> ixs = new HashMap<>();
-		for(FederatedRange range : fedMap.getFedMapping().keySet()) {
+		for(FederatedRange range : fedMap.getMap().keySet()) {
 			long rs = range.getBeginDims()[0], re = range.getEndDims()[0],
 				cs = range.getBeginDims()[1], ce = range.getEndDims()[1];
 			long rsn = (ixrange.rowStart >= rs) ? (ixrange.rowStart - rs) : 0;

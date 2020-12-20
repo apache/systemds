@@ -107,7 +107,7 @@ public class ReaderWriterFederated {
 			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			DataOutputStream out = fs.create(path, true);
 			ObjectMapper mapper = new ObjectMapper();
-			FederatedDataAddress[] outObjects = parseMap(fedMap.getFedMapping());
+			FederatedDataAddress[] outObjects = parseMap(fedMap.getMap());
 			try(BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
 				mapper.writeValue(pw, outObjects);
 			}

@@ -27,7 +27,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -44,48 +43,66 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/federated/paramserv/";
 	private final static String TEST_NAME = "FederatedParamservTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedParamservTest.class.getSimpleName() + "/";
-	private final static int _blocksize = 1024;
 
 	private final String _networkType;
 	private final int _numFederatedWorkers;
-	private final int _examplesPerWorker;
+	private final int _dataSetSize;
 	private final int _epochs;
 	private final int _batch_size;
 	private final double _eta;
 	private final String _utype;
 	private final String _freq;
+	private final String _scheme;
+	private final String _runtime_balancing;
+	private final String _data_distribution;
 
 	// parameters
 	@Parameterized.Parameters
 	public static Collection<Object[]> parameters() {
 		return Arrays.asList(new Object[][] {
-			// Network type, number of federated workers, examples per worker, batch size, epochs, learning rate, update
-			// type, update frequency
-			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"}, {"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
-			{"TwoNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"}, {"TwoNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
-			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "BATCH"}, {"CNN", 2, 2, 1, 5, 0.01, "ASP", "BATCH"},
-			{"CNN", 2, 2, 1, 5, 0.01, "BSP", "EPOCH"}, {"CNN", 2, 2, 1, 5, 0.01, "ASP", "EPOCH"},
-			{"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH"},
-			// {"TwoNN", 5, 1000, 200, 2, 0.01, "ASP", "BATCH"},
-			// {"TwoNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH"},
-			// {"TwoNN", 5, 1000, 200, 2, 0.01, "ASP", "EPOCH"},
-			// {"CNN", 5, 1000, 200, 2, 0.01, "BSP", "BATCH"},
-			// {"CNN", 5, 1000, 200, 2, 0.01, "ASP", "BATCH"},
-			{"CNN", 5, 1000, 200, 2, 0.01, "BSP", "EPOCH"},
-			// {"CNN", 5, 1000, 200, 2, 0.01, "ASP", "EPOCH"}
+			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
+
+			// basic functionality
+			{"TwoNN", 2, 4, 1, 4, 0.01,       "BSP", "BATCH", "KEEP_DATA_ON_WORKER", "CYCLE_AVG", "IMBALANCED"},
+			{"CNN",   2, 4, 1, 4, 0.01,       "BSP", "EPOCH", "SHUFFLE",             "NONE" ,     "IMBALANCED"},
+			{"CNN",   2, 4, 1, 4, 0.01,       "ASP", "BATCH", "REPLICATE_TO_MAX",    "RUN_MIN" ,  "IMBALANCED"},
+			{"TwoNN", 2, 4, 1, 4, 0.01,       "ASP", "EPOCH", "BALANCE_TO_AVG",      "CYCLE_MAX", "IMBALANCED"},
+			{"TwoNN", 5, 1000, 100, 2, 0.01,  "BSP", "BATCH", "KEEP_DATA_ON_WORKER", "NONE" ,     "BALANCED"},
+
+			/*
+				// runtime balancing
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
+
+				// data partitioning
+				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE_AVG" , 	"IMBALANCED"},
+				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE_TO_MAX",	 	"NONE" , 		"IMBALANCED"},
+				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SUBSAMPLE_TO_MIN",		"NONE" , 		"IMBALANCED"},
+				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE_TO_AVG",		"NONE" , 		"IMBALANCED"},
+
+				// balanced tests
+				{"CNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"BALANCED"}
+			 */
 		});
 	}
 
-	public FederatedParamservTest(String networkType, int numFederatedWorkers, int examplesPerWorker, int batch_size,
-		int epochs, double eta, String utype, String freq) {
+	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
+		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String data_distribution) {
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
-		_examplesPerWorker = examplesPerWorker;
+		_dataSetSize = dataSetSize;
 		_batch_size = batch_size;
 		_epochs = epochs;
 		_eta = eta;
 		_utype = utype;
 		_freq = freq;
+		_scheme = scheme;
+		_runtime_balancing = runtime_balancing;
+		_data_distribution = data_distribution;
 	}
 
 	@Override
@@ -111,68 +128,74 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		setOutputBuffering(true);
 
 		int C = 1, Hin = 28, Win = 28;
-		int numFeatures = C * Hin * Win;
 		int numLabels = 10;
 
 		ExecMode platformOld = setExecMode(mode);
 
 		try {
+			// start threads
+			List<Integer> ports = new ArrayList<>();
+			List<Thread> threads = new ArrayList<>();
+			for(int i = 0; i < _numFederatedWorkers; i++) {
+				ports.add(getRandomAvailablePort());
+				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
+			}
+
+			// generate test data
+			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
+			double[][] labels = generateDummyMNISTLabels(_dataSetSize, numLabels);
+			String featuresName = "";
+			String labelsName = "";
+
+			// federate test data balanced or imbalanced
+			if(_data_distribution.equals("IMBALANCED")) {
+				featuresName = "X_IMBALANCED_" + _numFederatedWorkers;
+				labelsName = "y_IMBALANCED_" + _numFederatedWorkers;
+				double[][] ranges = {{0,1}, {1,4}};
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
+			}
+			else {
+				featuresName = "X_BALANCED_" + _numFederatedWorkers;
+				labelsName = "y_BALANCED_" + _numFederatedWorkers;
+				double[][] ranges = generateBalancedFederatedRowRanges(_numFederatedWorkers, features.length);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
+			}
+
+			try {
+				//wait for all workers to be setup
+				Thread.sleep(FED_WORKER_WAIT);
+			}
+			catch(InterruptedException e) {
+				e.printStackTrace();
+			}
 
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			// generate program args
 			List<String> programArgsList = new ArrayList<>(Arrays.asList("-stats",
-				"-nvargs",
-				"examples_per_worker=" + _examplesPerWorker,
-				"num_features=" + numFeatures,
-				"num_labels=" + numLabels,
-				"epochs=" + _epochs,
-				"batch_size=" + _batch_size,
-				"eta=" + _eta,
-				"utype=" + _utype,
-				"freq=" + _freq,
-				"network_type=" + _networkType,
-				"channels=" + C,
-				"hin=" + Hin,
-				"win=" + Win));
+					"-nvargs",
+					"features=" + input(featuresName),
+					"labels=" + input(labelsName),
+					"epochs=" + _epochs,
+					"batch_size=" + _batch_size,
+					"eta=" + _eta,
+					"utype=" + _utype,
+					"freq=" + _freq,
+					"scheme=" + _scheme,
+					"runtime_balancing=" + _runtime_balancing,
+					"network_type=" + _networkType,
+					"channels=" + C,
+					"hin=" + Hin,
+					"win=" + Win,
+					"seed=" + 25));
 
-			// for each worker
-			List<Integer> ports = new ArrayList<>();
-			List<Thread> threads = new ArrayList<>();
-			for(int i = 0; i < _numFederatedWorkers; i++) {
-				// write row partitioned features to disk
-				writeInputMatrixWithMTD("X" + i,
-					generateDummyMNISTFeatures(_examplesPerWorker, C, Hin, Win),
-					false,
-					new MatrixCharacteristics(_examplesPerWorker, numFeatures, _blocksize,
-						_examplesPerWorker * numFeatures));
-				// write row partitioned labels to disk
-				writeInputMatrixWithMTD("y" + i,
-					generateDummyMNISTLabels(_examplesPerWorker, numLabels),
-					false,
-					new MatrixCharacteristics(_examplesPerWorker, numLabels, _blocksize,
-						_examplesPerWorker * numLabels));
-
-				// start worker
-				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
-
-				// add worker to program args
-				programArgsList.add("X" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("X" + i)));
-				programArgsList.add("y" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("y" + i)));
-			}
-			try {
-				Thread.sleep(1000);
-			}
-			catch(InterruptedException e) {
-				e.printStackTrace();
-			}
-	
 			programArgs = programArgsList.toArray(new String[0]);
 			LOG.debug(runTest(null));
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			
-			// cleanup
+			// shut down threads
 			for(int i = 0; i < _numFederatedWorkers; i++) {
 				TestUtils.shutdownThreads(threads.get(i));
 			}

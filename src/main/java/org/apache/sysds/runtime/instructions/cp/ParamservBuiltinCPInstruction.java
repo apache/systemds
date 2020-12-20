@@ -32,6 +32,7 @@ import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
 import static org.apache.sysds.parser.Statement.PS_SCHEME;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
+import static org.apache.sysds.parser.Statement.PS_RUNTIME_BALANCING;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,11 +53,12 @@ import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
 import org.apache.sysds.parser.Statement.PSModeType;
 import org.apache.sysds.parser.Statement.PSScheme;
+import org.apache.sysds.parser.Statement.FederatedPSScheme;
 import org.apache.sysds.parser.Statement.PSUpdateType;
+import org.apache.sysds.parser.Statement.PSRuntimeBalancing;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -86,6 +88,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
+	private static final PSRuntimeBalancing DEFAULT_RUNTIME_BALANCING = PSRuntimeBalancing.NONE;
+	private static final FederatedPSScheme DEFAULT_FEDERATED_SCHEME = FederatedPSScheme.KEEP_DATA_ON_WORKER;
 	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
 	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
 
@@ -96,7 +100,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// check if the input is federated
-		
 		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
 				ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
 			runFederated(ec);
@@ -124,15 +127,27 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// get inputs
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
+		PSRuntimeBalancing runtimeBalancing = getRuntimeBalancing();
+		FederatedPSScheme federatedPSScheme = getFederatedScheme();
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 
 		// partition federated data
-		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(Statement.FederatedPSScheme.KEEP_DATA_ON_WORKER)
+		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme)
 				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
-		List<MatrixObject> pFeatures = result.pFeatures;
-		List<MatrixObject> pLabels = result.pLabels;
-		int workerNum = result.workerNum;
+		List<MatrixObject> pFeatures = result._pFeatures;
+		List<MatrixObject> pLabels = result._pLabels;
+		int workerNum = result._workerNum;
+
+		// calculate runtime balancing
+		int numBatchesPerEpoch = 0;
+		if(runtimeBalancing == PSRuntimeBalancing.RUN_MIN) {
+			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._minRows / (float) getBatchSize());
+		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG) {
+			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._avgRows / (float) getBatchSize());
+ 		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
+			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._maxRows / (float) getBatchSize());
+		}
 
 		// setup threading
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
@@ -141,8 +156,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
-		// Level of par is 1 because one worker will be launched per task
-		// TODO: Fix recompilation
+		// Level of par is -1 so each federated worker can scale to its cpu cores
 		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, -1, true);
 		// Create workers' execution context
 		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
@@ -152,8 +166,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
 		// Create the local workers
+		int finalNumBatchesPerEpoch = numBatchesPerEpoch;
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
-				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
+				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
 				.collect(Collectors.toList());
 
 		if(workerNum != threads.size()) {
@@ -379,6 +394,18 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 	}
 
+	private PSRuntimeBalancing getRuntimeBalancing() {
+		if (!getParameterMap().containsKey(PS_RUNTIME_BALANCING)) {
+			return DEFAULT_RUNTIME_BALANCING;
+		}
+		try {
+			return PSRuntimeBalancing.valueOf(getParam(PS_RUNTIME_BALANCING));
+		} catch (IllegalArgumentException e) {
+			throw new DMLRuntimeException(String.format("Paramserv function: "
+					+ "not support '%s' runtime balancing.", getParam(PS_RUNTIME_BALANCING)));
+		}
+	}
+
 	private static int getRemainingCores() {
 		return InfrastructureAnalyzer.getLocalParallelism();
 	}
@@ -469,4 +496,15 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return scheme;
 	}
 
+	private FederatedPSScheme getFederatedScheme() {
+		FederatedPSScheme federated_scheme = DEFAULT_FEDERATED_SCHEME;
+		if (getParameterMap().containsKey(PS_SCHEME)) {
+			try {
+				federated_scheme = FederatedPSScheme.valueOf(getParam(PS_SCHEME));
+			} catch (IllegalArgumentException e) {
+				throw new DMLRuntimeException(String.format("Paramserv function in federated mode: not support data partition scheme '%s'", getParam(PS_SCHEME)));
+			}
+		}
+		return federated_scheme;
+	}
 }

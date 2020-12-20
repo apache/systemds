@@ -309,7 +309,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkDataValueType(true, fname, Statement.PS_PARALLELISM, DataType.SCALAR, ValueType.INT64, conditional);
 		checkStringParam(true, fname, Statement.PS_SCHEME, conditional);
 		checkStringParam(true, fname, Statement.PS_FED_RUNTIME_BALANCING, conditional);
-		checkDataValueType(true, fname, Statement.PS_FED_WEIGHING, DataType.SCALAR, ValueType.BOOLEAN, conditional);
+		checkStringParam(true, fname, Statement.PS_FED_WEIGHING, conditional);
 		checkDataValueType(true, fname, Statement.PS_HYPER_PARAMS, DataType.LIST, ValueType.UNKNOWN, conditional);
 		checkStringParam(true, fname, Statement.PS_CHECKPOINTING, conditional);
 		checkDataValueType(true, fname, Statement.PS_SEED, DataType.SCALAR, ValueType.INT64, conditional);

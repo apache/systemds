@@ -112,15 +112,24 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		System.out.println("[+] Running in federated mode");
 
 		// get inputs
-		PSFrequency freq = getFrequency();
-		PSUpdateType updateType = getUpdateType();
-		PSRuntimeBalancing runtimeBalancing = getRuntimeBalancing();
-		FederatedPSScheme federatedPSScheme = getFederatedScheme();
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
+		PSUpdateType updateType = getUpdateType();
+		PSFrequency freq = getFrequency();
+		FederatedPSScheme federatedPSScheme = getFederatedScheme();
+		PSRuntimeBalancing runtimeBalancing = getRuntimeBalancing();
+		boolean weighing = getWeighing();
+		int seed = getSeed();
+
+		System.out.println("[+] Update Type: " + updateType);
+		System.out.println("[+] Frequency: " + freq);
+		System.out.println("[+] Data Partitioning: " + federatedPSScheme);
+		System.out.println("[+] Runtime Balancing: " + runtimeBalancing);
+		System.out.println("[+] Weighing: " + weighing);
+		System.out.println("[+] Seed: " + seed);
 
 		// partition federated data
-		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme, getSeed())
+		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme, seed)
 				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
 		List<MatrixObject> pFeatures = result._pFeatures;
 		List<MatrixObject> pLabels = result._pLabels;
@@ -156,7 +165,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Create the local workers
 		int finalNumBatchesPerEpoch = numBatchesPerEpoch;
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
-				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, getWeighing(),
+				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighing,
 						getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
 				.collect(Collectors.toList());
 

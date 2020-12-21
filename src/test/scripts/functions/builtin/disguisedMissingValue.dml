@@ -17,12 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#------------------------------------------------------------
+#-------------------------------------------------------------
 
-# AS FRAME
-dmv = function(Frame[Unknown] FX) return (Frame[Unknown] Y) {
-  print("WE IN DMV");
-  Z = map(FX, "UtilFunctions.calculateAttributeTypes()");
-
-  Y = Z;
-}
+X = read($1, data_type = "frame", format = "csv", header = FALSE)
+Z = dmv(X)
+write(Z, $2,  format="csv")
+write(X, $3,  format="csv")

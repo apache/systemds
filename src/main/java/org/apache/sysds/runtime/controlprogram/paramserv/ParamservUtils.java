@@ -241,36 +241,6 @@ public class ParamservUtils {
 		return seq.ctableSeqOperations(sample, 1.0, new MatrixBlock(nsamples, nrows, true), false);
 	}
 
-	/**
-	 * Generates a matrix which when left multiplied with the input matrix will subsample
-	 * @param nsamples number of samples
-	 * @param nrows number of rows in input matrix
-	 * @param seed seed used to generate random number
-	 * @return subsample matrix
-	 */
-	public static MatrixBlock generateSubsampleMatrix(int nsamples, int nrows, long seed) {
-		MatrixBlock seq = new MatrixBlock(nsamples, nrows, false);
-		// No replacement to preserve as much of the original data as possible
-		MatrixBlock sample = MatrixBlock.sampleOperations(nrows, nsamples, false, seed);
-		return seq.ctableSeqOperations(sample, 1.0,
-				new MatrixBlock(nsamples, nrows, true), false);
-	}
-
-	/**
-	 * Generates a matrix which when left multiplied with the input matrix will replicate n data rows
-	 * @param nsamples number of samples
-	 * @param nrows number of rows in input matrix
-	 * @param seed seed used to generate random number
-	 * @return replication matrix
-	 */
-	public static MatrixBlock generateReplicationMatrix(int nsamples, int nrows, long seed) {
-		MatrixBlock seq = new MatrixBlock(nsamples, nrows, false);
-		// Replacement set to true to provide random replication
-		MatrixBlock sample = MatrixBlock.sampleOperations(nrows, nsamples, true, seed);
-		return seq.ctableSeqOperations(sample, 1.0,
-				new MatrixBlock(nsamples, nrows, true), false);
-	}
-
 	public static ExecutionContext createExecutionContext(ExecutionContext ec,
 		LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
 	{

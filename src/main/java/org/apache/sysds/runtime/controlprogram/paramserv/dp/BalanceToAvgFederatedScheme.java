@@ -76,7 +76,7 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 	 */
 	private static class balanceDataOnFederatedWorker extends FederatedUDF {
 		private static final long serialVersionUID = 6631958250346625546L;
-		int _seed;
+		private final int _seed;
 		private final int _average_num_rows;
 
 		protected balanceDataOnFederatedWorker(long[] inIDs, int seed, int average_num_rows) {

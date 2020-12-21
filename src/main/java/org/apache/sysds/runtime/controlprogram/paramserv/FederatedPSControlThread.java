@@ -62,7 +62,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	private static final long serialVersionUID = 6846648059569648791L;
 	protected static final Log LOG = LogFactory.getLog(ParamServer.class.getName());
 
-	Statement.PSRuntimeBalancing _runtimeBalancing;
 	FederatedData _featuresData;
 	FederatedData _labelsData;
 	final long _localStartBatchNumVarID;
@@ -119,11 +118,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// WARNING: Will get stuck on miss match
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.NONE) {
 			_numBatchesPerEpoch = _possibleBatchesPerLocalEpoch;
-		}
-
-		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH
-			|| _runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH_AND_WEIGH) {
-			throw new NotImplementedException();
 		}
 
 		// serialize program

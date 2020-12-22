@@ -47,20 +47,125 @@
 #  "created": "2020-12-07 00:00:01 UTC"
 #}
 load_raw_train_values = function() return (frame[string] data) {
-  tableSchema = "string,string";
-  data = read("../sherlock-project/data/data/raw/train_values.csv",
-              schema=tableSchema
+  tableSchema = "string,list(string)";
+  data = read("../sherlock-project/data/data/raw/test_values_small.csv",
+              fill=TRUE,
+              header=TRUE
+              #schema=tableSchema
               )
-  print(toString(data[2,2]))
+  print(toString(data))
   rows = nrow(data)
   cols = ncol(data)
   print("loaded train_values.csv with " + rows + " rows and " + cols + " columns")
+
+  #s = map(data, "d -> UtilFunctions.magicFrame(d)")
+  #print(toString(s))
+
+
+  s = map(data[2,2], "d -> UtilFunctions.getSplittedStringAsList(d)")
+  print(toString(s))
+  l_s = list(as.scalar(s))
+  print(toString(length(l_s)))
+/*
+
+  newFrame=matrix(0,rows=rows, cols=2)
+  newFrame=as.frame(newFrame)
+  newFrame = cbind(newFrame, data)
+  print(toString(newFrame))
+  #extra_col_frame=frame(0,rows=rows, cols=1)
+  for(i in 1:rows, check=0) {
+    newFrame[i,1] = map(data[i,2], "d -> d.split(\"\'[ ]*,[ ]*\'\").length")
+    s = (data[i,2])
+    s_l = list(map(s, "s -> s.split(\"\'[ ]*,[ ]*\'\")"))
+    print(toString(s))
+    print(toString(s_l))
+  }
+  #print(toString(data))
+  #print(toString(newFrame))
+*/
+ # print("split: " + toString(list(data[1,2])))
+  S = "ich, habe, hunber"
+  #res = S/","
+  #print(res)
+  l = list("ich")
+  #splitted = strsplit(S,",")
+  #list = list(strsplit(S, ",")[[1]])
+  #append("du", l)
+  #print(toString(l))
+
+
+  #print(S.split(",")[1])
+}
+
+load_processed_test_values = function() return (frame[string] data) {
+
+  tableSchema = "string,string";
+  data = read("../sherlock-project/data/data/processed/X_test_short.csv",
+  fill=TRUE,
+  header=TRUE
+  #schema=tableSchema
+  )
+  rows = nrow(data)
+  cols = ncol(data)
+  print("loaded X_test_short.csv with " + rows + " rows and " + cols + " columns")
+}
+
+load_processed_test_labels = function() return (frame[string] data) {
+  tableSchema = "string,string";
+  data = read("../sherlock-project/data/data/processed/y_test_short.csv",
+  fill=TRUE,
+  header=TRUE
+  #schema=tableSchema
+  )
+  rows = nrow(data)
+  cols = ncol(data)
+  print("loaded y_test_short.csv with " + rows + " rows and " + cols + " columns")
+}
+
+transform_values = function(frame[string] data) return (matrix[double] m_data) {
+  #remove index row
+  rows = nrow(data)
+  cols = ncol(data)
+  data = data[1:rows,2:cols]
+  rows = nrow(data)
+  cols = ncol(data)
+  print("loaded X_test_short.csv with " + rows + " rows and " + cols + " columns")
+
+  #replace True/Fasle with 1/0
+  data = map(data, "d -> d.replace(\"True\",\"1\")")
+  data = map(data, "d -> d.replace(\"False\",\"0\")")
+  write(data, "../sherlock-project/data/data/processed/X_test_short_T_F.csv",
+  format="csv")
+  m_data = as.matrix(data)
+}
+
+transform_labels = function(frame[string] data) return (matrix[double] m_data) {
+  #remove index row
+  rows = nrow(data)
+  cols = ncol(data)
+  data = data[1:rows,2:cols]
+  rows = nrow(data)
+  cols = ncol(data)
+  print("loaded y_test_short.csv with " + rows + " rows and " + cols + " columns")
+  print(toString(data[2]))
+
+  #replace label with number
+  transformSpec = read("../sherlock-project/data/data/processed/transform_y_labels.json", data_type="scalar", value_type="string");
+  [m_data, meta_data] = transformencode(target=data,
+  spec=transformSpec)
+  print(toString(m_data[2]))
+  write(meta_data, "../sherlock-project/data/data/processed/transform_y_labels")
+
 }
 
 m_sherlock = function (matrix[double] A) return (double m) {
   m = sum(A)/nrow(A)
-  data = load_raw_train_values()
+  processed_test_values = transform_values(load_processed_test_values())
+  processed_test_labels = transform_labels(load_processed_test_labels())
+
 }
+
+
 
 
 

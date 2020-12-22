@@ -2146,7 +2146,6 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 //			sb.append("public String apply() {\n");
 //			sb.append("System.out.println(\"Start analyzing Frame\")");
 //			sb.append("  return "+expr+"; }}\n");
-
 			return null;
 
 		} else {

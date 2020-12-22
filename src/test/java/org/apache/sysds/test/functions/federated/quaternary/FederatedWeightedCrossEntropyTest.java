@@ -158,16 +158,9 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     // Run reference fml script with normal matrix
     fullDMLScriptName = HOME + test_name + "Reference.dml";
-    if(!epsilon_flag)
-    {
-      programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
-      "in_U=" + input("U"), "in_V=" + input("V"), "out_Z=" + expected("Z")};
-    }
-    else
-    {
-      programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
-      "in_U=" + input("U"), "in_V=" + input("V"), "in_W=" + Double.toString(epsilon), "out_Z=" + expected("Z")};
-    }
+    programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
+      "in_U=" + input("U"), "in_V=" + input("V"), "in_W=" + Double.toString(epsilon),
+      "out_Z=" + expected("Z")};
     LOG.debug(runTest(true, false, null, -1));
 
     // Run actual dml script with federated matrix

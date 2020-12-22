@@ -23,6 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -850,6 +851,7 @@ public class UtilFunctions {
 	public static final char Hash = 'h';
 	public static final char PUNCTUATION = 'p';
 	public static final char ENCLOSURES = 'e';
+	public static final char ARBITRARY_LEN = '+';
 	public static final char NOT_IMPLEMENTED = '#';
 
 	//TODO[David]: Better name - (ExecuteSynPat(FramBlock frame) ?
@@ -858,9 +860,8 @@ public class UtilFunctions {
 		// Preparation
 		int numCols = frame.getNumColumns();
 		int numRows = frame.getNumRows();
-		ArrayList<Map<String, Integer>> tableHist = new ArrayList(numCols);
-		Map<String, Integer> patterns_hist = new HashMap();
-		List<String> patterns_list = new ArrayList<>(); // maybe expand to list of list later..
+		ArrayList<Map<String, Integer>> table_Hist = new ArrayList(numCols); // list of every column with values and their frequency
+
 		int idx;
 
 		for (idx = 0; idx < numCols; idx++) {
@@ -870,24 +871,99 @@ public class UtilFunctions {
 			for (String attr : column) {
 				if (attr.isEmpty()) key = "NULL";
 				else key = attr;
-				addDistinctValueOrIncrementCounter(tableHist, key, idx);
+				addDistinctValueOrIncrementCounter(table_Hist, key, idx);
 			}
 		}
 
 		// Syntactic Pattern Discovery
-		for (Map<String, Integer> colHist : tableHist) {
-			Level1(colHist, patterns_list, patterns_hist);
+		for (Map<String, Integer> col_Hist : table_Hist) {
+			Map<String, Integer> patterns_hist = new HashMap(); // patterns cumulated
+			List<String> patterns_list = new ArrayList<>(); // maybe expand to list of list later.. all patterns we discoverd
+
+			//-----------------------------------------------------------------------------------------------
+			// LEVEL 1 CHECK
+			Level1(col_Hist, patterns_list, patterns_hist);
 			System.out.println("------------------------");
+			Map<String, Double> dominant_patterns = calculatePatternsRatio(patterns_hist, numRows);
+			String dominant_pattern = findDominantPattern(dominant_patterns, numRows);
+			if(dominant_pattern != null) // found one dominant pattern
+			{
+				System.out.println("we found dominant pattern at L2");
+				// todo: we found the dominant pattern - do some crazy stuff
+				continue;
+			}
+
+			//-----------------------------------------------------------------------------------------------
+			// LEVEL 2 CHECK
+			dominant_patterns.clear();
+			Map<String, Integer> l2_pattern_hist = Level2(patterns_hist);
+			dominant_patterns = calculatePatternsRatio(l2_pattern_hist, numRows);
+			dominant_pattern = findDominantPattern(dominant_patterns, numRows);
+			if(dominant_pattern != null) { //found pattern
+				System.out.println("we found dominant pattern at L2");
+				// todo: we found the dominant pattern - do some crazy stuff
+				continue;
+			}
+
+			//-----------------------------------------------------------------------------------------------
+			// LEVEL 3 CHECK
+			dominant_patterns.clear();
+			Map<String, Integer> l3_pattern_hist = Level3(l2_pattern_hist);
+			dominant_patterns = calculatePatternsRatio(l3_pattern_hist, numRows);
+			dominant_pattern = findDominantPattern(dominant_patterns, numRows);
+			if(dominant_pattern != null) { //found pattern
+				System.out.println("we found dominant pattern at L3");
+				// todo: we found the dominant pattern - do some crazy stuff
+				continue;
+			}
+
+			System.out.println("he have not found a dominant pattern yet");
+
 		}
 
-
-		// Aggregation
-		// tbd
 
 		// TODO: Remove..
 		String[][] output = new String[frame.getNumRows()][frame.getNumColumns()];
 		return new FrameBlock(UtilFunctions.nCopies(frame.getNumColumns(), ValueType.STRING), output);
 	}
+
+	public static Map<String, Double> calculatePatternsRatio(Map<String, Integer> patterns_hist, int nr_entries) {
+
+		Map<String, Double> patterns_ratio_map = new HashedMap();
+		Iterator it = patterns_hist.entrySet().iterator(); // iterate over all patterns
+		while(it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			String pattern = (String) pair.getKey();
+			Double nr_occurences = new Double((Integer)pair.getValue());
+
+			double current_ratio = nr_occurences / nr_entries; // percentage of current pattern in column
+			assert current_ratio <= 1;
+
+			assert !patterns_ratio_map.containsKey(pattern); // should not contain key here
+			patterns_ratio_map.put(pattern, current_ratio);
+		}
+		return patterns_ratio_map;
+	}
+
+	public static String findDominantPattern(Map<String, Double> dominant_patterns, int nr_entries) {
+
+		// set threshold between 0.7 and 0.97 - a dominant pattern must have at least 70% occurence - max 100%
+		double threshold = Math.min(0.97, 1 - (3.0 / nr_entries));
+		threshold = Math.max(0.7, threshold);
+
+		Iterator it = dominant_patterns.entrySet().iterator(); // iterate over all patterns
+		while(it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			String pattern = (String) pair.getKey();
+			Double pattern_ratio = (Double)pair.getValue();
+
+			if(pattern_ratio > threshold)
+				return pattern;
+
+		}
+		return null;
+	}
+
 
 	private static void addDistinctValueOrIncrementCounter(ArrayList<Map<String, Integer>> maps, String key, Integer idx) {
 		if (maps.size() == idx) {
@@ -904,11 +980,11 @@ public class UtilFunctions {
 		}
 	}
 
-	private static void addDistinctValueOrIncrementCounter(Map<String, Integer> map, String key) {
-		if (!(map.containsKey(key))) {
-			map.put(key, 1);
+	private static void addDistinctValueOrIncrementCounter(Map<String, Integer> map, String encoded_value, Integer nr_occurrences) {
+		if (!(map.containsKey(encoded_value))) {
+			map.put(encoded_value, nr_occurrences);
 		} else {
-			map.compute(key, (k, v) -> v + 1);
+			map.compute(encoded_value, (k, v) -> v + nr_occurrences);
 		}
 	}
 
@@ -917,12 +993,92 @@ public class UtilFunctions {
 		while (it.hasNext()) {
 			Map.Entry pair = (Map.Entry) it.next();
 			String value = (String) pair.getKey();
+			Integer nr_of_occurences = (Integer)pair.getValue();
 
 			String encodedValue = processData(value);
-			addDistinctValueOrIncrementCounter(patterns_hist, encodedValue);
+			addDistinctValueOrIncrementCounter(patterns_hist, encodedValue, nr_of_occurences);
 			patterns_list.add(encodedValue);
 			System.out.println("Value:" + encodedValue);
 		}
+	}
+
+	// Level2 ignores the number of occurences. It replaces all numbers with '+'. So u3d2 -> u+d+
+	public static Map<String, Integer> Level2(Map<String, Integer> old_pattern_hist) {
+		Map<String, Integer> new_pattern_hist = new HashedMap();
+		Iterator it = old_pattern_hist.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			String pattern = (String) pair.getKey();
+			Integer nr_of_occurences = (Integer)pair.getValue();
+
+			String new_pattern = removeNumbers(pattern);
+
+			if(!new_pattern_hist.containsKey(new_pattern)) {
+				new_pattern_hist.put(new_pattern, nr_of_occurences);
+			}
+			else {
+				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurences);
+			}
+
+		}
+
+		return new_pattern_hist;
+	}
+
+	// Level3 ignores upper and lowercase characters. It replaces all 'u' and 'l' with 'a' = Alphabet
+	public static Map<String, Integer> Level3(Map<String, Integer> old_pattern_hist) {
+		Map<String, Integer> new_pattern_hist = new HashedMap();
+		Iterator it = old_pattern_hist.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			String pattern = (String) pair.getKey();
+			Integer nr_of_occurences = (Integer)pair.getValue();
+
+			String new_pattern = removeUpperLowerCase(pattern);
+
+			if(!new_pattern_hist.containsKey(new_pattern)) {
+				new_pattern_hist.put(new_pattern, nr_of_occurences);
+			}
+			else {
+				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurences);
+			}
+		}
+		return new_pattern_hist;
+	}
+
+	public static String removeUpperLowerCase(String pattern) {
+		char[] chars = pattern.toCharArray();
+		StringBuilder tmp = new StringBuilder();
+		boolean currently_alphabetic = false;
+		for (char ch : chars) {
+			if(ch == UPPER || ch == LOWER) {
+				if(!currently_alphabetic) { // concat u+l+ to a+
+					currently_alphabetic = true;
+					tmp.append(ALPHA);
+				}
+			}
+			else if(ch == ARBITRARY_LEN) {
+				if(tmp.charAt(tmp.length() - 1) != ARBITRARY_LEN)
+					tmp.append(ch);
+			}
+			else {
+				tmp.append(ch);
+				currently_alphabetic = false;
+			}
+		}
+		return tmp.toString();
+	}
+
+	private static String removeNumbers(String pattern) {
+		char[] chars = pattern.toCharArray();
+		StringBuilder tmp = new StringBuilder();
+		for (char ch : chars) {
+			if(Character.isDigit(ch)) // if we found a number, we replace it with +
+				tmp.append("+");
+			else
+				tmp.append(ch);
+		}
+		return tmp.toString();
 	}
 
 	public static String processData(String input) {
@@ -946,13 +1102,11 @@ public class UtilFunctions {
 		return NOT_IMPLEMENTED;
 	}
 
-	static String getFrequencyOfEachConsecutiveChar(String s) {
+	public static String getFrequencyOfEachConsecutiveChar(String s) {
 		StringBuilder retval = new StringBuilder();
 		for (int i = 0; i < s.length(); i++) {
 			int count = 1;
-			while (i + 1 < s.length()
-					&& s.charAt(i)
-					== s.charAt(i + 1)) {
+			while (i + 1 < s.length() && s.charAt(i) == s.charAt(i + 1)) {
 				i++;
 				count++;
 			}

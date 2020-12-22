@@ -10,12 +10,14 @@ public class testclass1 {
 
     public static void main(String[] args) {
         System.out.println("starting java test");
+
         //UtilFunctions.processData(x);
 
         FrameBlock f = new FrameBlock();
-        f.appendColumn(new String[]{"1","2","3","4","5"});
-        f.appendColumn(new String[]{"1","1","1","1","2"});
-        f.appendColumn(new String[]{"Hllo","asdasd","asd","asd","asd"});
+//        f.appendColumn(new String[]{"77","77","89","89","43"});
+//        f.appendColumn(new String[]{"100","1212","4","34","321"});
+//        f.appendColumn(new String[]{"Hllo","asdasd","3asd","asd","asd"});
+        f.appendColumn(new String[]{"44","3","235","52","weg"});
 
         UtilFunctions.calculateAttributeTypes(f);
 

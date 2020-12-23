@@ -116,7 +116,7 @@ public abstract class AutomatedTestBase {
 
 	public static final int FED_WORKER_WAIT = 1000; // in ms
 	public static final int FED_WORKER_WAIT_S = 40; // in ms
-	
+
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
 	// to set the native library paths internally thus breaking the code.
@@ -381,6 +381,11 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
+  protected ExecMode getExecMode()
+  {
+    return rtplatform;
+  }
+
 	protected ExecMode setExecMode(ExecMode execMode) {
 		ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -634,7 +639,7 @@ public abstract class AutomatedTestBase {
 		int ncol = matrix[0].length;
 
 		// create federated MatrixObject
-		MatrixObject federatedMatrixObject = new MatrixObject(ValueType.FP64, 
+		MatrixObject federatedMatrixObject = new MatrixObject(ValueType.FP64,
 			Dag.getNextUniqueVarname(Types.DataType.MATRIX));
 		federatedMatrixObject.setMetaData(new MetaDataFormat(
 			new MatrixCharacteristics(nrows, ncol), Types.FileFormat.BINARY));
@@ -657,7 +662,7 @@ public abstract class AutomatedTestBase {
 			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), input(path));
 			fedHashMap.put(range, data);
 		}
-		
+
 		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
 		federatedMatrixObject.getFedMapping().setType(FederationMap.FType.ROW);
 
@@ -957,7 +962,7 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Call readDMLMetaDataValue but fail test in case of JSONException or NullPointerException.
-	 * 
+	 *
 	 * @param fileName  of metadata file
 	 * @param outputDir directory of metadata file
 	 * @param key       key to find in metadata
@@ -1128,7 +1133,7 @@ public abstract class AutomatedTestBase {
 				"Rscript --default-packages=methods,datasets,graphics,grDevices,stats,utils");
 			// *** END HACK ***
 		}
-		
+
 		if(DEBUG) {
 			if(!newWay) { // not sure why have this condition
 				TestUtils.printRScript(executionFile);
@@ -1168,7 +1173,7 @@ public abstract class AutomatedTestBase {
 					executionFile = executionFile.replace('/', '\\');
 				}
 			}
-			
+
 			long t0 = System.nanoTime();
 			if(LOG.isInfoEnabled()) {
 				LOG.info("starting R script");
@@ -1292,7 +1297,7 @@ public abstract class AutomatedTestBase {
 	 * Runs a test for which the exception expectation can be specified as well as the specific expectation which is
 	 * expected. If SystemDS executes more MR jobs than specified in maxMRJobs this test will fail.
 	 * </p>
-	 * 
+	 *
 	 * @param newWay            in the new way if it is set to true
 	 * @param exceptionExpected exception expected
 	 * @param expectedException expected exception
@@ -1305,9 +1310,9 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Run a test for which an exception is expected if not set to null.
-	 * 
+	 *
 	 * Note this test execute in the "new" way.
-	 * 
+	 *
 	 * @param expectedException The expected exception
 	 * @return The Std output from the test.
 	 */
@@ -1328,7 +1333,7 @@ public abstract class AutomatedTestBase {
 	 * Runs a test for which the exception expectation and the error message can be specified as well as the specific
 	 * expectation which is expected. If SystemDS executes more MR jobs than specified in maxMRJobs this test will fail.
 	 * </p>
-	 * 
+	 *
 	 * @param newWay            in the new way if it is set to true
 	 * @param exceptionExpected exception expected
 	 * @param expectedException expected exception
@@ -1483,8 +1488,8 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Start new JVM for a federated worker at the port.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param port Port to use for the JVM
 	 * @return the process associated with the worker.
 	 */
@@ -1510,9 +1515,9 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
-	 * 
+	 *
 	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
-	 * 
+	 *
 	 * @param port Port to use
 	 * @return the thread associated with the worker.
 	 */
@@ -1522,9 +1527,9 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
-	 * 
+	 *
 	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
-	 * 
+	 *
 	 * @param port Port to use
 	 * @param sleep  The amount of time to wait for the worker startup. in Milliseconds
 	 * @return the thread associated with the worker.
@@ -1562,7 +1567,7 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Start java worker in same JVM.
-	 * 
+	 *
 	 * @param args the command line arguments
 	 * @return the thread associated with the process.s
 	 */
@@ -1730,7 +1735,7 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Compare results of the computation with the expected results where rows may be permuted.
-	 * 
+	 *
 	 * @param epsilon
 	 */
 	protected void compareResultsRowsOutOfOrder(double epsilon) {
@@ -1877,7 +1882,7 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Call this method from a subclass's setUp() method.
-	 * 
+	 *
 	 * @param isOutAndExpectedDeletionDisabled TRUE to disable code that deletes temporary files for this test case
 	 */
 	protected void setOutAndExpectedDeletionDisabled(boolean isOutAndExpectedDeletionDisabled) {

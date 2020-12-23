@@ -48,6 +48,8 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   private final static String TEST_DIR = "functions/federated/quaternary/";
   private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWeightedCrossEntropyTest.class.getSimpleName() + "/";
 
+  private final static String OUTPUT_NAME = "Z";
+
   private final static double TEST_TOLERANCE = 1e-9;
 
   private final static int blocksize = 1024;
@@ -68,8 +70,8 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   @Override
   public void setUp()
   {
-    addTestConfiguration(STD_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, STD_TEST_NAME, new String[]{"Z"}));
-    addTestConfiguration(EPS_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, EPS_TEST_NAME, new String[]{"Z"}));
+    addTestConfiguration(STD_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, STD_TEST_NAME, new String[]{OUTPUT_NAME}));
+    addTestConfiguration(EPS_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, EPS_TEST_NAME, new String[]{OUTPUT_NAME}));
   }
 
   @Parameterized.Parameters
@@ -129,8 +131,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   public void federatedWeightedCrossEntropy(ExecMode exec_mode, boolean epsilon_flag)
   {
     // store the previous spark config and platform config to restore it after the test
-    // and set the new execution mode
-    ExecMode platform_old = setExecMode(exec_mode);
+    ExecMode platform_old = getExecMode();
 
     getAndLoadTestConfiguration(test_name);
     String HOME = SCRIPT_DIR + TEST_DIR;
@@ -162,13 +163,17 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     getAndLoadTestConfiguration(test_name);
 
+    // we need the reference file to not be written to hdfs, so we get the correct format
+		setExecMode(ExecMode.SINGLE_NODE);
     // Run reference fml script with normal matrix
     fullDMLScriptName = HOME + test_name + "Reference.dml";
     programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
       "in_U=" + input("U"), "in_V=" + input("V"), "in_W=" + Double.toString(epsilon),
-      "out_Z=" + expected("Z")};
+      "out_Z=" + expected(OUTPUT_NAME)};
     LOG.debug(runTest(true, false, null, -1));
 
+    // set the execution mode for the actual test
+    setExecMode(exec_mode);
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + test_name + ".dml";
     programArgs = new String[] {"-stats", "-nvargs",
@@ -177,7 +182,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
       "in_U=" + input("U"),
       "in_V=" + input("V"),
       "in_W=" + Double.toString(epsilon),
-      "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output("Z")};
+      "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output(OUTPUT_NAME)};
     LOG.debug(runTest(true, false, null, -1));
 
     // compare the results via files

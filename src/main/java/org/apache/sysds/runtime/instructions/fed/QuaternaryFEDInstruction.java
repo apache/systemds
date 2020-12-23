@@ -77,9 +77,7 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
       return new QuaternaryWCeMMFEDInstruction(quaternary_operator, in1, in2, in3, in4, out, opcode, str);
     }
 
-    assert false: "Not implemented yet!\n";
-
-    return null;
+    throw new DMLRuntimeException("Unsupported opcode (" + opcode + ") for QuaternaryFEDInstruction.");
   }
 
   protected static void checkDataTypes(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4)

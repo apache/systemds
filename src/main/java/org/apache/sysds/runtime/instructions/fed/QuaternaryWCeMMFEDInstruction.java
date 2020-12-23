@@ -82,6 +82,8 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
       if(scalar_object_4 != null)
       {
         fed_req_init_3 = federation_mapping.broadcast(scalar_object_4);
+        // change the is_literal flag from true to false because when broadcasted it is no literal anymore
+        instString = instString.replace("true", "false");
         fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
           new CPOperand[]{input1, input2, input3, _input4},
           new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID(), fed_req_init_3.getID()});

@@ -81,7 +81,9 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     return Arrays.asList(new Object[][] {
       // {rows, cols, rank, epsilon, sparsity}
       {2000, 50, 10, 0.01, 0.01},
-      {2000, 50, 10, 0.01, 0.9}
+      {2000, 50, 10, 0.01, 0.9},
+      {2000, 50, 10, 6.45, 0.01},
+      {2000, 50, 10, 6.45, 0.9}
     });
   }
 
@@ -106,7 +108,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   }
 
   @Test
-  @Ignore
   public void federatedWeightedCrossEntropySingleNodeEpsilon()
   {
     test_name = EPS_TEST_NAME;
@@ -114,7 +115,6 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   }
 
   @Test
-  @Ignore
   public void federatedWeightedCrossEntropySparkEpsilon()
   {
     test_name = EPS_TEST_NAME;

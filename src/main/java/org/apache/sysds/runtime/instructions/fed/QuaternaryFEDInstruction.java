@@ -39,9 +39,6 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
   {
     super(type, operator, in1, in2, in3, out, opcode, instruction_str);
     _input4 = in4;
-    // TODO: assign the following variables when adding cache
-    // _cacheU = cacheU;
-    // _cacheV = cacheV;
   }
 
   public static QuaternaryFEDInstruction parseInstruction(String str)
@@ -66,7 +63,7 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 
     InstructionUtils.checkNumFields(parts, 7);
 
-    if(opcode.endsWith("wcemm"))
+    if(opcode.equals("wcemm"))
     {
       CPOperand in4 = new CPOperand(parts[4]);
       checkDataTypes(in1, in2, in3, in4);

@@ -130,7 +130,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
   public void federatedWeightedCrossEntropy(ExecMode exec_mode, boolean epsilon_flag)
   {
-    // store the previous spark config and platform config to restore it after the test
+    // store the previous platform config to restore it after the test
     ExecMode platform_old = getExecMode();
 
     getAndLoadTestConfiguration(test_name);
@@ -140,9 +140,8 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     int fed_cols = cols;
 
     // generate dataset
-    // one matrix handled by a single federated worker
+    // matrix handled by two federated workers
     double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 3);
-    // another matrix handled by a single federated worker
     double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 7);
 
     double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);

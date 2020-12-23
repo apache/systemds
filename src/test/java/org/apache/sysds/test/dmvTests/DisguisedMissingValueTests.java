@@ -112,6 +112,30 @@ public class DisguisedMissingValueTests {
         Assert.assertEquals((Integer)(2 + 1), value3);
         Integer value4 = l3_pattern_hist.get("d+sa+ta+");
         Assert.assertEquals((Integer)(2), value4);
+    }
+
+    @Test
+    public void TestLevel4Function() {
+        Map<String, Integer> pattern_hist = new HashedMap();
+        pattern_hist.put("d+", 15);
+        pattern_hist.put("d+td+", 30);
+
+        pattern_hist.put("a+d+", 20);
+        pattern_hist.put("a+d+td+", 35);
+
+        pattern_hist.put("d+a+", 25);
+        pattern_hist.put("d+td+a+", 40);
+
+        Map<String, Integer> l4_pattern_hist = UtilFunctions.Level4(pattern_hist);
+
+        Integer value1 = l4_pattern_hist.get("d+");
+        Assert.assertEquals((Integer)(15 + 30), value1);
+
+        Integer value2 = l4_pattern_hist.get("a+d+");
+        Assert.assertEquals((Integer)(20 + 35), value2);
+
+        Integer value5 = l4_pattern_hist.get("d+a+");
+        Assert.assertEquals((Integer)(40 + 25), value5);
 
     }
 
@@ -137,6 +161,27 @@ public class DisguisedMissingValueTests {
 
         s = UtilFunctions.getFrequencyOfEachConsecutiveChar("duu");
         Assert.assertEquals("d1u2", s);
+    }
+
+    @Test
+    public void TestFloatToDigitsFunction() {
+
+        String s = UtilFunctions.floatToDigits("d+td+");
+        Assert.assertEquals("d+", s);
+        s = UtilFunctions.floatToDigits("d+");
+        Assert.assertEquals("d+", s);
+        s = UtilFunctions.floatToDigits("td+");
+        Assert.assertEquals("d+", s);
+        s = UtilFunctions.floatToDigits("a+t");
+        Assert.assertEquals("a+t", s);
+        s = UtilFunctions.floatToDigits("a+d+td+");
+        Assert.assertEquals("a+d+", s);
+        s = UtilFunctions.floatToDigits("d+ta+");
+        Assert.assertEquals("d+ta+", s);
+        s = UtilFunctions.floatToDigits("d+td+a+");
+        Assert.assertEquals("d+a+", s);
+        s = UtilFunctions.floatToDigits("a+d+td+");
+        Assert.assertEquals("a+d+", s);
     }
 
 }

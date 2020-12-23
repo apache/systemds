@@ -2103,6 +2103,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		FrameMapFunction ret = getCompiledFunction(lambdaExpr);
 		if(ret == null) { // if it is executed on whole Frameblock with only the function to call "Utils.xxx()" wihtout lamda -> and parameters
 			System.out.println("## We now execute our modified UtilFunctions  hardcoded - because we are so cool");
+			// TODO: make it great again
 			return UtilFunctions.calculateAttributeTypes(this);
 		}
 

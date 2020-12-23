@@ -884,21 +884,21 @@ public class UtilFunctions {
 			// LEVEL 1 CHECK
 			Level1(col_Hist, patterns_list, patterns_hist);
 			System.out.println("------------------------");
-			Map<String, Double> dominant_patterns = calculatePatternsRatio(patterns_hist, numRows);
-			String dominant_pattern = findDominantPattern(dominant_patterns, numRows);
+			Map<String, Double> dominant_patterns_ratio = calculatePatternsRatio(patterns_hist, numRows);
+			String dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
 			if(dominant_pattern != null) // found one dominant pattern
 			{
-				System.out.println("we found dominant pattern at L2");
+				System.out.println("we found dominant pattern at L1");
 				// todo: we found the dominant pattern - do some crazy stuff
 				continue;
 			}
 
 			//-----------------------------------------------------------------------------------------------
 			// LEVEL 2 CHECK
-			dominant_patterns.clear();
+			dominant_patterns_ratio.clear();
 			Map<String, Integer> l2_pattern_hist = Level2(patterns_hist);
-			dominant_patterns = calculatePatternsRatio(l2_pattern_hist, numRows);
-			dominant_pattern = findDominantPattern(dominant_patterns, numRows);
+			dominant_patterns_ratio = calculatePatternsRatio(l2_pattern_hist, numRows);
+			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
 			if(dominant_pattern != null) { //found pattern
 				System.out.println("we found dominant pattern at L2");
 				// todo: we found the dominant pattern - do some crazy stuff
@@ -907,12 +907,24 @@ public class UtilFunctions {
 
 			//-----------------------------------------------------------------------------------------------
 			// LEVEL 3 CHECK
-			dominant_patterns.clear();
+			dominant_patterns_ratio.clear();
 			Map<String, Integer> l3_pattern_hist = Level3(l2_pattern_hist);
-			dominant_patterns = calculatePatternsRatio(l3_pattern_hist, numRows);
-			dominant_pattern = findDominantPattern(dominant_patterns, numRows);
+			dominant_patterns_ratio = calculatePatternsRatio(l3_pattern_hist, numRows);
+			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
 			if(dominant_pattern != null) { //found pattern
 				System.out.println("we found dominant pattern at L3");
+				// todo: we found the dominant pattern - do some crazy stuff
+				continue;
+			}
+
+			//-----------------------------------------------------------------------------------------------
+			// LEVEL 4 CHECK
+			dominant_patterns_ratio.clear();
+			Map<String, Integer> l4_pattern_hist = Level4(l3_pattern_hist);
+			dominant_patterns_ratio = calculatePatternsRatio(l4_pattern_hist, numRows);
+			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
+			if(dominant_pattern != null) { //found pattern
+				System.out.println("we found dominant pattern at L4");
 				// todo: we found the dominant pattern - do some crazy stuff
 				continue;
 			}
@@ -1032,18 +1044,66 @@ public class UtilFunctions {
 		while (it.hasNext()) {
 			Map.Entry pair = (Map.Entry) it.next();
 			String pattern = (String) pair.getKey();
-			Integer nr_of_occurences = (Integer)pair.getValue();
+			Integer nr_of_occurrences = (Integer)pair.getValue();
 
 			String new_pattern = removeUpperLowerCase(pattern);
 
 			if(!new_pattern_hist.containsKey(new_pattern)) {
-				new_pattern_hist.put(new_pattern, nr_of_occurences);
+				new_pattern_hist.put(new_pattern, nr_of_occurrences);
 			}
 			else {
-				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurences);
+				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurrences);
 			}
 		}
 		return new_pattern_hist;
+	}
+
+	public static Map<String, Integer> Level4(Map<String, Integer> old_pattern_hist) {
+		Map<String, Integer> new_pattern_hist = new HashedMap();
+		Iterator it = old_pattern_hist.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			String pattern = (String) pair.getKey();
+			Integer nr_of_occurrences = (Integer)pair.getValue();
+
+			String new_pattern = floatToDigits(pattern);
+
+			if(!new_pattern_hist.containsKey(new_pattern)) {
+				new_pattern_hist.put(new_pattern, nr_of_occurrences);
+			}
+			else {
+				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurrences);
+			}
+		}
+		return new_pattern_hist;
+	}
+
+	public static String floatToDigits(String pattern) {
+		char[] chars = pattern.toCharArray();
+		StringBuilder tmp = new StringBuilder();
+		boolean currently_digit = false;
+		for (int i = 0; i < chars.length; i++) {
+			char ch = chars[i];
+			if(ch == DIGIT && !currently_digit) {
+				currently_digit = true;
+				tmp.append(ch);
+			}
+			else if(ch == DIGIT && currently_digit)
+				i = i + 1;
+			else if(ch == DOT && currently_digit){
+				if(i+1 < chars.length && chars[i+1] != DIGIT) // digit before and after dot - concat it
+					tmp.append(ch);
+			}
+			else if(ch == DOT && i == 0) // dot at first place should be ignored and make a digit
+				continue;
+			else if(ch == ALPHA) {
+				currently_digit = false;
+				tmp.append(ch);
+			}
+			else
+				tmp.append(ch);
+		}
+		return tmp.toString();
 	}
 
 	public static String removeUpperLowerCase(String pattern) {

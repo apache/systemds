@@ -848,11 +848,12 @@ public class UtilFunctions {
 	public static final char ALPHA = 'a';
 	public static final char SPACE = 's';
 	public static final char DOT = 't';
-	public static final char Hash = 'h';
-	public static final char PUNCTUATION = 'p';
-	public static final char ENCLOSURES = 'e';
+	public static final char OTHER = 'y';
 	public static final char ARBITRARY_LEN = '+';
-	public static final char NOT_IMPLEMENTED = '#';
+	public static final String DISGUISED_VAL = "NA";
+	public static final int LEVEL1 = 1;
+	public static final int LEVEL2 = 2;
+	public static final int LEVEL3 = 3;
 
 	//TODO[David]: Better name - (ExecuteSynPat(FramBlock frame) ?
 	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
@@ -863,7 +864,6 @@ public class UtilFunctions {
 		ArrayList<Map<String, Integer>> table_Hist = new ArrayList(numCols); // list of every column with values and their frequency
 
 		int idx;
-
 		for (idx = 0; idx < numCols; idx++) {
 			Object c = frame.getColumnData(idx);
 			String[] column = (String[]) c;
@@ -876,20 +876,19 @@ public class UtilFunctions {
 		}
 
 		// Syntactic Pattern Discovery
+		idx = -1;
 		for (Map<String, Integer> col_Hist : table_Hist) {
+			idx++;
 			Map<String, Integer> patterns_hist = new HashMap(); // patterns cumulated
 			List<String> patterns_list = new ArrayList<>(); // maybe expand to list of list later.. all patterns we discoverd
-
 			//-----------------------------------------------------------------------------------------------
 			// LEVEL 1 CHECK
 			Level1(col_Hist, patterns_list, patterns_hist);
-			System.out.println("------------------------");
 			Map<String, Double> dominant_patterns = calculatePatternsRatio(patterns_hist, numRows);
 			String dominant_pattern = findDominantPattern(dominant_patterns, numRows);
 			if(dominant_pattern != null) // found one dominant pattern
 			{
-				System.out.println("we found dominant pattern at L2");
-				// todo: we found the dominant pattern - do some crazy stuff
+				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL1);
 				continue;
 			}
 
@@ -900,8 +899,7 @@ public class UtilFunctions {
 			dominant_patterns = calculatePatternsRatio(l2_pattern_hist, numRows);
 			dominant_pattern = findDominantPattern(dominant_patterns, numRows);
 			if(dominant_pattern != null) { //found pattern
-				System.out.println("we found dominant pattern at L2");
-				// todo: we found the dominant pattern - do some crazy stuff
+				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL2);
 				continue;
 			}
 
@@ -912,23 +910,19 @@ public class UtilFunctions {
 			dominant_patterns = calculatePatternsRatio(l3_pattern_hist, numRows);
 			dominant_pattern = findDominantPattern(dominant_patterns, numRows);
 			if(dominant_pattern != null) { //found pattern
-				System.out.println("we found dominant pattern at L3");
-				// todo: we found the dominant pattern - do some crazy stuff
+				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL3);
 				continue;
 			}
 
-			System.out.println("he have not found a dominant pattern yet");
 
+			System.out.println("he have not found a dominant pattern yet");
 		}
 
 
-		// TODO: Remove..
-		String[][] output = new String[frame.getNumRows()][frame.getNumColumns()];
-		return new FrameBlock(UtilFunctions.nCopies(frame.getNumColumns(), ValueType.STRING), output);
+		return frame;
 	}
 
 	public static Map<String, Double> calculatePatternsRatio(Map<String, Integer> patterns_hist, int nr_entries) {
-
 		Map<String, Double> patterns_ratio_map = new HashedMap();
 		Iterator it = patterns_hist.entrySet().iterator(); // iterate over all patterns
 		while(it.hasNext()) {
@@ -998,7 +992,6 @@ public class UtilFunctions {
 			String encodedValue = processData(value);
 			addDistinctValueOrIncrementCounter(patterns_hist, encodedValue, nr_of_occurences);
 			patterns_list.add(encodedValue);
-			System.out.println("Value:" + encodedValue);
 		}
 	}
 
@@ -1097,9 +1090,7 @@ public class UtilFunctions {
 		if (Character.isLowerCase(c)) return LOWER;
 		if (Character.isUpperCase(c)) return UPPER;
 		if (Character.isSpaceChar(c)) return SPACE;
-		// TODO: Expand mappings..
-
-		return NOT_IMPLEMENTED;
+		return OTHER;
 	}
 
 	public static String getFrequencyOfEachConsecutiveChar(String s) {
@@ -1111,19 +1102,38 @@ public class UtilFunctions {
 				count++;
 			}
 			retval.append(s.charAt(i));
-			retval.append(Integer.toString(count));
+			retval.append(count);
 		}
 		return retval.toString();
 	}
 
-	public static void printMap(Map mp) {
-		Iterator it = mp.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			System.out.println(pair.getKey() + " = " + pair.getValue());
+	private static void detectDisguisedValues(String dom_pattern, Object col, int col_idx, FrameBlock frameBlock, int level)
+	{
+		int row_idx = -1;
+		String pattern = "";
+		String[] column = (String[]) col;
+		for (String attr : column) {
+			switch (level){
+				case LEVEL1:
+					pattern = processData(attr);
+					break;
+				case LEVEL2:
+					pattern = processData(attr);
+					pattern = removeNumbers(pattern);
+					break;
+				case LEVEL3:
+					pattern = processData(attr);
+					pattern = removeNumbers(pattern);
+					pattern = removeUpperLowerCase(pattern);
+					break;
+				default:
+					System.out.println("Could not find suitable level");
+			}
+			row_idx++;
+			if(pattern.equals(dom_pattern)) continue;
+			System.out.println("[LEVEL"+ level +"] Disguised value: " + frameBlock.get(row_idx, col_idx) + " (c=" + col_idx + ",r=" + row_idx + ")");
+			frameBlock.set(row_idx, col_idx, DISGUISED_VAL);
 		}
 	}
 	// -----------------------------------------------------------------------------------------------------------------
-
-
 }

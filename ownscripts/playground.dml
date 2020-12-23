@@ -1,5 +1,5 @@
 path = "ownscripts/data/tiny.csv"
-X = read(path, data_type = "frame", format = "csv", header = FALSE)
+X = read(path, data_type = "frame", format = "csv", header = TRUE)
 print("RAW FRAME:")
 print("%s", toString(X))
 

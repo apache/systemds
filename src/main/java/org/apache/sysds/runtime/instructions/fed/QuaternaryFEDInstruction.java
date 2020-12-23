@@ -19,8 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -31,9 +33,6 @@ import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 {
   protected CPOperand _input4 = null;
-  // TODO: use this variables when adding cache
-  // protected boolean _cacheU = false;
-  // protected boolean _cacheV = false;
 
   protected QuaternaryFEDInstruction(FEDInstruction.FEDType type, Operator operator,
     CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str)
@@ -47,32 +46,25 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 
   public static QuaternaryFEDInstruction parseInstruction(String str)
   {
+    if(str.startsWith(ExecType.SPARK.name()))
+    {
+      // rewrite the spark instruction to a cp instruction
+      str = str.replace(ExecType.SPARK.name(), ExecType.CP.name());
+      str = str.replace("mapwcemm", "wcemm");
+      // adding value of k (=1) for CP instructions
+      str += Lop.OPERAND_DELIMITOR + "1";
+    }
+
     String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
     String opcode = parts[0];
 
-    // TODO: can we assume the same opcodes as for quaternarySP?
-    // if(!InstructionUtils.isDistQuaternaryOpcode(opcode))
-    // {
-    //   throw new DMLRuntimeException("QuaternaryFED.parseInstruction(): Unknown opcode " + opcode);
-    // }
-
-    // int add_input_4 = (opcode.endsWith("wcemm")) ? 1 : 0;
 
     CPOperand in1 = new CPOperand(parts[1]);
     CPOperand in2 = new CPOperand(parts[2]);
     CPOperand in3 = new CPOperand(parts[3]);
-    // CPOperand out = new CPOperand(parts[4] + add_input_4);
     CPOperand out = new CPOperand(parts[5]);
 
-    // InstructionUtils.checkNumFields(parts, 5 + add_input_4);
     InstructionUtils.checkNumFields(parts, 7);
-
-    // TODO: can the output data type be checked here?
-
-    // TODO: parse Operator here
-    // Operator operator =
-
-    // TODO: add cacheU and cacheV and other paramters in instruction?
 
     if(opcode.endsWith("wcemm"))
     {
@@ -92,9 +84,7 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 
   protected static void checkDataTypes(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4)
   {
-    // TODO: check input4 as soon as included
-    // if(in1.getDataType() != DataType.MATRIX || in2.getDataType() != DataType.MATRIX || in3.getDataType() != DataType.MATRIX || in4.getDataType() != DataType.MATRIX)
-    if(in1.getDataType() != DataType.MATRIX || in2.getDataType() != DataType.MATRIX || in3.getDataType() != DataType.MATRIX)
+    if(in1.getDataType() != DataType.MATRIX || in2.getDataType() != DataType.MATRIX || in3.getDataType() != DataType.MATRIX || !(in4.getDataType() == DataType.SCALAR || in4.getDataType() == DataType.MATRIX))
     {
       throw new DMLRuntimeException("Federated quaternary operations supported with matrices only yet");
     }

@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -43,7 +42,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
   // input1 ... federated X
   // input2 ... U
   // input3 ... V
-  // _input4 ... W
+  // _input4 ... W (=epsilon)
   protected QuaternaryWCeMMFEDInstruction(Operator operator,
     CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str)
   {

@@ -29,7 +29,6 @@ import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
-import org.apache.sysds.runtime.lineage.LineageCacheEviction;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.TestConfiguration;
@@ -42,7 +41,7 @@ import org.junit.Test;
 public class CacheEvictionTest extends LineageBase {
 
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "CacheEviction1";
+	protected static final String TEST_NAME1 = "CacheEviction2";
 
 	protected String TEST_CLASS_DIR = TEST_DIR + CacheEvictionTest.class.getSimpleName() + "/";
 	
@@ -65,17 +64,16 @@ public class CacheEvictionTest extends LineageBase {
 			LOG.debug("------------ BEGIN " + testname + "------------");
 			
 			/* This test verifies the order of evicted items w.r.t. the specified
-			 * cache policies. This test enables individual components of the 
-			 * scoring function by masking the other components, and compare the
-			 * order of evicted entries for different policies. HYBRID policy is 
-			 * not considered for this test as it is hard to anticipate the reuse
-			 * statistics if all the components are unmasked. 
+			 * cache policies, using a mini-batch wise autoencoder inspired
+			 * test script. An epoch-wise reusable scale and shift is part of
+			 * every batch processing. LRU fails to reuse the scale calls as
+			 * it tends to evicts scale and shift intermediates due to higher
+			 * number of post scale intermediates, where cost & size successfully
+			 * reuses all the reusable operations.
 			 * 
-			 * TODO: Test disk spilling, which will need some tunings in eviction
-			 * logic; otherwise the automated test might take significantly 
-			 * longer as eviction logic tends to just delete entries with little
-			 * computation and estimated I/O time. Note that disk spilling is 
-			 * already happening as part of other tests (e.g. MultiLogReg).
+			 * TODO: add DagHeight. All three policies perform as expected in my
+			 * laptop, but for some reasons, LRU performs better in github actions
+			 * - that leads to failed comparison between dagheight and LRU.
 			 */
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
@@ -84,8 +82,7 @@ public class CacheEvictionTest extends LineageBase {
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
 			Lineage.resetInternalState();
-			long cacheSize = LineageCacheEviction.getCacheLimit();
-			LineageCacheConfig.setReusableOpcodes("exp", "+", "round");
+			LineageCacheConfig.setSpill(false); //disable spilling
 			
 			// LRU based eviction
 			List<String> proArgs = new ArrayList<>();
@@ -94,14 +91,12 @@ public class CacheEvictionTest extends LineageBase {
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
 			proArgs.add("policy_lru");
 			proArgs.add("-args");
-			proArgs.add(String.valueOf(cacheSize));
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromOutputDir("R");
-			long expCount_lru = Statistics.getCPHeavyHitterCount("exp");
 			long hitCount_lru = LineageCacheStatistics.getInstHits();
-			long evictedCount_lru = LineageCacheStatistics.getMemDeletes();
+			long colmeanCount_lru = Statistics.getCPHeavyHitterCount("uacmean");
 			
 			// costnsize scheme (computationTime/Size)
 			proArgs.clear();
@@ -110,35 +105,28 @@ public class CacheEvictionTest extends LineageBase {
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
 			proArgs.add("policy_costnsize");
 			proArgs.add("-args");
-			proArgs.add(String.valueOf(cacheSize));
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromOutputDir("R");
-			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
-			long hitCount_wt = LineageCacheStatistics.getInstHits();
-			long evictedCount_wt = LineageCacheStatistics.getMemDeletes();
-			LineageCacheConfig.resetReusableOpcodes();
+			long hitCount_cs = LineageCacheStatistics.getInstHits();
+			long colmeanCount_cs = Statistics.getCPHeavyHitterCount("uacmean");
 			
 			// Compare results
 			Lineage.setLinReuseNone();
 			TestUtils.compareMatrices(R_lru, R_costnsize, 1e-6, "LRU", "costnsize");
-			
-			// Compare reused instructions
-			Assert.assertTrue(expCount_lru >= expCount_wt);
-			// Compare counts of evicted items
-			// LRU tends to evict more entries to recover equal amount of memory
-			// Note: changed to equals to fix flaky tests where both are not evicted at all
-			// (e.g., due to high execution time as sometimes observed through github actions)
-			Assert.assertTrue(("Violated expected evictions: "+evictedCount_lru+" >= "+evictedCount_wt),
-				evictedCount_lru >= evictedCount_wt);
 			// Compare cache hits
-			Assert.assertTrue(hitCount_lru < hitCount_wt);
+			Assert.assertTrue("Violated cache hit count: "+hitCount_lru+" < "+hitCount_cs, 
+					hitCount_lru < hitCount_cs);
+			// Compare reused instruction (uacmean) counts
+			Assert.assertTrue("Violated uacmean count: "+colmeanCount_cs+" < "+colmeanCount_lru, 
+					colmeanCount_cs < colmeanCount_lru);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
+			LineageCacheConfig.setSpill(true);
 			Recompiler.reinitRecompiler();
 		}
 	}

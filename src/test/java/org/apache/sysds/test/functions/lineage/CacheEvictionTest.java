@@ -123,29 +123,9 @@ public class CacheEvictionTest extends LineageBase {
 			//LineageCacheConfig.resetReusableOpcodes();
 			long colmeanCount_cs = Statistics.getCPHeavyHitterCount("uacmean");
 			
-			// dagheight scheme
-			proArgs.clear();
-			proArgs.add("-stats");
-			proArgs.add("-lineage");
-			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
-			proArgs.add("policy_dagheight");
-			proArgs.add("-args");
-			//proArgs.add(String.valueOf(cacheSize));
-			proArgs.add(output("R"));
-			programArgs = proArgs.toArray(new String[proArgs.size()]);
-			Lineage.resetInternalState();
-			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> R_dagheight = readDMLMatrixFromOutputDir("R");
-			//long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
-			long hitCount_dh = LineageCacheStatistics.getInstHits();
-			//long evictedCount_wt = LineageCacheStatistics.getMemDeletes();
-			//LineageCacheConfig.resetReusableOpcodes();
-			long colmeanCount_dh = Statistics.getCPHeavyHitterCount("uacmean");
-			
 			// Compare results
 			Lineage.setLinReuseNone();
 			TestUtils.compareMatrices(R_lru, R_costnsize, 1e-6, "LRU", "costnsize");
-			TestUtils.compareMatrices(R_lru, R_dagheight, 1e-6, "LRU", "dagheight");
 			
 			// Compare reused instructions
 			//Assert.assertTrue(expCount_lru >= expCount_wt);
@@ -156,12 +136,11 @@ public class CacheEvictionTest extends LineageBase {
 			//Assert.assertTrue(("Violated expected evictions: "+evictedCount_lru+" >= "+evictedCount_wt),
 			//	evictedCount_lru >= evictedCount_wt);
 			// Compare cache hits
-			System.out.println("hit counts: "+hitCount_lru+" "+hitCount_dh+" "+hitCount_cs);
-			System.out.println("colmeans count: "+ colmeanCount_lru + " " + colmeanCount_dh+" "+colmeanCount_cs);
-			Assert.assertTrue(hitCount_lru < hitCount_cs);
+			Assert.assertTrue("Violated cache hit count: "+hitCount_lru+" < "+hitCount_cs, 
+					hitCount_lru < hitCount_cs);
 			//Assert.assertTrue(hitCount_lru < hitCount_dh);
-			Assert.assertTrue(colmeanCount_cs < colmeanCount_lru);
-			Assert.assertTrue(colmeanCount_dh < colmeanCount_lru);
+			Assert.assertTrue("Violated uacmean count: "+colmeanCount_cs+" < "+colmeanCount_lru, 
+					colmeanCount_cs < colmeanCount_lru);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,77 +47,91 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 	public static QuaternaryCPInstruction parseInstruction(String inst) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String opcode = parts[0];
-		
-		if( opcode.equalsIgnoreCase("wsloss") || opcode.equalsIgnoreCase("wdivmm") || opcode.equalsIgnoreCase("wcemm") ) 
+
+		if( opcode.equalsIgnoreCase("wsloss") || opcode.equalsIgnoreCase("wdivmm") || opcode.equalsIgnoreCase("wcemm") )
 		{
 			InstructionUtils.checkNumFields ( parts, 7 );
-			
+
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand in4 = new CPOperand(parts[4]);
 			CPOperand out = new CPOperand(parts[5]);
 			int k = Integer.parseInt(parts[7]);
-			
+
 			if( opcode.equalsIgnoreCase("wsloss") )
-				return new QuaternaryCPInstruction(new QuaternaryOperator(WeightsType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);	
+				return new QuaternaryCPInstruction(new QuaternaryOperator(WeightsType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);
 			else if( opcode.equalsIgnoreCase("wdivmm") )
-				return new QuaternaryCPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);				
-			else if( opcode.equalsIgnoreCase("wcemm") ) 		
+				return new QuaternaryCPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);
+			else if( opcode.equalsIgnoreCase("wcemm") )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);
 		}
 		else if( opcode.equalsIgnoreCase("wsigmoid") )
 		{
 			InstructionUtils.checkNumFields ( parts, 6 );
-			
+
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
 			int k = Integer.parseInt(parts[6]);
-			
+
 			if( opcode.equalsIgnoreCase("wsigmoid") )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
 		}
 		else if( opcode.equalsIgnoreCase("wumm") )
 		{
 			InstructionUtils.checkNumFields ( parts, 7 );
-			
+
 			String uopcode = parts[1];
 			CPOperand in1 = new CPOperand(parts[2]);
 			CPOperand in2 = new CPOperand(parts[3]);
 			CPOperand in3 = new CPOperand(parts[4]);
 			CPOperand out = new CPOperand(parts[5]);
 			int k = Integer.parseInt(parts[7]);
-			
+
 			return new QuaternaryCPInstruction(new QuaternaryOperator(WUMMType.valueOf(parts[6]),uopcode), in1, in2, in3, null, out, k, opcode, inst);
 		}
-		
+
 		throw new DMLRuntimeException("Unexpected opcode in QuaternaryCPInstruction: " + inst);
 	}
 
 	public CPOperand getInput4() {
 		return input4;
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		QuaternaryOperator qop = (QuaternaryOperator) _optr;
-		
+
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName());
 		MatrixBlock matBlock4 = null;
 		if( qop.hasFourInputs() ) {
 			if (input4.getDataType() == DataType.SCALAR)
-				matBlock4 = new MatrixBlock(ec.getScalarInput(input4).getDoubleValue());
+      {
+        if(ec.containsVariable(input4))
+        {
+          // NOTE: this is a workaround for calling it from a federated Worker
+          //  when broadcasting a scalar object, the name which contains the literal gets assigned to the federated data id
+          // TODO: remove this as soon as possible (can cause problems if input4 is a literal with the same value as a variable id)
+          matBlock4 = new MatrixBlock(ec.getScalarInput(input4.getName(), input4.getValueType(), false).getDoubleValue());
+        }
+        else
+        {
+  				matBlock4 = new MatrixBlock(ec.getScalarInput(input4).getDoubleValue());
+        }
+      }
 			else
+      {
 				matBlock4 = ec.getMatrixInput(input4.getName());
+      }
 		}
-		
+
 		//core execute
 		MatrixBlock out = matBlock1.quaternaryOperations(qop, matBlock2, matBlock3, matBlock4, new MatrixBlock(), _numThreads);
-		
+
 		//release inputs and output
 		ec.releaseMatrixInput(input1.getName(), input2.getName(), input3.getName());
 		if( qop.wtype1 != null || qop.wtype4 != null ) { //wsloss/wcemm
@@ -135,5 +149,5 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 				}
 			ec.setMatrixOutput(output.getName(), out);
 		}
-	}	
+	}
 }

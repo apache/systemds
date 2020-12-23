@@ -854,6 +854,8 @@ public class UtilFunctions {
 	public static final int LEVEL1 = 1;
 	public static final int LEVEL2 = 2;
 	public static final int LEVEL3 = 3;
+	public static final int LEVEL4 = 4;
+	public static final int LEVEL5 = 5;
 
 	//TODO[David]: Better name - (ExecuteSynPat(FramBlock frame) ?
 	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
@@ -923,8 +925,18 @@ public class UtilFunctions {
 			dominant_patterns_ratio = calculatePatternsRatio(l4_pattern_hist, numRows);
 			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
 			if(dominant_pattern != null) { //found pattern
-				System.out.println("we found dominant pattern at L4");
-				// todo: we found the dominant pattern - do some crazy stuff
+				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL4);
+				continue;
+			}
+
+			//-----------------------------------------------------------------------------------------------
+			// LEVEL 5 CHECK
+			dominant_patterns_ratio.clear();
+			Map<String, Integer> l5_pattern_hist = Level5(l4_pattern_hist);
+			dominant_patterns_ratio = calculatePatternsRatio(l5_pattern_hist, numRows);
+			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
+			if(dominant_pattern != null) { //found pattern
+				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL5);
 				continue;
 			}
 
@@ -1072,30 +1084,70 @@ public class UtilFunctions {
 		return new_pattern_hist;
 	}
 
+
+	public static Map<String, Integer> Level5(Map<String, Integer> old_pattern_hist) {
+		Map<String, Integer> new_pattern_hist = new HashedMap();
+		Iterator it = old_pattern_hist.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			String pattern = (String) pair.getKey();
+			Integer nr_of_occurrences = (Integer)pair.getValue();
+
+			String new_pattern = removeSpaces(pattern);
+
+			if(!new_pattern_hist.containsKey(new_pattern)) {
+				new_pattern_hist.put(new_pattern, nr_of_occurrences);
+			}
+			else {
+				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurrences);
+			}
+		}
+		return new_pattern_hist;
+	}
+
+
+	public static String removeSpaces(String pattern) {
+		char[] chars = pattern.toCharArray();
+		StringBuilder tmp = new StringBuilder();
+		boolean currently_alphabetic = false;
+		for (char ch : chars) {
+			if(ch == ALPHA && !currently_alphabetic) {
+				currently_alphabetic = true;
+				tmp.append(ch);
+			}
+			else if(currently_alphabetic && (ch == ALPHA || ch == SPACE))
+				continue;
+			else if(ch != SPACE && ch != ARBITRARY_LEN) {
+				currently_alphabetic = false;
+				tmp.append(ch);
+			}
+			else {
+				if(tmp.length() > 0 && tmp.charAt(tmp.length() - 1) != ARBITRARY_LEN)
+					tmp.append(ch);
+			}
+		}
+		return tmp.toString();
+	}
+
 	public static String floatToDigits(String pattern) {
 		char[] chars = pattern.toCharArray();
 		StringBuilder tmp = new StringBuilder();
 		boolean currently_digit = false;
-		for (int i = 0; i < chars.length; i++) {
-			char ch = chars[i];
+		for (char ch : chars) {
 			if(ch == DIGIT && !currently_digit) {
 				currently_digit = true;
 				tmp.append(ch);
 			}
-			else if(ch == DIGIT && currently_digit)
-				i = i + 1;
-			else if(ch == DOT && currently_digit){
-				if(i+1 < chars.length && chars[i+1] != DIGIT) // digit before and after dot - concat it
-					tmp.append(ch);
-			}
-			else if(ch == DOT && i == 0) // dot at first place should be ignored and make a digit
+			else if(currently_digit && (ch == DIGIT || ch == DOT))
 				continue;
-			else if(ch == ALPHA) {
+			else if(ch != DOT && ch != ARBITRARY_LEN) {
 				currently_digit = false;
 				tmp.append(ch);
 			}
-			else
-				tmp.append(ch);
+			else {
+				if(tmp.length() > 0 && tmp.charAt(tmp.length() - 1) != ARBITRARY_LEN)
+					tmp.append(ch);
+			}
 		}
 		return tmp.toString();
 	}
@@ -1135,6 +1187,7 @@ public class UtilFunctions {
 		return tmp.toString();
 	}
 
+	// TODO: bitte rename :D
 	public static String processData(String input) {
 		char[] chars = input.toCharArray();
 
@@ -1151,6 +1204,7 @@ public class UtilFunctions {
 		if (Character.isLowerCase(c)) return LOWER;
 		if (Character.isUpperCase(c)) return UPPER;
 		if (Character.isSpaceChar(c)) return SPACE;
+		if (c == '.') return DOT;
 		return OTHER;
 	}
 
@@ -1186,6 +1240,19 @@ public class UtilFunctions {
 					pattern = processData(attr);
 					pattern = removeNumbers(pattern);
 					pattern = removeUpperLowerCase(pattern);
+					break;
+				case LEVEL4:
+					pattern = processData(attr);
+					pattern = removeNumbers(pattern);
+					pattern = removeUpperLowerCase(pattern);
+					pattern = floatToDigits(pattern);
+					break;
+				case LEVEL5:
+					pattern = processData(attr);
+					pattern = removeNumbers(pattern);
+					pattern = removeUpperLowerCase(pattern);
+					pattern = floatToDigits(pattern);
+					pattern = removeSpaces(pattern);
 					break;
 				default:
 					System.out.println("Could not find suitable level");

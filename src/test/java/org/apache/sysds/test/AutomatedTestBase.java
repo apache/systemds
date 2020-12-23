@@ -216,20 +216,34 @@ public abstract class AutomatedTestBase {
 	private static boolean outputBuffering = false;
 
 	static {
+		// Load configuration from setting file build by maven.
+		// If maven is not used as test setup, (as default in intellij for instance) default values are used.
+		// If one wants to use custom configurations, setup the IDE to build using maven, and set execution flags
+		// accordingly.
+		// Settings available can be found in the properties inside pom.xml.
+		// The custom configuration is required to run tests using GPU backend.
 		java.io.InputStream inputStream = Thread.currentThread().getContextClassLoader()
 			.getResourceAsStream("my.properties");
 		java.util.Properties properties = new Properties();
-		try {
-			properties.load(inputStream);
+		if(inputStream != null){
+			try {
+				properties.load(inputStream);
+			}
+			catch(IOException e) {
+				e.printStackTrace();
+			}
+			outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
+			boolean gpu = Boolean.parseBoolean(properties.getProperty("enableGPU"));
+			TEST_GPU = TEST_GPU || gpu;
+			boolean stats = Boolean.parseBoolean(properties.getProperty("enableStats"));
+			VERBOSE_STATS = VERBOSE_STATS || stats;
 		}
-		catch(IOException e) {
-			e.printStackTrace();
+		else{
+			// If no properties file exists.
+			outputBuffering = false;
+			TEST_GPU = false;
+			VERBOSE_STATS = false;
 		}
-		outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
-		boolean gpu = Boolean.parseBoolean(properties.getProperty("enableGPU"));
-		TEST_GPU = TEST_GPU || gpu;
-		boolean stats = Boolean.parseBoolean(properties.getProperty("enableStats"));
-		VERBOSE_STATS = VERBOSE_STATS || stats;
 	}
 
 	// Timestamp before test start.

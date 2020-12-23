@@ -96,21 +96,27 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
     federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE);
   }
 
-  // TODO: Not implemented yet
   @Test
-  @Ignore
   public void federatedWeightedCrossEntropySpark()
   {
     test_name = STD_TEST_NAME;
     federatedWeightedCrossEntropy(ExecMode.SPARK);
-    assert false: "Not implemented yet!";
   }
 
   @Test
+  @Ignore
   public void federatedWeightedCrossEntropySingleNodeEpsilon()
   {
     test_name = EPS_TEST_NAME;
     federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE, true);
+  }
+
+  @Test
+  @Ignore
+  public void federatedWeightedCrossEntropySparkEpsilon()
+  {
+    test_name = EPS_TEST_NAME;
+    federatedWeightedCrossEntropy(ExecMode.SPARK, true);
   }
 
 // -----------------------------------------------------------------------------

@@ -29,7 +29,6 @@ import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
-import org.apache.sysds.runtime.lineage.LineageCacheEviction;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.TestConfiguration;
@@ -42,7 +41,7 @@ import org.junit.Test;
 public class CacheEvictionTest extends LineageBase {
 
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "CacheEviction1";
+	protected static final String TEST_NAME1 = "CacheEviction2";
 
 	protected String TEST_CLASS_DIR = TEST_DIR + CacheEvictionTest.class.getSimpleName() + "/";
 	
@@ -84,8 +83,9 @@ public class CacheEvictionTest extends LineageBase {
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
 			Lineage.resetInternalState();
-			long cacheSize = LineageCacheEviction.getCacheLimit();
-			LineageCacheConfig.setReusableOpcodes("exp", "+", "round");
+			//long cacheSize = LineageCacheEviction.getCacheLimit();
+			//LineageCacheConfig.setReusableOpcodes("exp", "+", "round");
+			LineageCacheConfig.setSpill(false);
 			
 			// LRU based eviction
 			List<String> proArgs = new ArrayList<>();
@@ -94,14 +94,15 @@ public class CacheEvictionTest extends LineageBase {
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
 			proArgs.add("policy_lru");
 			proArgs.add("-args");
-			proArgs.add(String.valueOf(cacheSize));
+			//proArgs.add(String.valueOf(cacheSize));
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromOutputDir("R");
-			long expCount_lru = Statistics.getCPHeavyHitterCount("exp");
+			//long expCount_lru = Statistics.getCPHeavyHitterCount("exp");
 			long hitCount_lru = LineageCacheStatistics.getInstHits();
-			long evictedCount_lru = LineageCacheStatistics.getMemDeletes();
+			//long evictedCount_lru = LineageCacheStatistics.getMemDeletes();
+			long colmeanCount_lru = Statistics.getCPHeavyHitterCount("uacmean");
 			
 			// costnsize scheme (computationTime/Size)
 			proArgs.clear();
@@ -110,35 +111,60 @@ public class CacheEvictionTest extends LineageBase {
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
 			proArgs.add("policy_costnsize");
 			proArgs.add("-args");
-			proArgs.add(String.valueOf(cacheSize));
+			//proArgs.add(String.valueOf(cacheSize));
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromOutputDir("R");
-			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
-			long hitCount_wt = LineageCacheStatistics.getInstHits();
-			long evictedCount_wt = LineageCacheStatistics.getMemDeletes();
-			LineageCacheConfig.resetReusableOpcodes();
+			//long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
+			long hitCount_cs = LineageCacheStatistics.getInstHits();
+			//long evictedCount_wt = LineageCacheStatistics.getMemDeletes();
+			//LineageCacheConfig.resetReusableOpcodes();
+			long colmeanCount_cs = Statistics.getCPHeavyHitterCount("uacmean");
+			
+			// dagheight scheme
+			proArgs.clear();
+			proArgs.add("-stats");
+			proArgs.add("-lineage");
+			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
+			proArgs.add("policy_dagheight");
+			proArgs.add("-args");
+			//proArgs.add(String.valueOf(cacheSize));
+			proArgs.add(output("R"));
+			programArgs = proArgs.toArray(new String[proArgs.size()]);
+			Lineage.resetInternalState();
+			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			HashMap<MatrixValue.CellIndex, Double> R_dagheight = readDMLMatrixFromOutputDir("R");
+			//long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
+			long hitCount_dh = LineageCacheStatistics.getInstHits();
+			//long evictedCount_wt = LineageCacheStatistics.getMemDeletes();
+			//LineageCacheConfig.resetReusableOpcodes();
+			long colmeanCount_dh = Statistics.getCPHeavyHitterCount("uacmean");
 			
 			// Compare results
 			Lineage.setLinReuseNone();
 			TestUtils.compareMatrices(R_lru, R_costnsize, 1e-6, "LRU", "costnsize");
+			TestUtils.compareMatrices(R_lru, R_dagheight, 1e-6, "LRU", "dagheight");
 			
 			// Compare reused instructions
-			Assert.assertTrue(expCount_lru >= expCount_wt);
+			//Assert.assertTrue(expCount_lru >= expCount_wt);
 			// Compare counts of evicted items
 			// LRU tends to evict more entries to recover equal amount of memory
 			// Note: changed to equals to fix flaky tests where both are not evicted at all
 			// (e.g., due to high execution time as sometimes observed through github actions)
-			Assert.assertTrue(("Violated expected evictions: "+evictedCount_lru+" >= "+evictedCount_wt),
-				evictedCount_lru >= evictedCount_wt);
+			//Assert.assertTrue(("Violated expected evictions: "+evictedCount_lru+" >= "+evictedCount_wt),
+			//	evictedCount_lru >= evictedCount_wt);
 			// Compare cache hits
-			Assert.assertTrue(hitCount_lru < hitCount_wt);
+			Assert.assertTrue(hitCount_lru < hitCount_cs);
+			Assert.assertTrue(hitCount_lru < hitCount_dh);
+			Assert.assertTrue(colmeanCount_cs < colmeanCount_lru);
+			Assert.assertTrue(colmeanCount_dh < colmeanCount_lru);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
+			LineageCacheConfig.setSpill(true);
 			Recompiler.reinitRecompiler();
 		}
 	}

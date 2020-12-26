@@ -25,8 +25,8 @@
 # ----------------------------------------------------------------------------
 # NAME     TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# X        Double    ---      The input Matrix to do KMeans on.
-# C        Double    ---      The input Centroids to map X onto.
+# X        Matrix    ---      The input Matrix to do KMeans on.
+# C        Matrix    ---      The input Centroids to map X onto.
 #
 # RETURN VALUES
 # ----------------------------------------------------------------------------

@@ -26,20 +26,19 @@
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# X               Double  ---         matrix X of feature vectors
-# Y               Double  ---         matrix Y of class labels have to be a single column
+# X               Matrix  ---         matrix X of feature vectors
+# Y               Matrix  ---         matrix Y of class labels have to be a single column
 # intercept       Boolean False       No Intercept ( If set to TRUE then a constant bias column is added to X)
-# epsilon         Double  0.001       Procedure terminates early if the reduction in objective function 
-#                      value is less than epsilon (tolerance) times the initial objective function value.
+# epsilon         Double  0.001       Procedure terminates early if the reduction in objective function value is less than epsilon (tolerance) times the initial objective function value.
 # lambda          Double  1.0         Regularization parameter (lambda) for L2 regularization
-# maxiterations   Int     100         Maximum number of conjugate gradient iterations
-# verbose         Boolean False       Set to true if one wants print statements updating on loss.
-# column_id       Int     -1          The column Id used if one wants to add a ID to the print statement, 
-#                                     Specificly usefull when L2SVM is used in MSVM.
+# maxIterations   Int     100         Maximum number of conjugate gradient iterations
+# maxii           Int     20          -
+# verbose         Boolean FALSE       Set to true if one wants print statements updating on loss.
+# columnId        Int     -1          The column Id used if one wants to add a ID to the print statement, Specificly usefull when L2SVM is used in MSVM.
 # ---------------------------------------------------------------------------------------------
  
 
-#Output(s)
+# RETURN VALUES
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------

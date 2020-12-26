@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,11 +17,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
-import subprocess
-subprocess.run("python3 pre_setup.py",shell=True, check=True)
-subprocess.run("python3 generator/generator.py",shell=True, check=True)
-subprocess.run("python3 setup.py sdist bdist_wheel",shell=True, check=True)
-# post_setup.py moves the files from dist to target which we probably don't want for uploading them to pypi
-#subprocess.run(["python3", "post_setup.py"]).check_returncode()
+from generator.generator import (
+    PythonAPIFileGenerator,
+    PythonAPIFunctionGenerator,
+    PythonAPIDocumentationGenerator
+)
+from generator.parser import FunctionParser
+
+__all__ = [
+    PythonAPIFileGenerator,
+    PythonAPIFunctionGenerator,
+    PythonAPIDocumentationGenerator,
+    FunctionParser
+]

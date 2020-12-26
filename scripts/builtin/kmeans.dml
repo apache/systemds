@@ -25,8 +25,8 @@
 # ----------------------------------------------------------------------------
 # NAME                              TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# X                                 Double    ---      The input Matrix to do KMeans on.
-# k                                 Int       ---      Number of centroids
+# X                                 Matrix    ---      The input Matrix to do KMeans on.
+# k                                 Int       10      Number of centroids
 # runs                              Int       10       Number of runs (with different initial centroids)
 # max_iter                          Int       1000     Maximum number of iterations per run
 # eps                               Double    0.000001 Tolerance (epsilon) for WCSS change ratio

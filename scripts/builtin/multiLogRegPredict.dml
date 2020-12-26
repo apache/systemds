@@ -20,18 +20,19 @@
 #-------------------------------------------------------------
 
 
-#THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
+# THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
+# Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
+# NAME          TYPE        DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
-# X     Double  ---     Data Matrix X
-# B     Double  ---     Regression parameters betas
-# Y     Double  ---     Response vector Y
-# ---------------------------------------------------------------------------------------------
-# OUTPUT: Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
-# OUTPUT:
+# X             Matrix      ---     Data Matrix X
+# B             Matrix      ---     Regression parameters betas
+# Y             Matrix      ---     Response vector Y
+# verbose       Boolean     FALSE   /
+#
+# RETURN VALUES
 # ---------------------------------------------------------------------------------------------
 # NAME               TYPE   DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------

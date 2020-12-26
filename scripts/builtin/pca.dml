@@ -20,13 +20,17 @@
 #-------------------------------------------------------------
 
 # Principal Component Analysis (PCA) for dimensionality reduction
+# 
+# INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME   TYPE    DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
 # X      Matrix  ---      Input feature matrix
-# K      Int     ---      Number of reduced dimensions (i.e., columns)
+# K      Int     2      Number of reduced dimensions (i.e., columns)
 # Center Boolean TRUE     Indicates whether or not to center the feature matrix
 # Scale  Boolean TRUE     Indicates whether or not to scale the feature matrix
+
+# RETURN VALUES
 # ---------------------------------------------------------------------------------------------
 # Xout   Matrix  ---      Output feature matrix with K columns
 # Mout   Matrix  ---      Output dominant eigen vectors (can be used for projections)

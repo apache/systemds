@@ -68,11 +68,6 @@ class TestPCA(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             pca(features)
 
-    def test_invalid_input_2(self):
-        features = Matrix(self.sds, np.array([1]))
-        with self.assertRaises(ValueError) as context:
-            pca(features, K=-1)
-
     def generate_matrices_for_pca(self, dims: int, seed: int = 1234):
         np.random.seed(seed)
 

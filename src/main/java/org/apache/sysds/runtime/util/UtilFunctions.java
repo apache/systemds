@@ -851,11 +851,8 @@ public class UtilFunctions {
 	public static final char OTHER = 'y';
 	public static final char ARBITRARY_LEN = '+';
 	public static final String DISGUISED_VAL = "NA";
-	public static final int LEVEL1 = 1;
-	public static final int LEVEL2 = 2;
-	public static final int LEVEL3 = 3;
-	public static final int LEVEL4 = 4;
-	public static final int LEVEL5 = 5;
+	public enum LEVEL_ENUM { LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5}
+
 
 	//TODO[David]: Better name - (ExecuteSynPat(FramBlock frame) ?
 	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
@@ -881,68 +878,25 @@ public class UtilFunctions {
 		idx = -1;
 		for (Map<String, Integer> col_Hist : table_Hist) {
 			idx++;
-			Map<String, Integer> patterns_hist = new HashMap(); // patterns cumulated
-			List<String> patterns_list = new ArrayList<>(); // maybe expand to list of list later.. all patterns we discoverd
-			//-----------------------------------------------------------------------------------------------
-			// LEVEL 1 CHECK
-			Level1(col_Hist, patterns_list, patterns_hist);
-			System.out.println("------------------------");
-			Map<String, Double> dominant_patterns_ratio = calculatePatternsRatio(patterns_hist, numRows);
-			String dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
-			if(dominant_pattern != null) // found one dominant pattern
-			{
-				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL1);
-				continue;
+			Map<String, Double> dominant_patterns_ratio = new HashedMap();
+			Map<String, Integer> prev_pattern_hist = col_Hist;
+			int current_level = 0;
+			for(LEVEL_ENUM level : LEVEL_ENUM.values()) {
+				dominant_patterns_ratio.clear();
+				Map<String, Integer> current_pattern_hist = LevelsExecutor(prev_pattern_hist, level);
+				dominant_patterns_ratio = calculatePatternsRatio(current_pattern_hist, numRows);
+				String dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
+				if(dominant_pattern != null) { //found pattern
+					detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, level);
+					break;
+				}
+				current_level++;
+				prev_pattern_hist = current_pattern_hist;
 			}
 
-			//-----------------------------------------------------------------------------------------------
-			// LEVEL 2 CHECK
-			dominant_patterns_ratio.clear();
-			Map<String, Integer> l2_pattern_hist = Level2(patterns_hist);
-			dominant_patterns_ratio = calculatePatternsRatio(l2_pattern_hist, numRows);
-			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
-			if(dominant_pattern != null) { //found pattern
-				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL2);
-				continue;
-			}
-
-			//-----------------------------------------------------------------------------------------------
-			// LEVEL 3 CHECK
-			dominant_patterns_ratio.clear();
-			Map<String, Integer> l3_pattern_hist = Level3(l2_pattern_hist);
-			dominant_patterns_ratio = calculatePatternsRatio(l3_pattern_hist, numRows);
-			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
-			if(dominant_pattern != null) { //found pattern
-				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL3);
-				continue;
-			}
-
-
-			//-----------------------------------------------------------------------------------------------
-			// LEVEL 4 CHECK
-			dominant_patterns_ratio.clear();
-			Map<String, Integer> l4_pattern_hist = Level4(l3_pattern_hist);
-			dominant_patterns_ratio = calculatePatternsRatio(l4_pattern_hist, numRows);
-			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
-			if(dominant_pattern != null) { //found pattern
-				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL4);
-				continue;
-			}
-
-			//-----------------------------------------------------------------------------------------------
-			// LEVEL 5 CHECK
-			dominant_patterns_ratio.clear();
-			Map<String, Integer> l5_pattern_hist = Level5(l4_pattern_hist);
-			dominant_patterns_ratio = calculatePatternsRatio(l5_pattern_hist, numRows);
-			dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
-			if(dominant_pattern != null) { //found pattern
-				detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, LEVEL5);
-				continue;
-			}
-
-			System.out.println("he have not found a dominant pattern yet");
+			if(current_level == LEVEL_ENUM.values().length)
+				System.out.println("he have not found a dominant pattern for column " + idx);
 		}
-
 
 		return frame;
 	}
@@ -983,7 +937,6 @@ public class UtilFunctions {
 		return null;
 	}
 
-
 	private static void addDistinctValueOrIncrementCounter(ArrayList<Map<String, Integer>> maps, String key, Integer idx) {
 		if (maps.size() == idx) {
 			HashMap<String, Integer> m = new HashMap<>();
@@ -1007,21 +960,7 @@ public class UtilFunctions {
 		}
 	}
 
-	private static void Level1(Map<String, Integer> colHist, List<String> patterns_list, Map<String, Integer> patterns_hist) {
-		Iterator it = colHist.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			String value = (String) pair.getKey();
-			Integer nr_of_occurences = (Integer)pair.getValue();
-
-			String encodedValue = processData(value);
-			addDistinctValueOrIncrementCounter(patterns_hist, encodedValue, nr_of_occurences);
-			patterns_list.add(encodedValue);
-		}
-	}
-
-	// Level2 ignores the number of occurences. It replaces all numbers with '+'. So u3d2 -> u+d+
-	public static Map<String, Integer> Level2(Map<String, Integer> old_pattern_hist) {
+	public static Map<String, Integer> LevelsExecutor(Map<String, Integer> old_pattern_hist, LEVEL_ENUM level) {
 		Map<String, Integer> new_pattern_hist = new HashedMap();
 		Iterator it = old_pattern_hist.entrySet().iterator();
 		while (it.hasNext()) {
@@ -1029,118 +968,45 @@ public class UtilFunctions {
 			String pattern = (String) pair.getKey();
 			Integer nr_of_occurences = (Integer)pair.getValue();
 
-			String new_pattern = removeNumbers(pattern);
-
-			if(!new_pattern_hist.containsKey(new_pattern)) {
-				new_pattern_hist.put(new_pattern, nr_of_occurences);
+			String new_pattern;
+			switch(level) {
+				case LEVEL1:
+					new_pattern = encodeRawString(pattern);
+					break;
+				case LEVEL2: // ignores the number of occurrences. It replaces all numbers with '+'. So u3d2 -> u+d+
+					new_pattern = removeNumbers(pattern);
+					break;
+				case LEVEL3:// ignores upper and lowercase characters. It replaces all 'u' and 'l' with 'a' = Alphabet
+					new_pattern = removeUpperLowerCase(pattern);
+					break;
+				case LEVEL4: // changes floats to digits.
+					new_pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
+					break;
+				case LEVEL5: // remove spaces between strings
+					new_pattern = removeInnerCharacterInPattern(pattern, ALPHA, SPACE);
+					break;
+				default:
+					new_pattern = "";
+					break;
 			}
-			else {
-				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurences);
-			}
-
+			addDistinctValueOrIncrementCounter(new_pattern_hist, new_pattern, nr_of_occurences);
 		}
 
 		return new_pattern_hist;
 	}
 
-	// Level3 ignores upper and lowercase characters. It replaces all 'u' and 'l' with 'a' = Alphabet
-	public static Map<String, Integer> Level3(Map<String, Integer> old_pattern_hist) {
-		Map<String, Integer> new_pattern_hist = new HashedMap();
-		Iterator it = old_pattern_hist.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			String pattern = (String) pair.getKey();
-			Integer nr_of_occurrences = (Integer)pair.getValue();
-
-			String new_pattern = removeUpperLowerCase(pattern);
-
-			if(!new_pattern_hist.containsKey(new_pattern)) {
-				new_pattern_hist.put(new_pattern, nr_of_occurrences);
-			}
-			else {
-				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurrences);
-			}
-		}
-		return new_pattern_hist;
-	}
-
-	public static Map<String, Integer> Level4(Map<String, Integer> old_pattern_hist) {
-		Map<String, Integer> new_pattern_hist = new HashedMap();
-		Iterator it = old_pattern_hist.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			String pattern = (String) pair.getKey();
-			Integer nr_of_occurrences = (Integer)pair.getValue();
-
-			String new_pattern = floatToDigits(pattern);
-
-			if(!new_pattern_hist.containsKey(new_pattern)) {
-				new_pattern_hist.put(new_pattern, nr_of_occurrences);
-			}
-			else {
-				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurrences);
-			}
-		}
-		return new_pattern_hist;
-	}
-
-
-	public static Map<String, Integer> Level5(Map<String, Integer> old_pattern_hist) {
-		Map<String, Integer> new_pattern_hist = new HashedMap();
-		Iterator it = old_pattern_hist.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			String pattern = (String) pair.getKey();
-			Integer nr_of_occurrences = (Integer)pair.getValue();
-
-			String new_pattern = removeSpaces(pattern);
-
-			if(!new_pattern_hist.containsKey(new_pattern)) {
-				new_pattern_hist.put(new_pattern, nr_of_occurrences);
-			}
-			else {
-				new_pattern_hist.compute(new_pattern, (k, v) -> v + nr_of_occurrences);
-			}
-		}
-		return new_pattern_hist;
-	}
-
-
-	public static String removeSpaces(String pattern) {
-		char[] chars = pattern.toCharArray();
-		StringBuilder tmp = new StringBuilder();
-		boolean currently_alphabetic = false;
-		for (char ch : chars) {
-			if(ch == ALPHA && !currently_alphabetic) {
-				currently_alphabetic = true;
-				tmp.append(ch);
-			}
-			else if(currently_alphabetic && (ch == ALPHA || ch == SPACE))
-				continue;
-			else if(ch != SPACE && ch != ARBITRARY_LEN) {
-				currently_alphabetic = false;
-				tmp.append(ch);
-			}
-			else {
-				if(tmp.length() > 0 && tmp.charAt(tmp.length() - 1) != ARBITRARY_LEN)
-					tmp.append(ch);
-			}
-		}
-		return tmp.toString();
-	}
-
-	public static String floatToDigits(String pattern) {
+	public static String removeInnerCharacterInPattern(String pattern, char outter_char, char inner_char) {
 		char[] chars = pattern.toCharArray();
 		StringBuilder tmp = new StringBuilder();
 		boolean currently_digit = false;
 		for (char ch : chars) {
-			if(ch == DIGIT && !currently_digit) {
+			if(ch == outter_char && !currently_digit) {
 				currently_digit = true;
 				tmp.append(ch);
 			}
-			else if(currently_digit && (ch == DIGIT || ch == DOT))
+			else if(currently_digit && (ch == outter_char || ch == inner_char))
 				continue;
-			else if(ch != DOT && ch != ARBITRARY_LEN) {
+			else if(ch != inner_char && ch != ARBITRARY_LEN) {
 				currently_digit = false;
 				tmp.append(ch);
 			}
@@ -1151,6 +1017,7 @@ public class UtilFunctions {
 		}
 		return tmp.toString();
 	}
+
 
 	public static String removeUpperLowerCase(String pattern) {
 		char[] chars = pattern.toCharArray();
@@ -1187,15 +1054,13 @@ public class UtilFunctions {
 		return tmp.toString();
 	}
 
-	// TODO: bitte rename :D
-	public static String processData(String input) {
+	public static String encodeRawString(String input) {
 		char[] chars = input.toCharArray();
 
 		StringBuilder tmp = new StringBuilder();
 		for (char ch : chars) {
 			tmp.append(getCharClass(ch));
 		}
-
 		return getFrequencyOfEachConsecutiveChar(tmp.toString());
 	}
 
@@ -1222,7 +1087,7 @@ public class UtilFunctions {
 		return retval.toString();
 	}
 
-	private static void detectDisguisedValues(String dom_pattern, Object col, int col_idx, FrameBlock frameBlock, int level)
+	private static void detectDisguisedValues(String dom_pattern, Object col, int col_idx, FrameBlock frameBlock, LEVEL_ENUM level)
 	{
 		int row_idx = -1;
 		String pattern = "";
@@ -1230,36 +1095,36 @@ public class UtilFunctions {
 		for (String attr : column) {
 			switch (level){
 				case LEVEL1:
-					pattern = processData(attr);
+					pattern = encodeRawString(attr);
 					break;
 				case LEVEL2:
-					pattern = processData(attr);
+					pattern = encodeRawString(attr);
 					pattern = removeNumbers(pattern);
 					break;
 				case LEVEL3:
-					pattern = processData(attr);
+					pattern = encodeRawString(attr);
 					pattern = removeNumbers(pattern);
 					pattern = removeUpperLowerCase(pattern);
 					break;
 				case LEVEL4:
-					pattern = processData(attr);
+					pattern = encodeRawString(attr);
 					pattern = removeNumbers(pattern);
 					pattern = removeUpperLowerCase(pattern);
-					pattern = floatToDigits(pattern);
+					pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
 					break;
 				case LEVEL5:
-					pattern = processData(attr);
+					pattern = encodeRawString(attr);
 					pattern = removeNumbers(pattern);
 					pattern = removeUpperLowerCase(pattern);
-					pattern = floatToDigits(pattern);
-					pattern = removeSpaces(pattern);
+					pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
+					pattern = removeInnerCharacterInPattern(pattern, ALPHA, SPACE);
 					break;
 				default:
 					System.out.println("Could not find suitable level");
 			}
 			row_idx++;
 			if(pattern.equals(dom_pattern)) continue;
-			System.out.println("[LEVEL"+ level +"] Disguised value: " + frameBlock.get(row_idx, col_idx) + " (c=" + col_idx + ",r=" + row_idx + ")");
+			System.out.println("[" + level +"] Disguised value: " + frameBlock.get(row_idx, col_idx) + " (c=" + col_idx + ",r=" + row_idx + ")");
 			frameBlock.set(row_idx, col_idx, DISGUISED_VAL);
 		}
 	}

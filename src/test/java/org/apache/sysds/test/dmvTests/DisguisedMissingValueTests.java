@@ -78,7 +78,32 @@ public class DisguisedMissingValueTests {
     @Test
     public void TestLevel1Function() {
 
-        // TODO write tests
+        Map<String, Integer> values = new HashedMap();
+        values.put("kerschbaumer", 15);
+        values.put("edelsbrunner", 3);
+        values.put("27", 2);
+        values.put("L.44", 4);
+        values.put("3.7", 971);
+        values.put("456.David", 77);
+        values.put("Patrick Lovric", 64);
+
+        Map<String, Integer> l1_pattern_hist = UtilFunctions.LevelsExecutor(values, UtilFunctions.LEVEL_ENUM.LEVEL1);
+
+        Integer value1 = l1_pattern_hist.get("l12");
+        Assert.assertEquals((Integer)(15 + 3), value1);
+        Integer value2 = l1_pattern_hist.get("d2");
+        Assert.assertEquals((Integer)(2), value2);
+        Integer value3 = l1_pattern_hist.get("u1t1d2");
+        Assert.assertEquals((Integer)(4), value3);
+
+        Integer value4 = l1_pattern_hist.get("d1t1d1");
+        Assert.assertEquals((Integer)(971), value4);
+        Integer value5 = l1_pattern_hist.get("d3t1u1l4");
+        Assert.assertEquals((Integer)(77), value5);
+        Integer value6 = l1_pattern_hist.get("u1l6s1u1l5");
+        Assert.assertEquals((Integer)(64), value6);
+
+
     }
 
     @Test
@@ -92,7 +117,7 @@ public class DisguisedMissingValueTests {
         pattern_hist.put("d1l1", 3);
         pattern_hist.put("d1l2", 2);
 
-        Map<String, Integer> l2_pattern_hist = UtilFunctions.Level2(pattern_hist);
+        Map<String, Integer> l2_pattern_hist = UtilFunctions.LevelsExecutor(pattern_hist, UtilFunctions.LEVEL_ENUM.LEVEL2);
 
         Integer value1 = l2_pattern_hist.get("d+");
         Assert.assertEquals((Integer)(15 + 971), value1);
@@ -112,7 +137,7 @@ public class DisguisedMissingValueTests {
         pattern_hist.put("d+u+l+", 1);
         pattern_hist.put("d+su+l+tu+", 2);
 
-        Map<String, Integer> l3_pattern_hist = UtilFunctions.Level3(pattern_hist);
+        Map<String, Integer> l3_pattern_hist = UtilFunctions.LevelsExecutor(pattern_hist, UtilFunctions.LEVEL_ENUM.LEVEL3);
 
         Integer value1 = l3_pattern_hist.get("d+");
         Assert.assertEquals((Integer)(15 + 971), value1);
@@ -136,7 +161,8 @@ public class DisguisedMissingValueTests {
         pattern_hist.put("d+a+", 25);
         pattern_hist.put("d+td+a+", 40);
 
-        Map<String, Integer> l4_pattern_hist = UtilFunctions.Level4(pattern_hist);
+        Map<String, Integer> l4_pattern_hist = UtilFunctions.LevelsExecutor(pattern_hist, UtilFunctions.LEVEL_ENUM.LEVEL4);
+
 
         Integer value1 = l4_pattern_hist.get("d+");
         Assert.assertEquals((Integer)(15 + 30), value1);
@@ -164,7 +190,7 @@ public class DisguisedMissingValueTests {
         pattern_hist.put("sd+a+", 40);
         pattern_hist.put("d+a+s", 76);
 
-        Map<String, Integer> l5_pattern_hist = UtilFunctions.Level5(pattern_hist);
+        Map<String, Integer> l5_pattern_hist = UtilFunctions.LevelsExecutor(pattern_hist, UtilFunctions.LEVEL_ENUM.LEVEL5);
 
         Integer value1 = l5_pattern_hist.get("d+");
         Assert.assertEquals((Integer)(15 + 30 + 22), value1);
@@ -184,12 +210,17 @@ public class DisguisedMissingValueTests {
         String[] testarray1 = new String[]{"8010","?","8456","4565","89655", "86542", "45624"}; // detect ?
         String[] testarray2 = new String[]{"David K","Valentin E","Patrick L","45","DK", "VE", "PL"}; // detect 45
         String[] testarray3 = new String[]{"3.42","45","0.456",".45","4589.245", "97", "ka"}; // detect ka
+        String[] testarray4 = new String[]{"9999","123","158","146","158", "174", "201"}; // detect 9999
+        String[] testarray5 = new String[]{"Kerschbaumer","123","258d","80105","Valentin-E-Weg 23c", ".035", "f.ggot"}; // detect nothing
+
 
         FrameBlock f = new FrameBlock();
         f.appendColumn(testarray0.clone());
         f.appendColumn(testarray1.clone());
         f.appendColumn(testarray2.clone());
         f.appendColumn(testarray3.clone());
+        f.appendColumn(testarray4.clone());
+        f.appendColumn(testarray5.clone());
 
         FrameBlock new_frame = UtilFunctions.calculateAttributeTypes(f);
 
@@ -232,6 +263,24 @@ public class DisguisedMissingValueTests {
             else
                 Assert.assertEquals(testarray3[i], column[i]);
         }
+
+        // testarray4
+        c = new_frame.getColumnData(4);
+        column = (String[]) c;
+        for(int i = 0; i < testarray4.length; i++) {
+            if(testarray4[i].equals("9999"))
+                Assert.assertEquals("NA", column[i]);
+            else
+                Assert.assertEquals(testarray4[i], column[i]);
+        }
+
+        // testarray5 detect nothing
+        c = new_frame.getColumnData(5);
+        column = (String[]) c;
+        for(int i = 0; i < testarray5.length; i++) {
+                Assert.assertEquals(testarray5[i], column[i]);
+        }
+
     }
 
     //-----------------------------------------------------------------------------------------------
@@ -240,19 +289,19 @@ public class DisguisedMissingValueTests {
     @Test
     public void TestRemoveSpacesFunktion() {
 
-        String res = UtilFunctions.removeSpaces("a+s+");
+        String res = UtilFunctions.removeInnerCharacterInPattern("a+s+", UtilFunctions.ALPHA, UtilFunctions.SPACE);
         Assert.assertEquals("a+", res);
-        res = UtilFunctions.removeSpaces("d+s+");
+        res = UtilFunctions.removeInnerCharacterInPattern("d+s+", UtilFunctions.ALPHA, UtilFunctions.SPACE);
         Assert.assertEquals("d+", res);
-        res = UtilFunctions.removeSpaces("s+d+");
+        res = UtilFunctions.removeInnerCharacterInPattern("s+d+", UtilFunctions.ALPHA, UtilFunctions.SPACE);
         Assert.assertEquals("d+", res);
-        res = UtilFunctions.removeSpaces("s+a+");
+        res = UtilFunctions.removeInnerCharacterInPattern("s+a+", UtilFunctions.ALPHA, UtilFunctions.SPACE);
         Assert.assertEquals("a+", res);
-        res = UtilFunctions.removeSpaces("a+s+a+");
+        res = UtilFunctions.removeInnerCharacterInPattern("a+s+a+", UtilFunctions.ALPHA, UtilFunctions.SPACE);
         Assert.assertEquals("a+", res);
-        res = UtilFunctions.removeSpaces("d+s+a+");
+        res = UtilFunctions.removeInnerCharacterInPattern("d+s+a+", UtilFunctions.ALPHA, UtilFunctions.SPACE);
         Assert.assertEquals("d+a+", res);
-        res = UtilFunctions.removeSpaces("a+s+d+");
+        res = UtilFunctions.removeInnerCharacterInPattern("a+s+d+", UtilFunctions.ALPHA, UtilFunctions.SPACE);
         Assert.assertEquals("a+d+", res);
 
     }
@@ -284,21 +333,21 @@ public class DisguisedMissingValueTests {
     @Test
     public void TestFloatToDigitsFunction() {
 
-        String s = UtilFunctions.floatToDigits("d+t+d+");
+        String s = UtilFunctions.removeInnerCharacterInPattern("d+t+d+", UtilFunctions.DIGIT, UtilFunctions.DOT);
         Assert.assertEquals("d+", s);
-        s = UtilFunctions.floatToDigits("d+");
+        s = UtilFunctions.removeInnerCharacterInPattern("d+", UtilFunctions.DIGIT, UtilFunctions.DOT);
         Assert.assertEquals("d+", s);
-        s = UtilFunctions.floatToDigits("t+d+");
+        s = UtilFunctions.removeInnerCharacterInPattern("t+d+", UtilFunctions.DIGIT, UtilFunctions.DOT);
         Assert.assertEquals("d+", s);
-        s = UtilFunctions.floatToDigits("a+t+");
+        s = UtilFunctions.removeInnerCharacterInPattern("a+t+", UtilFunctions.DIGIT, UtilFunctions.DOT);
         Assert.assertEquals("a+", s);
-        s = UtilFunctions.floatToDigits("a+d+t+d+");
+        s = UtilFunctions.removeInnerCharacterInPattern("a+d+t+d+", UtilFunctions.DIGIT, UtilFunctions.DOT);
         Assert.assertEquals("a+d+", s);
-        s = UtilFunctions.floatToDigits("d+t+a+");
+        s = UtilFunctions.removeInnerCharacterInPattern("d+t+a+", UtilFunctions.DIGIT, UtilFunctions.DOT);
         Assert.assertEquals("d+a+", s);
-        s = UtilFunctions.floatToDigits("d+t+d+a+");
+        s = UtilFunctions.removeInnerCharacterInPattern("d+t+d+a+", UtilFunctions.DIGIT, UtilFunctions.DOT);
         Assert.assertEquals("d+a+", s);
-        s = UtilFunctions.floatToDigits("a+d+t+d+");
+        s = UtilFunctions.removeInnerCharacterInPattern("a+d+t+d+", UtilFunctions.DIGIT, UtilFunctions.DOT);
         Assert.assertEquals("a+d+", s);
     }
 

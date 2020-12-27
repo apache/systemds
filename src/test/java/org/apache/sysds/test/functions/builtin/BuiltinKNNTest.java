@@ -59,8 +59,6 @@ public class BuiltinKNNTest extends AutomatedTestBase
   @Parameterized.Parameter(4)
   public boolean continuous;
   @Parameterized.Parameter(5)
-  public String fmt;
-  @Parameterized.Parameter(6)
   public double sparsity;
 
   @Override
@@ -73,9 +71,9 @@ public class BuiltinKNNTest extends AutomatedTestBase
   public static Collection<Object[]> data()
   {
     return Arrays.asList(new Object[][] {
-      // {rows, cols, query_rows, query_cols, continuous, fmt, sparsity}
-      {1000, 500, 35, 450, true, "csv", 0.1},
-      {1000, 500, 35, 450, true, "csv", 0.9}
+      // {rows, cols, query_rows, query_cols, continuous, sparsity}
+      {1000, 500, 35, 450, true, 0.1},
+      {1000, 500, 35, 450, true, 0.9}
     });
   }
 
@@ -97,16 +95,17 @@ public class BuiltinKNNTest extends AutomatedTestBase
     double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
 
     writeInputMatrixWithMTD("X", X, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
-    writeInputMatrixWithMTD("T", T, false, new MatrixCharacteristics(query_rows, query_cols, blocksize, rows * cols));
 
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
+    // TODO: add args
     programArgs = new String[] {"-exec", "-args",
-      "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"), "in_format=" + fmt,
+      "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"),
       "out_B=" + output(OUTPUT_NAME)};
 
     fullRScriptName = HOME + TEST_NAME + ".R";
+    // TODO: add args
     rCmd = "Rscript" + " " + fullRScriptName + " " +
-      input("X") + " " + input("T") + " " + (continuous ? "1" : "0") + " " + fmt + " " +
+      input("X") + " " + input("T") + " " + (continuous ? "1" : "0") + " " +
       expectedDir();
 
     runTest(true, false, null, -1);

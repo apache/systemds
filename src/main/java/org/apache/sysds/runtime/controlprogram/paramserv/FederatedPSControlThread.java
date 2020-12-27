@@ -104,11 +104,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		long dataSize = _features.getNumRows();
 
 		// calculate scaled batch size if balancing via batch size.
-		// Floor or Ceil: In some cases either not use some data or cycle a few batches
+		// In some cases there will be some cycling
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.SCALE_BATCH) {
-			double batchSizeTmp = (double) dataSize / _numBatchesPerEpoch;
-			_batchSize = (int) ((Math.floor(batchSizeTmp) > 0) ? Math.floor(batchSizeTmp) : Math.ceil(batchSizeTmp));
-			_cycleStartAt0 = true;
+			_batchSize = (int) Math.ceil((float) dataSize / _numBatchesPerEpoch);
 		}
 
 		// Calculate possible batches with batch size
@@ -309,10 +307,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		if(_weighing && _weighingFactor != 1) {
 			gradients.getData().parallelStream().forEach((matrix) -> {
 				MatrixObject matrixObject = (MatrixObject) matrix;
-				matrixObject.acquireModify(
-						matrixObject.acquireReadAndRelease().scalarOperations(
-								new RightScalarOperator(Multiply.getMultiplyFnObject(), _weighingFactor), new MatrixBlock())
-				);
+				MatrixBlock input = matrixObject.acquireReadAndRelease().scalarOperations(
+						new RightScalarOperator(Multiply.getMultiplyFnObject(), _weighingFactor), new MatrixBlock());
+				matrixObject.acquireModify(input);
 				matrixObject.release();
 			});
 		}

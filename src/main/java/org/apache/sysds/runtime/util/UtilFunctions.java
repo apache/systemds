@@ -854,7 +854,6 @@ public class UtilFunctions {
 	public enum LEVEL_ENUM { LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5}
 
 
-	//TODO[David]: Better name - (ExecuteSynPat(FramBlock frame) ?
 	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
 
 		// Preparation

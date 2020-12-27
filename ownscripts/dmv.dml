@@ -1,10 +1,5 @@
-path = "ownscripts/data/tiny.csv"
+path = "ownscripts/data/323-1.csv"
 X = read(path, data_type = "frame", format = "csv", header = TRUE)
-print("RAW FRAME:")
-print("%s", toString(X))
-
 # any function call without '->' goes to our UtilFunctions.calculateAttributeTypes() - hardcoded in der map funktion (FrameBlock 2135)
 Z = map(X, "UtilFunctions.calculateAttributeTypes()")
-
-print("MODIFIED FRAME:")
-print("%s", toString(Z))
+write(Z, "ownscripts/results/output.csv", format="csv", header=TRUE, sep=";");

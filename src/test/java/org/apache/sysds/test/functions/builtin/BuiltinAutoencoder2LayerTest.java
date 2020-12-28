@@ -28,11 +28,11 @@ import org.junit.Test;
 import java.util.HashMap;
 
 
-public class BuiltinAutoencoder_2layerTest extends AutomatedTestBase
+public class BuiltinAutoencoder2LayerTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "autoencoder_2layer";
 	private final static String TEST_DIR = "functions/builtin/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinAutoencoder_2layerTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinAutoencoder2LayerTest.class.getSimpleName() + "/";
 
 	private final static int rows = 1058;
 	private final static int cols = 784;
@@ -142,19 +142,19 @@ public class BuiltinAutoencoder_2layerTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		String fullObj = obj ? "TRUE" : "FALSE";
 		programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"),
-				"H1="+numHidden1, "H2="+numHidden2, "EPOCH="+maxEpochs, "BATCH="+batchSize,
-				"STEP="+step, "DECAY="+decay, "MOMENTUM="+momentum, "OBJ="+fullObj,
-				"W1_rand="+input("W1_rand"),"W2_rand="+input("W2_rand"),
-				"W3_rand="+input("W3_rand"), "W4_rand="+input("W4_rand"),
-				"order_rand="+input("order_rand"),
-				"W1_out="+output("W1_out"), "b1_out="+output("b1_out"),
-				"W2_out="+output("W2_out"), "b2_out="+output("b2_out"),
-				"W3_out="+output("W3_out"), "b3_out="+output("b3_out"),
-				"W4_out="+output("W4_out"), "b4_out="+output("b4_out"),
-				"hidden_out="+output("hidden_out")};
+			"H1="+numHidden1, "H2="+numHidden2, "EPOCH="+maxEpochs, "BATCH="+batchSize,
+			"STEP="+step, "DECAY="+decay, "MOMENTUM="+momentum, "OBJ="+fullObj,
+			"W1_rand="+input("W1_rand"),"W2_rand="+input("W2_rand"),
+			"W3_rand="+input("W3_rand"), "W4_rand="+input("W4_rand"),
+			"order_rand="+input("order_rand"),
+			"W1_out="+output("W1_out"), "b1_out="+output("b1_out"),
+			"W2_out="+output("W2_out"), "b2_out="+output("b2_out"),
+			"W3_out="+output("W3_out"), "b3_out="+output("b3_out"),
+			"W4_out="+output("W4_out"), "b4_out="+output("b4_out"),
+			"hidden_out="+output("hidden_out")};
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = getRCmd(inputDir(), String.valueOf(numHidden1), String.valueOf(numHidden2), String.valueOf(maxEpochs),
-				String.valueOf(batchSize), String.valueOf(momentum), String.valueOf(step), String.valueOf(decay), fullObj, expectedDir());
+			String.valueOf(batchSize), String.valueOf(momentum), String.valueOf(step), String.valueOf(decay), fullObj, expectedDir());
 
 		double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 27);
 		writeInputMatrixWithMTD("X", X, true);

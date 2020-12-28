@@ -63,20 +63,15 @@
 # HIDDEN   Matrix[Double]   ---      Matrix storing the hidden (2nd) layer representation if needed
 # ---------------------------------------------------------------------------------------------
 #
-# INVOCATION:
-# -f autoencoder_2layer.dml --nvargs X=<input file> H1=500 H2=2 EPOCH=10
-#
 
 
 m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer num_hidden2, Integer max_epochs, 
-Boolean full_obj = FALSE, Integer batch_size = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
-Matrix[Double] W1_rand = matrix(0, rows=0, cols=0), Matrix[Double] W2_rand = matrix(0, rows=0, cols=0), 
-Matrix[Double] W3_rand = matrix(0, rows=0, cols=0), Matrix[Double] W4_rand = matrix(0, rows=0, cols=0), 
-Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
-  return(Matrix[Double] W1, Matrix[Double] b1,
-         Matrix[Double] W2, Matrix[Double] b2,
-         Matrix[Double] W3, Matrix[Double] b3,
-         Matrix[Double] W4, Matrix[Double] b4, Matrix[Double] reordered_H)
+  Boolean full_obj = FALSE, Integer batch_size = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
+  Matrix[Double] W1_rand = matrix(0, rows=0, cols=0), Matrix[Double] W2_rand = matrix(0, rows=0, cols=0), 
+  Matrix[Double] W3_rand = matrix(0, rows=0, cols=0), Matrix[Double] W4_rand = matrix(0, rows=0, cols=0), 
+  Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
+  return(Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
+    Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4, Matrix[Double] reordered_H)
 {
   n = nrow(X)
   m = ncol(X)
@@ -114,9 +109,9 @@ Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
   upd_b4 = matrix(0, rows=nrow(b4), cols=ncol(b4))
 
   if( full_obj ){
-        [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
-        full_o = obj(full_E)
-        print("EPOCHS=" + 0 + " OBJ (FULL DATA): " + full_o)
+    [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
+    full_o = obj(full_E)
+    print("EPOCHS=" + 0 + " OBJ (FULL DATA): " + full_o)
   }
 
   iter = 0
@@ -125,114 +120,101 @@ Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
   #print("num_iters_per_epoch=" + num_iters_per_epoch + " max_iterations=" + max_iterations)
   beg = 1
   while( iter < max_iterations ){
-        end = beg + batch_size - 1
-        if(end > n) end = n
-        X_batch = X[beg:end,]
+    end = beg + batch_size - 1
+    if(end > n) end = n
+    X_batch = X[beg:end,]
 
-        [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E] = feedForward(X_batch, W1, b1, W2, b2, W3, b3, W4, b4, X_batch)
-        [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad] = grad(X_batch, H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat_prime, E, W1, W2, W3, W4)
+    [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E] = feedForward(X_batch, W1, b1, W2, b2, W3, b3, W4, b4, X_batch)
+    [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad] = grad(X_batch, H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat_prime, E, W1, W2, W3, W4)
 
-        o = obj(E)
-        print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", (iter / num_iters_per_epoch), beg, end, o)
+    o = obj(E)
+    print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", (iter / num_iters_per_epoch), beg, end, o)
 
-      #update
-        local_step = step / nrow(X_batch)
-        upd_W1 = mu * upd_W1 - local_step * W1_grad
-        upd_b1 = mu * upd_b1 - local_step * b1
-        upd_W2 = mu * upd_W2 - local_step * W2_grad
-        upd_b2 = mu * upd_b2 - local_step * b2
-        upd_W3 = mu * upd_W3 - local_step * W3_grad
-        upd_b3 = mu * upd_b3 - local_step * b3
-        upd_W4 = mu * upd_W4 - local_step * W4_grad
-        upd_b4 = mu * upd_b4 - local_step * b4
-        W1 = W1 + upd_W1
-        b1 = b1 + upd_b1
-        W2 = W2 + upd_W2
-        b2 = b2 + upd_b2
-        W3 = W3 + upd_W3
-        b3 = b3 + upd_b3
-        W4 = W4 + upd_W4
-        b4 = b4 + upd_b4
+    #update
+    local_step = step / nrow(X_batch)
+    upd_W1 = mu * upd_W1 - local_step * W1_grad
+    upd_b1 = mu * upd_b1 - local_step * b1
+    upd_W2 = mu * upd_W2 - local_step * W2_grad
+    upd_b2 = mu * upd_b2 - local_step * b2
+    upd_W3 = mu * upd_W3 - local_step * W3_grad
+    upd_b3 = mu * upd_b3 - local_step * b3
+    upd_W4 = mu * upd_W4 - local_step * W4_grad
+    upd_b4 = mu * upd_b4 - local_step * b4
+    W1 = W1 + upd_W1
+    b1 = b1 + upd_b1
+    W2 = W2 + upd_W2
+    b2 = b2 + upd_b2
+    W3 = W3 + upd_W3
+    b3 = b3 + upd_b3
+    W4 = W4 + upd_W4
+    b4 = b4 + upd_b4
 
-        iter = iter + 1
-        if(end == n) beg = 1
-        else beg = end + 1
+    iter = iter + 1
+    if(end == n) beg = 1
+    else beg = end + 1
 
-        if( iter %% num_iters_per_epoch == 0 ) step = step * decay
+    if( iter %% num_iters_per_epoch == 0 ) step = step * decay
 
-        if( full_obj & iter %% num_iters_per_epoch == 0 ){
-      	    [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
-            full_o = obj(full_E)
-      	    epochs = iter %/% num_iters_per_epoch
-            print("EPOCHS=" + epochs + " iter=" + iter + " OBJ (FULL DATA)=" + full_o)
-        }
-    }
-    [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
-    reordered_H = t(permut) %*% full_H2
+    if( full_obj & iter %% num_iters_per_epoch == 0 ){
+      [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
+      full_o = obj(full_E)
+      epochs = iter %/% num_iters_per_epoch
+      print("EPOCHS=" + epochs + " iter=" + iter + " OBJ (FULL DATA)=" + full_o)
+      }
+  }
+  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
+  reordered_H = t(permut) %*% full_H2
 }
 
 #implements tanh
 #to use another activation fn, implement a DML-bodied function with 
 #function name 'func' and comment out this one
 func = function(Matrix[Double] X) return(Matrix[Double] Y, Matrix[Double] Y_prime){
-     Y = (exp(2*X) - 1)/(exp(2*X) + 1)
-     Y_prime = 1 - Y^2
+  Y = (exp(2*X) - 1)/(exp(2*X) + 1)
+  Y_prime = 1 - Y^2
 }
 
-feedForward = function(Matrix[Double] X, 
-	               Matrix[Double] W1, Matrix[Double] b1, 
-	               Matrix[Double] W2, Matrix[Double] b2, 
-	               Matrix[Double] W3, Matrix[Double] b3, 
-	               Matrix[Double] W4, Matrix[Double] b4, 
-		       Matrix[Double] Y)
-      	      return(Matrix[Double] H1, Matrix[Double] H1_prime,
-	     	     Matrix[Double] H2, Matrix[Double] H2_prime,
-	     	     Matrix[Double] H3, Matrix[Double] H3_prime,
-	     	     Matrix[Double] Yhat, Matrix[Double] Yhat_prime,
-	     	     Matrix[Double] E){
-      H1_in = t(W1 %*% t(X) + b1)
-      [H1, H1_prime] = func(H1_in)
+feedForward = function(Matrix[Double] X, Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2, 
+  Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4, Matrix[Double] Y)
+  return(Matrix[Double] H1, Matrix[Double] H1_prime,Matrix[Double] H2, Matrix[Double] H2_prime,
+    Matrix[Double] H3, Matrix[Double] H3_prime, Matrix[Double] Yhat, Matrix[Double] Yhat_prime, Matrix[Double] E){
+  H1_in = t(W1 %*% t(X) + b1)
+  [H1, H1_prime] = func(H1_in)
 
-      H2_in = t(W2 %*% t(H1) + b2)
-      [H2, H2_prime] = func(H2_in)
+  H2_in = t(W2 %*% t(H1) + b2)
+  [H2, H2_prime] = func(H2_in)
 
-      H3_in = t(W3 %*% t(H2) + b3)
-      [H3, H3_prime] = func(H3_in)
+  H3_in = t(W3 %*% t(H2) + b3)
+  [H3, H3_prime] = func(H3_in)
 
-      Yhat_in = t(W4 %*% t(H3) + b4)
-      [Yhat, Yhat_prime] = func(Yhat_in)
-      E = Yhat - Y
+  Yhat_in = t(W4 %*% t(H3) + b4)
+  [Yhat, Yhat_prime] = func(Yhat_in)
+  E = Yhat - Y
 }
 
-grad = function(Matrix[Double] X, 
-       		Matrix[Double] H1, Matrix[Double] H1_prime,
-       		Matrix[Double] H2, Matrix[Double] H2_prime,
-       		Matrix[Double] H3, Matrix[Double] H3_prime,
-		Matrix[Double] Yhat_prime,
-		Matrix[Double] E,
-		Matrix[Double] W1, Matrix[Double] W2, Matrix[Double] W3, Matrix[Double] W4)
-       return(Matrix[Double] W1_grad, Matrix[Double] b1_grad,
-              Matrix[Double] W2_grad, Matrix[Double] b2_grad,
-	      Matrix[Double] W3_grad, Matrix[Double] b3_grad,
-	      Matrix[Double] W4_grad, Matrix[Double] b4_grad){
-      #backprop
-      delta4 = E * Yhat_prime
-      delta3 = H3_prime * (delta4 %*% W4)
-      delta2 = H2_prime * (delta3 %*% W3)
-      delta1 = H1_prime * (delta2 %*% W2)
+grad = function(Matrix[Double] X, Matrix[Double] H1, Matrix[Double] H1_prime, Matrix[Double] H2, Matrix[Double] H2_prime,
+  Matrix[Double] H3, Matrix[Double] H3_prime, Matrix[Double] Yhat_prime, Matrix[Double] E,
+  Matrix[Double] W1, Matrix[Double] W2, Matrix[Double] W3, Matrix[Double] W4)
+  return(Matrix[Double] W1_grad, Matrix[Double] b1_grad,Matrix[Double] W2_grad, Matrix[Double] b2_grad, 
+    Matrix[Double] W3_grad, Matrix[Double] b3_grad, Matrix[Double] W4_grad, Matrix[Double] b4_grad){
+  #backprop
+  delta4 = E * Yhat_prime
+  delta3 = H3_prime * (delta4 %*% W4)
+  delta2 = H2_prime * (delta3 %*% W3)
+  delta1 = H1_prime * (delta2 %*% W2)
 
-      #compute gradients
-      b4_grad = t(colSums(delta4))
-      b3_grad = t(colSums(delta3))
-      b2_grad = t(colSums(delta2))
-      b1_grad = t(colSums(delta1))
+  #compute gradients
+  b4_grad = t(colSums(delta4))
+  b3_grad = t(colSums(delta3))
+  b2_grad = t(colSums(delta2))
+  b1_grad = t(colSums(delta1))
 
-      W4_grad = t(delta4) %*% H3
-      W3_grad = t(delta3) %*% H2
-      W2_grad = t(delta2) %*% H1
-      W1_grad = t(delta1) %*% X
+  W4_grad = t(delta4) %*% H3
+  W3_grad = t(delta3) %*% H2
+  W2_grad = t(delta2) %*% H1
+  W1_grad = t(delta1) %*% X
 }
 
 obj = function(Matrix[Double] E) return(Double val){
-    val = 0.5 * sum(E^2)
+  val = 0.5 * sum(E^2)
 }

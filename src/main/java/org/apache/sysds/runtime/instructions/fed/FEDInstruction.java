@@ -25,7 +25,7 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
 public abstract class FEDInstruction extends Instruction {
-	
+
 	public enum FEDType {
 		AggregateBinary,
 		AggregateUnary,
@@ -40,41 +40,42 @@ public abstract class FEDInstruction extends Instruction {
 		Reorg,
 		Reshape,
 		MatrixIndexing,
+		Quaternary,
 		QSort,
 		QPick
 	}
-	
+
 	protected final FEDType _fedType;
 	protected long _tid = -1; //main
-	
+
 	protected FEDInstruction(FEDType type, String opcode, String istr) {
 		this(type, null, opcode, istr);
 	}
-	
+
 	protected FEDInstruction(FEDType type, Operator op, String opcode, String istr) {
 		super(op);
 		_fedType = type;
 		instString = istr;
 		instOpcode = opcode;
 	}
-	
+
 	@Override
 	public IType getType() {
 		return IType.FEDERATED;
 	}
-	
+
 	public FEDType getFEDInstructionType() {
 		return _fedType;
 	}
-	
+
 	public long getTID() {
 		return _tid;
 	}
-	
+
 	public void setTID(long tid) {
 		_tid = tid;
 	}
-	
+
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
 		Instruction tmp = super.preprocessInstruction(ec);

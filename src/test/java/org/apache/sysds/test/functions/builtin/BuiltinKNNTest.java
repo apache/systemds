@@ -39,7 +39,7 @@ public class BuiltinKNNTest extends AutomatedTestBase
 {
   private final static Log LOG = LogFactory.getLog(BuiltinKNNTest.class.getName());
 
-  private final static String TEST_NAME = "KNN";
+  private final static String TEST_NAME = "knn";
   private final static String TEST_DIR = "functions/builtin/";
   private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinKNNTest.class.getSimpleName() + "/";
 
@@ -47,7 +47,6 @@ public class BuiltinKNNTest extends AutomatedTestBase
 
   private final static Double TEST_TOLERANCE = 1e-9;
 
-  public int blocksize = 1024;
   @Parameterized.Parameter()
   public int rows;
   @Parameterized.Parameter(1)
@@ -59,21 +58,23 @@ public class BuiltinKNNTest extends AutomatedTestBase
   @Parameterized.Parameter(4)
   public boolean continuous;
   @Parameterized.Parameter(5)
+  public int k_value;
+  @Parameterized.Parameter(6)
   public double sparsity;
 
   @Override
   public void setUp()
   {
-    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, new String[] {OUTPUT_NAME}));
+    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {OUTPUT_NAME}));
   }
 
   @Parameterized.Parameters
   public static Collection<Object[]> data()
   {
     return Arrays.asList(new Object[][] {
-      // {rows, cols, query_rows, query_cols, continuous, sparsity}
-      {1000, 500, 35, 450, true, 0.1},
-      {1000, 500, 35, 450, true, 0.9}
+      // {rows, cols, query_rows, query_cols, continuous, k_value, sparsity}
+      {1000, 500, 35, 450, true, 7, 0.1},
+      {1000, 500, 35, 450, true, 7, 0.9}
     });
   }
 
@@ -94,24 +95,24 @@ public class BuiltinKNNTest extends AutomatedTestBase
     double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
     double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
 
-    writeInputMatrixWithMTD("X", X, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+    writeInputMatrixWithMTD("X", X, true);
+    writeInputMatrixWithMTD("T", T, true);
 
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
-    // TODO: add args
     programArgs = new String[] {"-exec", "-args",
-      "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"),
+      "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value) +
       "out_B=" + output(OUTPUT_NAME)};
 
     fullRScriptName = HOME + TEST_NAME + ".R";
-    // TODO: add args
-    rCmd = "Rscript" + " " + fullRScriptName + " " +
-      input("X") + " " + input("T") + " " + (continuous ? "1" : "0") + " " +
-      expectedDir();
+    rCmd = getRCmd(inputDir(), (continuous ? "1" : "0"), Integer.toString(k_value),
+			expectedDir());
 
-    runTest(true, false, null, -1);
+    // TODO: add this line when both test scripts are implemented
+    // runTest(true, false, null, -1);
     runRScript(true);
 
-    compareResultsWithR(TEST_TOLERANCE);
+    // TODO: add this line when both test scripts are implemented
+    // compareResultsWithR(TEST_TOLERANCE);
 
     // restore execution mode
     setExecMode(platform_old);

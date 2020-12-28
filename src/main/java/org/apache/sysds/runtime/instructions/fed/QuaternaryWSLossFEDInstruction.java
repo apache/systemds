@@ -39,10 +39,10 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 
 	/**
 	 * This Instruction performs a Weighted Sigmoid Loss function as follows:
-	 * 
+	 *
 	 * Z = sum(W * (X - (U %*% t(V))) ^ 2)
-	 * 
-	 * @param operator Weighted Sigmoid Loss 
+	 *
+	 * @param operator Weighted Sigmoid Loss
 	 * @param in1 X
 	 * @param in2 U
 	 * @param in3 V

@@ -837,6 +837,10 @@ public abstract class AutomatedTestBase {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
+	protected static HashMap<CellIndex, Double> readDMLMatrixFromExpectedDir(String fileName) {
+		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + EXPECTED_DIR + fileName);
+	}
+	
 	public HashMap<CellIndex, Double> readRMatrixFromExpectedDir(String fileName) {
 		if(LOG.isInfoEnabled())
 			LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);

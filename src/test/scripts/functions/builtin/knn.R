@@ -19,51 +19,42 @@
 #
 #-------------------------------------------------------------
 
-#args<-commandArgs(TRUE)
-#options(digits=22)
-#library("Matrix")
-
-#X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
-#y = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
-#C = lm.fit(X, y)$coefficients
-#writeMM(as(C, "CsparseMatrix"), paste(args[2], "C", sep=""))
-
-###############################################################################
-args<-commandArgs(TRUE)
+args <- commandArgs(TRUE)
 library("Matrix")
 
 # read test data
-data_train            <- as.matrix(read.csv(args[1], stringsAsFactors = FALSE))
-data_test             <- as.matrix(read.csv(args[2], stringsAsFactors = FALSE))
+data_train            <- as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
+data_test             <- as.matrix(readMM(paste(args[1], "T.mtx", sep="")))
+
 ## depends how i get the labels/catagories, maybe they are in the training/testing set
-data_train_labels     <- as.matrix(read.csv(args[3], stringsAsFactors = FALSE))
-data_test_labels      <- as.matrix(read.csv(args[4], stringsAsFactors = FALSE))
+# data_train_labels     <- as.matrix(read.csv(args[3], stringsAsFactors = FALSE))
+# data_test_labels      <- as.matrix(read.csv(args[4], stringsAsFactors = FALSE))
 
-K <- args$k
+continuous <- as.integer(args[2])
+K <- as.integer(args[3])
 
-str(data_train)
-str(data_test)
 # ---- normalize -----
 normalize <- function(x) { return ((x - min(x)) / (max(x) - min(x))) }
 
-data_train_n <- as.data.frame(lapply(data_train, normalize))
-data_test_n  <- as.data.frame(lapply(data_test, normalize))
-
-
+if(continuous == 1)
+{
+  data_train_n <- as.data.frame(lapply(data_train, normalize))
+  data_test_n  <- as.data.frame(lapply(data_test, normalize))
+}
 
 # ------ training -------
-install.packages("class")
-library(class)
+#-- install.packages("class")
+#-- library(class)
 #Find the number of observation
-NROW(data_train_labels)
+#-- NROW(data_train_labels)
 # k is the square root of number of observation, is that correct?
-test_pred <- knn(train = data_train, test =data_test,cl = data_train_labels, k=floor(sqrt(NROW(data_train_labels))))
-
-#Calculate the proportion of correct classification for k = 26, 27
-accuracy <- 100 * sum(data_test_labels == pred)/NROW(data_test_labels)
-
-accuracy
-
-# Check prediction against actual value in tabular form
-table(test_pred ,data_test_labels)
-writeMM(as(C, "CsparseMatrix"), paste(args[2], "C", sep=""))
+#-- test_pred <- knn(train = data_train, test =data_test,cl = data_train_labels, k=floor(sqrt(NROW(data_train_labels))))
+#--
+#-- #Calculate the proportion of correct classification for k = 26, 27
+#-- accuracy <- 100 * sum(data_test_labels == pred)/NROW(data_test_labels)
+#--
+#-- accuracy
+#--
+#-- # Check prediction against actual value in tabular form
+#-- table(test_pred ,data_test_labels)
+#-- writeMM(as(test_pred, "CsparseMatrix"), paste(args[4], "B", sep=""))

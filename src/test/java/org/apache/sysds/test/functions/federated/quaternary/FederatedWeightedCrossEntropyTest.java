@@ -29,7 +29,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -111,24 +110,19 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
   public void federatedWeightedCrossEntropySingleNodeEpsilon()
   {
     test_name = EPS_TEST_NAME;
-    federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE, true);
+    federatedWeightedCrossEntropy(ExecMode.SINGLE_NODE);
   }
 
   @Test
   public void federatedWeightedCrossEntropySparkEpsilon()
   {
     test_name = EPS_TEST_NAME;
-    federatedWeightedCrossEntropy(ExecMode.SPARK, true);
+    federatedWeightedCrossEntropy(ExecMode.SPARK);
   }
 
 // -----------------------------------------------------------------------------
 
   public void federatedWeightedCrossEntropy(ExecMode exec_mode)
-  {
-    federatedWeightedCrossEntropy(exec_mode, false);
-  }
-
-  public void federatedWeightedCrossEntropy(ExecMode exec_mode, boolean epsilon_flag)
   {
     // store the previous platform config to restore it after the test
     ExecMode platform_old = getExecMode();
@@ -164,7 +158,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
     // we need the reference file to not be written to hdfs, so we get the correct format
 		setExecMode(ExecMode.SINGLE_NODE);
-    // Run reference fml script with normal matrix
+    // Run reference dml script with normal matrix
     fullDMLScriptName = HOME + test_name + "Reference.dml";
     programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
       "in_U=" + input("U"), "in_V=" + input("V"), "in_W=" + Double.toString(epsilon),

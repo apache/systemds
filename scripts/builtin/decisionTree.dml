@@ -29,20 +29,12 @@
 # X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded
 # Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
 # R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information
-#										- R[,1]: column ids
-#										- R[,2]: start indices
-#										- R[,3]: end indices
+#										- R[,1]: Row Vector which indicates if feature vector is scalar or categorical. 1 indicates
+#                                     a scalar feature vector, other positive Integers indicate the number of categories
 #									  If R is not provided by default all variables are assumed to be scale
 # bins          Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
 # depth         Int 	 25			  Maximum depth of the learned tree
-# num_leaf      Int      10           Number of samples when splitting stops and a leaf node is added
-# num_samples   Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
-# impurity      String   "Gini"    	  Impurity measure: entropy or Gini (the default)
 # M             String 	 ---	   	  Location to write matrix M containing the learned tree
-# O     		String   " "          Location to write the training accuracy; by default is standard output
-# S_map			String   " "		  Location to write the mappings from scale feature ids to global feature ids
-# C_map			String   " "		  Location to write the mappings from categorical feature ids to global feature ids
-# fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT:
 # Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
@@ -50,8 +42,7 @@
 #	 M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
 #	 M[3,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical)
 #			 that node j looks at if j is an internal node, otherwise 0
-#	 M[4,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features,
-#		     otherwise the label that leaf node j is supposed to predict
+#	 M[4,j]: Type of the feature that node j looks at if j is an internal node: holds the same information as R input vector
 #	 M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values
 #			 stored in rows 6,7,... if j is categorical
 #			 If j is a leaf node: number of misclassified samples reaching at node j
@@ -425,12 +416,15 @@ m_decisionTree = function(
         if (create_child_nodes_flag) {
             [left, right] = calculateChildNodes(node)
             node_queue = dataQueuePush(left, right, node_queue)
-
+            offset = dataQueueLength(node_queue) - 1
+            print("Offset to left child: " + offset)
             [new_use_cols_vector, left_use_rows_vector, right_use_rows_vector] = splitData(X, use_rows_vector, use_cols_vector, used_col, threshold, type)
             use_rows_queue = dataQueuePush(left_use_rows_vector, right_use_rows_vector, use_rows_queue)
             use_cols_queue = dataQueuePush(new_use_cols_vector, new_use_cols_vector, use_cols_queue)
 
             impurity_queue = dataQueuePush(matrix(impurity, rows = 1, cols = 1), matrix(impurity, rows = 1, cols = 1), impurity_queue)
+        } else {
+            print("Offset to left child: 0.0")
         }
         queue_length = dataQueueLength(node_queue)# -- user-defined function calls not supported in relational expressions
 

@@ -19,6 +19,7 @@
 
 #include "jni_bridge.h"
 #include "SpoofCUDAContext.h"
+#include "Matrix.h"
 
 // JNI Methods to get/release arrays
 #define GET_ARRAY(env, input)                                                  \
@@ -59,7 +60,7 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
 JNIEXPORT jdouble JNICALL
 Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
-    jlongArray side_ptrs, jlong out_ptr, jdoubleArray scalars_, jlong m, jlong n, jlong out_len, jlong grix) {
+    jlongArray side_ptrs, jlong out_ptr, jdoubleArray scalars_, jlong m, jlong n, jlong out_len, jlong grix, jobject inputs_) {
 
   SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
   const char *cstr_name = env->GetStringUTFChars(name, NULL);
@@ -68,9 +69,48 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
   double **sides = reinterpret_cast<double **>(GET_ARRAY(env, side_ptrs));
   double *scalars = reinterpret_cast<double *>(GET_ARRAY(env, scalars_));
 
+  jclass ArrayList = env->FindClass("java/util/ArrayList");
+	if(!ArrayList) {
+		std::cerr << " JNIEnv -> FindClass() failed" << std::endl;
+		return -1.0;
+	}
+  jmethodID ArrayList_size = env->GetMethodID(ArrayList, "size", "()I");
+  jmethodID ArrayList_get = env->GetMethodID(ArrayList, "get", "(I)Ljava/lang/Object;");
+  jint len = env->CallIntMethod(inputs_, ArrayList_size);
+  
+  std::cout << " inputs_ arraylist length: " << len << std::endl;
+  std::vector<Matrix<double>> side_info;
+  for(auto i = 1; i < len; i++) {
+	  jobject side_input_obj = env->CallObjectMethod(inputs_, ArrayList_get, i);
+	  jclass CacheableData = env->FindClass("org/apache/sysds/runtime/controlprogram/caching/CacheableData");
+	  if(!CacheableData) {
+	  	std::cerr << " JNIEnv -> FindClass() failed" << std::endl;
+	  	return -1.0;
+	  }
+	  
+	  jmethodID mat_obj_num_cols = env->GetMethodID(CacheableData, "getNumColumns", "()J");
+	  if(!mat_obj_num_cols) {
+		  std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
+		  return -1.0;
+	  }
+	  
+	  uint32_t m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));
+	
+	  jmethodID mat_obj_num_rows = env->GetMethodID(CacheableData, "getNumRows", "()J");
+	  if(!mat_obj_num_rows) {
+		  std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
+		  return -1.0;
+	  }
+	  
+	  uint32_t n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
+	
+	  side_info.push_back(Matrix<double>{sides[i], 0, 0, m, n, m * n});
+	  std::cout << "m=" << m << " n=" << n << std::endl;
+  }
+  
   double result = ctx_->execute_kernel(
       cstr_name, inputs, env->GetArrayLength(in_ptrs), sides, env->GetArrayLength(side_ptrs),
-      reinterpret_cast<double*>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, out_len, grix);
+      reinterpret_cast<double*>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, out_len, grix, side_info);
 
   RELEASE_ARRAY(env, in_ptrs, inputs);
   RELEASE_ARRAY(env, side_ptrs, sides);

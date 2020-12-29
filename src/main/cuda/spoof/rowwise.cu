@@ -85,7 +85,7 @@ __global__ void %TMP% (T* a, Matrix<T>* b, T* scalars, T* c, uint c_len, int len
 		MatrixAccessor<T> ma;
 		ma.init(&b[0]);
 		printf("bid=%d len=%d c_len=%d b.pos=%d b.len=%d\n", blockIdx.x, len, c_len, ma.pos(blockIdx.x), ma.len());
-		for(auto i = 0; i < 15; ++i) {
+		for(auto i = ma.pos(blockIdx.x); i < ma.len(); ++i) {
 		//			T val =  ma.val(blockIdx.x, i);
 			T val =  ma.val(0, i);
 			printf("%f ", val);

@@ -79,7 +79,7 @@ public:
 
 	template <typename T>
 	T execute_kernel(const std::string &name, T **in_ptrs, int num_inputs, T **side_ptrs, int num_sides, T *out_ptr, 
-			T *scalars_ptr, int num_scalars, int m, int n, int out_len, int grix) {
+			T *scalars_ptr, int num_scalars, uint32_t m, uint32_t n, int out_len, int grix, const std::vector<Matrix<T>>& sides) {
 		
 		T result = 0.0;
 		size_t dev_buf_size;
@@ -92,15 +92,15 @@ public:
 
 			if (num_sides > 0) {
 				dev_buf_size = sizeof(Matrix<T>) * num_sides;
-			    std::vector<Matrix<T>> h_sides;
+//			    std::vector<Matrix<T>> h_sides;
 			    
-			    for(auto i = 0; i < num_sides; i++)
-//			        h_sides.push_back(Matrix<T>(static_cast<uint32_t>(m), static_cast<uint32_t>(n), side_ptrs[i], nullptr, nullptr));
-					h_sides.push_back(Matrix<T>{side_ptrs[i], 0, 0, m, n, m*n});
+//			    for(auto i = 0; i < num_sides; i++)
+////			        h_sides.push_back(Matrix<T>(static_cast<uint32_t>(m), static_cast<uint32_t>(n), side_ptrs[i], nullptr, nullptr));
+//					h_sides.push_back(Matrix<T>{side_ptrs[i], 0, 0, m, n, m*n});
 			    
 
 				CHECK_CUDART(cudaMalloc((void **)&d_sides, dev_buf_size));
-				CHECK_CUDART(cudaMemcpy(d_sides, &h_sides[0], dev_buf_size, cudaMemcpyHostToDevice));
+				CHECK_CUDART(cudaMemcpy(d_sides, &sides[0], dev_buf_size, cudaMemcpyHostToDevice));
 
 //				for(auto i = 0; i < num_sides; i++)
 //					delete h_sides[i];

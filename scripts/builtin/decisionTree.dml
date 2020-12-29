@@ -189,7 +189,7 @@ calculateChildNodes = function(Matrix[Double] node)  return(Matrix[Double] left,
 }
 
 getTypeOfCol = function(Matrix[Double] R, Double col)  return(Double type) {    # 1..scalar,    2..categorical
-    type = 1
+    type = as.scalar(R[1, col])
 }
 
 extrapolateOrderedScalarFeatures = function(
@@ -355,7 +355,25 @@ splitRowsVector = function(
             }
         }
     } else {
-        #TODO categorical handling
+        len = dataVectorLength(use_rows_vector)
+        for (c_row in 1:len) {
+            row_enabled = dataVectorGet(use_rows_vector, c_row)
+            if (row_enabled != 0) {
+                categories_len = dataVectorLength(threshold)
+                move_sample_to_true_set = FALSE
+                for (category_index in 1:categories_len) {
+                    category = dataVectorGet(threshold, category_index)
+                    if (as.scalar(X[c_row, col]) == category) {
+                        move_sample_to_true_set = TRUE
+                    }
+                }
+                if (move_sample_to_true_set) {
+                    false_use_rows_vector = dataVectorSet(false_use_rows_vector, c_row, 0.0)
+                } else {
+                    true_use_rows_vector = dataVectorSet(true_use_rows_vector, c_row, 0.0)
+                }
+            }
+        }
     }
 }
 

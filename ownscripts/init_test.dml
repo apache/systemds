@@ -1,26 +1,34 @@
-
-
-
 print("Start-testscript");
 
-# test matrix
-#A = matrix(1, rows=2,cols=3)
+path = "ownscripts/data/tiny.csv"
 
-path = "data/haberman.csv"
-ncols = 3
-nrows =2
+Z = read(path, schema="int,string", data_type = "frame", format = "csv", header = TRUE)
+print("FRAME IS NOW")
+print(toString(Z))
 
-B = read(path, format="csv", header=FALSE, rows=nrows, cols=ncols); # can not read strings
+# here iterate over all double columns and do the outlier detection
+Q = as.scalar(Z[1,1])
+N = Q %% 1
 
-X = read(path, format="csv", header=FALSE, rows=nrows, cols=ncols, data_type="frame");
+if ( N > 0) {
+    print("we are double")
+} else {
+    print("we are integer")
+}
 
-print("NORMAL TABLE:")
-print("%s", toString(B))
-print("FRAME TABLE:")
-print("%s", toString(X))
+B = Z[, 1]
+M = as.matrix(B)
+Y = outlierBySd(M, 1, 2, 0, FALSE);
+T = as.frame(Y)
 
+for (i in 1:nrow(T)) {
+    intvalue = as.integer(as.scalar(Y[i, 1]))
+    if(intvalue > 0) {
+      Z[i, 1] = intvalue
+    } else {
+      Z[i, 1] = T[i]
+    }
+}
 
-#re = dmv(X=B);
-
-
-print("End-testscript");
+#Z[, 1] = T
+print(toString(Z))

@@ -22,4 +22,3 @@
 X = read($1, data_type = "frame", format = "csv", header = FALSE)
 Z = dmv(X)
 write(Z, $2,  format="csv")
-write(X, $3,  format="csv")

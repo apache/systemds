@@ -18,11 +18,13 @@
 # under the License.
 #
 #------------------------------------------------------------
+dmv = function(Frame[Unknown] F) return (Frame[Unknown] Y) {
 
-# AS FRAME
-dmv = function(Frame[Unknown] FX) return (Frame[Unknown] Y) {
-  print("WE IN DMV");
-  Z = map(FX, "UtilFunctions.calculateAttributeTypes()");
+  Z = map(F, "UtilFunctions.calculateAttributeTypes()")
 
-  Y = Z;
+  # spec = "{ids: false, recode: [ zipcode, district, view ]}";
+  # [T, P] = transformencode(target=Z, spec=spec)
+
+  Y = Z
+  # outlier..
 }

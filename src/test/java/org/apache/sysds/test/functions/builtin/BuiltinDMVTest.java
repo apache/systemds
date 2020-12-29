@@ -19,8 +19,13 @@
 
 package org.apache.sysds.test.functions.builtin;
 
+import java.sql.Array;
+import java.util.Arrays;
 import java.util.HashMap;
 
+import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
+import org.apache.sysds.api.mlcontext.Frame;
+import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -36,14 +41,13 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-public class BuiltinDisguisedMissingValueTest extends AutomatedTestBase {
+public class BuiltinDMVTest extends AutomatedTestBase {
 
     private final static String TEST_NAME = "disguisedMissingValue";
     private final static String TEST_DIR = "functions/builtin/";
     private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinOutlierTest.class.getSimpleName() + "/";
 
     private final static Types.ValueType[] schemaStrings = {Types.ValueType.STRING};
-    private final static Types.ValueType[] schemaInteger = {Types.ValueType.INT32};
     private final static int rows = 10;
 
     static enum TestType {
@@ -73,16 +77,39 @@ public class BuiltinDisguisedMissingValueTest extends AutomatedTestBase {
     }
 
     @Test
-    public void dmvWithStrings() {
-        runMissingValueTest( TestType.STRING, ExecType.CP );
+    public void IntegerFrameTest() {
+        String[] content = new String[]{"44","3","235","52","weg","12", "11", "33", "22", "99"};
+
+        FrameBlock f = new FrameBlock(schemaStrings);
+        for (String s : content) {
+            f.appendRow(new String[]{s});
+        }
+        System.out.println(f.getColumnData(0));
+
+        int[][] positions = new int[1][1];
+        positions[0] = new int[]{4};
+        runMissingValueTest(f, ExecType.CP, positions);
     }
 
     @Test
-    public void dmvWithIntegers() {
-        runMissingValueTest( TestType.INTEGER, ExecType.CP );
+    public void AdvancedIntegerFrameTest() {
+        String[] content1 = new String[]{"44","3","235","52","weg","12", "11", "33", "22", "99"};
+
+        FrameBlock f = new FrameBlock(schemaStrings);
+        for (String s : content1) {
+            f.appendRow(new String[]{s});
+        }
+        // f.appendColumn(new String[]{"15","weeeg","111","52","weg","333", "11", "999", "22", "99"});
+
+        int[][] positions = new int [2][2];
+        positions[0] = new int[]{4};
+        //positions[1] = new int[]{1,5};
+
+        //hardcoded for now
+        runMissingValueTest(f, ExecType.CP, positions);
     }
 
-    private void runMissingValueTest(TestType type, ExecType et)
+    private void runMissingValueTest(FrameBlock test_frame, ExecType et, int[][] positions)
     {
         Types.ExecMode platformOld = setExecMode(et);
 
@@ -91,30 +118,26 @@ public class BuiltinDisguisedMissingValueTest extends AutomatedTestBase {
 
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] { "-stats","-args", input("A"), output("O"), output("I")};
+            programArgs = new String[] { "-stats","-args", input("A"), output("O")};
 
-            double[][] A = getRandomMatrix(rows, 1, 0, 1, 1, 2);
+            System.out.println(test_frame.getNumColumns());
+            System.out.println(test_frame.getNumRows());
 
-            switch (type) {
-                case STRING:
-                    writeInputFrameWithMTD("A", A, true, schemaStrings, Types.FileFormat.CSV);
-                    break;
-                case INTEGER:
-                    writeInputFrameWithMTD("A", A, true, schemaInteger, Types.FileFormat.CSV);
-                    break;
-            }
+            FrameWriterFactory.createFrameWriter(Types.FileFormat.CSV).
+                    writeFrameToHDFS(test_frame, input("A"), test_frame.getNumRows(), test_frame.getNumColumns());
 
             runTest(true, false, null, -1);
 
             FrameBlock outputFrame = readDMLFrameFromHDFS("O", Types.FileFormat.CSV);
-            FrameBlock inputFrame = readDMLFrameFromHDFS("I", Types.FileFormat.CSV);
 
             String[] output = (String[])outputFrame.getColumnData(0);
-            String[] input = (String[])inputFrame.getColumnData(0);
 
-            for(int i = 0; i<input.length; i++)
-            {
-                TestUtils.compareScalars(null, output[i]);
+            for (int[] position : positions) {
+                for (int i = 0; i < position.length; i++)
+                {
+                    // if it's NA then it will be null here - otherwise the value you chose for disguised..
+                    TestUtils.compareScalars(null, output[position[i]]);
+                }
             }
 
         }

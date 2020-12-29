@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated.quaternary;
+package org.apache.sysds.test.functions.federated.primitives;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -139,7 +139,7 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
   public void federatedWeightedSquaredLoss(ExecMode exec_mode)
   {
     // store the previous platform config to restore it after the test
-    ExecMode platform_old = getExecMode();
+    ExecMode platform_old = setExecMode(exec_mode);
 
     getAndLoadTestConfiguration(test_name);
     String HOME = SCRIPT_DIR + TEST_DIR;
@@ -176,8 +176,6 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
 
     getAndLoadTestConfiguration(test_name);
 
-    // we need the reference file to not be written to hdfs, so we get the correct format
-		setExecMode(ExecMode.SINGLE_NODE);
     // Run reference dml script with normal matrix
     fullDMLScriptName = HOME + test_name + "Reference.dml";
     programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
@@ -185,8 +183,6 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
       "out_Z=" + expected(OUTPUT_NAME)};
     LOG.debug(runTest(true, false, null, -1));
 
-    // set the execution mode for the actual test
-    setExecMode(exec_mode);
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + test_name + ".dml";
     programArgs = new String[] {"-stats", "-nvargs",

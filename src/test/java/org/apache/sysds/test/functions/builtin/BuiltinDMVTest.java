@@ -120,9 +120,6 @@ public class BuiltinDMVTest extends AutomatedTestBase {
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
             programArgs = new String[] { "-stats","-args", input("A"), output("O")};
 
-            System.out.println(test_frame.getNumColumns());
-            System.out.println(test_frame.getNumRows());
-
             FrameWriterFactory.createFrameWriter(Types.FileFormat.CSV).
                     writeFrameToHDFS(test_frame, input("A"), test_frame.getNumRows(), test_frame.getNumColumns());
 

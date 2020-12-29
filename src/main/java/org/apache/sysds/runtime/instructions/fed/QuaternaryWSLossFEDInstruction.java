@@ -36,78 +36,78 @@ import java.util.concurrent.Future;
 
 public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction
 {
-  // input1 ... federated X
-  // input2 ... U
-  // input3 ... V
-  // _input4 ... W
-  protected QuaternaryWSLossFEDInstruction(Operator operator,
-    CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str)
-  {
-    super(FEDType.Quaternary, operator, in1, in2, in3, in4, out, opcode, instruction_str);
-  }
+	// input1 ... federated X
+	// input2 ... U
+	// input3 ... V
+	// _input4 ... W
+	protected QuaternaryWSLossFEDInstruction(Operator operator,
+		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str)
+	{
+		super(FEDType.Quaternary, operator, in1, in2, in3, in4, out, opcode, instruction_str);
+	}
 
-  @Override
-  public void processInstruction(ExecutionContext execution_context)
-  {
-    QuaternaryOperator qop = (QuaternaryOperator) _optr;
+	@Override
+	public void processInstruction(ExecutionContext execution_context)
+	{
+		QuaternaryOperator qop = (QuaternaryOperator) _optr;
 
-    MatrixObject matrix_object_1 = execution_context.getMatrixObject(input1);
-    MatrixObject matrix_object_2 = execution_context.getMatrixObject(input2);
-    MatrixObject matrix_object_3 = execution_context.getMatrixObject(input3);
-    MatrixObject matrix_object_4 = null;
-    if(qop.hasFourInputs())
-    {
-      matrix_object_4 = execution_context.getMatrixObject(_input4);
-    }
+		MatrixObject matrix_object_1 = execution_context.getMatrixObject(input1);
+		MatrixObject matrix_object_2 = execution_context.getMatrixObject(input2);
+		MatrixObject matrix_object_3 = execution_context.getMatrixObject(input3);
+		MatrixObject matrix_object_4 = null;
+		if(qop.hasFourInputs())
+		{
+			matrix_object_4 = execution_context.getMatrixObject(_input4);
+		}
 
-    if(matrix_object_1.isFederated() && !matrix_object_2.isFederated() && !matrix_object_3.isFederated() && (matrix_object_4 == null || !matrix_object_4.isFederated()))
-    {
-      FederationMap federation_mapping = matrix_object_1.getFedMapping();
-      FederatedRequest[] fed_req_init_1 = federation_mapping.broadcastSliced(matrix_object_2, false);
-      FederatedRequest fed_req_init_2 = federation_mapping.broadcast(matrix_object_3);
-      FederatedRequest[] fed_req_init_3 = null;
-      FederatedRequest fed_req_compute_1 = null;
+		if(matrix_object_1.isFederated() && !matrix_object_2.isFederated() && !matrix_object_3.isFederated() && (matrix_object_4 == null || !matrix_object_4.isFederated()))
+		{
+			FederationMap federation_mapping = matrix_object_1.getFedMapping();
+			FederatedRequest[] fed_req_init_1 = federation_mapping.broadcastSliced(matrix_object_2, false);
+			FederatedRequest fed_req_init_2 = federation_mapping.broadcast(matrix_object_3);
+			FederatedRequest[] fed_req_init_3 = null;
+			FederatedRequest fed_req_compute_1 = null;
 
-      if(matrix_object_4 != null)
-      {
-        fed_req_init_3 = federation_mapping.broadcastSliced(matrix_object_4, false);
-        fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
-          new CPOperand[]{input1, input2, input3, _input4},
-          new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID(), fed_req_init_3[0].getID()});
-      }
-      else
-      {
-        fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
-          new CPOperand[]{input1, input2, input3},
-          new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID()});
-      }
-      FederatedRequest fed_req_get_1 = new FederatedRequest(RequestType.GET_VAR, fed_req_compute_1.getID());
-      FederatedRequest fed_req_cleanup_1 = federation_mapping.cleanup(getTID(), fed_req_compute_1.getID());
-      FederatedRequest fed_req_cleanup_2 = federation_mapping.cleanup(getTID(), fed_req_init_1[0].getID());
-      FederatedRequest fed_req_cleanup_3 = federation_mapping.cleanup(getTID(), fed_req_init_2.getID());
+			if(matrix_object_4 != null)
+			{
+				fed_req_init_3 = federation_mapping.broadcastSliced(matrix_object_4, false);
+				fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
+					new CPOperand[]{input1, input2, input3, _input4},
+					new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID(), fed_req_init_3[0].getID()});
+			}
+			else
+			{
+				fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
+					new CPOperand[]{input1, input2, input3},
+					new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID()});
+			}
+			FederatedRequest fed_req_get_1 = new FederatedRequest(RequestType.GET_VAR, fed_req_compute_1.getID());
+			FederatedRequest fed_req_cleanup_1 = federation_mapping.cleanup(getTID(), fed_req_compute_1.getID());
+			FederatedRequest fed_req_cleanup_2 = federation_mapping.cleanup(getTID(), fed_req_init_1[0].getID());
+			FederatedRequest fed_req_cleanup_3 = federation_mapping.cleanup(getTID(), fed_req_init_2.getID());
 
-      Future<FederatedResponse>[] response;
-      if(fed_req_init_3 != null)
-      {
-        FederatedRequest fed_req_cleanup_4 = federation_mapping.cleanup(getTID(), fed_req_init_3[0].getID());
-        // execute federated instructions
-        federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2);
+			Future<FederatedResponse>[] response;
+			if(fed_req_init_3 != null)
+			{
+				FederatedRequest fed_req_cleanup_4 = federation_mapping.cleanup(getTID(), fed_req_init_3[0].getID());
+				// execute federated instructions
+				federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2);
 				response = federation_mapping.execute(getTID(), true, fed_req_init_3,
-          fed_req_compute_1, fed_req_get_1,
-          fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3, fed_req_cleanup_4);
-      }
-      else
-      {
-        // execute federated instructions
-        response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2,
-          fed_req_compute_1, fed_req_get_1,
-          fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3);
-      }
+					fed_req_compute_1, fed_req_get_1,
+					fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3, fed_req_cleanup_4);
+			}
+			else
+			{
+				// execute federated instructions
+				response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2,
+					fed_req_compute_1, fed_req_get_1,
+					fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3);
+			}
 
-      AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 
-      execution_context.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
-    }
-  }
+			execution_context.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
+		}
+	}
 
 }

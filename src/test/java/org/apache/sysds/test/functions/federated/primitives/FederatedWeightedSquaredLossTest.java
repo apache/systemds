@@ -19,9 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -35,13 +34,12 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
 {
-  private final static Log LOG = LogFactory.getLog(FederatedWeightedSquaredLossTest.class.getName());
-
   private final static String STD_TEST_NAME = "FederatedWSLossTest";
   private final static String PRE_TEST_NAME = "FederatedWSLossPreTest";
   private final static String POST_TEST_NAME = "FederatedWSLossPostTest";
@@ -50,11 +48,10 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
 
   private final static String OUTPUT_NAME = "Z";
 
-  private final static double TEST_TOLERANCE = 1e-9;
+  private final static double TOLERANCE = 1e-8;
 
   private final static int blocksize = 1024;
 
-  private String test_name;
   @Parameterized.Parameter()
   public int rows;
   @Parameterized.Parameter(1)
@@ -81,8 +78,8 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
       // {rows, cols, rank, sparsity}
       {2000, 50, 10, 0.01},
       {2000, 50, 10, 0.9},
-      {2000, 50, 10, 0.01},
-      {2000, 50, 10, 0.9}
+      {100, 250, 25, 0.01},
+      {100, 250, 25, 0.9}
     });
   }
 
@@ -95,48 +92,42 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
   @Test
   public void federatedWeightedSquaredLossSingleNode()
   {
-    test_name = STD_TEST_NAME;
-    federatedWeightedSquaredLoss(ExecMode.SINGLE_NODE);
+    federatedWeightedSquaredLoss(STD_TEST_NAME, ExecMode.SINGLE_NODE);
   }
 
   @Test
   public void federatedWeightedSquaredLossSpark()
   {
-    test_name = STD_TEST_NAME;
-    federatedWeightedSquaredLoss(ExecMode.SPARK);
+    federatedWeightedSquaredLoss(STD_TEST_NAME, ExecMode.SPARK);
   }
 
   @Test
   public void federatedWeightedSquaredLossPreSingleNode()
   {
-    test_name = PRE_TEST_NAME;
-    federatedWeightedSquaredLoss(ExecMode.SINGLE_NODE);
+    federatedWeightedSquaredLoss(PRE_TEST_NAME, ExecMode.SINGLE_NODE);
   }
 
   @Test
   public void federatedWeightedSquaredLossPreSpark()
   {
-    test_name = PRE_TEST_NAME;
-    federatedWeightedSquaredLoss(ExecMode.SPARK);
+    federatedWeightedSquaredLoss(PRE_TEST_NAME, ExecMode.SPARK);
   }
 
   @Test
   public void federatedWeightedSquaredLossPostSingleNode()
   {
-    test_name = PRE_TEST_NAME;
-    federatedWeightedSquaredLoss(ExecMode.SINGLE_NODE);
+    federatedWeightedSquaredLoss(POST_TEST_NAME, ExecMode.SINGLE_NODE);
   }
 
   @Test
   public void federatedWeightedSquaredLossPostSpark()
   {
-    test_name = PRE_TEST_NAME;
-    federatedWeightedSquaredLoss(ExecMode.SPARK);
+    federatedWeightedSquaredLoss(POST_TEST_NAME, ExecMode.SPARK);
   }
 
 // -----------------------------------------------------------------------------
 
-  public void federatedWeightedSquaredLoss(ExecMode exec_mode)
+  public void federatedWeightedSquaredLoss(String test_name, ExecMode exec_mode)
   {
     // store the previous platform config to restore it after the test
     ExecMode platform_old = setExecMode(exec_mode);
@@ -181,7 +172,7 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
     programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
       "in_U=" + input("U"), "in_V=" + input("V"), "in_W=" + input("W"),
       "out_Z=" + expected(OUTPUT_NAME)};
-    LOG.debug(runTest(true, false, null, -1));
+    runTest(true, false, null, -1);
 
     // Run actual dml script with federated matrix
     fullDMLScriptName = HOME + test_name + ".dml";
@@ -192,10 +183,12 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase
       "in_V=" + input("V"),
       "in_W=" + input("W"),
       "rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output(OUTPUT_NAME)};
-    LOG.debug(runTest(true, false, null, -1));
+    runTest(true, false, null, -1);
 
-    // compare the results via files
-    compareResults(TEST_TOLERANCE);
+		// compare the results via files
+		HashMap<CellIndex, Double> refResults  = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
+		HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+		TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
 
     TestUtils.shutdownThreads(thread1, thread2);
 

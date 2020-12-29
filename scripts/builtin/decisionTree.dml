@@ -29,7 +29,7 @@
 # X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded
 # Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
 # R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information
-#										- R[,1]: Row Vector which indicates if feature vector is scalar or categorical. 1 indicates
+#										- R[1,]: Row Vector which indicates if feature vector is scalar or categorical. 1 indicates
 #                                     a scalar feature vector, other positive Integers indicate the number of categories
 #									  If R is not provided by default all variables are assumed to be scale
 # bins          Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
@@ -371,6 +371,38 @@ splitData = function(
     [false_use_rows_vector, true_use_rows_vector] = splitRowsVector(X, use_rows_vector, col, threshold, type)
 }
 
+outputMatrixBind = function(
+    Matrix[Double] M,
+    Matrix[Double] node,
+    Double offset,
+    Double used_col,
+    Matrix[Double] R,
+    Matrix[Double] threshold
+) return (Matrix[Double] new_M) {
+    col = matrix(0, rows = 5, cols = 1)
+    col[1, 1] = node[1, 1]
+    col[2, 1] = offset
+    col[3, 1] = used_col
+    if (used_col >= 1.0) { col[4, 1] = R[1, used_col] }
+    col[5, 1] = nrow(threshold)
+    col = rbind(col, threshold)
+    printVector("New M col: ", col)
+
+    if (ncol(M) == 0 & nrow(M) == 0) {
+        new_M = col
+    } else {
+        row_difference = nrow(M) - nrow(col)
+        if (row_difference < 0.0) {
+            buffer = matrix(0, rows = -row_difference, cols = ncol(M))
+            M = rbind(M, buffer)
+        } else if (row_difference > 0.0) {
+            buffer = matrix(0, rows = row_difference, cols = 1)
+            col = rbind(M, buffer)
+        }
+        new_M = cbind(M, col)
+    }
+}
+
 m_decisionTree = function(
     Matrix[Double] X,
     Matrix[Double] Y,
@@ -386,7 +418,7 @@ m_decisionTree = function(
     # misclassifiedQueue = [-1]
     # depthQueue = [0]
     queue_length = 1
-
+    M = matrix(0, rows = 0, cols = 0)
     while (queue_length > 0) {
        print("-------------------------------------------------------------------------------------------------------")
         [node_queue, node] = dataQueuePop(node_queue)
@@ -405,6 +437,7 @@ m_decisionTree = function(
         create_child_nodes_flag = FALSE
 
         node_depth = calculateNodeDepth(node)
+        used_col = 0.0
         if (node_depth < depth & available_rows > 1 & available_cols > 0 & as.scalar(parent_impurity) > 0) {
             [impurity, used_col, threshold, type] = calcBestSplittingCriteria(X, Y, R, use_rows_vector, use_cols_vector, bins)
             create_child_nodes_flag = impurity < as.scalar(parent_impurity)
@@ -416,15 +449,18 @@ m_decisionTree = function(
         if (create_child_nodes_flag) {
             [left, right] = calculateChildNodes(node)
             node_queue = dataQueuePush(left, right, node_queue)
-            offset = dataQueueLength(node_queue) - 1
-            print("Offset to left child: " + offset)
+
             [new_use_cols_vector, left_use_rows_vector, right_use_rows_vector] = splitData(X, use_rows_vector, use_cols_vector, used_col, threshold, type)
             use_rows_queue = dataQueuePush(left_use_rows_vector, right_use_rows_vector, use_rows_queue)
             use_cols_queue = dataQueuePush(new_use_cols_vector, new_use_cols_vector, use_cols_queue)
 
             impurity_queue = dataQueuePush(matrix(impurity, rows = 1, cols = 1), matrix(impurity, rows = 1, cols = 1), impurity_queue)
+            offset = dataQueueLength(node_queue) - 1
+            print("Offset to left child: " + offset)
+            M = outputMatrixBind(M, node, offset, used_col, R, threshold)
         } else {
-            print("Offset to left child: 0.0")
+            M = outputMatrixBind(M, node, 0.0, used_col, R, matrix(0, rows = 1, cols = 1))
+            print("LEAF!")
         }
         queue_length = dataQueueLength(node_queue)# -- user-defined function calls not supported in relational expressions
 
@@ -432,6 +468,4 @@ m_decisionTree = function(
         print("-------------------------------------------------------------------------------------------------------")
         print(" ")
     }
-
-    M = X
 }

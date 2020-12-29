@@ -39,18 +39,22 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
 
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[]{"-args", input("X"), input("Y"), " ", output("M") };
+            programArgs = new String[]{"-args", input("X"), input("Y"), input("R"), output("M") };
             fullRScriptName = HOME + TEST_NAME + ".R";
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "  + expectedDir();
 
             //generate actual dataset
             double[][] X = getRandomMatrix(rows, cols, 0, 100, 1.0, 7);
             writeInputMatrixWithMTD("X", X, true);
+
             double[][] Y = getRandomMatrix(rows, 1, 0, 1, 1.0, 3);
             for (int row = 0; row < rows; row++) {
                 Y[row][0] = (Y[row][0] > 0.5)? 1.0 : 0.0;
             }
             writeInputMatrixWithMTD("Y", Y, true);
+
+            double[][] R = getRandomMatrix(1, cols, 1, 1, 1.0, 1);
+            writeInputMatrixWithMTD("R", R, true);
 
             runTest(true, false, null, -1);
 

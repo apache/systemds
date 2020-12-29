@@ -65,15 +65,15 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction
       FederationMap federation_mapping = matrix_object_1.getFedMapping();
       FederatedRequest[] fed_req_init_1 = federation_mapping.broadcastSliced(matrix_object_2, false);
       FederatedRequest fed_req_init_2 = federation_mapping.broadcast(matrix_object_3);
-      FederatedRequest fed_req_init_3 = null;
+      FederatedRequest[] fed_req_init_3 = null;
       FederatedRequest fed_req_compute_1 = null;
 
       if(matrix_object_4 != null)
       {
-        fed_req_init_3 = federation_mapping.broadcast(matrix_object_4);
+        fed_req_init_3 = federation_mapping.broadcastSliced(matrix_object_4, false);
         fed_req_compute_1 = FederationUtils.callInstruction(instString, output,
           new CPOperand[]{input1, input2, input3, _input4},
-          new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID(), fed_req_init_3.getID()});
+          new long[]{federation_mapping.getID(), fed_req_init_1[0].getID(), fed_req_init_2.getID(), fed_req_init_3[0].getID()});
       }
       else
       {
@@ -89,9 +89,10 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction
       Future<FederatedResponse>[] response;
       if(fed_req_init_3 != null)
       {
-        FederatedRequest fed_req_cleanup_4 = federation_mapping.cleanup(getTID(), fed_req_init_3.getID());
+        FederatedRequest fed_req_cleanup_4 = federation_mapping.cleanup(getTID(), fed_req_init_3[0].getID());
         // execute federated instructions
-        response = federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2, fed_req_init_3,
+        federation_mapping.execute(getTID(), true, fed_req_init_1, fed_req_init_2);
+				response = federation_mapping.execute(getTID(), true, fed_req_init_3,
           fed_req_compute_1, fed_req_get_1,
           fed_req_cleanup_1, fed_req_cleanup_2, fed_req_cleanup_3, fed_req_cleanup_4);
       }

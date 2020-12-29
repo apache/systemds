@@ -49,35 +49,47 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 			str = str.replace(ExecType.SPARK.name(), ExecType.CP.name());
       str = str.replace("mapwcemm", "wcemm");
 			str = str.replace("mapwsloss", "wsloss");
+			if(str.contains("redwsloss"))
+			{
+				str = str.replace("redwsloss", "wsloss");
+				// remove booleans which indicate cacheU and cacheV for redwsloss
+				str = str.replace(Lop.OPERAND_DELIMITOR + "true", "");
+				str = str.replace(Lop.OPERAND_DELIMITOR + "false", "");
+			}
 			str += Lop.OPERAND_DELIMITOR + "1"; //num threads
 		}
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
+		InstructionUtils.checkNumFields(parts, 7);
+
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[5]);
 
-		InstructionUtils.checkNumFields(parts, 7);
+		checkDataTypes(DataType.MATRIX, in1, in2, in3);
 
 		if(opcode.equals("wcemm") || opcode.equals("wsloss"))
 		{
 			CPOperand in4 = new CPOperand(parts[4]);
-			checkDataTypes(in1, in2, in3, in4, opcode.equals("wcemm"));
 
 			QuaternaryOperator quaternary_operator = null;
 
 			if(opcode.equals("wcemm"))
 			{
 			  final WCeMMType wcemm_type = WCeMMType.valueOf(parts[6]);
+				if(wcemm_type.hasFourInputs())
+					checkDataTypes(new DataType[]{DataType.SCALAR, DataType.MATRIX}, in4);
 			  quaternary_operator = (wcemm_type.hasFourInputs() ? new QuaternaryOperator(wcemm_type, Double.parseDouble(in4.getName())) : new QuaternaryOperator(wcemm_type));
 			  return new QuaternaryWCeMMFEDInstruction(quaternary_operator, in1, in2, in3, in4, out, opcode, str);
 			}
 			else if(opcode.equals("wsloss"))
 			{
 			  final WeightsType weights_type = WeightsType.valueOf(parts[6]);
+				if(weights_type.hasFourInputs())
+					checkDataTypes(DataType.MATRIX, in4);
 			  quaternary_operator = new QuaternaryOperator(weights_type);
 			  return new QuaternaryWSLossFEDInstruction(quaternary_operator, in1, in2, in3, in4, out, opcode, str);
 			}
@@ -86,12 +98,30 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 		throw new DMLRuntimeException("Unsupported opcode (" + opcode + ") for QuaternaryFEDInstruction.");
 	}
 
-	protected static void checkDataTypes(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, boolean in4_scalar_flag) {
-		if(in1.getDataType() != DataType.MATRIX || in2.getDataType() != DataType.MATRIX
-			|| in3.getDataType() != DataType.MATRIX
-			|| !((in4.getDataType() == DataType.SCALAR && in4_scalar_flag) || in4.getDataType() == DataType.MATRIX)) {
-			throw new DMLRuntimeException("Federated quaternary operations "
-				+ "only supported with matrix inputs and scalar epsilon.");
+	protected static void checkDataTypes(DataType data_type, CPOperand... cp_operands)
+	{
+		checkDataTypes(new DataType[]{data_type}, cp_operands);
+	}
+
+	protected static void checkDataTypes(DataType[] data_types, CPOperand... cp_operands)
+	{
+		for(CPOperand cpo : cp_operands)
+		{
+			if(!checkDataType(data_types, cpo))
+			{
+				throw new DMLRuntimeException("Federated quaternary operations "
+					+ "only supported with matrix inputs and scalar epsilon.");
+			}
 		}
+	}
+
+	private static boolean checkDataType(DataType[] data_types, CPOperand cp_operand)
+	{
+		for(DataType dt : data_types)
+		{
+			if(cp_operand.getDataType() == dt)
+				return true;
+		}
+		return false;
 	}
 }

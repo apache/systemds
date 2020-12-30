@@ -24,18 +24,18 @@ library("Matrix")
 
 # read test data
 data_train            <- as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
-data_test             <- as.matrix(readMM(paste(args[2], "T.mtx", sep="")))
-CL                    <- as.matrix(readMM(paste(args[3], "CL.mtx", sep="")))
+data_test             <- as.matrix(readMM(paste(args[1], "T.mtx", sep="")))
+CL                    <- as.matrix(readMM(paste(args[1], "CL.mtx", sep="")))
 
-str(data_train)
-str(data_test)
-str(CL)
+# str(data_train)
+# str(data_test)
+# str(CL)
 ## depends how i get the labels/catagories, maybe they are in the training/testing set
 # data_train_labels     <- as.matrix(read.csv(args[3], stringsAsFactors = FALSE))
 # data_test_labels      <- as.matrix(read.csv(args[4], stringsAsFactors = FALSE))
 
-is_continuous <- as.integer(args[4])
-K <- as.integer(args[5])
+is_continuous <- as.integer(args[2])
+K <- as.integer(args[3])
 
 # ---- normalize -----
 normalize <- function(x) { return ((x - min(x)) / (max(x) - min(x))) }
@@ -48,10 +48,15 @@ if(is_continuous == 1)
 }
 
 # get the labels, last col
-data_train_labels     <- CL[1:nrow(data_train),1] #data_train[1:NROW(data_train), NCOL(data_train)]
-data_test_labels      <- CL[nrow(data_train)+1:nrow(data_test),1]
+data_train_labels <- CL
+# data_train_labels     <- CL[1:nrow(data_train),1] #data_train[1:NROW(data_train), NCOL(data_train)]
+# data_test_labels      <- CL[nrow(data_train)+1:nrow(data_test),1]
 
-
+table(CL)
+print(K)
+print(dim(data_train))
+print(dim(data_test))
+print(dim(CL))
 
 # ------ training -------
 install.packages("class")

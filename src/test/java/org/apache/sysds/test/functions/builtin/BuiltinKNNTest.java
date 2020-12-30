@@ -73,8 +73,9 @@ public class BuiltinKNNTest extends AutomatedTestBase
   {
     return Arrays.asList(new Object[][] {
       // {rows, cols, query_rows, query_cols, continuous, k_value, sparsity}
-      {1000, 500, 35, 450, true, 7, 0.1},
-      {1000, 500, 35, 450, true, 7, 0.9}
+      // {1000, 500, 35, 450, true, 7, 0.1},
+      // {1000, 500, 35, 450, true, 7, 0.9}
+      {10, 10, 10, 10, true, 7, 1}
     });
   }
 
@@ -94,9 +95,11 @@ public class BuiltinKNNTest extends AutomatedTestBase
 
     double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
     double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
+    double[][] CL = getRandomMatrix(rows, 1, 0, 1, 1, 7);
 
     writeInputMatrixWithMTD("X", X, true);
     writeInputMatrixWithMTD("T", T, true);
+    writeInputMatrixWithMTD("CL", CL, true);
 
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
     programArgs = new String[] {"-exec", "-args",

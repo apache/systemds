@@ -48,6 +48,7 @@ public class BuiltinDMVTest extends AutomatedTestBase {
     private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinOutlierTest.class.getSimpleName() + "/";
 
     private final static Types.ValueType[] schemaStrings = {Types.ValueType.STRING};
+    private final static Types.ValueType[] schemaStrings2 = {Types.ValueType.STRING, Types.ValueType.STRING};
     private final static int rows = 10;
 
     static enum TestType {
@@ -95,15 +96,15 @@ public class BuiltinDMVTest extends AutomatedTestBase {
     public void AdvancedIntegerFrameTest() {
         String[] content1 = new String[]{"44","3","235","52","weg","12", "11", "33", "22", "99"};
 
-        FrameBlock f = new FrameBlock(schemaStrings);
+        FrameBlock f = new FrameBlock(schemaStrings2);
         for (String s : content1) {
             f.appendRow(new String[]{s});
         }
-        // f.appendColumn(new String[]{"15","weeeg","111","52","weg","333", "11", "999", "22", "99"});
+        f.appendColumn(new String[]{"15","weeeg","111","52","weg","333", "11", "999", "22", "99"});
 
         int[][] positions = new int [2][2];
         positions[0] = new int[]{4};
-        //positions[1] = new int[]{1,5};
+        positions[1] = new int[]{1,5};
 
         //hardcoded for now
         runMissingValueTest(f, ExecType.CP, positions);

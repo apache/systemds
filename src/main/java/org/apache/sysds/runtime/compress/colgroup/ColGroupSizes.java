@@ -41,9 +41,10 @@ public class ColGroupSizes {
 	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, boolean lossy) {
 		long size = estimateInMemorySizeGroup(nrColumns);
 		size += 8; // Dictionary Reference.
-		if(lossy){
+		if(lossy) {
 			size += QDictionary.getInMemorySize(nrValues);
-		}else{
+		}
+		else {
 			size += Dictionary.getInMemorySize(nrValues);
 		}
 		return size;
@@ -70,19 +71,21 @@ public class ColGroupSizes {
 		return size;
 	}
 
-	public static long estimateInMemorySizeOffset(int nrColumns, int nrValues, int pointers, int offsetLength, boolean lossy) {
+	public static long estimateInMemorySizeOffset(int nrColumns, int nrValues, int pointers, int offsetLength,
+		boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
 		size += MemoryEstimates.intArrayCost(pointers);
 		size += MemoryEstimates.charArrayCost(offsetLength);
 		return size;
 	}
 
-	public static long estimateInMemorySizeOLE(int nrColumns, int nrValues, int offsetLength, int nrRows, boolean lossy) {
+	public static long estimateInMemorySizeOLE(int nrColumns, int nrValues, int offsetLength, int nrRows,
+		boolean lossy) {
 		nrColumns = nrColumns > 0 ? nrColumns : 1;
 		offsetLength += (nrRows / CompressionSettings.BITMAP_BLOCK_SZ) * 2;
 		long size = 0;
 		size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues / nrColumns) + 1, offsetLength, lossy);
-		if (nrRows > CompressionSettings.BITMAP_BLOCK_SZ * 2){
+		if(nrRows > CompressionSettings.BITMAP_BLOCK_SZ * 2) {
 			size += MemoryEstimates.intArrayCost((int) nrValues / nrColumns);
 		}
 		return size;
@@ -96,7 +99,7 @@ public class ColGroupSizes {
 		return size;
 	}
 
-	public static long estimateInMemorySizeCONST(int nrColumns, int nrValues, boolean lossy){
+	public static long estimateInMemorySizeCONST(int nrColumns, int nrValues, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
 		return size;
 	}

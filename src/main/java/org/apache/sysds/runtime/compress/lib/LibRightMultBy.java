@@ -400,7 +400,7 @@ public class LibRightMultBy {
 		if(k == 1) {
 			for(int j = 0; j < colGroups.size(); j++) {
 				ColGroupValue g = (ColGroupValue) colGroups.get(j);
-				double[] preAggregatedB = g.preaggValues(v.getRight()[j]/g.getNumCols(),
+				double[] preAggregatedB = g.preaggValues(v.getRight()[j] / g.getNumCols(),
 					sb,
 					colGroups.get(j).getValues(),
 					0,
@@ -447,8 +447,8 @@ public class LibRightMultBy {
 		preTask.clear();
 		for(int h = 0; h < colGroups.size(); h++) {
 			RightMatrixPreAggregateSparseTask pAggT = new RightMatrixPreAggregateSparseTask(
-				(ColGroupValue) colGroups.get(h), v.getRight()[h]/colGroups.get(h).getNumCols(), sb, colGroups.get(h).getValues(), 0,
-				that.getNumColumns(), that.getNumColumns());
+				(ColGroupValue) colGroups.get(h), v.getRight()[h] / colGroups.get(h).getNumCols(), sb,
+				colGroups.get(h).getValues(), 0, that.getNumColumns(), that.getNumColumns());
 			preTask.add(pAggT);
 		}
 		return preTask;

@@ -150,7 +150,7 @@ public class LibBinaryCellOp {
 				}
 				else {
 					tasks.add(new BinaryMVRowTask(grp, v, sparseSafe, op));
-					
+
 				}
 				List<Future<ColGroup>> futures = pool.invokeAll(tasks);
 				for(Future<ColGroup> f : futures)

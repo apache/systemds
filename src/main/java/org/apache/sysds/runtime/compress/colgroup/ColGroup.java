@@ -204,16 +204,18 @@ public abstract class ColGroup implements Serializable {
 	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT);
 
 	/**
-	 * Decompress the contents of this column group into the specified full matrix block without managing the number of non zeros.
+	 * Decompress the contents of this column group into the specified full matrix block without managing the number of
+	 * non zeros.
 	 * 
-	 * @param target  a matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl row lower
-	 * @param ru row upper
-	 * @param offT Offset into target to assign from
+	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
+	 * @param rl     row lower
+	 * @param ru     row upper
+	 * @param offT   Offset into target to assign from
 	 * @param values The Values materialized in the dictionary
-	 * @param safe If the number of non zeros should be ignored.
+	 * @param safe   If the number of non zeros should be ignored.
 	 */
-	public abstract void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe);
+	public abstract void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values,
+		boolean safe);
 
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block.

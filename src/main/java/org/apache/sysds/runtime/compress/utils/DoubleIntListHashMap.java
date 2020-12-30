@@ -159,17 +159,17 @@ public class DoubleIntListHashMap extends CustomHashMap {
 		}
 
 		@Override
-		public String toString(){
+		public String toString() {
 			StringBuilder sb = new StringBuilder();
 			sb.append("[" + key + ", ");
-			sb.append( value + ", ");
-			sb.append( next + "]");
+			sb.append(value + ", ");
+			sb.append(next + "]");
 			return sb.toString();
 		}
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName() + this.hashCode());
 		sb.append("\n" + Arrays.toString(_data));

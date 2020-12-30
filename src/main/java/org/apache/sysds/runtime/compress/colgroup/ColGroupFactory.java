@@ -180,7 +180,7 @@ public class ColGroupFactory {
 
 			// Furthermore performance of a compressed representation that does not compress much, is decremental to
 			// overall performance.
-			
+
 			if(compRatio > 1.0 || compSettings.columnPartitioner == PartitionerType.COST) {
 				int rlen = compSettings.transposeInput ? in.getNumColumns() : in.getNumRows();
 				return compress(colIndexes, rlen, ubm, sizeInfo.getBestCompressionType(), compSettings, in);

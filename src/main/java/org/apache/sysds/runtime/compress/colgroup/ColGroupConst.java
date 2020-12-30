@@ -112,7 +112,7 @@ public class ColGroupConst extends ColGroupValue {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockSafe(target,rl,ru,offT,values, true);
+		decompressToBlockSafe(target, rl, ru, offT, values, true);
 	}
 
 	@Override
@@ -125,7 +125,6 @@ public class ColGroupConst extends ColGroupValue {
 				target.setValue(offT, _colIndexes[j], values[j] + v);
 			}
 	}
-
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {

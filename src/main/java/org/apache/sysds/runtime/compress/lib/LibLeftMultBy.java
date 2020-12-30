@@ -139,16 +139,16 @@ public class LibLeftMultBy {
 				int numExtraThreads = k / numBlocks;
 				LOG.error("overlapping  : " + overlapping);
 				// if(!overlapping) {
-				// 	for(int i = 0; i < that.getNumColumns(); i++) {
-				// 		tasks.add(new leftMultByCompressedTransposedMatrixTask(colGroups, that.getColGroups(), ret, v,
-				// 			thatV, i * blklen, Math.min((i + 1) * blklen, that.getNumColumns()), overlapping, ));
-				// 	}
+				// for(int i = 0; i < that.getNumColumns(); i++) {
+				// tasks.add(new leftMultByCompressedTransposedMatrixTask(colGroups, that.getColGroups(), ret, v,
+				// thatV, i * blklen, Math.min((i + 1) * blklen, that.getNumColumns()), overlapping, ));
+				// }
 				// }
 				// else {
-					for(int i = 0; i * blklen < that.getNumColumns(); i++)
-						tasks.add(new leftMultByCompressedTransposedMatrixTask(colGroups, that.getColGroups(), ret, v,
-							thatV, i * blklen, Math.min((i + 1) * blklen, that.getNumColumns()), overlapping,
-							numExtraThreads));
+				for(int i = 0; i * blklen < that.getNumColumns(); i++)
+					tasks.add(new leftMultByCompressedTransposedMatrixTask(colGroups, that.getColGroups(), ret, v,
+						thatV, i * blklen, Math.min((i + 1) * blklen, that.getNumColumns()), overlapping,
+						numExtraThreads));
 				// }
 				List<Future<Object>> futures = pool.invokeAll(tasks);
 				LOG.error("tasks: " + futures.size() + "  Each task has threads: " + numExtraThreads);

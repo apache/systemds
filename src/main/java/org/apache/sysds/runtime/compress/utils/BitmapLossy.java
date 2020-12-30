@@ -40,7 +40,6 @@ public final class BitmapLossy extends ABitmap {
 		_scale = scale;
 	}
 
-
 	/**
 	 * Get all values without unnecessary allocations and copies.
 	 * 

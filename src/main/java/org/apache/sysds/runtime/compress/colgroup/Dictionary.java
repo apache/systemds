@@ -141,7 +141,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary cloneAndExtend(int len){
+	public Dictionary cloneAndExtend(int len) {
 		double[] ret = Arrays.copyOf(_values, _values.length + len);
 		return new Dictionary(ret);
 	}
@@ -194,7 +194,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	protected double sumRow(int k, KahanFunction kplus, int nrColumns) {
-		
+
 		int valOff = k * nrColumns;
 		double res = 0.0;
 		if(kplus instanceof KahanPlus) {
@@ -206,7 +206,7 @@ public class Dictionary extends ADictionary {
 			// kSquare
 			for(int i = 0; i < nrColumns; i++)
 				res += _values[valOff + i] * _values[valOff + i];
-			}
+		}
 		return res;
 	}
 
@@ -250,10 +250,10 @@ public class Dictionary extends ADictionary {
 		return sb.toString();
 	}
 
-	public StringBuilder getString(StringBuilder sb, int colIndexes){
-		for(int i = 0; i< _values.length; i++){
+	public StringBuilder getString(StringBuilder sb, int colIndexes) {
+		for(int i = 0; i < _values.length; i++) {
 			sb.append(_values[i]);
-			sb.append((i) % (colIndexes ) == colIndexes - 1  ? "\n" : " ");
+			sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n" : " ");
 		}
 		return sb;
 	}

@@ -232,11 +232,11 @@ public class ColGroupUncompressed extends ColGroup {
 			}
 		}
 	}
-	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values,  boolean safe) {
-		decompressToBlock(target,rl,ru,offT, values);
-	}
 
+	@Override
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
+		decompressToBlock(target, rl, ru, offT, values);
+	}
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
@@ -348,8 +348,8 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c,
-		double[] values, int numRows, int numCols, int row, double[] MaterializedRow) {
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
+		double[] MaterializedRow) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 

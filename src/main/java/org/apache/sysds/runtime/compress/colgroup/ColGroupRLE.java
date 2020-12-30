@@ -644,7 +644,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		boolean[] lind = computeZeroIndicatorVector();
 		int[] loff = computeOffsets(lind);
 		if(loff.length == 0) { // empty offset list: go back to fast path
-			return new ColGroupRLE(_colIndexes, _numRows, false, applyScalarOp(op), _data, _ptr,getCachedCounts());
+			return new ColGroupRLE(_colIndexes, _numRows, false, applyScalarOp(op), _data, _ptr, getCachedCounts());
 		}
 
 		ADictionary rvalues = applyScalarOp(op, val0, getNumCols());
@@ -654,7 +654,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
 		rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
 
-		return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs,getCachedCounts());
+		return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
 	}
 
 	@Override
@@ -664,7 +664,8 @@ public class ColGroupRLE extends ColGroupOffset {
 		// fast path: sparse-safe operations
 		// Note that bitmaps don't change and are shallow-copied
 		if(sparseSafe) {
-			return new ColGroupRLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op.fn, v, sparseSafe), _data, _ptr,getCachedCounts());
+			return new ColGroupRLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op.fn, v, sparseSafe), _data, _ptr,
+				getCachedCounts());
 		}
 
 		// slow path: sparse-unsafe operations (potentially create new bitmap)
@@ -672,9 +673,10 @@ public class ColGroupRLE extends ColGroupOffset {
 		boolean[] lind = computeZeroIndicatorVector();
 		int[] loff = computeOffsets(lind);
 		if(loff.length == 0) { // empty offset list: go back to fast path
-			return new ColGroupRLE(_colIndexes, _numRows, false, applyBinaryRowOp(op.fn, v, true), _data, _ptr,getCachedCounts());
+			return new ColGroupRLE(_colIndexes, _numRows, false, applyBinaryRowOp(op.fn, v, true), _data, _ptr,
+				getCachedCounts());
 		}
-		
+
 		ADictionary rvalues = applyBinaryRowOp(op.fn, v, sparseSafe);
 		char[] lbitmap = genRLEBitmap(loff, loff.length);
 		char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
@@ -682,7 +684,8 @@ public class ColGroupRLE extends ColGroupOffset {
 		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
 		rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
 
-		// Also note that for efficiency of following operations (and less memory usage because they share index structures),
+		// Also note that for efficiency of following operations (and less memory usage because they share index
+		// structures),
 		// the materialized is also applied to this.
 		// so that following operations don't suffer from missing zeros.
 		_data = rbitmaps;
@@ -690,8 +693,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		_zeros = false;
 		_dict = _dict.cloneAndExtend(_colIndexes.length);
 
-
-		return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs,getCachedCounts());
+		return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
 	}
 
 	@Override

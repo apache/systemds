@@ -174,21 +174,21 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1);
 		ret.allocateDenseBlock();
 		// (nonZeros == -1) ?
-		// 	.allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
+		// .allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
 
 		// if(ret.isInSparseFormat()) {
-		// 	int[] rnnz = new int[rlen];
-		// 	// for(ColGroup grp : _colGroups)
-		// 	// grp.countNonZerosPerRow(rnnz, 0, rlen);
-		// 	ret.allocateSparseRowsBlock();
-		// 	SparseBlock rows = ret.getSparseBlock();
-		// 	for(int i = 0; i < rlen; i++)
-		// 		rows.allocate(i, rnnz[i]);
+		// int[] rnnz = new int[rlen];
+		// // for(ColGroup grp : _colGroups)
+		// // grp.countNonZerosPerRow(rnnz, 0, rlen);
+		// ret.allocateSparseRowsBlock();
+		// SparseBlock rows = ret.getSparseBlock();
+		// for(int i = 0; i < rlen; i++)
+		// rows.allocate(i, rnnz[i]);
 		// }
 
 		// core decompression (append if sparse)
 		for(ColGroup grp : _colGroups)
-			grp.decompressToBlockSafe(ret, 0, rlen,0,grp.getValues(),false);
+			grp.decompressToBlockSafe(ret, 0, rlen, 0, grp.getValues(), false);
 
 		// post-processing (for append in decompress)
 		if(ret.getNonZeros() == -1 || nonZeros == -1) {
@@ -380,15 +380,16 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	public int[] countNonZerosPerRow(int rl, int ru) {
 		int[] rnnz = new int[ru - rl];
-		if(! isOverlapping()){
+		if(!isOverlapping()) {
 
 			for(ColGroup grp : _colGroups)
 				grp.countNonZerosPerRow(rnnz, rl, ru);
 			return rnnz;
 		}
-		else{
-			LOG.warn("Not good to calculate number of non zeros in segment when overlapping compressed returning as if fully dense");
-			Arrays.fill(rnnz,getNumColumns());
+		else {
+			LOG.warn(
+				"Not good to calculate number of non zeros in segment when overlapping compressed returning as if fully dense");
+			Arrays.fill(rnnz, getNumColumns());
 			return rnnz;
 		}
 	}

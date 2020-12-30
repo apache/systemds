@@ -221,7 +221,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary cloneAndExtend(int len){
+	public QDictionary cloneAndExtend(int len) {
 		byte[] ret = Arrays.copyOf(_values, _values.length + len);
 		return new QDictionary(ret, _scale);
 	}
@@ -282,7 +282,7 @@ public class QDictionary extends ADictionary {
 			// kSquare
 			double res = 0.0;
 			for(int i = 0; i < nrColumns; i++)
-				res += (int)(_values[valOff + i] * _values[valOff+i]) * _scale * _scale;
+				res += (int) (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
 			return res;
 		}
 	}

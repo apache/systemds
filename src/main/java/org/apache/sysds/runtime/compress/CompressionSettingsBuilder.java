@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
  * Builder pattern for Compression Settings. See CompressionSettings for details on values.
  */
 public class CompressionSettingsBuilder {
-	private double samplingRatio; // default 0.1
+	private double samplingRatio;
 	private boolean allowSharedDictionary = false;
 	private boolean transposeInput = true;
 	private boolean skipList = true;
@@ -39,8 +39,7 @@ public class CompressionSettingsBuilder {
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
 	private boolean sortValuesByLength = false;
-	private PartitionerType columnPartitioner = PartitionerType.COST;
-	// private PartitionerType columnPartitioner = PartitionerType.STATIC;
+	private PartitionerType columnPartitioner;
 	private int maxStaticColGroupCoCode = 10;
 
 	public CompressionSettingsBuilder() {
@@ -54,7 +53,7 @@ public class CompressionSettingsBuilder {
 		}
 		samplingRatio = conf.getDoubleValue(DMLConfig.COMPRESSED_SAMPLING_RATIO);
 		columnPartitioner = PartitionerType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COCODE));
-		
+
 	}
 
 	/**

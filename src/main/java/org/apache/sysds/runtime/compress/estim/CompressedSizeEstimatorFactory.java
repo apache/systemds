@@ -37,8 +37,10 @@ public class CompressedSizeEstimatorFactory {
 		}
 		else {
 			int sampleSize = Math.max((int) Math.ceil(elements * compSettings.samplingRatio), 10000);
-			int[] sampleRows = CompressedSizeEstimatorSample
-				.getSortedUniformSample(compSettings.transposeInput ? data.getNumColumns(): data.getNumRows(), sampleSize, compSettings.seed);
+			int[] sampleRows = CompressedSizeEstimatorSample.getSortedUniformSample(
+				compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(),
+				sampleSize,
+				compSettings.seed);
 			est = new CompressedSizeEstimatorSample(data, compSettings, sampleRows);
 			if(LOG.isDebugEnabled()) {
 

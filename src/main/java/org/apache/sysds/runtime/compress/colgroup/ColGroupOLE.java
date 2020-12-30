@@ -119,19 +119,19 @@ public class ColGroupOLE extends ColGroupOffset {
 						int rix = row - (rl - offT);
 						int rc = rix * target.getNumColumns();
 						for(int j = 0; j < numCols; j++) {
-							if(safe){
+							if(safe) {
 
-								double v =  c[rc + j];
+								double v = c[rc + j];
 								double nv = c[rc + j] + values[off + j];
-								if(v == 0.0 && nv != 0.0){
-									target.setNonZeros(target.getNonZeros() +1);
+								if(v == 0.0 && nv != 0.0) {
+									target.setNonZeros(target.getNonZeros() + 1);
 								}
-								c[rc+j] = nv;
+								c[rc + j] = nv;
 							}
-							else{
-								c[rc+j] += values[off+j];
+							else {
+								c[rc + j] += values[off + j];
 							}
-							
+
 						}
 					}
 				}
@@ -297,7 +297,8 @@ public class ColGroupOLE extends ColGroupOffset {
 		// fast path: sparse-safe operations
 		// Note that bitmaps don't change and are shallow-copied
 		if(sparseSafe) {
-			return new ColGroupOLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op.fn, v, sparseSafe), _data, _ptr, getCachedCounts());
+			return new ColGroupOLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op.fn, v, sparseSafe), _data, _ptr,
+				getCachedCounts());
 		}
 
 		// slow path: sparse-unsafe operations (potentially create new bitmap)
@@ -305,7 +306,8 @@ public class ColGroupOLE extends ColGroupOffset {
 		boolean[] lind = computeZeroIndicatorVector();
 		int[] loff = computeOffsets(lind);
 		if(loff.length == 0) { // empty offset list: go back to fast path
-			return new ColGroupOLE(_colIndexes, _numRows, false, applyBinaryRowOp(op.fn, v, true), _data, _ptr, getCachedCounts());
+			return new ColGroupOLE(_colIndexes, _numRows, false, applyBinaryRowOp(op.fn, v, true), _data, _ptr,
+				getCachedCounts());
 		}
 		ADictionary rvalues = applyBinaryRowOp(op.fn, v, sparseSafe);
 		char[] lbitmap = genOffsetBitmap(loff, loff.length);
@@ -314,7 +316,8 @@ public class ColGroupOLE extends ColGroupOffset {
 		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
 		rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
 
-		// Also note that for efficiency of following operations (and less memory usage because they share index structures),
+		// Also note that for efficiency of following operations (and less memory usage because they share index
+		// structures),
 		// the materialized is also applied to this.
 		// so that following operations don't suffer from missing zeros.
 		_data = rbitmaps;
@@ -879,7 +882,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				// iterate over bitmap blocks and add values
 				for(int off = bi; bix < blen && off < bimax; off += blksz) {
 					int slen = _data[boff + bix];
-					for(int blckIx =  1; blckIx <= slen; blckIx++) {
+					for(int blckIx = 1; blckIx <= slen; blckIx++) {
 						rnnz[off + _data[boff + bix + blckIx] - rl] += numCols;
 					}
 					bix += slen + 1;

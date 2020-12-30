@@ -35,7 +35,6 @@ public class ReaderColumnSelectionDense extends ReaderColumnSelection {
 		reusableReturn = new DblArray(reusableArr);
 	}
 
-
 	protected DblArray getNextRow() {
 		if(_lastRow == _numRows - 1)
 			return null;

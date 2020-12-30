@@ -90,11 +90,11 @@ public class CompressedMatrixBlockFactory {
 		// Prepare basic meta data and deep copy / transpose input
 		int numRows = mb.getNumRows();
 		int numCols = mb.getNumColumns();
-		
+
 		// -------------------------------------------------
 		// PHASE 0: transpose input matrix
 		// Transpose the matrix, to give more cache friendly access to reading row by row values.
-		
+
 		// Transpose the MatrixBlock if the TransposeInput flag is set.
 		// This gives better cache consciousness, at a small upfront cost.
 
@@ -103,8 +103,7 @@ public class CompressedMatrixBlockFactory {
 			.transpose(mb, new MatrixBlock(numCols, numRows, sparse), 1);
 
 		// MatrixBlock rawBlock = !compSettings.transposeInput ? mb : LibMatrixReorg
-		// 		.transposeInPlace(mb, k);
-
+		// .transposeInPlace(mb, k);
 
 		_stats.setNextTimePhase(time.stop());
 		if(DMLScript.STATISTICS) {
@@ -229,7 +228,7 @@ public class CompressedMatrixBlockFactory {
 		}
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("--num col groups: " + colGroupList.size() + ", -- num input cols: " + numCols);
-			LOG.debug("--compression phase 5: " + _stats.getLastTimePhase());
+			LOG.debug("--compression phase 5 Cleanup   : " + _stats.getLastTimePhase());
 			LOG.debug("--col groups types " + _stats.getGroupsTypesString());
 			LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
 			LOG.debug("--compressed size: " + _stats.size);

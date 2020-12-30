@@ -90,7 +90,7 @@ public class LibCompAgg {
                 ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();
                 if(op.indexFn instanceof ReduceCol && grpParts.length > 0) {
                     final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
-                    int blklen = Math.min((int) Math.ceil((double) m1.getNumRows() / op.getNumThreads()), blkz/2);
+                    int blklen = Math.min((int) Math.ceil((double) m1.getNumRows() / op.getNumThreads()), blkz / 2);
                     blklen += (blklen % blkz != 0) ? blkz - blklen % blkz : 0;
                     for(int i = 0; i < op.getNumThreads() & i * blklen < m1.getNumRows(); i++) {
                         tasks.add(new UnaryAggregateTask(grpParts[0], ret, i * blklen,
@@ -231,15 +231,15 @@ public class LibCompAgg {
                 ret.recomputeNonZeros();
             }
             // else if(op.indexFn instanceof ReduceCol) {
-                // long nnz = 0;
-                // for(int i = 0; i * blklen < m1.getNumRows(); i++) {
-                //     MatrixBlock tmp = rtasks.get(i).get();
-                //     for(int row = 0, off = i * blklen; row < tmp.getNumRows(); row++, off++) {
-                //         ret.quickSetValue(off, 0, tmp.quickGetValue(row, 0));
-                //         nnz += ret.quickGetValue(off, 0) == 0 ? 0 : 1;
-                //     }
-                // }
-                // ret.setNonZeros(nnz);
+            // long nnz = 0;
+            // for(int i = 0; i * blklen < m1.getNumRows(); i++) {
+            // MatrixBlock tmp = rtasks.get(i).get();
+            // for(int row = 0, off = i * blklen; row < tmp.getNumRows(); row++, off++) {
+            // ret.quickSetValue(off, 0, tmp.quickGetValue(row, 0));
+            // nnz += ret.quickGetValue(off, 0) == 0 ? 0 : 1;
+            // }
+            // }
+            // ret.setNonZeros(nnz);
             // }
             else {
                 for(Future<MatrixBlock> rtask : rtasks) {

@@ -74,7 +74,8 @@ public class ColGroupDDC1 extends ColGroupDDC {
 		}
 	}
 
-	protected ColGroupDDC1(int[] colIndices, int numRows, ADictionary dict, byte[] data, boolean zeros, int[] cachedCounts) {
+	protected ColGroupDDC1(int[] colIndices, int numRows, ADictionary dict, byte[] data, boolean zeros,
+		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_data = data;
 		_zeros = zeros;
@@ -102,7 +103,8 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	}
 
 	@Override
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl, int cu){
+	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
+		int cu) {
 		LinearAlgebraUtils.vectListAddDDC(preAggregatedB, c, _data, rl, ru, cl, cu, thatNrColumns, getNumValues());
 	}
 
@@ -137,7 +139,7 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	@Override
 	protected double getData(int r, int colIx, double[] values) {
 		int index = (_data[r] & 0xFF) * getNumCols() + colIx;
-		return (index < values.length) ? values[index] :  0.0;
+		return (index < values.length) ? values[index] : 0.0;
 	}
 
 	@Override
@@ -194,14 +196,16 @@ public class ColGroupDDC1 extends ColGroupDDC {
 			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op), _data, _zeros, getCachedCounts());
 		}
 		else {
-			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false,getCachedCounts());
+			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false,
+				getCachedCounts());
 		}
 	}
 
 	@Override
 	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
 		sparseSafe = sparseSafe || !_zeros;
-		return new ColGroupDDC1(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe), _data, !sparseSafe,getCachedCounts());
+		return new ColGroupDDC1(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe), _data, !sparseSafe,
+			getCachedCounts());
 	}
 
 	@Override

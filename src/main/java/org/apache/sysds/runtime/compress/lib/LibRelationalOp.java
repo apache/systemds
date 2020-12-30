@@ -287,7 +287,12 @@ public class LibRelationalOp {
             }
 
             for(MinMaxGroup mmg : _minMax) {
-                mmg.g.decompressToBlockSafe(tmp, _i * _blkz, Math.min((_i + 1) * _blkz, mmg.g.getNumRows()), 0, mmg.values, false);
+                mmg.g.decompressToBlockSafe(tmp,
+                    _i * _blkz,
+                    Math.min((_i + 1) * _blkz, mmg.g.getNumRows()),
+                    0,
+                    mmg.values,
+                    false);
             }
 
             for(int row = 0, off = _i * _blkz; row < _blkz && row < _rows - _i * _blkz; row++, off++) {

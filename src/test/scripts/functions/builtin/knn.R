@@ -23,9 +23,9 @@ args <- commandArgs(TRUE)
 library("Matrix")
 
 # read test data
-data_train            <- as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
-data_test             <- as.matrix(readMM(paste(args[1], "T.mtx", sep="")))
-CL                    <- as.matrix(readMM(paste(args[1], "CL.mtx", sep="")))
+data_train            <- as.matrix(readMM(paste(args[1], "/X.mtx", sep="")))
+data_test             <- as.matrix(readMM(paste(args[1], "/T.mtx", sep="")))
+CL                    <- as.matrix(readMM(paste(args[1], "/CL.mtx", sep="")))
 
 # str(data_train)
 # str(data_test)
@@ -43,8 +43,8 @@ normalize <- function(x) { return ((x - min(x)) / (max(x) - min(x))) }
 if(is_continuous == 1)
 {
   # normalize all but last col (last is our target col)
-  data_train_n <- as.data.frame(lapply(data_train[1:NCOL(data_train)-1], normalize))
-  data_test_n  <- as.data.frame(lapply(data_test[1:NCOL(data_test)-1], normalize))
+  data_train_n <- as.data.frame(lapply(data_train[1:NCOL(data_train)], normalize))
+  data_test_n  <- as.data.frame(lapply(data_test[1:NCOL(data_test)], normalize))
 }
 
 # get the labels, last col
@@ -53,22 +53,23 @@ data_train_labels <- CL
 # data_test_labels      <- CL[nrow(data_train)+1:nrow(data_test),1]
 
 table(CL)
-print(K)
-print(dim(data_train))
-print(dim(data_test))
-print(dim(CL))
+#print(K)
+#print(dim(data_train))
+#print(dim(data_test))
+#print(dim(CL))
 
 # ------ training -------
-install.packages("class")
+#install.packages("class")
 library(class)
 test_pred <- knn(train= data_train, test= data_test, cl= data_train_labels, k=K)
-
-
-# NNR is native NNR, do we realy need to test that? I th
-writeMM(as(R, "CsparseMatrix"), paste(args[6], "PR", sep=""));
+print("-----------")
+print(test_pred)
+print("-----------")
+# NNR is native NNR, do we realy need to test that?
+writeMM(as(R, "CsparseMatrix"), paste(args[1], "PR", sep=""));
 
 ## feature importance with random forest
-install.packages("randomForest")
-library(randomForest)
-rf <- randomForest(as.factor(CL)~., data=dat)
-rf$importance
+#install.packages("randomForest")
+#library(randomForest)
+#rf <- randomForest(as.factor(CL)~., data=dat)
+#rf$importance

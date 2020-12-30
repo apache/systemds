@@ -98,12 +98,12 @@ public class CompressedMatrixBlockFactory {
 		// Transpose the MatrixBlock if the TransposeInput flag is set.
 		// This gives better cache consciousness, at a small upfront cost.
 
-		// boolean sparse = mb.isInSparseFormat();
-		// MatrixBlock rawBlock = !compSettings.transposeInput ? mb : LibMatrixReorg
-		// 	.transpose(mb, new MatrixBlock(numCols, numRows, sparse), 1);
-
+		boolean sparse = mb.isInSparseFormat();
 		MatrixBlock rawBlock = !compSettings.transposeInput ? mb : LibMatrixReorg
-				.transposeInPlace(mb, k);
+			.transpose(mb, new MatrixBlock(numCols, numRows, sparse), 1);
+
+		// MatrixBlock rawBlock = !compSettings.transposeInput ? mb : LibMatrixReorg
+		// 		.transposeInPlace(mb, k);
 
 
 		_stats.setNextTimePhase(time.stop());

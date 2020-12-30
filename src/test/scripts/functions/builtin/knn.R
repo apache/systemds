@@ -18,43 +18,52 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
+# TODO arguments and order
 args <- commandArgs(TRUE)
 library("Matrix")
 
 # read test data
 data_train            <- as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
-data_test             <- as.matrix(readMM(paste(args[1], "T.mtx", sep="")))
+data_test             <- as.matrix(readMM(paste(args[2], "T.mtx", sep="")))
+CL                    <- as.matrix(readMM(paste(args[3], "CL.mtx", sep="")))
 
+str(data_train)
+str(data_test)
+str(CL)
 ## depends how i get the labels/catagories, maybe they are in the training/testing set
 # data_train_labels     <- as.matrix(read.csv(args[3], stringsAsFactors = FALSE))
 # data_test_labels      <- as.matrix(read.csv(args[4], stringsAsFactors = FALSE))
 
-continuous <- as.integer(args[2])
-K <- as.integer(args[3])
+is_continuous <- as.integer(args[4])
+K <- as.integer(args[5])
 
 # ---- normalize -----
 normalize <- function(x) { return ((x - min(x)) / (max(x) - min(x))) }
 
-if(continuous == 1)
+if(is_continuous == 1)
 {
-  data_train_n <- as.data.frame(lapply(data_train, normalize))
-  data_test_n  <- as.data.frame(lapply(data_test, normalize))
+  # normalize all but last col (last is our target col)
+  data_train_n <- as.data.frame(lapply(data_train[1:NCOL(data_train)-1], normalize))
+  data_test_n  <- as.data.frame(lapply(data_test[1:NCOL(data_test)-1], normalize))
 }
 
+# get the labels, last col
+data_train_labels     <- CL[1:nrow(data_train),1] #data_train[1:NROW(data_train), NCOL(data_train)]
+data_test_labels      <- CL[nrow(data_train)+1:nrow(data_test),1]
+
+
+
 # ------ training -------
-#-- install.packages("class")
-#-- library(class)
-#Find the number of observation
-#-- NROW(data_train_labels)
-# k is the square root of number of observation, is that correct?
-#-- test_pred <- knn(train = data_train, test =data_test,cl = data_train_labels, k=floor(sqrt(NROW(data_train_labels))))
-#--
-#-- #Calculate the proportion of correct classification for k = 26, 27
-#-- accuracy <- 100 * sum(data_test_labels == pred)/NROW(data_test_labels)
-#--
-#-- accuracy
-#--
-#-- # Check prediction against actual value in tabular form
-#-- table(test_pred ,data_test_labels)
-#-- writeMM(as(test_pred, "CsparseMatrix"), paste(args[4], "B", sep=""))
+install.packages("class")
+library(class)
+test_pred <- knn(train= data_train, test= data_test, cl= data_train_labels, k=K)
+
+
+# NNR is native NNR, do we realy need to test that? I th
+writeMM(as(R, "CsparseMatrix"), paste(args[6], "PR", sep=""));
+
+## feature importance with random forest
+install.packages("randomForest")
+library(randomForest)
+rf <- randomForest(as.factor(CL)~., data=dat)
+rf$importance

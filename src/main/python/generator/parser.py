@@ -20,7 +20,8 @@
 # -------------------------------------------------------------
 
 
-from os import listdir
+import os
+import re
 
 class FunctionParser(object):
 
@@ -32,6 +33,9 @@ class FunctionParser(object):
         self.path = path
         self.ending = '.{ending}'.format(ending=ending)
         self.files()
+        self.header_input_pattern = r"^[ \t]*[#]+[ \t]*input[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
+        self.header_output_pattern = r"[\s#\-]*[#]+[ \t]*(return|output)[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
+        self.function_pattern = r"^m_[\w]+[ \t]+=[ \t]+function[^#{]*$"
 
 
     def parse_function(self, path:str):
@@ -47,12 +51,50 @@ class FunctionParser(object):
         """
         raise NotImplementedError()
 
-    def files():
+    def parse_header(self, path:str):
+        """
+        @param path: path of file to parse
+        parses function
+        @return:
+            {
+                'function_name': 'some_name',
+                'parameters': [('param1','description'), ...],
+                'return_values': [('retval1', 'description'),...]
+            }
+        """
+        data = {'function_name': None, 'parameters': [], 'return_values':[]}
+
+        raise NotImplementedError()
+
+    def find_header_input_params(self, path:str):
+        with open(path, 'r') as f:
+            content = f.read()
+        start = re.search(pattern=self.header_input_pattern, string=content, flags=re.I | re.M).end()
+        end = re.search(pattern=self.header_output_pattern, string=content, flags=re.I | re.M).start()
+        header = content[start:end]
+        return header
+
+    def find_function_definition(self, path:str):
+        with open(path, 'r') as f:
+            content = f.read()
+        match = re.search(pattern=self.function_pattern, string=content, flags=re.I | re.M)
+        start =match.start()
+        end = match.end()
+        return content[start:end]
+
+    def files(self):
         """
         generator function to find files in self.path, that end with self.ending
         """
-        for f in listdir(self.path):
+        for f in os.listdir(self.path):
             if len(f) > 4:
-                if f[-3:] == self.ending:
+                if f[-4:] == self.ending:
                     yield f
 
+
+#TODO Remove
+if __name__ == "__main__":
+    parser = FunctionParser('../../../../scripts/builtin')
+    path = parser.path + '/kmeans.dml'
+    #print(parser.find_header_input_params(path))
+    print(parser.find_function_definition(path))

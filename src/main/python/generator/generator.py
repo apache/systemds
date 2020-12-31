@@ -68,8 +68,8 @@ class PythonAPIDocumentationGenerator(object):
         @param data:
             {
                 'function_name': 'some_name',
-                'parameters': [('param1','type','default_value'), ...],
-                'return_values': [('retval1', 'type'),...]
+                'parameters': [('param1','description'), ...],
+                'return_values': [('retval1', 'descritpion'),...]
             }
         @return: function header including '\"\"\"' at start and end
         """

@@ -38,6 +38,7 @@ import org.apache.sysds.common.Types.ReturnType;
  */
 public enum Builtins {
 	//builtin functions
+	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),
 	ABSTAIN("abstain", true),

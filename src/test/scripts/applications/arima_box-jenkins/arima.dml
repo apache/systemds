@@ -288,7 +288,7 @@ if(include_mean){
 }
 
 result_format = ifdef($result_format, "csv")
-write(best_point, dest, format=result_format)
+write(best_point, dest)
 
  
 debug_printMatrixShape = function (Matrix[Double] M, String matrixIdentifier){

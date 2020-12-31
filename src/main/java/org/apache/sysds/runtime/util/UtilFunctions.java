@@ -850,16 +850,18 @@ public class UtilFunctions {
 	public static final char DOT = 't';
 	public static final char OTHER = 'y';
 	public static final char ARBITRARY_LEN = '+';
-	public static final String DISGUISED_VAL = "NA";
-	public enum LEVEL_ENUM { LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5}
+	public static final char MINUS = '-';
+	public static final String DISGUISED_VAL = "NaN";
+	public enum LEVEL_ENUM { LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6}
 
-
+	// TODO: rename?
 	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
 
 		// Preparation
 		int numCols = frame.getNumColumns();
 		int numRows = frame.getNumRows();
 		ArrayList<Map<String, Integer>> table_Hist = new ArrayList(numCols); // list of every column with values and their frequency
+		ArrayList<String> dominant_patterns_per_column = new ArrayList<>();
 
 		int idx;
 		for (idx = 0; idx < numCols; idx++) {
@@ -887,17 +889,46 @@ public class UtilFunctions {
 				String dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
 				if(dominant_pattern != null) { //found pattern
 					detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, level);
+					dominant_patterns_per_column.add(dominant_pattern);
 					break;
 				}
 				current_level++;
 				prev_pattern_hist = current_pattern_hist;
 			}
 
-			if(current_level == LEVEL_ENUM.values().length)
+			if(current_level == LEVEL_ENUM.values().length) {
 				System.out.println("he have not found a dominant pattern for column " + idx);
+				dominant_patterns_per_column.add("null");
+			}
+
 		}
 
+		FrameBlock new_frame = createNewFrame(frame, dominant_patterns_per_column);
 		return frame;
+	}
+
+	public static FrameBlock createNewFrame(FrameBlock frame, ArrayList<String> dominant_patterns_per_column) {
+
+		ValueType[] schema = new ValueType[dominant_patterns_per_column.size()];
+		for(int i  = 0; i < dominant_patterns_per_column.size(); i++) {
+			// if the dominant pattern is dX, d+, dXt1dX, d+t+d+ we have found digits
+
+			String pattern;
+			switch(dominant_patterns_per_column.get(i)) {
+				case "d+":
+				case "d+t+d+":
+					pattern = "DOUBLE";
+					break;
+				default:
+					pattern = "STRING";
+					break;
+			}
+			schema[i] = ValueType.fromExternalString(pattern);
+		}
+
+		FrameBlock new_frame = new FrameBlock(schema);
+
+		return new_frame;
 	}
 
 	public static Map<String, Double> calculatePatternsRatio(Map<String, Integer> patterns_hist, int nr_entries) {
@@ -978,11 +1009,14 @@ public class UtilFunctions {
 				case LEVEL3:// ignores upper and lowercase characters. It replaces all 'u' and 'l' with 'a' = Alphabet
 					new_pattern = removeUpperLowerCase(pattern);
 					break;
-				case LEVEL4: // changes floats to digits.
+				case LEVEL4: // changes floats to digits
 					new_pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
 					break;
 				case LEVEL5: // remove spaces between strings
 					new_pattern = removeInnerCharacterInPattern(pattern, ALPHA, SPACE);
+					break;
+				case LEVEL6: // chang negative numbers to digits
+					new_pattern = acceptNegativeNumbersAsDigits(pattern);
 					break;
 				default:
 					new_pattern = "";
@@ -992,6 +1026,31 @@ public class UtilFunctions {
 		}
 
 		return new_pattern_hist;
+	}
+
+	public static String acceptNegativeNumbersAsDigits(String pattern) {
+		char[] chars = pattern.toCharArray();
+		StringBuilder tmp = new StringBuilder();
+		boolean currently_minus_digit = false;
+		for (char ch : chars) {
+			if(ch == MINUS && !currently_minus_digit) {
+				currently_minus_digit = true;
+			}
+			else if(ch == DIGIT && currently_minus_digit) {
+				tmp.append(ch);
+				currently_minus_digit = false;
+			}
+			else if(currently_minus_digit) {
+				tmp.append(MINUS);
+				tmp.append(ch);
+				currently_minus_digit = false;
+			}
+			else {
+				tmp.append(ch);
+			}
+		}
+		return tmp.toString();
+
 	}
 
 	public static String removeInnerCharacterInPattern(String pattern, char outter_char, char inner_char) {
@@ -1069,6 +1128,7 @@ public class UtilFunctions {
 		if (Character.isUpperCase(c)) return UPPER;
 		if (Character.isSpaceChar(c)) return SPACE;
 		if (c == '.') return DOT;
+		if(c == '-') return MINUS;
 		return OTHER;
 	}
 
@@ -1118,6 +1178,13 @@ public class UtilFunctions {
 					pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
 					pattern = removeInnerCharacterInPattern(pattern, ALPHA, SPACE);
 					break;
+				case LEVEL6:
+					pattern = encodeRawString(attr);
+					pattern = removeNumbers(pattern);
+					pattern = removeUpperLowerCase(pattern);
+					pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
+					pattern = removeInnerCharacterInPattern(pattern, ALPHA, SPACE);
+					pattern = acceptNegativeNumbersAsDigits(pattern);
 				default:
 					System.out.println("Could not find suitable level");
 			}

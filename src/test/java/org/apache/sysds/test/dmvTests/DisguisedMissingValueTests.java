@@ -1,14 +1,13 @@
 package org.apache.sysds.test.dmvTests;
 
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.sysds.api.mlcontext.Frame;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 import org.junit.Test;
-import scala.Array;
 
-import javax.rmi.CORBA.Util;
+import java.util.ArrayList;
 import java.util.Map;
 
 public class DisguisedMissingValueTests {
@@ -204,6 +203,36 @@ public class DisguisedMissingValueTests {
     }
 
     @Test
+    public void TestLevel6Function() {
+        Map<String, Integer> pattern_hist = new HashedMap();
+        pattern_hist.put("-d+", 15);
+        pattern_hist.put("d+", 12);
+
+        pattern_hist.put("a+", 20);
+
+        pattern_hist.put("-d+a+", 25);
+        pattern_hist.put("d+a+", 17);
+
+        pattern_hist.put("a+-d+", 21);
+        pattern_hist.put("a+d+", 5);
+
+
+        Map<String, Integer> l6_pattern_hist = UtilFunctions.LevelsExecutor(pattern_hist, UtilFunctions.LEVEL_ENUM.LEVEL6);
+
+        Integer value1 = l6_pattern_hist.get("d+");
+        Assert.assertEquals((Integer)(15 + 12), value1);
+
+        Integer value2 = l6_pattern_hist.get("a+");
+        Assert.assertEquals((Integer)(20), value2);
+
+        Integer value3 = l6_pattern_hist.get("d+a+");
+        Assert.assertEquals((Integer)(25 + 17), value3);
+
+        Integer value4 = l6_pattern_hist.get("a+d+");
+        Assert.assertEquals((Integer)(21 + 5), value4);
+    }
+
+    @Test
     public void TestAllLevels1() {
 
         String[] testarray0 = new String[]{"77","77","55","89","43", "Patrick-Lovric-Weg-666", "46"}; // detect Weg
@@ -212,6 +241,7 @@ public class DisguisedMissingValueTests {
         String[] testarray3 = new String[]{"3.42","45","0.456",".45","4589.245", "97", "ka"}; // detect ka
         String[] testarray4 = new String[]{"9999","123","158","146","158", "174", "201"}; // detect 9999
         String[] testarray5 = new String[]{"Kerschbaumer","123","258d","80105","Valentin-E-Weg 23c", ".035", "f.ggot"}; // detect nothing
+        String[] testarray6 = new String[]{"77","-23","78","-21","43", "-44", "43"}; // detect nothing
 
 
         FrameBlock f = new FrameBlock();
@@ -221,70 +251,119 @@ public class DisguisedMissingValueTests {
         f.appendColumn(testarray3.clone());
         f.appendColumn(testarray4.clone());
         f.appendColumn(testarray5.clone());
+        f.appendColumn(testarray6.clone());
 
         FrameBlock new_frame = UtilFunctions.calculateAttributeTypes(f);
 
         // testarray0
         Object c = new_frame.getColumnData(0);
-        String[] column = (String[]) c;
+        String[] column_s = (String[]) c;
         for(int i = 0; i < testarray0.length; i++) {
             if(testarray0[i].equals("Patrick-Lovric-Weg-666"))
-                Assert.assertEquals("NA", column[i]);
+                Assert.assertEquals("NaN", column_s[i]);
             else
-                Assert.assertEquals(testarray0[i], column[i]);
+                Assert.assertEquals(testarray0[i], column_s[i]);
         }
 
         // testarray1
         c = new_frame.getColumnData(1);
-        column = (String[]) c;
+        column_s = (String[]) c;
         for(int i = 0; i < testarray1.length; i++) {
             if(testarray1[i].equals("?"))
-                Assert.assertEquals("NA", column[i]);
+                Assert.assertEquals("NaN", column_s[i]);
             else
-                Assert.assertEquals(testarray1[i], column[i]);
+                Assert.assertEquals(testarray1[i], column_s[i]);
         }
 
         // testarray2
         c = new_frame.getColumnData(2);
-        column = (String[]) c;
+        column_s = (String[]) c;
         for(int i = 0; i < testarray2.length; i++) {
             if(testarray2[i].equals("45"))
-                Assert.assertEquals("NA", column[i]);
+                Assert.assertEquals("NaN", column_s[i]);
             else
-                Assert.assertEquals(testarray2[i], column[i]);
+                Assert.assertEquals(testarray2[i], column_s[i]);
         }
 
         // testarray3
         c = new_frame.getColumnData(3);
-        column = (String[]) c;
+        column_s = (String[]) c;
         for(int i = 0; i < testarray3.length; i++) {
             if(testarray3[i].equals("ka"))
-                Assert.assertEquals("NA", column[i]);
+                Assert.assertEquals("NaN", column_s[i]);
             else
-                Assert.assertEquals(testarray3[i], column[i]);
+                Assert.assertEquals(testarray3[i], column_s[i]);
         }
 
         // testarray4
         c = new_frame.getColumnData(4);
-        column = (String[]) c;
+        column_s = (String[]) c;
         for(int i = 0; i < testarray4.length; i++) {
             if(testarray4[i].equals("9999"))
-                Assert.assertEquals("NA", column[i]);
+                Assert.assertEquals("NaN", column_s[i]);
             else
-                Assert.assertEquals(testarray4[i], column[i]);
+                Assert.assertEquals(testarray4[i], column_s[i]);
         }
 
         // testarray5 detect nothing
         c = new_frame.getColumnData(5);
-        column = (String[]) c;
+        column_s = (String[]) c;
         for(int i = 0; i < testarray5.length; i++) {
-                Assert.assertEquals(testarray5[i], column[i]);
+                Assert.assertEquals(testarray5[i], column_s[i]);
+        }
+
+        // testarray6
+        c = new_frame.getColumnData(6);
+        column_s = (String[]) c;
+        for(int i = 0; i < testarray6.length; i++) {
+            Assert.assertEquals(testarray6[i], column_s[i]);
         }
 
     }
 
     //-----------------------------------------------------------------------------------------------
     // TESTING FUNCTIONS
+
+    @Test
+    public void TestNegativNumbers() {
+
+        String res = UtilFunctions.acceptNegativeNumbersAsDigits("-d+");
+        Assert.assertEquals("d+", res);
+        res = UtilFunctions.acceptNegativeNumbersAsDigits("d+");
+        Assert.assertEquals("d+", res);
+        res = UtilFunctions.acceptNegativeNumbersAsDigits("a+-d+");
+        Assert.assertEquals("a+d+", res);
+        res = UtilFunctions.acceptNegativeNumbersAsDigits("-d+a+");
+        Assert.assertEquals("d+a+", res);
+        res = UtilFunctions.acceptNegativeNumbersAsDigits("a+-d+a+");
+        Assert.assertEquals("a+d+a+", res);
+        res = UtilFunctions.acceptNegativeNumbersAsDigits("-d+a+-d+");
+        Assert.assertEquals("d+a+d+", res);
+    }
+
+    @Test
+    public void TestSetSchemaFunktion() {
+
+        String[] testarray0 = new String[]{"77","77","55","89","43", "Patrick-Lovric-Weg-666", "46"};
+        String[] testarray1 = new String[]{"8010","?","8456","4565","89655", "86542", "45624"};
+        String[] testarray2 = new String[]{"David K","Valentin E","Patrick L","45","DK", "VE", "PL"};
+
+        FrameBlock f = new FrameBlock();
+        f.appendColumn(testarray0.clone());
+        f.appendColumn(testarray1.clone());
+        f.appendColumn(testarray2.clone());
+
+        ArrayList<String> schema = new ArrayList<String>();
+        schema.add("d+");
+        schema.add("d+t+d+");
+        schema.add("l+u+");
+
+        UtilFunctions.createNewFrame(f, schema);
+        Assert.assertEquals(Types.ValueType.FP64,f.getSchema()[0]);
+        Assert.assertEquals(Types.ValueType.FP64,f.getSchema()[1]);
+        Assert.assertEquals(Types.ValueType.STRING,f.getSchema()[2]);
+
+    }
 
     @Test
     public void TestRemoveSpacesFunktion() {

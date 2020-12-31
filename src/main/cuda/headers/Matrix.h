@@ -42,8 +42,10 @@ class MatrixAccessor {
 	// Member function pointers
 	uint32_t (MatrixAccessor::*_len)();
 	uint32_t (MatrixAccessor::*_pos)(uint32_t);
-	T (MatrixAccessor::*_val)(uint32_t, uint32_t);
-	T* (MatrixAccessor::*_val_r)(uint32_t);
+//	T (MatrixAccessor::*_val)(uint32_t, uint32_t);
+	T (MatrixAccessor::*_val_r)(uint32_t);
+	T (MatrixAccessor::*_val_rc)(uint32_t, uint32_t);
+	T* (MatrixAccessor::*_vals)(uint32_t);
 
 public:
 	void init(Matrix<T>* mat) {
@@ -51,12 +53,13 @@ public:
 		if (_mat->row_ptr == nullptr) {
 			_len = &MatrixAccessor::len_dense;
 			_pos = &MatrixAccessor::pos_dense;
-			_val = &MatrixAccessor::val_dense;
-			_val_r = &MatrixAccessor::val_dense_row;
+			_val_rc = &MatrixAccessor::val_dense_rc;
+			_val_r = &MatrixAccessor::val_dense_r;
+			_vals = &MatrixAccessor::vals_dense_row;
 		} else {
 			_len = &MatrixAccessor::len_sparse;
 			_pos = &MatrixAccessor::pos_sparse;
-			_val = &MatrixAccessor::val_sparse;
+			_val_rc = &MatrixAccessor::val_sparse;
 			_val_r = &MatrixAccessor::val_sparse_row;
 		}
 	}
@@ -70,17 +73,21 @@ public:
 	}
 	
 	T val(uint32_t r, uint32_t c) {
-		return (this->*_val)(r, c);
+		return (this->*_val_rc)(r, c);
 	}
 	
-	T* val(uint32_t rix) {
+	T val(uint32_t rix) {
 		return (this->*_val_r)(rix);
 	}
-	
+
+	T* vals(uint32_t rix) {
+		return (this->*_vals)(rix);
+	}
+
 private:
 	uint32_t len_dense() {
 		// ToDo: fix in SideInput upload
-		return _mat->cols == 1 ? _mat->rows : _mat->cols;
+		return _mat->cols < 2 ? _mat->rows : _mat->cols;
 //		return _mat->cols;
 	}
 	
@@ -88,13 +95,19 @@ private:
 		return _mat->cols * rix;
 	}
 	
-	T val_dense(uint32_t r, uint32_t c) {
+	T val_dense_rc(uint32_t r, uint32_t c) {
 		return _mat->data[_mat->cols * r + c];
 	}
 	
-	T* val_dense_row(uint32_t rix) {
+	T val_dense_r(uint32_t rix) {
 //		return &(_mat->data[_mat->cols * rix]);
-		return &(_mat->data[rix]);
+		return _mat->data[rix];
+	}
+
+	// ToDo: taken over from DenseBlockFP64 - doesn't feel right though
+	T* vals_dense_row(uint32_t rix) {
+//		return &(_mat->data[rix]);
+		return &(_mat->data[0]);
 	}
 	
 	//ToDo sparse accessors
@@ -110,8 +123,9 @@ private:
 		return _mat->data[0];
 	}
 	
-	T* val_sparse_row(uint32_t rix) {
-		return &(_mat->data[0]);
+	T val_sparse_row(uint32_t rix) {
+//		return &(_mat->data[0]);
+		return _mat->data[0];
 	}
 };
 

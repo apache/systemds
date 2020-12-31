@@ -225,7 +225,7 @@ public abstract class CNode
 		tmp = tmp.replace("%IN1i%", varj+"ix");
 		tmp = tmp.replace("%IN1%", 
 			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? 
-				((api == GeneratorAPI.JAVA) ? varj + ".values(rix)" : varj + ".val(rix)" ) :
+				((api == GeneratorAPI.JAVA) ? varj + ".values(rix)" : varj + ".vals(rix)" ) :
 				(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? 
 					((api == GeneratorAPI.JAVA) ? varj + ".values(0)" : varj + ".val(0)") : varj));
 		

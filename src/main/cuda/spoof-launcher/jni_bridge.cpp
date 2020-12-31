@@ -104,7 +104,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 	  
 	  uint32_t n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
 	
-	  side_info.push_back(Matrix<double>{sides[i], 0, 0, m, n, m * n});
+	  side_info.push_back(Matrix<double>{sides[i-1], 0, 0, m, n, m * n});
 	  std::cout << "m=" << m << " n=" << n << std::endl;
   }
   

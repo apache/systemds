@@ -83,7 +83,7 @@ public:
 		
 		T result = 0.0;
 		size_t dev_buf_size;
-		Matrix<T>* d_sides;
+		Matrix<T>* d_sides = nullptr;
 		T *d_scalars = nullptr;
 
 		auto o = ops.find(name);

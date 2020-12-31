@@ -210,7 +210,7 @@ __device__ T dotProduct(T* a, T* b, int ai, int bi, int len) {
 	ProductOp<T> load_op;
 	T ret =  BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
 //	if(blockIdx.x < 4 && threadIdx.x == 0)
-//		printf("bid=%d, tid=%d, dot=%f\n", blockIdx.x, threadIdx.x, ret);
+//		printf("bid=%d, ai=%d, dot=%f\n", blockIdx.x, ai, ret);
 	return ret;
 }
 
@@ -387,12 +387,12 @@ int vectMinusWrite(T a, T* b, T* c, int ai, int len) {
 
 template<typename T>
 int vectSignWrite(T* a, T* c, int ai, int len) {
-	return vectWrite_<T, SignOp<T>>(a, 0, c, ai, 0, len);
+	return vectWrite_<T, SignOp<T>>(a, 0.0, c, ai, 0, len);
 }
 
 template<typename T>
 int vectAbsWrite(T* a, T* c, int ai, int len) {
-	return vectWrite_<T, AbsOp<T>>(a, 0, c, ai, 0, len);
+	return vectWrite_<T, AbsOp<T>>(a, 0.0, c, ai, 0, len);
 }
 
 template<typename T>
@@ -407,7 +407,7 @@ int vectRoundWrite(T* a, T* c, int ai, int len) {
 
 template<typename T>
 int vectFloorWrite(T* a, T* c, int ai, int len) {
-	return vectWrite_<T, FloorOp<T>>(a, 0, c, ai, 0, len);
+	return vectWrite_<T, FloorOp<T>>(a, 0.0, c, ai, 0, len);
 }
 
 template<typename T>

@@ -103,10 +103,13 @@ public class SpoofCUDA extends SpoofOperator {
 			double[] scalars = prepInputScalars(scalarObjects);
 
 			long out_cols = out_obj == null ? 1 : out_obj.getNumColumns();
+			long out_rows = out_obj == null ? 1 : out_obj.getNumRows();
+
+			long out_len = out_rows * out_cols;
 
 			ret = execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
 					in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 
-					out_cols,0, inputs);
+					out_len,0, inputs);
 		}
 		return ret;
 	}

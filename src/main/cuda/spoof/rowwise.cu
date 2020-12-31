@@ -49,6 +49,8 @@ struct SpoofRowwiseOp {
 	int len, grix, c_len;
 
 	SpoofRowwiseOp(T* a, Matrix<T>* B, T* scalars, T* c, int len, int grix) : a(a), _b(B), c(c), scalars(scalars), len(len), grix(grix) {
+//		if(blockIdx.x==0)
+//			printf("init B\n");
 		if(B)
 			for(auto i = 0; i < NUM_B; ++i)
 				b[i].init(&(_b[i]));
@@ -66,7 +68,7 @@ struct SpoofRowwiseOp {
 
 template<typename T, int NUM_B>
 __global__ void %TMP% (T* a, Matrix<T>* b, T* scalars, T* c, uint c_len, int len, int grix) {
-	
+
 //	if(threadIdx.x == 0 && blockIdx.x == 1) {
 //		MatrixAccessor<T> ma;
 //		ma.init(&b[0]);
@@ -81,19 +83,25 @@ __global__ void %TMP% (T* a, Matrix<T>* b, T* scalars, T* c, uint c_len, int len
 	SpoofRowwiseOp<T, NUM_B> spoof_op(a, b, scalars, c, len, grix + blockIdx.x);
 	spoof_op.c_len = c_len;
 
-	if(threadIdx.x == 0 && blockIdx.x == 1) {
+
+	if(threadIdx.x == 0 && blockIdx.x == 0) {
+		printf("bid=%d len=%d c_len=%d\n", blockIdx.x, len, c_len);
+
+if(b) {
 		MatrixAccessor<T> ma;
 		ma.init(&b[0]);
 		printf("bid=%d len=%d c_len=%d b.pos=%d b.len=%d\n", blockIdx.x, len, c_len, ma.pos(blockIdx.x), ma.len());
+//		return;
 		for(auto i = ma.pos(blockIdx.x); i < ma.len(); ++i) {
 		//			T val =  ma.val(blockIdx.x, i);
 			T val =  ma.val(0, i);
 			printf("%f ", val);
 		}
 		printf("\n");
+		}
 	}
 
 	int ai = blockIdx.x * len;
-	int ci = blockIdx.x * c_len;
+	int ci = blockIdx.x * len;
 	spoof_op(ai, ci, blockIdx.x);
 };

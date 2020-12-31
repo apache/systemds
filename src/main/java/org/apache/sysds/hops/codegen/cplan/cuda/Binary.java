@@ -300,7 +300,7 @@ public class Binary extends CodeTemplate {
 				case BITWAND:
 					return "	T %TMP% = bwAnd(%IN1%, %IN2%);\n";
 				case SEQ_RIX:
-					return "	T %TMP% = %IN1% + grix * %IN2%;\n"; //0-based global rix
+					return "		T %TMP% = %IN1% + grix * %IN2%;\n"; //0-based global rix
 
 				default:
 					throw new RuntimeException("Invalid binary type: " + this.toString());

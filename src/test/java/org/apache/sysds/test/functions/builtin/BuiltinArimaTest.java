@@ -24,8 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import org.junit.Test;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecMode;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -37,6 +36,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class BuiltinArimaTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "arima";
 	private final static String TEST_DIR = "functions/builtin/";
@@ -81,7 +81,8 @@ public class BuiltinArimaTest extends AutomatedTestBase {
 
 	@Test
 	public void testArima(){
-		Types.ExecMode platformOld = setExecMode(LopProperties.ExecType.CP);
+		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
+		
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -113,11 +114,8 @@ public class BuiltinArimaTest extends AutomatedTestBase {
 			HashMap<CellIndex, Double> arima_model_SYSTEMDS= readDMLMatrixFromOutputDir("learnt.model");
 			TestUtils.compareMatrices(arima_model_R, arima_model_SYSTEMDS, tol, "arima_R", "arima_SYSTEMDS");
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
 		finally {
-			rtplatform = platformOld;
+			resetExecMode(platformOld);
 		}
 	}
 }

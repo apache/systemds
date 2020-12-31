@@ -102,7 +102,7 @@ m_arima = function(Matrix[Double] X, Integer max_func_invoc=1000, Integer p=0,
   }
 
   #prediciton values for seasonal MA
-  parfor(i6 in seq(1,Q, 1), check=0){
+  parfor(i6 in seq(1, Q, 1), check=0){
     Z[s*i6+1:n,1+P+p+q+i6] = X[1:n-s*i6,]
   }
 

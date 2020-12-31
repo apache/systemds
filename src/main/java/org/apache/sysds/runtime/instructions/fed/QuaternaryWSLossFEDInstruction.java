@@ -55,6 +55,7 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction
 		MatrixObject X = ec.getMatrixObject(input1);
 		MatrixObject U = ec.getMatrixObject(input2);
 		MatrixObject V = ec.getMatrixObject(input3);
+
 		MatrixObject W = null;
 		if(qop.hasFourInputs()) {
 			W = ec.getMatrixObject(_input4);
@@ -67,9 +68,9 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction
 		FederationMap fedMap = X.getFedMapping();
 		FederatedRequest[] frInit1 = fedMap.broadcastSliced(U, false);
 		FederatedRequest frInit2 = fedMap.broadcast(V);
+
 		FederatedRequest[] frInit3 = null;
 		FederatedRequest frCompute1 = null;
-
 		if(W != null)
 		{
 			frInit3 = fedMap.broadcastSliced(W, false);
@@ -83,6 +84,7 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction
 				new CPOperand[]{input1, input2, input3},
 				new long[]{fedMap.getID(), frInit1[0].getID(), frInit2.getID()});
 		}
+
 		FederatedRequest frGet1 = new FederatedRequest(RequestType.GET_VAR, frCompute1.getID());
 		FederatedRequest frCleanup1 = fedMap.cleanup(getTID(), frCompute1.getID());
 		FederatedRequest frCleanup2 = fedMap.cleanup(getTID(), frInit1[0].getID());
@@ -106,8 +108,8 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction
 				frCleanup1, frCleanup2, frCleanup3);
 		}
 
+		// aggregate partial results from federated responses
 		AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-
 		ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
 	}
 }

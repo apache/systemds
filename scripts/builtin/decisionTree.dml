@@ -148,8 +148,16 @@ dataVectorLength = function(Matrix[Double] vector)  return (Double len) {
     len = nrow(vector)
 }
 
+dataRowVectorLength = function(Matrix[Double] vector)  return (Double len) {
+    len = ncol(vector)
+}
+
 dataVectorGet = function(Matrix[Double] vector, Double index)  return (Double value) {
     value = as.scalar(vector[index, 1])
+}
+
+dataRowVectorGet = function(Matrix[Double] vector, Double index)  return (Double value) {
+    value = as.scalar(vector[1, index])
 }
 
 dataVectorSet = function(Matrix[Double] vector, Double index, Double data) return (Matrix[Double] new_vector) {
@@ -162,6 +170,16 @@ printVector = function(String leading, Matrix[Double] vector) {
     vector_string = leading + "|"
     for (index in 1:len) {
         element = dataVectorGet(vector, index)
+        vector_string = vector_string + element + "|"
+    }
+    print(vector_string)
+}
+
+printRowVector = function(String leading, Matrix[Double] vector) {
+    len = dataRowVectorLength(vector)
+    vector_string = leading + "|"
+    for (index in 1:len) {
+        element = dataRowVectorGet(vector, index)
         vector_string = vector_string + element + "|"
     }
     print(vector_string)
@@ -213,7 +231,7 @@ extrapolateOrderedScalarFeatures = function(
     feature_vector = order(target=feature_vector, by=1, decreasing=FALSE, index.return=FALSE)
 }
 
-calcPossibleThresholds = function(
+calcPossibleThresholdsScalar = function(
     Matrix[Double] X,
     Matrix[Double] use_rows_vector,
     Double col,
@@ -229,6 +247,27 @@ calcPossibleThresholds = function(
             mean = (dataVectorGet(ordered_features, real_index) + dataVectorGet(ordered_features, real_index + 1)) / 2
             thresholds[1, index] = mean
         }
+    }
+}
+
+calcPossibleThresholdsCategory = function(Double type) return (Matrix[Double] thresholds) {
+    numberThresholds = 2 ^ type
+    thresholds = matrix(-1, rows = type, cols = numberThresholds)
+    toggleFactor = numberThresholds / 2
+
+    for (index in 1:type) {
+        beginCols = 1
+        endCols = toggleFactor
+        iterations = numberThresholds / toggleFactor / 2
+        for (it in 1:iterations) {
+            category_val = type - index + 1
+            thresholds[index, beginCols:endCols] = matrix(category_val, rows = 1, cols = toggleFactor)
+            endCols = endCols + 2 * toggleFactor
+            beginCols = beginCols + 2 * toggleFactor
+        }
+        toggleFactor = toggleFactor / 2
+        iterations = numberThresholds / toggleFactor / 2
+        printRowVector("Truth Table: ", thresholds[index,])
     }
 }
 
@@ -248,14 +287,10 @@ calcImpurity = function(
 
     is_scalar_type = typeIsScalar(type)
     if (is_scalar_type) {
-        possible_thresholds = calcPossibleThresholds(X, use_rows_vector, col, bins)
+        possible_thresholds = calcPossibleThresholdsScalar(X, use_rows_vector, col, bins)
 
     } else {
-        #TODO categorical
-        #EXAMPLE CATEGORIES: 1, 2, 3
-        #possible thresholds: [1]    [2]    [3]    [1]    [1]    [2]
-        #                     -1     -1     -1     [2]    [3]    [3]
-
+        possible_thresholds = calcPossibleThresholdsCategory(type)
     }
     len_thresholds = ncol(possible_thresholds)
     impurity = 1

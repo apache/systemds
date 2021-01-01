@@ -251,7 +251,11 @@ __device__ void vectAdd_atomic(T* a, T b, T* c, int ai, int ci, int len, Op op) 
 	uint i = tid;
 
 	while (i < len) {
-		atomicAdd(&(c[ci + i]), op(a[ai + i], b));
+//		if(blockIdx.x == 1 && threadIdx.x < 2)
+//			printf("vectAdd_atomic: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, b=%f, c[%d]=%f, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai,
+//		  			ci, len, b, ci * len + threadIdx.x, op(a[ai + i], b), ai, a[ai + i]);
+		
+		atomicAdd(&(c[ci * len + i]), op(a[ai + i], b));
 		i += blockDim.x;
 	}
 }
@@ -271,7 +275,7 @@ __device__ void vectDivAdd(T* a, T b, T* c, int ai, int ci, int len) {
 template<typename T>
 __device__ int vectCbindWrite(T* a, T b, T* c, int ai, int len) {
 	if(threadIdx.x < len) {
-//		 if(blockIdx.x==0 && threadIdx.x ==0)
+//		 if(blockIdx.x==1 && threadIdx.x ==0)
 //		 	printf("vecCbindWrite: bid=%d, tid=%d, ai=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, len, ai * len + threadIdx.x, a[ai * len + threadIdx.x]);
         c[blockIdx.x * (len+1) + threadIdx.x] = a[ai + threadIdx.x];
 	}
@@ -295,9 +299,11 @@ __device__ int vectCbindWrite(T a, T b, T* c) {
 template<typename T, typename OP>
 __device__ int vectWrite_(T* a, T* b, T* c, int ai, int ci, int len) {
 	uint i = threadIdx.x;
-
+//	if(blockIdx.x == 1 && threadIdx.x < 2)
+//		printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a[ai + i], b[ai + i]));
+	
 	while (i < len) {
-		c[ci + i] = OP::exec(a[ai + i], b[ai + i]);
+		c[ci * len + i] = OP::exec(a[ai + i], b[ai + i]);
 		i += blockDim.x;
 	}
 	return len;
@@ -307,9 +313,10 @@ __device__ int vectWrite_(T* a, T* b, T* c, int ai, int ci, int len) {
 template<typename T, typename OP>
 __device__ int vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
     uint i = threadIdx.x;
-
+//	if(blockIdx.x == 1 && threadIdx.x < 2)
+//		printf("vecWrite_vs: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a[ai + i], b));
     while (i < len) {
-		c[ci + i] = OP::exec(a[ai + i], b);
+		c[ci * len + i] = OP::exec(a[ai + i], b);
         i += blockDim.x;
     }
     return len;
@@ -319,9 +326,11 @@ __device__ int vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
 template<typename T, typename OP>
 __device__ int vectWrite_(T a, T* b, T* c, int ai, int ci, int len) {
 	uint i = threadIdx.x;
-
+//	if(blockIdx.x == 1 && threadIdx.x < 2)
+//		printf("vecWrite_sv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a, b[ai + i]););
+	
 	while (i < len) {
-		c[ci + i] = OP::exec(a, b[ai + i]);
+		c[ci * len + i] = OP::exec(a, b[ai + i]);
 		i += blockDim.x;
 	}
 	return len;
@@ -329,8 +338,8 @@ __device__ int vectWrite_(T a, T* b, T* c, int ai, int ci, int len) {
 
 template<typename T>
 __device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
-	if(blockIdx.x == 3 && threadIdx.x < 2)
-		printf("vecWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ai + threadIdx.x, a[ai + threadIdx.x]);
+//	if(blockIdx.x == 1 && threadIdx.x < 2)
+//		printf("vecWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ai + threadIdx.x, a[ai + threadIdx.x]);
 
 	vectWrite_<T, IdentityOp<T>>(a, SumNeutralElement<T>::get(), c, ai, ci, len);
 }
@@ -362,6 +371,9 @@ int vectDivWrite(T a, T* b, T* c, int ai, int len) {
 
 template<typename T>
 int vectMultWrite(T* a, T b, T* c, int ai, int len) {
+//	if(blockIdx.x == 1 && threadIdx.x < 2)
+//		printf("vectMultWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d\n", blockIdx.x, threadIdx.x, ai, 0, len);
+	
 	return vectWrite_<T, ProductOp<T>>(a, b, c, ai, 0, len);
 }
 

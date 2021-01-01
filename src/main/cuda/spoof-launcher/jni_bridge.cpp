@@ -88,21 +88,19 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 	  	return -1.0;
 	  }
 	  
-	  jmethodID mat_obj_num_cols = env->GetMethodID(CacheableData, "getNumColumns", "()J");
-	  if(!mat_obj_num_cols) {
-		  std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
-		  return -1.0;
-	  }
-	  
-	  uint32_t m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));
-	
 	  jmethodID mat_obj_num_rows = env->GetMethodID(CacheableData, "getNumRows", "()J");
 	  if(!mat_obj_num_rows) {
 		  std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
 		  return -1.0;
 	  }
-	  
-	  uint32_t n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
+	  uint32_t m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
+	
+	  jmethodID mat_obj_num_cols = env->GetMethodID(CacheableData, "getNumColumns", "()J");
+	  if(!mat_obj_num_cols) {
+		  std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
+		  return -1.0;
+	  }
+	  uint32_t n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));
 	
 	  side_info.push_back(Matrix<double>{sides[i-1], 0, 0, m, n, m * n});
 	  std::cout << "m=" << m << " n=" << n << std::endl;

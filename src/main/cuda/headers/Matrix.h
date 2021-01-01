@@ -87,8 +87,9 @@ public:
 private:
 	uint32_t len_dense() {
 		// ToDo: fix in SideInput upload
-		return _mat->cols < 2 ? _mat->rows : _mat->cols;
+//		return _mat->cols < 2 ? _mat->rows : _mat->cols;
 //		return _mat->cols;
+		return _mat->rows * _mat->cols;
 	}
 	
 	uint32_t pos_dense(uint32_t rix) {
@@ -96,6 +97,11 @@ private:
 	}
 	
 	T val_dense_rc(uint32_t r, uint32_t c) {
+//#ifdef __CUDACC_RTC__
+//		if(threadIdx.x == 0)
+//		printf("bid=%d, rows=%d, cols=%d [%d,%d]=%f\n", blockIdx.x, _mat->rows, _mat->cols,
+//		 		r, c, _mat->data[_mat->cols * r + c]);
+//#endif
 		return _mat->data[_mat->cols * r + c];
 	}
 	

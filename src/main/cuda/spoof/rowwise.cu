@@ -60,8 +60,8 @@ struct SpoofRowwiseOp {
 		
 %BODY_dense%
 //    printArray(TMP27, TMP27_len);
-//        if(blockIdx.x == 1 && threadIdx.x==0) {
-//			printf("TMP26=%f\n", TMP26);
+//        if(blockIdx.x == 0 && threadIdx.x==0) {
+//			printf("TMP27=%f\n", TMP27);
 //        }
 	}
 };
@@ -84,22 +84,22 @@ __global__ void %TMP% (T* a, Matrix<T>* b, T* scalars, T* c, uint c_len, int len
 	spoof_op.c_len = c_len;
 
 
-	if(threadIdx.x == 0 && blockIdx.x == 0) {
-		printf("bid=%d len=%d c_len=%d\n", blockIdx.x, len, c_len);
+//	if(threadIdx.x == 0 && blockIdx.x == 0) {
+//		printf("bid=%d len=%d c_len=%d\n", blockIdx.x, len, c_len);
 
-if(b) {
-		MatrixAccessor<T> ma;
-		ma.init(&b[0]);
-		printf("bid=%d len=%d c_len=%d b.pos=%d b.len=%d\n", blockIdx.x, len, c_len, ma.pos(blockIdx.x), ma.len());
-//		return;
-		for(auto i = ma.pos(blockIdx.x); i < ma.len(); ++i) {
-		//			T val =  ma.val(blockIdx.x, i);
-			T val =  ma.val(0, i);
-			printf("%f ", val);
-		}
-		printf("\n");
-		}
-	}
+//if(b) {
+//		MatrixAccessor<T> ma;
+//		ma.init(&b[0]);
+//		printf("bid=%d len=%d c_len=%d b.pos=%d b.len=%d\n", blockIdx.x, len, c_len, ma.pos(blockIdx.x), ma.len());
+////		return;
+//		for(auto i = ma.pos(blockIdx.x); i < ma.len(); ++i) {
+//		//			T val =  ma.val(blockIdx.x, i);
+//			T val =  ma.val(0, i);
+//			printf("%f ", val);
+//		}
+//		printf("\n");
+//		}
+//	}
 
 	int ai = blockIdx.x * len;
 	int ci = blockIdx.x * len;

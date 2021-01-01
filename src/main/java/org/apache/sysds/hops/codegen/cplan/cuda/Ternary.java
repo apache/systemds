@@ -55,7 +55,8 @@ public class Ternary extends CodeTemplate {
 				case LOOKUP_RC1:
 					return sparse ?
 							"	T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
-							"	T %TMP% = getValue(%IN1%, %IN2%, rix, %IN3%-1);\n";
+//							"	T %TMP% = getValue(%IN1%, %IN2%, rix, %IN3%-1);\n";
+							"		T %TMP% = %IN1%.val(rix, %IN3%-1);\n";
 
 				case LOOKUP_RVECT1:
 					return "	T[] %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1);\n";
@@ -91,8 +92,10 @@ public class Ternary extends CodeTemplate {
 				case LOOKUP_RC1:
 					return sparse ?
 							"	T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
-							"	T %TMP% = getValue(%IN1%, %IN2%, rix, %IN3%-1);\n";
-
+//							"	T %TMP% = getValue(%IN1%, %IN2%, rix, %IN3%-1);\n";
+							"		T %TMP% = %IN1%.val(rix, %IN3%-1);\n";
+				
+				
 				case LOOKUP_RVECT1:
 					return "	T[] %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1);\n";
 

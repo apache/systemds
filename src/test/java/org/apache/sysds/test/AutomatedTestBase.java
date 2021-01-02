@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -1521,7 +1522,11 @@ public abstract class AutomatedTestBase {
 	 * @return the thread associated with the worker.
 	 */
 	protected Thread startLocalFedWorkerThread(int port) {
-		return startLocalFedWorkerThread(port, FED_WORKER_WAIT);
+		return startLocalFedWorkerThread(port, null, FED_WORKER_WAIT);
+	}
+
+	protected Thread startLocalFedWorkerThread(int port, String[] otherArgs) {
+		return startLocalFedWorkerThread(port, otherArgs, FED_WORKER_WAIT);
 	}
 
 	/**
@@ -1534,11 +1539,17 @@ public abstract class AutomatedTestBase {
 	 * @return the thread associated with the worker.
 	 */
 	protected Thread startLocalFedWorkerThread(int port, int sleep) {
+		return startLocalFedWorkerThread(port, null, sleep);
+	}
+	protected Thread startLocalFedWorkerThread(int port, String[] otherArgs, int sleep) {
 		Thread t = null;
 		String[] fedWorkArgs = {"-w", Integer.toString(port)};
 		ArrayList<String> args = new ArrayList<>();
 
 		addProgramIndependentArguments(args);
+		
+		if (otherArgs != null)
+			args.addAll(Arrays.stream(otherArgs).collect(Collectors.toList()));
 
 		for(int i = 0; i < fedWorkArgs.length; i++)
 			args.add(fedWorkArgs[i]);

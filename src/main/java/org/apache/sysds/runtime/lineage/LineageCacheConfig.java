@@ -173,7 +173,7 @@ public class LineageCacheConfig
 		REUSE_OPCODES = OPCODES;
 		setSpill(true); 
 		setCachePolicy(LineageCachePolicy.HYBRID);
-		setCompAssRW(true);
+		setCompAssRW(false);
 	}
 
 	public static void setReusableOpcodes(String... ops) {

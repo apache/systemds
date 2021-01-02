@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
@@ -232,6 +233,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		cd.enableCleanup(false); // guard against deletion
 		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 
+		if (DMLScript.LINEAGE)
+			// create a literal type lineage item with the file name
+			_ecm.get(tid).getLineage().set(String.valueOf(id), new LineageItem(filename));
+
 		if(dataType == Types.DataType.FRAME) {
 			FrameObject frameObject = (FrameObject) cd;
 			frameObject.acquireRead();
@@ -264,6 +269,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		// set variable and construct empty response
 		ec.setVariable(varname, data);
+		if (DMLScript.LINEAGE)
+			// TODO: Identify MO uniquely. Get serialized lineage DAG from the Coordinator?
+			ec.getLineage().set(varname, new LineageItem(String.valueOf(request.getLineageHash(0))));
+
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 

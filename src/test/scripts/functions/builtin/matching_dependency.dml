@@ -24,5 +24,5 @@ LHSf = read($2);
 LHSt = read($3);
 RHSf = read($4);
 RHSt = read($5);
-B = mdedup(X, LHSf, LHSt, RHSf, RHSt, TRUE);
+B = mdedup(X, LHSf, LHSt, RHSf, RHSt, FALSE);
 write(B, $6);

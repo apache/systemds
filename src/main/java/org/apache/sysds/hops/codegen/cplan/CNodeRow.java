@@ -38,11 +38,11 @@ public class CNodeRow extends CNodeTpl
 	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rix] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
 	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, ci, %LEN%);\n";
-	private static final String TEMPLATE_NOAGG_CONST_OUT_CUDA   = "\t\tvectWrite(%IN%, c, rix * %LEN%, ci, %LEN%);\n";
-	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c, 0, ci, %LEN%);\n";
-	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0){\n\t\t\tc[blockIdx.x] = %IN%;\n//printf(\"rix=%d TMP7=%f TMP8=%f %IN%=%f\\n\",rix, TMP7, TMP8,%IN%);\n}\n";
+	private static final String TEMPLATE_NOAGG_CONST_OUT_CUDA   = "\t\tvectWrite(%IN%, c.vals(0), rix * %LEN%, ci, %LEN%);\n";
+	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c.vals(0), 0, ci, %LEN%);\n";
+	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0){\n\t\t\t*(c.vals(rix)) = %IN%;\n//printf(\"rix=%d TMP7=%f TMP8=%f %IN%=%f\\n\",rix, TMP7, TMP8,%IN%);\n}\n";
 	private static final String TEMPLATE_FULLAGG_OUT_CUDA =
-		"\t\tif(threadIdx.x == 0) {\n\t\t\tT old = atomicAdd(&c[0], %IN%);\n\t\t\t//printf(\"bid=%d full_agg add %f to %f\\n\",blockIdx.x, %IN%, old);\n\t\t}\n";
+		"\t\tif(threadIdx.x == 0) {\n\t\t\tT old = atomicAdd(c.vals(0), %IN%);\n\t\t\t//printf(\"bid=%d full_agg add %f to %f\\n\",blockIdx.x, %IN%, old);\n\t\t}\n";
 
 
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
@@ -105,7 +105,8 @@ public class CNodeRow extends CNodeTpl
 		tmp = tmp.replace("%BODY_sparse%", tmpSparse);
 		
 		//replace outputs 
-		tmp = tmp.replace("%OUT%", "c");
+		tmp = api == GeneratorAPI.JAVA ? tmp.replace("%OUT%", "c") :
+				tmp.replace("%OUT%", "c.vals(0)");
 		tmp = tmp.replace("%POSOUT%", "0");
 		
 		//replace size information
@@ -125,7 +126,7 @@ public class CNodeRow extends CNodeTpl
 			Arrays.stream(tmp.split("\\r?\\n")).forEach(line -> {
 				if(line.contains("_STORAGE"))
 					declarations.append("__device__ " + dType + " " + 
-						line.substring(line.indexOf("&TMP") + 1, line.indexOf("[0];")) + "[2048];\n");
+						line.substring(line.indexOf("&TMP") + 1, line.indexOf("[0];")) + "[3072];\n");
 				});
 			
 			if(!declarations.toString().isEmpty()) 

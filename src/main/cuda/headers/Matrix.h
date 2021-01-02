@@ -48,6 +48,8 @@ class MatrixAccessor {
 	T* (MatrixAccessor::*_vals)(uint32_t);
 
 public:
+	MatrixAccessor() = default;
+	MatrixAccessor(Matrix<T>* mat) { init(mat); }
 	void init(Matrix<T>* mat) {
 		_mat = mat;
 		
@@ -118,8 +120,8 @@ private:
 
 	// ToDo: taken over from DenseBlockFP64 - doesn't feel right though
 	T* vals_dense_row(uint32_t rix) {
-//		return &(_mat->data[rix]);
-		return &(_mat->data[0]);
+		return &(_mat->data[rix]);
+//		return &(_mat->data[0]);
 	}
 	
 	//ToDo sparse accessors

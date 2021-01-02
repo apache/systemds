@@ -168,9 +168,9 @@ public class CNodeBinary extends CNode {
 			//replace sparse and dense inputs
 			tmp = tmp.replace("%IN"+(j+1)+"v%", varj+"vals");
 			tmp = tmp.replace("%IN"+(j+1)+"i%", varj+"ix");
-			tmp = tmp.replace("%IN"+(j+1)+"%", 
-					varj.startsWith("b") ? ((api == GeneratorAPI.JAVA) ? varj + ".values(rix)" : 
-					varj + ".vals(rix)") : varj);
+			tmp = tmp.replace("%IN"+(j+1)+"%",
+					varj.startsWith("a") ? (api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") :
+					varj.startsWith("b") ? (api == GeneratorAPI.JAVA ? varj + ".values(rix)" : varj + ".vals(0)") : varj);
 			
 			//replace start position of main input
 			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 

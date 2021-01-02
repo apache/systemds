@@ -263,7 +263,7 @@ public class CNodeNary extends CNode
 //				varj.startsWith("b") ? varj + ".values(rix)" : varj );
 			tmp = tmp.replace("%IN"+(j+1)+"%",
 				varj.startsWith("b") ? ((api == GeneratorAPI.JAVA) ? varj + ".values(rix)" :
-					varj + ".vals(rix)") : varj);
+					varj + ".vals(0)") : varj);
 			
 			//replace start position of main input
 			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 

@@ -48,6 +48,8 @@ import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
@@ -232,6 +234,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		cd.enableCleanup(false); // guard against deletion
 		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 
+		if (DMLScript.LINEAGE)
+			// create a literal type lineage item with the file name
+			_ecm.get(tid).getLineage().set(String.valueOf(id), new LineageItem(filename));
+
 		if(dataType == Types.DataType.FRAME) {
 			FrameObject frameObject = (FrameObject) cd;
 			frameObject.acquireRead();
@@ -264,6 +270,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		// set variable and construct empty response
 		ec.setVariable(varname, data);
+		if (DMLScript.LINEAGE)
+			// TODO: Identify MO uniquely. Use Adler32 checksum.
+			ec.getLineage().set(varname, new LineageItem(String.valueOf(request.getLineageHash(0))));
+
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 
@@ -299,6 +309,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		pb.getInstructions().clear();
 		Instruction receivedInstruction = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 		pb.getInstructions().add(receivedInstruction);
+
+		if (DMLScript.LINEAGE)
+			// Compiler assisted optimizations are not applicable for Fed workers.
+			// e.g. isMarkedForCaching fails as output operands are saved in the 
+			// symbol table only after the instruction execution finishes. 
+			// NOTE: In shared JVM, this will disable compiler assistance even for the coordinator 
+			LineageCacheConfig.setCompAssRW(false);
+
 		try {
 			pb.execute(ec); // execute single instruction
 		}

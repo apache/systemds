@@ -23,8 +23,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.utils.Statistics;
 
 public class FederatedRequest implements Serializable {
@@ -45,6 +47,7 @@ public class FederatedRequest implements Serializable {
 	private long _tid;
 	private List<Object> _data;
 	private boolean _checkPrivacy;
+	private List<Integer> _lineageHash;
 	
 	
 	public FederatedRequest(RequestType method) {
@@ -115,6 +118,16 @@ public class FederatedRequest implements Serializable {
 
 	public boolean checkPrivacy(){
 		return _checkPrivacy;
+	}
+	
+	public void setLineageHash(LineageItem[] liItems) {
+		// copy the hash of the corresponding lineage DAG
+		// TODO: copy both Adler32 checksum (on data) and hash (on lineage DAG)
+		_lineageHash = Arrays.stream(liItems).map(li -> li.hashCode()).collect(Collectors.toList());
+	}
+	
+	public int getLineageHash(int i) {
+		return _lineageHash.get(i);
 	}
 	
 	@Override

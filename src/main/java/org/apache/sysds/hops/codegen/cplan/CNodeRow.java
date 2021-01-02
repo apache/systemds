@@ -109,7 +109,7 @@ public class CNodeRow extends CNodeTpl
 		tmp = tmp.replace("%POSOUT%", "0");
 		
 		//replace size information
-		tmp = tmp.replace("%LEN%", "len");
+		tmp = tmp.replace("%LEN%", "a.cols()");
 		
 		//replace colvector information and number of vector intermediates
 		tmp = tmp.replace("%TYPE%", _type.name());

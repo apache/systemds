@@ -54,10 +54,10 @@ struct SpoofRowwiseOp {
 		c.init(C);
 		if(B)
 			for(auto i = 0; i < NUM_B; ++i)
-				b[i].init(&(_b[i]));
+				b[i].init(&(B[i]));
 	}
 
-	__device__  __forceinline__ void operator()(int ai, int ci, int rix) {
+	__device__  __forceinline__ void operator()(uint32_t ai, uint32_t ci, uint32_t rix) {
 		
 //%BODY_dense%
 //    printArray(TMP27, TMP27_len);
@@ -81,9 +81,9 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c
 //		printf("\n");
 //	}
 //	return;
-	if(rix < 3)
-		printf("bla\n");
-	return;
+//	if(rix < 3)
+//		printf("bla\n");
+//	return;
 	SpoofRowwiseOp<T, NUM_B> spoof_op(a, b, c, scalars, grix + rix);
 	// spoof_op.c_len = c_len;
 	// spoof_op.c_len = c->len_r();
@@ -106,7 +106,7 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c
 //		}
 //	}
 
-	int ai = blockIdx.x * a->cols;
-	int ci = blockIdx.x * c->cols;
+	uint32_t ai = blockIdx.x * a->cols;
+	uint32_t ci = blockIdx.x * c->cols;
 	spoof_op(ai, ci, rix);
 };

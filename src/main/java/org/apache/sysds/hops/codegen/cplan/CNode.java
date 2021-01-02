@@ -85,16 +85,17 @@ public abstract class CNode
 	public String getVarname(GeneratorAPI api) { return getVarname(); }
 
 	public String getVectorLength(GeneratorAPI api) {
-		if( getVarname().startsWith("a") )
-			return "len";
-		
 		if(api == GeneratorAPI.CUDA) {
+			if( getVarname().startsWith("a") )
+				return "a.cols()";
 			if(getVarname().startsWith("b"))
-				return getVarname()+".len()";
+				return getVarname()+".cols()";
 			else				
 				return getVarname()+"_len";
 		}
 		else {
+			if( getVarname().startsWith("a") )
+				return "len";
 			if(getVarname().startsWith("b"))
 				return getVarname() + ".clen";
 			else if(_dataType == DataType.MATRIX)

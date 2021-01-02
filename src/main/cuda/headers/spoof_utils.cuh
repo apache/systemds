@@ -22,6 +22,7 @@
 #define SPOOF_UTILS_CUH
 
 #include <math_constants.h>
+#include "Matrix.h"
 #include "operators.cuh"
 // #include "intellisense_cuda_intrinsics.h"
 
@@ -205,7 +206,7 @@ __device__ T BLOCK_ROW_AGG(T *a, T *b, int len, AggOp agg_op, LoadOp load_op) {
 }
 
 template<typename T>
-__device__ T dotProduct(T* a, T* b, int ai, int bi, int len) {
+__device__ T dotProduct(MatrixAccessor<T>& a, T* b, int ai, int bi, int len) {
 	SumOp<T> agg_op;
 	ProductOp<T> load_op;
 	T ret =  BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
@@ -244,7 +245,7 @@ __device__ T vectMax(T* a, int ai, int len) {
 }
 
 template<typename T, typename Op>
-__device__ void vectAdd_atomic(T* a, T b, T* c, int ai, int ci, int len, Op op) {
+__device__ void vectAdd_atomic(MatrixAccessor<T>& a, T b, MatrixAccessor<T>& c, uint32_t ai, uint32_t ci, uint32_t len, Op op) {
 	uint tid = threadIdx.x;
 	if(tid >= len)
 		return;
@@ -261,7 +262,7 @@ __device__ void vectAdd_atomic(T* a, T b, T* c, int ai, int ci, int len, Op op) 
 }
 
 template<typename T>
-__device__ void vectMultAdd(T* a, T b, T* c, int ai, int ci, int len) {
+__device__ void vectMultAdd(MatrixAccessor<T>& a, T b, MatrixAccessor<T>& c, uint32_t ai, uint32_t ci, uint32_t len) {
 	ProductOp<T> op;
 	vectAdd_atomic<T, ProductOp<T>>(a, b, c, ai, ci, len, op);
 }

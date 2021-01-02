@@ -21,7 +21,17 @@ package org.apache.sysds.runtime.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -833,6 +843,17 @@ public class UtilFunctions {
 	private static String getDateFormat (String dateString) {
 		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
+	}
+
+	 public static double jaccardSim(String x, String y) {
+		Set<String> charsX = new LinkedHashSet<>(Arrays.asList(x.split("(?!^)")));
+		Set<String> charsY = new LinkedHashSet<>(Arrays.asList(y.split("(?!^)")));
+
+		final int sa = charsX.size();
+		final int sb = charsY.size();
+		charsX.retainAll(charsY);
+		final int intersection = charsX.size();
+		return 1d / (sa + sb - charsX.size()) * intersection;
 	}
 
 	/**

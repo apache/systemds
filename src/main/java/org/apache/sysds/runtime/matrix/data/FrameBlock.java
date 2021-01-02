@@ -2101,13 +2101,15 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public FrameBlock map(String lambdaExpr) {
+		if(lambdaExpr.contains("jaccardSim") || lambdaExpr.contains("levenshteinDistance") ||
+			lambdaExpr.contains("jaroDistance"))
+			return mapDist(getCompiledFunction2Args(lambdaExpr));
 		return map(getCompiledFunction(lambdaExpr));
 	}
 	
 	public FrameBlock map(FrameMapFunction lambdaExpr) {
 		// Prepare temporary output array
 		String[][] output = new String[getNumRows()][getNumColumns()];
-		
 		// Execute map function on all cells
 		for(int j=0; j<getNumColumns(); j++) {
 			Array input = getColumn(j);
@@ -2117,6 +2119,23 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		}
 
 		return  new FrameBlock(UtilFunctions.nCopies(getNumColumns(), ValueType.STRING), output);
+	}
+
+	public FrameBlock mapDist(FrameMapDistFunction lambdaExpr) {
+		String[][] output = new String[getNumRows()][getNumRows()];
+		for (String[] row: output)
+			Arrays.fill(row, "0.0");
+
+		Array input = getColumn(0);
+		for(int j=0; j < input._size-1; j++) {
+			for (int i = j + 1; i < input._size; i++)
+				if(input.get(i) != null && input.get(j) != null) {
+					output[j][i] = lambdaExpr.apply(String.valueOf(input.get(j)), String.valueOf(input.get(i)));
+					output[i][j] = output[j][i];
+				}
+		}
+
+		return  new FrameBlock(UtilFunctions.nCopies(getNumRows(), ValueType.STRING), output);
 	}
 
 	public static FrameMapFunction getCompiledFunction(String lambdaExpr) {
@@ -2147,8 +2166,45 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		}
 	}
 
+	public static FrameMapDistFunction getCompiledFunction2Args(String lambdaExpr) {
+		// split lambda expression
+		String[] parts = lambdaExpr.split("->");
+		parts[0] = parts[0].replace("(", "");
+		parts[0] = parts[0].replace(")", "");
+		String[] vars = parts[0].split(",");
+		if( parts.length != 2 || vars.length != 2)
+			throw new DMLRuntimeException("Unsupported lambda expression: "+lambdaExpr);
+		String varname1 = vars[0].trim();
+		String varname2 = vars[1].trim();
+		String expr = parts[1].trim();
+
+		// construct class code
+		String cname = "StringProcessing"+CLASS_ID.getNextID();
+		StringBuilder sb = new StringBuilder();
+		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
+		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapDistFunction;\n");
+		sb.append("public class "+cname+" extends FrameMapDistFunction {\n");
+		sb.append("@Override\n");
+		sb.append("public String apply(String "+varname1+", String "+varname2+") {\n");
+		sb.append("  return String.valueOf("+expr+"); }}\n");
+
+		// compile class, and create FrameMapFunction object
+		try {
+			return (FrameMapDistFunction) CodegenUtils
+				.compileClass(cname, sb.toString()).newInstance();
+		}
+		catch(InstantiationException | IllegalAccessException e) {
+			throw new DMLRuntimeException("Failed to compile FrameMapDistFunction.", e);
+		}
+	}
+
 	public static abstract class FrameMapFunction implements Serializable {
 		private static final long serialVersionUID = -8398572153616520873L;
 		public abstract String apply(String input);
+	}
+
+	public static abstract class FrameMapDistFunction implements Serializable {
+		private static final long serialVersionUID = -8398572153616520873L;
+		public abstract String apply(String input1, String input2);
 	}
 }

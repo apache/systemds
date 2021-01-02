@@ -96,6 +96,7 @@ public enum Builtins {
 	DETECTSCHEMA("detectSchema", false),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
+	DISCOVER_MD("mdedup", true),
 	DIST("dist", true),
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),

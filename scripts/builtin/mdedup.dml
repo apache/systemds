@@ -90,13 +90,13 @@ getMDAdjacency = function(Frame[String] X, Matrix[Double] features, Matrix[Doubl
     dist = map(Xi, "(x, y) -> UtilFunctions.jaccardSim(x, y)")
     jaccardDist = as.matrix(dist)
     threshold = as.scalar(thresholds[1, i])
-#print(toString(jaccardDist))
+
     if(i == 1) {
       adjacency = jaccardDist >= threshold
     } else {
       adjacency = adjacency & (jaccardDist >= threshold)
     }
-#print(toString(adjacency))
+
     # break if one of MDs is false
     if (sum(adjacency) == 0)
       i = ncol(features)

@@ -21,10 +21,14 @@
 #ifndef SPOOFCUDACONTEXT_H
 #define SPOOFCUDACONTEXT_H
 
+#define NOMINMAX
+
 #include <cmath>
 #include <cstdint>
 #include <map>
 #include <string>
+#include <algorithm>
+
 #include "Matrix.h"
 
 #ifdef _DEBUG
@@ -79,10 +83,13 @@ public:
 
 	template <typename T>
 	T execute_kernel(const std::string &name, T **in_ptrs, int num_inputs, T **side_ptrs, int num_sides, T *out_ptr, 
-			T *scalars_ptr, int num_scalars, uint32_t m, uint32_t n, int out_len, int grix, const std::vector<Matrix<T>>& sides) {
+			T *scalars_ptr, int num_scalars, uint32_t m, uint32_t n, int out_len, int grix, 
+			const std::vector<Matrix<T>>& sides, Matrix<T>& out) {
 		
 		T result = 0.0;
 		size_t dev_buf_size;
+		Matrix<T>* d_in = nullptr;
+		Matrix<T>* d_out = nullptr;
 		Matrix<T>* d_sides = nullptr;
 		T *d_scalars = nullptr;
 
@@ -90,20 +97,17 @@ public:
 		if (o != ops.end()) {
 			SpoofOperator *op = &(o->second);
 
+			Matrix<T> in{in_ptrs[0], nullptr, nullptr, static_cast<uint32_t>(m), n, m*n};
+			CHECK_CUDART(cudaMalloc((void **)&d_in, sizeof(Matrix<T>)));
+			CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&in), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
+
+			CHECK_CUDART(cudaMalloc((void **)&d_out, sizeof(Matrix<T>)));
+			CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void*>(&out), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
+			
 			if (num_sides > 0) {
 				dev_buf_size = sizeof(Matrix<T>) * num_sides;
-//			    std::vector<Matrix<T>> h_sides;
-			    
-//			    for(auto i = 0; i < num_sides; i++)
-////			        h_sides.push_back(Matrix<T>(static_cast<uint32_t>(m), static_cast<uint32_t>(n), side_ptrs[i], nullptr, nullptr));
-//					h_sides.push_back(Matrix<T>{side_ptrs[i], 0, 0, m, n, m*n});
-			    
-
 				CHECK_CUDART(cudaMalloc((void **)&d_sides, dev_buf_size));
 				CHECK_CUDART(cudaMemcpy(d_sides, &sides[0], dev_buf_size, cudaMemcpyHostToDevice));
-
-//				for(auto i = 0; i < num_sides; i++)
-//					delete h_sides[i];
 			}
 
 			if (num_scalars > 0) {
@@ -117,7 +121,7 @@ public:
 //		        result = launch_cw_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
 //		        break;
 		    case SpoofOperator::OpType::RA:
-				result = launch_ra_kernel(op, in_ptrs, out_ptr, d_sides, num_sides, d_scalars, m, n, out_len, grix);
+				result = launch_ra_kernel(op, d_in, d_out, d_sides, num_sides, d_scalars, m, n, grix);
 		        break;
 		    default:
 				std::cerr << "error: unknown spoof operator" << std::endl;
@@ -300,16 +304,23 @@ public:
 	}
 
 	template<typename T>
-	T launch_ra_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, Matrix<T>* d_sides, uint32_t num_sides,
-			T* d_scalars, int in_rows, int row_len, int out_len, int grix) {
+	T launch_ra_kernel(SpoofOperator* op, Matrix<T>* d_in, Matrix<T>* d_out, Matrix<T>* d_sides, uint32_t num_sides,
+			T* d_scalars, uint32_t in_rows, uint32_t in_cols, uint32_t grix) {
 
 		T result = 0.0;
 		T *d_temp_agg_buf = nullptr;
 		size_t out_buf_size = 0;
-		if(out_ptr == nullptr) {
+		if(d_out == nullptr) {
 			out_buf_size = sizeof(T) * 1;
-			CHECK_CUDART(cudaMalloc((void **) &out_ptr, out_buf_size));
+			CHECK_CUDART(cudaMalloc((void **) &d_out, out_buf_size));
+
+			// Matrix<T> out{in_ptrs[0], nullptr, nullptr, static_cast<uint32_t>(m), n, m*n};
+			// CHECK_CUDART(cudaMalloc((void **)&d_in, sizeof(Matrix<T>)));
+			// CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&in), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
+
 		}
+
+		
 		dim3 grid(in_rows, 1, 1);
 		dim3 block(NT, 1, 1);
 		unsigned int shared_mem_size = NT * sizeof(T);
@@ -317,17 +328,17 @@ public:
 //#ifdef __DEBUG
 			// ToDo: connect output to SystemDS logging facilities
 			std::cout << "launching spoof rowwise kernel " << op->name << " with " << NT * in_rows << " threads in " << in_rows
-				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << row_len << " cols processed by " << NT << " threads per row " << std::endl;
+				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by " << NT << " threads per row " << std::endl;
 //#endif
 		
 		CHECK_CUDA(op->program.kernel(op->name)
 				.instantiate(type_of(result), std::max(1u, num_sides))
 				.configure(grid, block, shared_mem_size)
-				.launch(in_ptrs[0], d_sides, d_scalars, out_ptr, out_len, row_len, grix));
+				.launch(d_in, d_sides, d_out, d_scalars, grix));
 
 		if(out_buf_size != 0) {
-			CHECK_CUDART(cudaMemcpy(&result, out_ptr, sizeof(T), cudaMemcpyDeviceToHost));
-			CHECK_CUDART(cudaFree(out_ptr));
+			CHECK_CUDART(cudaMemcpy(&result, d_out, sizeof(T), cudaMemcpyDeviceToHost));
+			CHECK_CUDART(cudaFree(d_out));
 		}
 
 		return result;

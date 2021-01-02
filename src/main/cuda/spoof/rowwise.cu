@@ -1,4 +1,4 @@
-%TMP%
+//%TMP%
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,7 +21,7 @@
 
 // RowType: %TYPE%
 
-%TMP_MEM%
+//%TMP_MEM%
 
 #include "agg_ops.cuh"
 #include "reduction.cuh"
@@ -30,7 +30,7 @@
 #include "Matrix.h"
 
 template<typename T>
-__device__ void printArray(T* a, int len) {
+__device__ void printArray(T* a, uint32_t len) {
     if(blockIdx.x == 1 && threadIdx.x==0) {
         printf("block=%d, thread=%d, array[len=%d]:\n", blockIdx.x, threadIdx.x, len);
         for(auto i = 0; i < (blockIdx.x + 10); ++i)
@@ -41,16 +41,17 @@ __device__ void printArray(T* a, int len) {
 
 template<typename T, int NUM_B>
 struct SpoofRowwiseOp {
-	T* a;
-	Matrix<T>* _b;
+	MatrixAccessor<T> a;
 	MatrixAccessor<T> b[NUM_B];
-	T* c;
+	MatrixAccessor<T> c;
 	T* scalars;
-	int len, grix, c_len;
+	uint32_t grix;
 
-	SpoofRowwiseOp(T* a, Matrix<T>* B, T* scalars, T* c, int len, int grix) : a(a), _b(B), c(c), scalars(scalars), len(len), grix(grix) {
+	SpoofRowwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, uint32_t grix) : scalars(scalars), grix(grix) {
 //		if(blockIdx.x==0)
 //			printf("init B\n");
+		a.init(A);
+		c.init(C);
 		if(B)
 			for(auto i = 0; i < NUM_B; ++i)
 				b[i].init(&(_b[i]));
@@ -58,7 +59,7 @@ struct SpoofRowwiseOp {
 
 	__device__  __forceinline__ void operator()(int ai, int ci, int rix) {
 		
-%BODY_dense%
+//%BODY_dense%
 //    printArray(TMP27, TMP27_len);
 //        if(blockIdx.x == 0 && threadIdx.x==0) {
 //			printf("TMP27=%f\n", TMP27);
@@ -67,8 +68,8 @@ struct SpoofRowwiseOp {
 };
 
 template<typename T, int NUM_B>
-__global__ void %TMP% (T* a, Matrix<T>* b, T* scalars, T* c, uint c_len, int len, int grix) {
-
+__global__ void /*%TMP%*/SPOOF_OP_NAME (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c, T* scalars, uint32_t grix) {
+	const uint& rix = blockIdx.x;
 //	if(threadIdx.x == 0 && blockIdx.x == 1) {
 //		MatrixAccessor<T> ma;
 //		ma.init(&b[0]);
@@ -80,8 +81,12 @@ __global__ void %TMP% (T* a, Matrix<T>* b, T* scalars, T* c, uint c_len, int len
 //		printf("\n");
 //	}
 //	return;
-	SpoofRowwiseOp<T, NUM_B> spoof_op(a, b, scalars, c, len, grix + blockIdx.x);
-	spoof_op.c_len = c_len;
+	if(rix < 3)
+		printf("bla\n");
+	return;
+	SpoofRowwiseOp<T, NUM_B> spoof_op(a, b, c, scalars, grix + rix);
+	// spoof_op.c_len = c_len;
+	// spoof_op.c_len = c->len_r();
 
 
 //	if(threadIdx.x == 0 && blockIdx.x == 0) {
@@ -101,7 +106,7 @@ __global__ void %TMP% (T* a, Matrix<T>* b, T* scalars, T* c, uint c_len, int len
 //		}
 //	}
 
-	int ai = blockIdx.x * len;
-	int ci = blockIdx.x * len;
-	spoof_op(ai, ci, blockIdx.x);
+	int ai = blockIdx.x * a->cols;
+	int ci = blockIdx.x * c->cols;
+	spoof_op(ai, ci, rix);
 };

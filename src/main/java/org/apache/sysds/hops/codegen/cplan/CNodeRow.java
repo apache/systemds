@@ -99,8 +99,9 @@ public class CNodeRow extends CNodeTpl
 		String tmpSparse = _output.codegen(true, api) + getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
 		
-		tmp = tmp.replace("%TMP%", createVarname());
-		tmp = tmp.replace("%BODY_dense%", tmpDense);
+		tmp = tmp.replace("//%TMP%", createVarname());
+		tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", createVarname());
+		tmp = tmp.replace("//%BODY_dense%", tmpDense);
 		tmp = tmp.replace("%BODY_sparse%", tmpSparse);
 		
 		//replace outputs 
@@ -128,9 +129,9 @@ public class CNodeRow extends CNodeTpl
 				});
 			
 			if(!declarations.toString().isEmpty()) 
-				tmp = tmp.replace("%TMP_MEM%", declarations.toString());
+				tmp = tmp.replace("//%TMP_MEM%", declarations.toString());
 			else
-				tmp = tmp.replace("%TMP_MEM%", "");
+				tmp = tmp.replace("//%TMP_MEM%", "");
 		}
 		return tmp;
 	}

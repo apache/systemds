@@ -50,6 +50,7 @@ class MatrixAccessor {
 public:
 	void init(Matrix<T>* mat) {
 		_mat = mat;
+		
 		if (_mat->row_ptr == nullptr) {
 			_len = &MatrixAccessor::len_dense;
 			_pos = &MatrixAccessor::pos_dense;
@@ -63,10 +64,11 @@ public:
 			_val_r = &MatrixAccessor::val_sparse_row;
 		}
 	}
+
+	uint32_t cols() { return _mat->cols; }
+	uint32_t rows() { return _mat->rows; }
 	
-	uint32_t len() {
-		return (this->*_len)();
-	}
+	uint32_t len() { return (this->*_len)(); }
 	
 	uint32_t pos(uint32_t rix) {
 		return (this->*_pos)(rix);
@@ -83,6 +85,10 @@ public:
 	T* vals(uint32_t rix) {
 		return (this->*_vals)(rix);
 	}
+
+    T& operator[](uint32_t i) {
+	    return _mat->data[i];
+    }
 
 private:
 	uint32_t len_dense() {

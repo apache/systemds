@@ -21,6 +21,7 @@
 #ifndef AGG_OPS_H
 #define AGG_OPS_H
 
+#include <cstdint>
 #include <cmath>
 #include <cuda_runtime.h>
 #include <math_constants.h>

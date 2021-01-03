@@ -65,13 +65,11 @@ public class BuiltinDMVTest extends AutomatedTestBase {
         FrameBlock f = generateRandomFrameBlock(1000, 4,null);
         String[] disguised_values = new String[]{"?", "9999", "?", "9999"};
         ArrayList<List<Integer>> positions = getDisguisedPositions(f, 4, disguised_values);
-        System.out.println(positions);
         runMissingValueTest(f, ExecType.CP, positions);
     }
 
     @Test
     public void PreDefinedStringsFrameTest() {
-
         String[] testarray0 = new String[]{"77","77","55","89","43", "99", "46"}; // detect Weg
         String[] testarray1 = new String[]{"8010","9999","8456","4565","89655", "86542", "45624"}; // detect ?
         String[] testarray2 = new String[]{"David K","Valentin E","Patrick L","VEVE","DK", "VE", "PL"}; // detect 45
@@ -83,6 +81,24 @@ public class BuiltinDMVTest extends AutomatedTestBase {
         String[] disguised_values = new String[]{"Patrick-Lovric-Weg-666", "?", "45", "ka", "9999"};
         ArrayList<List<Integer>> positions = getDisguisedPositions(f, 1, disguised_values);
         System.out.println(positions);
+        runMissingValueTest(f, ExecType.CP, positions);
+    }
+
+    @Test
+    public void PreDefinedDoubleFrame() {
+        Double[] test_val = new Double[10000];
+        for(int i = 0; i < test_val.length; i++) {
+            test_val[i] = TestUtils.getPositiveRandomDouble();
+        }
+        String[] test_string = new String[test_val.length];
+        for(int j = 0; j < test_val.length; j++) {
+            test_string[j] = test_val[j].toString();
+        }
+
+        String[][] teststrings = new String[][]{test_string};
+        FrameBlock f = generateRandomFrameBlock(test_string.length, 1, teststrings);
+        String[] disguised_values = new String[]{"9999999999"};
+        ArrayList<List<Integer>> positions = getDisguisedPositions(f, 10, disguised_values);
         runMissingValueTest(f, ExecType.CP, positions);
     }
 

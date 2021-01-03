@@ -2105,7 +2105,6 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			// still hardcoded but should work this way somehow
 			//FrameBlockMapFunction ret = getCompiledFunctionBlock(lambdaExpr);
 			return UtilFunctions.calculateAttributeTypes(this);
-			// return map(ret);
 		}
 		else {
 			FrameMapFunction ret = getCompiledFunction(lambdaExpr);
@@ -2114,9 +2113,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public FrameBlock map(FrameBlockMapFunction lambdaExpression) {
-		String tee = lambdaExpression.apply(this);
-		System.out.println(tee);
-		return this;
+		//String tee = lambdaExpression.apply(this);
+		//System.out.println(tee);
+		return lambdaExpression.apply();
 	}
 	
 	public FrameBlock map(FrameMapFunction lambdaExpr) {
@@ -2180,7 +2179,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameBlockMapFunction;\n");
 		sb.append("public class "+cname+" extends FrameBlockMapFunction {\n");
 		sb.append("@Override\n");
-		sb.append("public String apply(FrameBlock "+this+") {\n");
+		sb.append("public FrameBlock apply() {\n");
 		sb.append("  return String.valueOf("+expr+"); }}\n");
 
 		try {
@@ -2199,6 +2198,6 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 	public static abstract class FrameBlockMapFunction implements Serializable {
 		private static final long serialVersionUID = -8398573333616520876L;
-		public abstract String apply(FrameBlock input);
+		public abstract FrameBlock apply();
 	}
 }

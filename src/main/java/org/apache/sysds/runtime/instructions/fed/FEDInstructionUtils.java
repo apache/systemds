@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.FrameIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
@@ -152,14 +153,32 @@ public class FEDInstructionUtils {
 				}
 			}
 		}
-		else if(inst instanceof MatrixIndexingCPInstruction) {
+		// TODO replace with IndexingCPInstruction
+		else if(inst instanceof IndexingCPInstruction) {
 			// matrix indexing
-			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
+			IndexingCPInstruction minst = (IndexingCPInstruction) inst;
 			if(inst.getOpcode().equalsIgnoreCase("rightIndex")
-				&& minst.input1.isMatrix() && ec.getCacheableData(minst.input1).isFederated()) {
-				fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());
+				&& (minst.input1.isMatrix() || minst.input1.isFrame())
+				&& ec.getCacheableData(minst.input1).isFederated()) {
+				fedinst = IndexingFEDInstruction.parseInstruction(minst.getInstructionString());
 			}
 		}
+//		else if(inst instanceof MatrixIndexingCPInstruction) {
+//			// matrix indexing
+//			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
+//			if(inst.getOpcode().equalsIgnoreCase("rightIndex")
+//				&& minst.input1.isMatrix() && ec.getCacheableData(minst.input1).isFederated()) {
+//				fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());
+//			}
+//		}
+//		else if(inst instanceof FrameIndexingCPInstruction) {
+//			// matrix indexing
+//			FrameIndexingCPInstruction finst = (FrameIndexingCPInstruction) inst;
+//			if(inst.getOpcode().equalsIgnoreCase("rightIndex")
+//				&& finst.input1.isFrame() && ec.getCacheableData(finst.input1).isFederated()) {
+//				fedinst = FrameIndexingFEDInstruction.parseInstruction(finst.getInstructionString());
+//			}
+//		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
 			if(ins.getVariableOpcode() == VariableOperationCode.Write

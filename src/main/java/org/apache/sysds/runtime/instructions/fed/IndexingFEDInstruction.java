@@ -72,8 +72,10 @@ public abstract class IndexingFEDInstruction extends UnaryFEDInstruction {
 				out = new CPOperand(parts[6]);
 				if(in.getDataType() == Types.DataType.MATRIX)
 					return new MatrixIndexingFEDInstruction(in, rl, ru, cl, cu, out, opcode, str);
+				else if(in.getDataType() == Types.DataType.FRAME)
+					return new FrameIndexingFEDInstruction(in, rl, ru, cl, cu, out, opcode, str);
 				else
-					throw new DMLRuntimeException("Can index only on matrices, frames, and lists in federated.");
+					throw new DMLRuntimeException("Can index only on matrices, frames in federated.");
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);

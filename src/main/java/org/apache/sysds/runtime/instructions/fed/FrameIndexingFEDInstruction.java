@@ -18,27 +18,26 @@
  */
 package org.apache.sysds.runtime.instructions.fed;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.util.IndexRange;
 
-public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
-	private static final Log LOG = LogFactory.getLog(MatrixIndexingFEDInstruction.class.getName());
+public final class FrameIndexingFEDInstruction extends IndexingFEDInstruction {
+	private static final Log LOG = LogFactory.getLog(FrameIndexingFEDInstruction.class.getName());
 
-	public MatrixIndexingFEDInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
+	public FrameIndexingFEDInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
 		CPOperand out, String opcode, String istr) {
 		super(in, rl, ru, cl, cu, out, opcode, istr);
 	}
@@ -51,7 +50,7 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 	private void rightIndexing(ExecutionContext ec)
 	{
 		//get input and requested index range
-		MatrixObject in = ec.getMatrixObject(input1);
+		FrameObject in = ec.getFrameObject(input1);
 		IndexRange ixrange = getIndexRange(ec);
 
 		//prepare output federation map (copy-on-write)
@@ -91,8 +90,10 @@ public final class MatrixIndexingFEDInstruction extends IndexingFEDInstruction {
 			output, new CPOperand[] {input1}, new long[] {fedMap.getID()});
 		fedMap.execute(getTID(), true, fr1, new FederatedRequest[0]);
 
-		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(fedMap.getMaxIndexInRange(0), fedMap.getMaxIndexInRange(1), (int) in.getBlocksize());
+		//TODO set schema  in for loop if dims are changed
+		FrameObject out = ec.getFrameObject(output);
+		out.setSchema(in.getSchema());
+		out.getDataCharacteristics().setDimension(fedMap.getMaxIndexInRange(0), fedMap.getMaxIndexInRange(1));
 		out.setFedMapping(fedMap.copyWithNewID(fr1[0].getID()));
 	}
 }

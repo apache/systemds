@@ -90,6 +90,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	/**
 	 * Sets up the federated worker and control thread
+	 *
+	 * @param weighingFactor Gradients from this worker will be multiplied by this factor if weighing is enabled
 	 */
 	public void setup(double weighingFactor) {
 		// prepare features and labels

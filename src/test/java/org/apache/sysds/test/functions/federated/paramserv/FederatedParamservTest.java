@@ -63,15 +63,14 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	public static Collection<Object[]> parameters() {
 		return Arrays.asList(new Object[][] {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
-
 			// basic functionality
-			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"SCALE_BATCH" ,	"true",	"IMBALANCED",	200},
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" ,	"true",	"IMBALANCED",	200},
 			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE" , 		"true",	"IMBALANCED", 	200},
 			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"RUN_MIN" , 	"true",	"IMBALANCED",	200},
 			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX" , 	"true",	"IMBALANCED",	200},
 			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"true",	"BALANCED",		200},
 
-			// runtime balancing
+			/* // runtime balancing
 			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"true",	"IMBALANCED",	200},
 			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"true",	"IMBALANCED",	200},
 			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"true",	"IMBALANCED",	200},
@@ -86,13 +85,14 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			{"TwoNN", 	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE_TO_AVG",		"NONE" , 		"true",	"IMBALANCED",	200},
 
 			// balanced tests
-			{"CNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"true",	"BALANCED",		200}
+			{"CNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"true",	"BALANCED",		200} */
 
 		});
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
 		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String weighing, String data_distribution, int seed) {
+
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_dataSetSize = dataSetSize;
@@ -196,8 +196,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"seed=" + _seed));
 
 			programArgs = programArgsList.toArray(new String[0]);
-			// LOG.debug(runTest(null));
-			System.out.println(runTest(null));
+			LOG.debug(runTest(null));
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			
 			// shut down threads

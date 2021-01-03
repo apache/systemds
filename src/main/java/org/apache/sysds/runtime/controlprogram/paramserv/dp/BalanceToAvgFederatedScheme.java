@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
@@ -41,7 +40,7 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
 		BalanceMetrics balanceMetricsBefore = getBalanceMetrics(pFeatures);
-		List<Double> scalingFactors = getScalingFactors(pFeatures, balanceMetricsBefore);
+		List<Double> weighingFactors = getWeighingFactors(pFeatures, balanceMetricsBefore);
 
 		int average_num_rows = (int) balanceMetricsBefore._avgRows;
 
@@ -68,7 +67,7 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
 
-		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), scalingFactors);
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), weighingFactors);
 	}
 
 	/**

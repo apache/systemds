@@ -88,17 +88,16 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		_modelVarID = FederationUtils.getNextFedDataID();
 	}
 
-	public void setWeighingFactor(double weighingFactor) {
-		_weighingFactor = weighingFactor;
-	}
-
 	/**
 	 * Sets up the federated worker and control thread
 	 */
-	public void setup() {
+	public void setup(double weighingFactor) {
 		// prepare features and labels
 		_featuresData = (FederatedData) _features.getFedMapping().getMap().values().toArray()[0];
 		_labelsData = (FederatedData) _labels.getFedMapping().getMap().values().toArray()[0];
+
+		// weighing factor is always set, but only used when weighing is specified
+		_weighingFactor = weighingFactor;
 
 		// different runtime balancing calculations
 		long dataSize = _features.getNumRows();
@@ -117,6 +116,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		if(_runtimeBalancing == Statement.PSRuntimeBalancing.NONE) {
 			_numBatchesPerEpoch = _possibleBatchesPerLocalEpoch;
 		}
+
+		LOG.info("Setup config for worker " + this.getWorkerName());
+		LOG.info("Batch size: " + _batchSize + " possible batches: " + _possibleBatchesPerLocalEpoch
+				+ " batches to run: " + _numBatchesPerEpoch + " weighing factor: " + _weighingFactor);
 
 		// serialize program
 		// create program blocks for the instruction filtering
@@ -336,9 +339,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				scaleAndPushGradients(gradients);
 				ParamservUtils.cleanupListObject(model);
 				ParamservUtils.cleanupListObject(gradients);
+				LOG.info("[+] " + this.getWorkerName() + " completed BATCH " + localStartBatchNum);
 			}
-			if( LOG.isInfoEnabled() )
-				LOG.info("[+] " + this.getWorkerName() + " completed epoch " + epochCounter);
+			LOG.info("[+] " + this.getWorkerName() + " --- completed EPOCH " + epochCounter);
 		}
 	}
 
@@ -361,8 +364,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerEpoch, localStartBatchNum, true);
 			scaleAndPushGradients(gradients);
 
-			if( LOG.isInfoEnabled() )
-				LOG.info("[+] " + this.getWorkerName() + " completed epoch " + epochCounter);
+			LOG.info("[+] " + this.getWorkerName() + " --- completed EPOCH " + epochCounter);
 			ParamservUtils.cleanupListObject(model);
 			ParamservUtils.cleanupListObject(gradients);
 		}
@@ -519,8 +521,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
 				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
 				ec.removeVariable(ec.getVariable(Statement.PS_FED_BATCHCOUNTER_VARID).toString());
-				if( LOG.isInfoEnabled() )
-					LOG.info("[+]" + " completed batch " + localBatchNum);
+				/*if( LOG.isInfoEnabled() )
+					LOG.info("[+]" + " completed batch " + localBatchNum);*/
 			}
 
 			// model clean up

@@ -136,12 +136,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		boolean weighing = getWeighing();
 		int seed = getSeed();
 
-		System.out.println("[+] Update Type: " + updateType);
-		System.out.println("[+] Frequency: " + freq);
-		System.out.println("[+] Data Partitioning: " + federatedPSScheme);
-		System.out.println("[+] Runtime Balancing: " + runtimeBalancing);
-		System.out.println("[+] Weighing: " + weighing);
-		System.out.println("[+] Seed: " + seed);
+		LOG.info("[+] Update Type: " + updateType);
+		LOG.info("[+] Frequency: " + freq);
+		LOG.info("[+] Data Partitioning: " + federatedPSScheme);
+		LOG.info("[+] Runtime Balancing: " + runtimeBalancing);
+		LOG.info("[+] Weighing: " + weighing);
+		LOG.info("[+] Seed: " + seed);
 
 		// partition federated data
 		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme, seed)
@@ -192,8 +192,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		for (int i = 0; i < threads.size(); i++) {
 			threads.get(i).setFeatures(pFeatures.get(i));
 			threads.get(i).setLabels(pLabels.get(i));
-			threads.get(i).setWeighingFactor(result._scalingFactors.get(i));
-			threads.get(i).setup();
+			threads.get(i).setup(result._weighingFactors.get(i));
 		}
 
 		try {

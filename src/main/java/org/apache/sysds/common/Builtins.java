@@ -49,6 +49,7 @@ public enum Builtins {
 	ATAN("atan", false),
 	AVG_POOL("avg_pool", false),
 	AVG_POOL_BACKWARD("avg_pool_backward", false),
+    BAESIAN_OPTIMISATION("bayesianOptimisation", true),
 	BATCH_NORM2D("batch_norm2d", false, ReturnType.MULTI_RETURN),
 	BATCH_NORM2D_BACKWARD("batch_norm2d_backward", false, ReturnType.MULTI_RETURN),
 	BANDIT("bandit", true),

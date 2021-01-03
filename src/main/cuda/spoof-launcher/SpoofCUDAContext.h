@@ -84,7 +84,7 @@ public:
 	template <typename T>
 	T execute_kernel(const std::string &name, T **in_ptrs, int num_inputs, T **side_ptrs, int num_sides, T *out_ptr, 
 			T *scalars_ptr, int num_scalars, uint32_t m, uint32_t n, int out_len, int grix, 
-			const std::vector<Matrix<T>>& sides, Matrix<T>& out) {
+			const std::vector<Matrix<T>>& sides, Matrix<T>* out) {
 		
 		T result = 0.0;
 		size_t dev_buf_size;
@@ -97,12 +97,25 @@ public:
 		if (o != ops.end()) {
 			SpoofOperator *op = &(o->second);
 
-			Matrix<T> in{in_ptrs[0], nullptr, nullptr, static_cast<uint32_t>(m), n, m*n};
+			Matrix<T> in{in_ptrs[0], nullptr, nullptr, m, n, m*n};
 			CHECK_CUDART(cudaMalloc((void **)&d_in, sizeof(Matrix<T>)));
 			CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&in), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
 
-			CHECK_CUDART(cudaMalloc((void **)&d_out, sizeof(Matrix<T>)));
-			CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void*>(&out), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
+			if(out != nullptr) {
+				CHECK_CUDART(cudaMalloc((void **) &d_out, sizeof(Matrix<T>)));
+				CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void *>(out), sizeof(Matrix<T>),
+						cudaMemcpyHostToDevice));
+			}
+			else {
+				std::cout << "fixing scalar out" << std::endl;
+				CHECK_CUDART(cudaMalloc((void **) &d_out, sizeof(Matrix<T>)));
+				T* d_out_data = nullptr;
+				CHECK_CUDART(cudaMalloc((void **) &d_out_data, sizeof(T)));
+				Matrix<T> scalar_out{d_out_data, 0, 0, 1, 1, 1};
+				CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void *>(&scalar_out), sizeof(Matrix<T>),
+										cudaMemcpyHostToDevice));
+			
+			}
 			
 			if (num_sides > 0) {
 				dev_buf_size = sizeof(Matrix<T>) * num_sides;
@@ -133,6 +146,16 @@ public:
 			
 			if (num_sides > 0)
 				CHECK_CUDART(cudaFree(d_sides));
+			
+			if(op->agg_type == SpoofOperator::AggType::FULL_AGG) {
+				std::cout << "retrieving scalar result" << std::endl;
+				
+				Matrix<T> res_mat;
+				CHECK_CUDART(cudaMemcpy(&res_mat, d_out, sizeof(Matrix<T>), cudaMemcpyDeviceToHost));
+				result = res_mat.data[0];
+				CHECK_CUDART(cudaFree(res_mat.data));
+				CHECK_CUDART(cudaFree(d_out));
+			}
 		} 
 		else {
 			std::cerr << "kernel " << name << " not found." << std::endl;
@@ -309,16 +332,16 @@ public:
 
 		T result = 0.0;
 		T *d_temp_agg_buf = nullptr;
-		size_t out_buf_size = 0;
-		if(d_out == nullptr) {
-			out_buf_size = sizeof(T) * 1;
-			CHECK_CUDART(cudaMalloc((void **) &d_out, out_buf_size));
-
-			// Matrix<T> out{in_ptrs[0], nullptr, nullptr, static_cast<uint32_t>(m), n, m*n};
-			// CHECK_CUDART(cudaMalloc((void **)&d_in, sizeof(Matrix<T>)));
-			// CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&in), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
-
-		}
+//		size_t out_buf_size = 0;
+//		if(d_out == nullptr) {
+//			out_buf_size = sizeof(T) * 1;
+//			CHECK_CUDART(cudaMalloc((void **) &d_out, out_buf_size));
+//
+//			// Matrix<T> out{in_ptrs[0], nullptr, nullptr, static_cast<uint32_t>(m), n, m*n};
+//			// CHECK_CUDART(cudaMalloc((void **)&d_in, sizeof(Matrix<T>)));
+//			// CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&in), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
+//
+//		}
 
 		
 		dim3 grid(in_rows, 1, 1);
@@ -335,11 +358,6 @@ public:
 				.instantiate(type_of(result), std::max(1u, num_sides))
 				.configure(grid, block, shared_mem_size)
 				.launch(d_in, d_sides, d_out, d_scalars, grix));
-
-		if(out_buf_size != 0) {
-			CHECK_CUDART(cudaMemcpy(&result, d_out, sizeof(T), cudaMemcpyDeviceToHost));
-			CHECK_CUDART(cudaFree(d_out));
-		}
 
 		return result;
 	}

@@ -42,7 +42,7 @@ public class CNodeRow extends CNodeTpl
 	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c.vals(0), 0, ci, %LEN%);\n";
 	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0){\n\t\t\t*(c.vals(rix)) = %IN%;\n//printf(\"rix=%d TMP7=%f TMP8=%f %IN%=%f\\n\",rix, TMP7, TMP8,%IN%);\n}\n";
 	private static final String TEMPLATE_FULLAGG_OUT_CUDA =
-		"\t\tif(threadIdx.x == 0) {\n\t\t\tT old = atomicAdd(c.vals(0), %IN%);\n\t\t\t//printf(\"bid=%d full_agg add %f to %f\\n\",blockIdx.x, %IN%, old);\n\t\t}\n";
+		"\t\tif(threadIdx.x == 0) {\n\t\t\tT old = atomicAdd(c.vals(0), %IN%);\n\t\t\tprintf(\"bid=%d full_agg add %f to %f\\n\",blockIdx.x, %IN%, old);\n\t\t}\n";
 
 
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
@@ -98,9 +98,9 @@ public class CNodeRow extends CNodeTpl
 		_output.resetGenerated();
 		String tmpSparse = _output.codegen(true, api) + getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
-		
-		tmp = tmp.replace("//%TMP%", createVarname());
-		tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", createVarname());
+		String varName = createVarname();
+		tmp = tmp.replace("//%TMP%", varName);
+		tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", varName);
 		tmp = tmp.replace("//%BODY_dense%", tmpDense);
 		tmp = tmp.replace("%BODY_sparse%", tmpSparse);
 		

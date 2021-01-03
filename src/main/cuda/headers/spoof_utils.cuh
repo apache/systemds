@@ -356,6 +356,11 @@ int vectLessequalWrite(T* a, T b, T* c, int ai, int len) {
 }
 
 template<typename T>
+int vectGreaterWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
+	return vectWrite_<T, GreaterOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T>
 int vectGreaterequalWrite(T* a, T b, T* c, int ai, int len) {
     return vectWrite_<T, GreaterEqualOp<T>>(a, b, c, ai, 0, len);
 }
@@ -432,8 +437,13 @@ int vectFloorWrite(T* a, T* c, int ai, int len) {
 }
 
 template<typename T>
-int vectMinWrite(T* a, T b, T* c, int ai, int len) {
-	return vectWrite_<T, MinOp<T>>(a, b, c, ai, 0, len);
+int vectMinWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
+	return vectWrite_<T, MinOp<T>>(a, b, c, ai, 0u, len);
+}
+
+template<typename T>
+int vectMinWrite(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t len) {
+	return vectWrite_<T, MinOp<T>>(a, b, c, ai, bi, len);
 }
 
 template<typename T>

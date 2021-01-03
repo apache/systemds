@@ -92,11 +92,14 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 	}
 	jmethodID ArrayList_size = env->GetMethodID(ArrayList, "size", "()I");
 	jmethodID ArrayList_get = env->GetMethodID(ArrayList, "get", "(I)Ljava/lang/Object;");
-
-	Matrix<double> out{reinterpret_cast<double*>(out_ptr), nullptr, nullptr,
-		static_cast<uint32_t>(env->CallIntMethod(output, mat_obj_num_rows)),
-		static_cast<uint32_t>(env->CallIntMethod(output, mat_obj_num_cols)),
-		static_cast<uint32_t>(m*n)};
+	std::unique_ptr<Matrix<double>> out;
+	if(output != nullptr) {
+		std::cout << "out not null" << std::endl;
+		out = std::make_unique<Matrix<double>>(Matrix<double>{reinterpret_cast<double *>(out_ptr), nullptr, nullptr,
+				static_cast<uint32_t>(env->CallIntMethod(output, mat_obj_num_rows)),
+				static_cast<uint32_t>(env->CallIntMethod(output, mat_obj_num_cols)),
+				static_cast<uint32_t>(m * n)});
+	}
 	
 	jint len = env->CallIntMethod(inputs_, ArrayList_size);
 	std::vector<Matrix<double>> side_info;
@@ -111,7 +114,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 	double result = ctx_->execute_kernel(
 		cstr_name, inputs, env->GetArrayLength(in_ptrs), sides, 
 		env->GetArrayLength(side_ptrs),	reinterpret_cast<double*>(out_ptr), scalars, 
-		env->GetArrayLength(scalars_), m, n, out_len, grix, side_info, out);
+		env->GetArrayLength(scalars_), m, n, out_len, grix, side_info, out.get());
 
 	RELEASE_ARRAY(env, in_ptrs, inputs);
 	RELEASE_ARRAY(env, side_ptrs, sides);

@@ -19,28 +19,16 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import java.sql.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
-import jdk.internal.util.xml.impl.Pair;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.sysds.api.mlcontext.Frame;
-import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.test.functions.binary.frame.FrameMapTest;
-import org.apache.sysds.utils.Hash;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
-import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;

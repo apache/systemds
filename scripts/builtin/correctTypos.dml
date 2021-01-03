@@ -1,0 +1,67 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function that implements the k-Means clustering algorithm
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME                              TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# X                                 Double    ---      The input Matrix to do KMeans on.
+# k                                 Int       ---      Number of centroids
+# runs                              Int       10       Number of runs (with different initial centroids)
+# max_iter                          Int       1000     Maximum number of iterations per run
+# eps                               Double    0.000001 Tolerance (epsilon) for WCSS change ratio
+# is_verbose                        Boolean   FALSE    do not print per-iteration stats
+# avg_sample_size_per_centroid      Int       50       Average number of records per centroid in data samples
+# seed                              Int       -1       The seed used for initial sampling. If set to -1 random seeds are selected. 
+#
+#
+# RETURN VALUES
+# ----------------------------------------------------------------------------
+# NAME     TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# Y        String    "Y.mtx"  The mapping of records to centroids
+# C        String    "C.mtx"  The output matrix with the centroids
+# ----------------------------------------------------------------------------
+
+
+s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean correct, 
+    Boolean is_verbose)
+  return (Frame[String] Y)
+{
+  if(is_verbose)
+    print ("BEGIN CORRECT-TYPOS SCRIPT");
+
+  Y = strings;
+
+  # num_strings = length(strings);
+
+  # if(is_verbose)
+    # print("num strings: " + num_strings)
+
+
+  # if(!decapitalize)
+    # if(is_verbose)
+      # print("Only decapitalization currently supported")
+}
+
+

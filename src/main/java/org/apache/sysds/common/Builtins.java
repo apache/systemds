@@ -80,6 +80,7 @@ public enum Builtins {
 	CONV2D("conv2d", false),
 	CONV2D_BACKWARD_FILTER("conv2d_backward_filter", false),
 	CONV2D_BACKWARD_DATA("conv2d_backward_data", false),
+	CORRECTTYPOS("correctTypos", true),
 	COS("cos", false),
 	COV("cov", false),
 	COSH("cosh", false),

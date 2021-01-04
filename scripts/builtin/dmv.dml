@@ -19,12 +19,5 @@
 #
 #------------------------------------------------------------
 dmv = function(Frame[Unknown] F) return (Frame[Unknown] Y) {
-
-  Z = map(F, "UtilFunctions.calculateAttributeTypes()")
-
-  # spec = "{ids: false, recode: [ zipcode, district, view ]}";
-  # [T, P] = transformencode(target=Z, spec=spec)
-
-  Y = Z
-  # outlier..
+  Y = map(F, "UtilFunctions.calculateAttributeTypes()")
 }

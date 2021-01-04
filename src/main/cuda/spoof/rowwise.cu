@@ -88,10 +88,6 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c
 	// spoof_op.c_len = c_len;
 	// spoof_op.c_len = c->len_r();
 
-	if(threadIdx.x == 0) {
-		printf("blubb\n");
-		printf("c=%f\n", spoof_op.c.val(0, 0));
-	}
 //	if(threadIdx.x == 0 && blockIdx.x == 0) {
 //		printf("bid=%d len=%d c_len=%d\n", blockIdx.x, len, c_len);
 

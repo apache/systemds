@@ -152,7 +152,9 @@ public:
 				
 				Matrix<T> res_mat;
 				CHECK_CUDART(cudaMemcpy(&res_mat, d_out, sizeof(Matrix<T>), cudaMemcpyDeviceToHost));
-				result = res_mat.data[0];
+				CHECK_CUDART(cudaMemcpy(&result, res_mat.data, sizeof(T), cudaMemcpyDeviceToHost));
+
+//				result = res_mat.data[0];
 				CHECK_CUDART(cudaFree(res_mat.data));
 				CHECK_CUDART(cudaFree(d_out));
 			}

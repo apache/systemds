@@ -42,9 +42,6 @@ public class BuiltinMDTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "matching_dependency";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinMDTest.class.getSimpleName() + "/";
-	private final static Types.ValueType[] schemaStrings = {
-		Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING,
-		Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING};
 
 	@Parameterized.Parameter()
 	public double[][] LHSf;
@@ -85,7 +82,7 @@ public class BuiltinMDTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMD1() {
+	public void testMDCP() {
 		double[][] D =  {
 			{7567, 231, 1231, 1232, 122, 321},
 			{5321, 23123, 122, 123, 1232, 11},
@@ -93,7 +90,19 @@ public class BuiltinMDTest extends AutomatedTestBase {
 			{7267, 3, 223, 432, 1132, 500},
 			{7254, 3, 223, 432, 1132, 0},
 		};
-		runMDTests(D, LHSf, LHSt, RHSf, RHSt, LopProperties.ExecType.CP );
+		runMDTests(D, LHSf, LHSt, RHSf, RHSt, LopProperties.ExecType.CP);
+	}
+
+	@Test
+	public void testMDSP() {
+		double[][] D =  {
+			{7567, 231, 1231, 1232, 122, 321},
+			{5321, 23123, 122, 123, 1232, 11},
+			{7267, 3, 223, 432, 1132, 0},
+			{7267, 3, 223, 432, 1132, 500},
+			{7254, 3, 223, 432, 1132, 0},
+		};
+		runMDTests(D, LHSf, LHSt, RHSf, RHSt, LopProperties.ExecType.SPARK);
 	}
 	
 	private void runMDTests(double [][] X , double[][] LHSf, double[][] LHSt, double[][] RHSf, double[][] RHSt, LopProperties.ExecType instType) {

@@ -61,14 +61,14 @@ s_mdedup = function(Frame[String] X, Matrix[Double] LHSfeatures, Matrix[Double] 
     stop("Invalid input: threshold values should be in the interval [0, 1].")
 
   MD = matrix(0, n, 1)
-
   LHS_MD = getMDAdjacency(X, LHSfeatures, LHSthreshold)
+  RHS_MD = matrix(0, n, n)
 
   if (sum(LHS_MD) > 0) {
     RHS_MD = getMDAdjacency(X, RHSfeatures, RHSthreshold)
   }
 
-  MD = detectDuplicates(LHS_MD, LHS_MD)
+  MD = detectDuplicates(LHS_MD, RHS_MD)
 
   if(verbose)
     print(toString(MD))
@@ -81,7 +81,8 @@ getMDAdjacency = function(Frame[String] X, Matrix[Double] features, Matrix[Doubl
   d = ncol(X)
   adjacency = matrix(0, n, n)
 
-  for(i in 1 : ncol(features)) {
+  i = 1
+  while (i < ncol(features)) {
     # slice col
     pos = as.scalar(features[1, i])
     Xi = X[, pos]
@@ -100,6 +101,8 @@ getMDAdjacency = function(Frame[String] X, Matrix[Double] features, Matrix[Doubl
     # break if one of MDs is false
     if (sum(adjacency) == 0)
       i = ncol(features)
+
+    i = i + 1
   }
 }
 

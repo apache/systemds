@@ -2169,8 +2169,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	public static FrameMapDistFunction getCompiledFunction2Args(String lambdaExpr) {
 		// split lambda expression
 		String[] parts = lambdaExpr.split("->");
-		parts[0] = parts[0].replace("(", "");
-		parts[0] = parts[0].replace(")", "");
+		parts[0] = parts[0].replaceAll("[()]", "");
 		String[] vars = parts[0].split(",");
 		if( parts.length != 2 || vars.length != 2)
 			throw new DMLRuntimeException("Unsupported lambda expression: "+lambdaExpr);

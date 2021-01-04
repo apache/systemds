@@ -1182,22 +1182,17 @@ public abstract class AutomatedTestBase {
 
 			outputR = IOUtils.toString(child.getInputStream());
 			errorString = IOUtils.toString(child.getErrorStream());
-			if(LOG.isTraceEnabled()) {
-				LOG.trace("Standard Output from R:" + outputR);
-				LOG.trace("Standard Error from R:" + errorString);
-			}
-
+			
 			//
 			// To give any stream enough time to print all data, otherwise there
 			// are situations where the test case fails, even before everything
 			// has been printed
 			//
 			child.waitFor();
-
 			try {
 				if(child.exitValue() != 0) {
 					throw new Exception(
-						"ERROR: R has ended irregularly\n" + outputR + "\nscript file: " + executionFile);
+						"ERROR: R has ended irregularly\n" + buildOutputStringR(outputR, errorString) + "\nscript file: " + executionFile);
 				}
 			}
 			catch(IllegalThreadStateException ie) {
@@ -1205,6 +1200,10 @@ public abstract class AutomatedTestBase {
 				// correctly. However, give it a try, since R processed the
 				// script, therefore we can terminate the process.
 				child.destroy();
+			}
+
+			if(!outputBuffering) {
+				System.out.println(buildOutputStringR(outputR, errorString));
 			}
 
 			long t1 = System.nanoTime();
@@ -1230,6 +1229,16 @@ public abstract class AutomatedTestBase {
 				fail(errorMessage.toString());
 			}
 		}
+	}
+
+	private static String buildOutputStringR(String standardOut, String standardError){
+		StringBuilder sb = new StringBuilder();
+		sb.append("R Standard output :\n");
+		sb.append(standardOut);
+		sb.append("\nR Standard Error  :\n");
+		sb.append(standardError);
+		sb.append("\n");
+		return sb.toString();
 	}
 
 	/**

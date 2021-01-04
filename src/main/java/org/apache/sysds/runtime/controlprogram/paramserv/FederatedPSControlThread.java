@@ -350,12 +350,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				int localStartBatchNum = getNextLocalBatchNum(currentLocalBatchNumber++, _possibleBatchesPerLocalEpoch);
 				ListObject model = pullModel();
 				ListObject gradients = computeGradientsForNBatches(model, 1, localStartBatchNum);
+				LOG.info("[+] " + this.getWorkerName() + " completed BATCH " + localStartBatchNum);
 				scaleAndPushGradients(gradients);
 				ParamservUtils.cleanupListObject(model);
 				ParamservUtils.cleanupListObject(gradients);
-				LOG.info("[+] " + this.getWorkerName() + " completed BATCH " + localStartBatchNum);
 			}
-			LOG.info("[+] " + this.getWorkerName() + " --- completed EPOCH " + epochCounter);
 		}
 	}
 

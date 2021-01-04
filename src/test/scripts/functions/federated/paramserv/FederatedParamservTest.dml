@@ -29,9 +29,12 @@ labels = read($labels)
 print($weighing)
 
 if($network_type == "TwoNN") {
-  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighing, $eta, $seed)
+  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighing, $eta, $seed)
 }
 else {
-  model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighing, $eta, $channels, $hin, $win, $seed)
+  model = CNN::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighing, $eta, $channels, $hin, $win, $seed)
 }
+
+# hyperparams = list(learning_rate=$eta)
+# TwoNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, hyperparams)
 print(toString(model))

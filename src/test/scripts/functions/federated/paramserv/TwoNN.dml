@@ -225,9 +225,9 @@ eval = function(matrix[double] probs, matrix[double] y)
  *  - loss: Scalar loss, of shape (1).
  *  - accuracy: Scalar accuracy, of shape (1).
  */
-validate = function(matrix[double] X_val, matrix[double] y_val, list[unknown] model, list[unknown] hyperparams)
+validate = function(matrix[double] val_features, matrix[double] val_labels, list[unknown] model, list[unknown] hyperparams)
     return (double loss, double accuracy) {
-  [loss, accuracy] = eval(predict(X_val, model), y_val)
+  [loss, accuracy] = eval(predict(val_features, model), val_labels)
 }
 
 # Should always use 'features' (batch features), 'labels' (batch labels),

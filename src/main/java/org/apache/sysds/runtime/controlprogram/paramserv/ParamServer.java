@@ -38,9 +38,11 @@ import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.utils.Statistics;
@@ -68,9 +70,15 @@ public abstract class ParamServer
 	private String _lossOutput;
 	private String _accuracyOutput;
 
+	private int _batchCounter = 0;
+	private int _epochCounter = 0 ;
+	private int _numBatchesPerEpoch;
+
 	protected ParamServer() {}
 
-	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, String valFunc) {
+	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec,
+						  int workerNum, String valFunc, int numBatchesPerEpoch,
+						  MatrixObject valFeatures, MatrixObject valLabels) {
 		// init worker queues and global model
 		_modelMap = new HashMap<>(workerNum);
 		IntStream.range(0, workerNum).forEach(i -> {
@@ -85,9 +93,10 @@ public abstract class ParamServer
 		_finishedStates = new boolean[workerNum];
 		setupAggFunc(_ec, aggFunc);
 
-		if(valFunc != null) {
-			setupValFunc(_ec, valFunc);
+		if(valFunc != null && numBatchesPerEpoch > 0) {
+			setupValFunc(_ec, valFunc, valFeatures, valLabels);
 		}
+		_numBatchesPerEpoch = numBatchesPerEpoch;
 		
 		// broadcast initial model
 		broadcastModel(true);
@@ -119,7 +128,7 @@ public abstract class ParamServer
 			func.getInputParamNames(), outputNames, "aggregate function");
 	}
 
-	protected void setupValFunc(ExecutionContext ec, String valFunc) {
+	protected void setupValFunc(ExecutionContext ec, String valFunc, MatrixObject valFeatures, MatrixObject valLabels) {
 		String[] cfn = DMLProgram.splitFunctionKey(valFunc);
 		String ns = cfn[0];
 		String fname = cfn[1];
@@ -145,6 +154,10 @@ public abstract class ParamServer
 		_valInst = new FunctionCallCPInstruction(ns, fname, false, boundInputs,
 				func.getInputParamNames(), outputNames, "validate function");
 
+		// write validation data to execution context. hyper params are already in ec
+		_ec.setVariable(Statement.PS_VAL_FEATURES, valFeatures);
+		_ec.setVariable(Statement.PS_VAL_LABELS, valLabels);
+
 		_validationPossible = true;
 	}
 
@@ -159,10 +172,6 @@ public abstract class ParamServer
 	}
 
 	protected synchronized void updateGlobalModel(int workerID, ListObject gradients) {
-		updateGlobalModel(workerID, gradients, false);
-	}
-	
-	protected synchronized void updateGlobalModel(int workerID, ListObject gradients, boolean validate) {
 		try {
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
@@ -186,8 +195,13 @@ public abstract class ParamServer
 							_accGradients = null;
 						}
 
-						if (_validationPossible && validate) {
+						// count batches and call validation if possible and necessary
+						_batchCounter++;
+						if (_validationPossible && LOG.isInfoEnabled() && _batchCounter % _numBatchesPerEpoch == 0) {
+							LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
 							validate();
+							_epochCounter++;
+							_batchCounter = 0;
 						}
 						
 						// Broadcast the updated model
@@ -283,8 +297,23 @@ public abstract class ParamServer
 	/**
 	 * Checks the current model against the validation set and
 	 */
-	private void validate() {
-		LOG.info("###VALIDATION###");
+	private synchronized void validate() {
+		LOG.info("VALIDATION:");
+		_ec.setVariable(Statement.PS_MODEL, _model);
+
+		// Invoke the validation function
+		_valInst.processInstruction(_ec);
+
+		// Get the validation results
+		double loss = ((DoubleObject) _ec.getVariable(_lossOutput)).getDoubleValue();
+		double accuracy = ((DoubleObject) _ec.getVariable(_accuracyOutput)).getDoubleValue();
+
+		// Log validation results
+		LOG.info("Loss: " + loss + " Accuracy: " + accuracy);
+
+		// cleanup
+		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+
 	}
 
 	public FunctionCallCPInstruction getAggInst() {

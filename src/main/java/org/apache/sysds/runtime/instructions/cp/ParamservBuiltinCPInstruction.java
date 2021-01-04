@@ -151,7 +151,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC, valFunc);
+		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC, valFunc,
+				getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), ec.getMatrixObject(getParam(PS_VAL_FEATURES)), ec.getMatrixObject(getParam(PS_VAL_LABELS)));
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
@@ -423,15 +424,17 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return parameter server
 	 */
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
-		return createPS(mode, aggFunc, updateType, workerNum, model, ec, null);
+		return createPS(mode, aggFunc, updateType, workerNum, model, ec, null, -1, null, null);
 	}
 
-	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec, String valFunc) {
+	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum,
+										ListObject model, ExecutionContext ec, String valFunc, int numBatchesPerEpoch,
+										MatrixObject valFeatures, MatrixObject valLabels) {
 		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
-				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum, valFunc);
+				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels);
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: "+mode.name());
 		}
@@ -508,7 +511,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return numBatchesPerEpoch
 	 */
 	private int getNumBatchesPerEpoch(PSRuntimeBalancing runtimeBalancing, DataPartitionFederatedScheme.BalanceMetrics balanceMetrics) {
-		int numBatchesPerEpoch = 0;
+		int numBatchesPerEpoch;
 		if(runtimeBalancing == PSRuntimeBalancing.RUN_MIN) {
 			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._minRows / (float) getBatchSize());
 		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG
@@ -516,6 +519,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._avgRows / (float) getBatchSize());
 		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
 			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._maxRows / (float) getBatchSize());
+		} else {
+			numBatchesPerEpoch = (int) (balanceMetrics._avgRows / getBatchSize());
 		}
 		return numBatchesPerEpoch;
 	}

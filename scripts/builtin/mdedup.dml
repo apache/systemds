@@ -19,7 +19,7 @@
 #
 #------------------------------------------------------------------------------------------------------------------
 
-# Implements builtin for deduplication using matching dependencies (like Street 0.95, City 0.90 -> ZIP 1.0)
+# Implements builtin for deduplication using matching dependencies (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
 # and Jaccard distance.
 # 
 # INPUT PARAMETERS:
@@ -28,7 +28,7 @@
 # -----------------------------------------------------------------------------------------------------------------
 # X               Frame               --       Input Frame X
 # LHSfeatures     Matrix[Integer]     --       A matrix 1xd with numbers of columns for MDs
-#                                              (like Street 0.95, City 0.90 -> ZIP 1.0)
+#                                              (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
 # LHSthreshold    Matrix[Double]      --       A matrix 1xd with threshold values in interval [0, 1] for MDs
 # RHSfeatures     Matrix[Integer]     --       A matrix 1xd with numbers of columns for MDs
 # RHSthreshold    Matrix[Double]      --       A matrix 1xd with threshold values in interval [0, 1] for MDs

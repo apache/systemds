@@ -19,7 +19,8 @@
 #
 #-------------------------------------------------------------
 
-X = read($1, data_type = "frame", format = "csv", header = FALSE);
+# X = read($1, data_type = "frame", format = "csv", header = FALSE);
+X = as.frame(read($1))
 LHSf = read($2);
 LHSt = read($3);
 RHSf = read($4);

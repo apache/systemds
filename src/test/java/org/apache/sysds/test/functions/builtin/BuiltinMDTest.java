@@ -109,8 +109,8 @@ public class BuiltinMDTest extends AutomatedTestBase {
 			double[][] A = getRandomMatrix(20, 6, 50, 500, 1, 2);
 			System.arraycopy(X, 0, A, 0, X.length);
 
-			writeInputFrameWithMTD("X", A, false, schemaStrings, Types.FileFormat.CSV);
-
+//			writeInputFrameWithMTD("X", A, false, schemaStrings, Types.FileFormat.CSV);
+			writeInputMatrixWithMTD("X", A, false);
 			writeInputMatrixWithMTD("LHSf", LHSf, true);
 			writeInputMatrixWithMTD("LHSt", LHSt, true);
 			writeInputMatrixWithMTD("RHSf", RHSf, true);
@@ -118,7 +118,7 @@ public class BuiltinMDTest extends AutomatedTestBase {
 
 			runTest(true, false, null, -1);
 		}
-		catch(IOException e) {
+		catch(Exception e) {
 			e.printStackTrace();
 		}
 		finally {

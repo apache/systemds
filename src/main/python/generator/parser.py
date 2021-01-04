@@ -82,8 +82,8 @@ class FunctionParser(object):
             name = splitted[1]
             default_value = None
             if len(splitted) == 4:
-                if splitted[3] == "=":
-                    defaul_value = splitted[4]
+                if splitted[2] == "=":
+                    default_value = splitted[3]
             parameters.append((name, dml_type, default_value))
         return parameters
 

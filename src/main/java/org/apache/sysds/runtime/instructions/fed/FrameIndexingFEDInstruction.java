@@ -18,17 +18,19 @@
  */
 package org.apache.sysds.runtime.instructions.fed;
 
-import java.util.concurrent.Future;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -59,6 +61,9 @@ public final class FrameIndexingFEDInstruction extends IndexingFEDInstruction {
 		//modify federated ranges in place
 		String[] instStrings = new String[fedMap.getSize()];
 
+		//create new frame schema
+		List<Types.ValueType> schema = new ArrayList<>();
+
 		// replace old reshape values for each worker
 		int i = 0;
 		for(FederatedRange range : fedMap.getMap().keySet()) {
@@ -76,7 +81,7 @@ public final class FrameIndexingFEDInstruction extends IndexingFEDInstruction {
 
 			long[] newIx = new long[]{rsn, ren, csn, cen};
 
-			// change 4 indices
+			// change 4 indices in instString
 			instStrings[i] = instString;
 			String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
 			for(int j = 3; j < 7; j++) {
@@ -84,15 +89,21 @@ public final class FrameIndexingFEDInstruction extends IndexingFEDInstruction {
 					.replace(instParts[j].split(Lop.VALUETYPE_PREFIX)[0], String.valueOf(newIx[j-3]+1));
 				instStrings[i] = String.join(Lop.OPERAND_DELIMITOR, instParts);
 			}
+
+			//modify frame schema
+			if (in.isFederated(FederationMap.FType.ROW))
+				schema = Arrays.asList(in.getSchema((int) csn, (int) cen));
+			else
+				Collections.addAll(schema, in.getSchema((int) csn, (int) cen));
+
 			i++;
 		}
 		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings,
 			output, new CPOperand[] {input1}, new long[] {fedMap.getID()});
 		fedMap.execute(getTID(), true, fr1, new FederatedRequest[0]);
 
-		//TODO set schema  in for loop if dims are changed
 		FrameObject out = ec.getFrameObject(output);
-		out.setSchema(in.getSchema());
+		out.setSchema(schema.toArray(new Types.ValueType[0]));
 		out.getDataCharacteristics().setDimension(fedMap.getMaxIndexInRange(0), fedMap.getMaxIndexInRange(1));
 		out.setFedMapping(fedMap.copyWithNewID(fr1[0].getID()));
 	}

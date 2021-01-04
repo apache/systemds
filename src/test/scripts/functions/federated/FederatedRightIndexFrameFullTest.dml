@@ -33,6 +33,8 @@ if ($rP) {
             list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
 
+A = as.frame(A)
+
 s = A[from:to, from:to];
 write(s, $out_S);
 

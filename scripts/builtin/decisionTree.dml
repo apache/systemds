@@ -148,16 +148,12 @@ dataVectorLength = function(Matrix[Double] vector)  return (Double len) {
     len = nrow(vector)
 }
 
-dataRowVectorLength = function(Matrix[Double] vector)  return (Double len) {
+dataColVectorLength = function(Matrix[Double] vector)  return (Double len) {
     len = ncol(vector)
 }
 
 dataVectorGet = function(Matrix[Double] vector, Double index)  return (Double value) {
     value = as.scalar(vector[index, 1])
-}
-
-dataRowVectorGet = function(Matrix[Double] vector, Double index)  return (Double value) {
-    value = as.scalar(vector[1, index])
 }
 
 dataVectorSet = function(Matrix[Double] vector, Double index, Double data) return (Matrix[Double] new_vector) {
@@ -170,16 +166,6 @@ printVector = function(String leading, Matrix[Double] vector) {
     vector_string = leading + "|"
     for (index in 1:len) {
         element = dataVectorGet(vector, index)
-        vector_string = vector_string + element + "|"
-    }
-    print(vector_string)
-}
-
-printRowVector = function(String leading, Matrix[Double] vector) {
-    len = dataRowVectorLength(vector)
-    vector_string = leading + "|"
-    for (index in 1:len) {
-        element = dataRowVectorGet(vector, index)
         vector_string = vector_string + element + "|"
     }
     print(vector_string)
@@ -267,7 +253,10 @@ calcPossibleThresholdsCategory = function(Double type) return (Matrix[Double] th
         }
         toggleFactor = toggleFactor / 2
         iterations = numberThresholds / toggleFactor / 2
-        printRowVector("Truth Table: ", thresholds[index,])
+    }
+    ncol = ncol(thresholds)
+    if (ncol > 2.0) {
+        thresholds = cbind(thresholds[,2:ncol-2], thresholds[,ncol-1])
     }
 }
 
@@ -288,12 +277,12 @@ calcImpurity = function(
     is_scalar_type = typeIsScalar(type)
     if (is_scalar_type) {
         possible_thresholds = calcPossibleThresholdsScalar(X, use_rows_vector, col, bins)
-
     } else {
         possible_thresholds = calcPossibleThresholdsCategory(type)
     }
     len_thresholds = ncol(possible_thresholds)
     impurity = 1
+    threshold = matrix(0, rows=1, cols=1)
     for (index in 1:len_thresholds) {
         [false_rows, true_rows] = splitRowsVector(X, use_rows_vector, col, possible_thresholds[, index], type)
         num_true_positive = 0; num_false_positive = 0; num_true_negative = 0; num_false_negative = 0
@@ -394,11 +383,15 @@ splitRowsVector = function(
         for (c_row in 1:len) {
             row_enabled = dataVectorGet(use_rows_vector, c_row)
             if (row_enabled != 0) {
-                categories_len = dataVectorLength(threshold)
+                categories_len = dataColVectorLength(threshold)
                 move_sample_to_true_set = FALSE
-                for (category_index in 1:categories_len) {
-                    category = dataVectorGet(threshold, category_index)
-                    if (as.scalar(X[c_row, col]) == category) {
+                for (category_col_index in 1:categories_len) {
+                    desired_category = as.scalar(X[c_row, col])
+                    if(desired_category != -1) {
+                        category_of_threshold = threshold[type - desired_category + 1, category_col_index]
+                        move_sample_to_true_set = as.scalar(X[c_row, col]) == as.scalar(category_of_threshold)
+                    } else {
+                        #Todo: has category -1 to be considered?
                         move_sample_to_true_set = TRUE
                     }
                 }
@@ -446,11 +439,11 @@ outputMatrixBind = function(
     } else {
         row_difference = nrow(M) - nrow(col)
         if (row_difference < 0.0) {
-            buffer = matrix(0, rows = -row_difference, cols = ncol(M))
+            buffer = matrix(-1, rows = -row_difference, cols = ncol(M))
             M = rbind(M, buffer)
         } else if (row_difference > 0.0) {
-            buffer = matrix(0, rows = row_difference, cols = 1)
-            col = rbind(M, buffer)
+            buffer = matrix(-1, rows = row_difference, cols = 1)
+            col = rbind(col, buffer)
         }
         new_M = cbind(M, col)
     }
@@ -463,6 +456,7 @@ m_decisionTree = function(
     int bins = 10,
     int depth = 20
 )  return (Matrix[Double] M) {
+    #calcPossibleThresholdsCategory(1)
     node_queue = matrix(1, rows=1, cols=1)             # Add first Node
     impurity_queue = matrix(1, rows=1, cols=1)
     use_cols_queue = matrix(1, rows=ncol(X), cols=1)   # Add fist bool Vector with all cols <=> (use all cols)
@@ -495,7 +489,7 @@ m_decisionTree = function(
             [impurity, used_col, threshold, type] = calcBestSplittingCriteria(X, Y, R, use_rows_vector, use_cols_vector, bins)
             create_child_nodes_flag = impurity < as.scalar(parent_impurity)
             print("Current impurity:   " + impurity)
-            printVector("Current threshold:  ", threshold)
+            printVector("Current threshold:  ", threshold) #Todo: threshold can't be printed if categorical
         }
         print("Current column:     " + used_col)
         print("Current type:       " + type)

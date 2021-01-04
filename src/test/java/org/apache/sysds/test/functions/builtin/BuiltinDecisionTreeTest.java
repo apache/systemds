@@ -13,7 +13,7 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
     private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinDecisionTreeTest.class.getSimpleName() + "/";
 
     private final static double eps = 1e-10;
-    private final static int rows = 5;
+    private final static int rows = 6;
     private final static int cols = 4;
 
     @Override
@@ -43,17 +43,29 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
             fullRScriptName = HOME + TEST_NAME + ".R";
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "  + expectedDir();
 
-            //generate actual dataset
-            double[][] X = getRandomMatrix(rows, cols, 0, 100, 1.0, 7);
-            writeInputMatrixWithMTD("X", X, true);
-
             double[][] Y = getRandomMatrix(rows, 1, 0, 1, 1.0, 3);
             for (int row = 0; row < rows; row++) {
                 Y[row][0] = (Y[row][0] > 0.5)? 1.0 : 0.0;
             }
+
+            //generate actual dataset
+            double[][] X = getRandomMatrix(rows, cols, 0, 100, 1.0, 7);
+            for (int row = 0; row < rows/2; row++) {
+                X[row][2] = (Y[row][0] > 0.5)? 2.0 : 1.0;
+                X[row][3] = 1.0;
+            }
+            for (int row = rows/2; row < rows; row++) {
+                X[row][2] = 1.0;
+                X[row][3] = (Y[row][0] > 0.5)? 2.0 : 1.0;
+            }
+            writeInputMatrixWithMTD("X", X, true);
             writeInputMatrixWithMTD("Y", Y, true);
 
+
+
             double[][] R = getRandomMatrix(1, cols, 1, 1, 1.0, 1);
+            R[0][3] = 3.0;
+            R[0][2] = 3.0;
             writeInputMatrixWithMTD("R", R, true);
 
             runTest(true, false, null, -1);

@@ -154,6 +154,7 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   model = paramserv(model=model, features=X, labels=y, val_features=X_val, val_labels=y_val,
     upd="./src/test/scripts/functions/federated/paramserv/TwoNN.dml::gradients",
     agg="./src/test/scripts/functions/federated/paramserv/TwoNN.dml::aggregation",
+    val="./src/test/scripts/functions/federated/paramserv/TwoNN.dml::validate",
     k=num_workers, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size,
     scheme=scheme, runtime_balancing=runtime_balancing, weighing=weighing, hyperparams=hyperparams, seed=seed)
 }
@@ -212,6 +213,21 @@ eval = function(matrix[double] probs, matrix[double] y)
   loss = cross_entropy_loss::forward(probs, y)
   correct_pred = rowIndexMax(probs) == rowIndexMax(y)
   accuracy = mean(correct_pred)
+}
+
+/*
+ * Gives the accuracy and loss for a model and given feature and label matrices
+ *
+ * This function is a combination of the predict and eval function used for validation.
+ * For inputs see eval and predict.
+ *
+ * Outputs:
+ *  - loss: Scalar loss, of shape (1).
+ *  - accuracy: Scalar accuracy, of shape (1).
+ */
+validate = function(matrix[double] X_val, matrix[double] y_val, list[unknown] model, list[unknown] hyperparams)
+    return (double loss, double accuracy) {
+  [loss, accuracy] = eval(predict(X_val, model), y_val)
 }
 
 # Should always use 'features' (batch features), 'labels' (batch labels),

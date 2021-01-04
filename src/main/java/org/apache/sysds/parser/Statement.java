@@ -66,6 +66,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_LABELS = "labels";
 	public static final String PS_VAL_FEATURES = "val_features";
 	public static final String PS_VAL_LABELS = "val_labels";
+	public static final String PS_VAL_FUN = "val";
 	public static final String PS_UPDATE_FUN = "upd";
 	public static final String PS_AGGREGATION_FUN = "agg";
 	public static final String PS_MODE = "mode";

@@ -30,23 +30,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
-import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
-import static org.apache.sysds.parser.Statement.PS_EPOCHS;
-import static org.apache.sysds.parser.Statement.PS_FEATURES;
-import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
-import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
-import static org.apache.sysds.parser.Statement.PS_LABELS;
-import static org.apache.sysds.parser.Statement.PS_MODE;
-import static org.apache.sysds.parser.Statement.PS_MODEL;
-import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
-import static org.apache.sysds.parser.Statement.PS_SCHEME;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
-import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
-import static org.apache.sysds.parser.Statement.PS_FED_WEIGHING;
-import static org.apache.sysds.parser.Statement.PS_SEED;
-
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -83,6 +66,8 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
+
+import static org.apache.sysds.parser.Statement.*;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
@@ -129,6 +114,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// get inputs
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
+		String valFunc = getParam(PS_VAL_FUN);
 		PSUpdateType updateType = getUpdateType();
 		PSFrequency freq = getFrequency();
 		FederatedPSScheme federatedPSScheme = getFederatedScheme();
@@ -165,7 +151,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
+		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC, valFunc);
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
@@ -437,11 +423,15 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return parameter server
 	 */
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
+		return createPS(mode, aggFunc, updateType, workerNum, model, ec, null);
+	}
+
+	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec, String valFunc) {
 		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
-				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum);
+				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum, valFunc);
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: "+mode.name());
 		}

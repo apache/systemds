@@ -30,12 +30,12 @@ public class LocalParamServer extends ParamServer {
 		super();
 	}
 
-	public static LocalParamServer create(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
-		return new LocalParamServer(model, aggFunc, updateType, ec, workerNum);
+	public static LocalParamServer create(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, String valFunc) {
+		return new LocalParamServer(model, aggFunc, updateType, ec, workerNum, valFunc);
 	}
 
-	private LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
-		super(model, aggFunc, updateType, ec, workerNum);
+	private LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, String valFunc) {
+		super(model, aggFunc, updateType, ec, workerNum, valFunc);
 	}
 
 	@Override

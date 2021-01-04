@@ -63,9 +63,14 @@ public abstract class ParamServer
 	private boolean[] _finishedStates;  // Workers' finished states
 	private ListObject _accGradients = null;
 
+	private boolean _validationPossible;
+	private FunctionCallCPInstruction _valInst;
+	private String _lossOutput;
+	private String _accuracyOutput;
+
 	protected ParamServer() {}
 
-	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
+	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, String valFunc) {
 		// init worker queues and global model
 		_modelMap = new HashMap<>(workerNum);
 		IntStream.range(0, workerNum).forEach(i -> {
@@ -79,6 +84,10 @@ public abstract class ParamServer
 		_updateType = updateType;
 		_finishedStates = new boolean[workerNum];
 		setupAggFunc(_ec, aggFunc);
+
+		if(valFunc != null) {
+			setupValFunc(_ec, valFunc);
+		}
 		
 		// broadcast initial model
 		broadcastModel(true);
@@ -110,6 +119,35 @@ public abstract class ParamServer
 			func.getInputParamNames(), outputNames, "aggregate function");
 	}
 
+	protected void setupValFunc(ExecutionContext ec, String valFunc) {
+		String[] cfn = DMLProgram.splitFunctionKey(valFunc);
+		String ns = cfn[0];
+		String fname = cfn[1];
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, false);
+		ArrayList<DataIdentifier> inputs = func.getInputParams();
+		ArrayList<DataIdentifier> outputs = func.getOutputParams();
+
+		// Check the output of the validate function
+		if (outputs.size() != 2) {
+			throw new DMLRuntimeException(String.format("The output of the '%s' function should provide the loss and the accuracy in that order", valFunc));
+		}
+		if (outputs.get(0).getDataType() != DataType.SCALAR || outputs.get(1).getDataType() != DataType.SCALAR) {
+			throw new DMLRuntimeException(String.format("The outputs of the '%s' function should both be scalars", valFunc));
+		}
+		_lossOutput = outputs.get(0).getName();
+		_accuracyOutput = outputs.get(1).getName();
+
+		CPOperand[] boundInputs = inputs.stream()
+				.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
+				.toArray(CPOperand[]::new);
+		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
+				.collect(Collectors.toCollection(ArrayList::new));
+		_valInst = new FunctionCallCPInstruction(ns, fname, false, boundInputs,
+				func.getInputParamNames(), outputNames, "validate function");
+
+		_validationPossible = true;
+	}
+
 	public abstract void push(int workerID, ListObject value);
 
 	public abstract ListObject pull(int workerID);
@@ -119,8 +157,12 @@ public abstract class ParamServer
 		// so we could return directly the result model
 		return _model;
 	}
-	
+
 	protected synchronized void updateGlobalModel(int workerID, ListObject gradients) {
+		updateGlobalModel(workerID, gradients, false);
+	}
+	
+	protected synchronized void updateGlobalModel(int workerID, ListObject gradients, boolean validate) {
 		try {
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
@@ -142,6 +184,10 @@ public abstract class ParamServer
 						if( ACCRUE_BSP_GRADIENTS ) {
 							updateGlobalModel(_accGradients);
 							_accGradients = null;
+						}
+
+						if (_validationPossible && validate) {
+							validate();
 						}
 						
 						// Broadcast the updated model
@@ -232,6 +278,13 @@ public abstract class ParamServer
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSModelBroadcastTime((long) tBroad.stop());
+	}
+
+	/**
+	 * Checks the current model against the validation set and
+	 */
+	private void validate() {
+		LOG.info("###VALIDATION###");
 	}
 
 	public FunctionCallCPInstruction getAggInst() {

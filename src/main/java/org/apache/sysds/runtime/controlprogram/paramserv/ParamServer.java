@@ -74,6 +74,8 @@ public abstract class ParamServer
 	private int _epochCounter = 0 ;
 	private int _numBatchesPerEpoch;
 
+	private int _numWorkers;
+
 	protected ParamServer() {}
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec,
@@ -97,6 +99,7 @@ public abstract class ParamServer
 			setupValFunc(_ec, valFunc, valFeatures, valLabels);
 		}
 		_numBatchesPerEpoch = numBatchesPerEpoch;
+		_numWorkers = workerNum;
 		
 		// broadcast initial model
 		broadcastModel(true);
@@ -214,6 +217,17 @@ public abstract class ParamServer
 				}
 				case ASP: {
 					updateGlobalModel(gradients);
+
+					if(LOG.isInfoEnabled()) {
+						_batchCounter++;
+						if(_validationPossible && ((float) _batchCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0) {
+							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP)" + _epochCounter);
+							validate();
+							_epochCounter++;
+							_batchCounter = 0;
+						}
+					}
+
 					broadcastModel(workerID);
 					break;
 				}
@@ -298,7 +312,6 @@ public abstract class ParamServer
 	 * Checks the current model against the validation set and
 	 */
 	private synchronized void validate() {
-		LOG.info("VALIDATION:");
 		_ec.setVariable(Statement.PS_MODEL, _model);
 
 		// Invoke the validation function
@@ -309,7 +322,7 @@ public abstract class ParamServer
 		double accuracy = ((DoubleObject) _ec.getVariable(_accuracyOutput)).getDoubleValue();
 
 		// Log validation results
-		LOG.info("Loss: " + loss + " Accuracy: " + accuracy);
+		LOG.info("[+] PARAMSERVER validation - loss: " + loss + " accuracy: " + accuracy);
 
 		// cleanup
 		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);

@@ -35,6 +35,6 @@ else {
   model = CNN::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighing, $eta, $channels, $hin, $win, $seed)
 }
 
-# hyperparams = list(learning_rate=$eta)
-# TwoNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, hyperparams)
+hyperparams = list(learning_rate=$eta, C=$channels, Hin=$hin, Win=$win)
+CNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, hyperparams)
 print(toString(model))

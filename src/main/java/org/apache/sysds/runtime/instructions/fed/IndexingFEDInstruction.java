@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.Lop;

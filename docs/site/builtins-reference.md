@@ -55,6 +55,7 @@ limitations under the License.
     * [`slicefinder`-Function](#slicefinder-function)
     * [`normalize`-Function](#normalize-function)
     * [`gnmf`-Function](#gnmf-function)
+    * [`mdedup`-Function](#mdedup-function)
     * [`msvm`-Function](#msvm-function)
     * [`naivebayes`-Function](#naivebayes-function)
     * [`outlier`-Function](#outlier-function)
@@ -1235,6 +1236,48 @@ toOneHot(X, numClasses)
 numClasses = 5
 X = round(rand(rows = 10, cols = 10, min = 1, max = numClasses))
 y = toOneHot(X,numClasses)
+```
+
+## `mdedup`-Function
+
+The `mdedup`-function implements builtin for deduplication using matching dependencies 
+(e.g. Street 0.95, City 0.90 -> ZIP 1.0) by Jaccard distance.
+
+### Usage
+
+```r
+mdedup(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
+```
+
+
+### Arguments
+
+| Name          | Type             | Default    | Description |
+| :------       | :-------------   | --------   | :---------- |
+| X             | Frame            | ---        | Input Frame X |
+| LHSfeatures   | Matrix[Integer]  | ---        | A matrix 1xd with numbers of columns for MDs |
+| LHSthreshold  | Matrix[Double]   | ---        | A matrix 1xd with threshold values in interval [0, 1] for MDs |
+| RHSfeatures   | Matrix[Integer]  | ---        | A matrix 1xd with numbers of columns for MDs |
+| RHSthreshold  | Matrix[Double]   | ---        | A matrix 1xd with threshold values in interval [0, 1] for MDs |
+| verbose       | Boolean          | False      | Set to true to print duplicates.|
+
+
+### Returns
+
+| Type            | Default  | Description |
+| :-------------- | -------- | :---------- |
+| Matrix[Integer] | ---      | Matrix of duplicates (rows). |
+
+
+### Example
+
+```r
+X = as.frame(rand(rows = 50, cols = 10))
+LHSfeatures = matrix("1 3 19", 1, 2)
+LHSthreshold = matrix("0.85 0.85", 1, 2)
+RHSfeatures = matrix("30", 1, 1)
+RHSthreshold = matrix("1.0", 1, 1)
+duplicates = mdedup(X, LHSfeatures, LHSthreshold, RHSfeatures, RHSthreshold, verbose = FALSE)
 ```
 
 ## `msvm`-Function

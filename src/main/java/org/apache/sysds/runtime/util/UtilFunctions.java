@@ -861,7 +861,7 @@ public class UtilFunctions {
 		int numCols = frame.getNumColumns();
 		int numRows = frame.getNumRows();
 		ArrayList<Map<String, Integer>> table_Hist = new ArrayList(numCols); // list of every column with values and their frequency
-		ArrayList<String> dominant_patterns_per_column = new ArrayList<>();
+//		ArrayList<String> dominant_patterns_per_column = new ArrayList<>();
 
 		int idx;
 		for (idx = 0; idx < numCols; idx++) {
@@ -889,7 +889,7 @@ public class UtilFunctions {
 				String dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
 				if(dominant_pattern != null) { //found pattern
 					detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, level);
-					dominant_patterns_per_column.add(dominant_pattern);
+//					dominant_patterns_per_column.add(dominant_pattern);
 					break;
 				}
 				current_level++;
@@ -898,38 +898,14 @@ public class UtilFunctions {
 
 			if(current_level == LEVEL_ENUM.values().length) {
 				System.out.println("he have not found a dominant pattern for column " + idx);
-				dominant_patterns_per_column.add("null");
+//				dominant_patterns_per_column.add("null");
 			}
 
 		}
 
-		FrameBlock new_frame = createNewFrame(frame, dominant_patterns_per_column);
 		return frame;
 	}
 
-	public static FrameBlock createNewFrame(FrameBlock frame, ArrayList<String> dominant_patterns_per_column) {
-
-		ValueType[] schema = new ValueType[dominant_patterns_per_column.size()];
-		for(int i  = 0; i < dominant_patterns_per_column.size(); i++) {
-			// if the dominant pattern is dX, d+, dXt1dX, d+t+d+ we have found digits
-
-			String pattern;
-			switch(dominant_patterns_per_column.get(i)) {
-				case "d+":
-				case "d+t+d+":
-					pattern = "DOUBLE";
-					break;
-				default:
-					pattern = "STRING";
-					break;
-			}
-			schema[i] = ValueType.fromExternalString(pattern);
-		}
-
-		FrameBlock new_frame = new FrameBlock(schema);
-
-		return new_frame;
-	}
 
 	public static Map<String, Double> calculatePatternsRatio(Map<String, Integer> patterns_hist, int nr_entries) {
 		Map<String, Double> patterns_ratio_map = new HashedMap();

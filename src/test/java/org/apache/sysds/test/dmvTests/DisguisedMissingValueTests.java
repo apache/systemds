@@ -341,29 +341,6 @@ public class DisguisedMissingValueTests {
         Assert.assertEquals("d+a+d+", res);
     }
 
-    @Test
-    public void TestSetSchemaFunktion() {
-
-        String[] testarray0 = new String[]{"77","77","55","89","43", "Patrick-Lovric-Weg-666", "46"};
-        String[] testarray1 = new String[]{"8010","?","8456","4565","89655", "86542", "45624"};
-        String[] testarray2 = new String[]{"David K","Valentin E","Patrick L","45","DK", "VE", "PL"};
-
-        FrameBlock f = new FrameBlock();
-        f.appendColumn(testarray0.clone());
-        f.appendColumn(testarray1.clone());
-        f.appendColumn(testarray2.clone());
-
-        ArrayList<String> schema = new ArrayList<String>();
-        schema.add("d+");
-        schema.add("d+t+d+");
-        schema.add("l+u+");
-
-        UtilFunctions.createNewFrame(f, schema);
-        Assert.assertEquals(Types.ValueType.FP64,f.getSchema()[0]);
-        Assert.assertEquals(Types.ValueType.FP64,f.getSchema()[1]);
-        Assert.assertEquals(Types.ValueType.STRING,f.getSchema()[2]);
-
-    }
 
     @Test
     public void TestRemoveSpacesFunktion() {

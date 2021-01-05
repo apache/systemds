@@ -1,6 +1,5 @@
 package org.apache.sysds.testclasses;
 
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -15,7 +14,7 @@ public class testclass1 {
         f.appendColumn(new String[]{"Hllo","asdasd","3asd","asd","asd", "xx", "123"});
         f.appendColumn(new String[]{"44","3","235","52","weg", "xx", "123"});
 
-        UtilFunctions.calculateAttributeTypes(f, 0.7, "NA");
+        UtilFunctions.syntacticalPatternDiscovery(f, 0.7, "NA");
     }
 
 }

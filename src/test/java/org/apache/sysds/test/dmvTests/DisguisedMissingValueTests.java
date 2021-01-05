@@ -1,13 +1,11 @@
 package org.apache.sysds.test.dmvTests;
 
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Map;
 
 public class DisguisedMissingValueTests {
@@ -36,7 +34,7 @@ public class DisguisedMissingValueTests {
         Double value3 = dominant_patterns.get("l1sd2");
         Assert.assertEquals(value3, (Double)0.5);
 
-        String s = UtilFunctions.findDominantPattern(dominant_patterns, 100, 0.7);
+        String s = UtilFunctions.findDominantPattern(dominant_patterns, 0.7);
         Assert.assertEquals(s, null); // must be 0 because no dominant pattern found
     }
 
@@ -68,7 +66,7 @@ public class DisguisedMissingValueTests {
         Double value7 = dominant_patterns.get("d1l2");
         Assert.assertEquals((Double)0.002, value7);
 
-        String s = UtilFunctions.findDominantPattern(dominant_patterns, 1000, 0.7);
+        String s = UtilFunctions.findDominantPattern(dominant_patterns,  0.7);
         Assert.assertEquals(s, "d4");
     }
 
@@ -253,7 +251,7 @@ public class DisguisedMissingValueTests {
         f.appendColumn(testarray5.clone());
         f.appendColumn(testarray6.clone());
 
-        FrameBlock new_frame = UtilFunctions.calculateAttributeTypes(f, 0.7, "NA");
+        FrameBlock new_frame = UtilFunctions.syntacticalPatternDiscovery(f, 0.7, "NA");
 
         // testarray0
         Object c = new_frame.getColumnData(0);

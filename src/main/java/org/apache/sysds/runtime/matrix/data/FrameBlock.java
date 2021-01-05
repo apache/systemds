@@ -2099,23 +2099,19 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public FrameBlock map(String lambdaExpr) {
-		System.out.println("exp: " + lambdaExpr);
 		if(!lambdaExpr.contains("->"))
 		{
-			// still hardcoded but should work this way somehow
-//			return map(getCompiledFunctionBlock(lambdaExpr));
+			//return map(getCompiledFunctionBlock(lambdaExpr));
 			String args = lambdaExpr.substring(lambdaExpr.indexOf('(') + 1, lambdaExpr.indexOf(')'));
 			if(args.contains(",")) {
 				String[] arguments = args.split(",");
-				return UtilFunctions.calculateAttributeTypes(this, Double.parseDouble(arguments[0]), arguments[1]);
+				return UtilFunctions.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
 			}
 		}
 		return map(getCompiledFunction(lambdaExpr));
 	}
 
 	public FrameBlock map(FrameBlockMapFunction lambdaExpression) {
-		//String tee = lambdaExpression.apply(this);
-		//System.out.println(tee);
 		return lambdaExpression.apply();
 	}
 	

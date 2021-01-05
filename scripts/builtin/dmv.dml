@@ -24,6 +24,6 @@ s_dmv = function(Frame[String] X, Double threshold=0.8, String replace="NA") ret
   if( threshold < 0 | threshold > 1 )
     stop("Stopping due to invalid input, threshold required in interval [0, 1] found " + threshold)
 
-  Y = map(X, "UtilFunctions.calculateAttributeTypes(" + threshold + "," + replace + ")")
+  Y = map(X, "UtilFunctions.syntacticalPatternDiscovery(" + threshold + "," + replace + ")")
 }
 

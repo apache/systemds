@@ -63,11 +63,10 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
   num_strings = length(strings);
 
   if(is_verbose)
-    print("num strings: " + num_strings)
+    print("num strings: " + num_strings + "\n")
     # print(toString(strings));
 
   strings = map(strings, "s -> s.toLowerCase()");
-  lengths = as.matrix(map(strings, "s -> s.length()"));
   # print(toString(strings));
   # print(toString(lengths)); # DONT COMMENT THIS OUT
 
@@ -78,49 +77,39 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
     current_string = as.scalar(strings[i]);
     dict = insertOrIncrement(current_string, dict);
   }
-  print(toString(dict));
   strings = dict[,1];
   frequencies = dict[,2];
+  lengths = as.matrix(map(strings, "s -> s.length()"));
   num_different_strings = nrow(strings);
-  # print(toString(strings));
+
+  if (is_verbose) {
+    print("dict:" )
+    print(toString(dict));
+    print("lengths:")
+    print(toString(lengths))
+  }
 
   # generate ascii matrix
-  # max_len = max(lengths);
-  # print(max_len);
-  # ascii_frame = map(strings, "s -> UtilFunctions.getAsciiAtIdx(s, 0)");
-  # for (i in 1:max_len-1) {
-    # lambda = "s -> UtilFunctions.getAsciiAtIdx(s, " + i + ")";
-    # print(lambda);
-    # col = map(strings, lambda);
-    # ascii_frame = cbind(ascii_frame, col);
-  # }
-  # print(toString(ascii_frame));
+  max_len = max(lengths);
+  if (is_verbose) {
+    print("max_len: " + max_len + "\n");
+  }
+  ascii_matrix = matrix(0, rows = max_len, cols = num_different_strings)
+  for (i in 1:num_different_strings) {
+    for (j in 1:as.scalar(lengths[i, 1])) {
+      tmp = as.matrix(map(strings[i,], "s -> UtilFunctions.getAsciiAtIdx(s, " + j + ")"));
+      ascii_matrix[j, i] = tmp[1, 1];
+    }
+  }
+  if (is_verbose) {
+    print("ascii_matrix: ")
+    print(toString(ascii_matrix));
+  }
 
-  ascii_frame = map(strings, "s -> UtilFunctions.stringToInts(s)");
-  print(toString(ascii_frame));
+  # TODO: create upper triangular matrix with distances
 
-  row_str = as.scalar(ascii_frame[1]);
-  print(row_str);
-  m = matrix(row_str, rows=1, cols=8);
-  # i = 2;
-  # while (i <= num_different_strings) {
-    # i += 1;
-  # }
-  # for (i in 2:num_different_strings) {
-    # row_str = as.scalar(ascii_frame[i]);
-    # m = matrix(row, rows=1, cols=max_len);
-    # m = rbind(m, matrix(ascii_frame[i]));
-  # }
-  print(toString(m));
-
-  # for (i in 1:num_different_strings) {
-    # for (j in 1:num_different_strings) {
-      # if (i != j) {
-      # }
-    # }
-  # }
-  A = matrix("1 3 2 4 5 4 3 6 2 5 2 4 5 3 6 3", rows = 16, cols = 1);
-  B = matrix("1 2 3 4 5 2 3 2 7 5 2 4 6 3 6", rows = 15, cols = 1);
+  A = ascii_matrix[1:as.scalar(lengths[1,1]), 1];
+  B = ascii_matrix[1:as.scalar(lengths[2,1]), 2];
 
   damerauLevenshteinDistanceBound(A, B, max(length(A), length(B)), is_verbose);
 }
@@ -218,6 +207,7 @@ damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, d
   }
 
   if (is_verbose){
+    print("dl distance matrix:")
     print(toString(dl_matrix));
   }
 

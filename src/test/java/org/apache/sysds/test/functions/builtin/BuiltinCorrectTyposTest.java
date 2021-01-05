@@ -51,6 +51,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 
 	private final static int numberDataPoints = 1000;
 	private final static int maxFrequencyErrors = 40;
+	private final static boolean corruptData = false;
 	// for every error number below between (1 and maxFrequencyErrors) identical errors are made
 	// errors can still overlap though
 	private final static int numberCharSwaps = 10;
@@ -127,7 +128,12 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	private static int initFrameData(FrameBlock frame) {
 		List<Integer> bins = new ArrayList<Integer>();
 		String[] correctStrings = getCorrectData(numberDataPoints, bins);
-		String[] corruptedStrings = getCorruptedData(correctStrings, bins, maxFrequencyErrors, numberCharSwaps, numberCharChanges, numberCharAdds, numberCharDeletions, numberWrongCapitalizations);
+		String[] corruptedStrings;
+		if (corruptData) {
+			corruptedStrings = getCorruptedData(correctStrings, bins, maxFrequencyErrors, numberCharSwaps, numberCharChanges, numberCharAdds, numberCharDeletions, numberWrongCapitalizations);
+		} else {
+			corruptedStrings = correctStrings;
+		}
 		frame.appendColumn(corruptedStrings);
 		return corruptedStrings.length;
   }

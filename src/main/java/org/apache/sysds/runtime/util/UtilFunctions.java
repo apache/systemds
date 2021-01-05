@@ -627,8 +627,9 @@ public class UtilFunctions {
   public static int getAsciiAtIdx(String s, int idx) {
     int strlen = s.length();
     int c = 0;
-    if (idx >= 0 && idx < strlen) {
-      c = (int)s.charAt(idx);
+    int javaIdx = idx - 1;
+    if (javaIdx >= 0 && javaIdx < strlen) {
+      c = (int)s.charAt(javaIdx);
     }
     return c; 
   }

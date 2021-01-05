@@ -624,6 +624,22 @@ public class UtilFunctions {
 		return "\"" + s + "\"";
 	}
 
+  public static String substringpadded(String s, int start, int end) {
+    int strlen = s.length();
+    String substr = "";
+    if (start >= 0 && start <= end && start <= strlen) {
+      int padding = end - strlen;
+      if (padding <= 0) {
+        substr = s.substring(start, end);
+      }
+      else {
+        substr = s.substring(start, s.length());
+        substr += new String(new char[padding]);
+      }
+    }
+    return substr; 
+  }
+
 	/**
 	 * Parses a memory size with optional g/m/k quantifiers into its
 	 * number representation.

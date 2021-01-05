@@ -69,10 +69,27 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
   print(toString(strings));
 
   lc = map(strings, "s -> s.toLowerCase()"); # works
-  print(toString(lc));
   lengths = map(strings, "s -> s.length()"); # works
-  print(toString(lengths)); # DONT COMMENT THIS OUT
-  # subs = map(strings, "s -> s.substring(5,6)"); # works
+  # print(toString(lc));
+  # print(toString(lengths)); # DONT COMMENT THIS OUT
+
+  # TODO: WHY ARE LAMBDAS IN QUOTATIONS
+  col1 = map(lc, "s -> UtilFunctions.substringpadded(s, 0, 1)");
+  col2 = map(lc, "s -> UtilFunctions.substringpadded(s, 1, 2)");
+  mat = cbind(col1, col2);
+  col = map(lc, "s -> UtilFunctions.substringpadded(s, 2, 3)");
+  mat = cbind(mat, col);
+  col = map(lc, "s -> UtilFunctions.substringpadded(s, 3, 4)");
+  mat = cbind(mat, col);
+  col = map(lc, "s -> UtilFunctions.substringpadded(s, 4, 5)");
+  mat = cbind(mat, col);
+  col = map(lc, "s -> UtilFunctions.substringpadded(s, 5, 6)");
+  mat = cbind(mat, col);
+  col = map(lc, "s -> UtilFunctions.substringpadded(s, 6, 7)");
+  mat = cbind(mat, col);
+  col = map(lc, "s -> UtilFunctions.substringpadded(s, 7, 8)");
+  mat = cbind(mat, col);
+  print(toString(mat));
 
   lc_rows = nrow(lc);
   length_rows = nrow(lengths);
@@ -80,7 +97,7 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
     # print("ERROR");
 
   f = cbind(lc, lengths);
-  order(f, by=2);
+  # order(f, by=2);
   fs = f[2, 2]; # row major, 1-indexing
   print(toString(fs));
 

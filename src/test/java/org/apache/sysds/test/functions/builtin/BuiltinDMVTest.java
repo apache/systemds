@@ -65,7 +65,7 @@ public class BuiltinDMVTest extends AutomatedTestBase {
         FrameBlock f = generateRandomFrameBlock(1000, 4,null);
         String[] disguised_values = new String[]{"?", "9999", "?", "9999"};
         ArrayList<List<Integer>> positions = getDisguisedPositions(f, 4, disguised_values);
-        runMissingValueTest(f, ExecType.CP, positions);
+        runMissingValueTest(f, ExecType.CP, 0.8, "DMV", positions);
     }
 
     @Test
@@ -81,7 +81,7 @@ public class BuiltinDMVTest extends AutomatedTestBase {
         String[] disguised_values = new String[]{"Patrick-Lovric-Weg-666", "?", "45", "ka", "9999"};
         ArrayList<List<Integer>> positions = getDisguisedPositions(f, 1, disguised_values);
         System.out.println(positions);
-        runMissingValueTest(f, ExecType.CP, positions);
+        runMissingValueTest(f, ExecType.CP, 0.7,"NA", positions);
     }
 
     @Test
@@ -99,10 +99,10 @@ public class BuiltinDMVTest extends AutomatedTestBase {
         FrameBlock f = generateRandomFrameBlock(test_string.length, 1, teststrings);
         String[] disguised_values = new String[]{"9999999999"};
         ArrayList<List<Integer>> positions = getDisguisedPositions(f, 10, disguised_values);
-        runMissingValueTest(f, ExecType.CP, positions);
+        runMissingValueTest(f, ExecType.CP, 0.6, "-1", positions);
     }
 
-    private void runMissingValueTest(FrameBlock test_frame, ExecType et, ArrayList<List<Integer>> positions)
+    private void runMissingValueTest(FrameBlock test_frame, ExecType et, Double threshold, String replacement, ArrayList<List<Integer>> positions)
     {
         Types.ExecMode platformOld = setExecMode(et);
 
@@ -111,7 +111,9 @@ public class BuiltinDMVTest extends AutomatedTestBase {
 
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] { "-stats","-args", input("F"), output("O")};
+            programArgs = new String[] {"-nvargs", "F=" + input("F"), "O=" + output("O"),
+                    "threshold=" + threshold, "replacement=" + replacement
+            };
 
             FrameWriterFactory.createFrameWriter(Types.FileFormat.CSV).
                     writeFrameToHDFS(test_frame, input("F"), test_frame.getNumRows(), test_frame.getNumColumns());
@@ -123,7 +125,12 @@ public class BuiltinDMVTest extends AutomatedTestBase {
             for(int i = 0; i < positions.size(); i++) {
                 String[] output = (String[]) outputFrame.getColumnData(i);
                 for(int j = 0; j < positions.get(i).size(); j++) {
-                    TestUtils.compareScalars(null, output[positions.get(i).get(j)]);
+                    if(replacement.equals("NA")) {
+                      TestUtils.compareScalars(null, output[positions.get(i).get(j)]);
+                    }
+                    else {
+                      TestUtils.compareScalars(replacement, output[positions.get(i).get(j)]);
+                    }
                 }
             }
         }

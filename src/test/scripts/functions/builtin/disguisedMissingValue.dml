@@ -18,6 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
-X = read($1, data_type="frame", format="csv", header=FALSE)
-Z = dmv(X)
-write(Z, $2, format = "csv")
+X = read($F, data_type="frame", format="csv", header=FALSE)
+Z = dmv(X=X, threshold=$threshold, replace=$replacement)
+
+write(Z, $O, format = "csv")

@@ -24,6 +24,6 @@ U = read($in_U);
 V = read($in_V);
 
 UV = -(U %*% t(V));
-Z = X * log(1/(1 + exp(-UV)));
+Z = X * log(1 / (1 + exp(-UV)));
 
 write(Z, $out_Z);

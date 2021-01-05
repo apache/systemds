@@ -42,6 +42,8 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase
 {
   private final static String STD_TEST_NAME = "FederatedWSigmoidTest";
   private final static String LOG_TEST_NAME = "FederatedWSigmoidLogTest";
+	private final static String MINUS_TEST_NAME = "FederatedWSigmoidMinusTest";
+	private final static String MINUS_LOG_TEST_NAME = "FederatedWSigmoidMinusLogTest";
   private final static String TEST_DIR = "functions/federated/quaternary/";
   private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWeightedSigmoidTest.class.getSimpleName() + "/";
 
@@ -65,7 +67,9 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase
   public void setUp()
   {
     addTestConfiguration(STD_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, STD_TEST_NAME, new String[]{OUTPUT_NAME}));
-    addTestConfiguration(LOG_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, LOG_TEST_NAME, new String[]{OUTPUT_NAME}));
+		addTestConfiguration(LOG_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, LOG_TEST_NAME, new String[]{OUTPUT_NAME}));
+		addTestConfiguration(MINUS_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, MINUS_TEST_NAME, new String[]{OUTPUT_NAME}));
+		addTestConfiguration(MINUS_LOG_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, MINUS_LOG_TEST_NAME, new String[]{OUTPUT_NAME}));
   }
 
   @Parameterized.Parameters
@@ -76,8 +80,8 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase
       // {rows, cols, rank, sparsity}
       {2000, 50, 10, 0.01},
       {2000, 50, 10, 0.9},
-      {500, 630, 100, 0.01},
-      {500, 630, 100, 0.9}
+      {150, 230, 75, 0.01},
+      {150, 230, 75, 0.9}
     });
   }
 
@@ -109,6 +113,30 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase
   public void federatedWeightedSigmoidLogSpark()
   {
     federatedWeightedSigmoid(LOG_TEST_NAME, ExecMode.SPARK);
+  }
+
+  @Test
+  public void federatedWeightedSigmoidMinusSingleNode()
+  {
+    federatedWeightedSigmoid(MINUS_TEST_NAME, ExecMode.SINGLE_NODE);
+  }
+
+  @Test
+  public void federatedWeightedSigmoidMinusSpark()
+  {
+    federatedWeightedSigmoid(MINUS_TEST_NAME, ExecMode.SPARK);
+  }
+
+  @Test
+  public void federatedWeightedSigmoidMinusLogSingleNode()
+  {
+    federatedWeightedSigmoid(MINUS_LOG_TEST_NAME, ExecMode.SINGLE_NODE);
+  }
+
+  @Test
+  public void federatedWeightedSigmoidMinusLogSpark()
+  {
+    federatedWeightedSigmoid(MINUS_LOG_TEST_NAME, ExecMode.SPARK);
   }
 
 // -----------------------------------------------------------------------------

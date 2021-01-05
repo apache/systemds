@@ -216,20 +216,34 @@ public abstract class AutomatedTestBase {
 	private static boolean outputBuffering = false;
 
 	static {
+		// Load configuration from setting file build by maven.
+		// If maven is not used as test setup, (as default in intellij for instance) default values are used.
+		// If one wants to use custom configurations, setup the IDE to build using maven, and set execution flags
+		// accordingly.
+		// Settings available can be found in the properties inside pom.xml.
+		// The custom configuration is required to run tests using GPU backend.
 		java.io.InputStream inputStream = Thread.currentThread().getContextClassLoader()
 			.getResourceAsStream("my.properties");
 		java.util.Properties properties = new Properties();
-		try {
-			properties.load(inputStream);
+		if(inputStream != null){
+			try {
+				properties.load(inputStream);
+			}
+			catch(IOException e) {
+				e.printStackTrace();
+			}
+			outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
+			boolean gpu = Boolean.parseBoolean(properties.getProperty("enableGPU"));
+			TEST_GPU = TEST_GPU || gpu;
+			boolean stats = Boolean.parseBoolean(properties.getProperty("enableStats"));
+			VERBOSE_STATS = VERBOSE_STATS || stats;
 		}
-		catch(IOException e) {
-			e.printStackTrace();
+		else{
+			// If no properties file exists.
+			outputBuffering = false;
+			TEST_GPU = false;
+			VERBOSE_STATS = false;
 		}
-		outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
-		boolean gpu = Boolean.parseBoolean(properties.getProperty("enableGPU"));
-		TEST_GPU = TEST_GPU || gpu;
-		boolean stats = Boolean.parseBoolean(properties.getProperty("enableStats"));
-		VERBOSE_STATS = VERBOSE_STATS || stats;
 	}
 
 	// Timestamp before test start.
@@ -823,6 +837,10 @@ public abstract class AutomatedTestBase {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
+	protected static HashMap<CellIndex, Double> readDMLMatrixFromExpectedDir(String fileName) {
+		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + EXPECTED_DIR + fileName);
+	}
+	
 	public HashMap<CellIndex, Double> readRMatrixFromExpectedDir(String fileName) {
 		if(LOG.isInfoEnabled())
 			LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
@@ -1164,22 +1182,17 @@ public abstract class AutomatedTestBase {
 
 			outputR = IOUtils.toString(child.getInputStream());
 			errorString = IOUtils.toString(child.getErrorStream());
-			if(LOG.isTraceEnabled()) {
-				LOG.trace("Standard Output from R:" + outputR);
-				LOG.trace("Standard Error from R:" + errorString);
-			}
-
+			
 			//
 			// To give any stream enough time to print all data, otherwise there
 			// are situations where the test case fails, even before everything
 			// has been printed
 			//
 			child.waitFor();
-
 			try {
 				if(child.exitValue() != 0) {
 					throw new Exception(
-						"ERROR: R has ended irregularly\n" + outputR + "\nscript file: " + executionFile);
+						"ERROR: R has ended irregularly\n" + buildOutputStringR(outputR, errorString) + "\nscript file: " + executionFile);
 				}
 			}
 			catch(IllegalThreadStateException ie) {
@@ -1187,6 +1200,10 @@ public abstract class AutomatedTestBase {
 				// correctly. However, give it a try, since R processed the
 				// script, therefore we can terminate the process.
 				child.destroy();
+			}
+
+			if(!outputBuffering) {
+				System.out.println(buildOutputStringR(outputR, errorString));
 			}
 
 			long t1 = System.nanoTime();
@@ -1212,6 +1229,16 @@ public abstract class AutomatedTestBase {
 				fail(errorMessage.toString());
 			}
 		}
+	}
+
+	private static String buildOutputStringR(String standardOut, String standardError){
+		StringBuilder sb = new StringBuilder();
+		sb.append("R Standard output :\n");
+		sb.append(standardOut);
+		sb.append("\nR Standard Error  :\n");
+		sb.append(standardError);
+		sb.append("\n");
+		return sb.toString();
 	}
 
 	/**

@@ -27,15 +27,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 public class DMLPrivacyException extends DMLRuntimeException 
 {
 	private static final long serialVersionUID = 1L;
-
-	//prevent string concatenation of classname w/ stop message
-	private DMLPrivacyException(Exception e) {
-		super(e);
-	}
-
-	private DMLPrivacyException(String string, Exception ex){
-		super(string,ex);
-	}
 	
 	/**
 	 * This is the only valid constructor for DMLPrivacyException.

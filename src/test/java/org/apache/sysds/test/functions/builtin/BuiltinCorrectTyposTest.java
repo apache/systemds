@@ -78,6 +78,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 
       String HOME = SCRIPT_DIR + TEST_DIR;
       fullDMLScriptName = HOME + TEST_NAME + ".dml";
+
       fullRScriptName = HOME + TEST_NAME + ".R";
       programArgs = new String[]{
         "-nvargs", "X=" + input("X"), "Y=" + output("Y"),
@@ -85,22 +86,17 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
       rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
       System.out.println("Create dataset");
-      //TODO: read dataset
       FrameBlock frame = new FrameBlock(schema);
       FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
       int rows = initFrameData(frame);
       int cols = 1;
-
-      System.out.println("Write dataset");
-      System.out.println(frame.getNumColumns());
+      // System.out.println("Write dataset");
+      // System.out.println(frame.getNumColumns());
 			writer.writeFrameToHDFS(frame.slice(0, rows - 1, 0, 0, new FrameBlock()), input("X"), rows, cols);
-
-
 
       System.out.println("Run test");
       runTest(true, false, null, -1);
       System.out.println("DONE");
-      // runRScript(true);
 
       //compare matrices
       // HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");

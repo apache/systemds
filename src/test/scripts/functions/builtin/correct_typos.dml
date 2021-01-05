@@ -20,10 +20,7 @@
 #-------------------------------------------------------------
 
 X = read($X, data_type="frame", format="csv", header=FALSE);
-#X = read($X);
-#correct = TRUE
-#is_verbose = TRUE
-#Y = correctTypos(X, $decapitalize, TRUE, TRUE);
-correctTypos(X, TRUE, TRUE, TRUE);
-#Y = correctTypos(X, $decapitalize, correct, is_verbose);
-#write(Y, $Y)
+correct = TRUE
+is_verbose = TRUE
+Y = correctTypos(X, $decapitalize, correct, is_verbose);
+write(Y, $Y)

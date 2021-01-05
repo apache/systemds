@@ -60,77 +60,71 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
     print ("BEGIN CORRECT-TYPOS SCRIPT");
 
   Y = strings;
-
   num_strings = length(strings);
 
   if(is_verbose)
     print("num strings: " + num_strings)
+    # print(toString(strings));
 
-  print(toString(strings));
-
-  lc = map(strings, "s -> s.toLowerCase()"); # works
-  lengths = map(strings, "s -> s.length()"); # works
-  # print(toString(lc));
+  strings = map(strings, "s -> s.toLowerCase()");
+  lengths = as.matrix(map(strings, "s -> s.length()"));
+  # print(toString(strings));
   # print(toString(lengths)); # DONT COMMENT THIS OUT
 
-  # TODO: WHY ARE LAMBDAS IN QUOTATIONS
-  col1 = map(lc, "s -> UtilFunctions.substringpadded(s, 0, 1)");
-  col2 = map(lc, "s -> UtilFunctions.substringpadded(s, 1, 2)");
-  mat = cbind(col1, col2);
-  col = map(lc, "s -> UtilFunctions.substringpadded(s, 2, 3)");
-  mat = cbind(mat, col);
-  col = map(lc, "s -> UtilFunctions.substringpadded(s, 3, 4)");
-  mat = cbind(mat, col);
-  col = map(lc, "s -> UtilFunctions.substringpadded(s, 4, 5)");
-  mat = cbind(mat, col);
-  col = map(lc, "s -> UtilFunctions.substringpadded(s, 5, 6)");
-  mat = cbind(mat, col);
-  col = map(lc, "s -> UtilFunctions.substringpadded(s, 6, 7)");
-  mat = cbind(mat, col);
-  col = map(lc, "s -> UtilFunctions.substringpadded(s, 7, 8)");
-  mat = cbind(mat, col);
+  # build dictionary
+  current_string = as.scalar(strings[1]);
+  dict = cbind(as.frame(current_string), as.frame(1));
+  for (i in 2:num_strings) {
+    current_string = as.scalar(strings[i]);
+    dict = insertOrIncrement(current_string, dict);
+  }
+  print(toString(dict));
+  strings = dict[,1];
+  frequencies = dict[,2];
+  # print(toString(strings));
+
+  # generate letter matrix
+  max_len = max(lengths);
+  print(max_len);
+  mat = map(strings, "s -> UtilFunctions.substringpadded(s, 0, 1)");
+  for (i in 1:max_len-1) {
+    lambda = "s -> UtilFunctions.substringpadded(s, " + i + ", " + (i+1) + ")";
+    print(lambda);
+    col = map(strings, lambda);
+    mat = cbind(mat, col);
+  }
   print(toString(mat));
-
-  lc_rows = nrow(lc);
-  length_rows = nrow(lengths);
-  # if (lc_rows != length_rows)
-    # print("ERROR");
-
-  f = cbind(lc, lengths);
-  # order(f, by=2);
-  fs = f[2, 2]; # row major, 1-indexing
-  print(toString(fs));
-
-  # if (lc_rows == 11) {
-    # if (length_rows == 11) {
-      # f = cbind(lc, lengths);
-      # order(f, by=2)
-      # fs = f[1, 1];
-      # print(toString(fs));
-    # }
-  # }
-  # else {
-    # print("WTF");
-  # }
-
 
 
   A = matrix("1 3 2 4 5 4 3 6 2 5 2 4 5 3 6 3", rows = 16, cols = 1);
   B = matrix("1 2 3 4 5 2 3 2 7 5 2 4 6 3 6", rows = 15, cols = 1);
 
   damerauLevenshteinDistanceBound(A, B, max(length(A), length(B)), is_verbose);
-  # str = "hello world!";
+}
 
-  # print(sc);
-  # print(s.charAt(2));
-  # c = as.character(s);
-  # print(c);
-  #m = matrix(s, rows=2, cols=6);
-  #print(toString(m));
 
-  # if(!decapitalize)
-    # if(is_verbose)
-      # print("Only decapitalization currently supported")
+insertOrIncrement = function(String str, Frame[Unknown] dict)
+  return(Frame[Unknown] dict)
+{
+  i = 1;
+  ret = FALSE;
+  break = FALSE;
+  while (i <= nrow(dict) & !break) {
+    # print(as.scalar(dict[i, 1]) + str);
+    # print(toString(as.scalar(dict[i, 1])) + str);
+    if (as.scalar(dict[i, 1]) == str) {
+      value = as.integer(as.scalar(dict[i, 2]) + 1);
+      dict[i, 2] = value;
+      # print("Incrementing to " + value);
+      contains = TRUE;
+      break = TRUE;
+    }
+    i += 1;
+  }
+  if (!break) {
+    # print("Adding row");
+    dict = rbind(dict, cbind(as.frame(str), as.frame(1)));
+  }
 }
 
 

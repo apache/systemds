@@ -69,13 +69,34 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
   print(toString(strings));
 
   lc = map(strings, "s -> s.toLowerCase()"); # works
-  lengths = map(strings, "s -> s.length()"); # works
-  # subs = map(strings, "s -> s[2]"); # doesnt work
-  subs = map(strings, "s -> s.substring(0,2)"); # works
-
   print(toString(lc));
-  print(toString(lengths));
-  print(toString(subs));
+  lengths = map(strings, "s -> s.length()"); # works
+  print(toString(lengths)); # DONT COMMENT THIS OUT
+  # subs = map(strings, "s -> s.substring(5,6)"); # works
+
+  lc_rows = nrow(lc);
+  length_rows = nrow(lengths);
+  # if (lc_rows != length_rows)
+    # print("ERROR");
+
+  f = cbind(lc, lengths);
+  order(f, by=2);
+  fs = f[2, 2]; # row major, 1-indexing
+  print(toString(fs));
+
+  # if (lc_rows == 11) {
+    # if (length_rows == 11) {
+      # f = cbind(lc, lengths);
+      # order(f, by=2)
+      # fs = f[1, 1];
+      # print(toString(fs));
+    # }
+  # }
+  # else {
+    # print("WTF");
+  # }
+
+
 
   A = matrix("1 3 2 4 5 4 3 6 2 5 2 4 5 3 6 3", rows = 16, cols = 1);
   B = matrix("1 2 3 4 5 2 3 2 7 5 2 4 6 3 6", rows = 15, cols = 1);

@@ -24,6 +24,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysds.lops.WeightedSquaredLoss.WeightsType;
+import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -34,6 +35,12 @@ import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 {
 	protected CPOperand _input4 = null;
+
+	protected QuaternaryFEDInstruction(FEDInstruction.FEDType type, Operator operator,
+		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String instruction_str)
+	{
+		super(type, operator, in1, in2, in3, out, opcode, instruction_str);
+	}
 
 	protected QuaternaryFEDInstruction(FEDInstruction.FEDType type, Operator operator,
 		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str)
@@ -56,26 +63,28 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 				str = str.replace(Lop.OPERAND_DELIMITOR + "true", "");
 				str = str.replace(Lop.OPERAND_DELIMITOR + "false", "");
 			}
+			str = str.replace("mapwsigmoid", "wsigmoid");
 			str += Lop.OPERAND_DELIMITOR + "1"; //num threads
 		}
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		InstructionUtils.checkNumFields(parts, 7);
+		int addInput4 = (opcode.equals("wcemm") || opcode.equals("wsloss")) ? 1 : 0;
+
+		InstructionUtils.checkNumFields(parts, 6 + addInput4);
 
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand in3 = new CPOperand(parts[3]);
-		CPOperand out = new CPOperand(parts[5]);
+		CPOperand out = new CPOperand(parts[4 + addInput4]);
 
 		checkDataTypes(DataType.MATRIX, in1, in2, in3);
 
-		if(opcode.equals("wcemm") || opcode.equals("wsloss"))
+		QuaternaryOperator qop = null;
+		if(addInput4 == 1) // wcemm, wsloss
 		{
 			CPOperand in4 = new CPOperand(parts[4]);
-
-			QuaternaryOperator qop = null;
 
 			if(opcode.equals("wcemm"))
 			{
@@ -93,6 +102,12 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 			  qop = new QuaternaryOperator(weights_type);
 			  return new QuaternaryWSLossFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
 			}
+		}
+		else if(opcode.equals("wsigmoid"))
+		{
+			final WSigmoidType wsigmoid_type = WSigmoidType.valueOf(parts[5]);
+			qop = new QuaternaryOperator(wsigmoid_type);
+			return new QuaternaryWSigmoidFEDInstruction(qop, in1, in2, in3, out, opcode, str);
 		}
 
 		throw new DMLRuntimeException("Unsupported opcode (" + opcode + ") for QuaternaryFEDInstruction.");

@@ -19,6 +19,14 @@
 #
 #-------------------------------------------------------------
 
+# ----------------------------------------------------------------------------
+# References:
+# Fred J. Damerau. 1964. 
+#   A technique for computer detection and correction of spelling errors. 
+#   Commun. ACM 7, 3 (March 1964), 171–176. 
+#   DOI:https://doi.org/10.1145/363958.363994
+# ----------------------------------------------------------------------------
+
 # Builtin function that implements the k-Means clustering algorithm
 #
 # INPUT PARAMETERS:

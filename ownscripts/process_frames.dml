@@ -1,7 +1,0 @@
-path = "ownscripts/data/tiny.csv"
-X = read(path, data_type = "frame", format = "csv", header = FALSE)
-print("RAW FRAME:")
-print("%s", toString(X))
-Z = map(X, "x -> x.toUpperCase()")
-print("MODIFIED FRAME:")
-print("%s", toString(Z))

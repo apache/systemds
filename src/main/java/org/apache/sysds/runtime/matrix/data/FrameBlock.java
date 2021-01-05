@@ -64,6 +64,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	private static final long serialVersionUID = -3993450030207130665L;
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final IDSequence CLASS_ID = new IDSequence();
+
 	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block
 
 	//internal configuration

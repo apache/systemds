@@ -25,7 +25,6 @@ limitations under the License.
 
   * [Introduction](#introduction)
   * [Built-In Construction Functions](#built-in-construction-functions)
-    
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
@@ -164,14 +163,14 @@ confusionMatrix(P, Y)
 | Y    | Matrix[Double] | ---     | vector of Golden standard One Hot Encoded |
 
 ### Returns
-
+ 
 | Name         | Type           | Description |
 | :----------- | :------------- | :---------- |
 | ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
 | ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
 
 ### Example
-
+ 
 ```r
 numClasses = 1
 z = rand(rows = 5, cols = 1, min = 1, max = 9)
@@ -305,7 +304,7 @@ Y = dist(X)
 
 ## `dmv`-Function
 
-The `dmv`-function is used to find disguised missing values in a Frame. It does syntactical pattern recognition and set all values which does not follow the dominant pattern of the column to a defined string.
+The `dmv`-function is used to find disguised missing values utilising syntactical pattern recognition.
 
 ### Usage
 
@@ -318,14 +317,14 @@ dmv(X, threshold, replace)
 | Name      | Type          | Default  | Description                                                  |
 | :-------- | :------------ | :------- | :----------------------------------------------------------- |
 | X         | Frame[String] | required | Input Frame                                                  |
-| threshold | Double        | 0.8      | threshold value in interval [0, 1] for dominant pattern (e.g. 80% must follow this pattern to be dominant) |
-| replace   | String        | "NA"     | The string disguised missing values will be set to           |
+| threshold | Double        | 0.8      | threshold value in interval [0, 1] for dominant pattern per column (e.g., 0.8 means that 80% of the entries per column must adhere this pattern to be dominant) |
+| replace   | String        | "NA"     | The string disguised missing values are replaced with        |
 
 ### Returns
 
-| Type           | Description                                                  |
-| :------------- | :----------------------------------------------------------- |
-| Frame[Strings] | The same Frame as `X` with disguised missing values set to the `replace` string. |
+| Type          | Description                                            |
+| :------------ | :----------------------------------------------------- |
+| Frame[String] | Frame `X`  including detected disguised missing values |
 
 ### Example
 
@@ -672,7 +671,7 @@ is called internally and parameters `tol` and `maxi` are ignored.
 ##### `icpt`-Argument
 
 The *icpt-argument* can be set to 3 modes:
-
+ 
   * 0 = no intercept, no shifting, no rescaling
   * 1 = add intercept, but neither shift nor rescale X
   * 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
@@ -699,7 +698,7 @@ intersect(X, Y)
 | Name | Type   | Default  | Description |
 | :--- | :----- | -------- | :---------- |
 | X    | Double | --       | matrix X, set A |
-| Y    | Double | --       | matrix Y, set B |
+| Y    | Double | --       | matrix Y, set B | 
 
 ### Returns
 
@@ -1055,7 +1054,7 @@ steplm(X, y, icpt);
 ##### `icpt`-Argument
 
 The *icpt-arg* can be set to 2 modes:
-
+ 
   * 0 = no intercept, no shifting, no rescaling
   * 1 = add intercept, but neither shift nor rescale X
 

@@ -53,11 +53,30 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
 
   Y = strings;
 
-  # num_strings = length(strings);
+  num_strings = length(strings);
 
-  # if(is_verbose)
-    # print("num strings: " + num_strings)
+  if(is_verbose)
+    print("num strings: " + num_strings)
 
+  print(toString(strings));
+
+  lc = map(strings, "s -> s.toLowerCase()"); # works
+  lengths = map(strings, "s -> s.length()"); # works
+  # subs = map(strings, "s -> s[2]"); # doesnt work
+  subs = map(strings, "s -> s.substring(0,2)"); # works
+
+  print(toString(lc));
+  print(toString(lengths));
+  print(toString(subs));
+
+  # str = "hello world!";
+
+  # print(sc);
+  # print(s.charAt(2));
+  # c = as.character(s);
+  # print(c);
+  #m = matrix(s, rows=2, cols=6);
+  #print(toString(m));
 
   # if(!decapitalize)
     # if(is_verbose)

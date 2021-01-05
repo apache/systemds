@@ -54,7 +54,7 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 		if(str.startsWith(ExecType.SPARK.name())) {
 			// rewrite the spark instruction to a cp instruction
 			str = str.replace(ExecType.SPARK.name(), ExecType.CP.name());
-      str = str.replace("mapwcemm", "wcemm");
+			str = str.replace("mapwcemm", "wcemm");
 			str = str.replace("mapwsloss", "wsloss");
 			if(str.contains("redwsloss"))
 			{
@@ -88,19 +88,19 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 
 			if(opcode.equals("wcemm"))
 			{
-			  final WCeMMType wcemm_type = WCeMMType.valueOf(parts[6]);
+				final WCeMMType wcemm_type = WCeMMType.valueOf(parts[6]);
 				if(wcemm_type.hasFourInputs())
 					checkDataTypes(new DataType[]{DataType.SCALAR, DataType.MATRIX}, in4);
-			  qop = (wcemm_type.hasFourInputs() ? new QuaternaryOperator(wcemm_type, Double.parseDouble(in4.getName())) : new QuaternaryOperator(wcemm_type));
-			  return new QuaternaryWCeMMFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
+				qop = (wcemm_type.hasFourInputs() ? new QuaternaryOperator(wcemm_type, Double.parseDouble(in4.getName())) : new QuaternaryOperator(wcemm_type));
+				return new QuaternaryWCeMMFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
 			}
 			else if(opcode.equals("wsloss"))
 			{
-			  final WeightsType weights_type = WeightsType.valueOf(parts[6]);
+				final WeightsType weights_type = WeightsType.valueOf(parts[6]);
 				if(weights_type.hasFourInputs())
 					checkDataTypes(DataType.MATRIX, in4);
-			  qop = new QuaternaryOperator(weights_type);
-			  return new QuaternaryWSLossFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
+				qop = new QuaternaryOperator(weights_type);
+				return new QuaternaryWSLossFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
 			}
 		}
 		else if(opcode.equals("wsigmoid"))

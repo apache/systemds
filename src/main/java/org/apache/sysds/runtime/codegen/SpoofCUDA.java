@@ -30,6 +30,8 @@ import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
@@ -39,10 +41,12 @@ public class SpoofCUDA extends SpoofOperator {
 	
 	private final CNodeTpl cnt;
 	public final String name;
+	public final String src;
 
-	public SpoofCUDA(CNodeTpl cnode) {
+	public SpoofCUDA(CNodeTpl cnode, String source) {
 		name = "codegen." + cnode.getVarname();
 		cnt = cnode;
+		src = source;
 	}
 
 	public String getName() {
@@ -86,6 +90,14 @@ public class SpoofCUDA extends SpoofOperator {
 		long[] in_ptrs = new long[offset];
 		for(int i = 0; i < offset; ++i)
 			in_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
+		
+//		if(src.contains("TB1: true")) {
+//			MatrixBlock in = LibMatrixReorg.transpose((MatrixBlock) inputs.get(1).acquireRead(),
+//					new MatrixBlock((int) inputs.get(1).getNumColumns(),
+//					(int) inputs.get(1).getNumRows(), false));
+//			LibMatrixCUDA.transpose(ec, ec.getGPUContext(0),"SpoofCUDA", inputs.get(1),"SpoofCudaTransposeTemp");
+//
+//		}
 
 		long[] side_ptrs = new long[inputs.size() - offset];
 		for(int i = offset; i < inputs.size(); ++i)

@@ -39,6 +39,7 @@
 // #endif
 
 #include <jitify.hpp>
+#include <cublas_v2.h>
 
 #include "host_utils.h"
 
@@ -54,6 +55,7 @@ struct SpoofOperator {
 	AggOp agg_op;
 	OpType op_type;
     const std::string name;
+	bool TB1 = false;
 };
 
 class SpoofCUDAContext {
@@ -84,13 +86,14 @@ public:
 	template <typename T>
 	T execute_kernel(const std::string &name, T **in_ptrs, int num_inputs, T **side_ptrs, int num_sides, T *out_ptr, 
 			T *scalars_ptr, int num_scalars, uint32_t m, uint32_t n, int out_len, int grix, 
-			const std::vector<Matrix<T>>& sides, Matrix<T>* out) {
+			std::vector<Matrix<T>>& sides, Matrix<T>* out) {
 		
 		T result = 0.0;
 		size_t dev_buf_size;
 		Matrix<T>* d_in = nullptr;
 		Matrix<T>* d_out = nullptr;
 		Matrix<T>* d_sides = nullptr;
+		T* b1_transposed = nullptr;
 		T *d_scalars = nullptr;
 
 		auto o = ops.find(name);
@@ -114,12 +117,50 @@ public:
 				Matrix<T> scalar_out{d_out_data, 0, 0, 1, 1, 1};
 				CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void *>(&scalar_out), sizeof(Matrix<T>),
 										cudaMemcpyHostToDevice));
-			
 			}
 			
 			if (num_sides > 0) {
+				if(op->TB1) {
+					T* b1 = sides[0].data;
+					uint32_t m = sides[0].rows;
+					uint32_t n = sides[0].cols;
+
+					std::cout << "--- b1:" << std::endl;
+					std::vector<T> tmp_b1(m*n);
+					CHECK_CUDART(cudaMemcpy(tmp_b1.data(), sides[0].data, sizeof(T) * tmp_b1.size(), cudaMemcpyDeviceToHost));
+					for (auto i = 0; i < m; ++i) {
+						for(auto j = i * n; j < (i+1) * n; ++j)
+							std::cout << tmp_b1[j] << " ";
+						std::cout << std::endl;
+					}
+					
+					cudaMalloc(reinterpret_cast<void**>(&b1_transposed), sizeof(T) * m * n);
+					double alpha = 1.0;
+					double beta  = 0.0;
+					cublasHandle_t handle;
+					
+					CHECK_CUBLAS(cublasCreate(&handle));
+					CHECK_CUBLAS(cublasDgeam(handle, CUBLAS_OP_T, CUBLAS_OP_T, m, n, &alpha, b1, n, &beta, b1, n, b1_transposed, m));					
+					// CHECK_CUDART(cudaDeviceSynchronize());
+					//
+					// CHECK_CUDART(cudaMemcpy(b1_transposed, b1, sizeof(T) * m * n, cudaMemcpyDeviceToDevice));
+
+					std::cout << "--- b1_transposed:" << std::endl;
+					std::vector<T> tmp_b1t(m*n);
+					CHECK_CUDART(cudaMemcpy(tmp_b1t.data(), b1_transposed, sizeof(T) * tmp_b1t.size(), cudaMemcpyDeviceToHost));
+					for (auto i = 0; i < n; ++i) {
+						for(auto j = i * m; j < (i+1) * m; ++j)
+							std::cout << tmp_b1t[j] << " ";
+						std::cout << std::endl;
+					}
+
+					sides[0].data = b1_transposed;
+					sides[0].rows = n;
+					sides[0].cols = m;
+					CHECK_CUBLAS(cublasDestroy(handle));
+				}
 				dev_buf_size = sizeof(Matrix<T>) * num_sides;
-				CHECK_CUDART(cudaMalloc((void **)&d_sides, dev_buf_size));
+				CHECK_CUDART(cudaMalloc(reinterpret_cast<void **>(&d_sides), dev_buf_size));
 				CHECK_CUDART(cudaMemcpy(d_sides, &sides[0], dev_buf_size, cudaMemcpyHostToDevice));
 			}
 
@@ -146,6 +187,9 @@ public:
 			
 			if (num_sides > 0)
 				CHECK_CUDART(cudaFree(d_sides));
+
+			if(op->TB1)
+				cudaFree(b1_transposed);
 			
 			if(op->agg_type == SpoofOperator::AggType::FULL_AGG) {
 				std::cout << "retrieving scalar result" << std::endl;
@@ -344,7 +388,6 @@ public:
 //			// CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&in), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
 //
 //		}
-
 		
 		dim3 grid(in_rows, 1, 1);
 		dim3 block(NT, 1, 1);
@@ -360,7 +403,7 @@ public:
 				.instantiate(type_of(result), std::max(1u, num_sides))
 				.configure(grid, block, shared_mem_size)
 				.launch(d_in, d_sides, d_out, d_scalars, grix));
-
+		
 		return result;
 	}
 };

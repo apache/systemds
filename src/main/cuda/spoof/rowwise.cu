@@ -20,6 +20,9 @@
  */
 
 // RowType: %TYPE%
+// ConstDim2: %CONST_DIM2%
+// TB1: %TB1%
+// VectMem: %VECT_MEM%
 
 //%TMP_MEM%
 

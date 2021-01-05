@@ -109,7 +109,10 @@ bool SpoofCUDAContext::compile_cuda(const std::string &src,
         std::cerr << "error: unknown spoof operator" << std::endl;
 		return false;
 	}
-
+	bool TB1 = false;
+	if((pos = src.find("TB1")) != std::string::npos)
+		if(src.substr(pos, pos+8).find("true") != std::string::npos)
+			TB1 = true;
 
 	
 	if(((pos = src.find("CellType")) != std::string::npos) || ((pos = src.find("RowType")) != std::string::npos)){
@@ -153,6 +156,6 @@ bool SpoofCUDAContext::compile_cuda(const std::string &src,
 	s2 << "-I" << resource_path << "/cuda/spoof";
 
 	jitify::Program program = kernel_cache.program(src, 0, {s1.str(), s2.str(), cuda_include_path});
-	ops.insert(std::make_pair(name, SpoofOperator({std::move(program), agg_type, agg_op, op_type, name})));
+	ops.insert(std::make_pair(name, SpoofOperator({std::move(program), agg_type, agg_op, op_type, name, TB1})));
 	return true;
 }

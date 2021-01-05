@@ -103,7 +103,7 @@ set_source_files_properties( ${SPOOF_TEMPLATES} PROPERTIES HEADER_FILE_ONLY ON)
 add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_CUDA_HEADERS} ${SPOOF_SOURCES} ${SPOOF_TEMPLATES})
 
 target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify" headers)
-target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)
+target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart CUDA::cublas)
 target_compile_features(spoof_cuda PUBLIC cxx_std_11)
 set_target_properties(spoof_cuda PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(spoof_cuda PROPERTIES OUTPUT_NAME "systemds_spoof_cuda-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")

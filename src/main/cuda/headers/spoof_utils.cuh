@@ -210,8 +210,8 @@ __device__ T dotProduct(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len) {
 	SumOp<T> agg_op;
 	ProductOp<T> load_op;
 	T ret =  BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
-//	if(blockIdx.x < 4 && threadIdx.x == 0)
-//		printf("bid=%d, ai=%d, dot=%f\n", blockIdx.x, ai, ret);
+	if(blockIdx.x == 0 && threadIdx.x == 0)
+		printf("bid=%d, ai=%d, dot=%f\n", blockIdx.x, ai, ret);
 	return ret;
 }
 
@@ -245,20 +245,21 @@ __device__ T vectMax(T* a, int ai, int len) {
 }
 
 template<typename T, typename Op>
-__device__ void vectAdd_atomic(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len, Op op) {
+__device__ uint32_t vectAdd_atomic(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len, Op op) {
 	uint tid = threadIdx.x;
 	if(tid >= len)
-		return;
+		return len;
 	uint i = tid;
 
 	while (i < len) {
-//		if(blockIdx.x == 1 && threadIdx.x < 2)
-//			printf("vectAdd_atomic: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, b=%f, c[%d]=%f, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai,
-//		  			ci, len, b, ci * len + threadIdx.x, op(a[ai + i], b), ai, a[ai + i]);
+		if(blockIdx.x == 0 && threadIdx.x < 4)
+			printf("vectAdd_atomic: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, b=%f, c[%d]=%f, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai,
+		  			ci, len, b, ci + i, op(a[ai + i], b), ai+i, a[ai + i]);
 		
-		atomicAdd(&(c[ci * len + i]), op(a[ai + i], b));
+		atomicAdd(&(c[ci + i]), op(a[ai + i], b));
 		i += blockDim.x;
 	}
+	return len;
 }
 
 template<typename T>
@@ -300,8 +301,8 @@ __device__ int vectCbindWrite(T a, T b, T* c) {
 template<typename T, typename OP>
 __device__ int vectWrite_(T* a, T* b, T* c, int ai, int ci, int len) {
 	uint i = threadIdx.x;
-	if(blockIdx.x == 1 && threadIdx.x < 2)
-		printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a[ai + i], b[ai + i]));
+	if(blockIdx.x == 2 && threadIdx.x < 13)
+		printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci + threadIdx.x, OP::exec(a[ai + i], b[ai + i]));
 	
 	while (i < len) {
 		c[ci + i] = OP::exec(a[ai + i], b[ai + i]);
@@ -452,7 +453,7 @@ int vectMaxWrite(T* a, T b, T* c, int ai, int len) {
 }
 
 template<typename T, typename OP>
-__device__ int vectAdd_atomic_(T* a, T b, T* c, int ai, int ci, int len) {
+__device__ int vectAdd_atomic_(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
     uint i = threadIdx.x;
     while (i < len) {
         atomicAdd(&(c[ci + i]), OP::exec(a[ai + i], b));
@@ -480,5 +481,53 @@ int vectMinAdd(T* a, T b, T* c, int ai, int ci, int len) {
 template<typename T>
 int vectMaxAdd(T* a, T b, T* c, int ai, int ci, int len) {
 	return vectAdd_atomic_<T, MaxOp<T>>(a, b, c, ai, ci, len);
+}
+
+
+template<typename T>
+int vectMatrixMult(T* a, MatrixAccessor<T>& b, T* c, uint32_t ai, uint32_t bi, uint32_t len) {
+//	uint32_t bix = bi + threadIdx.x * len;
+	uint32_t m2clen = b.len() / len;
+	
+	for(uint32_t j = 0, bix = bi; j < m2clen; ++j, bix+=len) {
+//	for(uint32_t j = 0; j < m2clen; ++j, bix+=len) {
+		T result = dotProduct(a, b.vals(0), ai, bix, len);
+		if(threadIdx.x == 0) {
+			c[ai + j] = result;
+			if(blockIdx.x == 2)
+				printf("vectMatrixMult bid=%d bix=%d len=%d m2clen=%d c[%d]=%f\n", blockIdx.x, bix, len, m2clen, ai+j, c[ai+j]);
+		}
+	}
+	return len;
+}
+
+template<typename T>
+uint32_t vectOuterMultAdd(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len1, uint32_t len2) {
+//	uint32_t cix = ci + threadIdx.x * len2;
+//	if(threadIdx.x == 0 && blockIdx.x < 3)
+//		printf("vectOuterMultAdd cix=%d\n", cix);
+	// vectMultiplyAdd(a[ai+threadIdx.x], b, c, bi, cix, len2);
+//	ProductOp<T> op;
+//	return vectAdd_atomic<T, ProductOp<T>>(b, a[ai+threadIdx.x], c, bi, ci, len2, op);
+
+	uint32_t i = threadIdx.x;
+
+	while (i < len1) {
+		if(a[ai + i != 0]) {
+			for(uint32_t j=0; j < len2; ++j) {
+				atomicAdd(&(c[i * len2 + j]), a[ai + i] * b[bi + j]);
+				if (blockIdx.x == 0)
+					printf("vectOuterMultAdd: bid=%d, tid=%d, ai=%d, bi=%d, ci=%d, len1=%d, len2=%d, a[%d]=%f, b[%d]=%f, c[%d]=%f\n",
+							blockIdx.x, threadIdx.x, ai, bi, ci, len1, len2, ai+i, a[ai+i], bi+j, b[bi+j], ci+i, c[ci+i]);
+
+
+//				vectAdd_atomic<T, ProductOp<T>>(b, a[ai+i], c, bi, ci, len2, op);
+			}
+		}
+		i += blockDim.x;
+	}
+
+
+	return len1*len2;
 }
 #endif // SPOOF_UTILS_CUH

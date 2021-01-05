@@ -43,11 +43,11 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase
   private final static String STD_TEST_NAME = "FederatedWSigmoidTest";
   private final static String LOG_TEST_NAME = "FederatedWSigmoidLogTest";
   private final static String TEST_DIR = "functions/federated/quaternary/";
-  private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWeightedSquaredLossTest.class.getSimpleName() + "/";
+  private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWeightedSigmoidTest.class.getSimpleName() + "/";
 
   private final static String OUTPUT_NAME = "Z";
 
-  private final static double TOLERANCE = 1e-9;
+  private final static double TOLERANCE = 0;
 
   private final static int blocksize = 1024;
 
@@ -76,8 +76,8 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase
       // {rows, cols, rank, sparsity}
       {2000, 50, 10, 0.01},
       {2000, 50, 10, 0.9},
-      {100, 250, 25, 0.01},
-      {100, 250, 25, 0.9}
+      {500, 630, 100, 0.01},
+      {500, 630, 100, 0.9}
     });
   }
 

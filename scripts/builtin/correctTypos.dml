@@ -81,21 +81,44 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
   print(toString(dict));
   strings = dict[,1];
   frequencies = dict[,2];
+  num_different_strings = nrow(strings);
   # print(toString(strings));
 
-  # generate letter matrix
-  max_len = max(lengths);
-  print(max_len);
-  mat = map(strings, "s -> UtilFunctions.substringpadded(s, 0, 1)");
-  for (i in 1:max_len-1) {
-    lambda = "s -> UtilFunctions.substringpadded(s, " + i + ", " + (i+1) + ")";
-    print(lambda);
-    col = map(strings, lambda);
-    mat = cbind(mat, col);
-  }
-  print(toString(mat));
+  # generate ascii matrix
+  # max_len = max(lengths);
+  # print(max_len);
+  # ascii_frame = map(strings, "s -> UtilFunctions.getAsciiAtIdx(s, 0)");
+  # for (i in 1:max_len-1) {
+    # lambda = "s -> UtilFunctions.getAsciiAtIdx(s, " + i + ")";
+    # print(lambda);
+    # col = map(strings, lambda);
+    # ascii_frame = cbind(ascii_frame, col);
+  # }
+  # print(toString(ascii_frame));
 
+  ascii_frame = map(strings, "s -> UtilFunctions.stringToInts(s)");
+  print(toString(ascii_frame));
 
+  row_str = as.scalar(ascii_frame[1]);
+  print(row_str);
+  m = matrix(row_str, rows=1, cols=8);
+  # i = 2;
+  # while (i <= num_different_strings) {
+    # i += 1;
+  # }
+  # for (i in 2:num_different_strings) {
+    # row_str = as.scalar(ascii_frame[i]);
+    # m = matrix(row, rows=1, cols=max_len);
+    # m = rbind(m, matrix(ascii_frame[i]));
+  # }
+  print(toString(m));
+
+  # for (i in 1:num_different_strings) {
+    # for (j in 1:num_different_strings) {
+      # if (i != j) {
+      # }
+    # }
+  # }
   A = matrix("1 3 2 4 5 4 3 6 2 5 2 4 5 3 6 3", rows = 16, cols = 1);
   B = matrix("1 2 3 4 5 2 3 2 7 5 2 4 6 3 6", rows = 15, cols = 1);
 

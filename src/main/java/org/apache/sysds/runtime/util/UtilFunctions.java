@@ -624,20 +624,27 @@ public class UtilFunctions {
 		return "\"" + s + "\"";
 	}
 
-  public static String substringpadded(String s, int start, int end) {
+  public static int getAsciiAtIdx(String s, int idx) {
     int strlen = s.length();
-    String substr = "";
-    if (start >= 0 && start <= end && start <= strlen) {
-      int padding = end - strlen;
-      if (padding <= 0) {
-        substr = s.substring(start, end);
-      }
-      else {
-        substr = s.substring(start, s.length());
-        substr += new String(new char[padding]);
-      }
+    int c = 0;
+    if (idx >= 0 && idx < strlen) {
+      c = (int)s.charAt(idx);
     }
-    return substr; 
+    return c; 
+  }
+
+  public static String stringToInts(String s) {
+    int strlen = s.length();
+    String res = "";
+    if (strlen == 0) return res;
+    char[] chars = s.toCharArray();
+    int c = (int)s.charAt(0);
+    res += Integer.toString(c) + " ";
+    for (int i=1; i<strlen; ++i) {
+      c = (int)s.charAt(i);
+      res += Integer.toString(c) + " ";
+    }
+    return res; 
   }
 
 	/**

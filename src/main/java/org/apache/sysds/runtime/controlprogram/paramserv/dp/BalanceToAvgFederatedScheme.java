@@ -34,6 +34,16 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import java.util.List;
 import java.util.concurrent.Future;
 
+/**
+ * Balance to Avg Federated scheme
+ *
+ * When the parameter server runs in federated mode it cannot pull in the data which is already on the workers.
+ * Therefore, a UDF is sent to manipulate the data locally. In this case the global average number of examples is taken
+ * and the worker subsamples or replicates data to match that number of examples. See the other federated schemes.
+ *
+ * Then all entries in the federation map of the input matrix are separated into MatrixObjects and returned as a list.
+ * Only supports row federated matrices atm.
+ */
 public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
 	public Result partition(MatrixObject features, MatrixObject labels, int seed) {

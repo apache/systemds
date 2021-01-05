@@ -22,6 +22,13 @@ package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import java.util.List;
 
+/**
+ * Keep Data on Worker Federated scheme
+ *
+ * When the parameter server runs in federated mode it cannot pull in the data which is already on the workers.
+ * All entries in the federation map of the input matrix are separated into MatrixObjects and returned as a list.
+ * Only supports row federated matrices atm.
+ */
 public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
 	public Result partition(MatrixObject features, MatrixObject labels, int seed) {

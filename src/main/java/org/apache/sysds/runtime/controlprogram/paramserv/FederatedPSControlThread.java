@@ -523,8 +523,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
 				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
 				ec.removeVariable(ec.getVariable(Statement.PS_FED_BATCHCOUNTER_VARID).toString());
-				/*if( LOG.isInfoEnabled() )
-					LOG.info("[+]" + " completed batch " + localBatchNum);*/
 			}
 
 			// model clean up

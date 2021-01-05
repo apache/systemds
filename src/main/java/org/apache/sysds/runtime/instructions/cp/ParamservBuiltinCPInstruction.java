@@ -123,8 +123,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runFederated(ExecutionContext ec) {
-		System.out.println("PARAMETER SERVER");
-		System.out.println("[+] Running in federated mode");
+		LOG.info("PARAMETER SERVER");
+		LOG.info("[+] Running in federated mode");
 
 		// get inputs
 		String updFunc = getParam(PS_UPDATE_FUN);
@@ -146,20 +146,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// partition federated data
 		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme, seed)
 				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
-		List<MatrixObject> pFeatures = result._pFeatures;
-		List<MatrixObject> pLabels = result._pLabels;
 		int workerNum = result._workerNum;
-
-		// calculate runtime balancing
-		int numBatchesPerEpoch = 0;
-		if(runtimeBalancing == PSRuntimeBalancing.RUN_MIN) {
-			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._minRows / (float) getBatchSize());
-		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG
-				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH) {
-			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._avgRows / (float) getBatchSize());
- 		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
-			numBatchesPerEpoch = (int) Math.ceil(result._balanceMetrics._maxRows / (float) getBatchSize());
-		}
 
 		// setup threading
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
@@ -178,7 +165,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
 		// Create the local workers
-		int finalNumBatchesPerEpoch = numBatchesPerEpoch;
+		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
 				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighing,
 						getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
@@ -190,8 +177,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Set features and lables for the control threads and write the program and instructions and hyperparams to the federated workers
 		for (int i = 0; i < threads.size(); i++) {
-			threads.get(i).setFeatures(pFeatures.get(i));
-			threads.get(i).setLabels(pLabels.get(i));
+			threads.get(i).setFeatures(result._pFeatures.get(i));
+			threads.get(i).setLabels(result._pLabels.get(i));
 			threads.get(i).setup(result._weighingFactors.get(i));
 		}
 
@@ -519,6 +506,26 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			}
 		}
 		return federated_scheme;
+	}
+
+	/**
+	 * Calculates the number of batches per epoch depending on the balance metrics and the runtime balancing
+	 *
+	 * @param runtimeBalancing the runtime balancing
+	 * @param balanceMetrics the balance metrics calculated during data partitioning
+	 * @return numBatchesPerEpoch
+	 */
+	private int getNumBatchesPerEpoch(PSRuntimeBalancing runtimeBalancing, DataPartitionFederatedScheme.BalanceMetrics balanceMetrics) {
+		int numBatchesPerEpoch = 0;
+		if(runtimeBalancing == PSRuntimeBalancing.RUN_MIN) {
+			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._minRows / (float) getBatchSize());
+		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG
+				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH) {
+			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._avgRows / (float) getBatchSize());
+		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
+			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._maxRows / (float) getBatchSize());
+		}
+		return numBatchesPerEpoch;
 	}
 
 	private boolean getWeighing() {

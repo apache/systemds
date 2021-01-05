@@ -236,7 +236,7 @@ public abstract class ParamServer
 			}
 		} 
 		catch (Exception e) {
-			throw new DMLRuntimeException("Aggregation service failed: ", e);
+			throw new DMLRuntimeException("Aggregation or validation service failed: ", e);
 		}
 	}
 
@@ -322,7 +322,7 @@ public abstract class ParamServer
 		double accuracy = ((DoubleObject) _ec.getVariable(_accuracyOutput)).getDoubleValue();
 
 		// Log validation results
-		LOG.info("[+] PARAMSERVER validation - loss: " + loss + " accuracy: " + accuracy);
+		LOG.info("[+] PARAMSERV: validation - loss: " + loss + " accuracy: " + accuracy);
 
 		// cleanup
 		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);

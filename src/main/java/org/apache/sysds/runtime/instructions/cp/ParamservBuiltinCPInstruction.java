@@ -114,7 +114,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// get inputs
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
-		String valFunc = getParam(PS_VAL_FUN);
+		String valFunc = getValFunction();
 		PSUpdateType updateType = getUpdateType();
 		PSFrequency freq = getFrequency();
 		FederatedPSScheme federatedPSScheme = getFederatedScheme();
@@ -527,6 +527,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private boolean getWeighing() {
 		return getParameterMap().containsKey(PS_FED_WEIGHING) && Boolean.parseBoolean(getParam(PS_FED_WEIGHING));
+	}
+
+	private String getValFunction() {
+		if (getParameterMap().containsKey(PS_VAL_FUN)) {
+			return getParam(PS_VAL_FUN);
+		}
+		return null;
 	}
 
 	private int getSeed() {

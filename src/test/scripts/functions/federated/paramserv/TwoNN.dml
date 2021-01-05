@@ -258,7 +258,7 @@ gradients = function(list[unknown] model,
   # Compute loss & accuracy for training data
   loss = cross_entropy_loss::forward(probs, labels)
   accuracy = mean(rowIndexMax(probs) == rowIndexMax(labels))
-  print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
+  # print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
 
   # Compute data backward pass
   dprobs = cross_entropy_loss::backward(probs, labels)

@@ -15,7 +15,7 @@ public class testclass1 {
         f.appendColumn(new String[]{"Hllo","asdasd","3asd","asd","asd", "xx", "123"});
         f.appendColumn(new String[]{"44","3","235","52","weg", "xx", "123"});
 
-        UtilFunctions.calculateAttributeTypes(f);
+        UtilFunctions.calculateAttributeTypes(f, 0.7, "NA");
     }
 
 }

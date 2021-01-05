@@ -36,7 +36,7 @@ public class DisguisedMissingValueTests {
         Double value3 = dominant_patterns.get("l1sd2");
         Assert.assertEquals(value3, (Double)0.5);
 
-        String s = UtilFunctions.findDominantPattern(dominant_patterns, 100);
+        String s = UtilFunctions.findDominantPattern(dominant_patterns, 100, 0.7);
         Assert.assertEquals(s, null); // must be 0 because no dominant pattern found
     }
 
@@ -68,7 +68,7 @@ public class DisguisedMissingValueTests {
         Double value7 = dominant_patterns.get("d1l2");
         Assert.assertEquals((Double)0.002, value7);
 
-        String s = UtilFunctions.findDominantPattern(dominant_patterns, 1000);
+        String s = UtilFunctions.findDominantPattern(dominant_patterns, 1000, 0.7);
         Assert.assertEquals(s, "d4");
     }
 
@@ -240,7 +240,7 @@ public class DisguisedMissingValueTests {
         String[] testarray2 = new String[]{"David K","Valentin E","Patrick L","45","DK", "VE", "PL"}; // detect 45
         String[] testarray3 = new String[]{"3.42","45","0.456",".45","4589.245", "97", "ka"}; // detect ka
         String[] testarray4 = new String[]{"9999","123","158","146","158", "174", "201"}; // detect 9999
-        String[] testarray5 = new String[]{"Kerschbaumer","123","258d","80105","Valentin-E-Weg 23c", ".035", "f.ggot"}; // detect nothing
+        String[] testarray5 = new String[]{"Kerschbaumer","123","258d","80105","Valentin-E-Weg 23c", ".035", "helloWorld"}; // detect nothing
         String[] testarray6 = new String[]{"77","-23","78","-21","43", "-44", "43"}; // detect nothing
 
 
@@ -253,14 +253,14 @@ public class DisguisedMissingValueTests {
         f.appendColumn(testarray5.clone());
         f.appendColumn(testarray6.clone());
 
-        FrameBlock new_frame = UtilFunctions.calculateAttributeTypes(f);
+        FrameBlock new_frame = UtilFunctions.calculateAttributeTypes(f, 0.7, "NA");
 
         // testarray0
         Object c = new_frame.getColumnData(0);
         String[] column_s = (String[]) c;
         for(int i = 0; i < testarray0.length; i++) {
             if(testarray0[i].equals("Patrick-Lovric-Weg-666"))
-                Assert.assertEquals("NaN", column_s[i]);
+                Assert.assertEquals(UtilFunctions.DISGUISED_VAL, column_s[i]);
             else
                 Assert.assertEquals(testarray0[i], column_s[i]);
         }
@@ -270,7 +270,7 @@ public class DisguisedMissingValueTests {
         column_s = (String[]) c;
         for(int i = 0; i < testarray1.length; i++) {
             if(testarray1[i].equals("?"))
-                Assert.assertEquals("NaN", column_s[i]);
+                Assert.assertEquals(UtilFunctions.DISGUISED_VAL, column_s[i]);
             else
                 Assert.assertEquals(testarray1[i], column_s[i]);
         }
@@ -280,7 +280,7 @@ public class DisguisedMissingValueTests {
         column_s = (String[]) c;
         for(int i = 0; i < testarray2.length; i++) {
             if(testarray2[i].equals("45"))
-                Assert.assertEquals("NaN", column_s[i]);
+                Assert.assertEquals(UtilFunctions.DISGUISED_VAL, column_s[i]);
             else
                 Assert.assertEquals(testarray2[i], column_s[i]);
         }
@@ -290,7 +290,7 @@ public class DisguisedMissingValueTests {
         column_s = (String[]) c;
         for(int i = 0; i < testarray3.length; i++) {
             if(testarray3[i].equals("ka"))
-                Assert.assertEquals("NaN", column_s[i]);
+                Assert.assertEquals(UtilFunctions.DISGUISED_VAL, column_s[i]);
             else
                 Assert.assertEquals(testarray3[i], column_s[i]);
         }
@@ -300,7 +300,7 @@ public class DisguisedMissingValueTests {
         column_s = (String[]) c;
         for(int i = 0; i < testarray4.length; i++) {
             if(testarray4[i].equals("9999"))
-                Assert.assertEquals("NaN", column_s[i]);
+                Assert.assertEquals(UtilFunctions.DISGUISED_VAL, column_s[i]);
             else
                 Assert.assertEquals(testarray4[i], column_s[i]);
         }

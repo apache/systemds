@@ -1,5 +1,8 @@
-path = "ownscripts/data/323-1.csv"
+path = "ownscripts/data/pima-indians-diabetes.csv"
 X = read(path, data_type = "frame", format = "csv", header = TRUE)
 # any function call without '->' goes to our UtilFunctions.calculateAttributeTypes() - hardcoded in der map funktion (FrameBlock 2135)
-Z = map(X, "UtilFunctions.calculateAttributeTypes()")
+
+Z = dmv(F=X,threshold=0.9, replace="NA")
+
+print(toString(Z))
 write(Z, "ownscripts/results/output.csv", format="csv", header=TRUE, sep=";");

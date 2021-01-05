@@ -64,8 +64,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	private static final long serialVersionUID = -3993450030207130665L;
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final IDSequence CLASS_ID = new IDSequence();
-	
-	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
+	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block
 
 	//internal configuration
 	private static final boolean REUSE_RECODE_MAPS = true;
@@ -2100,16 +2099,18 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public FrameBlock map(String lambdaExpr) {
+		System.out.println("exp: " + lambdaExpr);
 		if(!lambdaExpr.contains("->"))
 		{
 			// still hardcoded but should work this way somehow
-			//FrameBlockMapFunction ret = getCompiledFunctionBlock(lambdaExpr);
-			return UtilFunctions.calculateAttributeTypes(this);
+//			return map(getCompiledFunctionBlock(lambdaExpr));
+			String args = lambdaExpr.substring(lambdaExpr.indexOf('(') + 1, lambdaExpr.indexOf(')'));
+			if(args.contains(",")) {
+				String[] arguments = args.split(",");
+				return UtilFunctions.calculateAttributeTypes(this, Double.parseDouble(arguments[0]), arguments[1]);
+			}
 		}
-		else {
-			FrameMapFunction ret = getCompiledFunction(lambdaExpr);
-			return map(ret);
-		}
+		return map(getCompiledFunction(lambdaExpr));
 	}
 
 	public FrameBlock map(FrameBlockMapFunction lambdaExpression) {
@@ -2121,7 +2122,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	public FrameBlock map(FrameMapFunction lambdaExpr) {
 		// Prepare temporary output array
 		String[][] output = new String[getNumRows()][getNumColumns()];
-		
+
 		// Execute map function on all cells
 		for(int j=0; j<getNumColumns(); j++) {
 			Array input = getColumn(j);
@@ -2180,14 +2181,14 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		sb.append("public class "+cname+" extends FrameBlockMapFunction {\n");
 		sb.append("@Override\n");
 		sb.append("public FrameBlock apply() {\n");
-		sb.append("  return String.valueOf("+expr+"); }}\n");
+		sb.append("  return "+expr+"; }}\n");
 
 		try {
 			return (FrameBlockMapFunction) CodegenUtils
 				.compileClass(cname, sb.toString()).newInstance();
 		}
 		catch(InstantiationException | IllegalAccessException e) {
-			throw new DMLRuntimeException("Failed to compile FrameMapFunction.", e);
+			throw new DMLRuntimeException("Failed to compile FrameBlockMapFunction.", e);
 		}
 	}
 

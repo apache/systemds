@@ -851,17 +851,17 @@ public class UtilFunctions {
 	public static final char OTHER = 'y';
 	public static final char ARBITRARY_LEN = '+';
 	public static final char MINUS = '-';
-	public static final String DISGUISED_VAL = "NaN";
+	public static String DISGUISED_VAL = "";
 	public enum LEVEL_ENUM { LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6}
 
 	// TODO: rename?
-	public static FrameBlock calculateAttributeTypes(FrameBlock frame) {
+	public static FrameBlock calculateAttributeTypes(FrameBlock frame, double threshold, String disguised_value) {
 
+		DISGUISED_VAL = disguised_value;
 		// Preparation
 		int numCols = frame.getNumColumns();
 		int numRows = frame.getNumRows();
 		ArrayList<Map<String, Integer>> table_Hist = new ArrayList(numCols); // list of every column with values and their frequency
-//		ArrayList<String> dominant_patterns_per_column = new ArrayList<>();
 
 		int idx;
 		for (idx = 0; idx < numCols; idx++) {
@@ -886,10 +886,9 @@ public class UtilFunctions {
 				dominant_patterns_ratio.clear();
 				Map<String, Integer> current_pattern_hist = LevelsExecutor(prev_pattern_hist, level);
 				dominant_patterns_ratio = calculatePatternsRatio(current_pattern_hist, numRows);
-				String dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows);
+				String dominant_pattern = findDominantPattern(dominant_patterns_ratio, numRows, threshold);
 				if(dominant_pattern != null) { //found pattern
 					detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, level);
-//					dominant_patterns_per_column.add(dominant_pattern);
 					break;
 				}
 				current_level++;
@@ -898,7 +897,6 @@ public class UtilFunctions {
 
 			if(current_level == LEVEL_ENUM.values().length) {
 				System.out.println("he have not found a dominant pattern for column " + idx);
-//				dominant_patterns_per_column.add("null");
 			}
 
 		}
@@ -924,11 +922,13 @@ public class UtilFunctions {
 		return patterns_ratio_map;
 	}
 
-	public static String findDominantPattern(Map<String, Double> dominant_patterns, int nr_entries) {
+	public static String findDominantPattern(Map<String, Double> dominant_patterns, int nr_entries, double threshold) {
 
-		// set threshold between 0.7 and 0.97 - a dominant pattern must have at least 70% occurence - max 100%
-		double threshold = Math.min(0.97, 1 - (3.0 / nr_entries));
-		threshold = Math.max(0.7, threshold);
+		// if not provided we use this default value between 0.7 and .97 as lower boundary
+		if(threshold == 0) {
+			threshold = Math.min(0.97, 1 - (3.0 / nr_entries));
+			threshold = Math.max(0.7, threshold);
+		}
 
 		Iterator it = dominant_patterns.entrySet().iterator(); // iterate over all patterns
 		while(it.hasNext()) {
@@ -1059,7 +1059,7 @@ public class UtilFunctions {
 		boolean currently_alphabetic = false;
 		for (char ch : chars) {
 			if(ch == UPPER || ch == LOWER) {
-				if(!currently_alphabetic) { // concat u+l+ to a+
+				if(!currently_alphabetic) {
 					currently_alphabetic = true;
 					tmp.append(ALPHA);
 				}

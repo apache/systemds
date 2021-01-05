@@ -18,6 +18,12 @@
 # under the License.
 #
 #------------------------------------------------------------
-dmv = function(Frame[Unknown] F) return (Frame[Unknown] Y) {
-  Y = map(F, "UtilFunctions.calculateAttributeTypes()")
+
+s_dmv = function(Frame[String] X, Double threshold=0.8, String replace="NA") return (Frame[String] Y) {
+
+  if( threshold < 0 | threshold > 1 )
+    stop("Stopping due to invalid input, threshold required in interval [0, 1] found " + threshold)
+
+  Y = map(X, "UtilFunctions.calculateAttributeTypes(" + threshold + "," + replace + ")")
 }
+

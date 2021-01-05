@@ -80,7 +80,6 @@ public class BuiltinDMVTest extends AutomatedTestBase {
         FrameBlock f = generateRandomFrameBlock(7, 5, teststrings);
         String[] disguised_values = new String[]{"Patrick-Lovric-Weg-666", "?", "45", "ka", "9999"};
         ArrayList<List<Integer>> positions = getDisguisedPositions(f, 1, disguised_values);
-        System.out.println(positions);
         runMissingValueTest(f, ExecType.CP, 0.7,"NA", positions);
     }
 

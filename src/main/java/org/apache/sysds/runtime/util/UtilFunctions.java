@@ -624,29 +624,15 @@ public class UtilFunctions {
 		return "\"" + s + "\"";
 	}
 
-  public static int getAsciiAtIdx(String s, int idx) {
-    int strlen = s.length();
-    int c = 0;
-    int javaIdx = idx - 1;
-    if (javaIdx >= 0 && javaIdx < strlen) {
-      c = (int)s.charAt(javaIdx);
-    }
-    return c; 
-  }
-
-  public static String stringToInts(String s) {
-    int strlen = s.length();
-    String res = "";
-    if (strlen == 0) return res;
-    char[] chars = s.toCharArray();
-    int c = (int)s.charAt(0);
-    res += Integer.toString(c) + " ";
-    for (int i=1; i<strlen; ++i) {
-      c = (int)s.charAt(i);
-      res += Integer.toString(c) + " ";
-    }
-    return res; 
-  }
+	public static int getAsciiAtIdx(String s, int idx) {
+		int strlen = s.length();
+		int c = 0;
+		int javaIdx = idx - 1;
+		if (javaIdx >= 0 && javaIdx < strlen) {
+			c = (int)s.charAt(javaIdx);
+		}
+		return c;
+	}
 
 	/**
 	 * Parses a memory size with optional g/m/k quantifiers into its

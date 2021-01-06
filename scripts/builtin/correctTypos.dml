@@ -55,231 +55,231 @@
 # TODO: future: add parameter for list of words that are sure to be correct
 
 s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05, Integer distance_threshold=2,
-    Boolean decapitalize=TRUE, Boolean correct=TRUE, Boolean is_verbose=FALSE)
-  return (Frame[String] Y)
+		Boolean decapitalize=TRUE, Boolean correct=TRUE, Boolean is_verbose=FALSE)
+	return (Frame[String] Y)
 {
-  if(is_verbose)
-    print ("BEGIN CORRECT-TYPOS SCRIPT");
+	if(is_verbose)
+		print ("BEGIN CORRECT-TYPOS SCRIPT");
 
-  num_strings = length(strings);
+	num_strings = length(strings);
 
-  if(is_verbose)
-    print("num strings: " + num_strings + "\n")
+	if(is_verbose)
+		print("num strings: " + num_strings + "\n")
 
-  if (decapitalize)
-    strings = map(strings, "s -> s.toLowerCase()");
-  Y = strings
+	if (decapitalize)
+		strings = map(strings, "s -> s.toLowerCase()");
+	Y = strings
 
-  # build dictionary
-  current_string = as.scalar(strings[1]);
-  dict = cbind(as.frame(current_string), as.frame(1));
-  for (i in 2:num_strings) {
-    current_string = as.scalar(strings[i]);
-    dict = insertOrIncrement(current_string, dict);
-  }
-  strings = dict[,1];
-  frequencies = as.matrix(dict[,2]) / num_strings;
-  lengths = as.matrix(map(strings, "s -> s.length()"));
-  num_different_strings = nrow(strings);
-  if (is_verbose) {
-    print("dict:" )
-    print(toString(dict));
-    print("frequencies: ");
-    print(toString(frequencies));
-    print("lengths:")
-    print(toString(lengths))
-  }
+	# build dictionary
+	current_string = as.scalar(strings[1]);
+	dict = cbind(as.frame(current_string), as.frame(1));
+	for (i in 2:num_strings) {
+		current_string = as.scalar(strings[i]);
+		dict = insertOrIncrement(current_string, dict);
+	}
+	strings = dict[,1];
+	frequencies = as.matrix(dict[,2]) / num_strings;
+	lengths = as.matrix(map(strings, "s -> s.length()"));
+	num_different_strings = nrow(strings);
+	if (is_verbose) {
+		print("dict:" )
+		print(toString(dict));
+		print("frequencies: ");
+		print(toString(frequencies));
+		print("lengths:")
+		print(toString(lengths))
+	}
 
-  # generate ascii matrix
-  max_len = max(lengths);
-  if (is_verbose) {
-    print("max_len: " + max_len + "\n");
-  }
-  # TODO: when proper lambda expressions are supported: rewrite in not so hacky
-  ascii_matrix = matrix(0, rows = max_len, cols = num_different_strings)
-  parfor (i in 1:num_different_strings) {
-    for (j in 1:as.scalar(lengths[i, 1])) {
-      tmp = as.matrix(map(strings[i,], "s -> UtilFunctions.getAsciiAtIdx(s, " + j + ")"));
-      ascii_matrix[j, i] = tmp[1, 1];
-    }
-  }
-  if (is_verbose) {
-    print("ascii_matrix: ")
-    print(toString(ascii_matrix));
-  }
+	# generate ascii matrix
+	max_len = max(lengths);
+	if (is_verbose) {
+		print("max_len: " + max_len + "\n");
+	}
+	# TODO: when proper lambda expressions are supported: rewrite in not so hacky
+	ascii_matrix = matrix(0, rows = max_len, cols = num_different_strings)
+	parfor (i in 1:num_different_strings) {
+		for (j in 1:as.scalar(lengths[i, 1])) {
+			tmp = as.matrix(map(strings[i,], "s -> UtilFunctions.getAsciiAtIdx(s, " + j + ")"));
+			ascii_matrix[j, i] = tmp[1, 1];
+		}
+	}
+	if (is_verbose) {
+		print("ascii_matrix: ")
+		print(toString(ascii_matrix));
+	}
 
-  # create upper triangular matrix with distances
-  distance_matrix = matrix(0, rows=num_different_strings, cols=num_different_strings);
-  parfor (i in 1:num_different_strings) {
-    parfor (j in i:num_different_strings) {
-      if (i != j) {
-        if(abs(as.scalar(lengths[i, 1]) - as.scalar(lengths[j , 1])) >= distance_threshold) {
-          distance_matrix[i, j] = 42000;
-        } else {
-          A = ascii_matrix[1:as.scalar(lengths[i,1]), i];
-          B = ascii_matrix[1:as.scalar(lengths[j,1]), j];
-          d = damerauLevenshteinDistanceBound(A, B, distance_threshold, FALSE);
-          if (d == -1) {
-            distance_matrix[i, j] = 42000;
-          } else {
-            distance_matrix[i, j] = d;
-          }
-        }
-      }
-    }
-  }
-  upper_triangle = upper.tri(target=distance_matrix, values=TRUE);
-  distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, rows=num_different_strings, cols=1));
+	# create upper triangular matrix with distances
+	distance_matrix = matrix(0, rows=num_different_strings, cols=num_different_strings);
+	parfor (i in 1:num_different_strings) {
+		parfor (j in i:num_different_strings) {
+			if (i != j) {
+				if(abs(as.scalar(lengths[i, 1]) - as.scalar(lengths[j , 1])) >= distance_threshold) {
+					distance_matrix[i, j] = 42000;
+				} else {
+					A = ascii_matrix[1:as.scalar(lengths[i,1]), i];
+					B = ascii_matrix[1:as.scalar(lengths[j,1]), j];
+					d = damerauLevenshteinDistanceBound(A, B, distance_threshold, FALSE);
+					if (d == -1) {
+						distance_matrix[i, j] = 42000;
+					} else {
+						distance_matrix[i, j] = d;
+					}
+				}
+			}
+		}
+	}
+	upper_triangle = upper.tri(target=distance_matrix, values=TRUE);
+	distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, rows=num_different_strings, cols=1));
 
-  sorted_frequency_idxs = order(target=frequencies, index.return=TRUE);
-  if (is_verbose) {
-    print("DISTANCE MATRIX: ");
-    print(toString(distance_matrix));
-    print("sorted frequency idxs: ");
-    print(toString(sorted_frequency_idxs));
-  }
-  
-  # correct strings
-  for (i in 1:num_different_strings) {
-    idx = as.integer(as.scalar(sorted_frequency_idxs[i])); # lowest frequency idx
-    frequency = as.scalar(frequencies[idx]);
-    if (is_verbose) print("idx: " + idx + " - frequency: " + frequency);
-    if (frequency < frequency_threshold) {
-      min_idxs = t(order(target=t(distance_matrix[idx,]), index.return=TRUE));
+	sorted_frequency_idxs = order(target=frequencies, index.return=TRUE);
+	if (is_verbose) {
+		print("DISTANCE MATRIX: ");
+		print(toString(distance_matrix));
+		print("sorted frequency idxs: ");
+		print(toString(sorted_frequency_idxs));
+	}
+	
+	# correct strings
+	for (i in 1:num_different_strings) {
+		idx = as.integer(as.scalar(sorted_frequency_idxs[i])); # lowest frequency idx
+		frequency = as.scalar(frequencies[idx]);
+		if (is_verbose) print("idx: " + idx + " - frequency: " + frequency);
+		if (frequency < frequency_threshold) {
+			min_idxs = t(order(target=t(distance_matrix[idx,]), index.return=TRUE));
 
-      j = 1;
-      break=FALSE;
-      while (j <= num_different_strings & !break) {
-        min_idx = as.integer(as.scalar(min_idxs[,j]));
-        min = as.integer(as.scalar(distance_matrix[idx, min_idx]));
-        replacement_frequency = as.scalar(frequencies[min_idx]);
+			j = 1;
+			break=FALSE;
+			while (j <= num_different_strings & !break) {
+				min_idx = as.integer(as.scalar(min_idxs[,j]));
+				min = as.integer(as.scalar(distance_matrix[idx, min_idx]));
+				replacement_frequency = as.scalar(frequencies[min_idx]);
 
-        # TODO: additional parameter for replacement_frequency?
-        if (min < distance_threshold & replacement_frequency > frequency_threshold/2) {
-          to_replace = as.scalar(strings[idx,]);
-          replacement = as.scalar(strings[min_idx,]);
-          if (is_verbose|!correct) print("Replacement: " + to_replace + "(" + frequency + ")" + " with " + replacement + "(" + replacement_frequency + ")" + " dist: " + min);
-          if (correct) 
-            Y = replaceStrings(replacement, to_replace, Y);
-          break=TRUE;
-        }
-        j += 1;
-      }
-    }
-  }
-  if (is_verbose) {
-    print("Corrected Strings: ");
-    print(toString(Y));
-  }
+				# TODO: additional parameter for replacement_frequency?
+				if (min < distance_threshold & replacement_frequency > frequency_threshold/2) {
+					to_replace = as.scalar(strings[idx,]);
+					replacement = as.scalar(strings[min_idx,]);
+					if (is_verbose|!correct) print("Replacement: " + to_replace + "(" + frequency + ")" + " with " + replacement + "(" + replacement_frequency + ")" + " dist: " + min);
+					if (correct) 
+						Y = replaceStrings(replacement, to_replace, Y);
+					break=TRUE;
+				}
+				j += 1;
+			}
+		}
+	}
+	if (is_verbose) {
+		print("Corrected Strings: ");
+		print(toString(Y));
+	}
 }
 
 
 replaceStrings = function(String replacement, String to_replace, Frame[String] strings)
-  return(Frame[String] strings) 
+	return(Frame[String] strings) 
 {
-  for (i in 1:nrow(strings)) {
-    if (as.scalar(strings[i,]) == to_replace) {
-      strings[i,] = replacement;
-    }
-  }
+	for (i in 1:nrow(strings)) {
+		if (as.scalar(strings[i,]) == to_replace) {
+			strings[i,] = replacement;
+		}
+	}
 }
 
 
 insertOrIncrement = function(String str, Frame[Unknown] dict)
-  return(Frame[Unknown] dict)
+	return(Frame[Unknown] dict)
 {
-  i = 1;
-  ret = FALSE;
-  break = FALSE;
-  while (i <= nrow(dict) & !break) {
-    # print(as.scalar(dict[i, 1]) + str);
-    # print(toString(as.scalar(dict[i, 1])) + str);
-    if (as.scalar(dict[i, 1]) == str) {
-      value = as.integer(as.scalar(dict[i, 2]) + 1);
-      dict[i, 2] = value;
-      # print("Incrementing to " + value);
-      contains = TRUE;
-      break = TRUE;
-    }
-    i += 1;
-  }
-  if (!break) {
-    # print("Adding row");
-    dict = rbind(dict, cbind(as.frame(str), as.frame(1)));
-  }
+	i = 1;
+	ret = FALSE;
+	break = FALSE;
+	while (i <= nrow(dict) & !break) {
+		# print(as.scalar(dict[i, 1]) + str);
+		# print(toString(as.scalar(dict[i, 1])) + str);
+		if (as.scalar(dict[i, 1]) == str) {
+			value = as.integer(as.scalar(dict[i, 2]) + 1);
+			dict[i, 2] = value;
+			# print("Incrementing to " + value);
+			contains = TRUE;
+			break = TRUE;
+		}
+		i += 1;
+	}
+	if (!break) {
+		# print("Adding row");
+		dict = rbind(dict, cbind(as.frame(str), as.frame(1)));
+	}
 }
 
 
 damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, double bound, Boolean is_verbose) 
-  return(double dl_distance) {
+	return(double dl_distance) {
 
-  dl_matrix = matrix(0, rows = length(A) + 1, cols = length(B) + 1);
-  dl_matrix[length(A) + 1, length(B) + 1] = -1;
+	dl_matrix = matrix(0, rows = length(A) + 1, cols = length(B) + 1);
+	dl_matrix[length(A) + 1, length(B) + 1] = -1;
 
-  for (j in 2:length(B) + 1) {
-    dl_matrix[1, j] = j - 1;
-  }
+	for (j in 2:length(B) + 1) {
+		dl_matrix[1, j] = j - 1;
+	}
 
-  dl_matrix[2, 1] = 1;
+	dl_matrix[2, 1] = 1;
 
-  for (j in 2:length(B) + 1) {
-    if (as.scalar(A[1]) == as.scalar(B[j - 1])) {
-      cost = 0;
-    } else {
-      cost = 1;
-    }
-    dl_matrix[2, j] = min(min(
-      dl_matrix[2, j - 1] + 1, 
-      dl_matrix[1, j] + 1),
-      dl_matrix[1, j - 1] + cost);
-  }
+	for (j in 2:length(B) + 1) {
+		if (as.scalar(A[1]) == as.scalar(B[j - 1])) {
+			cost = 0;
+		} else {
+			cost = 1;
+		}
+		dl_matrix[2, j] = min(min(
+			dl_matrix[2, j - 1] + 1, 
+			dl_matrix[1, j] + 1),
+			dl_matrix[1, j - 1] + cost);
+	}
 
-  i = 2;
-  break_condition = FALSE;
-  while (i < length(A) + 1 & !break_condition) {
-    i += 1;
+	i = 2;
+	break_condition = FALSE;
+	while (i < length(A) + 1 & !break_condition) {
+		i += 1;
 
-    dl_matrix[i, 1] = i - 1;
+		dl_matrix[i, 1] = i - 1;
 
-    if (as.scalar(A[i - 1]) == as.scalar(B[1])) {
-      cost = 0;
-    } else {
-      cost = 1;
-    }
-    dl_matrix[i, 2] = min(min(
-      dl_matrix[i - 1, 2] + 1, 
-      dl_matrix[i, 1] + 1),
-      dl_matrix[i - 1, 1] + cost);
+		if (as.scalar(A[i - 1]) == as.scalar(B[1])) {
+			cost = 0;
+		} else {
+			cost = 1;
+		}
+		dl_matrix[i, 2] = min(min(
+			dl_matrix[i - 1, 2] + 1, 
+			dl_matrix[i, 1] + 1),
+			dl_matrix[i - 1, 1] + cost);
 
-    for (j in 3:length(B) + 1) {
-      if (as.scalar(A[i - 1]) == as.scalar(B[j - 1])) {
-        cost = 0;
-      } else {
-        cost = 1;
-      }
-      if (as.scalar(A[i - 1]) == as.scalar(B[j - 2]) & as.scalar(A[i - 2]) == as.scalar(B[j - 1])) {
-        dl_matrix[i, j] = min(min(
-          dl_matrix[i, j - 1] + 1, 
-          dl_matrix[i - 1, j] + 1), min(
-          dl_matrix[i - 1, j - 1] + cost,
-          dl_matrix[i - 2, j - 2] +  1));
-      } else {
-        dl_matrix[i, j] = min(min(
-          dl_matrix[i, j - 1] + 1, 
-          dl_matrix[i - 1, j] + 1),
-          dl_matrix[i - 1, j - 1] + cost);   
-      }
-    }
+		for (j in 3:length(B) + 1) {
+			if (as.scalar(A[i - 1]) == as.scalar(B[j - 1])) {
+				cost = 0;
+			} else {
+				cost = 1;
+			}
+			if (as.scalar(A[i - 1]) == as.scalar(B[j - 2]) & as.scalar(A[i - 2]) == as.scalar(B[j - 1])) {
+				dl_matrix[i, j] = min(min(
+					dl_matrix[i, j - 1] + 1, 
+					dl_matrix[i - 1, j] + 1), min(
+					dl_matrix[i - 1, j - 1] + cost,
+					dl_matrix[i - 2, j - 2] +  1));
+			} else {
+				dl_matrix[i, j] = min(min(
+					dl_matrix[i, j - 1] + 1, 
+					dl_matrix[i - 1, j] + 1),
+					dl_matrix[i - 1, j - 1] + cost);   
+			}
+		}
 
-    if( min(dl_matrix[i - 1, ]) > bound & min(dl_matrix[i, ]) > bound) {
-      break_condition = TRUE;
-    }
-  }
+		if( min(dl_matrix[i - 1, ]) > bound & min(dl_matrix[i, ]) > bound) {
+			break_condition = TRUE;
+		}
+	}
 
-  if (is_verbose){
-    print("dl distance matrix:")
-    print(toString(dl_matrix));
-  }
+	if (is_verbose){
+		print("dl distance matrix:")
+		print(toString(dl_matrix));
+	}
 
-  dl_distance = as.scalar(dl_matrix[length(A) + 1, length(B) + 1]);
+	dl_distance = as.scalar(dl_matrix[length(A) + 1, length(B) + 1]);
 }

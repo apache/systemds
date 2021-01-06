@@ -69,71 +69,71 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
 	}
 
-  // @Test
-  // public void testCorrectTyposCPReport() throws IOException {
-    // runCorrectTyposTest("TRUE", 0.1, 3, "FALSE", "FALSE", ExecType.CP);
-  // }
+	// @Test
+	// public void testCorrectTyposCPReport() throws IOException {
+		// runCorrectTyposTest("TRUE", 0.1, 3, "FALSE", "FALSE", ExecType.CP);
+	// }
 
-  @Test
-  public void testCorrectTyposCPCorrect() throws IOException {
-    runCorrectTyposTest("TRUE", 0.05, 3, "TRUE", "FALSE", 42, ExecType.CP);
-  }
+	@Test
+	public void testCorrectTyposCPCorrect() throws IOException {
+		runCorrectTyposTest("TRUE", 0.05, 3, "TRUE", "FALSE", 42, ExecType.CP);
+	}
 
-  // TODO: this test fails unless the new frames are printed before accessing them
-   /*@Test
+	// TODO: this test fails unless the new frames are printed before accessing them
+	/*@Test
 
-   public void testCorrectTyposSP() throws IOException {
-     runCorrectTyposTest("TRUE", 0.05, 3, "TRUE", "TRUE", 42, ExecType.SPARK);
-   }*/
+	public void testCorrectTyposSP() throws IOException {
+		runCorrectTyposTest("TRUE", 0.05, 3, "TRUE", "TRUE", 42, ExecType.SPARK);
+	}*/
 
 	
 	private void runCorrectTyposTest(String decapitalize, double frequency_threshold, 
-      int distance_threshold, String correct, String is_verbose, Integer seed,
-      ExecType instType) throws IOException
+			int distance_threshold, String correct, String is_verbose, Integer seed,
+			ExecType instType) throws IOException
 	{
 		ExecMode platformOld = setExecMode(instType);
 
-    System.out.println("Begin CorrectTyposTest");
-    try
-    {
-      loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		System.out.println("Begin CorrectTyposTest");
+		try
+		{
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
-      String HOME = SCRIPT_DIR + TEST_DIR;
-      fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
-      fullRScriptName = HOME + TEST_NAME + ".R";
-      programArgs = new String[]{
-        "-nvargs", "X=" + input("X"), "Y=" + output("Y"),
-        "frequency_threshold=" + frequency_threshold, 
-        "distance_threshold=" + distance_threshold,
-        "decapitalize=" + decapitalize,
-        "correct=" + correct,
-        "is_verbose=" + is_verbose};
-      rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			programArgs = new String[]{
+				"-nvargs", "X=" + input("X"), "Y=" + output("Y"),
+				"frequency_threshold=" + frequency_threshold, 
+				"distance_threshold=" + distance_threshold,
+				"decapitalize=" + decapitalize,
+				"correct=" + correct,
+				"is_verbose=" + is_verbose};
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-      System.out.println("Create dataset");
+			System.out.println("Create dataset");
 
-      if (seed != null) {
-      	generator = new Random(seed);
-	  } else {
-	  	generator = new Random();
-	  }
-      FrameBlock frame = new FrameBlock(schema);
-      FrameBlock verificationFrame = new FrameBlock(schema);
-      FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
-      initFrameData(frame, verificationFrame, decapitalize);
-      verificationFrame = verificationFrame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock());
-      writer.writeFrameToHDFS(frame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock()), input("X"), frame.getNumRows(), 1);
+			if (seed != null) {
+				generator = new Random(seed);
+		} else {
+			generator = new Random();
+		}
+			FrameBlock frame = new FrameBlock(schema);
+			FrameBlock verificationFrame = new FrameBlock(schema);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
+			initFrameData(frame, verificationFrame, decapitalize);
+			verificationFrame = verificationFrame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock());
+			writer.writeFrameToHDFS(frame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock()), input("X"), frame.getNumRows(), 1);
 
-      System.out.println("Run test");
-      runTest(true, false, null, -1);
-      System.out.println("DONE");
-      FrameBlock outputFrame = readDMLFrameFromHDFS("Y", FileFormat.CSV);
-      verifyFrameData(verificationFrame, outputFrame, schema);
-    }
-    finally {
-      rtplatform = platformOld;
-    }
+			System.out.println("Run test");
+			runTest(true, false, null, -1);
+			System.out.println("DONE");
+			FrameBlock outputFrame = readDMLFrameFromHDFS("Y", FileFormat.CSV);
+			verifyFrameData(verificationFrame, outputFrame, schema);
+		}
+		finally {
+			rtplatform = platformOld;
+		}
 	}
 
 	private static void initFrameData(FrameBlock frame, FrameBlock verificationFrame, String decapitalize) {
@@ -145,14 +145,14 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 		} else {
 			corruptedStrings = correctStrings;
 		}
-    if (decapitalize.equals("TRUE")) {
-      for (int i=0; i<correctStrings.length; ++i) {
-        correctStrings[i] = correctStrings[i].toLowerCase();
-      }
-    }
+		if (decapitalize.equals("TRUE")) {
+			for (int i=0; i<correctStrings.length; ++i) {
+				correctStrings[i] = correctStrings[i].toLowerCase();
+			}
+		}
 		frame.appendColumn(corruptedStrings);
-    verificationFrame.appendColumn(correctStrings);
-  }
+		verificationFrame.appendColumn(correctStrings);
+	}
 
 
 	private static String[] getCorrectData(int numberDataPoints, List<Integer> bins) {
@@ -183,7 +183,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	}
 
 	private static String[] getCorruptedData(String[] correctStrings, List<Integer> bins, int maxFrequencyErrors, int numberSwaps, int numberChanges, int numberAdds, int numberDeletions, int numberWrongCapitalizations) {
-    String[] data = correctStrings.clone();
+		String[] data = correctStrings.clone();
 		for (int i = 0; i < numberSwaps; i++) {
 			makeSwapErrors(data, bins, maxFrequencyErrors);
 		}
@@ -295,17 +295,17 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 		}
 	}
 
-  private static void verifyFrameData(FrameBlock verificationFrame, FrameBlock frame2, Types.ValueType[] schema) {
+	private static void verifyFrameData(FrameBlock verificationFrame, FrameBlock frame2, Types.ValueType[] schema) {
 		for (int i = 0; i < verificationFrame.getNumRows(); i++) {
 			for (int j = 0; j < verificationFrame.getNumColumns(); j++) {
-        String s1 = frame2.get(i, j).toString();
-        String s2 = verificationFrame.get(i, j).toString();
-        if (!s1.equals(s2)) {
-          System.out.println("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
-          Assert.fail("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
-        }
+				String s1 = frame2.get(i, j).toString();
+				String s2 = verificationFrame.get(i, j).toString();
+				if (!s1.equals(s2)) {
+					System.out.println("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
+					Assert.fail("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
+				}
 			}
-	  }
-  }
+		}
+	}
 
 }

@@ -61,7 +61,7 @@ limitations under the License.
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`winsorize`-Function](#winsorize-function)
     * [`gmm`-Function](#gmm-function)
-    
+    * [`correctTypos`-Function](#correcttypos-function)
     
 # Introduction
 
@@ -1349,4 +1349,36 @@ gmm(X=X, n_components = 3,  model = "VVV",  init_params = "random", iter = 100, 
 ```r
 X = read($1)
 [labels, df, bic] = gmm(X=X, n_components = 3,  model = "VVV",  init_params = "random", iter = 100, reg_covar = 0.000001, tol = 0.0001, verbose=TRUE)
+```
+
+## `correctTypos`-Function
+
+The `correctTypos` - function tries to correct typos in a given frame. This algorithm operates on the assumption that most strings are correct and simply swaps strings that do not occur often with similar strings that occur more often. If correct is set to FALSE only prints suggested corrections without effecting the frame.
+
+### Usage
+
+```r
+correctTypos(strings, frequency_threshold, distance_threshold, decapitalize, correct, is_verbose)
+```
+
+### Arguments
+
+| NAME    | TYPE           | DEFAULT  | Description |
+| :------ | :------------- | -------- | :---------- |
+| strings | String  |   ---  |    The nx1 input frame of corrupted strings |
+| frequency_threshold   |            Double   | 0.05 |    Strings that occur above this relative frequency level will not be corrected |
+| distance_threshold         |       Int   |    2   |     Max editing distance at which strings are considered similar |
+| decapitalize            |          Boolean  | TRUE  |   Decapitalize all strings before correction |
+| correct              |             Boolean  | TRUE |    Correct strings or only report potential errors |
+| is_verbose                    |    Boolean |  FALSE |   Print debug information |
+
+### Returns
+|   TYPE     |   Description|
+|  :------------- |  :---------- |
+|      String   |  Corrected nx1 output frame |
+
+### Example
+```r
+A = read(“file1”, data_type=”frame”, rows=2000, cols=1, format=”binary”)
+A_corrected = correctTypos(A, 0.02, 3, FALSE, TRUE)
 ```

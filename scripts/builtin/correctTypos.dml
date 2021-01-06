@@ -36,7 +36,7 @@
 # ----------------------------------------------------------------------------
 # NAME                              TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# X                                 String    ---      The nx1 input frame of corrupted strings
+# strings                           String    ---      The nx1 input frame of corrupted strings
 # frequency_threshold               Double    0.05     Strings that occur above this frequency level will not be corrected
 # distance_threshold                Int       2        Max distance at which strings are considered similar
 # decapitalize                      Boolean   TRUE     Decapitalize all strings before correction

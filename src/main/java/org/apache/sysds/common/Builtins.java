@@ -38,6 +38,7 @@ import org.apache.sysds.common.Types.ReturnType;
  */
 public enum Builtins {
 	//builtin functions
+	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),
 	ABSTAIN("abstain", true),
@@ -47,6 +48,7 @@ public enum Builtins {
 	ALS_DS("alsDS", true),
 	ASIN("asin", false),
 	ATAN("atan", false),
+	AUTOENCODER2LAYER("autoencoder_2layer", true),
 	AVG_POOL("avg_pool", false),
 	AVG_POOL_BACKWARD("avg_pool_backward", false),
 	BATCH_NORM2D("batch_norm2d", false, ReturnType.MULTI_RETURN),

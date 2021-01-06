@@ -1,0 +1,65 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+m_knnbf = function(
+    Matrix[Double] X,
+    Matrix[Double] T,
+    Integer k_value = 5
+  ) return(
+    Matrix[Double] PR
+  )
+{
+  # 1. Calculate squared euclidean distance matrix
+  D = calculateDistance(X, T);
+  # 2. Sort distance matrix
+  # 3. Return the k first entries
+  PR = sortAndGetK(D, k_value)
+  print(toString(PR))
+}
+
+
+calculateDistance = function(
+    Matrix[Double] R,
+    Matrix[Double] Q
+  ) return(
+    Matrix[Double] distances
+  )
+{
+  distances = l2norm(Q) %*% t(l2norm(R)) - 2.0 * R %*% t(Q);
+}
+
+l2norm = function(Matrix[Double] X) return (Matrix[Double] res) {
+  res = sqrt(rowSums(X * X));
+}
+
+sortAndGetK = function(Matrix[Double] D, Integer k)
+  return (Matrix[Double] knn_)
+{
+  if(nrow(D) < k)
+    stop("can not pick "+k+" nearest neighbours from "+nrow(D)+" total instances")
+
+#--  # compute the euclidean distance
+#--  diff = X - instance
+#--  square_diff = diff^2
+#--  distance = sqrt(rowSums(square_diff))
+  sort_dist = order(target = D, by = 1, decreasing= FALSE, index.return =  TRUE)
+  knn_ = sort_dist[2:k+1,]
+}

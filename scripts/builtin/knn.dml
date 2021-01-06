@@ -59,7 +59,7 @@
 # OUTPUT: Matrix PR, Matrix NNR, Matrix FEATURE_IMPORTANCE_VALUE
 #
 
-mainKNN = function(
+m_knn = function(
     matrix[double] Train,
     matrix[double] Test,
     matrix[double] CLType = " ",

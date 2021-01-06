@@ -102,8 +102,8 @@ public class BuiltinKNNTest extends AutomatedTestBase
     writeInputMatrixWithMTD("CL", CL, true);
 
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
-    programArgs = new String[] {"-exec", "-args",
-      "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value) +
+    programArgs = new String[] {"-nvargs",
+      "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
       "out_B=" + output(OUTPUT_NAME)};
 
     fullRScriptName = HOME + TEST_NAME + ".R";
@@ -111,11 +111,11 @@ public class BuiltinKNNTest extends AutomatedTestBase
 			expectedDir());
 
     // TODO: add this line when both test scripts are implemented
-    // runTest(true, false, null, -1);
+    runTest(true, false, null, -1);
     runRScript(true);
 
     // TODO: add this line when both test scripts are implemented
-    // compareResultsWithR(TEST_TOLERANCE);
+    compareResultsWithR(TEST_TOLERANCE);
 
     // restore execution mode
     setExecMode(platform_old);

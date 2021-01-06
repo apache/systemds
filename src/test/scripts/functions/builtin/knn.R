@@ -66,7 +66,7 @@ print("-----------")
 print(test_pred)
 print("-----------")
 # NNR is native NNR, do we realy need to test that?
-writeMM(as(R, "CsparseMatrix"), paste(args[1], "PR", sep=""));
+writeMM(as(test_pred, "CsparseMatrix"), paste(args[4], "B", sep=""));
 
 ## feature importance with random forest
 #install.packages("randomForest")

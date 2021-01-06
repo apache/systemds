@@ -30,6 +30,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -110,29 +111,25 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 
       System.out.println("Create dataset");
       FrameBlock frame = new FrameBlock(schema);
+      FrameBlock verificationFrame = new FrameBlock(schema);
       FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
-      int rows = initFrameData(frame);
-      int cols = 1;
-      // System.out.println("Write dataset");
-      // System.out.println(frame.getNumColumns());
-			writer.writeFrameToHDFS(frame.slice(0, rows - 1, 0, 0, new FrameBlock()), input("X"), rows, cols);
+      initFrameData(frame, verificationFrame, decapitalize);
+      verificationFrame = verificationFrame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock());
+      writer.writeFrameToHDFS(frame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock()), input("X"), frame.getNumRows(), 1);
 
       System.out.println("Run test");
       runTest(true, false, null, -1);
       System.out.println("DONE");
 
-      // TestUtils.compareDMLFrameWithJavaFrame(schema, , output("Y"));
-      //compare matrices
-      // HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
-      // HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
-      // TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+      FrameBlock outputFrame = readDMLFrameFromHDFS("Y", FileFormat.TEXT);
+      verifyFrameData(verificationFrame, outputFrame, schema);
     }
     finally {
       rtplatform = platformOld;
     }
 	}
 
-	private static int initFrameData(FrameBlock frame) {
+	private static void initFrameData(FrameBlock frame, FrameBlock verificationFrame, String decapitalize) {
 		int seed = 5;
 		generator = new Random(seed);
 		List<Integer> bins = new ArrayList<Integer>();
@@ -143,8 +140,13 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 		} else {
 			corruptedStrings = correctStrings;
 		}
+    if (decapitalize.equals("TRUE")) {
+      for (int i=0; i<correctStrings.length; ++i) {
+        correctStrings[i] = correctStrings[i].toLowerCase();
+      }
+    }
 		frame.appendColumn(corruptedStrings);
-		return corruptedStrings.length;
+    verificationFrame.appendColumn(correctStrings);
   }
 
 
@@ -175,7 +177,8 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 		return string_array;
 	}
 
-	private static String[] getCorruptedData(String[] data, List<Integer> bins, int maxFrequencyErrors, int numberSwaps, int numberChanges, int numberAdds, int numberDeletions, int numberWrongCapitalizations) {
+	private static String[] getCorruptedData(String[] correctStrings, List<Integer> bins, int maxFrequencyErrors, int numberSwaps, int numberChanges, int numberAdds, int numberDeletions, int numberWrongCapitalizations) {
+    String[] data = correctStrings.clone();
 		for (int i = 0; i < numberSwaps; i++) {
 			makeSwapErrors(data, bins, maxFrequencyErrors);
 		}
@@ -286,4 +289,18 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 			}
 		}
 	}
+
+  private static void verifyFrameData(FrameBlock verificationFrame, FrameBlock frame2, Types.ValueType[] schema) {
+		for (int i = 0; i < verificationFrame.getNumRows(); i++) {
+			for (int j = 0; j < verificationFrame.getNumColumns(); j++) {
+        String s1 = frame2.get(i, j).toString();
+        String s2 = verificationFrame.get(i, j).toString();
+        if (!s1.equals(s2)) {
+          System.out.println("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
+          // Assert.fail("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
+        }
+			}
+	  }
+  }
+
 }

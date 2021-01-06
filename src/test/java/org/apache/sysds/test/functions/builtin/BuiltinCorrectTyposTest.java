@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.builtin;
 
 // import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
@@ -50,7 +51,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	
 	private final static Types.ValueType[] schema = {Types.ValueType.STRING};
 
-	private final static int numberDataPoints = 100;
+	private final static int numberDataPoints = 500;
 	private final static int maxFrequencyErrors = 10;
 	private final static boolean corruptData = true;
 	// for every error number below between (1 and maxFrequencyErrors) identical errors are made
@@ -75,18 +76,19 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 
   @Test
   public void testCorrectTyposCPCorrect() throws IOException {
-    runCorrectTyposTest("TRUE", 0.1, 3, "TRUE", "TRUE", ExecType.CP);
+    runCorrectTyposTest("TRUE", 0.05, 3, "TRUE", "FALSE", 42, ExecType.CP);
   }
 
   // TODO: this test fails unless the new frames are printed before accessing them
-  // @Test
-  // public void testCorrectTyposSP() throws IOException {
-    // runCorrectTyposTest(true, ExecType.SPARK);
-  // }
+   /*@Test
+
+   public void testCorrectTyposSP() throws IOException {
+     runCorrectTyposTest("TRUE", 0.05, 3, "TRUE", "TRUE", 42, ExecType.SPARK);
+   }*/
 
 	
 	private void runCorrectTyposTest(String decapitalize, double frequency_threshold, 
-      int distance_threshold, String correct, String is_verbose, 
+      int distance_threshold, String correct, String is_verbose, Integer seed,
       ExecType instType) throws IOException
 	{
 		ExecMode platformOld = setExecMode(instType);
@@ -110,6 +112,12 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
       rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
       System.out.println("Create dataset");
+
+      if (seed != null) {
+      	generator = new Random(seed);
+	  } else {
+	  	generator = new Random();
+	  }
       FrameBlock frame = new FrameBlock(schema);
       FrameBlock verificationFrame = new FrameBlock(schema);
       FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
@@ -129,8 +137,6 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	}
 
 	private static void initFrameData(FrameBlock frame, FrameBlock verificationFrame, String decapitalize) {
-		int seed = 5;
-		generator = new Random(seed);
 		List<Integer> bins = new ArrayList<Integer>();
 		String[] correctStrings = getCorrectData(numberDataPoints, bins);
 		String[] corruptedStrings;
@@ -296,7 +302,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
         String s2 = verificationFrame.get(i, j).toString();
         if (!s1.equals(s2)) {
           System.out.println("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
-          // Assert.fail("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
+          Assert.fail("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal to the expected value '" + s2 + "'");
         }
 			}
 	  }

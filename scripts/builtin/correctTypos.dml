@@ -51,6 +51,8 @@
 # Y        String    "Y.frm"  Corrected nx1 output frame
 # ----------------------------------------------------------------------------
 
+# TODO: check if parfors are used correctly
+# TODO: future: add parameter for list of words that are sure to be correct
 
 s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05, Integer distance_threshold=2,
     Boolean decapitalize=TRUE, Boolean correct=TRUE, Boolean is_verbose=FALSE)
@@ -63,13 +65,10 @@ s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
 
   if(is_verbose)
     print("num strings: " + num_strings + "\n")
-    # print(toString(strings));
 
   if (decapitalize)
     strings = map(strings, "s -> s.toLowerCase()");
   Y = strings
-  # print(toString(strings));
-  # print(toString(lengths)); # DONT COMMENT THIS OUT
 
   # build dictionary
   current_string = as.scalar(strings[1]);
@@ -96,8 +95,9 @@ s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
   if (is_verbose) {
     print("max_len: " + max_len + "\n");
   }
+  # TODO: when proper lambda expressions are supported: rewrite in not so hacky
   ascii_matrix = matrix(0, rows = max_len, cols = num_different_strings)
-  for (i in 1:num_different_strings) {
+  parfor (i in 1:num_different_strings) {
     for (j in 1:as.scalar(lengths[i, 1])) {
       tmp = as.matrix(map(strings[i,], "s -> UtilFunctions.getAsciiAtIdx(s, " + j + ")"));
       ascii_matrix[j, i] = tmp[1, 1];
@@ -110,8 +110,8 @@ s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
 
   # create upper triangular matrix with distances
   distance_matrix = matrix(0, rows=num_different_strings, cols=num_different_strings);
-  for (i in 1:num_different_strings) {
-    for (j in i:num_different_strings) {
+  parfor (i in 1:num_different_strings) {
+    parfor (j in i:num_different_strings) {
       if (i != j) {
         A = ascii_matrix[1:as.scalar(lengths[i,1]), i];
         B = ascii_matrix[1:as.scalar(lengths[j,1]), j];
@@ -138,17 +138,13 @@ s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
     if (is_verbose) print("idx: " + idx + " - frequency: " + frequency);
     if (frequency < frequency_threshold) {
       min_idxs = t(order(target=t(distance_matrix[idx,]), index.return=TRUE));
-      # print(toString(min_idxs));
+
       j = 1;
       break=FALSE;
       while (j <= num_different_strings & !break) {
         min_idx = as.integer(as.scalar(min_idxs[,j]));
         min = as.integer(as.scalar(distance_matrix[idx, min_idx]));
         replacement_frequency = as.scalar(frequencies[min_idx]);
-
-        # to_replace = as.scalar(strings[idx,]);
-        # replacement = as.scalar(strings[min_idx,]);
-        # if (is_verbose) print("candidates: " + to_replace + "(" + frequency + ")" + " with " + replacement + "(" + replacement_frequency + ")" + " dist: " + min);
 
         # TODO: additional parameter for replacement_frequency?
         if (min < distance_threshold & replacement_frequency > frequency_threshold/2) {

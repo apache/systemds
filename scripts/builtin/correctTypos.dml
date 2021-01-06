@@ -27,33 +27,33 @@
 #   DOI:https://doi.org/10.1145/363958.363994
 # ----------------------------------------------------------------------------
 
-# Builtin function that implements the k-Means clustering algorithm
+# Builtin function that corrects corrupted frames of strings
+# This algorithm operates on the assumption that most strings are correct
+# and simply swaps strings that do not occur often with similar strings that 
+# occur more often
 #
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------
 # NAME                              TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# X                                 Double    ---      The input Matrix to do KMeans on.
-# k                                 Int       ---      Number of centroids
-# runs                              Int       10       Number of runs (with different initial centroids)
-# max_iter                          Int       1000     Maximum number of iterations per run
-# eps                               Double    0.000001 Tolerance (epsilon) for WCSS change ratio
-# is_verbose                        Boolean   FALSE    do not print per-iteration stats
-# avg_sample_size_per_centroid      Int       50       Average number of records per centroid in data samples
-# seed                              Int       -1       The seed used for initial sampling. If set to -1 random seeds are selected. 
+# X                                 String    ---      The nx1 input frame of corrupted strings
+# frequency_threshold               Double    0.05     Strings that occur above this frequency level will not be corrected
+# distance_threshold                Int       2        Max distance at which strings are considered similar
+# decapitalize                      Boolean   TRUE     Decapitalize all strings before correction
+# correct                           Boolean   TRUE     Correct strings or only report potential errors
+# is_verbose                        Boolean   FALSE    Print debug information
 #
 #
 # RETURN VALUES
 # ----------------------------------------------------------------------------
 # NAME     TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# Y        String    "Y.mtx"  The mapping of records to centroids
-# C        String    "C.mtx"  The output matrix with the centroids
+# Y        String    "Y.frm"  Corrected nx1 output frame
 # ----------------------------------------------------------------------------
 
 
-s_correctTypos = function(Frame[String] strings, Double frequency_threshold, Integer distance_threshold,
-    Boolean decapitalize, Boolean correct, Boolean is_verbose)
+s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05, Integer distance_threshold=2,
+    Boolean decapitalize=TRUE, Boolean correct=TRUE, Boolean is_verbose=FALSE)
   return (Frame[String] Y)
 {
   if(is_verbose)
@@ -65,7 +65,8 @@ s_correctTypos = function(Frame[String] strings, Double frequency_threshold, Int
     print("num strings: " + num_strings + "\n")
     # print(toString(strings));
 
-  strings = map(strings, "s -> s.toLowerCase()");
+  if (decapitalize)
+    strings = map(strings, "s -> s.toLowerCase()");
   Y = strings
   # print(toString(strings));
   # print(toString(lengths)); # DONT COMMENT THIS OUT
@@ -153,8 +154,9 @@ s_correctTypos = function(Frame[String] strings, Double frequency_threshold, Int
         if (min < distance_threshold & replacement_frequency > frequency_threshold/2) {
           to_replace = as.scalar(strings[idx,]);
           replacement = as.scalar(strings[min_idx,]);
-          if (is_verbose) print("replacing " + to_replace + "(" + frequency + ")" + " with " + replacement + "(" + replacement_frequency + ")" + " dist: " + min);
-          Y = replaceStrings(replacement, to_replace, Y);
+          if (is_verbose|!correct) print("Replacement: " + to_replace + "(" + frequency + ")" + " with " + replacement + "(" + replacement_frequency + ")" + " dist: " + min);
+          if (correct) 
+            Y = replaceStrings(replacement, to_replace, Y);
           break=TRUE;
         }
         j += 1;

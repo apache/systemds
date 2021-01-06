@@ -65,9 +65,14 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
 	}
 
+  // @Test
+  // public void testCorrectTyposCPReport() throws IOException {
+    // runCorrectTyposTest("TRUE", 0.1, 3, "FALSE", "FALSE", ExecType.CP);
+  // }
+
   @Test
-  public void testCorrectTyposCP() throws IOException {
-    runCorrectTyposTest(true, 0.1, 3, ExecType.CP);
+  public void testCorrectTyposCPCorrect() throws IOException {
+    runCorrectTyposTest("TRUE", 0.1, 3, "TRUE", "TRUE", ExecType.CP);
   }
 
   // TODO: this test fails unless the new frames are printed before accessing them
@@ -77,8 +82,9 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
   // }
 
 	
-	private void runCorrectTyposTest(boolean decapitalize, double frequency_threshold, 
-      int distance_threshold, ExecType instType) throws IOException
+	private void runCorrectTyposTest(String decapitalize, double frequency_threshold, 
+      int distance_threshold, String correct, String is_verbose, 
+      ExecType instType) throws IOException
 	{
 		ExecMode platformOld = setExecMode(instType);
 
@@ -95,7 +101,9 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
         "-nvargs", "X=" + input("X"), "Y=" + output("Y"),
         "frequency_threshold=" + frequency_threshold, 
         "distance_threshold=" + distance_threshold,
-        "decapitalize=" + decapitalize};
+        "decapitalize=" + decapitalize,
+        "correct=" + correct,
+        "is_verbose=" + is_verbose};
       rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
       System.out.println("Create dataset");

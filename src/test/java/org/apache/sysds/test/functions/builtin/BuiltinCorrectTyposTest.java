@@ -37,7 +37,7 @@ import org.apache.sysds.test.TestUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 import java.io.IOException;
 
@@ -60,6 +60,8 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	private final static int numberCharDeletions = 5;
 	private final static int numberWrongCapitalizations = 10;
 
+	private static Random generator;
+	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
@@ -131,6 +133,8 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	}
 
 	private static int initFrameData(FrameBlock frame) {
+		int seed = 5;
+		generator = new Random(seed);
 		List<Integer> bins = new ArrayList<Integer>();
 		String[] correctStrings = getCorrectData(numberDataPoints, bins);
 		String[] corruptedStrings;
@@ -155,7 +159,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 		int remainingDataPoints = numberDataPoints;
 		bins.add(0);
 		for (int i = 0; i < allCountries.length-1; i++) {
-			int rand = ThreadLocalRandom.current().nextInt(0, (int)(remainingDataPoints/Math.sqrt(allCountries.length)));
+			int rand = generator.nextInt((int)(remainingDataPoints/Math.sqrt(allCountries.length)));
 			for (int j = 0; j < rand; j++) {
 				chosenCountries.add(allCountries[i]);
 			}
@@ -193,15 +197,15 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 
 
 	private static void makeSwapErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = ThreadLocalRandom.current().nextInt(0, data.length);
+		int randIndex = generator.nextInt(data.length);
 		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
 		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
 		int leftIndex = bins.get(leftBinIndex);
 		int rightIndex = bins.get(rightBinIndex) - 1;
 
-		int charPos = ThreadLocalRandom.current().nextInt(1, data[randIndex].length());
-		for (int j = 0; j < ThreadLocalRandom.current().nextInt(1, maxFrequencyErrors + 1); j++) {
-			int randErrorIndex = ThreadLocalRandom.current().nextInt(leftIndex, rightIndex + 1);
+		int charPos = generator.nextInt(data[randIndex].length() - 1) + 1;
+		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
+			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
 			String str = data[randErrorIndex];
 			if (str.length() > 1 && charPos < str.length()) {
 				data[randErrorIndex] = str.substring(0, charPos - 1) + str.charAt(charPos) + str.charAt(charPos - 1) + str.substring(charPos + 1);
@@ -210,16 +214,16 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	}
 
 	private static void makeChangeErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = ThreadLocalRandom.current().nextInt(0, data.length);
+		int randIndex = generator.nextInt(data.length);
 		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
 		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
 		int leftIndex = bins.get(leftBinIndex);
 		int rightIndex = bins.get(rightBinIndex) - 1;
 
-		int charPos = ThreadLocalRandom.current().nextInt(0, data[randIndex].length());
-		String newChar = Character.toString((char)ThreadLocalRandom.current().nextInt('a', 'z' + 1));
-		for (int j = 0; j < ThreadLocalRandom.current().nextInt(1, maxFrequencyErrors + 1); j++) {
-			int randErrorIndex = ThreadLocalRandom.current().nextInt(leftIndex, rightIndex + 1);
+		int charPos = generator.nextInt(data[randIndex].length());
+		String newChar = Character.toString((char)(generator.nextInt('z' + 1 - 'a') + 'a'));
+		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
+			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
 			String str = data[randErrorIndex];
 			if (str.length() > 0 && charPos < str.length()) {
 				data[randErrorIndex] =  str.substring(0, charPos) + newChar + str.substring(charPos + 1);
@@ -228,16 +232,16 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	}
 
 	private static void makeAddErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = ThreadLocalRandom.current().nextInt(0, data.length);
+		int randIndex = generator.nextInt(data.length);
 		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
 		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
 		int leftIndex = bins.get(leftBinIndex);
 		int rightIndex = bins.get(rightBinIndex) - 1;
 
-		int charPos = ThreadLocalRandom.current().nextInt(0, data[randIndex].length() + 1);
-		String newChar = Character.toString((char)ThreadLocalRandom.current().nextInt('a', 'z' + 1));
-		for (int j = 0; j < ThreadLocalRandom.current().nextInt(1, maxFrequencyErrors + 1); j++) {
-			int randErrorIndex = ThreadLocalRandom.current().nextInt(leftIndex, rightIndex + 1);
+		int charPos = generator.nextInt(data[randIndex].length() + 1);
+		String newChar = Character.toString((char)(generator.nextInt('z' + 1 - 'a') + 'a'));
+		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
+			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
 			String str = data[randErrorIndex];
 			if (str.length() > 0 && charPos < str.length() + 1) {
 				data[randErrorIndex] =  str.substring(0, charPos) + newChar + str.substring(charPos);
@@ -246,15 +250,15 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	}
 
 	private static void makeDeletionErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = ThreadLocalRandom.current().nextInt(0, data.length);
+		int randIndex = generator.nextInt(data.length);
 		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
 		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
 		int leftIndex = bins.get(leftBinIndex);
 		int rightIndex = bins.get(rightBinIndex) - 1;
 
-		int charPos = ThreadLocalRandom.current().nextInt(0, data[randIndex].length());
-		for (int j = 0; j < ThreadLocalRandom.current().nextInt(1, maxFrequencyErrors + 1); j++) {
-			int randErrorIndex = ThreadLocalRandom.current().nextInt(leftIndex, rightIndex + 1);
+		int charPos = generator.nextInt(data[randIndex].length());
+		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
+			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
 			String str = data[randErrorIndex];
 			if (str.length() > 1 && charPos < str.length()) {
 				data[randErrorIndex] =  str.substring(0, charPos) + str.substring(charPos + 1);
@@ -263,14 +267,14 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	}
 
 	private static void makeCapitalizationErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = ThreadLocalRandom.current().nextInt(0, data.length);
+		int randIndex = generator.nextInt(data.length);
 		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
 		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
 		int leftIndex = bins.get(leftBinIndex);
 		int rightIndex = bins.get(rightBinIndex) - 1;
 
-		for (int j = 0; j < ThreadLocalRandom.current().nextInt(1, maxFrequencyErrors + 1); j++) {
-			int randErrorIndex = ThreadLocalRandom.current().nextInt(leftIndex, rightIndex + 1);
+		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
+			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
 			String str = data[randErrorIndex];
 			if (str.length() > 0) {
 				if (Character.isUpperCase(str.charAt(0))) {

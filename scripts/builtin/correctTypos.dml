@@ -113,10 +113,18 @@ s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
   parfor (i in 1:num_different_strings) {
     parfor (j in i:num_different_strings) {
       if (i != j) {
-        A = ascii_matrix[1:as.scalar(lengths[i,1]), i];
-        B = ascii_matrix[1:as.scalar(lengths[j,1]), j];
-        d = damerauLevenshteinDistanceBound(A, B, max(length(A), length(B)), FALSE);
-        distance_matrix[i, j] = d;
+        if(abs(as.scalar(lengths[i, 1]) - as.scalar(lengths[j , 1])) >= distance_threshold) {
+          distance_matrix[i, j] = 42000;
+        } else {
+          A = ascii_matrix[1:as.scalar(lengths[i,1]), i];
+          B = ascii_matrix[1:as.scalar(lengths[j,1]), j];
+          d = damerauLevenshteinDistanceBound(A, B, distance_threshold, FALSE);
+          if (d == -1) {
+            distance_matrix[i, j] = 42000;
+          } else {
+            distance_matrix[i, j] = d;
+          }
+        }
       }
     }
   }

@@ -52,14 +52,13 @@
 # ----------------------------------------------------------------------------
 
 
-s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean correct, 
-    Boolean is_verbose)
+s_correctTypos = function(Frame[String] strings, Double frequency_threshold, Integer distance_threshold,
+    Boolean decapitalize, Boolean correct, Boolean is_verbose)
   return (Frame[String] Y)
 {
   if(is_verbose)
     print ("BEGIN CORRECT-TYPOS SCRIPT");
 
-  Y = strings;
   num_strings = length(strings);
 
   if(is_verbose)
@@ -67,6 +66,7 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
     # print(toString(strings));
 
   strings = map(strings, "s -> s.toLowerCase()");
+  Y = strings
   # print(toString(strings));
   # print(toString(lengths)); # DONT COMMENT THIS OUT
 
@@ -78,13 +78,14 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
     dict = insertOrIncrement(current_string, dict);
   }
   strings = dict[,1];
-  frequencies = dict[,2];
+  frequencies = as.matrix(dict[,2]) / num_strings;
   lengths = as.matrix(map(strings, "s -> s.length()"));
   num_different_strings = nrow(strings);
-
   if (is_verbose) {
     print("dict:" )
     print(toString(dict));
+    print("frequencies: ");
+    print(toString(frequencies));
     print("lengths:")
     print(toString(lengths))
   }
@@ -106,12 +107,75 @@ s_correctTypos = function(Frame[String] strings, Boolean decapitalize, Boolean c
     print(toString(ascii_matrix));
   }
 
-  # TODO: create upper triangular matrix with distances
+  # create upper triangular matrix with distances
+  distance_matrix = matrix(0, rows=num_different_strings, cols=num_different_strings);
+  for (i in 1:num_different_strings) {
+    for (j in i:num_different_strings) {
+      if (i != j) {
+        A = ascii_matrix[1:as.scalar(lengths[i,1]), i];
+        B = ascii_matrix[1:as.scalar(lengths[j,1]), j];
+        d = damerauLevenshteinDistanceBound(A, B, max(length(A), length(B)), FALSE);
+        distance_matrix[i, j] = d;
+      }
+    }
+  }
+  upper_triangle = upper.tri(target=distance_matrix, values=TRUE);
+  distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, rows=num_different_strings, cols=1));
 
-  A = ascii_matrix[1:as.scalar(lengths[1,1]), 1];
-  B = ascii_matrix[1:as.scalar(lengths[2,1]), 2];
+  sorted_frequency_idxs = order(target=frequencies, index.return=TRUE);
+  if (is_verbose) {
+    print("DISTANCE MATRIX: ");
+    print(toString(distance_matrix));
+    print("sorted frequency idxs: ");
+    print(toString(sorted_frequency_idxs));
+  }
+  
+  # correct strings
+  for (i in 1:num_different_strings) {
+    idx = as.integer(as.scalar(sorted_frequency_idxs[i])); # lowest frequency idx
+    frequency = as.scalar(frequencies[idx]);
+    if (is_verbose) print("idx: " + idx + " - frequency: " + frequency);
+    if (frequency < frequency_threshold) {
+      min_idxs = t(order(target=t(distance_matrix[idx,]), index.return=TRUE));
+      # print(toString(min_idxs));
+      j = 1;
+      break=FALSE;
+      while (j <= num_different_strings & !break) {
+        min_idx = as.integer(as.scalar(min_idxs[,j]));
+        min = as.integer(as.scalar(distance_matrix[idx, min_idx]));
+        replacement_frequency = as.scalar(frequencies[min_idx]);
 
-  damerauLevenshteinDistanceBound(A, B, max(length(A), length(B)), is_verbose);
+        # to_replace = as.scalar(strings[idx,]);
+        # replacement = as.scalar(strings[min_idx,]);
+        # if (is_verbose) print("candidates: " + to_replace + "(" + frequency + ")" + " with " + replacement + "(" + replacement_frequency + ")" + " dist: " + min);
+
+        # TODO: additional parameter for replacement_frequency?
+        if (min < distance_threshold & replacement_frequency > frequency_threshold/2) {
+          to_replace = as.scalar(strings[idx,]);
+          replacement = as.scalar(strings[min_idx,]);
+          if (is_verbose) print("replacing " + to_replace + "(" + frequency + ")" + " with " + replacement + "(" + replacement_frequency + ")" + " dist: " + min);
+          Y = replaceStrings(replacement, to_replace, Y);
+          break=TRUE;
+        }
+        j += 1;
+      }
+    }
+  }
+  if (is_verbose) {
+    print("Corrected Strings: ");
+    print(toString(Y));
+  }
+}
+
+
+replaceStrings = function(String replacement, String to_replace, Frame[String] strings)
+  return(Frame[String] strings) 
+{
+  for (i in 1:nrow(strings)) {
+    if (as.scalar(strings[i,]) == to_replace) {
+      strings[i,] = replacement;
+    }
+  }
 }
 
 

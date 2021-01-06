@@ -22,5 +22,5 @@
 X = read($X, data_type="frame", format="csv", header=FALSE);
 correct = TRUE
 is_verbose = TRUE
-Y = correctTypos(X, $decapitalize, correct, is_verbose);
+Y = correctTypos(X, $frequency_threshold, $distance_threshold, $decapitalize, correct, is_verbose);
 write(Y, $Y)

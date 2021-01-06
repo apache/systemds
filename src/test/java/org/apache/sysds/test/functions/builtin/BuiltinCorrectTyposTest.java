@@ -49,23 +49,17 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	
 	private final static Types.ValueType[] schema = {Types.ValueType.STRING};
 
-	private final static int numberDataPoints = 1000;
-	private final static int maxFrequencyErrors = 40;
-	private final static boolean corruptData = false;
+	private final static int numberDataPoints = 100;
+	private final static int maxFrequencyErrors = 10;
+	private final static boolean corruptData = true;
 	// for every error number below between (1 and maxFrequencyErrors) identical errors are made
 	// errors can still overlap though
-	private final static int numberCharSwaps = 10;
-	private final static int numberCharChanges = 10;
-	private final static int numberCharAdds = 10;
-	private final static int numberCharDeletions = 10;
+	private final static int numberCharSwaps = 5;
+	private final static int numberCharChanges = 5;
+	private final static int numberCharAdds = 5;
+	private final static int numberCharDeletions = 5;
 	private final static int numberWrongCapitalizations = 10;
 
-	// private final static double eps = 1e-10;
-	// private final static int rows = 70;
-	// private final static int cols = 50;
-	// private final static double spSparse = 0.1;
-	// private final static double spDense = 0.9;
-	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
@@ -73,7 +67,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 
   @Test
   public void testCorrectTyposCP() throws IOException {
-    runCorrectTyposTest(true, ExecType.CP);
+    runCorrectTyposTest(true, 0.1, 3, ExecType.CP);
   }
 
   // TODO: this test fails unless the new frames are printed before accessing them
@@ -83,12 +77,12 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
   // }
 
 	
-	private void runCorrectTyposTest(boolean decapitalize, ExecType instType) throws IOException
+	private void runCorrectTyposTest(boolean decapitalize, double frequency_threshold, 
+      int distance_threshold, ExecType instType) throws IOException
 	{
 		ExecMode platformOld = setExecMode(instType);
 
     System.out.println("Begin CorrectTyposTest");
-		
     try
     {
       loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -99,6 +93,8 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
       fullRScriptName = HOME + TEST_NAME + ".R";
       programArgs = new String[]{
         "-nvargs", "X=" + input("X"), "Y=" + output("Y"),
+        "frequency_threshold=" + frequency_threshold, 
+        "distance_threshold=" + distance_threshold,
         "decapitalize=" + decapitalize};
       rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
@@ -115,6 +111,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
       runTest(true, false, null, -1);
       System.out.println("DONE");
 
+      // TestUtils.compareDMLFrameWithJavaFrame(schema, , output("Y"));
       //compare matrices
       // HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
       // HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");

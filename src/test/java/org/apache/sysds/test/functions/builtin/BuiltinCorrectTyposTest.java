@@ -120,8 +120,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
       System.out.println("Run test");
       runTest(true, false, null, -1);
       System.out.println("DONE");
-
-      FrameBlock outputFrame = readDMLFrameFromHDFS("Y", FileFormat.TEXT);
+      FrameBlock outputFrame = readDMLFrameFromHDFS("Y", FileFormat.CSV);
       verifyFrameData(verificationFrame, outputFrame, schema);
     }
     finally {

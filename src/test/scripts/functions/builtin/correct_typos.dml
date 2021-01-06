@@ -21,4 +21,4 @@
 
 X = read($X, data_type="frame", format="csv", header=FALSE);
 Y = correctTypos(X, $frequency_threshold, $distance_threshold, $decapitalize, $correct, $is_verbose);
-write(Y, $Y)
+write(Y, $Y, format="csv")

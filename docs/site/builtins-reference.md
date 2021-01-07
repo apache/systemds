@@ -1,6 +1,6 @@
 ---
 layout: site
-title: Buildin Reference
+title: Builtin Reference
 ---
 <!--
 {% comment %}

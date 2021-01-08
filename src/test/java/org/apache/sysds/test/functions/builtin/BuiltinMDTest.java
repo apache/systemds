@@ -20,16 +20,11 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.runtime.io.FrameWriter;
-import org.apache.sysds.runtime.io.FrameWriterFactory;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -118,7 +113,6 @@ public class BuiltinMDTest extends AutomatedTestBase {
 			double[][] A = getRandomMatrix(20, 6, 50, 500, 1, 2);
 			System.arraycopy(X, 0, A, 0, X.length);
 
-//			writeInputFrameWithMTD("X", A, false, schemaStrings, Types.FileFormat.CSV);
 			writeInputMatrixWithMTD("X", A, false);
 			writeInputMatrixWithMTD("LHSf", LHSf, true);
 			writeInputMatrixWithMTD("LHSt", LHSt, true);

@@ -82,7 +82,7 @@ getMDAdjacency = function(Frame[String] X, Matrix[Double] features, Matrix[Doubl
   adjacency = matrix(0, n, n)
 
   i = 1
-  while (i < ncol(features)) {
+  while (i <= ncol(features)) {
     # slice col
     pos = as.scalar(features[1, i])
     Xi = X[, pos]

@@ -811,45 +811,51 @@ public class RowAggTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
 			runTest(true, false, null, -1);
-			runRScript(true);
-			
-			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
-				|| heavyHittersContainsSubString("sp_spoofRA")
-				|| heavyHittersContainsSubString("gpu_SpoofCUDA_RA"));
-			
-			//ensure full aggregates for certain patterns
-			if( testname.equals(TEST_NAME15) )
-				Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
-			if( testname.equals(TEST_NAME17) )
-				Assert.assertTrue(!heavyHittersContainsSubString(RightIndex.OPCODE));
-			if( testname.equals(TEST_NAME28) || testname.equals(TEST_NAME45) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
-					&& !heavyHittersContainsSubString("sp_spoofRA", 2));
-			if( testname.equals(TEST_NAME30) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
-					&& !heavyHittersContainsSubString(RightIndex.OPCODE));
-			if( testname.equals(TEST_NAME31) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2));
-			if( testname.equals(TEST_NAME35) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
-					&& !heavyHittersContainsSubString("cbind"));
-			if( testname.equals(TEST_NAME36) )
-				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
-			if( testname.equals(TEST_NAME41) )
-				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
-			if( testname.equals(TEST_NAME42) )
-				Assert.assertTrue(!heavyHittersContainsSubString("min","nmin") 
-					&& !heavyHittersContainsSubString("spoof", 2));
-			if( testname.equals(TEST_NAME44) )
-				Assert.assertTrue(!heavyHittersContainsSubString("maxpooling") 
-					&& !heavyHittersContainsSubString("spoof", 2));
-			if( testname.equals(TEST_NAME46) )
-				Assert.assertTrue(!heavyHittersContainsSubString("conv2d") 
-					&& !heavyHittersContainsSubString("spoof", 2));
+			if(true) {
+				runRScript(true);
+
+				//compare matrices
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
+				HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("S");
+				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+
+				Assert
+					.assertTrue(heavyHittersContainsSubString("spoofRA") || heavyHittersContainsSubString("sp_spoofRA") || heavyHittersContainsSubString(
+						"gpu_SpoofCUDA_RA"));
+
+				//ensure full aggregates for certain patterns
+				if(testname.equals(TEST_NAME15))
+					Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
+				if(testname.equals(TEST_NAME17))
+					Assert.assertTrue(!heavyHittersContainsSubString(RightIndex.OPCODE));
+				if(testname.equals(TEST_NAME28) || testname.equals(TEST_NAME45))
+					Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2) && !heavyHittersContainsSubString(
+						"sp_spoofRA",
+						2));
+				if(testname.equals(TEST_NAME30))
+					Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2) && !heavyHittersContainsSubString(
+						RightIndex.OPCODE));
+				if(testname.equals(TEST_NAME31))
+					Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2));
+				if(testname.equals(TEST_NAME35))
+					Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2) && !heavyHittersContainsSubString(
+						"cbind"));
+				if(testname.equals(TEST_NAME36))
+					Assert.assertTrue(!heavyHittersContainsSubString("xor"));
+				if(testname.equals(TEST_NAME41))
+					Assert.assertTrue(!heavyHittersContainsSubString("seq"));
+				if(testname.equals(TEST_NAME42))
+					Assert.assertTrue(!heavyHittersContainsSubString("min", "nmin") && !heavyHittersContainsSubString(
+						"spoof",
+						2));
+				if(testname.equals(TEST_NAME44))
+					Assert.assertTrue(!heavyHittersContainsSubString("maxpooling") && !heavyHittersContainsSubString(
+						"spoof",
+						2));
+				if(testname.equals(TEST_NAME46))
+					Assert.assertTrue(!heavyHittersContainsSubString("conv2d") && !heavyHittersContainsSubString("spoof",
+						2));
+			}
 		}
 		finally {
 			resetExecMode(platformOld);

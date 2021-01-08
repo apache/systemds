@@ -2101,8 +2101,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public FrameBlock map(String lambdaExpr) {
-		if(lambdaExpr.contains("jaccardSim") || lambdaExpr.contains("levenshteinDistance") ||
-			lambdaExpr.contains("jaroDistance"))
+		if(lambdaExpr.contains("jaccardSim"))
 			return mapDist(getCompiledFunction2Args(lambdaExpr));
 		return map(getCompiledFunction(lambdaExpr));
 	}
@@ -2131,7 +2130,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			for (int i = j + 1; i < input._size; i++)
 				if(input.get(i) != null && input.get(j) != null) {
 					output[j][i] = lambdaExpr.apply(String.valueOf(input.get(j)), String.valueOf(input.get(i)));
-					output[i][j] = output[j][i];
+//					output[i][j] = output[j][i];
 				}
 		}
 

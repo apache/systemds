@@ -1558,7 +1558,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixFrameParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
 			output.setDataType(DataType.FRAME);
-			output.setDimensions(id.getDim1(), 1);
+			if(_args[1].getText().contains("jaccardSim"))
+				output.setDimensions(id.getDim1(), id.getDim1());
+			else
+				output.setDimensions(id.getDim1(), 1);
 			output.setBlocksize (id.getBlocksize());
 			output.setValueType(ValueType.STRING);
 			break;

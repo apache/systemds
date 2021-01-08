@@ -25,9 +25,9 @@ library("Matrix")
 library("matrixStats")
 
 
-X = matrix(seq(1,1500), 150, 10, byrow=TRUE);
+X = matrix(seq(1,150), 15, 10, byrow=TRUE);
 
 Y1 = X - max.col(X, ties.method="last") 
 R = Y1 / rowSums(Y1)
-
+print(R)
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

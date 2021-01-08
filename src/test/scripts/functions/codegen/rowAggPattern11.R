@@ -25,10 +25,9 @@ library("Matrix")
 library("matrixStats")
 
 
-X = matrix(seq(1,1500000), 150000, 10, byrow=TRUE);
+X = matrix(seq(1,150), 15, 10, byrow=TRUE);
 v = seq(1,10);
-y = seq(1,150000);
-
+y = seq(1,15);
 R = y - X %*% v;
-
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 
+print(R)
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep=""));

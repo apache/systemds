@@ -24,5 +24,5 @@ v = seq(1,150);
 
 Y = (X >= v); 
 R = Y / rowSums(Y);
-
+print(toString(R))
 write(R, $1)

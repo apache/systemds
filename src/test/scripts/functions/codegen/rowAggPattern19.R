@@ -24,8 +24,8 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-LT = matrix(1, 1500, 2);
-Y = matrix(2, 1500, 2);
+LT = matrix(1, 15, 2);
+Y = matrix(2, 15, 2);
   
 LT = LT - rowMaxs (LT) %*% matrix (1, 1, 2);
 exp_LT = exp (LT);

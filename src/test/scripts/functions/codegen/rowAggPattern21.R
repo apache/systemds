@@ -27,5 +27,5 @@ library("matrixStats")
 A = matrix(1, 1500, 7);
   
 R = as.matrix(sum(A / rowSums(A)));
-
+# print(R)
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

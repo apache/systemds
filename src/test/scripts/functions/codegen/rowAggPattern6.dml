@@ -22,8 +22,10 @@
 X = matrix(seq(1,15), rows=5, cols=3);
 v = seq(1,3);
 P = cbind(seq(1,5),seq(2,6));
-
+# print("P=")
+# print(toString(P))
 S = t(X) %*% ((P[,1] * (1-P[,1])) * (X %*% v));
-
+# print("S=")
+# print(toString(S))
 write(S,$1)
 

@@ -24,10 +24,16 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-X = matrix(seq(1,6000)/6000, 600, 10, byrow=TRUE);
-w = matrix(seq(1,2400)/2400, 600, 4, byrow=TRUE);
-v = matrix(seq(1,40)/40, 10, 4, byrow=TRUE);
+X = matrix(seq(1,60), 6, 10, byrow=TRUE);
+w = matrix(seq(1,24), 6, 4, byrow=TRUE);
+v = matrix(seq(1,40), 10, 4, byrow=TRUE);
 
-R = t(X) %*% (w * (X %*% v));
-
+X1=(X %*% v)
+X2=(w * X1)
+R = t(X) %*% X2;
+cat("\n----------------------\n")
+# print(X)
+print(X1)
+print(X2)
+print(R)
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

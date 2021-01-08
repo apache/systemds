@@ -22,5 +22,5 @@
 A = matrix(1, 1500, 7);
 
 R = as.matrix(sum(A / rowSums(A)));
-
+# print(toString(R))
 write(R, $1)

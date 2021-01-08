@@ -23,8 +23,10 @@ X= matrix( "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15", rows=5, cols=3)
 v=matrix(1,rows=3,cols=1)
 Y= matrix( "1 1 1 4 5 6 7 8 9 10 11 12 13 14 15", rows=5, cols=3)
 lamda=sum(Y)
+# print(lamda)
 #lamda=2
 S=t(X)%*%(lamda*(X%*%v))
+# print(toString(S))
 write(S,$1)
 
 

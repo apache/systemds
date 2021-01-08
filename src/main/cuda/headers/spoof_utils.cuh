@@ -28,6 +28,9 @@
 
 using uint32_t = unsigned int;
 
+__device__ bool debug_row() { return blockIdx.x == 1; };
+__device__ bool debug_thread() { return threadIdx.x == 0; }
+
 __constant__ double DOUBLE_EPS = 1.11022E-16; // 2 ^ -53
 __constant__ double FLOAT_EPS = 1.49012E-08; // 2 ^ -26
 __constant__ double EPSILON = 1E-11; // margin for comparisons ToDo: make consistent use of it
@@ -210,8 +213,8 @@ __device__ T dotProduct(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len) {
 	SumOp<T> agg_op;
 	ProductOp<T> load_op;
 	T ret =  BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
-	if(blockIdx.x == 0 && threadIdx.x == 0)
-		printf("bid=%d, ai=%d, dot=%f\n", blockIdx.x, ai, ret);
+//	if(blockIdx.x == 0 && threadIdx.x == 0)
+//		printf("bid=%d, ai=%d, dot=%f\n", blockIdx.x, ai, ret);
 	return ret;
 }
 
@@ -299,22 +302,27 @@ __device__ int vectCbindWrite(T a, T b, T* c) {
 
 // vect-vect
 template<typename T, typename OP>
-__device__ int vectWrite_(T* a, T* b, T* c, int ai, int ci, int len) {
-	uint i = threadIdx.x;
-//	if(blockIdx.x == 2 && threadIdx.x < 13)
-//		printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci + threadIdx.x, OP::exec(a[ai + i], b[ai + i]));
-	
+__device__ int vectWrite_(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len) {
+	uint32_t i = threadIdx.x;
+	const uint32_t& bid = blockIdx.x;
+
 	while (i < len) {
-		c[ci + i] = OP::exec(a[ai + i], b[ai + i]);
+		c[ci + i] = OP::exec(a[ai + i], b[bi + i]);
+		if(blockIdx.x == 1 && threadIdx.x < 4)
+			printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, bi=%d, ci=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
+//			   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, OP::exec(a[ai + i], b[bi + i]));
+				   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, c[ci+i]);
 		i += blockDim.x;
 	}
+	
+
 	return len;
 }
 
 // vect-scalar
 template<typename T, typename OP>
-__device__ int vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
-    uint i = threadIdx.x;
+__device__ int vectWrite_(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
+    uint32_t i = threadIdx.x;
 	if(blockIdx.x < 2 && threadIdx.x < 1)
 		printf("vecWrite_vs: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a[ai + i], b));
     while (i < len) {
@@ -326,8 +334,8 @@ __device__ int vectWrite_(T* a, T b, T* c, int ai, int ci, int len) {
 
 // scalar-vector
 template<typename T, typename OP>
-__device__ int vectWrite_(T a, T* b, T* c, int ai, int ci, int len) {
-	uint i = threadIdx.x;
+__device__ int vectWrite_(T a, T* b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
+	uint32_t i = threadIdx.x;
 //	if(blockIdx.x == 1 && threadIdx.x < 2)
 //		printf("vecWrite_sv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a, b[ai + i]););
 	
@@ -339,7 +347,7 @@ __device__ int vectWrite_(T a, T* b, T* c, int ai, int ci, int len) {
 }
 
 template<typename T>
-__device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
+__device__ void vectWrite(T* a, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
 //	if(blockIdx.x == 1 && threadIdx.x < 2)
 //		printf("vecWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ai + threadIdx.x, a[ai + threadIdx.x]);
 
@@ -347,12 +355,12 @@ __device__ void vectWrite(T* a, T* c, int ai, int ci, int len) {
 }
 
 template<typename T>
-__device__ void vectWrite(T* a, T* c, int ci, int len) {
+__device__ void vectWrite(T* a, T* c, uint32_t ci, uint32_t len) {
     vectWrite(a, c, 0, ci, len);
 }
 
 template<typename T>
-int vectLessequalWrite(T* a, T b, T* c, int ai, int len) {
+int vectLessequalWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 	return vectWrite_<T, LessEqualOp<T>>(a, b, c, ai, 0, len);
 }
 
@@ -362,22 +370,22 @@ int vectGreaterWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 }
 
 template<typename T>
-int vectGreaterequalWrite(T* a, T b, T* c, int ai, int len) {
+int vectGreaterequalWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
     return vectWrite_<T, GreaterEqualOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
-int vectDivWrite(T* a, T b, T* c, int ai, int len) {
+int vectDivWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
-int vectDivWrite(T a, T* b, T* c, int ai, int len) {
+int vectDivWrite(T a, T* b, T* c, uint32_t ai, uint32_t len) {
 	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
-int vectMultWrite(T* a, T b, T* c, int ai, int len) {
+int vectMultWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 //	if(blockIdx.x == 1 && threadIdx.x < 2)
 //		printf("vectMultWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d\n", blockIdx.x, threadIdx.x, ai, 0, len);
 	
@@ -389,7 +397,7 @@ int vectMultWrite(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t len) {
 //	if(blockIdx.x == 1 && threadIdx.x < 2)
 //		printf("vectMultWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d\n", blockIdx.x, threadIdx.x, ai, 0, len);
 
-	return vectWrite_<T, ProductOp<T>>(a, b, c, ai, bi, len);
+	return vectWrite_<T, ProductOp<T>>(a, b, c, ai, bi, 0, len);
 }
 
 template<typename T>
@@ -493,9 +501,9 @@ int vectMatrixMult(T* a, MatrixAccessor<T>& b, T* c, uint32_t ai, uint32_t bi, u
 //	for(uint32_t j = 0; j < m2clen; ++j, bix+=len) {
 		T result = dotProduct(a, b.vals(0), ai, bix, len);
 		if(threadIdx.x == 0) {
-			c[ai + j] = result;
-//			if(blockIdx.x == 0)
-				printf("vectMatrixMult bid=%d bix=%d len=%d m2clen=%d c[%d]=%f\n", blockIdx.x, bix, len, m2clen, ai+j, c[ai+j]);
+			c[bi + j] = result;
+			if(blockIdx.x == 1)
+				printf("vectMatrixMult bid=%d bix=%d len=%d m2clen=%d c[%d]=%4.3f\n", blockIdx.x, bix, len, m2clen, bi+j, c[bi+j]);
 		}
 	}
 	return len;
@@ -511,14 +519,15 @@ uint32_t vectOuterMultAdd(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t c
 //	return vectAdd_atomic<T, ProductOp<T>>(b, a[ai+threadIdx.x], c, bi, ci, len2, op);
 
 	uint32_t i = threadIdx.x;
-
+//	uint32_t bix = bi + blockIdx.x * len2;
+uint32_t bix = 0;
 	while (i < len1) {
 		if(a[ai + i != 0]) {
 			for(uint32_t j=0; j < len2; ++j) {
-				atomicAdd(&(c[i * len2 + j]), a[ai + i] * b[bi + j]);
-				if (blockIdx.x == 0 && threadIdx.x ==0)
-					printf("vectOuterMultAdd: bid=%d, tid=%d, ai=%d, bi=%d, ci=%d, len1=%d, len2=%d, a[%d]=%f, b[%d]=%f, c[%d]=%f\n",
-							blockIdx.x, threadIdx.x, ai, bi, ci, len1, len2, ai+i, a[ai+i], bi+j, b[bi+j], i*len2+j, c[i*len2+j]);
+				atomicAdd(&(c[i * len2 + j]), a[ai + i] * b[bix + j]);
+				if (debug_row() && debug_thread())
+					printf("vectOuterMultAdd: bid=%d, tid=%d, ai=%d, bix=%d, ci=%d, len1=%d, len2=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
+							blockIdx.x, threadIdx.x, ai, bix, ci, len1, len2, ai+i, a[ai+i], bix+j, b[bix+j], i*len2+j, c[i*len2+j]);
 
 
 //				vectAdd_atomic<T, ProductOp<T>>(b, a[ai+i], c, bi, ci, len2, op);

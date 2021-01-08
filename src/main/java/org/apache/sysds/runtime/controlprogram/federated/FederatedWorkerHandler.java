@@ -272,7 +272,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		ec.setVariable(varname, data);
 		if (DMLScript.LINEAGE)
 			// TODO: Identify MO uniquely. Use Adler32 checksum.
-			ec.getLineage().set(varname, new LineageItem(String.valueOf(request.getLineageHash(0))));
+			ec.getLineage().set(varname, new LineageItem(String.valueOf(request.getChecksum(0))));
 
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}

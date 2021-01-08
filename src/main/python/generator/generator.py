@@ -20,6 +20,11 @@
 # -------------------------------------------------------------
 
 from typing import Tuple, List
+import json
+
+# TODO: cant find directory resources
+#with open('resources/type_mapping.json') as json_file:
+#    type_mapping = json.load(json_file)
 
 class PythonAPIFileGenerator(object):
 
@@ -99,6 +104,9 @@ class PythonAPIFunctionGenerator(object):
         result = u""
         has_optional = False
         for param in parameters:
+            # map data types
+            # TODO: type mapping
+            # param = [type_mapping["type"].get(item, item) for item in param]
             if param[2] is not None:
                 has_optional = True
             else:
@@ -190,6 +198,9 @@ class PythonAPIFunctionGenerator(object):
     def format_value_checks(self, parameters :List[Tuple[str]]) -> str:
         result = ""
         for param in parameters:
+            if "Matrix" not in param[1]:
+                # This check is only needed for Matrix types
+                continue
             check = self.__class__.value_check_template.format(param=param[0])
             result = "{result}{check}".format(
                 result=result,
@@ -199,7 +210,9 @@ class PythonAPIFunctionGenerator(object):
     
 
 class PythonAPIDocumentationGenerator(object):
-    
+    python_multi_cmnt = "\"\"\""
+    param_str = "\n    :param {pname}: {meaning}"
+    return_str = "\n    :return: \'OperationNode\' containing {meaning} \n"
     def __init__(self):
         super(PythonAPIDocumentationGenerator, self).__init__()
 
@@ -214,13 +227,41 @@ class PythonAPIDocumentationGenerator(object):
             }
         @return: function header including '\"\"\"' at start and end
         """
-        raise NotImplementedError()
+        input_param = self.header_parameter_string(data["parameters"])
+        output_param = self.header_return_string(data["return_values"])
 
+        return self.__class__.python_multi_cmnt + input_param + output_param + "    " + self.__class__.python_multi_cmnt
 
+    def header_parameter_string(self, parameter:dict) -> str:
+        parameter_str = ""
+        for param in parameter:
+            parameter_str += self.__class__.param_str.format(pname=param[0], meaning=param[3])
+
+        return parameter_str
+
+    def header_return_string(self, parameter:dict) -> str:
+        meaning_str = ""
+
+        for param in parameter:
+            if len(meaning_str) > 0:
+                meaning_str += " & " + param[3]
+            else:
+                meaning_str += param[3]
+
+        return self.__class__.return_str.format(meaning=meaning_str.lower())
 
 
 #TODO: remove
 if __name__ == "__main__":
     generator = PythonAPIFunctionGenerator()
     data = {'function_header': "\"\"\"\n    sample header\n    \"\"\"",'function_name': 'kmeans', 'parameters': [('X', 'Matrix[Double]', None), ('k', 'Integer', '10'), ('runs', 'Integer', '10'), ('max_iter', 'Integer', '1000'), ('eps', 'Double', '0.000001'), ('is_verbose', 'Boolean', 'FALSE'), ('avg_sample_size_per_centroid', 'Integer', '50'), ('seed', 'Integer', '-1')], 'return_values': [('C', 'Matrix[Double]', None), ('Y', 'Matrix[Double]', None)]}
-    print(generator.generate_function(data))
+    document_generator = PythonAPIDocumentationGenerator()
+    header = {'function_name': None, 'parameters': [('X', 'Double', '---', 'The input Matrix to do KMeans on.'), ('k', 'Int', '---', 'Number of centroids'), ('runs', 'Int', '10', 'Number of runs (with different initial centroids)'), ('max_iter', 'Int', '1000', 'Maximum number of iterations per run'), ('eps', 'Double', '0.000001', 'Tolerance (epsilon) for WCSS change ratio'), ('is_verbose', 'Boolean', 'FALSE', 'do not print per-iteration stats'), ('avg_sample_size_per_centroid', 'Int', '50', 'Average number of records per centroid in data samples'), ('seed', 'Int', '-1', 'The seed used for initial sampling. If set to -1 random seeds are selected.')], 'return_values': [('Y', 'String', '"Y.mtx"', 'The mapping of records to centroids'), ('C', 'String', '"C.mtx"', 'The output matrix with the centroids')]}
+    function_header = document_generator.generate_documentation(header)
+    # print(function_header)
+
+    data["function_header"] = function_header
+    script_content = generator.generate_function(data)
+    print("---------------------------------------")
+    print(script_content)
+

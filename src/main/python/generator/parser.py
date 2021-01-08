@@ -22,14 +22,19 @@
 
 import os
 import re
+import json
+
+with open('resources/type_mapping.json') as json_file:
+    type_mapping = json.load(json_file)
 
 class FunctionParser(object):
-
     header_input_pattern = r"^[ \t]*[#]+[ \t]*input[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
     header_output_pattern = r"[\s#\-]*[#]+[ \t]*(return|output)[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
     function_pattern = r"^m_[\w]+[ \t]+=[ \t]+function[^#{]*$"
     parameter_pattern = r"^m_[\w]+[\s]+=[\s]+function\(([\w\[\]\s,\d=.\-]*)\)[\s]*return[\s]*\(([\w\[\]\s,\d=.\-]*)\)"
     path_delimiter = "/"
+    header_parameter_pattern = r"[\s#\-]*[#]+[ \t]*([\w|-]+)[\s]+([\w]+)[\s]+([\w,\d.\"\-]+)[\s]+([\w|\W]+)"
+    divider_pattern = r"[\s#\-]*"
 
     def __init__(self, path:str, ending:str='dml'):
         """
@@ -74,6 +79,7 @@ class FunctionParser(object):
         #pattern = re.compile(r"[\r\v\n\t]")
         #param_str = pattern.sub(" ", param_str)
         #print(param_str)
+        # TODO @anton: I've split the params by "=" see pca.dml, there are no spaces in between defaults
         params = re.split(r",[\s]*", param_str)
         parameters = []
         for param in params:
@@ -81,10 +87,31 @@ class FunctionParser(object):
             dml_type = splitted[0]
             name = splitted[1]
             default_value = None
+
             if len(splitted) == 4:
                 if splitted[2] == "=":
                     default_value = splitted[3]
+            elif "=" in name:
+                default_split = name.split("=")
+                name = default_split[0]
+                default_value = default_split[1]
             parameters.append((name, dml_type, default_value))
+        return parameters
+
+    def get_header_parameters(self, param_str: str):
+        parameters = list()
+        pattern = re.compile(self.__class__.header_parameter_pattern, flags=re.I)
+
+        for param_line in [s for s in param_str.split("\n") if s]:
+            match = pattern.match(param_line)
+            try:
+                parameters.append((match.group(1), match.group(2), match.group(3), match.group(4)))
+            except Exception as e:
+                if re.search(pattern=self.__class__.divider_pattern, string=param_line, flags=re.I | re.M) is not None:
+                    continue
+                print(e)
+                return None
+
         return parameters
 
     def parse_header(self, path:str):
@@ -98,14 +125,28 @@ class FunctionParser(object):
                 'return_values': [('retval1', 'description'),...]
             }
         """
-        data = {'function_name': None, 'parameters': [], 'return_values':[]}
-   
+        h_input = parser.find_header_input_params(path)
+        input_parameters = self.get_header_parameters(h_input)
+
+        h_output = parser.find_header_output_params(path)
+        output_parameters = self.get_header_parameters(h_output)
+
+        data = {'function_name': None, 'parameters': input_parameters, 'return_values':output_parameters}
+        return data
 
     def find_header_input_params(self, path:str):
         with open(path, 'r') as f:
             content = f.read()
         start = re.search(pattern=self.__class__.header_input_pattern, string=content, flags=re.I | re.M).end()
         end = re.search(pattern=self.__class__.header_output_pattern, string=content, flags=re.I | re.M).start()
+        header = content[start:end]
+        return header
+
+    def find_header_output_params(self, path:str):
+        with open(path, 'r') as f:
+            content = f.read()
+        start = re.search(pattern=self.__class__.header_output_pattern, string=content, flags=re.I | re.M).end()
+        end = re.search(pattern=self.__class__.function_pattern, string=content, flags=re.I | re.M).start()
         header = content[start:end]
         return header
 
@@ -126,11 +167,38 @@ class FunctionParser(object):
                 if f[-4:] == self.ending:
                     yield f
 
+    def check_parameters(self, header, data):
+        header_param_names = [p[0].lower() for p in header["parameters"]]
+        data_param_names = [p[0].lower() for p in data["parameters"]]
+        if header_param_names != data_param_names:
+            raise ValueError("The parameter names of the function does not match with the documentation")
+
+        header_param_type = [p[1].lower() for p in header["parameters"]]
+        header_param_type = [type_mapping["type"].get(item, item) for item in header_param_type]
+
+        data_param_type = [p[1].lower() for p in data["parameters"]]
+        data_param_type = [type_mapping["type"].get(item, item) for item in data_param_type]
+        if header_param_type != data_param_type:
+            raise ValueError("The parameter type of the function does not match with the documentation")
+
+        header_param_default = [p[2] for p in header["parameters"]]
+        header_param_default = [type_mapping["default"].get(item, item) for item in header_param_default]
+        data_param_default = [str(p[2]) for p in data["parameters"]]
+        data_param_default = [type_mapping["default"].get(item, item) for item in data_param_default]
+        if header_param_default != data_param_default:
+            raise ValueError("The parameter default of the function does not match with the documentation")
+
 
 #TODO Remove
+
 if __name__ == "__main__":
     parser = FunctionParser('../../../../scripts/builtin')
     path = parser.path + 'kmeans.dml'
     #print(parser.find_header_input_params(path))
+    #print(parser.find_header_output_params(path))
     #print(parser.find_function_definition(path))
-    print(parser.parse_function(path))
+    header = parser.parse_header(path)
+    print(header)
+    data = parser.parse_function(path)
+    print(data)
+    parser.check_parameters(header, data)

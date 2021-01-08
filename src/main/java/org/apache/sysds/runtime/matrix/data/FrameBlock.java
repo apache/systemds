@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.DMVUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -64,8 +65,8 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	private static final long serialVersionUID = -3993450030207130665L;
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final IDSequence CLASS_ID = new IDSequence();
-	
-	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
+
+	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block
 
 	//internal configuration
 	private static final boolean REUSE_RECODE_MAPS = true;
@@ -2101,13 +2102,26 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public FrameBlock map(String lambdaExpr) {
+		if(!lambdaExpr.contains("->"))
+		{
+			//return map(getCompiledFunctionBlock(lambdaExpr));
+			String args = lambdaExpr.substring(lambdaExpr.indexOf('(') + 1, lambdaExpr.indexOf(')'));
+			if(args.contains(",")) {
+				String[] arguments = args.split(",");
+				return DMVUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
+			}
+		}
 		return map(getCompiledFunction(lambdaExpr));
+	}
+
+	public FrameBlock map(FrameBlockMapFunction lambdaExpression) {
+		return lambdaExpression.apply();
 	}
 	
 	public FrameBlock map(FrameMapFunction lambdaExpr) {
 		// Prepare temporary output array
 		String[][] output = new String[getNumRows()][getNumColumns()];
-		
+
 		// Execute map function on all cells
 		for(int j=0; j<getNumColumns(); j++) {
 			Array input = getColumn(j);
@@ -2120,16 +2134,20 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public static FrameMapFunction getCompiledFunction(String lambdaExpr) {
-		// split lambda expression
+		String varname;
+		String expr;
+
+		String cname = "StringProcessing"+CLASS_ID.getNextID();
+		StringBuilder sb = new StringBuilder();
+
+
 		String[] parts = lambdaExpr.split("->");
 		if( parts.length != 2 )
 			throw new DMLRuntimeException("Unsupported lambda expression: "+lambdaExpr);
-		String varname = parts[0].trim();
-		String expr = parts[1].trim();
-		
+		varname = parts[0].trim();
+		expr = parts[1].trim();
+
 		// construct class code
-		String cname = "StringProcessing"+CLASS_ID.getNextID();
-		StringBuilder sb = new StringBuilder();
 		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
 		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction;\n");
 		sb.append("public class "+cname+" extends FrameMapFunction {\n");
@@ -2140,15 +2158,46 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		// compile class, and create FrameMapFunction object
 		try {
 			return (FrameMapFunction) CodegenUtils
-				.compileClass(cname, sb.toString()).newInstance();
+					.compileClass(cname, sb.toString()).newInstance();
 		}
 		catch(InstantiationException | IllegalAccessException e) {
 			throw new DMLRuntimeException("Failed to compile FrameMapFunction.", e);
 		}
 	}
 
+
+	public FrameBlockMapFunction getCompiledFunctionBlock(String lambdaExpression) {
+		// split lambda expression
+		String expr;
+
+		String cname = "StringProcessing"+CLASS_ID.getNextID();
+		StringBuilder sb = new StringBuilder();
+
+		expr = lambdaExpression;
+
+		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
+		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameBlockMapFunction;\n");
+		sb.append("public class "+cname+" extends FrameBlockMapFunction {\n");
+		sb.append("@Override\n");
+		sb.append("public FrameBlock apply() {\n");
+		sb.append("  return "+expr+"; }}\n");
+
+		try {
+			return (FrameBlockMapFunction) CodegenUtils
+				.compileClass(cname, sb.toString()).newInstance();
+		}
+		catch(InstantiationException | IllegalAccessException e) {
+			throw new DMLRuntimeException("Failed to compile FrameBlockMapFunction.", e);
+		}
+	}
+
 	public static abstract class FrameMapFunction implements Serializable {
 		private static final long serialVersionUID = -8398572153616520873L;
 		public abstract String apply(String input);
+	}
+
+	public static abstract class FrameBlockMapFunction implements Serializable {
+		private static final long serialVersionUID = -8398573333616520876L;
+		public abstract FrameBlock apply();
 	}
 }

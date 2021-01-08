@@ -19,11 +19,12 @@
 #
 #-------------------------------------------------------------
 
-X = matrix(seq(1,1500), rows=150, cols=10);
-y = seq(1,150);
+X = matrix(seq(1,150), rows=15, cols=10);
+y = seq(1,15);
 print(toString(X[1:5,]))
 Z = max(floor(round(abs(min(sign(X+y),rowSums(X))))),7)
-print(toString(Z))
+#print(toString(Z))
 R = colSums(Z); 
 print(toString(R))
+
 write(R, $1)

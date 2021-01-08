@@ -19,10 +19,10 @@
 #
 #-------------------------------------------------------------
 
-X = matrix(seq(1,1500), rows=150, cols=10);
+X = matrix(seq(1,150), rows=15, cols=10);
 
 Y = (X <= rowMins(X));
 Z = (Y / rowSums(Y));
 R = colSums(Z);
-
+print(toString(Y))
 write(R, $1)

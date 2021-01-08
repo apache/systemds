@@ -28,12 +28,15 @@ X = matrix(seq(1,60), 6, 10, byrow=TRUE);
 w = matrix(seq(1,24), 6, 4, byrow=TRUE);
 v = matrix(seq(1,40), 10, 4, byrow=TRUE);
 
-X1=(X %*% v)
-X2=(w * X1)
+X1 = (X %*% v);
+X2 = (w * X1);
 R = t(X) %*% X2;
-cat("\n----------------------\n")
-# print(X)
-print(X1)
-print(X2)
-print(R)
+cat("\nX-------------------\n")
+print.table(X, digits=3, zero.print = ".")
+print("X1-------------------")
+print.table(X1, digits=3, zero.print = ".")
+print("X2-------------------")
+print.table(X2, digits=3, zero.print = ".")
+print("R-------------------")
+print.table(R, digits=3, zero.print = ".")
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

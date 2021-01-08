@@ -27,6 +27,7 @@ X = matrix(seq(1,15), 5, 3, byrow=TRUE);
 v = seq(1,3);
 P = cbind(seq(1,5),seq(2,6));
 
+print(P)
 S = t(X) %*% ((P[,1] * (1-P[,1])) * (X %*% v));
-
+print(S)
 writeMM(as(S, "CsparseMatrix"), paste(args[2], "S", sep="")); 

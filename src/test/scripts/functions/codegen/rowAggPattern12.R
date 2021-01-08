@@ -25,10 +25,10 @@ library("Matrix")
 library("matrixStats")
 
 
-X = matrix(seq(1,1500), 150, 10, byrow=TRUE);
+X = matrix(seq(1,150), 15, 10, byrow=TRUE);
 v = seq(1,150);
 
 Y = (X >= v); 
 R = Y / rowSums(Y);
-
+print(R)
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

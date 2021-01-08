@@ -30,4 +30,5 @@ v = seq(1,10);
 y = seq(1,15);
 R = y - X %*% v;
 print(R)
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep=""));
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 
+

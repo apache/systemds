@@ -32,6 +32,7 @@ limitations under the License.
     * [`DBSCAN`-Function](#DBSCAN-function)
     * [`discoverFD`-Function](#discoverFD-function)
     * [`dist`-Function](#dist-function)
+    * [`dmv`-Function](#dmv-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -298,6 +299,43 @@ dist(X)
 X = rand (rows = 5, cols = 5)
 Y = dist(X)
 ```
+
+
+
+## `dmv`-Function
+
+The `dmv`-function is used to find disguised missing values utilising syntactical pattern recognition.
+
+### Usage
+
+```r
+dmv(X, threshold, replace)
+```
+
+### Arguments
+
+| Name      | Type          | Default  | Description                                                  |
+| :-------- | :------------ | :------- | :----------------------------------------------------------- |
+| X         | Frame[String] | required | Input Frame                                                  |
+| threshold | Double        | 0.8      | threshold value in interval [0, 1] for dominant pattern per column (e.g., 0.8 means that 80% of the entries per column must adhere this pattern to be dominant) |
+| replace   | String        | "NA"     | The string disguised missing values are replaced with        |
+
+### Returns
+
+| Type          | Description                                            |
+| :------------ | :----------------------------------------------------- |
+| Frame[String] | Frame `X`  including detected disguised missing values |
+
+### Example
+
+```r
+A = read("fileA", data_type="frame", rows=10, cols=8);
+Z = dmv(X=A)
+Z = dmv(X=A, threshold=0.9)
+Z = dmv(X=A, threshold=0.9, replace="NaN")
+```
+
+
 
 ## `glm`-Function
 

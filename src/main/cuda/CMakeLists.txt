@@ -49,8 +49,13 @@ target_include_directories(SystemDS PUBLIC "${CMAKE_SOURCE_DIR}/headers")
 
 find_package(CUDAToolkit REQUIRED)
 cmake_policy(SET CMP0104 NEW)
+
 set(CMAKE_CUDA_ARCHITECTURES  OFF)
 #ToDo: more compiler flag settings for Debug/Release compilation
+#set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 CACHE STRING "CUDA architectures" FORCE)
+#set(CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
+#message("CUDA_ARCHITECTURES: ${CUDA_ARCHITECTURES}")
+
 set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr")
 
 set_property(TARGET SystemDS PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
@@ -101,6 +106,9 @@ set(SPOOF_TEMPLATES
 source_group("SPOOF Templates" FILES ${SPOOF_TEMPLATES})
 set_source_files_properties( ${SPOOF_TEMPLATES} PROPERTIES HEADER_FILE_ONLY ON)
 add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_CUDA_HEADERS} ${SPOOF_SOURCES} ${SPOOF_TEMPLATES})
+
+set_property(TARGET reduction PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
+set_property(TARGET spoof_cuda PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
 
 target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify" headers)
 target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart CUDA::cublas)

@@ -2102,9 +2102,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public FrameBlock map(String lambdaExpr) {
-		if(!lambdaExpr.contains("->"))
-		{
-			//return map(getCompiledFunctionBlock(lambdaExpr));
+		if(!lambdaExpr.contains("->")) {
 			String args = lambdaExpr.substring(lambdaExpr.indexOf('(') + 1, lambdaExpr.indexOf(')'));
 			if(args.contains(",")) {
 				String[] arguments = args.split(",");
@@ -2134,18 +2132,15 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public static FrameMapFunction getCompiledFunction(String lambdaExpr) {
-		String varname;
-		String expr;
-
 		String cname = "StringProcessing"+CLASS_ID.getNextID();
 		StringBuilder sb = new StringBuilder();
-
-
 		String[] parts = lambdaExpr.split("->");
+		
 		if( parts.length != 2 )
 			throw new DMLRuntimeException("Unsupported lambda expression: "+lambdaExpr);
-		varname = parts[0].trim();
-		expr = parts[1].trim();
+		
+		String varname = parts[0].trim();
+		String expr = parts[1].trim();
 
 		// construct class code
 		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
@@ -2158,7 +2153,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		// compile class, and create FrameMapFunction object
 		try {
 			return (FrameMapFunction) CodegenUtils
-					.compileClass(cname, sb.toString()).newInstance();
+				.compileClass(cname, sb.toString()).newInstance();
 		}
 		catch(InstantiationException | IllegalAccessException e) {
 			throw new DMLRuntimeException("Failed to compile FrameMapFunction.", e);
@@ -2167,13 +2162,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 
 	public FrameBlockMapFunction getCompiledFunctionBlock(String lambdaExpression) {
-		// split lambda expression
-		String expr;
-
 		String cname = "StringProcessing"+CLASS_ID.getNextID();
 		StringBuilder sb = new StringBuilder();
-
-		expr = lambdaExpression;
+		String expr = lambdaExpression;
 
 		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
 		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameBlockMapFunction;\n");

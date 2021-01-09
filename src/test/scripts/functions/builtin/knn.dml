@@ -24,5 +24,8 @@ T = read($in_T)
 CL = read($in_CL)
 k = $in_k
 
-B = knn(Train=X,  Test=T, CL=CL, k_value=k)
+[B, PR] = knn(Train=X,  Test=T, CL=CL, k_value=k)
+
+print(toString(PR))
+
 write(B, $out_B)

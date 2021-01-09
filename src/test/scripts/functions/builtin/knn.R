@@ -47,21 +47,11 @@ if(is_continuous == 1)
   data_test_n  <- as.data.frame(lapply(data_test[1:NCOL(data_test)], normalize))
 }
 
-# get the labels, last col
-data_train_labels <- CL
-# data_train_labels     <- CL[1:nrow(data_train),1] #data_train[1:NROW(data_train), NCOL(data_train)]
-# data_test_labels      <- CL[nrow(data_train)+1:nrow(data_test),1]
-
-table(CL)
-#print(K)
-#print(dim(data_train))
-#print(dim(data_test))
-#print(dim(CL))
 
 # ------ training -------
 #install.packages("class")
 library(class)
-test_pred <- knn(train= data_train, test= data_test, cl= data_train_labels, k=K)
+test_pred <- knn(train=data_train, test=data_test, cl=CL, k=K)
 print("-----------")
 print(test_pred)
 print("-----------")

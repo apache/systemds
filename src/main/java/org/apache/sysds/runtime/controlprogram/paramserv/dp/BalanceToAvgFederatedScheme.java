@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
@@ -35,13 +34,25 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import java.util.List;
 import java.util.concurrent.Future;
 
+/**
+ * Balance to Avg Federated scheme
+ *
+ * When the parameter server runs in federated mode it cannot pull in the data which is already on the workers.
+ * Therefore, a UDF is sent to manipulate the data locally. In this case the global average number of examples is taken
+ * and the worker subsamples or replicates data to match that number of examples. See the other federated schemes.
+ *
+ * Then all entries in the federation map of the input matrix are separated into MatrixObjects and returned as a list.
+ * Only supports row federated matrices atm.
+ */
 public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
-	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
+	public Result partition(MatrixObject features, MatrixObject labels, int seed) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
+		BalanceMetrics balanceMetricsBefore = getBalanceMetrics(pFeatures);
+		List<Double> weighingFactors = getWeighingFactors(pFeatures, balanceMetricsBefore);
 
-		int average_num_rows = (int) Math.round(pFeatures.stream().map(CacheableData::getNumRows).mapToInt(Long::intValue).average().orElse(Double.NaN));
+		int average_num_rows = (int) balanceMetricsBefore._avgRows;
 
 		for(int i = 0; i < pFeatures.size(); i++) {
 			// Works, because the map contains a single entry
@@ -49,7 +60,7 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 			FederatedData labelsData = (FederatedData) pLabels.get(i).getFedMapping().getMap().values().toArray()[0];
 
 			Future<FederatedResponse> udfResponse = featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					featuresData.getVarID(), new balanceDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, average_num_rows)));
+					featuresData.getVarID(), new balanceDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, seed, average_num_rows)));
 
 			try {
 				FederatedResponse response = udfResponse.get();
@@ -66,7 +77,7 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
 
-		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), weighingFactors);
 	}
 
 	/**
@@ -74,10 +85,12 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 	 */
 	private static class balanceDataOnFederatedWorker extends FederatedUDF {
 		private static final long serialVersionUID = 6631958250346625546L;
+		private final int _seed;
 		private final int _average_num_rows;
-		
-		protected balanceDataOnFederatedWorker(long[] inIDs, int average_num_rows) {
+
+		protected balanceDataOnFederatedWorker(long[] inIDs, int seed, int average_num_rows) {
 			super(inIDs);
+			_seed = seed;
 			_average_num_rows = average_num_rows;
 		}
 
@@ -88,14 +101,14 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 
 			if(features.getNumRows() > _average_num_rows) {
 				// generate subsampling matrix
-				MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(_average_num_rows, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(_average_num_rows, Math.toIntExact(features.getNumRows()), _seed);
 				subsampleTo(features, subsampleMatrixBlock);
 				subsampleTo(labels, subsampleMatrixBlock);
 			}
 			else if(features.getNumRows() < _average_num_rows) {
 				int num_rows_needed = _average_num_rows - Math.toIntExact(features.getNumRows());
 				// generate replication matrix
-				MatrixBlock replicateMatrixBlock = ParamservUtils.generateReplicationMatrix(num_rows_needed, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				MatrixBlock replicateMatrixBlock = ParamservUtils.generateReplicationMatrix(num_rows_needed, Math.toIntExact(features.getNumRows()), _seed);
 				replicateTo(features, replicateMatrixBlock);
 				replicateTo(labels, replicateMatrixBlock);
 			}

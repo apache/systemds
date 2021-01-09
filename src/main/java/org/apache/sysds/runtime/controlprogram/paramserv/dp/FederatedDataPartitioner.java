@@ -24,10 +24,11 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 
 public class FederatedDataPartitioner {
-
 	private final DataPartitionFederatedScheme _scheme;
+	private final int _seed;
 
-	public FederatedDataPartitioner(Statement.FederatedPSScheme scheme) {
+	public FederatedDataPartitioner(Statement.FederatedPSScheme scheme, int seed) {
+		_seed = seed;
 		switch (scheme) {
 			case KEEP_DATA_ON_WORKER:
 				_scheme = new KeepDataOnWorkerFederatedScheme();
@@ -50,6 +51,6 @@ public class FederatedDataPartitioner {
 	}
 
 	public DataPartitionFederatedScheme.Result doPartitioning(MatrixObject features, MatrixObject labels) {
-		return _scheme.doPartitioning(features, labels);
+		return _scheme.partition(features, labels, _seed);
 	}
 }

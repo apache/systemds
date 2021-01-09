@@ -228,7 +228,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		return val;
 	}
 
-	protected final double sumValuesSparse(int valIx, SparseRow[] rows, double[] dictVals, int rowsIndex) {
+	protected static double sumValuesSparse(int valIx, SparseRow[] rows, double[] dictVals, int rowsIndex) {
 		throw new NotImplementedException("This Method was implemented incorrectly");
 		// final int numCols = getNumCols();
 		// final int valOff = valIx * numCols;

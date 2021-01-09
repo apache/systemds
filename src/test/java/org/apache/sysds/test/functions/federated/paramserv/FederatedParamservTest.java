@@ -54,44 +54,45 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final String _freq;
 	private final String _scheme;
 	private final String _runtime_balancing;
+	private final String _weighing;
 	private final String _data_distribution;
+	private final int _seed;
 
 	// parameters
 	@Parameterized.Parameters
 	public static Collection<Object[]> parameters() {
 		return Arrays.asList(new Object[][] {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
-
 			// basic functionality
-			{"TwoNN", 2, 4, 1, 4, 0.01,       "BSP", "BATCH", "KEEP_DATA_ON_WORKER", "CYCLE_AVG", "IMBALANCED"},
-			{"CNN",   2, 4, 1, 4, 0.01,       "BSP", "EPOCH", "SHUFFLE",             "NONE" ,     "IMBALANCED"},
-			{"CNN",   2, 4, 1, 4, 0.01,       "ASP", "BATCH", "REPLICATE_TO_MAX",    "RUN_MIN" ,  "IMBALANCED"},
-			{"TwoNN", 2, 4, 1, 4, 0.01,       "ASP", "EPOCH", "BALANCE_TO_AVG",      "CYCLE_MAX", "IMBALANCED"},
-			{"TwoNN", 5, 1000, 100, 2, 0.01,  "BSP", "BATCH", "KEEP_DATA_ON_WORKER", "NONE" ,     "BALANCED"},
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" ,	"true",	"IMBALANCED",	200},
+			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE" , 		"true",	"IMBALANCED", 	200},
+			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"RUN_MIN" , 	"true",	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX" , 	"true",	"IMBALANCED",	200},
+			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"true",	"BALANCED",		200},
 
-			/*
-				// runtime balancing
-				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
-				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"IMBALANCED"},
-				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
-				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"IMBALANCED"},
-				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
-				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" , 	"IMBALANCED"},
+			/* // runtime balancing
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"true",	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"RUN_MIN" , 	"true",	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"true",	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_AVG" , 	"true",	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" ,	"true", "IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"CYCLE_MAX" ,	"true", "IMBALANCED",	200},
 
-				// data partitioning
-				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE_AVG" , 	"IMBALANCED"},
-				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE_TO_MAX",	 	"NONE" , 		"IMBALANCED"},
-				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SUBSAMPLE_TO_MIN",		"NONE" , 		"IMBALANCED"},
-				{"TwoNN", 2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE_TO_AVG",		"NONE" , 		"IMBALANCED"},
+			// data partitioning
+			{"TwoNN", 	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE", 				"CYCLE_AVG" , 	"true",	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "REPLICATE_TO_MAX",	 	"NONE" , 		"true",	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SUBSAMPLE_TO_MIN",		"NONE" , 		"true",	"IMBALANCED",	200},
+			{"TwoNN", 	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "BALANCE_TO_AVG",		"NONE" , 		"true",	"IMBALANCED",	200},
 
-				// balanced tests
-				{"CNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"BALANCED"}
-			 */
+			// balanced tests
+			{"CNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"NONE" , 		"true",	"BALANCED",		200} */
+
 		});
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
-		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String data_distribution) {
+		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String weighing, String data_distribution, int seed) {
+
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_dataSetSize = dataSetSize;
@@ -102,7 +103,9 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		_freq = freq;
 		_scheme = scheme;
 		_runtime_balancing = runtime_balancing;
+		_weighing = weighing;
 		_data_distribution = data_distribution;
+		_seed = seed;
 	}
 
 	@Override
@@ -185,11 +188,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"freq=" + _freq,
 					"scheme=" + _scheme,
 					"runtime_balancing=" + _runtime_balancing,
+					"weighing=" + _weighing,
 					"network_type=" + _networkType,
 					"channels=" + C,
 					"hin=" + Hin,
 					"win=" + Win,
-					"seed=" + 25));
+					"seed=" + _seed));
 
 			programArgs = programArgsList.toArray(new String[0]);
 			LOG.debug(runTest(null));

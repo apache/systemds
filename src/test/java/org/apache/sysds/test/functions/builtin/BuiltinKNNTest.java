@@ -34,11 +34,13 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
+import java.util.HashMap;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.runtime.util.HDFSTool;
+
 @RunWith(value = Parameterized.class)
 public class BuiltinKNNTest extends AutomatedTestBase
 {
-  private final static Log LOG = LogFactory.getLog(BuiltinKNNTest.class.getName());
-
   private final static String TEST_NAME = "knn";
   private final static String TEST_DIR = "functions/builtin/";
   private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinKNNTest.class.getSimpleName() + "/";
@@ -95,15 +97,21 @@ public class BuiltinKNNTest extends AutomatedTestBase
 
     double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
     double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
-    double[][] CL = getRandomMatrix(rows, 1, 0, 1, 1, 7);
+    // double[][] CL = getRandomMatrix(rows, 1, 0, 1, 1, 7);
+
+    double[][] CL = new double[rows][1];
+    for(int counter = 0; counter < rows; counter++)
+    {
+      CL[counter][0] = counter;
+    }
 
     writeInputMatrixWithMTD("X", X, true);
     writeInputMatrixWithMTD("T", T, true);
     writeInputMatrixWithMTD("CL", CL, true);
 
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
-    programArgs = new String[] {"-nvargs",
-      "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
+    programArgs = new String[] {"-stats", "-nvargs",
+      "in_X=" + input("X"), "in_T=" + input("T"), "in_CL=" + input("CL"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
       "out_B=" + output(OUTPUT_NAME)};
 
     fullRScriptName = HOME + TEST_NAME + ".R";
@@ -114,8 +122,17 @@ public class BuiltinKNNTest extends AutomatedTestBase
     runTest(true, false, null, -1);
     runRScript(true);
 
+    System.out.println(CL[0][0] + " | " + CL[1][0] + " | " + CL[2][0] + " | " + CL[3][0] + " | " + CL[4][0]);
+
+    HashMap<CellIndex, Double> refResults	= readRMatrixFromExpectedDir("B");
+    HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir("B");
+
+    System.out.println(refResults.toString());
+    System.out.println(fedResults.toString());
+
     // TODO: add this line when both test scripts are implemented
     compareResultsWithR(TEST_TOLERANCE);
+
 
     // restore execution mode
     setExecMode(platform_old);

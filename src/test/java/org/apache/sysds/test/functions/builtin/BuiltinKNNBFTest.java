@@ -34,6 +34,9 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
+import java.util.HashMap;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+
 @RunWith(value = Parameterized.class)
 public class BuiltinKNNBFTest extends AutomatedTestBase
 {
@@ -93,9 +96,15 @@ public class BuiltinKNNBFTest extends AutomatedTestBase
 
     String HOME = SCRIPT_DIR + TEST_DIR;
 
-    double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 431);
+    double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
     double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
-    double[][] CL = getRandomMatrix(rows, 1, 0, 1, 1, 7);
+    // double[][] CL = getRandomMatrix(rows, 1, 0, 1, 1, 7);
+
+    double[][] CL = new double[rows][1];
+    for(int counter = 0; counter < rows; counter++)
+    {
+      CL[counter][0] = counter;
+    }
 
     writeInputMatrixWithMTD("X", X, true);
     writeInputMatrixWithMTD("T", T, true);
@@ -115,6 +124,14 @@ public class BuiltinKNNBFTest extends AutomatedTestBase
     // TODO: add this line when both test scripts are implemented
     runTest(true, false, null, -1);
     runRScript(true);
+
+    System.out.println(CL[0][0] + " | " + CL[1][0] + " | " + CL[2][0] + " | " + CL[3][0] + " | " + CL[4][0]);
+
+    HashMap<CellIndex, Double> refResults	= readRMatrixFromExpectedDir("B");
+    HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir("B");
+
+    System.out.println(refResults.toString());
+    System.out.println(fedResults.toString());
 
     // TODO: add this line when both test scripts are implemented
     compareResultsWithR(TEST_TOLERANCE);

@@ -62,6 +62,7 @@
 m_knn = function(
     Matrix[Double] Train,
     Matrix[Double] Test,
+    Matrix[Double] CL,
 #--    matrix[double] CLType = " ",
 #--    matrix[double] CL = " ",
     Integer trans_continuous = 0,
@@ -71,9 +72,9 @@ m_knn = function(
     Integer select_k = 0,
     Integer k_min = 1,
     Integer k_max = 100,
-    Integer select_feature = 0
+    Integer select_feature = 0,
 #--    Integer feature_max = 10,
-#--    Integer interval = 1000,
+    Integer interval = 1000
 #--    Integer feature_importance = 0,
 #--    Integer predict_con_tg = 0,
 #--    String START_SELECTED = " ",
@@ -96,9 +97,6 @@ m_knn = function(
     s_selected_k = 5;
     m_selected_feature = matrix(1,rows=1,cols=n_records);
     if( select_k == 1 | select_feature==1 ){
-        default_interval = as.integer( ceil( sqrt( n_records ) ) );
-        interval = ifdef( $interval,default_interval );
-        print( "interval is " + interval );
         #parameter check
         #parameter re-define
         if( select_k==1 ){
@@ -157,7 +155,7 @@ m_knn = function(
 #--        }
     }
 
-    NNR_matrix = naiveKNNsearch(Train,Test,k_value)
+    NNR_matrix = naiveKNNsearch(P=Train,Q=Test,K=k_value);
 
 #--    # main part for knn predicted
 #--    if( CLPath != " " ){
@@ -168,26 +166,24 @@ m_knn = function(
 #--        # CLType = read( CLTypePath );
 #--        i_cl_type = as.integer( as.scalar( CLType[1,1] ) );
 #--    }
-#--    CL_matrix = matrix( 0,nrow( Test ),1 );
-#--    if( CLPath != " " ){
-#--        parfor( i in 1:nrow( NNR_matrix ) ,check=0){
-#--            NNR_tmp_matrix = matrix( 0,k_value,1 );
-#--            for( j in 1:k_value ){
-#--                NNR_tmp_matrix[j,1] = CL[as.scalar( NNR_matrix[i,j] ),1] ;
-#--            }
-#--            t_cl_value = 0.0 #test data label value
-#--            if( i_cl_type == 2 ){
-#--                t_cl_value = as.scalar( rowIndexMax( t( table( NNR_tmp_matrix,1 ) ) ) )
-#--            }else{
-#--                if ( predict_con_tg == 0){
-#--                    t_cl_value = mean( NNR_tmp_matrix );
-#--                } else if(predict_con_tg == 1){
-#--                    t_cl_value = median( NNR_tmp_matrix );
-#--                }
-#--            }
-#--            CL_matrix[i,1] = t_cl_value;
-#--        }
-#--    }
+   CL_matrix = matrix( 0,nrow( Test ),1 );
+   parfor( i in 1:nrow( NNR_matrix ) ,check=0){
+       NNR_tmp_matrix = matrix( 0,k_value,1 );
+       for( j in 1:k_value ){
+           NNR_tmp_matrix[j,1] = CL[as.scalar( NNR_matrix[i,j] ),1] ;
+       }
+#--       t_cl_value = 0.0 #test data label value
+#--           if( i_cl_type == 2 ){
+       t_cl_value = as.scalar( rowIndexMax( t( table( NNR_tmp_matrix,1 ) ) ) )
+#--           }else{
+#--               if ( predict_con_tg == 0){
+#--                   t_cl_value = mean( NNR_tmp_matrix );
+#--               } else if(predict_con_tg == 1){
+#--                   t_cl_value = median( NNR_tmp_matrix );
+#--               }
+#--           }
+       CL_matrix[i,1] = t_cl_value;
+   }
 }
 
 #naive knn search implement

@@ -21,10 +21,8 @@
 
 from typing import Tuple, List
 import json
-
-# TODO: cant find directory resources
-#with open('resources/type_mapping.json') as json_file:
-#    type_mapping = json.load(json_file)
+import os
+from parser import FunctionParser
 
 class PythonAPIFileGenerator(object):
 
@@ -58,6 +56,7 @@ class PythonAPIFunctionGenerator(object):
 
     #TODO: find out when 'if {param}.shape[0] == 0:...' check must be applied
     value_check_template = u"\n    {param}._check_matrix_op()"
+    type_mapping_file = os.path.join('resources','type_mapping.json')
 
     def __init__(self):
         super(PythonAPIFunctionGenerator, self).__init__()
@@ -103,10 +102,17 @@ class PythonAPIFunctionGenerator(object):
     def format_param_string(self, parameters: List[Tuple[str]]) -> str:
         result = u""
         has_optional = False
+        path = os.path.dirname(__file__)
+        type_mapping_path = os.path.join(path,self.__class__.type_mapping_file)
+        print(type_mapping_path)
+        with open(type_mapping_path, 'r') as mapping:
+            type_mapping = json.load(mapping)
+        print(type_mapping)
         for param in parameters:
             # map data types
-            # TODO: type mapping
-            # param = [type_mapping["type"].get(item, item) for item in param]
+            # TODO: type mapping path
+            #param[1] = type_mapping["type"][param[1].lower()]
+            param = tuple([type_mapping["type"].get(str(item).lower(),item) for item in param])
             if param[2] is not None:
                 has_optional = True
             else:

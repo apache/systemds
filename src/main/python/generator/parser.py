@@ -24,8 +24,6 @@ import os
 import re
 import json
 
-with open('resources/type_mapping.json') as json_file:
-    type_mapping = json.load(json_file)
 
 class FunctionParser(object):
     header_input_pattern = r"^[ \t]*[#]+[ \t]*input[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
@@ -188,17 +186,3 @@ class FunctionParser(object):
         if header_param_default != data_param_default:
             raise ValueError("The parameter default of the function does not match with the documentation")
 
-
-#TODO Remove
-
-if __name__ == "__main__":
-    parser = FunctionParser('../../../../scripts/builtin')
-    path = parser.path + 'kmeans.dml'
-    #print(parser.find_header_input_params(path))
-    #print(parser.find_header_output_params(path))
-    #print(parser.find_function_definition(path))
-    header = parser.parse_header(path)
-    print(header)
-    data = parser.parse_function(path)
-    print(data)
-    parser.check_parameters(header, data)

@@ -94,7 +94,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 	jmethodID ArrayList_get = env->GetMethodID(ArrayList, "get", "(I)Ljava/lang/Object;");
 	std::unique_ptr<Matrix<double>> out;
 	if(output != nullptr) {
-		std::cout << "out not null" << std::endl;
+//		std::cout << "out not null" << std::endl;
 		out = std::make_unique<Matrix<double>>(Matrix<double>{reinterpret_cast<double *>(out_ptr), nullptr, nullptr,
 				static_cast<uint32_t>(env->CallIntMethod(output, mat_obj_num_rows)),
 				static_cast<uint32_t>(env->CallIntMethod(output, mat_obj_num_cols)),

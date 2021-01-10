@@ -56,6 +56,8 @@ struct SpoofOperator {
 	OpType op_type;
     const std::string name;
 	bool TB1 = false;
+	uint32_t const_dim2 = 4;
+	uint32_t num_temp_vectors = 2;
 };
 
 class SpoofCUDAContext {
@@ -110,7 +112,6 @@ public:
 						cudaMemcpyHostToDevice));
 			}
 			else {
-				std::cout << "fixing scalar out" << std::endl;
 				CHECK_CUDART(cudaMalloc((void **) &d_out, sizeof(Matrix<T>)));
 				T* d_out_data = nullptr;
 				CHECK_CUDART(cudaMalloc((void **) &d_out_data, sizeof(T)));
@@ -125,14 +126,14 @@ public:
 					uint32_t m = sides[0].rows;
 					uint32_t n = sides[0].cols;
 
-					std::cout << "--- b1:" << std::endl;
+//					std::cout << "--- b1:" << std::endl;
 					std::vector<T> tmp_b1(m*n);
 					CHECK_CUDART(cudaMemcpy(tmp_b1.data(), sides[0].data, sizeof(T) * tmp_b1.size(), cudaMemcpyDeviceToHost));
-					for (auto i = 0; i < m; ++i) {
-						for(auto j = i * n; j < (i+1) * n; ++j)
-							std::cout << tmp_b1[j] << " ";
-						std::cout << std::endl;
-					}
+//					for (auto i = 0; i < m; ++i) {
+//						for(auto j = i * n; j < (i+1) * n; ++j)
+//							std::cout << tmp_b1[j] << " ";
+//						std::cout << std::endl;
+//					}
 					
 					cudaMalloc(reinterpret_cast<void**>(&b1_transposed), sizeof(T) * m * n);
 					double alpha = 1.0;
@@ -145,14 +146,14 @@ public:
 					//
 					// CHECK_CUDART(cudaMemcpy(b1_transposed, b1, sizeof(T) * m * n, cudaMemcpyDeviceToDevice));
 
-					std::cout << "--- b1_transposed:" << std::endl;
+//					std::cout << "--- b1_transposed:" << std::endl;
 					std::vector<T> tmp_b1t(m*n);
 					CHECK_CUDART(cudaMemcpy(tmp_b1t.data(), b1_transposed, sizeof(T) * tmp_b1t.size(), cudaMemcpyDeviceToHost));
-					for (auto i = 0; i < n; ++i) {
-						for(auto j = i * m; j < (i+1) * m; ++j)
-							std::cout << tmp_b1t[j] << " ";
-						std::cout << std::endl;
-					}
+//					for (auto i = 0; i < n; ++i) {
+//						for(auto j = i * m; j < (i+1) * m; ++j)
+//							std::cout << tmp_b1t[j] << " ";
+//						std::cout << std::endl;
+//					}
 
 					sides[0].data = b1_transposed;
 					sides[0].rows = n;
@@ -189,10 +190,10 @@ public:
 				CHECK_CUDART(cudaFree(d_sides));
 
 			if(op->TB1)
-				cudaFree(b1_transposed);
+				CHECK_CUDART(cudaFree(b1_transposed));
 			
 			if(op->agg_type == SpoofOperator::AggType::FULL_AGG) {
-				std::cout << "retrieving scalar result" << std::endl;
+//				std::cout << "retrieving scalar result" << std::endl;
 				
 				Matrix<T> res_mat;
 				CHECK_CUDART(cudaMemcpy(&res_mat, d_out, sizeof(Matrix<T>), cudaMemcpyDeviceToHost));
@@ -393,17 +394,31 @@ public:
 		dim3 block(NT, 1, 1);
 		unsigned int shared_mem_size = NT * sizeof(T);
 
+		uint32_t tmp_len = 0;
+		uint32_t temp_buf_size = 0;
+		T* d_temp = nullptr;
+		if(op->const_dim2>0) {
+			tmp_len = std::max(in_cols, op->const_dim2);
+			temp_buf_size = op->num_temp_vectors * tmp_len * in_rows;
+			CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&d_temp), temp_buf_size));
+			CHECK_CUDART(cudaMemset(d_temp, 0, temp_buf_size));
+		}
+
 //#ifdef __DEBUG
 			// ToDo: connect output to SystemDS logging facilities
 			std::cout << "launching spoof rowwise kernel " << op->name << " with " << NT * in_rows << " threads in " << in_rows
-				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by " << NT << " threads per row " << std::endl;
+				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by "
+				<< NT << " threads per row " << std::endl;
 //#endif
 		
 		CHECK_CUDA(op->program.kernel(op->name)
-				.instantiate(type_of(result), std::max(1u, num_sides))
+				.instantiate(type_of(result), std::max(1u, num_sides), tmp_len)
 				.configure(grid, block, shared_mem_size)
-				.launch(d_in, d_sides, d_out, d_scalars, grix));
-		
+				.launch(d_in, d_sides, d_out, d_scalars, d_temp, grix));
+
+		if(op->const_dim2>0)
+			CHECK_CUDART(cudaFree(d_temp));
+
 		return result;
 	}
 };

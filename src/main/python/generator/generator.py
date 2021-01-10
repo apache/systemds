@@ -22,6 +22,7 @@
 from typing import Tuple, List
 import json
 import os
+import re
 from parser import FunctionParser
 
 class PythonAPIFileGenerator(object):
@@ -58,6 +59,8 @@ class PythonAPIFunctionGenerator(object):
 
     value_check_template = u"\n    {param}._check_matrix_op()"
     type_mapping_file = os.path.join('resources','type_mapping.json')
+
+    type_mapping_pattern = r"^([^\[\s]+)"
 
     def __init__(self):
         super(PythonAPIFunctionGenerator, self).__init__()
@@ -113,7 +116,8 @@ class PythonAPIFunctionGenerator(object):
             # map data types
             # TODO: type mapping path
             #param[1] = type_mapping["type"][param[1].lower()]
-            param = tuple([type_mapping["type"].get(str(item).lower(),item) for item in param])
+            pattern = self.__class__.type_mapping_pattern
+            param = tuple([type_mapping["type"].get(re.search(pattern,str(item).lower()).group() if item else str(item).lower(),item) for item in param])
             if param[2] is not None:
                 has_optional = True
             else:
@@ -275,17 +279,5 @@ if __name__ == "__main__":
         #print("---------------------------------------")
         #print(script_content)
 
-    """  
-    generator = PythonAPIFunctionGenerator()
-    data = {'function_header': "\"\"\"\n    sample header\n    \"\"\"",'function_name': 'kmeans', 'parameters': [('X', 'Matrix[Double]', None), ('k', 'Integer', '10'), ('runs', 'Integer', '10'), ('max_iter', 'Integer', '1000'), ('eps', 'Double', '0.000001'), ('is_verbose', 'Boolean', 'FALSE'), ('avg_sample_size_per_centroid', 'Integer', '50'), ('seed', 'Integer', '-1')], 'return_values': [('C', 'Matrix[Double]', None), ('Y', 'Matrix[Double]', None)]}
-    document_generator = 
-    header = {'function_name': None, 'parameters': [('X', 'Double', '---', 'The input Matrix to do KMeans on.'), ('k', 'Int', '---', 'Number of centroids'), ('runs', 'Int', '10', 'Number of runs (with different initial centroids)'), ('max_iter', 'Int', '1000', 'Maximum number of iterations per run'), ('eps', 'Double', '0.000001', 'Tolerance (epsilon) for WCSS change ratio'), ('is_verbose', 'Boolean', 'FALSE', 'do not print per-iteration stats'), ('avg_sample_size_per_centroid', 'Int', '50', 'Average number of records per centroid in data samples'), ('seed', 'Int', '-1', 'The seed used for initial sampling. If set to -1 random seeds are selected.')], 'return_values': [('Y', 'String', '"Y.mtx"', 'The mapping of records to centroids'), ('C', 'String', '"C.mtx"', 'The output matrix with the centroids')]}
-    function_header = document_generator.generate_documentation(header)
-    # print(function_header)
-
-    data["function_header"] = function_header
-    script_content = generator.generate_function(data)
-    print("---------------------------------------")
-    print(script_content)"""
 
 

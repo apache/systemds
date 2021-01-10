@@ -34,6 +34,7 @@ class PythonAPIFileGenerator(object):
     def __init__(self, extension: str='py'):
         super(PythonAPIFileGenerator, self).__init__()
         self.extension = '.{extension}'.format(extension=extension)
+        os.makedirs(self.__class__.target_path, exist_ok = True)
 
     def generate_file(self, filename: str, file_content: str):
         """
@@ -185,11 +186,8 @@ class PythonAPIFunctionGenerator(object):
         if length > 1:
             output_type_list = ""
             for value in return_values:
-                # map type from Matrix[Double] to Matrix.Double
-                # TODO maybe use regex instead to map from Matrix[Double] to MATRIX.DOUBLE
-                value = tuple(
-                    [self.__class__.type_mapping["return_type"].get(str(item).lower(), item) for item in value])
-
+                output_type = ".".join(re.split("[\[\]]", value[1])).upper()[:-1]
+                print(output_type)
                 if len(output_type_list):
                     output_type_list = "{output_type_list}, ".format(
                         output_type_list=output_type_list
@@ -199,7 +197,7 @@ class PythonAPIFunctionGenerator(object):
                 
                 output_type_list = "{output_type_list}OutputType.{typ}".format(
                     output_type_list=output_type_list,
-                    typ=value[1]
+                    typ=output_type
                 )
             output_type_list = "{output_type_list}]".format(
                 output_type_list=output_type_list
@@ -209,9 +207,9 @@ class PythonAPIFunctionGenerator(object):
                 output_type_list=output_type_list
             )
         else:
-            # TODO maybe use regex instead to map from Matrix[Double] to MATRIX.DOUBLE
-            output_type = output_type = tuple([self.__class__.type_mapping["return_type"].get(str(item).lower(), item)
-                                               for item in return_values[0]])[1]
+            value = return_values[0]
+            output_type = ".".join(re.split("[\[\]]", value[1])).upper()[:-1]
+            #print(output_type)
         result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, output_type=OutputType.{output_type}".format(
             param=param[0],
             function_name=function_name,

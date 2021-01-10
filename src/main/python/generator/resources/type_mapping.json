@@ -8,8 +8,5 @@
     },
     "default": {
         "---": "None"
-    },
-  "return_type": {
-    "matrix[double]": "MATRIX.DOUBLE"
-  }
+    }
 }

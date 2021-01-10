@@ -172,6 +172,8 @@ class FunctionParser(object):
                 yield os.path.join(self.path, f)
 
     def check_parameters(self, header, data):
+        type_mapping_pattern = r"^([^\[\s]+)"
+
         path = os.path.dirname(__file__)
         type_mapping_path = os.path.join(path, self.__class__.type_mapping_file)
         # print(type_mapping_path)
@@ -190,7 +192,10 @@ class FunctionParser(object):
         header_param_type = [type_mapping["type"].get(item, item) for item in header_param_type]
 
         data_param_type = [p[1].lower() for p in data["parameters"]]
-        data_param_type = [type_mapping["type"].get(item, item) for item in data_param_type]
+        data_param_type = [type_mapping["type"].get(
+            re.search(type_mapping_pattern, str(item).lower()).group() if item else str(item).lower(), item)
+            for item in data_param_type]
+        # data_param_type = [type_mapping["type"].get(item, item) for item in data_param_type]
         if header_param_type != data_param_type:
             print("[ERROR]   The parameter type of the function does not match with the documentation for file \'{file_name}\'.".format(
                 file_name=data["function_name"]

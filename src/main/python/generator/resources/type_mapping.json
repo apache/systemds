@@ -4,7 +4,8 @@
             "matrix": "OperationNode",
             "boolean": "bool",
             "integer": "int",
-            "matrix[double]": "OperationNode"
+            "matrix[double]": "OperationNode",
+            "double": "float"
     },
     "default": {
         "---": "None"

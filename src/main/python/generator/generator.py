@@ -26,9 +26,11 @@ from parser import FunctionParser
 
 class PythonAPIFileGenerator(object):
 
+    target_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'systemds', 'operator')
+    source_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),'scripts', 'builtin')
+
     def __init__(self):
         super(PythonAPIFileGenerator, self).__init__()
-        self.path = 'src/main/python/systemds/operator/algorithm'
 
     def generate_file(self, data:dict):
         """
@@ -54,7 +56,6 @@ class PythonAPIFunctionGenerator(object):
     kwargs_parameter_string = u"**kwargs: Dict[str, VALID_INPUT_TYPES]"
     kwargs_result = u"params_dict.update(kwargs)"
 
-    #TODO: find out when 'if {param}.shape[0] == 0:...' check must be applied
     value_check_template = u"\n    {param}._check_matrix_op()"
     type_mapping_file = os.path.join('resources','type_mapping.json')
 
@@ -83,12 +84,12 @@ class PythonAPIFunctionGenerator(object):
             data['return_values'],
             data['function_name']
         )
-        print(parameters)
-        print(function_name)
-        print(header)
-        print(value_checks)
-        print(params_dict)
-        print(api_call)
+        #print(parameters)
+        #print(function_name)
+        #print(header)
+        #print(value_checks)
+        #print(params_dict)
+        #print(api_call)
         return self.__class__.api_template.format(
             function_name=function_name,
             parameters=parameters,
@@ -104,10 +105,10 @@ class PythonAPIFunctionGenerator(object):
         has_optional = False
         path = os.path.dirname(__file__)
         type_mapping_path = os.path.join(path,self.__class__.type_mapping_file)
-        print(type_mapping_path)
+        #print(type_mapping_path)
         with open(type_mapping_path, 'r') as mapping:
             type_mapping = json.load(mapping)
-        print(type_mapping)
+        #print(type_mapping)
         for param in parameters:
             # map data types
             # TODO: type mapping path
@@ -259,9 +260,25 @@ class PythonAPIDocumentationGenerator(object):
 
 #TODO: remove
 if __name__ == "__main__":
+    f_parser = FunctionParser(PythonAPIFileGenerator.source_path)
+    doc_generator = PythonAPIDocumentationGenerator()
+    fun_generator = PythonAPIFunctionGenerator()
+    for dml_file in f_parser.files():
+        header_data = f_parser.parse_header(dml_file)
+        try:
+            data = f_parser.parse_function(dml_file)
+        except AttributeError as e:
+            #print("[WARNING] Skipping file \'{file_name}\'.".format(file_name = dml_file))
+            continue
+        data['function_header'] = doc_generator.generate_documentation(header_data)
+        script_content = fun_generator.generate_function(data)
+        #print("---------------------------------------")
+        #print(script_content)
+
+    """  
     generator = PythonAPIFunctionGenerator()
     data = {'function_header': "\"\"\"\n    sample header\n    \"\"\"",'function_name': 'kmeans', 'parameters': [('X', 'Matrix[Double]', None), ('k', 'Integer', '10'), ('runs', 'Integer', '10'), ('max_iter', 'Integer', '1000'), ('eps', 'Double', '0.000001'), ('is_verbose', 'Boolean', 'FALSE'), ('avg_sample_size_per_centroid', 'Integer', '50'), ('seed', 'Integer', '-1')], 'return_values': [('C', 'Matrix[Double]', None), ('Y', 'Matrix[Double]', None)]}
-    document_generator = PythonAPIDocumentationGenerator()
+    document_generator = 
     header = {'function_name': None, 'parameters': [('X', 'Double', '---', 'The input Matrix to do KMeans on.'), ('k', 'Int', '---', 'Number of centroids'), ('runs', 'Int', '10', 'Number of runs (with different initial centroids)'), ('max_iter', 'Int', '1000', 'Maximum number of iterations per run'), ('eps', 'Double', '0.000001', 'Tolerance (epsilon) for WCSS change ratio'), ('is_verbose', 'Boolean', 'FALSE', 'do not print per-iteration stats'), ('avg_sample_size_per_centroid', 'Int', '50', 'Average number of records per centroid in data samples'), ('seed', 'Int', '-1', 'The seed used for initial sampling. If set to -1 random seeds are selected.')], 'return_values': [('Y', 'String', '"Y.mtx"', 'The mapping of records to centroids'), ('C', 'String', '"C.mtx"', 'The output matrix with the centroids')]}
     function_header = document_generator.generate_documentation(header)
     # print(function_header)
@@ -269,5 +286,6 @@ if __name__ == "__main__":
     data["function_header"] = function_header
     script_content = generator.generate_function(data)
     print("---------------------------------------")
-    print(script_content)
+    print(script_content)"""
+
 

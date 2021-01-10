@@ -30,25 +30,18 @@ class FunctionParser(object):
     header_output_pattern = r"[\s#\-]*[#]+[ \t]*(return|output)[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
     function_pattern = r"^m_[\w]+[ \t]+=[ \t]+function[^#{]*$"
     parameter_pattern = r"^m_[\w]+[\s]+=[\s]+function\(([\w\[\]\s,\d=.\-]*)\)[\s]*return[\s]*\(([\w\[\]\s,\d=.\-]*)\)"
-    path_delimiter = "/"
     header_parameter_pattern = r"[\s#\-]*[#]+[ \t]*([\w|-]+)[\s]+([\w]+)[\s]+([\w,\d.\"\-]+)[\s]+([\w|\W]+)"
     divider_pattern = r"[\s#\-]*"
 
-    def __init__(self, path:str, ending:str='dml'):
+    def __init__(self, path:str, extension:str='dml'):
         """
         @param path: path where to look for python scripts
         """
         super(FunctionParser, self).__init__()
-        self.path = self.normalize_path(path)
-        self.ending = '.{ending}'.format(ending=ending)
+        self.path = path
+        self.extension = '.{extension}'.format(extension=extension)
         self.files()
 
-    def normalize_path(self, path:str):
-        if len(path) > 0:
-            path = "{path}{delim}".format(path=path, delim=self.__class__.path_delimiter)
-        elif path[-1] != self.__class__.path_delimiter:
-            path = "{path}{delim}".format(path=path, delim=self.__class__.path_delimiter)
-        return path
 
     def parse_function(self, path:str):
         """
@@ -61,10 +54,17 @@ class FunctionParser(object):
                 'return_values': [('retval1', 'type'),...]
             }
         """
-        function_name = path.replace(self.ending, "")
-        function_name = function_name.replace(self.path, "")
-        function_definition = self.find_function_definition(path)
-        print(function_definition)
+        file_name = os.path.basename(path)
+        function_name, extension = os.path.splitext(file_name)
+        try:
+            function_definition = self.find_function_definition(path)
+        except AttributeError as e:
+            print("[ERROR]   Could not find function_definition for file \'{file_name}\'.".format(
+                file_name = file_name
+            ))
+            raise e
+
+        #print(function_definition)
         pattern = re.compile(self.__class__.parameter_pattern, flags=re.I|re.M)
         match = pattern.match(function_definition)
         param_str,retval_str = match.group(1,2)
@@ -123,12 +123,17 @@ class FunctionParser(object):
                 'return_values': [('retval1', 'description'),...]
             }
         """
-        h_input = parser.find_header_input_params(path)
-        input_parameters = self.get_header_parameters(h_input)
+        try:
+            h_input = self.find_header_input_params(path)
+            input_parameters = self.get_header_parameters(h_input)
 
-        h_output = parser.find_header_output_params(path)
-        output_parameters = self.get_header_parameters(h_output)
-
+            h_output = self.find_header_output_params(path)
+            output_parameters = self.get_header_parameters(h_output)
+        except AttributeError as e:
+            file_name = os.path.basename(path)
+            print("[WARNING] Could not parse header in file \'{file_name}\'.".format(file_name = file_name))
+            input_parameters = []
+            output_parameters = []
         data = {'function_name': None, 'parameters': input_parameters, 'return_values':output_parameters}
         return data
 
@@ -152,18 +157,18 @@ class FunctionParser(object):
         with open(path, 'r') as f:
             content = f.read()
         match = re.search(pattern=self.__class__.function_pattern, string=content, flags=re.I | re.M)
-        start =match.start()
+        start = match.start()
         end = match.end()
         return content[start:end]
 
     def files(self):
         """
-        generator function to find files in self.path, that end with self.ending
+        generator function to find files in self.path, that end with self.extension
         """
         for f in os.listdir(self.path):
-            if len(f) > 4:
-                if f[-4:] == self.ending:
-                    yield f
+            name, extension = os.path.splitext(f)
+            if extension == self.extension:
+                yield os.path.join(self.path, f)
 
     def check_parameters(self, header, data):
         header_param_names = [p[0].lower() for p in header["parameters"]]

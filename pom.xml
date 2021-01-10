@@ -109,6 +109,7 @@
 					<include>reduction.cuh</include>
 					<include>spoof_utils.cuh</include>
 					<include>utils.cuh</include>
+					<include>Matrix.h</include>
 				</includes>
 				<targetPath>cuda/headers</targetPath>
 			</resource>

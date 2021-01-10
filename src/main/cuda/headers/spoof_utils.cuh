@@ -28,7 +28,7 @@
 
 using uint32_t = unsigned int;
 
-__device__ bool debug_row() { return blockIdx.x == 1; };
+__device__ bool debug_row() { return blockIdx.x == 4; };
 __device__ bool debug_thread() { return threadIdx.x == 0; }
 
 __constant__ double DOUBLE_EPS = 1.11022E-16; // 2 ^ -53
@@ -308,10 +308,9 @@ __device__ int vectWrite_(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t c
 
 	while (i < len) {
 		c[ci + i] = OP::exec(a[ai + i], b[bi + i]);
-		if(blockIdx.x == 1 && threadIdx.x < 4)
-			printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, bi=%d, ci=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
-//			   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, OP::exec(a[ai + i], b[bi + i]));
-				   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, c[ci+i]);
+//		if(debug_row() && threadIdx.x < 4)
+//			printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, bi=%d, ci=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
+//				   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, c[ci+i]);
 		i += blockDim.x;
 	}
 	
@@ -502,8 +501,8 @@ int vectMatrixMult(T* a, MatrixAccessor<T>& b, T* c, uint32_t ai, uint32_t bi, u
 		T result = dotProduct(a, b.vals(0), ai, bix, len);
 		if(threadIdx.x == 0) {
 			c[bi + j] = result;
-			if(blockIdx.x == 1)
-				printf("vectMatrixMult bid=%d bix=%d len=%d m2clen=%d c[%d]=%4.3f\n", blockIdx.x, bix, len, m2clen, bi+j, c[bi+j]);
+//			if(debug_row())
+//				printf("vectMatrixMult bid=%d bix=%d len=%d m2clen=%d c[%d]=%4.3f\n", blockIdx.x, bix, len, m2clen, bi+j, c[bi+j]);
 		}
 	}
 	return len;
@@ -525,9 +524,9 @@ uint32_t bix = 0;
 		if(a[ai + i != 0]) {
 			for(uint32_t j=0; j < len2; ++j) {
 				atomicAdd(&(c[i * len2 + j]), a[ai + i] * b[bix + j]);
-				if (debug_row() && debug_thread())
-					printf("vectOuterMultAdd: bid=%d, tid=%d, ai=%d, bix=%d, ci=%d, len1=%d, len2=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
-							blockIdx.x, threadIdx.x, ai, bix, ci, len1, len2, ai+i, a[ai+i], bix+j, b[bix+j], i*len2+j, c[i*len2+j]);
+//				if (debug_row() && debug_thread())
+//					printf("vectOuterMultAdd: bid=%d, tid=%d, ai=%d, bix=%d, ci=%d, len1=%d, len2=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
+//							blockIdx.x, threadIdx.x, ai, bix, ci, len1, len2, ai+i, a[ai+i], bix+j, b[bix+j], i*len2+j, c[i*len2+j]);
 
 
 //				vectAdd_atomic<T, ProductOp<T>>(b, a[ai+i], c, bi, ci, len2, op);

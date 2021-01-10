@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,7 +19,12 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.io.Serializable;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -38,37 +43,37 @@ import org.apache.wink.json4j.JSONArray;
 /**
  * Base class for all transform encoders providing both a row and block
  * interface for decoding frames to matrices.
- * 
+ *
  */
-public abstract class Encoder implements Serializable
+public abstract class Encoder implements Externalizable
 {
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected static final Log LOG = LogFactory.getLog(Encoder.class.getName());
-	
-	protected int _clen = -1; 
+
+	protected int _clen = -1;
 	protected int[] _colList = null;
-	
+
 	protected Encoder( int[] colList, int clen ) {
 		_colList = colList;
 		_clen = clen;
 	}
-	
+
 	public int[] getColList() {
 		return _colList;
 	}
-	
+
 	public void setColList(int[] colList) {
 		_colList = colList;
 	}
-	
+
 	public int getNumCols() {
 		return _clen;
 	}
 
 	public int initColList(JSONArray attrs) {
 		_colList = new int[attrs.size()];
-		for(int i=0; i < _colList.length; i++) 
-			_colList[i] = UtilFunctions.toInt(attrs.get(i));	
+		for(int i=0; i < _colList.length; i++)
+			_colList[i] = UtilFunctions.toInt(attrs.get(i));
 		return _colList.length;
 	}
 
@@ -76,21 +81,21 @@ public abstract class Encoder implements Serializable
 		_colList = colList;
 		return _colList.length;
 	}
-	
+
 	/**
-	 * Indicates if this encoder is applicable, i.e, if there is at 
-	 * least one column to encode. 
-	 * 
+	 * Indicates if this encoder is applicable, i.e, if there is at
+	 * least one column to encode.
+	 *
 	 * @return true if at least one column to encode
 	 */
 	public boolean isApplicable()  {
 		return (_colList != null && _colList.length > 0);
 	}
-	
+
 	/**
 	 * Indicates if this encoder is applicable for the given column ID,
 	 * i.e., if it is subject to this transformation.
-	 * 
+	 *
 	 * @param colID column ID
 	 * @return true if encoder is applicable for given column
 	 */
@@ -100,10 +105,10 @@ public abstract class Encoder implements Serializable
 		int idx = Arrays.binarySearch(_colList, colID);
 		return ( idx >= 0 ? idx : -1);
 	}
-	
+
 	/**
 	 * Block encode: build and apply (transform encode).
-	 * 
+	 *
 	 * @param in input frame block
 	 * @param out output matrix block
 	 * @return output matrix block
@@ -113,15 +118,15 @@ public abstract class Encoder implements Serializable
 	/**
 	 * Build the transform meta data for the given block input. This call modifies
 	 * and keeps meta data as encoder state.
-	 * 
+	 *
 	 * @param in input frame block
 	 */
 	public abstract void build(FrameBlock in);
-	
+
 	/**
 	 * Encode input data blockwise according to existing transform meta
 	 * data (transform apply).
-	 * 
+	 *
 	 * @param in input frame block
 	 * @param out output matrix block
 	 * @return output matrix block
@@ -143,7 +148,7 @@ public abstract class Encoder implements Serializable
 
 	/**
 	 * Returns a new Encoder that only handles a sub range of columns.
-	 * 
+	 *
 	 * @param ixRange the range (1-based, begin inclusive, end exclusive)
 	 * @return an encoder of the same type, just for the sub-range
 	 */
@@ -154,7 +159,7 @@ public abstract class Encoder implements Serializable
 
 	/**
 	 * Merges the column information, like how many columns the frame needs and which columns this encoder operates on.
-	 * 
+	 *
 	 * @param other the other encoder of the same type
 	 * @param col   column at which the second encoder will be merged in (1-based)
 	 */
@@ -175,7 +180,7 @@ public abstract class Encoder implements Serializable
 	 * Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
 	 * <code>Encoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with every
 	 * other <code>Encoder</code>.
-	 * 
+	 *
 	 * @param other the encoder that should be merged in
 	 * @param row   the row where it should be placed (1-based)
 	 * @param col   the col where it should be placed (1-based)
@@ -184,7 +189,7 @@ public abstract class Encoder implements Serializable
 		throw new DMLRuntimeException(
 			this.getClass().getSimpleName() + " does not support merging with " + other.getClass().getSimpleName());
 	}
-	
+
 	/**
 	 * Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.
 	 *
@@ -197,7 +202,7 @@ public abstract class Encoder implements Serializable
 
 	/**
 	 * Construct a frame block out of the transform meta data.
-	 * 
+	 *
 	 * @param out output frame block
 	 * @return output frame block?
 	 */
@@ -205,15 +210,15 @@ public abstract class Encoder implements Serializable
 
 	/**
 	 * Sets up the required meta data for a subsequent call to apply.
-	 * 
+	 *
 	 * @param meta frame block
 	 */
 	public abstract void initMetaData(FrameBlock meta);
-	
+
 	/**
 	 * Obtain the column mapping of encoded frames based on the passed
 	 * meta data frame.
-	 * 
+	 *
 	 * @param meta meta data frame block
 	 * @param out output matrix
 	 * @return matrix with column mapping (one row per attribute)
@@ -221,5 +226,47 @@ public abstract class Encoder implements Serializable
 	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
 		//default: do nothing
 		return out;
+	}
+
+	public abstract void write(DataOutput out) throws IOException;
+
+	public abstract void read(DataInput in) throws IOException;
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default
+	 * hadoop writable serialization for efficient broadcast/rdd serialization.
+	 *
+	 * @param os object output
+	 * @throws IOException if IOException occurs
+	 */
+	@Override
+	public void writeExternal(ObjectOutput os)
+		throws IOException
+	{
+		os.writeInt(_clen);
+		os.writeInt(_colList.length);
+		for(int col : _colList)
+			os.writeInt(col);
+
+		write(os);
+	}
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default
+	 * hadoop writable serialization for efficient broadcast/rdd deserialization.
+	 *
+	 * @param in object input
+	 * @throws IOException, ClassNotFoundException if occur
+	 */
+	@Override
+	public void readExternal(ObjectInput in)
+		throws IOException
+	{
+		_clen = in.readInt();
+		_colList = new int[in.readInt()];
+		for(int i = 0; i < _colList.length; i++)
+			_colList[i] = in.readInt();
+
+		read(in);
 	}
 }

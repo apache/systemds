@@ -19,12 +19,24 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC1;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC2;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -41,7 +53,10 @@ public class EncoderComposite extends Encoder
 	
 	private List<Encoder> _encoders = null;
 	private FrameBlock _meta = null;
-	
+
+	// needed for _encoders serialization
+	private enum  EncoderType { EncoderBin, EncoderComposite, EncoderDummycode, EncoderFeatureHash, EncoderMVImpute, EncoderOmit, EncoderPassThrough, EncoderRecode };
+
 	public EncoderComposite(List<Encoder> encoders) {
 		super(null, -1);
 		_encoders = encoders;
@@ -218,5 +233,62 @@ public class EncoderComposite extends Encoder
 			sb.append("\n");
 		}
 		return sb.toString();
+	}
+
+	@Override
+	public void write(DataOutput out)
+		throws IOException {
+		out.writeInt(_encoders.size());
+		for(Encoder encoder : _encoders) {
+			out.writeByte(EncoderType.valueOf(encoder.getClass().getSimpleName()).ordinal());
+			// check cast
+			encoder.writeExternal((ObjectOutput) out);
+		}
+		_meta.write(out);
+	}
+
+	@Override
+	public void read(DataInput in) throws IOException {
+		int encodersSize = in.readInt();
+		for(int i = 0; i < encodersSize; i++) {
+			EncoderType etype = EncoderType.values()[in.readByte()];
+			Encoder encoder = null;
+
+			// create instance of column group
+			switch(etype) {
+				case EncoderBin:
+					encoder = new EncoderBin();
+					break;
+				case EncoderComposite:
+					encoder = new EncoderComposite(null);
+					break;
+				case EncoderDummycode:
+					encoder = new EncoderDummycode();
+					break;
+				case EncoderFeatureHash:
+					encoder = new EncoderFeatureHash();
+					break;
+				case EncoderMVImpute:
+					encoder = new EncoderMVImpute();
+					break;
+				case EncoderOmit:
+					encoder = new EncoderOmit();
+					break;
+				case EncoderPassThrough:
+					encoder = new EncoderPassThrough();
+					break;
+				case EncoderRecode:
+					encoder = new EncoderRecode();
+					break;
+				default:
+					throw new DMLRuntimeException("Unsupported Encoder Type used:  " + etype);
+			}
+			encoder.readExternal((ObjectInput) in);
+			_encoders.add(encoder);
+		}
+		FrameBlock meta = new FrameBlock();
+		// check cast
+		meta.readFields(in);
+		_meta = meta;
 	}
 }

@@ -19,6 +19,11 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -230,5 +235,24 @@ public class EncoderDummycode extends Encoder
 		}
 		
 		return out;
+	}
+
+	@Override
+	public void write(DataOutput out)
+		throws IOException {
+		out.writeLong(_dummycodedLength);
+		out.writeInt(_domainSizes.length);
+		for(int size : _domainSizes)
+			out.writeInt(size);
+	}
+
+	@Override
+	public void read(DataInput in) throws IOException {
+		_dummycodedLength = in.readLong();
+		if(_domainSizes.length == 0) {
+			_domainSizes = new int[in.readInt()];
+			for(int i = 0; i < _domainSizes.length; i++)
+				_domainSizes[i] = in.readInt();
+		}
 	}
 }

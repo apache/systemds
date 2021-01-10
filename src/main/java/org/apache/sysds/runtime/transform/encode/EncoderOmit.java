@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Arrays;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -194,5 +197,24 @@ public class EncoderOmit extends Encoder
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		//do nothing
+	}
+
+	@Override
+	public void write(DataOutput out)
+		throws IOException {
+		out.writeBoolean(_federated);
+		out.writeInt(_rmRows.length);
+		for(boolean r : _rmRows)
+			out.writeBoolean(r);
+	}
+
+	@Override
+	public void read(DataInput in) throws IOException {
+		if(_rmRows.length == 0) {
+			_federated = in.readBoolean();
+			_rmRows = new boolean[in.readInt()];
+			for(int i = 0; i < _rmRows.length; i++)
+				_rmRows[i] = in.readBoolean();
+		}
 	}
 }

@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
@@ -143,5 +147,16 @@ public class EncoderFeatureHash extends Encoder
 			int colID = _colList[j]; //1-based
 			_K = UtilFunctions.parseToLong(meta.get(0, colID-1).toString());
 		}
+	}
+
+	@Override
+	public void write(DataOutput out)
+		throws IOException {
+		out.writeLong(_K);
+	}
+
+	@Override
+	public void read(DataInput in) throws IOException {
+		_K = in.readLong();
 	}
 }

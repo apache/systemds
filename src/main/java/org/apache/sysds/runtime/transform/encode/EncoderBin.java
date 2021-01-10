@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -259,6 +261,37 @@ public class EncoderBin extends Encoder
 				String[] tmp = meta.get(i, colID-1).toString().split(Lop.DATATYPE_PREFIX);
 				_binMins[j][i] = Double.parseDouble(tmp[0]);
 				_binMaxs[j][i] = Double.parseDouble(tmp[1]);
+			}
+		}
+	}
+
+	@Override
+	public void write(DataOutput out)
+		throws IOException {
+		//TODO no need to ser _binMin?
+		out.writeInt(_numBins.length);
+		out.writeInt(_binMaxs[0].length);
+		for(int i = 0; i < _numBins.length; i++) {
+			out.writeInt(i);
+			for(int j = 0; j < _binMaxs[0].length; j++)
+				out.writeDouble(_binMaxs[i][j]);
+		}
+
+	}
+
+	@Override
+	public void read(DataInput in) throws IOException {
+		//TODO no need to ser _binMin?
+		if(_numBins == null && _binMaxs == null) {
+			int d1 = in.readInt();
+			int d2 = in.readInt();
+			_numBins = new int[d1];
+			_binMaxs = new double[d1][d2];
+			for(int i = 0; i < d1; i++) {
+				_numBins[i] = in.readInt();
+				for(int j = 0; j < d2; j++)
+					_binMaxs[i][j] = in.readDouble();
+
 			}
 		}
 	}

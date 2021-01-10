@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -332,6 +335,57 @@ public class EncoderMVImpute extends Encoder
 	 */
 	public HashMap<String,Long> getHistogram( int colID ) {
 		return _hist.get(colID);
+	}
+
+	@Override
+	public void write(DataOutput out)
+		throws IOException {
+		// TODO maybe do nothing
+		out.writeInt(_replacementList.length);
+		for(String replacement : _replacementList)
+			out.writeUTF(replacement);
+		out.writeInt(_rcList.size());
+
+//		out.writeInt(_rcList.size());
+//		for(Integer replacement : _rcList)
+//			out.writeInt(replacement);
+
+		out.writeInt(_hist.size());
+		for(Entry e1 : _hist.entrySet()) {
+			out.writeInt((Integer) e1.getKey());
+			out.writeInt(((HashMap) e1.getValue()).size());
+			for(Entry e2 : ((HashMap<String, Long>) e1.getValue()).entrySet()) {
+				out.writeUTF((String) e2.getKey());
+				out.writeLong((Long) e2.getValue());
+			}
+		}
+
+	}
+
+	@Override
+	public void read(DataInput in) throws IOException {
+		//TODO maybe do nothing
+		_replacementList = new String[in.readInt()];
+		for(int i = 0; i < _replacementList.length; i++)
+			_replacementList[i] = in.readUTF();
+
+//		for(int i = 0; i < in.readInt(); i++)
+//			_rcList.add(in.readInt());
+
+		int size1 = in.readInt();
+		for(int i = 0; i < size1; i++) {
+			Integer key1 = in.readInt();
+			int size2 = in.readInt();
+
+			HashMap<String, Long> maps = new HashMap<>();
+			for(int j = 0; j < size2; j++){
+				String key2 = in.readUTF();
+				Long value = in.readLong();
+				maps.put(key2, value);
+			}
+
+			_hist.put(key1, maps);
+		}
 	}
 	
 	private static class ColInfo {

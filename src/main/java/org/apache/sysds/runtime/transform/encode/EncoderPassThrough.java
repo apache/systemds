@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -104,6 +107,17 @@ public class EncoderPassThrough extends Encoder
 	
 	@Override
 	public void initMetaData(FrameBlock meta) {
+		//do nothing
+	}
+
+	@Override
+	public void write(DataOutput out)
+		throws IOException {
+		//do nothing
+	}
+
+	@Override
+	public void read(DataInput in) throws IOException {
 		//do nothing
 	}
 }

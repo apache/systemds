@@ -399,7 +399,7 @@ public:
 		T* d_temp = nullptr;
 		if(op->const_dim2>0) {
 			tmp_len = std::max(in_cols, op->const_dim2);
-			temp_buf_size = op->num_temp_vectors * tmp_len * in_rows;
+			temp_buf_size = op->num_temp_vectors * tmp_len * in_rows * sizeof(T);
 			CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&d_temp), temp_buf_size));
 			CHECK_CUDART(cudaMemset(d_temp, 0, temp_buf_size));
 		}

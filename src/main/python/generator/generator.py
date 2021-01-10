@@ -27,23 +27,29 @@ from parser import FunctionParser
 
 class PythonAPIFileGenerator(object):
 
-    target_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'systemds', 'operator')
+    target_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'systemds', 'operator', 'algorithm', 'builtin')
     source_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),'scripts', 'builtin')
+    template_path = os.path.join('resources', 'template_python_script_imports')
 
-    def __init__(self):
+    def __init__(self, extension: str='py'):
         super(PythonAPIFileGenerator, self).__init__()
+        self.extension = '.{extension}'.format(extension=extension)
 
-    def generate_file(self, data:dict):
+    def generate_file(self, filename: str, file_content: str):
         """
         Generates file in self.path with name file_name
         and given file_contents as content
-        @param data: dictionary containing
-            {
-                'file_name':'some_name',
-                'file_contents': 'some_content'
-            }
         """
-        raise NotImplementedError()
+        path = os.path.dirname(__file__)
+        template_license_import_path = os.path.join(path, self.__class__.template_path)
+        with open(template_license_import_path, 'r') as temp_py_script:
+            license_imports = temp_py_script.read()
+
+        target_file = os.path.join(self.target_path, filename) + self.extension
+        with open(target_file, "w") as new_script:
+            new_script.write(license_imports)
+            new_script.writelines("\n \n")
+            new_script.write(file_content)
 
 class PythonAPIFunctionGenerator(object):
 
@@ -61,6 +67,12 @@ class PythonAPIFunctionGenerator(object):
     type_mapping_file = os.path.join('resources','type_mapping.json')
 
     type_mapping_pattern = r"^([^\[\s]+)"
+
+    path = os.path.dirname(__file__)
+    type_mapping_path = os.path.join(path, type_mapping_file)
+    # print(type_mapping_path)
+    with open(type_mapping_path, 'r') as mapping:
+        type_mapping = json.load(mapping)
 
     def __init__(self):
         super(PythonAPIFunctionGenerator, self).__init__()
@@ -107,17 +119,12 @@ class PythonAPIFunctionGenerator(object):
         result = u""
         has_optional = False
         path = os.path.dirname(__file__)
-        type_mapping_path = os.path.join(path,self.__class__.type_mapping_file)
-        #print(type_mapping_path)
-        with open(type_mapping_path, 'r') as mapping:
-            type_mapping = json.load(mapping)
-        #print(type_mapping)
         for param in parameters:
             # map data types
             # TODO: type mapping path
-            #param[1] = type_mapping["type"][param[1].lower()]
+            # param[1] = type_mapping["type"][param[1].lower()]
             pattern = self.__class__.type_mapping_pattern
-            param = tuple([type_mapping["type"].get(re.search(pattern,str(item).lower()).group() if item else str(item).lower(),item) for item in param])
+            param = tuple([self.__class__.type_mapping["type"].get(re.search(pattern, str(item).lower()).group() if item else str(item).lower(), item) for item in param])
             if param[2] is not None:
                 has_optional = True
             else:
@@ -178,6 +185,11 @@ class PythonAPIFunctionGenerator(object):
         if length > 1:
             output_type_list = ""
             for value in return_values:
+                # map type from Matrix[Double] to Matrix.Double
+                # TODO maybe use regex instead to map from Matrix[Double] to MATRIX.DOUBLE
+                value = tuple(
+                    [self.__class__.type_mapping["return_type"].get(str(item).lower(), item) for item in value])
+
                 if len(output_type_list):
                     output_type_list = "{output_type_list}, ".format(
                         output_type_list=output_type_list
@@ -197,7 +209,9 @@ class PythonAPIFunctionGenerator(object):
                 output_type_list=output_type_list
             )
         else:
-            output_type = return_values[0][1]
+            # TODO maybe use regex instead to map from Matrix[Double] to MATRIX.DOUBLE
+            output_type = output_type = tuple([self.__class__.type_mapping["return_type"].get(str(item).lower(), item)
+                                               for item in return_values[0]])[1]
         result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, output_type=OutputType.{output_type}".format(
             param=param[0],
             function_name=function_name,
@@ -267,17 +281,24 @@ if __name__ == "__main__":
     f_parser = FunctionParser(PythonAPIFileGenerator.source_path)
     doc_generator = PythonAPIDocumentationGenerator()
     fun_generator = PythonAPIFunctionGenerator()
+    file_generator = PythonAPIFileGenerator()
+
     for dml_file in f_parser.files():
         header_data = f_parser.parse_header(dml_file)
         try:
             data = f_parser.parse_function(dml_file)
-        except AttributeError as e:
+            # TODO: define a set of dml script that would not fail this check
+            f_parser.check_parameters(header_data, data)
+        except Exception as e:
             #print("[WARNING] Skipping file \'{file_name}\'.".format(file_name = dml_file))
             continue
         data['function_header'] = doc_generator.generate_documentation(header_data)
         script_content = fun_generator.generate_function(data)
+        file_generator.generate_file(data["function_name"], script_content)
         #print("---------------------------------------")
         #print(script_content)
 
+    # TODO: Add the scripts to algorthm.py? or make the scripts accessible somehow
+    #       maybe use some tests to test the implementation (eg. kmeans/pca)
 
 

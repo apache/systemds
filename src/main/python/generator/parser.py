@@ -33,6 +33,8 @@ class FunctionParser(object):
     header_parameter_pattern = r"[\s#\-]*[#]+[ \t]*([\w|-]+)[\s]+([\w]+)[\s]+([\w,\d.\"\-]+)[\s]+([\w|\W]+)"
     divider_pattern = r"[\s#\-]*"
 
+    type_mapping_file = os.path.join('resources', 'type_mapping.json')
+
     def __init__(self, path:str, extension:str='dml'):
         """
         @param path: path where to look for python scripts
@@ -77,7 +79,6 @@ class FunctionParser(object):
         #pattern = re.compile(r"[\r\v\n\t]")
         #param_str = pattern.sub(" ", param_str)
         #print(param_str)
-        # TODO @anton: I've split the params by "=" see pca.dml, there are no spaces in between defaults
         params = re.split(r",[\s]*", param_str)
         parameters = []
         for param in params:
@@ -171,9 +172,18 @@ class FunctionParser(object):
                 yield os.path.join(self.path, f)
 
     def check_parameters(self, header, data):
+        path = os.path.dirname(__file__)
+        type_mapping_path = os.path.join(path, self.__class__.type_mapping_file)
+        # print(type_mapping_path)
+        with open(type_mapping_path, 'r') as mapping:
+            type_mapping = json.load(mapping)
+
         header_param_names = [p[0].lower() for p in header["parameters"]]
         data_param_names = [p[0].lower() for p in data["parameters"]]
         if header_param_names != data_param_names:
+            print("[ERROR]   The parameter names of the function does not match with the documentation for file \'{file_name}\'.".format(
+                file_name=data["function_name"]
+            ))
             raise ValueError("The parameter names of the function does not match with the documentation")
 
         header_param_type = [p[1].lower() for p in header["parameters"]]
@@ -182,6 +192,9 @@ class FunctionParser(object):
         data_param_type = [p[1].lower() for p in data["parameters"]]
         data_param_type = [type_mapping["type"].get(item, item) for item in data_param_type]
         if header_param_type != data_param_type:
+            print("[ERROR]   The parameter type of the function does not match with the documentation for file \'{file_name}\'.".format(
+                file_name=data["function_name"]
+            ))
             raise ValueError("The parameter type of the function does not match with the documentation")
 
         header_param_default = [p[2] for p in header["parameters"]]
@@ -189,5 +202,8 @@ class FunctionParser(object):
         data_param_default = [str(p[2]) for p in data["parameters"]]
         data_param_default = [type_mapping["default"].get(item, item) for item in data_param_default]
         if header_param_default != data_param_default:
+            print("[ERROR]   The parameter default of the function does not match with the documentation for file \'{file_name}\'.".format(
+                file_name=data["function_name"]
+            ))
             raise ValueError("The parameter default of the function does not match with the documentation")
 

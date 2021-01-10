@@ -4,10 +4,12 @@
             "matrix": "OperationNode",
             "boolean": "bool",
             "integer": "int",
-            "matrix[double]": "OperationNode",
             "double": "float"
     },
     "default": {
         "---": "None"
-    }
+    },
+  "return_type": {
+    "matrix[double]": "MATRIX.DOUBLE"
+  }
 }

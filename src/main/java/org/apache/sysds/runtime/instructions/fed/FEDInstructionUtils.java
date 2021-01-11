@@ -136,6 +136,9 @@ public class FEDInstructionUtils {
 					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
 				else if(instruction.getOpcode().equals("qpick"))
 					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
+				else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1).isFederated(FType.ROW) ||
+					ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
+					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
 				else
 					fedinst = BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 			}

@@ -44,6 +44,11 @@ public class BinaryFrameScalarSPInstruction extends BinarySPInstruction {
 		// Create local compiled functions (once) and execute on RDD
 		JavaPairRDD<Long, FrameBlock> out = in1.mapValues(new RDDStringProcessing(expression));
 
+		if(expression.contains("jaccardSim")) {
+			long rows = sec.getDataCharacteristics(output.getName()).getRows();
+			sec.getDataCharacteristics(output.getName()).setDimension(rows, rows);
+		}
+
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}

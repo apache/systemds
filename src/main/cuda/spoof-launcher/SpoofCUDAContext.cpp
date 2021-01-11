@@ -109,12 +109,20 @@ bool SpoofCUDAContext::compile_cuda(const std::string &src,
         std::cerr << "error: unknown spoof operator" << std::endl;
 		return false;
 	}
+
 	bool TB1 = false;
 	if((pos = src.find("TB1")) != std::string::npos)
 		if(src.substr(pos, pos+8).find("true") != std::string::npos)
 			TB1 = true;
 
-	
+	uint32_t numTempVect = 0;
+	if((pos = src.find("// VectMem: ")) != std::string::npos)
+		numTempVect = std::stoi(std::string(src.begin() + pos + 12, std::find(src.begin()+pos, src.end(), '\n')));
+
+	uint32_t constDim2 = 0;
+	if((pos = src.find("// ConstDim2: ")) != std::string::npos)
+		constDim2 = std::stoi(std::string(src.begin() + pos + 14, std::find(src.begin()+pos, src.end(), '\n')));
+
 	if(((pos = src.find("CellType")) != std::string::npos) || ((pos = src.find("RowType")) != std::string::npos)){
 		if(src.substr(pos, pos+30).find("FULL_AGG") != std::string::npos)
 			agg_type= SpoofOperator::AggType::FULL_AGG;
@@ -156,6 +164,6 @@ bool SpoofCUDAContext::compile_cuda(const std::string &src,
 	s2 << "-I" << resource_path << "/cuda/spoof";
 
 	jitify::Program program = kernel_cache.program(src, 0, {s1.str(), s2.str(), cuda_include_path});
-	ops.insert(std::make_pair(name, SpoofOperator({std::move(program), agg_type, agg_op, op_type, name, TB1})));
+	ops.insert(std::make_pair(name, SpoofOperator({std::move(program), agg_type, agg_op, op_type, name, TB1, constDim2, numTempVect})));
 	return true;
 }

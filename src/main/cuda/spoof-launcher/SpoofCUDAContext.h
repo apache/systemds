@@ -56,8 +56,8 @@ struct SpoofOperator {
 	OpType op_type;
     const std::string name;
 	bool TB1 = false;
-	uint32_t const_dim2 = 4;
-	uint32_t num_temp_vectors = 2;
+	int32_t const_dim2;
+	uint32_t num_temp_vectors;
 };
 
 class SpoofCUDAContext {
@@ -397,8 +397,8 @@ public:
 		uint32_t tmp_len = 0;
 		uint32_t temp_buf_size = 0;
 		T* d_temp = nullptr;
-		if(op->const_dim2>0) {
-			tmp_len = std::max(in_cols, op->const_dim2);
+		if(op->num_temp_vectors>0) {
+			tmp_len = std::max(in_cols, op->const_dim2 < 0 ? 0 : static_cast<uint32_t>(op->const_dim2));
 			temp_buf_size = op->num_temp_vectors * tmp_len * in_rows * sizeof(T);
 			CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&d_temp), temp_buf_size));
 			CHECK_CUDART(cudaMemset(d_temp, 0, temp_buf_size));
@@ -408,7 +408,7 @@ public:
 			// ToDo: connect output to SystemDS logging facilities
 			std::cout << "launching spoof rowwise kernel " << op->name << " with " << NT * in_rows << " threads in " << in_rows
 				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by "
-				<< NT << " threads per row " << std::endl;
+				<< NT << " threads per row, adding " << temp_buf_size / 1024 << " kb of temp buffer in global men." <<  std::endl;
 //#endif
 		
 		CHECK_CUDA(op->program.kernel(op->name)
@@ -416,7 +416,7 @@ public:
 				.configure(grid, block, shared_mem_size)
 				.launch(d_in, d_sides, d_out, d_scalars, d_temp, grix));
 
-		if(op->const_dim2>0)
+		if(op->num_temp_vectors>0)
 			CHECK_CUDART(cudaFree(d_temp));
 
 		return result;

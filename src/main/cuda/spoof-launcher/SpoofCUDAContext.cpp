@@ -119,7 +119,7 @@ bool SpoofCUDAContext::compile_cuda(const std::string &src,
 	if((pos = src.find("// VectMem: ")) != std::string::npos)
 		numTempVect = std::stoi(std::string(src.begin() + pos + 12, std::find(src.begin()+pos, src.end(), '\n')));
 
-	uint32_t constDim2 = 0;
+	int32_t constDim2 = 0;
 	if((pos = src.find("// ConstDim2: ")) != std::string::npos)
 		constDim2 = std::stoi(std::string(src.begin() + pos + 14, std::find(src.begin()+pos, src.end(), '\n')));
 

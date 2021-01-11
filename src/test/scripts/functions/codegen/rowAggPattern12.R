@@ -24,11 +24,10 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-
 X = matrix(seq(1,150), 15, 10, byrow=TRUE);
-v = seq(1,150);
+v = seq(1,15);
 
 Y = (X >= v); 
 R = Y / rowSums(Y);
-print(R)
+print(R, digits=3, zero.print = ".")
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

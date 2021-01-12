@@ -125,7 +125,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.AUTO.name() );
 		_defaultVals.put(COMPRESSED_LOSSY,       "false" );
 		_defaultVals.put(COMPRESSED_VALID_COMPRESSIONS, "DDC,OLE,RLE");
-		_defaultVals.put(COMPRESSED_OVERLAPPING, "false" );
+		_defaultVals.put(COMPRESSED_OVERLAPPING, "true" );
 		_defaultVals.put(COMPRESSED_SAMPLING_RATIO, "0.01");
 		_defaultVals.put(COMPRESSED_COCODE,      "COST");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");

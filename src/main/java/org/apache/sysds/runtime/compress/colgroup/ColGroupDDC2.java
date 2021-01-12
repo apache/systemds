@@ -27,7 +27,6 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -125,19 +124,11 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	}
 
 	@Override
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
-		int cu) {
-		LinearAlgebraUtils.vectListAddDDC(preAggregatedB, c, _data, rl, ru, cl, cu, thatNrColumns, getNumValues());
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	int ru) {
+		LinearAlgebraUtils.vectListAddDDC(outputColumns, preAggregatedB, c, _data, rl, ru, thatNrColumns, getNumValues());
 	}
 
-	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		for(int i = 0; i < rows[0].size(); i++) {
-			double[] vals = sparsePreaggValues(numVals, rows[0].values()[i], false, dictVals);
-			LinearAlgebraUtils.vectListAdd(vals, c, _data, rl, ru, rows[0].indexes()[i] * _numRows);
-		}
-	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {

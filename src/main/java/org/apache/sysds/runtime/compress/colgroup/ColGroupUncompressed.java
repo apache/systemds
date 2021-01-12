@@ -30,7 +30,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlock.Type;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.matrix.data.IJV;
@@ -200,10 +199,7 @@ public class ColGroupUncompressed extends ColGroup {
 		return ColGroupSizes.estimateInMemorySizeUncompressed(_numRows, getNumCols(), _data.getSparsity());
 	}
 
-	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		decompressToBlock(target, rl, ru, rl);
-	}
+
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
@@ -320,19 +316,14 @@ public class ColGroupUncompressed extends ColGroup {
 		LibMatrixMult.matrixMult(_data, subMatrix, result);
 	}
 
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
-		int cu) {
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+		int ru) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
-	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
-	}
 
 	@Override
-	public void leftMultByRowVector(double[] vector, double[] c, int numVals) {
+	public void leftMultByRowVector(double[] vector, double[] c) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 

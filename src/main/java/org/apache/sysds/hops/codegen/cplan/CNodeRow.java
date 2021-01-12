@@ -124,20 +124,22 @@ public class CNodeRow extends CNodeTpl
 
 			tmp_stor_str.append("TMP_STORAGE = tmp_stor;\n");
 			tmp_stor_str.append("\t\ttmp_row_offset = tmp_len * tmp_count * blockIdx.x;\n");
+			tmp_stor_str.append("\t\ttemp_rb.init(tmp_row_offset, tmp_len, tmp_stor);\n");
 
 			tmp_stor_str_dec.append(
 					"T* TMP_STORAGE;\n" +
-					"\tuint32_t tmp_row_offset;\n");
+					"\tuint32_t tmp_row_offset;\n" +
+					"\tRingBuffer<T,2> temp_rb;\n");
 
-			int seq_id = 0;
-			for(int i = 0; i < _numVectors; ++i) {
-				if(tmp.contains("tmp_offset_")) {
-					tmp = tmp.replaceFirst("tmp_offset_", "tmp_offset" + seq_id++);
-					tmp_stor_str.append("\t\ttmp_offset" + i + " = tmp_len*" + i + ";\n");
-					tmp_stor_str_dec.append("\tuint32_t tmp_offset" + i + ";\n");
-				}
-			}
-			_numVectors = seq_id;
+//			int seq_id = 0;
+//			for(int i = 0; i < _numVectors; ++i) {
+//				if(tmp.contains("tmp_offset_")) {
+//					tmp = tmp.replaceFirst("tmp_offset_", "tmp_offset" + seq_id++);
+//					tmp_stor_str.append("\t\ttmp_offset" + i + " = tmp_len*" + i + ";\n");
+//					tmp_stor_str_dec.append("\tuint32_t tmp_offset" + i + ";\n");
+//				}
+//			}
+//			_numVectors = seq_id;
 			tmp_stor_str_dec.append("\tuint32_t tmp_count = " + _numVectors + ";\n");
 			tmp = tmp.replace("//%TMP_MEM%", tmp_stor_str.toString());
 			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", tmp_stor_str_dec.toString());

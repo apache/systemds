@@ -23,6 +23,40 @@
 
 using uint32_t = unsigned int;
 
+//ToDo: move to separate file
+template <typename T>
+struct Vector {
+	T* data;
+	uint32_t length;
+
+	T* vals(uint32_t idx) { return &data[idx]; }
+};
+
+template <typename T, uint32_t ELEMENTS>
+class RingBuffer {
+	Vector<T> vec[ELEMENTS];
+	int32_t pos;
+
+public:
+	void init(uint32_t offset, uint32_t length, T* buffer) {
+		pos = -1;
+		for(auto i=0;i<ELEMENTS;++i) {
+			vec[i].data = &buffer[offset + length * ELEMENTS];
+			vec[i].length = length;
+		}
+	}
+
+	Vector<T>& next() {
+		pos = (pos+1>=ELEMENTS) ? 0 : pos+1;
+		return vec[pos];
+	}
+};
+
+template <typename T>
+struct SpoofOp {
+	virtual Vector<T>& getTempStorage() = 0;
+};
+
 template <typename T>
 struct Matrix {
 	T* data;

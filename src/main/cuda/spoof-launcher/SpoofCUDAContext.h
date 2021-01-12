@@ -408,7 +408,7 @@ public:
 			// ToDo: connect output to SystemDS logging facilities
 			std::cout << "launching spoof rowwise kernel " << op->name << " with " << NT * in_rows << " threads in " << in_rows
 				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by "
-				<< NT << " threads per row, adding " << temp_buf_size / 1024 << " kb of temp buffer in global men." <<  std::endl;
+				<< NT << " threads per row, adding " << temp_buf_size / 1024 << " kb of temp buffer in global memory." <<  std::endl;
 //#endif
 		
 		CHECK_CUDA(op->program.kernel(op->name)

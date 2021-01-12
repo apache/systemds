@@ -221,7 +221,7 @@ public class Binary extends CodeTemplate {
 						return sparseRhs ? "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" : "		T* %TMP% = &TMP_STORAGE[tmp_row_offset+tmp_offset_];\n\t\tint %TMP%_len = vect" + vectName + "Write(%IN1%, %IN2%, %TMP%, %POS2%, %LEN%);\n";
 					else
 //						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
-						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		T* %TMP% = &TMP_STORAGE[tmp_row_offset+tmp_offset_];\n\t\tint %TMP%_len = vect" + vectName + "Write(%IN1%, %IN2%, %TMP%, %POS1%, %LEN%);\n";
+						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		Vector<T>& %TMP% = vect" + vectName + "Write(%IN1%, %IN2%, %POS1%, %LEN%, this);\n";
 				}
 
 				case VECT_CBIND:

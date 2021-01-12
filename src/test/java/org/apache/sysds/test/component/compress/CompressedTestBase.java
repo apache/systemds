@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.Power2;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.functionobjects.Xor;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -53,6 +55,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -301,29 +304,8 @@ public abstract class CompressedTestBase extends TestBase {
 				MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
 
 				// compare result with input
-				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
 
-				if(compressionSettings.lossy) {
-					// TODO Make actual calculation to know the tolerance
-					// double scaledTolerance = lossyTolerance * d1.length * d1.length * 1.5;
-					// if(ctype == ChainType.XtwXv){
-					// scaledTolerance *= d1.length * d1.length * 0.5;
-					// }
-					// TestUtils.compareMatrices(d1, d2, d1.length, d1[0].length, scaledTolerance );
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.95, this.toString());
-				}
-				else {
-					if(rows > 50000)
-						TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.999, this.toString());
-					else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-						overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-						overlappingType == OverLapping.COL)
-						TestUtils.compareMatricesPercentageDistance(d1, d2, 0.98, 0.99, this.toString());
-					else
-						TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 350, this.toString());
-
-				}
+				compareResultMatrices(ret1, ret2);
 			}
 		}
 		catch(Exception e) {
@@ -422,22 +404,8 @@ public abstract class CompressedTestBase extends TestBase {
 			MatrixBlock ret1 = mb.aggregateBinaryOperations(matrix, mb, new MatrixBlock(), abop);
 
 			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy) {
-				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString());
-			}
-			else {
-				if(rows > 65000)
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
-				else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-					overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-					overlappingType == OverLapping.COL)
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 1500000, 1000, this.toString());
-				else
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 24000, 512, this.toString());
 
-			}
+			compareResultMatrices(ret1, ret2);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -523,28 +491,150 @@ public abstract class CompressedTestBase extends TestBase {
 			MatrixBlock ret2 = cmb.aggregateBinaryOperations(cmb, matrix, new MatrixBlock(), abop);
 
 			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy) {
-				if(rows > 65000) {
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * cols * rows / 10, this.toString());
-				}
-				else {
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * cols * rows / 15, this.toString());
 
-				}
-			}
-			else {
-				if(rows > 65000)
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.99, this.toString());
-				else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-					overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-					overlappingType == OverLapping.COL)
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 1600000, 1000, this.toString());
-				else
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 500, this.toString());
+			compareResultMatrices(ret1, ret2);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+		}
+	}
 
-			}
+	@Test
+	public void testLeftMatrixMatrixMultTransposedLeftSide() {
+		MatrixBlock matrix = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 2, 0.9, 1.5, 1.0, 3));
+		testLeftMatrixMatrixMultiplicationTransposed(matrix, true, false, false);
+	}
+
+	@Test
+	public void testLeftMatrixMatrixMultTransposedRightSide() {
+		MatrixBlock matrix = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(2, cols, 0.9, 1.5, 1.0, 3));
+		testLeftMatrixMatrixMultiplicationTransposed(matrix, false, true, false);
+	}
+
+	@Test
+	public void testLeftMatrixMatrixMultTransposedBothSides() {
+		MatrixBlock matrix = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, 0.9, 1.5, 1.0, 3));
+		testLeftMatrixMatrixMultiplicationTransposed(matrix, true, true, false);
+	}
+
+	@Test
+	public void testLeftMatrixMatrixMultDoubleCompressedTransposedLeftSideSmaller() {
+		MatrixBlock matrix = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 1.0, 3);
+		ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
+		matrix = matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+		testLeftMatrixMatrixMultiplicationTransposed(matrix, true, false, true);
+		
+	}
+
+	@Test
+	public void testLeftMatrixMatrixMultDoubleCompressedTransposedLeftSideBigger() {
+		if(rows < 6000){
+
+			MatrixBlock matrix = CompressibleInputGenerator.getInput(rows, cols + 1, CompressionType.OLE, 5, 1.0, 3);
+			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
+			matrix = matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+			testLeftMatrixMatrixMultiplicationTransposed(matrix, true, false, true);
+		}
+
+	}
+
+	// // @Test(expected = DMLCompressionException.class)
+	// // public void testLeftMatrixMatrixMultDoubleCompressedTransposedRightSide() {
+	// // MatrixBlock matrix = CompressibleInputGenerator.getInput(1, rows, CompressionType.OLE, 5, 1.0, 3);
+	// // testLeftMatrixMatrixMultiplicationTransposed(matrix, false, true, true);
+	// // }
+
+	// @Test
+	// public void testLeftMatrixMatrixMultDoubleCompressedTransposedBothSides() {
+	// if(rows < 1000) {
+	// MatrixBlock matrix = CompressibleInputGenerator.getInput(1, rows, CompressionType.OLE, 5, 1.0, 3);
+	// testLeftMatrixMatrixMultiplicationTransposed(matrix, true, true, true);
+	// }
+	// }
+
+	public void testLeftMatrixMatrixMultiplicationTransposed(MatrixBlock matrix, boolean transposeLeft,
+		boolean transposeRight, boolean compressMatrix) {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return; // Input was not compressed then just pass test
+
+			// Make Operator
+			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
+			AggregateBinaryOperator abopSingle = InstructionUtils.getMatMultOperator(1);
+
+
+			// vector-matrix uncompressed
+			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
+
+			MatrixBlock left = transposeLeft ? matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : matrix;
+			MatrixBlock right = transposeRight ? mb.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : mb;
+			MatrixBlock ret1 = right.aggregateBinaryOperations(left, right, new MatrixBlock(), abopSingle);
+
+			// vector-matrix compressed
+			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, 1)
+				.getLeft() : matrix;
+			assertFalse("Failed to compress other matrix",
+				compressMatrix && !(compMatrix instanceof CompressedMatrixBlock));
+			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb)
+				.aggregateBinaryOperations(compMatrix, cmb, new MatrixBlock(), abop, transposeLeft, transposeRight);
+
+
+			compareResultMatrices(ret1, ret2);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	public void testRightMatrixMatrixMultTransposedLeftSide() {
+		MatrixBlock matrix = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 2, 0.9, 1.5, 1.0, 3));
+		testRightMatrixMatrixMultiplicationTransposed(matrix, true, false, false);
+	}
+
+	@Test
+	public void testRightMatrixMatrixMultTransposedRightSide() {
+		MatrixBlock matrix = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(2, cols, 0.9, 1.5, 1.0, 3));
+		testRightMatrixMatrixMultiplicationTransposed(matrix, false, true, false);
+	}
+
+	@Test
+	public void testRightMatrixMatrixMultTransposedBothSides() {
+		MatrixBlock matrix = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(1, rows, 0.9, 1.5, 1.0, 3));
+		testRightMatrixMatrixMultiplicationTransposed(matrix, true, true, false);
+	}
+
+	public void testRightMatrixMatrixMultiplicationTransposed(MatrixBlock matrix, boolean transposeLeft,
+		boolean transposeRight, boolean compressMatrix) {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return; // Input was not compressed then just pass test
+
+			// Make Operator
+			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
+
+			// vector-matrix compressed
+			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, _k)
+				.getLeft() : matrix;
+			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb)
+				.aggregateBinaryOperations(cmb, compMatrix, new MatrixBlock(), abop, transposeLeft, transposeRight);
+
+			// vector-matrix uncompressed
+			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
+
+			MatrixBlock left = transposeLeft ? mb.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : mb;
+			MatrixBlock right = transposeRight ? matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : matrix;
+			MatrixBlock ret1 = right.aggregateBinaryOperations(left, right, new MatrixBlock(), abop);
+
+			compareResultMatrices(ret1, ret2);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -568,25 +658,7 @@ public abstract class CompressedTestBase extends TestBase {
 				MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
 
 				// compare result with input
-				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-				// High probability that The value is off by some amount
-				if(compressionSettings.lossy) {
-					// Probably the worst thing you can do to increase the amount the values are estimated wrong
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.8, this.toString());
-				}
-				else {
-					if(rows > 50000) {
-						TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.999, this.toString());
-					}
-					else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-						overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-						overlappingType == OverLapping.COL)
-						TestUtils.compareMatricesPercentageDistance(d1, d2, 0.98, 0.98, this.toString());
-					else {
-						TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 512, this.toString());
-					}
-				}
+				compareResultMatrices(ret1, ret2);
 			}
 		}
 		catch(Exception e) {
@@ -743,21 +815,11 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testScalarLeftOpDivide() {
 		double addValue = 14.0;
 		ScalarOperator sop = new LeftScalarOperator(Divide.getDivideFnObject(), addValue);
 		testScalarOperations(sop, lossyTolerance + 0.1);
 	}
-
-	// @Test
-	// This test does not make sense to execute... since the result of left power always is 4.
-	// Furthermore it does not work consistently in our normal matrix blocks ... and should never be used.
-	// public void testScalarLeftOpPower2() {
-	// double addValue = 2;
-	// ScalarOperator sop = new LeftScalarOperator(Power2.getPower2FnObject(), addValue);
-	// testScalarOperations(sop, lossyTolerance + 0.1);
-	// }
 
 	public void testScalarOperations(ScalarOperator sop, double tolerance) {
 		try {
@@ -770,16 +832,7 @@ public abstract class CompressedTestBase extends TestBase {
 			MatrixBlock ret2 = cmb.scalarOperations(sop, new MatrixBlock());
 
 			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-
-			if(compressionSettings.lossy)
-				TestUtils.compareMatrices(d1, d2, tolerance, this.toString());
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 50000, 1000, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 150, 1, this.toString());
+			compareResultMatrices(ret1, ret2);
 
 		}
 		catch(Exception e) {
@@ -872,19 +925,8 @@ public abstract class CompressedTestBase extends TestBase {
 				ret1 = vector.binaryOperations(bop, mb, new MatrixBlock());
 				ret2 = vector.binaryOperations(bop, cmb, new MatrixBlock());
 			}
-			// LOG.error(ret2);
-			if(ret2 instanceof CompressedMatrixBlock)
-				ret2 = ((CompressedMatrixBlock) ret2).decompress();
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
 
-			if(compressionSettings.lossy)
-				TestUtils.compareMatrices(d1, d2, lossyTolerance * 2, this.toString());
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 65536, 512, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 150, 1, this.toString());
+			compareResultMatrices(ret1, ret2);
 
 		}
 		catch(Exception e) {
@@ -893,4 +935,24 @@ public abstract class CompressedTestBase extends TestBase {
 		}
 	}
 
+	private void compareResultMatrices(MatrixBlock ret1, MatrixBlock ret2) {
+		if(ret2 instanceof CompressedMatrixBlock)
+			ret2 = ((CompressedMatrixBlock) ret2).decompress();
+
+		// compare result with input
+		double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
+		double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+		if(compressionSettings.lossy) {
+			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString());
+		}
+		else {
+			if(rows > 65000)
+				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
+			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
+				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 1500000, 1000, this.toString());
+			else
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 24000, 512, this.toString());
+		}
+	}
 }

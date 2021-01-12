@@ -62,7 +62,6 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, k, new CompressionSettingsBuilder().create());
 	}
 
-
 	/**
 	 * The main method for compressing the input matrix.
 	 * 
@@ -103,8 +102,8 @@ public class CompressedMatrixBlockFactory {
 		// where a column is compressible if ratio > 1.
 		MatrixBlock shallowCopy = new MatrixBlock().copyShallow(mb);
 		// Construct sample-based size estimator
-		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory
-			.getSizeEstimator(shallowCopy, compSettings, false);
+		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory.getSizeEstimator(shallowCopy,
+			compSettings);
 		CompressedSizeInfo sizeInfos = sizeEstimator.computeCompressedSizeInfos(k);
 
 		if(compSettings.investigateEstimate)
@@ -123,8 +122,9 @@ public class CompressedMatrixBlockFactory {
 			return new ImmutablePair<>(new MatrixBlock().copyShallow(mb), _stats);
 		}
 		// --------------------------------------------------
-		if(sizeInfos.colsC.size() != mb.getNumColumns()){
-			throw new DMLCompressionException("Invalid number of columns is:" +  sizeInfos.colsC.size() + " and should be: " + mb.getNumColumns());
+		if(sizeInfos.colsC.size() != mb.getNumColumns()) {
+			throw new DMLCompressionException(
+				"Invalid number of columns is:" + sizeInfos.colsC.size() + " and should be: " + mb.getNumColumns());
 		}
 		// --------------------------------------------------
 		// PHASE : Grouping columns

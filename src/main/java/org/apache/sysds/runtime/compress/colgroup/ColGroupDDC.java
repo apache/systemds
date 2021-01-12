@@ -55,11 +55,6 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int off, double[] values) {
-		decompressToBlockSafe(target, rl, ru, off, values, true);
-	}
-
-	@Override
 	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
 		final int nCol = getNumCols();
 		double[] c = target.getDenseBlockValues();
@@ -272,14 +267,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		postScaling(values, vals, c, numVals, row, numCols);
 	}
 
-	@Override
-	public void leftMultByRowVector(double[] a, double[] result, int numVals) {
-		numVals = getNumValues();
-		double[] values = getValues();
 
-		leftMultByRowVector(a, result, numVals, values);
-
-	}
 
 	public double[] preAggregate(double[] a, int numVals) {
 		return preAggregate(a, numVals, 0);

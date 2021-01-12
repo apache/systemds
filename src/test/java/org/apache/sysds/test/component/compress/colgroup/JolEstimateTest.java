@@ -93,7 +93,8 @@ public abstract class JolEstimateTest {
 	public void compressedSizeInfoEstimatorExact() {
 		try {
 			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0).setValidCompressions(EnumSet.of(getCT())).create();
-			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs, true);
+			cs.transposed = true;
+			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs);
 
 			CompressedSizeInfoColGroup csi = cse.estimateCompressedColGroupSize();
 			long estimateCSI = csi.getCompressionSize(getCT());
@@ -119,7 +120,8 @@ public abstract class JolEstimateTest {
 	public void compressedSizeInfoEstimatorExactLossy() {
 		try {
 			// CompressionSettings cs = new CompressionSettings(1.0);
-			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, csl, true);
+			csl.transposed = true;
+			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, csl);
 			CompressedSizeInfoColGroup csi = cse.estimateCompressedColGroupSize();
 			long estimateCSI = csi.getCompressionSize(getCT());
 			long estimateObject = cgl.estimateInMemorySize();

@@ -185,10 +185,10 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||
 				aggType == AggType.COLMINS || aggType == AggType.COLMEAN) ? cols : 1;
 
-			assertTrue("dim 1 is equal in non compressed res", d1.length == dim1);
-			assertTrue("dim 1 is equal in compressed res", d2.length == dim1);
-			assertTrue("dim 2 is equal in non compressed res", d1[0].length == dim2);
-			assertTrue("dim 2 is equal in compressed res", d2[0].length == dim2);
+			assertTrue("dim 1 is not equal in non compressed res  is: " + d1.length    + "  Should be: " +  dim1, d1.length    == dim1);
+			assertTrue("dim 1 is not equal in compressed res      is: " + d2.length    + "  Should be: " +  dim1, d2.length    == dim1);
+			assertTrue("dim 2 is not equal in non compressed res  is: " + d1[0].length + "  Should be: " +  dim2, d1[0].length == dim2);
+			assertTrue("dim 2 is not equal in compressed res      is: " + d2[0].length + "  Should be: " +  dim2, d2[0].length == dim2);
 
 			String css = this.toString();
 			if(compressionSettings.lossy) {

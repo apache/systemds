@@ -43,7 +43,9 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public ParCompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettings compressionSettings, MatrixTypology matrixTypology, OverLapping ov) {
 		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
-			InfrastructureAnalyzer.getLocalParallelism());
+			2);
+		// super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
+		// 	InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	@Override

@@ -23,15 +23,17 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
@@ -43,7 +45,6 @@ import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -58,7 +59,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	private static ThreadLocal<Pair<int[], double[]>> memPool = new ThreadLocal<Pair<int[], double[]>>() {
 		@Override
 		protected Pair<int[], double[]> initialValue() {
-			return new Pair<>();
+			return null;
 		}
 	};
 
@@ -228,27 +229,15 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		return val;
 	}
 
-	protected static double sumValuesSparse(int valIx, SparseRow[] rows, double[] dictVals, int rowsIndex) {
-		throw new NotImplementedException("This Method was implemented incorrectly");
-		// final int numCols = getNumCols();
-		// final int valOff = valIx * numCols;
-		// double val = 0;
-		// for(int i = 0; i < numCols; i++) {
-		// // TODO FIX ?
-		// val += dictVals[valOff + i] * rows[i].values()[rowsIndex];
-		// }
-		// return val;
-	}
-
-	protected final double[] preaggValues(int numVals, double[] b, double[] dictVals) {
+	protected double[] preaggValues(int numVals, double[] b, double[] dictVals) {
 		return preaggValues(numVals, b, false, dictVals, 0);
 	}
 
-	protected final double[] preaggValues(int numVals, double[] b, double[] dictVals, int off) {
+	protected double[] preaggValues(int numVals, double[] b, double[] dictVals, int off) {
 		return preaggValues(numVals, b, false, dictVals, off);
 	}
 
-	protected final double[] preaggValues(int numVals, double[] b, boolean allocNew, double[] dictVals, int off) {
+	protected double[] preaggValues(int numVals, double[] b, boolean allocNew, double[] dictVals, int off) {
 		// + 1 to enable containing a zero value. which we have added at the length of the arrays index.
 		double[] ret = allocNew ? new double[numVals + 1] : allocDVector(numVals + 1, true);
 
@@ -264,84 +253,98 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		return ret;
 	}
 
-	/**
-	 * Aggregates a double array, that contains the values to add to the output matrix.
-	 * 
-	 * Used in right mult by dense matrix
-	 * 
-	 * @param numVals  The number of values contained in the dictionary.
-	 * @param b        The matrix to multiply with
-	 * @param dictVals The values contained in the dictionary materialized as doubles
-	 * @param cl       Lower column index to aggregate from
-	 * @param cu       Upper column index to aggregate to
-	 * @param cut      The total number of columns in b.
-	 * @param ret      The double list to return.
-	 * @return The aggregated matrix output. Note this has to be mapped to the output matrix.
-	 */
-	public double[] preaggValues(final int numVals, final double[] b, double[] dictVals, final int cl, final int cu,
-		final int cut, double[] ret) {
+	private int[] getAggregateColumnsSetDense(double[] b, int cl, int cu, int cut){
+		Set<Integer> aggregateColumnsSet = new HashSet<>();
+		final int retCols = (cu - cl);
+		for(int k = 0; k <  _colIndexes.length; k ++) {
+			int rowIdxOffset = _colIndexes[k] * cut;
+			for(int h = cl; h < cu; h++) {
+				double v = b[rowIdxOffset + h];
+				if(v != 0.0){
+					aggregateColumnsSet.add(h);
+				}
+			}
+			if(aggregateColumnsSet.size() == retCols)
+				break;
+		}
 
-		final int retRows = (cu - cl);
-		for(int k = 0, off = 0; k < numVals * _colIndexes.length; k += _colIndexes.length, off += retRows) {
+		int[] aggregateColumns = aggregateColumnsSet.stream().mapToInt(x -> x).toArray();
+		Arrays.sort(aggregateColumns);
+		return aggregateColumns;
+	}
+
+	private Pair<int[], double[]> preaggValuesFromDense(final int numVals, final double[] b, double[] dictVals,
+		final int cl, final int cu, final int cut) {
+
+		int[] aggregateColumns = getAggregateColumnsSetDense(b, cl, cu, cut);
+		double[] ret = new double[numVals * aggregateColumns.length];
+
+		for(int k = 0, off = 0; k < numVals * _colIndexes.length; k += _colIndexes.length, off += aggregateColumns.length) {
 			for(int h = 0; h < _colIndexes.length; h++) {
 				int idb = _colIndexes[h] * cut;
 				double v = dictVals[k + h];
-				// TODO: Test if filtering out 0 here is beneficial.
-				// TODO: utilize dictionary quantisation here and dont materialize dictVals beforehand.
-				for(int i = cl, n = off; i < cu; i++, n += 1) {
-					ret[n] += v * b[idb + i];
+				for(int i = 0; i < aggregateColumns.length; i++) {
+					ret[off + i] += v * b[idb + aggregateColumns[i]];
 				}
 
 			}
 		}
 
-		return ret;
+		return new ImmutablePair<>(aggregateColumns, ret);
 	}
 
-	public double[] preaggValues(final int numVals, final double[] b, double[] dictVals, final int cl, final int cu,
-		final int cut) {
+	private int[] getAggregateColumnsSetSparse(SparseBlock b){
+		Set<Integer> aggregateColumnsSet = new HashSet<>();
 
-		final double[] ret = new double[numVals * (cu - cl)];
-
-		return preaggValues(numVals, b, dictVals, cl, cu, cut, ret);
-	}
-
-	public double[] preaggValues(final int numVals, final SparseBlock b, double[] dictVals, final int cl, final int cu,
-		final int cut, final double[] ret) {
-		// There is currently an error here with regards to the cl and cu, that are not in use.
-		// if cl and cu is specified to anything other than cl = 0 and cu = number of columns in b the code will crash.
-
-		final int retCols = (cu - cl);
-		
-		for(int h = 0; h< _colIndexes.length; h++){
+		for(int h = 0; h < _colIndexes.length; h++) {
 			int colIdx = _colIndexes[h];
-			if(!b.isEmpty(colIdx)){
-				double[] sValues = b.values(colIdx);
+			if(!b.isEmpty(colIdx)) {
 				int[] sIndexes = b.indexes(colIdx);
 				for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++) {
-					for(int j = 0, offOrg = h; j< numVals * retCols; j+= retCols, offOrg += _colIndexes.length){
-						ret[j + sIndexes[i]] += dictVals[offOrg] * sValues[i];
-					}
+					aggregateColumnsSet.add(sIndexes[i]);
 				}
 			}
 		}
 
-		return ret;
+		int[] aggregateColumns = aggregateColumnsSet.stream().mapToInt(x -> x).toArray();
+		Arrays.sort(aggregateColumns);
+		return aggregateColumns;
 	}
 
-	public double[] preaggValues(final int numVals, final SparseBlock b, double[] dictVals, final int cl, final int cu,
-		final int cut) {
-		return preaggValues(numVals, b, dictVals, cl, cu, cut, new double[numVals * (cu - cl)]);
-	}
+	private Pair<int[], double[]> preaggValuesFromSparse(int numVals, SparseBlock b, double[] dictVals, int cl, int cu,
+		int cut) {
 
-	protected final double[] preaggValue(int k, double[] b, double[] dictVals, int cl, int cu, int cut) {
-		double[] ret = allocDVector(cu - cl, true);
+		int[] aggregateColumns = getAggregateColumnsSetSparse(b);
+
+		double[] ret = new double[numVals *aggregateColumns.length];
+
 		for(int h = 0; h < _colIndexes.length; h++) {
-			for(int i = cl, n = 0; i < cu; i++, n++) {
-				ret[n] = dictVals[k + h] * b[_colIndexes[h] * cut + i];
+			int colIdx = _colIndexes[h];
+			if(!b.isEmpty(colIdx)) {
+				double[] sValues = b.values(colIdx);
+				int[] sIndexes = b.indexes(colIdx);
+				int retIdx = 0;
+				for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++) {
+					while(aggregateColumns[retIdx] < sIndexes[i])
+						retIdx++;
+					if(sIndexes[i] == aggregateColumns[retIdx] )
+						for(int j = 0, offOrg = h; j < numVals * aggregateColumns.length; j += aggregateColumns.length, offOrg += _colIndexes.length) {
+							ret[j + retIdx] += dictVals[offOrg] * sValues[i];
+						}
+				}
 			}
 		}
-		return ret;
+
+		return new ImmutablePair<> (aggregateColumns, ret);
+	}
+
+	public Pair<int[], double[]> preaggValues(int numVals, MatrixBlock b, double[] dictVals, int cl, int cu, int cut) {
+		return b.isInSparseFormat() ? preaggValuesFromSparse(numVals,
+			b.getSparseBlock(),
+			dictVals,
+			cl,
+			cu,
+			cut) : preaggValuesFromDense(numVals, b.getDenseBlockValues(), dictVals, cl, cu, cut);
 	}
 
 	protected static double[] sparsePreaggValues(int numVals, double v, boolean allocNew, double[] dictVals) {
@@ -471,10 +474,10 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	}
 
 	public static void setupThreadLocalMemory(int len) {
-		Pair<int[], double[]> p = new Pair<>();
-		p.setKey(new int[len]);
-		p.setValue(new double[len]);
-		memPool.set(p);
+		if(memPool.get() == null || memPool.get().getLeft().length < len){
+			Pair<int[], double[]> p = new ImmutablePair<>(new int[len],new double[len] );
+			memPool.set(p);
+		}
 	}
 
 	public static void cleanupThreadLocalMemory() {
@@ -485,9 +488,13 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		Pair<int[], double[]> p = memPool.get();
 
 		// sanity check for missing setup
-		if(p.getValue() == null) {
-			LOG.error("Mempool was not allocated!!!");
+		if(p == null) {
 			return new double[len];
+		}
+
+		if(p.getValue().length < len){
+			setupThreadLocalMemory(len);
+			return p.getValue();
 		}
 
 		// get and reset if necessary
@@ -501,10 +508,14 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		Pair<int[], double[]> p = memPool.get();
 
 		// sanity check for missing setup
-		if(p.getKey() == null)
-			return new int[len];
+		if(p == null)
+			return new int[len + 1];
+		 
+		if(p.getKey().length < len){
+			setupThreadLocalMemory(len);
+			return p.getKey();
+		}
 
-		// get and reset if necessary
 		int[] tmp = p.getKey();
 		if(reset)
 			Arrays.fill(tmp, 0, len, 0);
@@ -616,5 +627,13 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] a, double[] result) {
+		double[] values = getValues();
+		int numVals = getNumValues();
+		leftMultByRowVector(a, result, numVals, values);
+
 	}
 }

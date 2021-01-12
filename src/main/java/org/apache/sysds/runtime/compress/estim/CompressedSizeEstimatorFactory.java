@@ -29,24 +29,23 @@ public class CompressedSizeEstimatorFactory {
 
 	private static final int minimumSampleSize = 2000;
 
-	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings compSettings,
-		boolean transposed) {
-		long elements = transposed ? data.getNumColumns() : data.getNumRows();
-		elements = data.getNonZeros() / (transposed ? data.getNumRows() : data.getNumColumns());
+	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
+		long elements = compSettings.transposed ? data.getNumColumns() : data.getNumRows();
+		elements = data.getNonZeros() / (compSettings.transposed ? data.getNumRows() : data.getNumColumns());
 		CompressedSizeEstimator est;
 
 		// Calculate the sample size.
 		// If the sample size is very small, set it to the minimum size
 		int sampleSize = Math.max((int) Math.ceil(elements * compSettings.samplingRatio), minimumSampleSize);
 		if(compSettings.samplingRatio >= 1.0 || elements < minimumSampleSize || sampleSize > elements) {
-			est = new CompressedSizeEstimatorExact(data, compSettings, transposed);
+			est = new CompressedSizeEstimatorExact(data, compSettings, compSettings.transposed);
 		}
 		else {
 			int[] sampleRows = CompressedSizeEstimatorSample.getSortedUniformSample(
-				transposed ? data.getNumColumns() : data.getNumRows(),
+				compSettings.transposed ? data.getNumColumns() : data.getNumRows(),
 				sampleSize,
 				compSettings.seed);
-				est = new CompressedSizeEstimatorSample(data, compSettings, sampleRows, transposed);
+				est = new CompressedSizeEstimatorSample(data, compSettings, sampleRows, compSettings.transposed);
 		}
 
 		LOG.debug(est);

@@ -2819,10 +2819,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = checkType(thatValue);
 		MatrixBlock ret = checkType(result);
-		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
-			throw new RuntimeException("Block sizes are not matched for binary " +
-					"cell operations: "+this.rlen+"x"+this.clen+" vs "+ that.rlen+"x"+that.clen);
-		}
+		LibMatrixBincell.isValidDimensionsBinary(this, that);
 		
 		//compute output dimensions
 		boolean outer = (LibMatrixBincell.getBinaryAccessType(this, that)
@@ -2846,10 +2843,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		MatrixBlock that=checkType(thatValue);
-		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
-			throw new RuntimeException("block sizes are not matched for binary " +
-					"cell operations: "+this.rlen+"*"+this.clen+" vs "+ that.rlen+"*"+that.clen);
-		}
+		LibMatrixBincell.isValidDimensionsBinary(this, that);
 	
 		//estimate output sparsity
 		SparsityEstimate resultSparse = estimateSparsityOnBinary(this, that, op);

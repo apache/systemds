@@ -123,13 +123,13 @@ public class CNodeRow extends CNodeTpl
 			StringBuilder tmp_stor_str_dec = new StringBuilder();
 
 			tmp_stor_str.append("TMP_STORAGE = tmp_stor;\n");
-			tmp_stor_str.append("\t\ttmp_row_offset = tmp_len * tmp_count * blockIdx.x;\n");
-			tmp_stor_str.append("\t\ttemp_rb.init(tmp_row_offset, tmp_len, tmp_stor);\n");
+			tmp_stor_str.append("\t\ttmp_row_offset = TMP_VECT_LEN * tmp_count * blockIdx.x;\n");
+			tmp_stor_str.append("\t\ttemp_rb.init(tmp_row_offset, TMP_VECT_LEN, tmp_stor);\n");
 
 			tmp_stor_str_dec.append(
 					"T* TMP_STORAGE;\n" +
 					"\tuint32_t tmp_row_offset;\n" +
-					"\tRingBuffer<T,2> temp_rb;\n");
+					"\tRingBuffer<T,NUM_TMP_VECT> temp_rb;\n");
 
 //			int seq_id = 0;
 //			for(int i = 0; i < _numVectors; ++i) {
@@ -143,11 +143,17 @@ public class CNodeRow extends CNodeTpl
 			tmp_stor_str_dec.append("\tuint32_t tmp_count = " + _numVectors + ";\n");
 			tmp = tmp.replace("//%TMP_MEM%", tmp_stor_str.toString());
 			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", tmp_stor_str_dec.toString());
-
+			String hasTempVectorStorage = " : public SpoofOp<T>";
+			String getTempStorage = "\t__device__ Vector<T>& getTempStorage() { return temp_rb.next(); }\n";
+			tmp = tmp.replace("//%GET_TEMP_STORAGE%", getTempStorage);
+			tmp = tmp.replace("//%HAS_TEMP_VECT%", hasTempVectorStorage);
 		}
 		else {
 			tmp = tmp.replace("//%TMP_MEM%", "");
 			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", "");
+			tmp = tmp.replace("//%GET_TEMP_STORAGE%","");
+			tmp = tmp.replace("//%HAS_TEMP_VECT%", "");
+			
 		}
 		tmp = tmp.replace("%VECT_MEM%", String.valueOf(_numVectors));
 
@@ -180,7 +186,7 @@ public class CNodeRow extends CNodeTpl
 					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+".length");
 				else
 //					return "";
-					return TEMPLATE_NOAGG_CONST_OUT_CUDA.replace("%IN%", varName) .replaceAll("%LEN%", _output.getVarname()+"_len");
+					return TEMPLATE_NOAGG_CONST_OUT_CUDA.replace("%IN%", varName + ".vals(0)") .replaceAll("%LEN%", _output.getVarname()+".length");
 			case FULL_AGG:
 				if(api == GeneratorAPI.JAVA)
 					return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);

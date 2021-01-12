@@ -230,7 +230,7 @@ public class Binary extends CodeTemplate {
 					else
 //						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 //						return sparseLhs ? "	T[] %TMP% = vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		T* %TMP% = vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
-						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		T* %TMP% = &TMP_STORAGE[tmp_row_offset+tmp_offset_];\n\t\tint %TMP%_len = vectCbindWrite(%IN1%, %IN2%, %TMP%, %POS1%, %LEN%);\n";
+						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		Vector<T>& %TMP% = vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%, this);\n";
 					
 					//vector-vector operations
 				case VECT_MULT:

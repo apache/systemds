@@ -278,7 +278,10 @@ __device__ void vectDivAdd(T* a, T b, T* c, int ai, int ci, int len) {
 }
 
 template<typename T>
-__device__ int vectCbindWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
+__device__ Vector<T>& vectCbindWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+
+	Vector<T>& c = fop->getTempStorage();
+
 	if(threadIdx.x < len) {
 //		 if(blockIdx.x==1 && threadIdx.x ==0)
 //		 	printf("vecCbindWrite: bid=%d, tid=%d, ai=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, len, ai * len + threadIdx.x, a[ai * len + threadIdx.x]);
@@ -288,21 +291,38 @@ __device__ int vectCbindWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 //		printf("---> block %d thread %d, b=%f,, len=%d, a[%d]=%f\n",blockIdx.x, threadIdx.x, b, len, ai, a[ai]);
         c[blockIdx.x * (len+1) + threadIdx.x] = b;
 	}
-	return len+1;
+	return c;
 }
 
 template<typename T>
-__device__ int vectCbindWrite(T a, T b, T* c) {
+__device__ Vector<T>& vectCbindWrite(T a, T b) {
+	Vector<T>& c = fop->getTempStorage();
+
 	if (threadIdx.x == 0) {
 		c[blockIdx.x * 2] = a;
 		c[blockIdx.x * 2 + 1] = b;
 	}
-	return 2;
+	return c;
 }
 
 // vect-vect
 template<typename T, typename OP>
-__device__ int vectWrite_(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len) {
+__device__ void vectWrite_(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
+	uint32_t i = threadIdx.x;
+	const uint32_t& bid = blockIdx.x;
+
+	while (i < len) {
+		c[ci + i] = OP::exec(a[ai + i], b);
+//		if(debug_row() && threadIdx.x < 4)
+//			printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, bi=%d, ci=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
+//				   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, c[ci+i]);
+		i += blockDim.x;
+	}
+}
+
+// vect-vect
+template<typename T, typename OP>
+__device__ void vectWrite_(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len) {
 	uint32_t i = threadIdx.x;
 	const uint32_t& bid = blockIdx.x;
 
@@ -313,22 +333,20 @@ __device__ int vectWrite_(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t c
 //				   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, c[ci+i]);
 		i += blockDim.x;
 	}
-	
-
-	return len;
 }
 
 // vect-scalar
 template<typename T, typename OP>
-__device__ int vectWrite_(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
+__device__ Vector<T>& vectWrite_(T* a, T b, uint32_t ai, uint32_t ci, uint32_t len, SpoofOp<T>* fop) {
     uint32_t i = threadIdx.x;
+	Vector<T>& c = fop->getTempStorage();
 	if(blockIdx.x < 2 && threadIdx.x < 1)
 		printf("vecWrite_vs: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a[ai + i], b));
     while (i < len) {
 		c[ci + i] = OP::exec(a[ai + i], b);
         i += blockDim.x;
     }
-    return len;
+    return c;
 }
 
 // scalar-vector
@@ -393,6 +411,11 @@ int vectGreaterequalWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 template<typename T>
 int vectDivWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
+}
+
+template<typename T>
+Vector<T>& vectDivWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWrite_<T, DivOp<T>>(a, b, ai, 0, len, fop);
 }
 
 template<typename T>

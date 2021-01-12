@@ -40,8 +40,9 @@ __device__ void printArray(T* a, uint32_t len) {
     }
 }
 
-template<typename T, int NUM_B, uint32_t tmp_len>
-struct SpoofRowwiseOp : public SpoofOp<T> {
+template<typename T, int NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
+struct SpoofRowwiseOp //%HAS_TEMP_VECT%
+{
 	MatrixAccessor<T> a;
 	MatrixAccessor<T> b[NUM_B];
 	MatrixAccessor<T> c;
@@ -51,13 +52,9 @@ struct SpoofRowwiseOp : public SpoofOp<T> {
 	//%TMP_MEM_DECLARATION%
 
 	SpoofRowwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) : scalars(scalars), grix(grix) {
-//		if(blockIdx.x==0)
-//			printf("init B\n");
 		a.init(A);
 		c.init(C);
-
 		//%TMP_MEM%
-
 		if(B)
 			for(auto i = 0; i < NUM_B; ++i)
 				b[i].init(&(B[i]));
@@ -72,12 +69,10 @@ struct SpoofRowwiseOp : public SpoofOp<T> {
 //        }
 	}
 
-	__device__ Vector<T>& getTempStorage() {
-		return temp_rb.next();
-	}
+//%GET_TEMP_STORAGE%
 };
 
-template<typename T, uint32_t NUM_B, uint32_t TMP_LEN>
+template<typename T, uint32_t NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
 __global__ void /*%TMP%*/SPOOF_OP_NAME (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c, T* scalars, T* tmp_stor, uint32_t grix) {
 	const uint& rix = blockIdx.x;
 //	if(threadIdx.x == 0 && blockIdx.x == 1) {
@@ -94,7 +89,7 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c
 //	if(rix < 3)
 //		printf("bla\n");
 //	return;
-	SpoofRowwiseOp<T, NUM_B, TMP_LEN> spoof_op(a, b, c, scalars, tmp_stor, grix + rix);
+	SpoofRowwiseOp<T, NUM_B, NUM_TMP_VECT, TMP_VECT_LEN> spoof_op(a, b, c, scalars, tmp_stor, grix + rix);
 	// spoof_op.c_len = c_len;
 	// spoof_op.c_len = c->len_r();
 

@@ -412,7 +412,7 @@ public:
 //#endif
 		
 		CHECK_CUDA(op->program.kernel(op->name)
-				.instantiate(type_of(result), std::max(1u, num_sides), tmp_len)
+				.instantiate(type_of(result), std::max(1u, num_sides), op->num_temp_vectors, tmp_len)
 				.configure(grid, block, shared_mem_size)
 				.launch(d_in, d_sides, d_out, d_scalars, d_temp, grix));
 

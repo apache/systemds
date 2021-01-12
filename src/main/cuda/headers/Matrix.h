@@ -30,6 +30,10 @@ struct Vector {
 	uint32_t length;
 
 	T* vals(uint32_t idx) { return &data[idx]; }
+
+	T& operator[](uint32_t idx) {
+	    return data[idx];
+    }
 };
 
 template <typename T, uint32_t ELEMENTS>
@@ -54,7 +58,13 @@ public:
 
 template <typename T>
 struct SpoofOp {
+
+	// RingBuffer<T,ELEMENTS> temp_rb;
+	
 	virtual Vector<T>& getTempStorage() = 0;
+	// Vector<T>& getTempStorage() {
+		// return temp_rb.next();
+	// }
 };
 
 template <typename T>

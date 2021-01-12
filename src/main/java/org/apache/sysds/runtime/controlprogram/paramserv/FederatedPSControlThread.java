@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.parser.DataIdentifier;
@@ -50,6 +51,7 @@ import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.util.ProgramConverter;
 
 import java.util.ArrayList;
@@ -224,6 +226,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
+		}
 	}
 
 	/**
@@ -270,6 +277,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ParamservUtils.cleanupListObject(ec, Statement.PS_HYPER_PARAMS);
 			
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 
@@ -530,6 +542,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL);
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, accGradients);
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 

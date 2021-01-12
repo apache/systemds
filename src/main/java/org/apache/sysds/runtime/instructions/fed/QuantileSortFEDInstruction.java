@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.SortKeys;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -32,6 +33,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
@@ -158,6 +160,10 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 			ec.setVariable(String.valueOf(_outputID), mout);
 			// return schema
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
+		}
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 }

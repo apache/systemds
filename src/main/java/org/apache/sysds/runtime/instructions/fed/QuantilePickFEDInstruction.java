@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.fed;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -36,6 +37,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
@@ -176,6 +178,11 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 					new Object[] {picked});
 			}
 		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
+		}
 	}
 
 	private static class IQM extends FederatedUDF {
@@ -191,6 +198,10 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
 				new Object[] {mb.interQuartileMean()});
 		}
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
+		}
 	}
 
 	private static class Median extends FederatedUDF {
@@ -205,6 +216,10 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			MatrixBlock mb = ((MatrixObject)data[0]).acquireReadAndRelease();
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
 				new Object[] {mb.median()});
+		}
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 }

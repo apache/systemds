@@ -32,6 +32,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -234,6 +235,69 @@ public class LineageCache
 		return reuse;
 	}
 	
+	//Reuse federated UDFs
+	public static boolean reuse(FederatedUDF udf, ExecutionContext ec) 
+	{
+		if (ReuseCacheType.isNone() || udf.getOutputIds() == null)
+			return false;
+		//TODO: reuse only those UDFs which are part of reusable instructions
+		
+		boolean reuse = false;
+		List<Long> outIds = udf.getOutputIds();
+		HashMap<String, Data> udfOutputs = new HashMap<>();
+
+		//TODO: support multi-return UDFs
+		if (udf.getLineageItem(ec) == null)
+			//TODO: trace all UDFs
+			return false;
+		LineageItem li = udf.getLineageItem(ec).getValue();
+		li.setDistLeaf2Node(1); //to save from early eviction
+		LineageCacheEntry e = null;
+		synchronized(_cache) {
+			if (probe(li))
+				e = LineageCache.getIntern(li);
+			else
+				//for now allow only matrix blocks
+				putIntern(li, DataType.MATRIX, null, null, 0);
+		}
+		
+		if (e != null) {
+			String outName = String.valueOf(outIds.get(0));
+			Data outValue = null;
+			//convert to matrix object
+			if (e.isMatrixValue()) {
+				MetaDataFormat md = new MetaDataFormat(
+					e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
+				outValue = new MatrixObject(ValueType.FP64, outName, md);
+				((MatrixObject)outValue).acquireModify(e.getMBValue());
+				((MatrixObject)outValue).release();
+			}
+			else {
+				outValue = e.getSOValue();
+			}
+			udfOutputs.put(outName, outValue);
+			reuse = true;
+		}
+		else
+			reuse = false;
+		
+		if (reuse) {
+			udfOutputs.forEach((var, val) -> {
+				//cleanup existing data bound to output name
+				Data exdata = ec.removeVariable(var);
+				if (exdata != val)
+					ec.cleanupDataObject(exdata);
+				//add or replace data in the symbol table
+				ec.setVariable(var, val);
+			});
+
+			if (DMLScript.STATISTICS)
+				//TODO: dedicated stats for federated reuse
+				LineageCacheStatistics.incrementInstHits();
+		}
+		return reuse;
+	}
+	
 	public static boolean probe(LineageItem key) {
 		//TODO problematic as after probe the matrix might be kicked out of cache
 		boolean p = _cache.containsKey(key);  // in cache or in disk
@@ -382,6 +446,53 @@ public class LineageCache
 		}
 		
 		return;
+	}
+	
+	public static void putValue(FederatedUDF udf, ExecutionContext ec, long computetime) 
+	{
+		if (ReuseCacheType.isNone() || udf.getOutputIds() == null)
+			return;
+
+		List<Long> outIds = udf.getOutputIds();
+		if (udf.getLineageItem(ec) == null)
+			//TODO: trace all UDFs
+			return;
+		LineageItem item = udf.getLineageItem(ec).getValue();
+		LineageCacheEntry entry = _cache.get(item);
+		Data data = ec.getVariable(String.valueOf(outIds.get(0)));
+		if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
+			// Don't cache if the udf outputs frames
+			_cache.remove(item);
+			return;
+		}
+		
+		MatrixBlock mb = (data instanceof MatrixObject) ? 
+				((MatrixObject)data).acquireReadAndRelease() : null;
+		long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
+
+		//remove the placeholder if the entry is bigger than the cache.
+		//FIXME: the resumed threads will enter into infinite wait as the entry
+		//is removed. Need to add support for graceful remove (placeholder) and resume.
+		if (size > LineageCacheEviction.getCacheLimit()) {
+			_cache.remove(item);
+			return;
+		}
+
+		//make space for the data
+		if (!LineageCacheEviction.isBelowThreshold(size))
+			LineageCacheEviction.makeSpace(_cache, size);
+		LineageCacheEviction.updateSize(size, true);
+
+		//place the data
+		if (data instanceof MatrixObject)
+			entry.setValue(mb, computetime);
+		else if (data instanceof ScalarObject)
+			entry.setValue((ScalarObject)data, computetime);
+
+		//TODO: maintain statistics, lineage estimate
+
+		//maintain order for eviction
+		LineageCacheEviction.addEntry(entry);
 	}
 	
 	public static void resetCache() {

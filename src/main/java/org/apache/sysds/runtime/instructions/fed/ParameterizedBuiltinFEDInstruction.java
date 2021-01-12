@@ -25,7 +25,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -48,6 +50,8 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -241,6 +245,27 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			ec.setVariable(String.valueOf(_outputID), mout);
 
 			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+		}
+
+		@Override
+		public List<Long> getOutputIds() {
+			return new ArrayList<>(Arrays.asList(_outputID));
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			LineageItem[] liUdfInputs = Arrays.stream(getInputIDs())
+					.mapToObj(id -> ec.getLineage().get(String.valueOf(id))).toArray(LineageItem[]::new);
+			CPOperand slice = new CPOperand(Arrays.toString(_slice), ValueType.STRING, DataType.SCALAR, true);
+			CPOperand rowFed = new CPOperand(String.valueOf(_rowFed), ValueType.BOOLEAN, DataType.SCALAR, true);
+			CPOperand lower = new CPOperand(String.valueOf(_lower), ValueType.BOOLEAN, DataType.SCALAR, true);
+			CPOperand diag = new CPOperand(String.valueOf(_diag), ValueType.BOOLEAN, DataType.SCALAR, true);
+			CPOperand values = new CPOperand(String.valueOf(_values), ValueType.BOOLEAN, DataType.SCALAR, true);
+			LineageItem[] otherInputs = LineageItemUtils.getLineage(ec, slice, rowFed, lower, diag, values);
+			LineageItem[] liInputs = Stream.concat(Arrays.stream(liUdfInputs), Arrays.stream(otherInputs))
+					.toArray(LineageItem[]::new);
+			return Pair.of(String.valueOf(_outputID), 
+					new LineageItem(getClass().getSimpleName(), liInputs));
 		}
 	}
 
@@ -561,6 +586,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			// return schema
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {fo.getSchema()});
 		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
+		}
 	}
 
 	private static class GetColumnNames extends FederatedUDF {
@@ -575,6 +605,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			FrameBlock fb = ((FrameObject) data[0]).acquireReadAndRelease();
 			// return column names
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {fb.getColumnNames()});
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 
@@ -594,6 +629,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			_encoder.build(fb);
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {_encoder});
 		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
+		}
 	}
 
 	private static class GetDataCharacteristics extends FederatedUDF {
@@ -610,6 +650,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			int r = mb.getDenseBlockValues() != null ? mb.getNumRows() : 0;
 			int c = mb.getDenseBlockValues() != null ? mb.getNumColumns(): 0;
 			return new FederatedResponse(ResponseType.SUCCESS, new int[] {r, c});
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 
@@ -639,6 +684,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			}
 			tmp1 = tmp1.binaryOperationsInPlace(greater, new MatrixBlock(tmp1.getNumRows(), tmp1.getNumColumns(), 0.0));
 			return new FederatedResponse(ResponseType.SUCCESS, tmp1);
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 }

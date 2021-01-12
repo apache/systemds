@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -28,6 +29,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.List;
@@ -94,6 +96,11 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 			shuffle(features, permutationMatrixBlock);
 			shuffle(labels, permutationMatrixBlock);
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 }

@@ -34,6 +34,17 @@ struct Vector {
 	T& operator[](uint32_t idx) {
 	    return data[idx];
     }
+
+    void print(const char* name, uint32_t end_ = 0, uint32_t start = 0, uint32_t bID = 0, uint32_t tID = 0) {
+		if(blockIdx.x == bID && threadIdx.x==tID) {
+			uint32_t end = end_;
+			if(end > 0)
+				end = min(end, length);
+			printf("%s: ", name);
+			for(auto i = start; i < end; ++i)
+				print("%4.3f ", data[i]);
+		}
+	}
 };
 
 template <typename T, uint32_t ELEMENTS>

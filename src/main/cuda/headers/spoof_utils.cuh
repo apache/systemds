@@ -309,7 +309,7 @@ __device__ Vector<T>& vectCbindWrite(T a, T b) {
 template<typename T, typename OP>
 __device__ void vectWrite_(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
 	uint32_t i = threadIdx.x;
-	const uint32_t& bid = blockIdx.x;
+	// const uint32_t& bid = blockIdx.x;
 
 	while (i < len) {
 		c[ci + i] = OP::exec(a[ai + i], b);
@@ -340,8 +340,8 @@ template<typename T, typename OP>
 __device__ Vector<T>& vectWrite_(T* a, T b, uint32_t ai, uint32_t ci, uint32_t len, SpoofOp<T>* fop) {
     uint32_t i = threadIdx.x;
 	Vector<T>& c = fop->getTempStorage();
-	if(blockIdx.x < 2 && threadIdx.x < 1)
-		printf("vecWrite_vs: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a[ai + i], b));
+	// if(blockIdx.x < 2 && threadIdx.x < 1)
+		// printf("vecWrite_vs: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a[ai + i], b));
     while (i < len) {
 		c[ci + i] = OP::exec(a[ai + i], b);
         i += blockDim.x;
@@ -394,8 +394,8 @@ __device__ void vectWrite(T* a, T* c, uint32_t ci, uint32_t len) {
 }
 
 template<typename T>
-int vectLessequalWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
-	return vectWrite_<T, LessEqualOp<T>>(a, b, c, ai, 0, len);
+Vector<T>& vectLessequalWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWrite_<T, LessEqualOp<T>>(a, b, ai, 0, len, fop);
 }
 
 template<typename T>
@@ -404,8 +404,8 @@ int vectGreaterWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 }
 
 template<typename T>
-int vectGreaterequalWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
-    return vectWrite_<T, GreaterEqualOp<T>>(a, b, c, ai, 0, len);
+Vector<T>& vectGreaterequalWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWrite_<T, GreaterEqualOp<T>>(a, b, ai, 0, len, fop);
 }
 
 template<typename T>

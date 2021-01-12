@@ -30,16 +30,6 @@
 #include "utils.cuh"
 #include "Matrix.h"
 
-template<typename T>
-__device__ void printArray(T* a, uint32_t len) {
-    if(blockIdx.x == 1 && threadIdx.x==0) {
-        printf("block=%d, thread=%d, array[len=%d]:\n", blockIdx.x, threadIdx.x, len);
-        for(auto i = 0; i < (blockIdx.x + 10); ++i)
-            printf(" %f", a[i]);
-        printf("\n");
-    }
-}
-
 template<typename T, int NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
 struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 {
@@ -63,10 +53,6 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 	__device__  __forceinline__ void exec(uint32_t ai, uint32_t ci, uint32_t rix) {
 		
 //%BODY_dense%
-//    printArray(TMP27, TMP27_len);
-//        if(blockIdx.x == 0 && threadIdx.x==0) {
-//			printf("TMP27=%f\n", TMP27);
-//        }
 	}
 
 //%GET_TEMP_STORAGE%
@@ -75,42 +61,8 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 template<typename T, uint32_t NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
 __global__ void /*%TMP%*/SPOOF_OP_NAME (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c, T* scalars, T* tmp_stor, uint32_t grix) {
 	const uint& rix = blockIdx.x;
-//	if(threadIdx.x == 0 && blockIdx.x == 1) {
-//		MatrixAccessor<T> ma;
-//		ma.init(&b[0]);
-//		printf("bid=%d len=%d c_len=%d b.pos=%d b.len=%d\n", blockIdx.x, len, c_len, ma.pos(blockIdx.x), ma.len());
-//		for(auto i = 0; i < len; ++i) {
-//			T val =  ma.val(blockIdx.x, i);
-//			printf("%f ", val);
-//		}
-//		printf("\n");
-//	}
-//	return;
-//	if(rix < 3)
-//		printf("bla\n");
-//	return;
 	SpoofRowwiseOp<T, NUM_B, NUM_TMP_VECT, TMP_VECT_LEN> spoof_op(a, b, c, scalars, tmp_stor, grix + rix);
-	// spoof_op.c_len = c_len;
-	// spoof_op.c_len = c->len_r();
-
-//	if(threadIdx.x == 0 && blockIdx.x == 0) {
-//		printf("bid=%d len=%d c_len=%d\n", blockIdx.x, len, c_len);
-
-//if(b) {
-//		MatrixAccessor<T> ma;
-//		ma.init(&b[0]);
-//		printf("bid=%d len=%d c_len=%d b.pos=%d b.len=%d\n", blockIdx.x, len, c_len, ma.pos(blockIdx.x), ma.len());
-////		return;
-//		for(auto i = ma.pos(blockIdx.x); i < ma.len(); ++i) {
-//		//			T val =  ma.val(blockIdx.x, i);
-//			T val =  ma.val(0, i);
-//			printf("%f ", val);
-//		}
-//		printf("\n");
-//		}
-//	}
-
-	uint32_t ai = blockIdx.x * a->cols;
-	uint32_t ci = blockIdx.x * c->cols;
+	uint32_t ai = rix * a->cols;
+	uint32_t ci = rix * c->cols;
 	spoof_op.exec(ai, ci, rix);
 };

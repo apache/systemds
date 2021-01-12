@@ -229,7 +229,8 @@ public abstract class CNode
 				((api == GeneratorAPI.JAVA) ? varj + ".values(rix)" : varj + ".vals(0)" ) :
 				(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? 
 					((api == GeneratorAPI.JAVA) ? varj + ".values(0)" : varj + ".val(0)") :
-					varj.startsWith("a") ? (api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj));
+						(varj.startsWith("a") || TemplateUtils.isMatrix(_inputs.get(0))) ?
+								(api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj));
 		
 		//replace start position of main input
 		String spos = (_inputs.get(0) instanceof CNodeData 

@@ -179,7 +179,7 @@ public class CNodeRow extends CNodeTpl
 		switch( _type ) {
 			case NO_AGG:
 				if(api == GeneratorAPI.CUDA)
-					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName) .replaceAll("%LEN%", _output.getVarname()+"_len");
+					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName + ".vals(0)") .replaceAll("%LEN%", _output.getVarname()+".length");
 			case NO_AGG_B1:
 			case NO_AGG_CONST:
 				if(api == GeneratorAPI.JAVA)

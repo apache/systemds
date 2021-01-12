@@ -143,7 +143,7 @@ public class Unary extends CodeTemplate {
 //						"	T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
 
 					return sparse ? "	T %TMP% = vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
-						"		T %TMP% = vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n\t\tif(threadIdx.x==0&&blockIdx.x==1)\n\t\t\tprintf(\"%TMP%: %f\\n\", %TMP%);\n";
+						"		T %TMP% = vect"+vectName+"(%IN1%, static_cast<uint32_t>(%POS1%), %LEN%);\n";
 					
 				}
 
@@ -175,7 +175,7 @@ public class Unary extends CodeTemplate {
 //					return sparse ? "	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
 //						"	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
 					return sparse ? "	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
-						"		Vector<T>& %TMP% = vect"+vectName+"Write(%IN1%.vals(0), %POS1%, %LEN%, this);\n";
+						"		Vector<T>& %TMP% = vect"+vectName+"Write(%IN1%, %POS1%, %LEN%, this);\n";
 				}
 
 				case EXP:
@@ -183,7 +183,7 @@ public class Unary extends CodeTemplate {
 				case LOOKUP_R:
 					return sparse ?
 						"	T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
-						"	T %TMP% = %IN1%.val(rix);\n";
+						"		T %TMP% = %IN1%.val(rix);\n";
 //						"	T %TMP% = getValue(%IN1%, rix);\n";
 				case LOOKUP_C:
 					return "	T %TMP% = getValue(%IN1%, n, 0, cix);\n";

@@ -1,4 +1,0 @@
-s_bayesianOptimisation = function(string funcNameToMaximize, List[String] paramNames, List[Unknown] paramValues) return (List[String] optiHyperParams) {
-# when using a matrix the function will need to be renamed to m_bayes...
-   optiHyperParams = paramNames;
-}

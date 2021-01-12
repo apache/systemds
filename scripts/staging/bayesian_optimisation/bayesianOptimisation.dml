@@ -1,0 +1,20 @@
+#s_bayesianOptimisation = function(string funcNameToMaximize, List[String] paramNames, List[Unknown] paramValues) return (List[String] optiHyperParams) {
+
+# when using a matrix the function will need to be renamed to m_bayes...
+#
+#
+
+funcNameToMaximize = $1;
+paramNames = read($2);
+paramValues = read($3);
+iterations = $4
+outputDir = $5
+#paramValues = $3;
+print(funcNameToMaximize);
+#print(toString(paramNames));
+#print(toString(paramValues));
+print(iterations);
+
+
+write(paramNames, outputDir);
+

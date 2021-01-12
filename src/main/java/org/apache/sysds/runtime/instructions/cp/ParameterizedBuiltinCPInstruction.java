@@ -444,6 +444,14 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			return Pair.of(output.getName(), new LineageItem(getOpcode(),
 				LineageItemUtils.getLineage(ec, target, max, dir, cast, ignore)));
 		}
+		else if (opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
+			CPOperand target = getTargetOperand();
+			CPOperand lower = getBoolLiteral("lowertri");
+			CPOperand diag = getBoolLiteral("diag");
+			CPOperand values = getBoolLiteral("values");
+			return Pair.of(output.getName(), new LineageItem(getOpcode(),
+				LineageItemUtils.getLineage(ec, target, lower, diag, values)));
+		}
 		else if (opcode.equalsIgnoreCase("transformdecode") ||
 				opcode.equalsIgnoreCase("transformapply")) {
 			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.FRAME);

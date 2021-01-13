@@ -97,8 +97,6 @@ m_gaussianClassifier = function(Matrix[Double] D, Matrix[Double] C, Double varSm
     [eVals, eVecs] = eigen(covMatrix)
     lam = diag(eVals^(-1))
     invCovMatrix = eVecs %*% lam %*% t(eVecs)
-    #print(toString(invCovMatrix, decimal=8))
-
 
     #Compute determinant
     det = prod(eVals)

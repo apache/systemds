@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
@@ -48,6 +49,7 @@ import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantilePickSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantileSortSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 
@@ -91,7 +93,8 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof UnaryCPInstruction && ! (inst instanceof IndexingCPInstruction)) {
 			UnaryCPInstruction instruction = (UnaryCPInstruction) inst;
-			if(inst instanceof ReorgCPInstruction && inst.getOpcode().equals("r'")) {
+			if(inst instanceof ReorgCPInstruction && (inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag")
+				|| inst.getOpcode().equals("rev"))) {
 				ReorgCPInstruction rinst = (ReorgCPInstruction) inst;
 				CacheableData<?> mo = ec.getCacheableData(rinst.input1);
 
@@ -100,7 +103,7 @@ public class FEDInstructionUtils {
 			}
 			else if(instruction.input1 != null && instruction.input1.isMatrix()
 				&& ec.containsVariable(instruction.input1)) {
-				
+
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				if(instruction.getOpcode().equalsIgnoreCase("cm") && mo1.isFederated()) {
 					fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
@@ -129,7 +132,9 @@ public class FEDInstructionUtils {
 		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {
 			ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction) inst;
-			if((pinst.getOpcode().equals("replace") || pinst.getOpcode().equals("rmempty")) && pinst.getTarget(ec).isFederated()) {
+			if((pinst.getOpcode().equals("replace") || pinst.getOpcode().equals("rmempty")
+				|| pinst.getOpcode().equals("lowertri") || pinst.getOpcode().equals("uppertri"))
+				&& pinst.getTarget(ec).isFederated()) {
 				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
 			}
 			else if((pinst.getOpcode().equals("transformdecode") || pinst.getOpcode().equals("transformapply")) &&
@@ -157,18 +162,18 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
-			if(ins.getVariableOpcode() == VariableOperationCode.Write 
+			if(ins.getVariableOpcode() == VariableOperationCode.Write
 				&& ins.getInput1().isMatrix()
 				&& ins.getInput3().getName().contains("federated")){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
 			}
-			else if(ins.getVariableOpcode() == VariableOperationCode.CastAsFrameVariable 
-				&& ins.getInput1().isMatrix() 
+			else if(ins.getVariableOpcode() == VariableOperationCode.CastAsFrameVariable
+				&& ins.getInput1().isMatrix()
 				&& ec.getCacheableData(ins.getInput1()).isFederated()){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
 			}
-			else if(ins.getVariableOpcode() == VariableOperationCode.CastAsMatrixVariable 
-				&& ins.getInput1().isFrame() 
+			else if(ins.getVariableOpcode() == VariableOperationCode.CastAsMatrixVariable
+				&& ins.getInput1().isFrame()
 				&& ec.getCacheableData(ins.getInput1()).isFederated()){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
 			}
@@ -180,16 +185,22 @@ public class FEDInstructionUtils {
 				fedinst = AggregateTernaryFEDInstruction.parseInstruction(ins);
 			}
 		}
+		else if(inst instanceof QuaternaryCPInstruction) {
+			QuaternaryCPInstruction instruction = (QuaternaryCPInstruction) inst;
+			Data data = ec.getVariable(instruction.input1);
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+				fedinst = QuaternaryFEDInstruction.parseInstruction(instruction.getInstructionString());
+		}
 
 		//set thread id for federated context management
 		if( fedinst != null ) {
 			fedinst.setTID(ec.getTID());
 			return fedinst;
 		}
-		
+
 		return inst;
 	}
-	
+
 	public static Instruction checkAndReplaceSP(Instruction inst, ExecutionContext ec) {
 		FEDInstruction fedinst = null;
 		if (inst instanceof MapmmSPInstruction) {
@@ -253,12 +264,18 @@ public class FEDInstructionUtils {
 				return VariableCPInstruction.parseInstruction(instruction.getInstructionString());
 			}
 		}
+		else if(inst instanceof QuaternarySPInstruction) {
+			QuaternarySPInstruction instruction = (QuaternarySPInstruction) inst;
+			Data data = ec.getVariable(instruction.input1);
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+				fedinst = QuaternaryFEDInstruction.parseInstruction(instruction.getInstructionString());
+		}
 		//set thread id for federated context management
 		if( fedinst != null ) {
 			fedinst.setTID(ec.getTID());
 			return fedinst;
 		}
-		
+
 		return inst;
 	}
 }

@@ -756,8 +756,7 @@ public class TestUtils
 	}
 
 	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, double epsilon, String message){
-		assertTrue(message+"\n The number of columns in the matrixes should be equal", expectedMatrix.length == actualMatrix.length);
-		assertTrue(message+"\n The number of rows in the matrixes should be equal", expectedMatrix[0].length == actualMatrix[0].length);
+		assertEqualColsAndRows(expectedMatrix,actualMatrix);
 		compareMatrices(expectedMatrix, actualMatrix, expectedMatrix.length, expectedMatrix[0].length, epsilon, message);
 	}
 	
@@ -795,8 +794,7 @@ public class TestUtils
 
 	public static void compareMatricesBitAvgDistance(double[][] expectedMatrix, double[][] actualMatrix,
 			long maxUnitsOfLeastPrecision, long maxAvgDistance, String message){
-		assertTrue("The number of columns in the matrixes should be equal", expectedMatrix.length == actualMatrix.length);
-		assertTrue("The number of rows in the matrixes should be equal", expectedMatrix[0].length == actualMatrix[0].length);
+		assertEqualColsAndRows(expectedMatrix,actualMatrix);
 		compareMatricesBitAvgDistance(expectedMatrix, actualMatrix, expectedMatrix.length, actualMatrix[0].length, 
 			maxUnitsOfLeastPrecision, maxAvgDistance, message);
 	}
@@ -848,20 +846,27 @@ public class TestUtils
 		return min / max;
 	}
 
-
+	private static void assertEqualColsAndRows(double[][] expectedMatrix, double[][] actualMatrix){
+		assertTrue("The number of columns in the matrixes should be equal :" 
+			+ expectedMatrix.length  + "  "
+			+ actualMatrix.length, 
+			expectedMatrix.length == actualMatrix.length);
+		assertTrue("The number of rows in the matrixes should be equal" 
+			+ expectedMatrix[0].length  + "  " 
+			+ actualMatrix[0].length, 
+			expectedMatrix[0].length == actualMatrix[0].length);
+	}
 
 	public static void compareMatricesPercentageDistance(double[][] expectedMatrix, double[][] actualMatrix,  
 			double percentDistanceAllowed, double maxAveragePercentDistance,  String message){
-		assertTrue("The number of columns in the matrixes should be equal", expectedMatrix.length == actualMatrix.length);
-		assertTrue("The number of rows in the matrixes should be equal", expectedMatrix[0].length == actualMatrix[0].length);
+		assertEqualColsAndRows(expectedMatrix,actualMatrix);
 		compareMatricesPercentageDistance(expectedMatrix, actualMatrix, expectedMatrix.length, expectedMatrix[0].length,
 			percentDistanceAllowed, maxAveragePercentDistance, message, false);
 	}
 
 	public static void compareMatricesPercentageDistance(double[][] expectedMatrix, double[][] actualMatrix,  
 			double percentDistanceAllowed, double maxAveragePercentDistance,  String message, boolean ignoreZero){
-		assertTrue("The number of columns in the matrixes should be equal", expectedMatrix.length == actualMatrix.length);
-		assertTrue("The number of rows in the matrixes should be equal", expectedMatrix[0].length == actualMatrix[0].length);
+		assertEqualColsAndRows(expectedMatrix,actualMatrix);
 		compareMatricesPercentageDistance(expectedMatrix, actualMatrix, expectedMatrix.length, expectedMatrix[0].length,
 			percentDistanceAllowed, maxAveragePercentDistance, message, ignoreZero);
 	}

@@ -22,5 +22,5 @@
 X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
     ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
 		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)))
-[X2,M] = pca(X=X,  K=2, scale=$scaleAndShift, center=$scaleAndShift)
+[X2,M,c,s] = pca(X=X,  K=2, scale=$scaleAndShift, center=$scaleAndShift)
 write(X2, $out)

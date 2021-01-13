@@ -45,16 +45,31 @@ public abstract class DataPartitionFederatedScheme {
 		public final List<MatrixObject> _pLabels;
 		public final int _workerNum;
 		public final BalanceMetrics _balanceMetrics;
+		public final List<Double> _weighingFactors;
 
-		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum, BalanceMetrics balanceMetrics) {
-			this._pFeatures = pFeatures;
-			this._pLabels = pLabels;
-			this._workerNum = workerNum;
-			this._balanceMetrics = balanceMetrics;
+
+		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum, BalanceMetrics balanceMetrics, List<Double> weighingFactors) {
+			_pFeatures = pFeatures;
+			_pLabels = pLabels;
+			_workerNum = workerNum;
+			_balanceMetrics = balanceMetrics;
+			_weighingFactors = weighingFactors;
 		}
 	}
 
-	public abstract Result doPartitioning(MatrixObject features, MatrixObject labels);
+	public static final class BalanceMetrics {
+		public final long _minRows;
+		public final long _avgRows;
+		public final long _maxRows;
+
+		public BalanceMetrics(long minRows, long avgRows, long maxRows) {
+			_minRows = minRows;
+			_avgRows = avgRows;
+			_maxRows = maxRows;
+		}
+	}
+
+	public abstract Result partition(MatrixObject features, MatrixObject labels, int seed);
 
 	/**
 	 * Takes a row federated Matrix and slices it into a matrix for each worker
@@ -110,16 +125,12 @@ public abstract class DataPartitionFederatedScheme {
 		return new BalanceMetrics(minRows, sum / slices.size(), maxRows);
 	}
 
-	public static final class BalanceMetrics {
-		public final long _minRows;
-		public final long _avgRows;
-		public final long _maxRows;
-
-		public BalanceMetrics(long minRows, long avgRows, long maxRows) {
-			this._minRows = minRows;
-			this._avgRows = avgRows;
-			this._maxRows = maxRows;
-		}
+	static List<Double> getWeighingFactors(List<MatrixObject> pFeatures, BalanceMetrics balanceMetrics) {
+		List<Double> weighingFactors = new ArrayList<>();
+		pFeatures.forEach((feature) -> {
+			weighingFactors.add((double) feature.getNumRows() / balanceMetrics._avgRows);
+		});
+		return weighingFactors;
 	}
 
 	/**

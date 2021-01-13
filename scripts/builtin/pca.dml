@@ -30,16 +30,18 @@
 # ---------------------------------------------------------------------------------------------
 # Xout   Matrix  ---      Output feature matrix with K columns
 # Mout   Matrix  ---      Output dominant eigen vectors (can be used for projections)
+# Centering Matrix ---    The column means of the input, subtracted to construct the PCA
+# ScaleFactor Matrix ---  The Scaling of the values, to make each dimension same size.
 # ---------------------------------------------------------------------------------------------
 
 m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
-  return (Matrix[Double] Xout, Matrix[Double] Mout) 
+  return (Matrix[Double] Xout, Matrix[Double] Mout, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
   N = nrow(X);
   D = ncol(X);
 
   # perform z-scoring (centering and scaling)
-  X = scale(X, center, scale);
+  [X, Centering, ScaleFactor] = scale(X, center, scale);
 
   # co-variance matrix
   mu = colSums(X)/N;
@@ -61,4 +63,5 @@ m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean sca
   # Construct new data set by treating computed dominant eigenvectors as the basis vectors
   Xout = X %*% evec_dominant;
   Mout = evec_dominant;
+
 }

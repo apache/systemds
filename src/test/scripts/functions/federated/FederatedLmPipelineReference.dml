@@ -19,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-Fin = rbind(read($1), read($2))
 
+Fin = rbind(read($1), read($2))
 y = read($5)
 
 # one hot encoding categorical, other passthrough

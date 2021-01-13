@@ -51,7 +51,15 @@ public class DoubleIntListHashMap extends CustomHashMap {
 
 		// compute entry index position
 		int hash = hash(key);
+		return getHash(key, hash);
+	}
+
+	private IntArrayList getHash(double key, int hash) {
 		int ix = indexFor(hash, _data.length);
+		return getHashIndex(key, ix);
+	}
+
+	private IntArrayList getHashIndex(double key, int ix) {
 
 		// find entry
 		for(DIListEntry e = _data[ix]; e != null; e = e.next) {
@@ -79,6 +87,38 @@ public class DoubleIntListHashMap extends CustomHashMap {
 		_size++;
 
 		// resize if necessary
+		if(_size >= LOAD_FACTOR * _data.length)
+			resize();
+	}
+
+	public void appendValue(double key, int value) {
+		int hash = hash(key);
+		int ix = indexFor(hash, _data.length);
+		IntArrayList lstPtr = null; // The list to add the value to.
+		if(_data[ix] == null) {
+			lstPtr = new IntArrayList();
+			_data[ix] = new DIListEntry(key, lstPtr);
+			_size++;
+		}
+		else {
+			for(DIListEntry e = _data[ix]; e != null; e = e.next) {
+				if(e.key == key) {
+					lstPtr = e.value;
+					break;
+				}
+				else if(e.next == null) {
+					lstPtr = new IntArrayList();
+					// Swap to place the new value, in front.
+					DIListEntry eOld = _data[ix];
+					_data[ix] = new DIListEntry(key, lstPtr);
+					_data[ix].next = eOld;
+					_size++;
+					break;
+				}
+				DblArrayIntListHashMap.hashMissCount++;
+			}
+		}
+		lstPtr.appendValue(value);
 		if(_size >= LOAD_FACTOR * _data.length)
 			resize();
 	}
@@ -122,6 +162,8 @@ public class DoubleIntListHashMap extends CustomHashMap {
 	}
 
 	private static int hash(double key) {
+		// return (int) key;
+
 		// basic double hash code (w/o object creation)
 		long bits = Double.doubleToRawLongBits(key);
 		int h = (int) (bits ^ (bits >>> 32));
@@ -159,17 +201,17 @@ public class DoubleIntListHashMap extends CustomHashMap {
 		}
 
 		@Override
-		public String toString(){
+		public String toString() {
 			StringBuilder sb = new StringBuilder();
 			sb.append("[" + key + ", ");
-			sb.append( value + ", ");
-			sb.append( next + "]");
+			sb.append(value + ", ");
+			sb.append(next + "]");
 			return sb.toString();
 		}
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName() + this.hashCode());
 		sb.append("\n" + Arrays.toString(_data));

@@ -19,10 +19,6 @@
 
 package org.apache.sysds.runtime.util;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
@@ -34,6 +30,10 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class UtilFunctions {
 	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
@@ -833,6 +833,17 @@ public class UtilFunctions {
 	private static String getDateFormat (String dateString) {
 		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
+	}
+
+	 public static double jaccardSim(String x, String y) {
+		Set<String> charsX = new LinkedHashSet<>(Arrays.asList(x.split("(?!^)")));
+		Set<String> charsY = new LinkedHashSet<>(Arrays.asList(y.split("(?!^)")));
+
+		final int sa = charsX.size();
+		final int sb = charsY.size();
+		charsX.retainAll(charsY);
+		final int intersection = charsX.size();
+		return 1d / (sa + sb - charsX.size()) * intersection;
 	}
 
 	/**

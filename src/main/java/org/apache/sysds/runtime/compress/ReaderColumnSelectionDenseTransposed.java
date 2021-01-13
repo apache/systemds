@@ -22,39 +22,26 @@ package org.apache.sysds.runtime.compress;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-/** considers only a subset of row indexes */
-public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection {
+public class ReaderColumnSelectionDenseTransposed extends ReaderColumnSelection {
 	protected MatrixBlock _data;
 
-	private int[] _sampleIndexes;
-	private int lastIndex = -1;
-
-	// reusable return
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionDenseSample(MatrixBlock data, int[] colIndexes, int[] sampleIndexes,
-		CompressionSettings compSettings) {
-		super(colIndexes, -1, compSettings);
+	public ReaderColumnSelectionDenseTransposed(MatrixBlock data, int[] colIndices) {
+		super(colIndices, data.getNumColumns() );
 		_data = data;
-		_sampleIndexes = sampleIndexes;
-		reusableArr = new double[colIndexes.length];
+		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);
 	}
 
 	protected DblArray getNextRow() {
-		if(lastIndex == _sampleIndexes.length - 1)
+		if(_lastRow == _numRows - 1)
 			return null;
-		lastIndex++;
+		_lastRow++;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _compSettings.transposeInput ? _data.quickGetValue(_colIndexes[i],
-				_sampleIndexes[lastIndex]) : _data.quickGetValue(_sampleIndexes[lastIndex], _colIndexes[i]);
+			reusableArr[i] = _data.quickGetValue(_colIndexes[i], _lastRow);
 		}
 		return reusableReturn;
-	}
-
-	@Override
-	public int getCurrentRowIndex() {
-		return _sampleIndexes[lastIndex];
 	}
 }

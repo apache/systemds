@@ -59,7 +59,7 @@ public final class Bitmap extends ABitmap {
 	}
 
 	public int getNumValues() {
-		return _values.length / _numCols;
+		return (_values == null) ? 0: _values.length / _numCols;
 	}
 
 	public void sortValuesByFrequency() {

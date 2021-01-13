@@ -24,58 +24,69 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 
-public class MatMultCP extends Lop 
-{
+public class MatMultCP extends Lop {
 	private int numThreads = -1;
 	private boolean isLeftTransposed; // Used for GPU matmult operation
 	private boolean isRightTransposed;
-	
+	private boolean useTranspose;
+
 	public MatMultCP(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) {
 		this(input1, input2, dt, vt, et, 1);
 	}
-	
+
 	public MatMultCP(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.MatMultCP, dt, vt);
 		init(input1, input2, dt, vt, et);
 		numThreads = k;
 	}
-	
-	public MatMultCP(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et, 
-			boolean isLeftTransposed, boolean isRightTransposed) {
+
+	public MatMultCP(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et, boolean isLeftTransposed,
+		boolean isRightTransposed) {
 		super(Lop.Type.Binary, dt, vt);
 		init(input1, input2, dt, vt, et);
 		this.isLeftTransposed = isLeftTransposed;
 		this.isRightTransposed = isRightTransposed;
+		this.useTranspose = true;
 	}
-	
+
+	public MatMultCP(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et, int k, boolean isLeftTransposed,
+		boolean isRightTransposed) {
+		this(input1, input2, dt, vt, et, k);
+		this.isLeftTransposed = isLeftTransposed;
+		this.isRightTransposed = isRightTransposed;
+		this.useTranspose = true;
+	}
+
 	private void init(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) {
 		addInput(input1);
 		addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
-		lps.setProperties( inputs, et);
+		lps.setProperties(inputs, et);
 	}
 
 	@Override
 	public String toString() {
 		return " Operation: ba+*";
 	}
-	
+
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		if( getExecType() == ExecType.CP ) {
-			return InstructionUtils.concatOperands(
-				getExecType().name(), "ba+*",
+		if(!useTranspose) {
+			return InstructionUtils.concatOperands(getExecType().name(),
+				"ba+*",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
-				prepOutputOperand(output), String.valueOf(numThreads));
+				prepOutputOperand(output),
+				String.valueOf(numThreads));
 		}
-		else { //GPU
-			return InstructionUtils.concatOperands(
-				getExecType().name(), "ba+*",
+		else { // GPU or compressed
+			return InstructionUtils.concatOperands(getExecType().name(),
+				"ba+*",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
-				prepOutputOperand(output), String.valueOf(numThreads),
+				prepOutputOperand(output),
+				String.valueOf(numThreads),
 				String.valueOf(isLeftTransposed),
 				String.valueOf(isRightTransposed));
 		}

@@ -56,9 +56,11 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
-public class InitFEDInstruction extends FEDInstruction {
+public class InitFEDInstruction extends FEDInstruction implements LineageTraceable {
 
 	private static final Log LOG = LogFactory.getLog(InitFEDInstruction.class.getName());
 
@@ -341,5 +343,35 @@ public class InitFEDInstruction extends FEDInstruction {
 		catch(Exception e) {
 			throw new DMLRuntimeException("Exception in frame response from federated worker.", e);
 		}
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		String type = ec.getScalarInput(_type).getStringValue();
+		ListObject addresses = ec.getListObject(_addresses.getName());
+		ListObject ranges = ec.getListObject(_ranges.getName());
+		LineageItem[] liInputs = new LineageItem[addresses.getLength()];
+
+		for(int i = 0; i < addresses.getLength(); i++) {
+			Data addressData = addresses.getData().get(i);
+			if(addressData instanceof StringObject) {
+				String address = ((StringObject)addressData).getStringValue();
+				// get beginning and end of data ranges
+				List<Data> rangesData = ranges.getData();
+				List<Data> beginDimsData = ((ListObject) rangesData.get(i*2)).getData();
+				List<Data> endDimsData = ((ListObject) rangesData.get(i*2+1)).getData();
+				String rl = ((ScalarObject)beginDimsData.get(0)).getStringValue();
+				String cl = ((ScalarObject)beginDimsData.get(1)).getStringValue();
+				String ru = ((ScalarObject)endDimsData.get(0)).getStringValue();
+				String cu = ((ScalarObject)endDimsData.get(1)).getStringValue();
+				// form a string with all the information and create a lineage item
+				String data = InstructionUtils.concatOperands(type, address, rl, cl, ru, cu);
+				liInputs[i] = new LineageItem(data);
+			}
+			else {
+				throw new DMLRuntimeException("federated instruction only takes strings as addresses");
+			}
+		}
+		return Pair.of(_output.getName(), new LineageItem(getOpcode(), liInputs));
 	}
 }

@@ -28,6 +28,6 @@ U = read($in_U)
 V = read($in_V)
 eps = $in_W
 
-Z = t(t(U) %*% (X / (U %*% t(V)) + eps));
+Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
 
 write(Z, $out_Z)

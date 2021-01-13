@@ -51,7 +51,7 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 
 	private final static String OUTPUT_NAME = "Z";
 
-	private final static double TOLERANCE = 1e-12;
+	private final static double TOLERANCE = 1e-11;
 
 	private final static int blocksize = 1024;
 
@@ -138,28 +138,24 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 
 	@Test
-	@Ignore
 	public void federatedWeightedDivMatrixMultLeftEpsSingleNode()
 	{
 		federatedWeightedDivMatrixMult(LEFT_EPS_TEST_NAME, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
 	public void federatedWeightedDivMatrixMultLeftEpsSpark()
 	{
 		federatedWeightedDivMatrixMult(LEFT_EPS_TEST_NAME, ExecMode.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void federatedWeightedDivMatrixMultRightEpsSingleNode()
 	{
 		federatedWeightedDivMatrixMult(RIGHT_EPS_TEST_NAME, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
 	public void federatedWeightedDivMatrixMultRightEpsSpark()
 	{
 		federatedWeightedDivMatrixMult(RIGHT_EPS_TEST_NAME, ExecMode.SPARK);
@@ -189,8 +185,8 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 
-		writeInputMatrixWithMTD("U", U, true);
-		writeInputMatrixWithMTD("V", V, true);
+		writeInputMatrixWithMTD("U", U, true, new MatrixCharacteristics(rows, rank, blocksize, rows * rank));
+		writeInputMatrixWithMTD("V", V, true, new MatrixCharacteristics(cols, rank, blocksize, rows * rank));
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";

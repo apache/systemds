@@ -80,7 +80,10 @@ class PythonAPIFunctionGenerator(object):
     kwargs_parameter_string = u"**kwargs: Dict[str, VALID_INPUT_TYPES]"
     kwargs_result = u"params_dict.update(kwargs)"
 
-    value_check_template = u"\n    {param}._check_matrix_op()"
+    matrix_check_template = u"\n    {param}._check_matrix_op()"
+    shape_check_template = u"""\n    if {param}.shape[0] == 0:
+        raise ValueError("Found array with 0 feature(s) (shape={{s}}) while a minimum of 1 is required."
+                         .format(s={param}.shape))"""
     type_mapping_file = os.path.join('resources','type_mapping.json')
 
     type_mapping_pattern = r"^([^\[\s]+)"
@@ -195,11 +198,12 @@ class PythonAPIFunctionGenerator(object):
         result = "OperationNode({params})"
         param_string = ""
         param = parameters[0]
+        pattern = r"^[^\[]+"
         if length > 1:
             output_type_list = ""
             for value in return_values:
-                output_type = ".".join(re.split("[\[\]]", value[1])).upper()[:-1]
-                print(output_type)
+                output_type = re.search(pattern, value[1])[0].upper()
+                #print(output_type)
                 if len(output_type_list):
                     output_type_list = "{output_type_list}, ".format(
                         output_type_list=output_type_list
@@ -220,8 +224,8 @@ class PythonAPIFunctionGenerator(object):
             )
         else:
             value = return_values[0]
-            output_type = ".".join(re.split("[\[\]]", value[1])).upper()[:-1]
-            # print(output_type)
+            output_type = re.search(pattern, value[1])[0].upper()
+            #print(output_type)
         result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, " \
                  "output_type=OutputType.{output_type}".format(
             param=param[0],
@@ -237,10 +241,12 @@ class PythonAPIFunctionGenerator(object):
             if "matrix" not in param[1].lower():
                 # This check is only needed for Matrix types
                 continue
-            check = self.__class__.value_check_template.format(param=param[0])
-            result = "{result}{check}".format(
+            matrix_check = self.__class__.matrix_check_template.format(param=param[0])
+            shape_check = self.__class__.shape_check_template.format(param=param[0])
+            result = "{result}{matrix_check}{shape_check}".format(
                 result=result,
-                check=check
+                matrix_check=matrix_check,
+                shape_check=shape_check
             )
         return result
     

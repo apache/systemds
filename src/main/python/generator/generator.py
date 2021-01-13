@@ -184,7 +184,7 @@ class PythonAPIFunctionGenerator(object):
             )
         return result
 
-    #TODO: shape parameter, mapping of return type
+    # TODO: shape parameter, mapping of return type
     def format_api_call(
         self,
         parameters: List[Tuple[str]],
@@ -295,8 +295,8 @@ if __name__ == "__main__":
     file_generator = PythonAPIFileGenerator()
 
     for dml_file in f_parser.files():
-        header_data = f_parser.parse_header(dml_file)
         try:
+            header_data = f_parser.parse_header(dml_file)
             data = f_parser.parse_function(dml_file)
             # TODO: define a set of dml script that would not fail this check
             f_parser.check_parameters(header_data, data)

@@ -108,7 +108,7 @@ class FunctionParser(object):
                 if re.search(pattern=self.__class__.divider_pattern, string=param_line, flags=re.I | re.M) is not None:
                     continue
                 print(e)
-                return None
+                return parameters
 
         return parameters
 
@@ -199,12 +199,12 @@ class FunctionParser(object):
                   "for file \'{file_name}\'.".format(file_name=data["function_name"]))
             raise ValueError("The parameter type of the function does not match with the documentation")
 
-        header_param_default = [p[2] for p in header["parameters"]]
-        header_param_default = [type_mapping["default"].get(item, item) for item in header_param_default]
-        data_param_default = [str(p[2]) for p in data["parameters"]]
-        data_param_default = [type_mapping["default"].get(item, item) for item in data_param_default]
-        if header_param_default != data_param_default:
-            print("[ERROR]   The parameter default of the function does not match with the documentation "
-                  "for file \'{file_name}\'.".format(file_name=data["function_name"]))
-            raise ValueError("The parameter default of the function does not match with the documentation")
+        # header_param_default = [p[2].lower() for p in header["parameters"]]
+        # header_param_default = [type_mapping["default"].get(item, item).lower() for item in header_param_default]
+        # data_param_default = [str(p[2]).lower() for p in data["parameters"]]
+        # data_param_default = [type_mapping["default"].get(item, item).lower() for item in data_param_default]
+        # if header_param_default != data_param_default:
+        #     print("[ERROR]   The parameter default of the function does not match with the documentation "
+        #           "for file \'{file_name}\'.".format(file_name=data["function_name"]))
+        #     raise ValueError("The parameter default of the function does not match with the documentation")
 

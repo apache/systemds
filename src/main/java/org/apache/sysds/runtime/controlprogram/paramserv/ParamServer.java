@@ -243,7 +243,7 @@ public abstract class ParamServer
 	private void updateGlobalModel(ListObject gradients) {
 		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
 		_model = updateLocalModel(_ec, gradients, _model);
-		if (DMLScript.STATISTICS)
+		if (DMLScript.STATISTICS && tAgg != null)
 			Statistics.accPSAggregationTime((long) tAgg.stop());
 	}
 
@@ -300,18 +300,17 @@ public abstract class ParamServer
 
 	private void broadcastModel(int workerID) throws InterruptedException {
 		Timing tBroad = DMLScript.STATISTICS ? new Timing(true) : null;
-
 		//broadcast copy of model to specific worker, cleaned up by worker
 		_modelMap.get(workerID).put(ParamservUtils.copyList(_model, false));
-
-		if (DMLScript.STATISTICS)
+		if (DMLScript.STATISTICS && tBroad != null)
 			Statistics.accPSModelBroadcastTime((long) tBroad.stop());
 	}
 
 	/**
-	 * Checks the current model against the validation set and
+	 * Checks the current model against the validation set
 	 */
 	private synchronized void validate() {
+		Timing tValidate = DMLScript.STATISTICS ? new Timing(true) : null;
 		_ec.setVariable(Statement.PS_MODEL, _model);
 
 		// Invoke the validation function
@@ -321,12 +320,13 @@ public abstract class ParamServer
 		double loss = ((DoubleObject) _ec.getVariable(_lossOutput)).getDoubleValue();
 		double accuracy = ((DoubleObject) _ec.getVariable(_accuracyOutput)).getDoubleValue();
 
-		// Log validation results
-		LOG.info("[+] PARAMSERV: validation - loss: " + loss + " accuracy: " + accuracy);
-
 		// cleanup
 		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 
+		// Log validation results
+		LOG.info("[+] PARAMSERV: validation-loss: " + loss + " validation-accuracy: " + accuracy);
+		if(tValidate != null)
+			Statistics.accPSValidationTime((long) tValidate.stop());
 	}
 
 	public FunctionCallCPInstruction getAggInst() {

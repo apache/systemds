@@ -23,6 +23,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
@@ -53,9 +54,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -73,12 +75,12 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	private final long _modelVarID;
 
 	// runtime balancing
-	private PSRuntimeBalancing _runtimeBalancing;
+	private final PSRuntimeBalancing _runtimeBalancing;
 	private int _numBatchesPerEpoch;
 	private int _possibleBatchesPerLocalEpoch;
-	private boolean _weighing;
+	private final boolean _weighing;
 	private double _weighingFactor = 1;
-	private boolean _cycleStartAt0 = false;
+	private final boolean _cycleStartAt0 = false;
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq,
 		PSRuntimeBalancing runtimeBalancing, boolean weighing, int epochs, long batchSize,
@@ -100,6 +102,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 * @param weighingFactor Gradients from this worker will be multiplied by this factor if weighing is enabled
 	 */
 	public void setup(double weighingFactor) {
+		incWorkerNumber();
+
 		// prepare features and labels
 		_featuresData = (FederatedData) _features.getFedMapping().getMap().values().toArray()[0];
 		_labelsData = (FederatedData) _labels.getFedMapping().getMap().values().toArray()[0];
@@ -125,9 +129,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			_numBatchesPerEpoch = _possibleBatchesPerLocalEpoch;
 		}
 
-		LOG.info("Setup config for worker " + this.getWorkerName());
-		LOG.info("Batch size: " + _batchSize + " possible batches: " + _possibleBatchesPerLocalEpoch
-				+ " batches to run: " + _numBatchesPerEpoch + " weighing factor: " + _weighingFactor);
+		if( LOG.isInfoEnabled() ) {
+			LOG.info("Setup config for worker " + this.getWorkerName());
+			LOG.info("Batch size: " + _batchSize + " possible batches: " + _possibleBatchesPerLocalEpoch
+					+ " batches to run: " + _numBatchesPerEpoch + " weighing factor: " + _weighingFactor);
+		}
 
 		// serialize program
 		// create program blocks for the instruction filtering
@@ -135,12 +141,12 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		ArrayList<ProgramBlock> pbs = new ArrayList<>();
 
 		BasicProgramBlock gradientProgramBlock = new BasicProgramBlock(_ec.getProgram());
-		gradientProgramBlock.setInstructions(new ArrayList<>(Arrays.asList(_inst)));
+		gradientProgramBlock.setInstructions(new ArrayList<>(Collections.singletonList(_inst)));
 		pbs.add(gradientProgramBlock);
 
 		if(_freq == PSFrequency.EPOCH) {
 			BasicProgramBlock aggProgramBlock = new BasicProgramBlock(_ec.getProgram());
-			aggProgramBlock.setInstructions(new ArrayList<>(Arrays.asList(_ps.getAggInst())));
+			aggProgramBlock.setInstructions(new ArrayList<>(Collections.singletonList(_ps.getAggInst())));
 			pbs.add(aggProgramBlock);
 		}
 
@@ -319,7 +325,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		return _ps.pull(_workerID);
 	}
 
-	protected void scaleAndPushGradients(ListObject gradients) {
+	protected void weighAndPushGradients(ListObject gradients) {
+		Timing tWeighing = DMLScript.STATISTICS ? new Timing(true) : null;
 		// scale gradients - must only include MatrixObjects
 		if(_weighing && _weighingFactor != 1) {
 			gradients.getData().parallelStream().forEach((matrix) -> {
@@ -330,6 +337,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				matrixObject.release();
 			});
 		}
+		accFedPSGradientWeighingTime(tWeighing);
 
 		// Push the gradients to ps
 		_ps.push(_workerID, gradients);
@@ -350,8 +358,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				int localStartBatchNum = getNextLocalBatchNum(currentLocalBatchNumber++, _possibleBatchesPerLocalEpoch);
 				ListObject model = pullModel();
 				ListObject gradients = computeGradientsForNBatches(model, 1, localStartBatchNum);
-				// LOG.info("[+] " + this.getWorkerName() + " completed BATCH " + localStartBatchNum);
-				scaleAndPushGradients(gradients);
+				weighAndPushGradients(gradients);
 				ParamservUtils.cleanupListObject(model);
 				ParamservUtils.cleanupListObject(gradients);
 			}
@@ -375,9 +382,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// Pull the global parameters from ps
 			ListObject model = pullModel();
 			ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerEpoch, localStartBatchNum, true);
-			scaleAndPushGradients(gradients);
-
-			// LOG.info("[+] " + this.getWorkerName() + " --- completed EPOCH " + epochCounter);
+			weighAndPushGradients(gradients);
 			ParamservUtils.cleanupListObject(model);
 			ParamservUtils.cleanupListObject(gradients);
 		}
@@ -400,6 +405,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	protected ListObject computeGradientsForNBatches(ListObject model,
 		int numBatchesToCompute, int localStartBatchNum, boolean localUpdate)
 	{
+		Timing tGradients = DMLScript.STATISTICS ? new Timing(true) : null;
 		// put local start batch num on federated worker
 		Future<FederatedResponse> putBatchCounterResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.PUT_VAR, _localStartBatchNumVarID, new IntObject(localStartBatchNum)));
@@ -424,9 +430,12 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		try {
 			Object[] responseData = udfResponse.get().getData();
+			accGradientComputeTime(tGradients);
 			return (ListObject) responseData[0];
 		}
 		catch(Exception e) {
+			if(tGradients != null)
+				tGradients.stop();
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage());
 		}
 	}
@@ -550,6 +559,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	// Statistics methods
+	protected void accFedPSGradientWeighingTime(Timing time) {
+		if (DMLScript.STATISTICS && time != null)
+			Statistics.accFedPSGradientWeighingTime((long) time.stop());
+	}
+
 	@Override
 	public String getWorkerName() {
 		return String.format("Federated worker_%d", _workerID);
@@ -557,21 +571,25 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	@Override
 	protected void incWorkerNumber() {
-
+		if (DMLScript.STATISTICS)
+			Statistics.incWorkerNumber();
 	}
 
 	@Override
 	protected void accLocalModelUpdateTime(Timing time) {
-
+		if (DMLScript.STATISTICS && time != null)
+			Statistics.accFedPSWorkerComputing((long) time.stop());
 	}
 
 	@Override
 	protected void accBatchIndexingTime(Timing time) {
-
+		if (DMLScript.STATISTICS && time != null)
+			Statistics.accFedPSWorkerComputing((long) time.stop());
 	}
 
 	@Override
 	protected void accGradientComputeTime(Timing time) {
-
+		if (DMLScript.STATISTICS && time != null)
+			Statistics.accFedPSWorkerComputing((long) time.stop());
 	}
 }

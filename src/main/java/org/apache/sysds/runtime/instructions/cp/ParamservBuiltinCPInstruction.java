@@ -30,6 +30,26 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
+import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
+import static org.apache.sysds.parser.Statement.PS_EPOCHS;
+import static org.apache.sysds.parser.Statement.PS_FEATURES;
+import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
+import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
+import static org.apache.sysds.parser.Statement.PS_LABELS;
+import static org.apache.sysds.parser.Statement.PS_MODE;
+import static org.apache.sysds.parser.Statement.PS_MODEL;
+import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
+import static org.apache.sysds.parser.Statement.PS_SCHEME;
+import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
+import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
+import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
+import static org.apache.sysds.parser.Statement.PS_FED_WEIGHING;
+import static org.apache.sysds.parser.Statement.PS_SEED;
+import static org.apache.sysds.parser.Statement.PS_VAL_FEATURES;
+import static org.apache.sysds.parser.Statement.PS_VAL_LABELS;
+import static org.apache.sysds.parser.Statement.PS_VAL_FUN;
+
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,8 +86,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
-
-import static org.apache.sysds.parser.Statement.*;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
@@ -108,6 +126,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runFederated(ExecutionContext ec) {
+		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		LOG.info("PARAMETER SERVER");
 		LOG.info("[+] Running in federated mode");
 
@@ -130,17 +149,24 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			LOG.info("[+] Weighing: " + weighing);
 			LOG.info("[+] Seed: " + seed);
 		}
-		
+		if (tSetup != null)
+			tSetup.stop();
+
 		// partition federated data
+		Timing tDataPartitioning = DMLScript.STATISTICS ? new Timing(true) : null;
 		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme, seed)
 			.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
 		int workerNum = result._workerNum;
+		if (DMLScript.STATISTICS)
+			Statistics.accFedPSDataPartitioningTime((long) tSetup.stop());
 
+
+		if (DMLScript.STATISTICS)
+			tSetup.start();
 		// setup threading
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
 			.namingPattern("workers-pool-thread-%d").build();
 		ExecutorService es = Executors.newFixedThreadPool(workerNum, factory);
-
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
 		// Level of par is -1 so each federated worker can scale to its cpu cores
@@ -159,17 +185,17 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighing,
 				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
 			.collect(Collectors.toList());
-
 		if(workerNum != threads.size()) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
 		}
-
 		// Set features and lables for the control threads and write the program and instructions and hyperparams to the federated workers
 		for (int i = 0; i < threads.size(); i++) {
 			threads.get(i).setFeatures(result._pFeatures.get(i));
 			threads.get(i).setLabels(result._pLabels.get(i));
 			threads.get(i).setup(result._weighingFactors.get(i));
 		}
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		try {
 			// Launch the worker threads and wait for completion
@@ -520,7 +546,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
 			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._maxRows / (float) getBatchSize());
 		} else {
-			numBatchesPerEpoch = (int) (balanceMetrics._avgRows / getBatchSize());
+			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._avgRows / (float) getBatchSize());
 		}
 		return numBatchesPerEpoch;
 	}

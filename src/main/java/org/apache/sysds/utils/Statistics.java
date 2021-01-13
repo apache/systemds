@@ -125,6 +125,11 @@ public class Statistics
 	private static final LongAdder psModelBroadcastTime = new LongAdder();
 	private static final LongAdder psBatchIndexTime = new LongAdder();
 	private static final LongAdder psRpcRequestTime = new LongAdder();
+	private static final LongAdder psValidationTime = new LongAdder();
+	// Federated parameter server specifics (time is in milli sec)
+	private static final LongAdder fedPSDataPartitioningTime = new LongAdder();
+	private static final LongAdder fedPSWorkerComputingTime = new LongAdder();
+	private static final LongAdder fedPSGradientWeighingTime = new LongAdder();
 
 	//PARFOR optimization stats (low frequency updates)
 	private static long parforOptTime = 0; //in milli sec
@@ -590,6 +595,22 @@ public class Statistics
 		psRpcRequestTime.add(t);
 	}
 
+	public static void accPSValidationTime(long t) {
+		psValidationTime.add(t);
+	}
+
+	public static void accFedPSDataPartitioningTime(long t) {
+		fedPSDataPartitioningTime.add(t);
+	}
+
+	public static void accFedPSWorkerComputing(long t) {
+		fedPSWorkerComputingTime.add(t);
+	}
+
+	public static void accFedPSGradientWeighingTime(long t) {
+		fedPSGradientWeighingTime.add(t);
+	}
+
 	public static String getCPHeavyHitterCode( Instruction inst )
 	{
 		String opcode = null;
@@ -1013,12 +1034,22 @@ public class Statistics
 			if (psNumWorkers.longValue() > 0) {
 				sb.append(String.format("Paramserv total num workers:\t%d.\n", psNumWorkers.longValue()));
 				sb.append(String.format("Paramserv setup time:\t\t%.3f secs.\n", psSetupTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv grad compute time:\t%.3f secs.\n", psGradientComputeTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv model update time:\t%.3f/%.3f secs.\n",
-						psLocalModelUpdateTime.doubleValue() / 1000, psAggregationTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv model broadcast time:\t%.3f secs.\n", psModelBroadcastTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv batch slice time:\t%.3f secs.\n", psBatchIndexTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv RPC request time:\t%.3f secs.\n", psRpcRequestTime.doubleValue() / 1000));
+
+				if(fedPSDataPartitioningTime.doubleValue() > 0) { 	//if data partitioning happens this is the federated case
+					sb.append(String.format("Paramserv federated data partitioning time:\t%.3f secs.\n", fedPSDataPartitioningTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv federated worker compute time (total over workers):\t%.3f secs.\n", fedPSWorkerComputingTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv gradient weighing time (total over workers):\t%.3f secs.\n", fedPSGradientWeighingTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv global model update (aggregation) time:\t%.3f secs.\n", psAggregationTime.doubleValue() / 1000));
+				}
+				else {
+					sb.append(String.format("Paramserv grad compute time:\t%.3f secs.\n", psGradientComputeTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv model update time:\t%.3f/%.3f secs.\n",
+							psLocalModelUpdateTime.doubleValue() / 1000, psAggregationTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv model broadcast time:\t%.3f secs.\n", psModelBroadcastTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv batch slice time:\t%.3f secs.\n", psBatchIndexTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv RPC request time:\t%.3f secs.\n", psRpcRequestTime.doubleValue() / 1000));
+				}
+				sb.append(String.format("Paramserv valdiation time:\t%.3f secs.\n", psValidationTime.doubleValue() / 1000));
 			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");

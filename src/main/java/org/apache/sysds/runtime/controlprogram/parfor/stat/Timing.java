@@ -26,9 +26,8 @@ package org.apache.sysds.runtime.controlprogram.parfor.stat;
  */
 public class Timing 
 {
-
-	
 	private long _start = -1;
+	private long _cummulativeDuration = 0;
 	
 	public Timing() {
 		//default constructor
@@ -63,10 +62,11 @@ public class Timing
 	
 		long end = System.nanoTime();		
 		double duration = ((double)(end-_start))/1000000;
+		_cummulativeDuration += duration;
 		
 		//carry end time over
 		_start = end;		
-		return duration;
+		return _cummulativeDuration;
 	}
 	
 	/**

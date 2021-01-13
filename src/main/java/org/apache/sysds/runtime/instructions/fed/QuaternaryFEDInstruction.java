@@ -23,9 +23,9 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysds.lops.WeightedDivMM.WDivMMType;
 import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
 import org.apache.sysds.lops.WeightedSquaredLoss.WeightsType;
-import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -59,13 +59,14 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 				str = str.replace(Lop.OPERAND_DELIMITOR + "false", "");
 			}
 			str = str.replace("mapwsigmoid", "wsigmoid");
+			str = str.replace("mapwdivmm", "wdivmm");
 			str += Lop.OPERAND_DELIMITOR + "1"; // num threads
 		}
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		int addInput4 = (opcode.equals("wcemm") || opcode.equals("wsloss")) ? 1 : 0;
+		int addInput4 = (opcode.equals("wcemm") || opcode.equals("wsloss") || opcode.equals("wdivmm")) ? 1 : 0;
 
 		InstructionUtils.checkNumFields(parts, 6 + addInput4);
 
@@ -77,7 +78,7 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 		checkDataTypes(DataType.MATRIX, in1, in2, in3);
 
 		QuaternaryOperator qop = null;
-		if(addInput4 == 1) // wcemm, wsloss
+		if(addInput4 == 1) // wcemm, wsloss, wdivmm
 		{
 			CPOperand in4 = new CPOperand(parts[4]);
 
@@ -95,6 +96,14 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 					checkDataTypes(DataType.MATRIX, in4);
 				qop = new QuaternaryOperator(weights_type);
 				return new QuaternaryWSLossFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
+			}
+			else if(opcode.equals("wdivmm"))
+			{
+				final WDivMMType wdivmm_type = WDivMMType.valueOf(parts[6]);
+				if(wdivmm_type.hasFourInputs())
+					checkDataTypes(new DataType[]{DataType.SCALAR, DataType.MATRIX}, in4);
+				qop = new QuaternaryOperator(wdivmm_type);
+				return new QuaternaryWDivMMFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
 			}
 		}
 		else if(opcode.equals("wsigmoid")) {

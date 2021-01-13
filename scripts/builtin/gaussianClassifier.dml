@@ -97,6 +97,8 @@ m_gaussianClassifier = function(Matrix[Double] D, Matrix[Double] C, Double varSm
     [eVals, eVecs] = eigen(covMatrix)
     lam = diag(eVals^(-1))
     invCovMatrix = eVecs %*% lam %*% t(eVecs)
+    #print(toString(invCovMatrix, decimal=8))
+
 
     #Compute determinant
     det = prod(eVals)
@@ -116,13 +118,11 @@ m_gaussianClassifier = function(Matrix[Double] D, Matrix[Double] C, Double varSm
         intermediate = 0
         meanDiff = (D[i,] - classMeans[class,])
         intermediate = -1/2 * log((2*pi)^nFeats * determinants[class,])
-        print(toString(determinants[class,], decimal=50))
         intermediate = intermediate - 1/2 * (meanDiff %*% as.matrix(classInvCovariances[class]) %*% t(meanDiff))
         intermediate = log(classPriors[class,]) + intermediate
         results[i, class] = intermediate
       }
     }
-    print(toString(results))
     acc = sum(rowIndexMax(results) == C) / nSamples * 100
     print("Training Accuracy (%): " + acc)
   }

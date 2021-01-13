@@ -1,15 +1,36 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+args <- commandArgs(TRUE)
 library("Matrix")
 
+D <- as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
+c <- as.matrix(readMM(paste(args[1], "Y.mtx", sep="")))
 
-D <- rbind(c(1, 2, 3, 6), c(4, 3, 2, 5), c(1, 1, 2, 4))
-
-c <- matrix(data=c(1, 2, 1), nrow=3, ncol=1)
+nClasses <- as.integer(args[2])
+varSmoothing <- as.double(args[3])
 
 nSamples <- nrow(D)
 nFeatures <- ncol(D)
-nClasses <- max(c)
+
 classInvCovariances <- list()
-varSmoothing <- 1e-9
 
 classMeans <- aggregate(D, by=list(c), FUN= mean)
 classMeans <- classMeans[1:nFeatures+1]
@@ -30,11 +51,16 @@ for (i in 1:nClasses)
   covMatrix <- cov(x=classMatrix, use="all.obs")
   covMatrix[is.na(covMatrix)] <- 0
   covMatrix <- covMatrix + smoothedVar
+  #determinant <- det(covMatrix)
+  #determinants[i] <- det(covMatrix)
 
-  determinant <- det(covMatrix)
-  determinants[i] <- det(covMatrix)
+  ev <- eigen(covMatrix)
+  vecs <- ev$vectors
+  vals <- ev$values
+  lam <- diag(vals^(-1))
+  determinants[i] <- prod(vals)
 
-  invCovMatrix <- solve(covMatrix)
+  invCovMatrix <- vecs %*% lam %*% t(vecs)
   invCovMatrix[is.na(invCovMatrix)] <- 0
   classInvCovariances[[i]] <- invCovMatrix
 }
@@ -58,6 +84,26 @@ for (class in 1:nClasses)
 pred <- max.col(results)
 acc <- sum(pred == c) / nSamples * 100
 print(paste("Training Accuracy (%): ", acc, sep=""))
+
+classPriors <- data.matrix(classPriors)
+classMeans <- data.matrix(classMeans)
+
+#Cbind the inverse covariance matrices, to make them comparable in the unit tests
+stackedInvCovs <- classInvCovariances[[1]]
+for (i in 2:nClasses)
+{
+  stackedInvCovs <- cbind(stackedInvCovs, classInvCovariances[[i]])
+}
+
+writeMM(as(classPriors, "CsparseMatrix"), paste(args[4], "priors", sep=""));
+writeMM(as(classMeans, "CsparseMatrix"), paste(args[4], "means", sep=""));
+writeMM(as(determinants, "CsparseMatrix"), paste(args[4], "determinants", sep=""));
+writeMM(as(stackedInvCovs, "CsparseMatrix"), paste(args[4], "invcovs", sep=""));
+
+
+
+
+
 
 
 

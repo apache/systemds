@@ -35,7 +35,7 @@ public class BuiltinALSTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinALSTest.class.getSimpleName() + "/";
 
-	private final static double eps = 0.00001;
+	private final static double eps = 0.0001;
 	private final static int rows = 6;
 	private final static int cols = 6;
 

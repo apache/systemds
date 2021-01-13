@@ -25,16 +25,21 @@ import os
 import re
 from parser import FunctionParser
 
+
 class PythonAPIFileGenerator(object):
 
     target_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'systemds', 'operator', 'algorithm', 'builtin')
     source_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),'scripts', 'builtin')
     template_path = os.path.join('resources', 'template_python_script_imports')
+    init_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'systemds', 'operator', 'algorithm', '__init__.py')
+    init_import = u"from .builtin.{function} import {function} \n"
+    init_all = u"__all__ = {functions} \n"
 
     def __init__(self, extension: str='py'):
         super(PythonAPIFileGenerator, self).__init__()
         self.extension = '.{extension}'.format(extension=extension)
         os.makedirs(self.__class__.target_path, exist_ok = True)
+        self.function_names = list()
 
     def generate_file(self, filename: str, file_content: str):
         """
@@ -51,6 +56,17 @@ class PythonAPIFileGenerator(object):
             new_script.write(license_imports)
             new_script.writelines("\n \n")
             new_script.write(file_content)
+
+        self.function_names.append(filename)
+
+    def generate_init_file(self):
+        with open(self.init_path, "w") as init_file:
+            for f in self.function_names:
+                init_file.write(self.init_import.format(function=f))
+
+            init_file.write("\n")
+            init_file.write(self.init_all.format(functions=self.function_names).replace("'", ""))
+
 
 class PythonAPIFunctionGenerator(object):
 
@@ -114,16 +130,13 @@ class PythonAPIFunctionGenerator(object):
             params_dict=params_dict,
             api_call=api_call
         )
-    
-    #TODO: mapping of parameter types
+
     def format_param_string(self, parameters: List[Tuple[str]]) -> str:
         result = u""
         has_optional = False
         path = os.path.dirname(__file__)
         for param in parameters:
             # map data types
-            # TODO: type mapping path
-            # param[1] = type_mapping["type"][param[1].lower()]
             pattern = self.__class__.type_mapping_pattern
             param = tuple([self.__class__.type_mapping["type"].get(re.search(pattern, str(item).lower()).group() if item else str(item).lower(), item) for item in param])
             if param[2] is not None:
@@ -171,13 +184,12 @@ class PythonAPIFunctionGenerator(object):
             )
         return result
 
-
     #TODO: shape parameter, mapping of return type
     def format_api_call(
         self,
-        parameters :List[Tuple[str]],
-        return_values :List[Tuple[str]],
-        function_name :str
+        parameters: List[Tuple[str]],
+        return_values: List[Tuple[str]],
+        function_name: str
         ) -> str:
         length = len(return_values)
         result = "OperationNode({params})"
@@ -209,19 +221,20 @@ class PythonAPIFunctionGenerator(object):
         else:
             value = return_values[0]
             output_type = ".".join(re.split("[\[\]]", value[1])).upper()[:-1]
-            #print(output_type)
-        result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, output_type=OutputType.{output_type}".format(
+            # print(output_type)
+        result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, " \
+                 "output_type=OutputType.{output_type}".format(
             param=param[0],
             function_name=function_name,
             output_type=output_type
         )
-        result ="OperationNode({params})".format(params=result)
+        result = "OperationNode({params})".format(params=result)
         return result
 
     def format_value_checks(self, parameters :List[Tuple[str]]) -> str:
         result = ""
         for param in parameters:
-            if "Matrix" not in param[1]:
+            if "matrix" not in param[1].lower():
                 # This check is only needed for Matrix types
                 continue
             check = self.__class__.value_check_template.format(param=param[0])
@@ -236,6 +249,7 @@ class PythonAPIDocumentationGenerator(object):
     python_multi_cmnt = "\"\"\""
     param_str = "\n    :param {pname}: {meaning}"
     return_str = "\n    :return: \'OperationNode\' containing {meaning} \n"
+
     def __init__(self):
         super(PythonAPIDocumentationGenerator, self).__init__()
 
@@ -274,7 +288,6 @@ class PythonAPIDocumentationGenerator(object):
         return self.__class__.return_str.format(meaning=meaning_str.lower())
 
 
-#TODO: remove
 if __name__ == "__main__":
     f_parser = FunctionParser(PythonAPIFileGenerator.source_path)
     doc_generator = PythonAPIDocumentationGenerator()
@@ -288,15 +301,13 @@ if __name__ == "__main__":
             # TODO: define a set of dml script that would not fail this check
             f_parser.check_parameters(header_data, data)
         except Exception as e:
-            #print("[WARNING] Skipping file \'{file_name}\'.".format(file_name = dml_file))
+            # print("[WARNING] Skipping file \'{file_name}\'.".format(file_name = dml_file))
             continue
         data['function_header'] = doc_generator.generate_documentation(header_data)
         script_content = fun_generator.generate_function(data)
         file_generator.generate_file(data["function_name"], script_content)
-        #print("---------------------------------------")
-        #print(script_content)
 
-    # TODO: Add the scripts to algorthm.py? or make the scripts accessible somehow
-    #       maybe use some tests to test the implementation (eg. kmeans/pca)
+    file_generator.generate_init_file()
+
 
 

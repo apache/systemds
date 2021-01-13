@@ -28,14 +28,14 @@ import json
 class FunctionParser(object):
     header_input_pattern = r"^[ \t]*[#]+[ \t]*input[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
     header_output_pattern = r"[\s#\-]*[#]+[ \t]*(return|output)[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
-    function_pattern = r"^m_[\w]+[ \t]+=[ \t]+function[^#{]*$"
+    function_pattern = r"^m_[\w]+[ \t]+=[ \t]+function[^#{]*"
     parameter_pattern = r"^m_[\w]+[\s]+=[\s]+function\(([\w\[\]\s,\d=.\-]*)\)[\s]*return[\s]*\(([\w\[\]\s,\d=.\-]*)\)"
     header_parameter_pattern = r"[\s#\-]*[#]+[ \t]*([\w|-]+)[\s]+([\w]+)[\s]+([\w,\d.\"\-]+)[\s]+([\w|\W]+)"
     divider_pattern = r"[\s#\-]*"
 
     type_mapping_file = os.path.join('resources', 'type_mapping.json')
 
-    def __init__(self, path:str, extension:str='dml'):
+    def __init__(self, path: str, extension: str='dml'):
         """
         @param path: path where to look for python scripts
         """
@@ -43,7 +43,6 @@ class FunctionParser(object):
         self.path = path
         self.extension = '.{extension}'.format(extension=extension)
         self.files()
-
 
     def parse_function(self, path:str):
         """
@@ -66,7 +65,7 @@ class FunctionParser(object):
             ))
             raise e
 
-        #print(function_definition)
+        # print(function_definition)
         pattern = re.compile(self.__class__.parameter_pattern, flags=re.I|re.M)
         match = pattern.match(function_definition)
         param_str,retval_str = match.group(1,2)
@@ -76,9 +75,9 @@ class FunctionParser(object):
         return data
     
     def get_parameters(self, param_str:str):
-        #pattern = re.compile(r"[\r\v\n\t]")
-        #param_str = pattern.sub(" ", param_str)
-        #print(param_str)
+        # pattern = re.compile(r"[\r\v\n\t]")
+        # param_str = pattern.sub(" ", param_str)
+        # print(param_str)
         params = re.split(r",[\s]*", param_str)
         parameters = []
         for param in params:
@@ -138,7 +137,7 @@ class FunctionParser(object):
         data = {'function_name': None, 'parameters': input_parameters, 'return_values':output_parameters}
         return data
 
-    def find_header_input_params(self, path:str):
+    def find_header_input_params(self, path: str):
         with open(path, 'r') as f:
             content = f.read()
         start = re.search(pattern=self.__class__.header_input_pattern, string=content, flags=re.I | re.M).end()
@@ -146,7 +145,7 @@ class FunctionParser(object):
         header = content[start:end]
         return header
 
-    def find_header_output_params(self, path:str):
+    def find_header_output_params(self, path: str):
         with open(path, 'r') as f:
             content = f.read()
         start = re.search(pattern=self.__class__.header_output_pattern, string=content, flags=re.I | re.M).end()
@@ -154,7 +153,7 @@ class FunctionParser(object):
         header = content[start:end]
         return header
 
-    def find_function_definition(self, path:str):
+    def find_function_definition(self, path: str):
         with open(path, 'r') as f:
             content = f.read()
         match = re.search(pattern=self.__class__.function_pattern, string=content, flags=re.I | re.M)
@@ -183,9 +182,8 @@ class FunctionParser(object):
         header_param_names = [p[0].lower() for p in header["parameters"]]
         data_param_names = [p[0].lower() for p in data["parameters"]]
         if header_param_names != data_param_names:
-            print("[ERROR]   The parameter names of the function does not match with the documentation for file \'{file_name}\'.".format(
-                file_name=data["function_name"]
-            ))
+            print("[ERROR]   The parameter names of the function does not match with the documentation "
+                  "for file \'{file_name}\'.".format(file_name=data["function_name"]))
             raise ValueError("The parameter names of the function does not match with the documentation")
 
         header_param_type = [p[1].lower() for p in header["parameters"]]
@@ -197,9 +195,8 @@ class FunctionParser(object):
             for item in data_param_type]
         # data_param_type = [type_mapping["type"].get(item, item) for item in data_param_type]
         if header_param_type != data_param_type:
-            print("[ERROR]   The parameter type of the function does not match with the documentation for file \'{file_name}\'.".format(
-                file_name=data["function_name"]
-            ))
+            print("[ERROR]   The parameter type of the function does not match with the documentation "
+                  "for file \'{file_name}\'.".format(file_name=data["function_name"]))
             raise ValueError("The parameter type of the function does not match with the documentation")
 
         header_param_default = [p[2] for p in header["parameters"]]
@@ -207,8 +204,7 @@ class FunctionParser(object):
         data_param_default = [str(p[2]) for p in data["parameters"]]
         data_param_default = [type_mapping["default"].get(item, item) for item in data_param_default]
         if header_param_default != data_param_default:
-            print("[ERROR]   The parameter default of the function does not match with the documentation for file \'{file_name}\'.".format(
-                file_name=data["function_name"]
-            ))
+            print("[ERROR]   The parameter default of the function does not match with the documentation "
+                  "for file \'{file_name}\'.".format(file_name=data["function_name"]))
             raise ValueError("The parameter default of the function does not match with the documentation")
 

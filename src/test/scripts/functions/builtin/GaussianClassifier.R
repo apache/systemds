@@ -24,8 +24,8 @@ library("Matrix")
 D <- as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
 c <- as.matrix(readMM(paste(args[1], "Y.mtx", sep="")))
 
-nClasses <- as.integer(args[2])
-varSmoothing <- as.double(args[3])
+nClasses <- as.integer(max(c))
+varSmoothing <- as.double(args[2])
 
 nSamples <- nrow(D)
 nFeatures <- ncol(D)
@@ -95,10 +95,10 @@ for (i in 2:nClasses)
   stackedInvCovs <- cbind(stackedInvCovs, classInvCovariances[[i]])
 }
 
-writeMM(as(classPriors, "CsparseMatrix"), paste(args[4], "priors", sep=""));
-writeMM(as(classMeans, "CsparseMatrix"), paste(args[4], "means", sep=""));
-writeMM(as(determinants, "CsparseMatrix"), paste(args[4], "determinants", sep=""));
-writeMM(as(stackedInvCovs, "CsparseMatrix"), paste(args[4], "invcovs", sep=""));
+writeMM(as(classPriors, "CsparseMatrix"), paste(args[3], "priors", sep=""));
+writeMM(as(classMeans, "CsparseMatrix"), paste(args[3], "means", sep=""));
+writeMM(as(determinants, "CsparseMatrix"), paste(args[3], "determinants", sep=""));
+writeMM(as(stackedInvCovs, "CsparseMatrix"), paste(args[3], "invcovs", sep=""));
 
 
 

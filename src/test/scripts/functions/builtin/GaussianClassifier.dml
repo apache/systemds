@@ -22,7 +22,7 @@
 X = read($1);
 y = read($2);
 
-[prior, means, covs, det] = gaussianClassifier(D=X, C=y, varSmoothing=$4);
+[prior, means, covs, det] = gaussianClassifier(D=X, C=y, varSmoothing=$3);
 
 #Cbind the inverse covariance matrices, to make them comparable in the unit tests
 invcovs = as.matrix(covs[1])
@@ -31,7 +31,7 @@ for (i in 2:max(y))
   invcovs = cbind(invcovs, as.matrix(covs[i]))
 }
 
-write(prior, $5);
-write(means, $6);
-write(det, $7);
-write(invcovs, $8);
+write(prior, $4);
+write(means, $5);
+write(det, $6);
+write(invcovs, $7);

@@ -94,7 +94,6 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 		proArgs.add("-args");
 		proArgs.add(input("X"));
 		proArgs.add(input("Y"));
-		proArgs.add(String.valueOf(classes));
 		proArgs.add(String.valueOf(varSmoothing));
 		proArgs.add(output("priors"));
 		proArgs.add(output("means"));
@@ -103,7 +102,7 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 
-		rCmd = getRCmd(inputDir(), Integer.toString(classes), Double.toString(varSmoothing), expectedDir());
+		rCmd = getRCmd(inputDir(), Double.toString(varSmoothing), expectedDir());
 		
 		double[][] X = getRandomMatrix(rows, cols, 0, 100, sparsity, -1);
 		double[][] Y = getRandomMatrix(rows, 1, 0, 1, 1, -1);

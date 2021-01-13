@@ -24,8 +24,10 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-X = matrix(seq(1,1500), 150, 10, byrow=TRUE);
+X = matrix(seq(1,150), 15, 10, byrow=TRUE);
 v = seq(1, ncol(X));
 R = cbind((X %*% v), matrix (0, nrow(X), 1))
 
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 
+print.table(R, digits=3, zero.print = ".")
+
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep=""));

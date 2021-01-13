@@ -26,7 +26,7 @@
 template<typename T, typename OP>
 __device__ Vector<T>& vectWriteUnary(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
 	uint32_t i = threadIdx.x;
-	Vector<T>& c = fop->getTempStorage();
+	Vector<T>& c = fop->getTempStorage(len);
 //	if(blockIdx.x == 1 && threadIdx.x < 2)
 //		printf("vecWrite_sv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a, b[ai + i]););
 	
@@ -51,7 +51,7 @@ __device__ void vectWriteUnary(T* a, T* c, uint32_t ai, uint32_t ci, uint32_t le
 template<typename T, typename OP>
 __device__ Vector<T>& vectWriteBinary(T a, T* b, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
 	uint32_t i = threadIdx.x;
-	Vector<T>& c = fop->getTempStorage();
+	Vector<T>& c = fop->getTempStorage(len);
 	while (i < len) {
 		c[i] = OP::exec(a, b[bi + i]);
 		i += blockDim.x;
@@ -63,7 +63,7 @@ __device__ Vector<T>& vectWriteBinary(T a, T* b, uint32_t bi, uint32_t len, Spoo
 template<typename T, typename OP>
 __device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
 	uint32_t i = threadIdx.x;
-	Vector<T>& c = fop->getTempStorage();
+	Vector<T>& c = fop->getTempStorage(len);
 	while (i < len) {
 		c[i] = OP::exec(a[ai + i], b);
 		i += blockDim.x;
@@ -75,7 +75,7 @@ __device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t ai, uint32_t len, Spoo
 template<typename T, typename OP>
 __device__ Vector<T>& vectWriteBinary(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
 	uint32_t i = threadIdx.x;
-	Vector<T>& c = fop->getTempStorage();
+	Vector<T>& c = fop->getTempStorage(len);
 	
 	while (i < len) {
 		c[i] = OP::exec(a[ai + i], b[bi + i]);

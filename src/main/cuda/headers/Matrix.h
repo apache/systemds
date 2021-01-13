@@ -74,7 +74,7 @@ struct SpoofOp {
 
 	// RingBuffer<T,ELEMENTS> temp_rb;
 	
-	virtual Vector<T>& getTempStorage() = 0;
+	virtual Vector<T>& getTempStorage(uint32_t len) = 0;
 	// Vector<T>& getTempStorage() {
 		// return temp_rb.next();
 	// }

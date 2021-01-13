@@ -19,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-X = matrix(seq(1,1500), 150, 10);
+X = matrix(seq(1,150), 15, 10);
 v = seq(1, ncol(X));
 R = cbind((X %*% v), matrix (0, nrow(X), 1))
-
+print(toString(R))
 write(R, $1)

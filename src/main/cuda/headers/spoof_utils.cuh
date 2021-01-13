@@ -281,7 +281,7 @@ __device__ Vector<T>& vectCbindWrite(T* a, T b, uint32_t ai, uint32_t len, Spoof
 
 template<typename T>
 __device__ Vector<T>& vectCbindWrite(T a, T b, SpoofOp<T>* fop) {
-	Vector<T>& c = fop->getTempStorage();
+	Vector<T>& c = fop->getTempStorage(2);
 	if (threadIdx.x == 0) {
 		c[blockIdx.x * 2] = a;
 		c[blockIdx.x * 2 + 1] = b;

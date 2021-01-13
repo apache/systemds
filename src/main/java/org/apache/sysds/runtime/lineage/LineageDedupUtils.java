@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.lineage;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Stack;
 
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
@@ -106,9 +107,6 @@ public class LineageDedupUtils {
 		String ph = LineageItemUtils.LPLACEHOLDER;
 		for (int i=0; i<liinputs.length; i++) {
 			// Wrap the inputs with order-preserving placeholders.
-			// An alternative way would be to replace the non-literal leaves with 
-			// placeholders after each iteration, but that requires a full DAG
-			// traversal after each iteration.
 			LineageItem phInput = new LineageItem(ph+String.valueOf(i), new LineageItem[] {liinputs[i]});
 			_tmpLineage.set(inputnames.get(i), phInput);
 		}
@@ -125,11 +123,16 @@ public class LineageDedupUtils {
 	
 	public static void setDedupMap(LineageDedupBlock ldb, long takenPath) {
 		// if this iteration took a new path, store the corresponding map
-		if (ldb.getMap(takenPath) == null)
-			ldb.setMap(takenPath, _tmpLineage.getLineageMap());
+		if (ldb.getMap(takenPath) == null) {
+			LineageMap patchMap = _tmpLineage.getLineageMap();
+			// Cut the DAGs at placeholders
+			cutAtPlaceholder(patchMap);
+			ldb.setMap(takenPath, patchMap);
+		}
 	}
 	
 	private static void initLocalLineage(ExecutionContext ec) {
+		_mainLineage = ec.getLineage();
 		_tmpLineage = _tmpLineage == null ? new Lineage() : _tmpLineage;
 		_tmpLineage.clearLineageMap();
 		_tmpLineage.clearDedupBlock();
@@ -163,6 +166,39 @@ public class LineageDedupUtils {
 			}
 		}
 		return sb.toString();
+	}
+	
+	public static void cutAtPlaceholder(LineageMap lmap) {
+		// Gather all the DAG roots and cut each at placeholder
+		for (Map.Entry<String, LineageItem> litem : lmap.getTraces().entrySet()) {
+			LineageItem root = litem.getValue();
+			root.resetVisitStatusNR();
+			cutAtPlaceholder(root);
+		}
+	}
+	
+	public static void cutAtPlaceholder(LineageItem root) {
+		Stack<LineageItem> q = new Stack<>();
+		q.push(root);
+		while (!q.empty()) {
+			LineageItem tmp = q.pop();
+			if (tmp.isVisited())
+				continue;
+
+			if (tmp.getOpcode().startsWith(LineageItemUtils.LPLACEHOLDER)) {
+				// set inputs to null
+				tmp.resetInputs();
+				tmp.setVisited();
+				continue;
+			}
+
+			if (tmp.getInputs() != null)
+				for (int i=0; i<tmp.getInputs().length; i++) {
+					LineageItem li = tmp.getInputs()[i];
+					q.push(li);
+				}
+			tmp.setVisited();
+		}
 	}
 	
 	//------------------------------------------------------------------------------

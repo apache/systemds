@@ -63,6 +63,11 @@ public class LineageParser
 			
 			switch (type) {
 				case Creation:
+					if (representation.startsWith(LineageItemUtils.LPLACEHOLDER)) {
+						// Handle the placeholder nodes
+						li = new LineageItem(id, representation, "Create"+representation);
+						break;
+					}
 					Instruction inst = InstructionParser.parseSingleInstruction(representation);
 					if (!(inst instanceof LineageTraceable))
 						throw new ParseException("Invalid Instruction (" + inst.getOpcode() + ") traced");
@@ -96,11 +101,11 @@ public class LineageParser
 			throw new ParseException("Invalid length ot lineage item "+tokens.length+".");
 		String opcode = tokens[0];
 
-		if (opcode.startsWith(LineageItemUtils.LPLACEHOLDER)) {
+		/*if (opcode.startsWith(LineageItemUtils.LPLACEHOLDER)) {
 			// Convert this to a leaf node (creation type)
 			String data = opcode;
 			return new LineageItem(id, data, "Create"+opcode);
-		}
+		}*/
 
 		ArrayList<LineageItem> inputs = new ArrayList<>();
 		for( int i=1; i<tokens.length; i++ ) {

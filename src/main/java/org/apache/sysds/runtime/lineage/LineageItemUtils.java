@@ -114,7 +114,11 @@ public class LineageItemUtils {
 		sb.append("(").append(getString(li)).append(") ");
 		
 		if (li.isLeaf()) {
-			sb.append(li.getData()).append(" ");
+			if (li.getOpcode().startsWith(LPLACEHOLDER))
+				//This is a special node. Serialize opcode instead of data
+				sb.append(li.getOpcode()).append(" ");
+			else
+				sb.append(li.getData()).append(" ");
 		} else {
 			if (li.getType() == LineageItemType.Dedup)
 				sb.append(li.getOpcode()).append(li.getData()).append(" ");

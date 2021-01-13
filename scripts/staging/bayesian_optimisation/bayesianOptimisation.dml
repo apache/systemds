@@ -1,14 +1,26 @@
 #s_bayesianOptimisation = function(string funcNameToMaximize, List[String] paramNames, List[Unknown] paramValues) return (List[String] optiHyperParams) {
 
-# when using a matrix the function will need to be renamed to m_bayes...
+# INPUT PARAMETERS:
+# -----------------------------------------------------------------------------------------------------
+# NAME           TYPE           DEFAULT  MEANING
+# -----------------------------------------------------------------------------------------------------
+# fAqu           String          ---     Name of the aquisition function to optimize.
+# paramNames     Matrix[String]  ---     Name of the hyper parameters to optimize.
+# paramValues    Matrix[Double]  ---     Values of the hyper parameters to optimize.
 #
-#
+source("./scripts/staging/scalable_linalg/linalg_decomp.dml") as decomp
 
 funcNameToMaximize = $1;
-paramNames = read($2);
-paramValues = read($3);
-iterations = $4
+#paramNames = read($2);
+#paramValues = read($3);
+paramNames = list("reg", "tol", "maxi");
+paramValues = list(10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
+X = read($2);
+y = read($3);
+
+iterations = as.integer($4)
 outputDir = $5
+scale = 1
 #paramValues = $3;
 print(funcNameToMaximize);
 #print(toString(paramNames));
@@ -16,5 +28,74 @@ print(funcNameToMaximize);
 print(iterations);
 
 
-write(paramNames, outputDir);
+kernel_gaus = function(Matrix[Double] X1, Matrix[Double] X2, Double scale)
+  return (Matrix[Double] result)
+{
+    print("called gaus");
+    result = X1;
+}
+
+l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B)
+  return (Matrix[Double] loss)
+{    
+    print("called train function");
+     loss = as.matrix(sum((y - X%*%B)^2));
+}
+
+acquisition = function(Matrix[Double] X, Matrix[Double] y) 
+return (Double result) {
+    print("called aquisition");
+    result = 1;
+}
+
+m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTrain, String fAqu, String kernel, List[String] params, List[Unknown] paramValues, Integer iterations, Double scale=1, Boolean verbose = TRUE)
+  return (Matrix[Double] B, Frame[Unknown] opt)
+{
+
+    numParams = length(params);
+    paramLens = matrix(0, numParams, 1);
+    for( j in 1:numParams ) {
+      vect = as.matrix(paramValues[j,1]);
+      paramLens[j,1] = nrow(vect);
+    }
+    paramVals = matrix(0, numParams, max(paramLens));
+    for( j in 1:numParams ) {
+      vect = as.matrix(paramValues[j,1]);
+      paramVals[j,1:nrow(vect)] = t(vect);
+    }
+
+
+    # loop
+
+    for (i in 1:iterations) {
+        print("iteration" + i);
+
+        aArgs = list(X, y);
+        aquisition_result = eval(fAqu, aArgs);
+
+        #tArgs = list(
+
+        kArgs = list(X, X, scale);
+        train_result = eval(kernel, kArgs);
+
+
+        print(toString(train_result));
+    }
+    B = X;
+    opt = as.frame(y);
+    print("Works");
+}
+
+
+
+N = 200;
+Xtrain = X[1:N,];
+ytrain = y[1:N,];
+Xtest = X[(N+1):nrow(X),];
+ytest = y[(N+1):nrow(X),];
+
+
+result = m_bayesianOptimisation(Xtrain, ytrain, "lm", "l2norm", "kernel_gaus", paramNames, paramValues, iterations, 1, TRUE);
+
+write(result, outputDir);
 

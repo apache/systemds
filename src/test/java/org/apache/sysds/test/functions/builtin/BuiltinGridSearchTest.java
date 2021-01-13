@@ -66,7 +66,7 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 			double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.8, -1);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("y", y, true);
-			
+
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			
 			//expected loss smaller than default invocation

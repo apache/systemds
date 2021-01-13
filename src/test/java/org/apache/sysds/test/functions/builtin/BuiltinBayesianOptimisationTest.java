@@ -38,7 +38,7 @@ public class BuiltinBayesianOptimisationTest extends AutomatedTestBase {
             String HOME = SCRIPT_DIR + TEST_DIR;
 		//fullDMLScriptName = TEST_DIR + TEST_NAME;
 			fullDMLScriptName = "./scripts/staging/bayesian_optimisation/bayesianOptimisation.dml"; //HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-args", "testFunc", input("X"), input("y"), "iterations=10" , output("R")};
+			programArgs = new String[] {"-args", "testFunc", input("X"), input("y"), "10" , output("R")};
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
 			double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.8, -1);
 			writeInputMatrixWithMTD("X", X, true);

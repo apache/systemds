@@ -34,8 +34,9 @@ struct Vector {
 	T& operator[](uint32_t idx) {
 	    return data[idx];
     }
-
-    void print(const char* name, uint32_t end_ = 0, uint32_t start = 0, uint32_t bID = 0, uint32_t tID = 0) {
+	
+#ifdef __CUDACC_RTC__
+	__device__ void print(const char* name, uint32_t end_ = 0, uint32_t start = 0, uint32_t bID = 0, uint32_t tID = 0) {
 		if(blockIdx.x == bID && threadIdx.x==tID) {
 			uint32_t end = end_;
 			if(end > 0)
@@ -45,6 +46,7 @@ struct Vector {
 				print("%4.3f ", data[i]);
 		}
 	}
+#endif // __CUDACC_RTC__
 };
 
 template <typename T, uint32_t ELEMENTS>

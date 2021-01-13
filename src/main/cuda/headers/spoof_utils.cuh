@@ -23,7 +23,10 @@
 
 #include <math_constants.h>
 #include "Matrix.h"
+#include "vector_write.cuh"
+#include "vector_add.cuh"
 #include "operators.cuh"
+
 // #include "intellisense_cuda_intrinsics.h"
 
 using uint32_t = unsigned int;
@@ -247,24 +250,6 @@ __device__ T vectMax(T* a, int ai, int len) {
 	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
 }
 
-template<typename T, typename Op>
-__device__ uint32_t vectAdd_atomic(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len, Op op) {
-	uint tid = threadIdx.x;
-	if(tid >= len)
-		return len;
-	uint i = tid;
-
-	while (i < len) {
-		if(blockIdx.x == 0 && threadIdx.x < 4)
-			printf("vectAdd_atomic: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, b=%f, c[%d]=%f, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai,
-		  			ci, len, b, ci + i, op(a[ai + i], b), ai+i, a[ai + i]);
-		
-		atomicAdd(&(c[ci + i]), op(a[ai + i], b));
-		i += blockDim.x;
-	}
-	return len;
-}
-
 template<typename T>
 __device__ void vectMultAdd(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
 	ProductOp<T> op;
@@ -295,9 +280,8 @@ __device__ Vector<T>& vectCbindWrite(T* a, T b, uint32_t ai, uint32_t len, Spoof
 }
 
 template<typename T>
-__device__ Vector<T>& vectCbindWrite(T a, T b) {
+__device__ Vector<T>& vectCbindWrite(T a, T b, SpoofOp<T>* fop) {
 	Vector<T>& c = fop->getTempStorage();
-
 	if (threadIdx.x == 0) {
 		c[blockIdx.x * 2] = a;
 		c[blockIdx.x * 2 + 1] = b;
@@ -305,87 +289,12 @@ __device__ Vector<T>& vectCbindWrite(T a, T b) {
 	return c;
 }
 
-// vect-vect
-template<typename T, typename OP>
-__device__ void vectWrite_(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
-	uint32_t i = threadIdx.x;
-	// const uint32_t& bid = blockIdx.x;
-
-	while (i < len) {
-		c[ci + i] = OP::exec(a[ai + i], b);
-//		if(debug_row() && threadIdx.x < 4)
-//			printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, bi=%d, ci=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
-//				   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, c[ci+i]);
-		i += blockDim.x;
-	}
-}
-
-// vect-vect
-template<typename T, typename OP>
-__device__ void vectWrite_(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len) {
-	uint32_t i = threadIdx.x;
-	const uint32_t& bid = blockIdx.x;
-
-	while (i < len) {
-		c[ci + i] = OP::exec(a[ai + i], b[bi + i]);
-//		if(debug_row() && threadIdx.x < 4)
-//			printf("vecWrite_vv: bid=%d, tid=%d, ai=%d, bi=%d, ci=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
-//				   bid, i, ai, bi, ci, len, ai+i, a[ai+i], bi+i, b[bi+i], ci + i, c[ci+i]);
-		i += blockDim.x;
-	}
-}
-
-// vect-scalar
-template<typename T, typename OP>
-__device__ Vector<T>& vectWrite_(T* a, T b, uint32_t ai, uint32_t ci, uint32_t len, SpoofOp<T>* fop) {
-    uint32_t i = threadIdx.x;
-	Vector<T>& c = fop->getTempStorage();
-	// if(blockIdx.x < 2 && threadIdx.x < 1)
-		// printf("vecWrite_vs: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a[ai + i], b));
-    while (i < len) {
-		c[ci + i] = OP::exec(a[ai + i], b);
-        i += blockDim.x;
-    }
-    return c;
-}
-
-// scalar-vector
-template<typename T, typename OP>
-__device__ Vector<T>& vectWrite_unary(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	uint32_t i = threadIdx.x;
-	Vector<T>& c = fop->getTempStorage();
-//	if(blockIdx.x == 1 && threadIdx.x < 2)
-//		printf("vecWrite_sv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a, b[ai + i]););
-
-	while (i < len) {
-		*(c.vals(i)) = OP::exec(a[ai + i], 0); //ToDo: remove b from all unary ops
-		i += blockDim.x;
-	}
-	return c;
-}
-
-// scalar-vector
-template<typename T, typename OP>
-__device__ Vector<T>& vectWrite_(T a, T* b, uint32_t ai, uint32_t ci, uint32_t len, SpoofOp<T>* fop) {
-	uint32_t i = threadIdx.x;
-	Vector<T>& vec_c = fop->getTempStorage();
-	T* c = vec_c.data;
-//	if(blockIdx.x == 1 && threadIdx.x < 2)
-//		printf("vecWrite_sv: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, c[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ci * len + threadIdx.x, OP::exec(a, b[ai + i]););
-	
-	while (i < len) {
-		c[ci + i] = OP::exec(a, b[ai + i]);
-		i += blockDim.x;
-	}
-	return vec_c;
-}
-
 template<typename T>
 __device__ void vectWrite(T* a, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
 //	if(blockIdx.x == 1 && threadIdx.x < 2)
 //		printf("vecWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, ci, len, ai + threadIdx.x, a[ai + threadIdx.x]);
 
-	vectWrite_<T, IdentityOp<T>>(a, SumNeutralElement<T>::get(), c, ai, ci, len);
+	vectWriteBinary<T, IdentityOp<T>>(a, SumNeutralElement<T>::get(), c, ai, ci, len);
 }
 
 template<typename T>
@@ -394,49 +303,13 @@ __device__ void vectWrite(T* a, T* c, uint32_t ci, uint32_t len) {
 }
 
 template<typename T>
-Vector<T>& vectLessequalWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWrite_<T, LessEqualOp<T>>(a, b, ai, 0, len, fop);
-}
-
-template<typename T>
-int vectGreaterWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
-	return vectWrite_<T, GreaterOp<T>>(a, b, c, ai, 0, len);
-}
-
-template<typename T>
-Vector<T>& vectGreaterequalWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWrite_<T, GreaterEqualOp<T>>(a, b, ai, 0, len, fop);
-}
-
-template<typename T>
 int vectDivWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
 	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
-Vector<T>& vectDivWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWrite_<T, DivOp<T>>(a, b, ai, 0, len, fop);
-}
-
-template<typename T>
 int vectDivWrite(T a, T* b, T* c, uint32_t ai, uint32_t len) {
 	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
-}
-
-template<typename T>
-int vectMultWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
-//	if(blockIdx.x == 1 && threadIdx.x < 2)
-//		printf("vectMultWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d\n", blockIdx.x, threadIdx.x, ai, 0, len);
-	
-	return vectWrite_<T, ProductOp<T>>(a, b, c, ai, 0, len);
-}
-
-template<typename T>
-int vectMultWrite(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t len) {
-//	if(blockIdx.x == 1 && threadIdx.x < 2)
-//		printf("vectMultWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d\n", blockIdx.x, threadIdx.x, ai, 0, len);
-
-	return vectWrite_<T, ProductOp<T>>(a, b, c, ai, bi, 0, len);
 }
 
 template<typename T>
@@ -465,11 +338,6 @@ int vectAbsWrite(T* a, T* c, int ai, int len) {
 }
 
 template<typename T>
-int vectExpWrite(T* a, T* c, int ai, int len) {
-	return vectWrite_<T, ExpOp<T>>(a, 0.0, c, ai, 0, len);
-}
-
-template<typename T>
 int vectRoundWrite(T* a, T* c, int ai, int len) {
 	return vectWrite_<T, RoundOp<T>>(a, 0.0, c, ai, 0, len);
 }
@@ -492,36 +360,6 @@ int vectMinWrite(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t len) {
 template<typename T>
 int vectMaxWrite(T* a, T b, T* c, int ai, int len) {
 	return vectWrite_<T, MaxOp<T>>(a, b, c, ai, 0, len);
-}
-
-template<typename T>
-Vector<T>& vectSignWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWrite_unary<T, SignOp<T>>(a, ai, len, fop);
-}
-
-template<typename T>
-Vector<T>& vectRoundWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWrite_unary<T, RoundOp<T>>(a, ai, len, fop);
-}
-
-template<typename T>
-Vector<T>& vectAbsWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWrite_unary<T, AbsOp<T>>(a, ai, len, fop);
-}
-
-template<typename T>
-Vector<T>& vectFloorWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWrite_unary<T, FloorOp<T>>(a, ai, len, fop);
-}
-
-template<typename T>
-Vector<T>& vectMinWrite(T* a, T b, int ai, int len, SpoofOp<T>* fop) {
-	return vectWrite_<T, MinOp<T>>(b, a, ai, 0, len, fop);
-}
-
-template<typename T>
-Vector<T>& vectPlusWrite(T* a, T b, int ai, int len, SpoofOp<T>* fop) {
-	return vectWrite_<T, SumOp<T>>(b, a, ai, 0, len, fop);
 }
 
 template<typename T, typename OP>
@@ -607,4 +445,128 @@ uint32_t bix = 0;
 
 	return len1*len2;
 }
+
+/* --------------------------------------------------------------------------------------------------------------------
+ * Binary to intermediate
+ */
+
+template<typename T>
+Vector<T>& vectPlusWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, SumOp<T>>(a, b, ai, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectPlusWrite(T a, T* b, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, SumOp<T>>(a, b, bi, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectPlusWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, SumOp<T>>(a, b, ai, bi, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectMinusWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, MinusOp<T>>(a, b, ai, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectMinusWrite(T a, T* b, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, MinusOp<T>>(a, b, bi, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectMinusWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, MinusOp<T>>(a, b, ai, bi, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectMultWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+//	if(blockIdx.x == 1 && threadIdx.x < 2)
+//		printf("vectMultWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d\n", blockIdx.x, threadIdx.x, ai, 0, len);
+	
+	return vectWriteBinary<T, ProductOp<T>>(a, b, ai, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectMultWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, ProductOp<T>>(a, b, ai, bi, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectDivWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, DivOp<T>>(a, b, ai, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectDivWrite(T a, T* b, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, DivOp<T>>(a, b, bi, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectMinWrite(T* a, T b, int ai, int len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, MinOp<T>>(a, b, ai,len, fop);
+}
+
+template<typename T>
+Vector<T>& vectMinWrite(T a, T* b, int bi, int len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, MinOp<T>>(a, b, bi, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectLessequalWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, LessEqualOp<T>>(a, b, ai, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectGreaterequalWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteBinary<T, GreaterEqualOp<T>>(a, b, ai, len, fop);
+}
+
+
+/* --------------------------------------------------------------------------------------------------------------------
+ * Binary to output
+ */
+
+template<typename T>
+void vectMinusWrite(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len) {
+	return vectWriteBinary<T, MinusOp<T>>(a, b, c, ai, bi, ci, len);
+}
+
+template<typename T>
+void vectMultWrite(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len) {
+//	if(blockIdx.x == 1 && threadIdx.x < 2)
+//		printf("vectMultWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d\n", blockIdx.x, threadIdx.x, ai, 0, len);
+	return vectWriteBinary<T, ProductOp<T>>(a, b, c, ai, bi, ci, len);
+}
+
+/* --------------------------------------------------------------------------------------------------------------------
+ * Unary to intermediate
+ */
+
+ template<typename T>
+Vector<T>& vectExpWrite(T* a, int ai, int len, SpoofOp<T>* fop) {
+	return vectWriteUnary<T, ExpOp<T>>(a, ai, len, fop);
+}
+
+ template<typename T>
+Vector<T>& vectSignWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteUnary<T, SignOp<T>>(a, ai, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectRoundWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteUnary<T, RoundOp<T>>(a, ai, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectAbsWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteUnary<T, AbsOp<T>>(a, ai, len, fop);
+}
+
+template<typename T>
+Vector<T>& vectFloorWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+	return vectWriteUnary<T, FloorOp<T>>(a, ai, len, fop);
+}
+
 #endif // SPOOF_UTILS_CUH

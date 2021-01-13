@@ -130,6 +130,7 @@ public class Statistics
 	private static final LongAdder fedPSDataPartitioningTime = new LongAdder();
 	private static final LongAdder fedPSWorkerComputingTime = new LongAdder();
 	private static final LongAdder fedPSGradientWeighingTime = new LongAdder();
+	private static final LongAdder fedPSCommunicationTime = new LongAdder();
 
 	//PARFOR optimization stats (low frequency updates)
 	private static long parforOptTime = 0; //in milli sec
@@ -611,6 +612,8 @@ public class Statistics
 		fedPSGradientWeighingTime.add(t);
 	}
 
+	public static void accFedPSCommunicationTime(long t) { fedPSCommunicationTime.add(t);}
+
 	public static String getCPHeavyHitterCode( Instruction inst )
 	{
 		String opcode = null;
@@ -1037,6 +1040,7 @@ public class Statistics
 
 				if(fedPSDataPartitioningTime.doubleValue() > 0) { 	//if data partitioning happens this is the federated case
 					sb.append(String.format("Paramserv federated data partitioning time:\t%.3f secs.\n", fedPSDataPartitioningTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv federated communication time (total over workers):\t%.3f secs.\n", fedPSCommunicationTime.doubleValue() / 1000));
 					sb.append(String.format("Paramserv federated worker compute time (total over workers):\t%.3f secs.\n", fedPSWorkerComputingTime.doubleValue() / 1000));
 					sb.append(String.format("Paramserv gradient weighing time (total over workers):\t%.3f secs.\n", fedPSGradientWeighingTime.doubleValue() / 1000));
 					sb.append(String.format("Paramserv global model update (aggregation) time:\t%.3f secs.\n", psAggregationTime.doubleValue() / 1000));

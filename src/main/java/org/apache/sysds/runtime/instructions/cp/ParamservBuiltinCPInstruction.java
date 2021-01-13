@@ -177,7 +177,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC, valFunc,
+		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, valFunc,
 				getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), ec.getMatrixObject(getParam(PS_VAL_FEATURES)), ec.getMatrixObject(getParam(PS_VAL_LABELS)));
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
@@ -228,7 +228,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = sec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), workerNum, model, aggServiceEC);
+		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), getFrequency(), workerNum, model, aggServiceEC);
 
 		// Get driver host
 		String host = sec.getSparkContext().getConf().get("spark.driver.host");
@@ -312,7 +312,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, updateType, workerNum, model, aggServiceEC);
+		ParamServer ps = createPS(mode, aggFunc, updateType, freq, workerNum, model, aggServiceEC);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
@@ -449,20 +449,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 *
 	 * @return parameter server
 	 */
-	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
-		return createPS(mode, aggFunc, updateType, workerNum, model, ec, null, -1, null, null);
+	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec) {
+		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null);
 	}
 
-	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum,
+	// When this creation is used the parameter server is able to validate after each epoch
+	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, PSFrequency freq, int workerNum,
 										ListObject model, ExecutionContext ec, String valFunc, int numBatchesPerEpoch,
 										MatrixObject valFeatures, MatrixObject valLabels) {
 		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
-				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels);
+				return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels);
 			default:
-				throw new DMLRuntimeException("Unsupported parameter server: "+mode.name());
+				throw new DMLRuntimeException("Unsupported parameter server: " + mode.name());
 		}
 	}
 

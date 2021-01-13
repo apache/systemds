@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -59,6 +60,7 @@ import org.apache.sysds.utils.Statistics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -326,9 +328,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	protected void weighAndPushGradients(ListObject gradients) {
-		Timing tWeighing = DMLScript.STATISTICS ? new Timing(true) : null;
 		// scale gradients - must only include MatrixObjects
 		if(_weighing && _weighingFactor != 1) {
+			Timing tWeighing = DMLScript.STATISTICS ? new Timing(true) : null;
 			gradients.getData().parallelStream().forEach((matrix) -> {
 				MatrixObject matrixObject = (MatrixObject) matrix;
 				MatrixBlock input = matrixObject.acquireReadAndRelease().scalarOperations(
@@ -336,8 +338,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				matrixObject.acquireModify(input);
 				matrixObject.release();
 			});
+			accFedPSGradientWeighingTime(tWeighing);
 		}
-		accFedPSGradientWeighingTime(tWeighing);
 
 		// Push the gradients to ps
 		_ps.push(_workerID, gradients);
@@ -405,7 +407,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	protected ListObject computeGradientsForNBatches(ListObject model,
 		int numBatchesToCompute, int localStartBatchNum, boolean localUpdate)
 	{
-		Timing tGradients = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tFedCommunication = DMLScript.STATISTICS ? new Timing(true) : null;
 		// put local start batch num on federated worker
 		Future<FederatedResponse> putBatchCounterResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.PUT_VAR, _localStartBatchNumVarID, new IntObject(localStartBatchNum)));
@@ -425,17 +427,22 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.EXEC_UDF, _featuresData.getVarID(),
 				new federatedComputeGradientsForNBatches(new long[]{_featuresData.getVarID(), _labelsData.getVarID(),
-				_localStartBatchNumVarID, _modelVarID}, numBatchesToCompute,localUpdate)
+				_localStartBatchNumVarID, _modelVarID}, numBatchesToCompute, localUpdate)
 		));
 
 		try {
 			Object[] responseData = udfResponse.get().getData();
-			accGradientComputeTime(tGradients);
+			if(DMLScript.STATISTICS) {
+				long total = (long) tFedCommunication.stop();
+				long workerComputing = ((DoubleObject) responseData[1]).getLongValue();
+				Statistics.accFedPSWorkerComputing(workerComputing);
+				Statistics.accFedPSCommunicationTime(total - workerComputing);
+			}
 			return (ListObject) responseData[0];
 		}
 		catch(Exception e) {
-			if(tGradients != null)
-				tGradients.stop();
+			if(DMLScript.STATISTICS)
+				tFedCommunication.stop();
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage());
 		}
 	}
@@ -456,6 +463,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			Timing tGradients = new Timing(true);
 			// read in data by varid
 			MatrixObject features = (MatrixObject) data[0];
 			MatrixObject labels = (MatrixObject) data[1];
@@ -548,8 +556,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// model clean up
 			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
 			ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL);
-
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, accGradients);
+			// stop timing
+			DoubleObject gradientsTime = new DoubleObject(tGradients.stop());
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{accGradients, gradientsTime});
 		}
 
 		@Override
@@ -577,19 +586,16 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	@Override
 	protected void accLocalModelUpdateTime(Timing time) {
-		if (DMLScript.STATISTICS && time != null)
-			Statistics.accFedPSWorkerComputing((long) time.stop());
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void accBatchIndexingTime(Timing time) {
-		if (DMLScript.STATISTICS && time != null)
-			Statistics.accFedPSWorkerComputing((long) time.stop());
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void accGradientComputeTime(Timing time) {
-		if (DMLScript.STATISTICS && time != null)
-			Statistics.accFedPSWorkerComputing((long) time.stop());
+		throw new NotImplementedException();
 	}
 }

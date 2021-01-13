@@ -59,6 +59,7 @@ public abstract class ParamServer
 	//aggregation service
 	protected ExecutionContext _ec;
 	private Statement.PSUpdateType _updateType;
+	private Statement.PSFrequency _freq;
 
 	private FunctionCallCPInstruction _inst;
 	private String _outputName;
@@ -70,7 +71,7 @@ public abstract class ParamServer
 	private String _lossOutput;
 	private String _accuracyOutput;
 
-	private int _batchCounter = 0;
+	private int _syncCounter = 0;
 	private int _epochCounter = 0 ;
 	private int _numBatchesPerEpoch;
 
@@ -78,7 +79,7 @@ public abstract class ParamServer
 
 	protected ParamServer() {}
 
-	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec,
+	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, Statement.PSFrequency freq, ExecutionContext ec,
 						  int workerNum, String valFunc, int numBatchesPerEpoch,
 						  MatrixObject valFeatures, MatrixObject valLabels) {
 		// init worker queues and global model
@@ -92,6 +93,7 @@ public abstract class ParamServer
 		// init aggregation service
 		_ec = ec;
 		_updateType = updateType;
+		_freq = freq;
 		_finishedStates = new boolean[workerNum];
 		setupAggFunc(_ec, aggFunc);
 
@@ -198,13 +200,16 @@ public abstract class ParamServer
 							_accGradients = null;
 						}
 
-						// count batches and call validation if possible and necessary
-						_batchCounter++;
-						if (_validationPossible && LOG.isInfoEnabled() && _batchCounter % _numBatchesPerEpoch == 0) {
+						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
+						// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
+						// BSP epoch case every time
+						if (LOG.isInfoEnabled() && _validationPossible &&
+								(_freq == Statement.PSFrequency.EPOCH ||
+							 	(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
 							LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
 							validate();
 							_epochCounter++;
-							_batchCounter = 0;
+							_syncCounter = 0;
 						}
 						
 						// Broadcast the updated model
@@ -217,14 +222,17 @@ public abstract class ParamServer
 				}
 				case ASP: {
 					updateGlobalModel(gradients);
-
 					if(LOG.isInfoEnabled()) {
-						_batchCounter++;
-						if(_validationPossible && ((float) _batchCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0) {
-							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP)" + _epochCounter);
+						// This if works similarly to the one for BSP, but divides the sync couter through the number of workers,
+						// creating "Pseudo Epochs"
+						if (LOG.isInfoEnabled() && _validationPossible &&
+								((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
+								 (_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0))) {
+
+							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
 							validate();
 							_epochCounter++;
-							_batchCounter = 0;
+							_syncCounter = 0;
 						}
 					}
 

@@ -28,21 +28,19 @@ public class ReaderColumnSelectionDense extends ReaderColumnSelection {
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionDense(MatrixBlock data, int[] colIndices, CompressionSettings compSettings) {
-		super(colIndices, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), compSettings);
+	public ReaderColumnSelectionDense(MatrixBlock data, int[] colIndices) {
+		super(colIndices, data.getNumRows());
 		_data = data;
 		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);
 	}
-
 
 	protected DblArray getNextRow() {
 		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _compSettings.transposeInput ? _data.quickGetValue(_colIndexes[i], _lastRow) : _data
-				.quickGetValue(_lastRow, _colIndexes[i]);
+			reusableArr[i] = _data.quickGetValue(_lastRow, _colIndexes[i]);
 		}
 		return reusableReturn;
 	}

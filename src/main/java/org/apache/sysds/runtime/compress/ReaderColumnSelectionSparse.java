@@ -19,10 +19,8 @@
 
 package org.apache.sysds.runtime.compress;
 
-import java.util.Arrays;
-
 import org.apache.sysds.runtime.compress.utils.DblArray;
-import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -40,53 +38,56 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	// an empty array to return if the entire row was 0.
 	private DblArray empty = new DblArray();
 
-	// current sparse row positions
-	private SparseRow[] sparseCols = null;
-	private int[] sparsePos = null;
+	private SparseBlock a;
 
 	/**
 	 * Reader of sparse matrix blocks for compression.
 	 * 
-	 * This reader should not be used if the input data is not transposed and sparse
+	 * This reader should not be used if the input data is not sparse
 	 * 
 	 * @param data         The transposed and sparse matrix
 	 * @param colIndexes   The column indexes to combine
-	 * @param compSettings The compression settings.
 	 */
-	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, CompressionSettings compSettings) {
-		super(colIndexes, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), compSettings);
+	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes) {
+		super(colIndexes, data.getNumRows());
 		reusableArr = new double[colIndexes.length];
 		reusableReturn = new DblArray(reusableArr);
-
-		sparseCols = new SparseRow[colIndexes.length];
-		sparsePos = new int[colIndexes.length];
-		if(data.getSparseBlock() != null)
-			for(int i = 0; i < colIndexes.length; i++)
-				sparseCols[i] = data.getSparseBlock().get(colIndexes[i]);
+		a = data.getSparseBlock();
 	}
 
 	protected DblArray getNextRow() {
 		if(_lastRow == _numRows - 1) {
-
 			return null;
 		}
+
 		_lastRow++;
 
-		// move pos to current row if necessary (for all columns)
-		for(int i = 0; i < _colIndexes.length; i++)
-			if(sparseCols[i] != null &&
-				(sparseCols[i].indexes().length <= sparsePos[i] || sparseCols[i].indexes()[sparsePos[i]] < _lastRow)) {
-				sparsePos[i]++;
-			}
-		// extract current values
-		Arrays.fill(reusableArr, 0);
 		boolean zeroResult = true;
-		for(int i = 0; i < _colIndexes.length; i++)
-			if(sparseCols[i] != null && sparseCols[i].indexes().length > sparsePos[i] &&
-				sparseCols[i].indexes()[sparsePos[i]] == _lastRow) {
-				reusableArr[i] = sparseCols[i].values()[sparsePos[i]];
-				zeroResult = false;
+
+		if(a != null && !a.isEmpty(_lastRow)) {
+
+			int apos = a.pos(_lastRow);
+			int alen = a.size(_lastRow) + apos;
+			int[] aix = a.indexes(_lastRow);
+			double[] avals = a.values(_lastRow);
+			int skip = 0;
+			int j = apos;
+
+			while(skip < _colIndexes.length && j < alen) {
+				if(_colIndexes[skip] == aix[j]) {
+					reusableArr[skip++] = avals[j++];
+					zeroResult = false;
+				}
+				else if(_colIndexes[skip] > aix[j]) {
+					j++;
+				}
+				else {
+					reusableArr[skip++] = 0;
+				}
+
 			}
+		}
+
 		return zeroResult ? empty : reusableReturn;
 	}
 }

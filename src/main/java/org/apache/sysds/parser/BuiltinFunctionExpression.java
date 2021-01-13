@@ -800,6 +800,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			output.setDataType(id.getDataType());
 			output.setValueType(id.getValueType());
+			
+			//special handling of concatenating all list elements
 			if( id.getDataType() == DataType.LIST && getAllExpr().length == 1) {
 				output.setDataType(DataType.MATRIX);
 				output.setValueType(ValueType.FP64);
@@ -810,33 +812,35 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			long m1clen = getFirstExpr().getOutput().getDim2();
 			long appendDim1 = m1rlen, appendDim2 = m1clen;
 			
-			for(int i=1; i<getAllExpr().length; i++) {
-				long m2rlen = getExpr(i).getOutput().getDim1();
-				long m2clen = getExpr(i).getOutput().getDim2();
-				
-				if( getOpCode() == Builtins.CBIND ) {
-					if (m1rlen >= 0 && m2rlen >= 0 && m1rlen!=m2rlen) {
-						raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
-							m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-					}
-					appendDim1 = (m2rlen>=0) ? m2rlen : appendDim1;
-					appendDim2 = (appendDim2>=0 && m2clen>=0) ? appendDim2 + m2clen : -1;
-				}
-				else if( getOpCode() == Builtins.RBIND ) {
-					if (m1clen >= 0 && m2clen >= 0 && m1clen!=m2clen) {
-						raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
-							m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-					}
-					appendDim1 = (appendDim1>=0 && m2rlen>=0)? appendDim1 + m2rlen : -1;
-					appendDim2 = (m2clen>=0) ? m2clen : appendDim2;
-				}
-			}
-			
+			// best-effort dimension propagation and validation
 			if( id.getDataType() == DataType.LIST ) {
 				appendDim1 = -1;
 				appendDim2 = -1;
 			}
-
+			else {
+				for(int i=1; i<getAllExpr().length; i++) {
+					long m2rlen = getExpr(i).getOutput().getDim1();
+					long m2clen = getExpr(i).getOutput().getDim2();
+					
+					if( getOpCode() == Builtins.CBIND ) {
+						if (m1rlen >= 0 && m2rlen >= 0 && m1rlen!=m2rlen) {
+							raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
+								m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+						}
+						appendDim1 = (m2rlen>=0) ? m2rlen : appendDim1;
+						appendDim2 = (appendDim2>=0 && m2clen>=0) ? appendDim2 + m2clen : -1;
+					}
+					else if( getOpCode() == Builtins.RBIND ) {
+						if (m1clen >= 0 && m2clen >= 0 && m1clen!=m2clen) {
+							raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
+								m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+						}
+						appendDim1 = (appendDim1>=0 && m2rlen>=0)? appendDim1 + m2rlen : -1;
+						appendDim2 = (m2clen>=0) ? m2clen : appendDim2;
+					}
+				}
+			}
+			
 			output.setDimensions(appendDim1, appendDim2);
 			output.setBlocksize (id.getBlocksize());
 			
@@ -1558,9 +1562,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixFrameParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
 			output.setDataType(DataType.FRAME);
-			output.setDimensions(id.getDim1(), 1);
+			if(_args[1].getText().contains("jaccardSim")) {
+				output.setDimensions(id.getDim1(), id.getDim1());
+				output.setValueType(ValueType.FP64);
+			}
+			else {
+				output.setDimensions(id.getDim1(), 1);
+				output.setValueType(ValueType.STRING);
+			}
 			output.setBlocksize (id.getBlocksize());
-			output.setValueType(ValueType.STRING);
+
 			break;
 
 		default:

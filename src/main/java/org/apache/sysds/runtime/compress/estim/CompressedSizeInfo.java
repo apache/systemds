@@ -64,4 +64,13 @@ public class CompressedSizeInfo {
 		return est;
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("CompressedSizeInfo");
+		sb.append("\n  - CompressableColumns: " + (colsC) + " UncompressableColumns: " + (colsUC));
+		sb.append("\n  - CompressionRatio: " + compRatios);
+		sb.append("\n  - nnzUC: " + nnzUC);
+		return sb.toString();
+	}
 }

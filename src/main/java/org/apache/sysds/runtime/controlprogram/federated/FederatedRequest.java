@@ -19,12 +19,21 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.Adler32;
+import java.util.zip.Checksum;
 
+import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
+import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.utils.Statistics;
 
 public class FederatedRequest implements Serializable {
@@ -45,6 +54,7 @@ public class FederatedRequest implements Serializable {
 	private long _tid;
 	private List<Object> _data;
 	private boolean _checkPrivacy;
+	private List<Long> _checksums;
 	
 	
 	public FederatedRequest(RequestType method) {
@@ -65,6 +75,8 @@ public class FederatedRequest implements Serializable {
 		_id = id;
 		_data = data;
 		setCheckPrivacy();
+		if (DMLScript.LINEAGE)
+			setChecksum();
 	}
 	
 	public RequestType getType() {
@@ -115,6 +127,52 @@ public class FederatedRequest implements Serializable {
 
 	public boolean checkPrivacy(){
 		return _checkPrivacy;
+	}
+	
+	public void setChecksum() {
+		// Calculate Adler32 checksum. This is used as a leaf node of Lineage DAGs
+		// in the workers, and helps to uniquely identify a node (tracing PUT)
+		// TODO: append lineageitem hash if checksum is not enough
+		_checksums = new ArrayList<>();
+		try {
+			calcChecksum();
+		}
+		catch (IOException e) {
+			throw new DMLException(e);
+		}
+	}
+	
+	public long getChecksum(int i) {
+		return _checksums.get(i);
+	}
+	
+	private void calcChecksum() throws IOException {
+		for (Object ob : _data) {
+			if (!(ob instanceof CacheBlock) && !(ob instanceof ScalarObject))
+				continue;
+			
+			Checksum checksum = new Adler32();
+			if (ob instanceof ScalarObject) {
+				byte bytes[] = ((ScalarObject)ob).getStringValue().getBytes();
+				checksum.update(bytes, 0, bytes.length);
+				_checksums.add(checksum.getValue());
+			}
+			
+			if (ob instanceof CacheBlock) {
+				try {
+					CacheBlock cb = (CacheBlock)ob;
+					long cbsize = LazyWriteBuffer.getCacheBlockSize((CacheBlock)ob);
+					DataOutput dout = new CacheDataOutput(new byte[(int)cbsize]);
+					cb.write(dout);
+					byte bytes[] = ((CacheDataOutput) dout).getBytes();
+					checksum.update(bytes, 0, bytes.length);
+					_checksums.add(checksum.getValue());
+				}
+				catch(Exception ex) {
+					throw new IOException("Failed to serialize cache block.", ex);
+				}
+			}
+		}
 	}
 	
 	@Override

@@ -32,6 +32,7 @@ limitations under the License.
     * [`DBSCAN`-Function](#DBSCAN-function)
     * [`discoverFD`-Function](#discoverFD-function)
     * [`dist`-Function](#dist-function)
+    * [`dmv`-Function](#dmv-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -55,6 +56,7 @@ limitations under the License.
     * [`slicefinder`-Function](#slicefinder-function)
     * [`normalize`-Function](#normalize-function)
     * [`gnmf`-Function](#gnmf-function)
+    * [`mdedup`-Function](#mdedup-function)
     * [`msvm`-Function](#msvm-function)
     * [`naivebayes`-Function](#naivebayes-function)
     * [`outlier`-Function](#outlier-function)
@@ -298,6 +300,43 @@ dist(X)
 X = rand (rows = 5, cols = 5)
 Y = dist(X)
 ```
+
+
+
+## `dmv`-Function
+
+The `dmv`-function is used to find disguised missing values utilising syntactical pattern recognition.
+
+### Usage
+
+```r
+dmv(X, threshold, replace)
+```
+
+### Arguments
+
+| Name      | Type          | Default  | Description                                                  |
+| :-------- | :------------ | :------- | :----------------------------------------------------------- |
+| X         | Frame[String] | required | Input Frame                                                  |
+| threshold | Double        | 0.8      | threshold value in interval [0, 1] for dominant pattern per column (e.g., 0.8 means that 80% of the entries per column must adhere this pattern to be dominant) |
+| replace   | String        | "NA"     | The string disguised missing values are replaced with        |
+
+### Returns
+
+| Type          | Description                                            |
+| :------------ | :----------------------------------------------------- |
+| Frame[String] | Frame `X`  including detected disguised missing values |
+
+### Example
+
+```r
+A = read("fileA", data_type="frame", rows=10, cols=8);
+Z = dmv(X=A)
+Z = dmv(X=A, threshold=0.9)
+Z = dmv(X=A, threshold=0.9, replace="NaN")
+```
+
+
 
 ## `glm`-Function
 
@@ -1235,6 +1274,48 @@ toOneHot(X, numClasses)
 numClasses = 5
 X = round(rand(rows = 10, cols = 10, min = 1, max = numClasses))
 y = toOneHot(X,numClasses)
+```
+
+## `mdedup`-Function
+
+The `mdedup`-function implements builtin for deduplication using matching dependencies 
+(e.g. Street 0.95, City 0.90 -> ZIP 1.0) by Jaccard distance.
+
+### Usage
+
+```r
+mdedup(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
+```
+
+
+### Arguments
+
+| Name          | Type             | Default    | Description |
+| :------       | :-------------   | --------   | :---------- |
+| X             | Frame            | ---        | Input Frame X |
+| LHSfeatures   | Matrix[Integer]  | ---        | A matrix 1xd with numbers of columns for MDs |
+| LHSthreshold  | Matrix[Double]   | ---        | A matrix 1xd with threshold values in interval [0, 1] for MDs |
+| RHSfeatures   | Matrix[Integer]  | ---        | A matrix 1xd with numbers of columns for MDs |
+| RHSthreshold  | Matrix[Double]   | ---        | A matrix 1xd with threshold values in interval [0, 1] for MDs |
+| verbose       | Boolean          | False      | Set to true to print duplicates.|
+
+
+### Returns
+
+| Type            | Default  | Description |
+| :-------------- | -------- | :---------- |
+| Matrix[Integer] | ---      | Matrix of duplicates (rows). |
+
+
+### Example
+
+```r
+X = as.frame(rand(rows = 50, cols = 10))
+LHSfeatures = matrix("1 3 19", 1, 2)
+LHSthreshold = matrix("0.85 0.85", 1, 2)
+RHSfeatures = matrix("30", 1, 1)
+RHSthreshold = matrix("1.0", 1, 1)
+duplicates = mdedup(X, LHSfeatures, LHSthreshold, RHSfeatures, RHSthreshold, verbose = FALSE)
 ```
 
 ## `msvm`-Function

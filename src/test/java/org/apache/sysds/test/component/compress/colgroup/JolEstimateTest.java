@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.EnumSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
@@ -40,6 +42,8 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 public abstract class JolEstimateTest {
+
+	protected static final Log LOG = LogFactory.getLog(JolEstimateTest.class.getName());
 
 	protected static final CompressionType ddc = CompressionType.DDC;
 	protected static final CompressionType ole = CompressionType.OLE;
@@ -66,15 +70,16 @@ public abstract class JolEstimateTest {
 			.setValidCompressions(vc);
 		this.cs = csb.create();
 		this.csl = csb.setLossy(true).setSortValuesByLength(false).create();
-
+		cs.transposed = true;
+		csl.transposed = true;
 		int[] colIndexes = new int[mbt.getNumRows()];
 		for(int x = 0; x < mbt.getNumRows(); x++) {
 			colIndexes[x] = x;
 		}
 		try {
-			ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mbt, cs);
+			ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mbt, true);
 			cg = ColGroupFactory.compress(colIndexes, mbt.getNumColumns(), ubm, getCT(), cs, mbt);
-			ABitmap ubml = BitmapEncoder.extractBitmap(colIndexes, mbt, csl);
+			ABitmap ubml = BitmapEncoder.extractBitmap(colIndexes, mbt, true);
 			cgl = ColGroupFactory.compress(colIndexes, mbt.getNumColumns(), ubml, getCT(), csl, mbt);
 
 		}
@@ -87,10 +92,13 @@ public abstract class JolEstimateTest {
 	@Test
 	public void compressedSizeInfoEstimatorExact() {
 		try {
-			// CompressionSettings cs = new CompressionSettings(1.0);
+			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0).setValidCompressions(EnumSet.of(getCT())).create();
+			cs.transposed = true;
 			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs);
+
 			CompressedSizeInfoColGroup csi = cse.estimateCompressedColGroupSize();
 			long estimateCSI = csi.getCompressionSize(getCT());
+
 			long estimateObject = cg.estimateInMemorySize();
 			String errorMessage = "CSI estimate " + estimateCSI + " should be exactly " + estimateObject + "\n"
 				+ cg.toString();
@@ -112,10 +120,12 @@ public abstract class JolEstimateTest {
 	public void compressedSizeInfoEstimatorExactLossy() {
 		try {
 			// CompressionSettings cs = new CompressionSettings(1.0);
+			csl.transposed = true;
 			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, csl);
 			CompressedSizeInfoColGroup csi = cse.estimateCompressedColGroupSize();
 			long estimateCSI = csi.getCompressionSize(getCT());
 			long estimateObject = cgl.estimateInMemorySize();
+
 			String errorMessage = "CSI estimate " + estimateCSI + " should be exactly " + estimateObject + "\n"
 				+ cg.toString();
 			boolean res = Math.abs(estimateCSI - estimateObject) <= tolerance;

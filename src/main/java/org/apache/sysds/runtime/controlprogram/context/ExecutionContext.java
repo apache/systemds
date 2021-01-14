@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
+import org.apache.sysds.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.Lineage;
@@ -405,15 +406,21 @@ public class ExecutionContext {
 		mo.getGPUObject(getGPUContext(0)).addWriteLock();
 		return mo;
 	}
-
-	public long getGPUPointerAddress(MatrixObject obj) {
-
-			if(obj.getGPUObject(getGPUContext(0)) == null)
+	
+	public long getGPUDensePointerAddress(MatrixObject obj) {
+		if(obj.getGPUObject(getGPUContext(0)) == null)
 				return 0;
 			else
-				return obj.getGPUObject(getGPUContext(0)).getPointerAddress();
+				return obj.getGPUObject(getGPUContext(0)).getDensePointerAddress();
 	}
-
+	
+	public CSRPointer getGPUSparsePointerAddress(MatrixObject obj) {
+		if(obj.getGPUObject(getGPUContext(0)) == null)
+			throw new RuntimeException("No CSRPointer for MatrixObject " + obj.toString());
+		else
+			return obj.getGPUObject(getGPUContext(0)).getJcudaSparseMatrixPtr();
+	}
+	
 	public MatrixObject getMatrixInputForGPUInstruction(String varName, String opcode) {
 		GPUContext gCtx = getGPUContext(0);
 		MatrixObject mo = getMatrixObject(varName);

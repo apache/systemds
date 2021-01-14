@@ -83,7 +83,7 @@ public class GPUObject {
 	protected boolean writeLock = false;
 
 	/**
-	 * Timestamp, needed by {@link GPUContext#evict(long)}
+	 * Timestamp, needed by {@link GPUContext\#evict(long)}
 	 */
 	AtomicLong timestamp = new AtomicLong();
 
@@ -1006,7 +1006,7 @@ public class GPUObject {
 		return sb.toString();
 	}
 
-	private static long getPointerAddress(Pointer p) {
+	private static long getPointerAddressInternal(Pointer p) {
 		// WORKAROUND until a method like CUdeviceptr#getAddress exists in jCuda
 		class PointerWithAddress extends Pointer
 		{
@@ -1021,8 +1021,11 @@ public class GPUObject {
 		}
 		return new PointerWithAddress(p).getAddress();
 	}
-
-	public long getPointerAddress() {
-		return getPointerAddress(getDensePointer());
+	
+	public long getDensePointerAddress() {
+		return getPointerAddressInternal(getDensePointer());
 	}
-}
+	
+	public static long getPointerAddress(Pointer p) {
+		return getPointerAddressInternal(p);
+	}}

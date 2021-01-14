@@ -93,7 +93,10 @@ class MatrixAccessor {
 	
 	// Member function pointers
 	uint32_t (MatrixAccessor::*_len)();
+	uint32_t (MatrixAccessor::*_row_len)(uint32_t);
 	uint32_t (MatrixAccessor::*_pos)(uint32_t);
+	uint32_t* (MatrixAccessor::*_col_idxs)(uint32_t);
+	
 //	T (MatrixAccessor::*_val)(uint32_t, uint32_t);
 	T (MatrixAccessor::*_val_r)(uint32_t);
 	T (MatrixAccessor::*_val_rc)(uint32_t, uint32_t);
@@ -108,14 +111,18 @@ public:
 		if (_mat->row_ptr == nullptr) {
 			_len = &MatrixAccessor::len_dense;
 			_pos = &MatrixAccessor::pos_dense;
+			_col_idxs = &MatrixAccessor::cols_dense;
 			_val_rc = &MatrixAccessor::val_dense_rc;
 			_val_r = &MatrixAccessor::val_dense_r;
 			_vals = &MatrixAccessor::vals_dense_row;
+			_row_len = &MatrixAccessor::row_len_dense;
 		} else {
 			_len = &MatrixAccessor::len_sparse;
 			_pos = &MatrixAccessor::pos_sparse;
+			_col_idxs = &MatrixAccessor::cols_sparse;
 			_val_rc = &MatrixAccessor::val_sparse;
-			_val_r = &MatrixAccessor::val_sparse_row;
+			_vals = &MatrixAccessor::val_sparse_row;
+			_row_len = &MatrixAccessor::row_len_sparse;
 		}
 	}
 
@@ -140,9 +147,18 @@ public:
 		return (this->*_vals)(rix);
 	}
 
+	//ToDo: no sparse
     T& operator[](uint32_t i) {
 	    return _mat->data[i];
     }
+    
+    uint32_t row_len(uint32_t rix) {
+		return (this->*_row_len)(rix);
+	}
+
+	uint32_t* col_idxs(uint32_t rix) {
+		return (this->*_col_idxs)(rix);
+	}
 
 private:
 	uint32_t len_dense() {
@@ -154,6 +170,11 @@ private:
 	
 	uint32_t pos_dense(uint32_t rix) {
 		return _mat->cols * rix;
+	}
+	
+	uint32_t* cols_dense(uint32_t rix) {
+		printf("ERROR: no column indices array in a dense matrix! This will likely crash :-/\n");
+		return nullptr;
 	}
 	
 	T val_dense_rc(uint32_t r, uint32_t c) {
@@ -176,22 +197,34 @@ private:
 //		return &(_mat->data[0]);
 	}
 	
+	uint32_t row_len_dense(uint32_t rix) {
+		return _mat->rows;
+	}
+	
 	//ToDo sparse accessors
 	uint32_t len_sparse() {
 		return 0;
 	}
 	
 	uint32_t pos_sparse(uint32_t rix) {
-		return 0;
+		return _mat->row_ptr[rix];
+	}
+	
+	uint32_t* cols_sparse(uint32_t rix) {
+		return &_mat->col_idx[_mat->row_ptr[rix]];
 	}
 	
 	T val_sparse(uint32_t r, uint32_t c) {
 		return _mat->data[0];
 	}
 	
-	T val_sparse_row(uint32_t rix) {
+	T* val_sparse_row(uint32_t rix) {
 //		return &(_mat->data[0]);
-		return _mat->data[0];
+		return &_mat->data[_mat->row_ptr[rix]];
+	}
+	
+	uint32_t row_len_sparse(uint32_t rix) {
+		return _mat->row_ptr[rix+1]-_mat->row_ptr[rix];
 	}
 };
 

@@ -86,9 +86,8 @@ public:
   bool compile_cuda(const std::string &src, const std::string &name);
 
 	template <typename T>
-	T execute_kernel(const std::string &name, T **in_ptrs, int num_inputs, T **side_ptrs, int num_sides, T *out_ptr, 
-			T *scalars_ptr, int num_scalars, uint32_t m, uint32_t n, int out_len, int grix, 
-			std::vector<Matrix<T>>& sides, Matrix<T>* out) {
+	T execute_kernel(const std::string &name, std::vector<Matrix<T>>& input,  std::vector<Matrix<T>>& sides, Matrix<T>* output,
+					 T *scalars_ptr, int num_scalars, uint32_t m, uint32_t n, int out_len, int grix) {
 		
 		T result = 0.0;
 		size_t dev_buf_size;
@@ -102,14 +101,14 @@ public:
 		if (o != ops.end()) {
 			SpoofOperator *op = &(o->second);
 
-			Matrix<T> in{in_ptrs[0], nullptr, nullptr, m, n, m*n};
+			// ToDo: multiple inputs for SpoofOuterProduct template
 			CHECK_CUDART(cudaMalloc((void **)&d_in, sizeof(Matrix<T>)));
-			CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&in), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
+			CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&input[0]), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
 
-			if(out != nullptr) {
+			if(output != nullptr) {
 				CHECK_CUDART(cudaMalloc((void **) &d_out, sizeof(Matrix<T>)));
 				//CHECK_CUDART(cudaMemset(out->data, 0, out->rows*out->cols*sizeof(T)));
-				CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void *>(out), sizeof(Matrix<T>),
+				CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void *>(output), sizeof(Matrix<T>),
 						cudaMemcpyHostToDevice));
 			}
 			else {
@@ -121,7 +120,7 @@ public:
 										cudaMemcpyHostToDevice));
 			}
 			
-			if (num_sides > 0) {
+			if (!sides.empty()) {
 				if(op->TB1) {
 					T* b1 = sides[0].data;
 					uint32_t m = sides[0].rows;
@@ -161,7 +160,7 @@ public:
 					sides[0].cols = m;
 					CHECK_CUBLAS(cublasDestroy(handle));
 				}
-				dev_buf_size = sizeof(Matrix<T>) * num_sides;
+				dev_buf_size = sizeof(Matrix<T>) * sides.size();
 				CHECK_CUDART(cudaMalloc(reinterpret_cast<void **>(&d_sides), dev_buf_size));
 				CHECK_CUDART(cudaMemcpy(d_sides, &sides[0], dev_buf_size, cudaMemcpyHostToDevice));
 			}
@@ -177,7 +176,7 @@ public:
 //		        result = launch_cw_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
 //		        break;
 		    case SpoofOperator::OpType::RA:
-				result = launch_ra_kernel(op, d_in, d_out, d_sides, num_sides, d_scalars, m, n, grix);
+				result = launch_ra_kernel(op, d_in, d_out, d_sides, sides.size(), d_scalars, m, n, grix);
 		        break;
 		    default:
 				std::cerr << "error: unknown spoof operator" << std::endl;
@@ -187,7 +186,7 @@ public:
 			if (num_scalars > 0)
 				CHECK_CUDART(cudaFree(d_scalars));
 			
-			if (num_sides > 0)
+			if (sides.size() > 0)
 				CHECK_CUDART(cudaFree(d_sides));
 
 			if(op->TB1)

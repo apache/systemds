@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -97,13 +98,18 @@ public class SpoofCUDAInstruction extends GPUInstruction implements LineageTrace
 				else if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.ROW_AGG)
 					out_cols = 1;
 
-			MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey();
+//			MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey();
+			GPUObject g = inputs.get(0).getGPUObject(ec.getGPUContext(0));
+			MatrixObject out_obj = (g.isSparse() ?
+				(ec.getSparseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols, g.getNnz(getOpcode(), false)).getKey()) :
+				(ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey()));
+			
 			ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
-			_op.execute(inputs, scalars, out_obj, ec);
+			_op.execute(inputs, scalars, out_obj, ec, g.isSparse());
 			ec.releaseMatrixOutputForGPUInstruction(_out.getName());
 		}
 		else if (_out.getDataType() == Types.DataType.SCALAR) {
-			ScalarObject out = new DoubleObject(_op.execute(inputs, scalars, null, ec));
+			ScalarObject out = new DoubleObject(_op.execute(inputs, scalars, null, ec, false));
 			ec.setScalarOutput(_out.getName(), out);
 		}
 

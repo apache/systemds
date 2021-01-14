@@ -31,7 +31,7 @@
 
 using uint32_t = unsigned int;
 
-__device__ bool debug_row() { return blockIdx.x == 4; };
+__device__ bool debug_row() { return blockIdx.x == 0; };
 __device__ bool debug_thread() { return threadIdx.x == 0; }
 
 __constant__ double DOUBLE_EPS = 1.11022E-16; // 2 ^ -53
@@ -433,34 +433,6 @@ int vectMatrixMult(T* a, MatrixAccessor<T>& b, T* c, uint32_t ai, uint32_t bi, u
 	return len;
 }
 
-template<typename T>
-void vectOuterMultAdd(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len1, uint32_t len2) {
-//	uint32_t cix = ci + threadIdx.x * len2;
-//	if(threadIdx.x == 0 && blockIdx.x < 3)
-//		printf("vectOuterMultAdd cix=%d\n", cix);
-	// vectMultiplyAdd(a[ai+threadIdx.x], b, c, bi, cix, len2);
-//	ProductOp<T> op;
-//	return vectAdd_atomic<T, ProductOp<T>>(b, a[ai+threadIdx.x], c, bi, ci, len2, op);
-
-	uint32_t i = threadIdx.x;
-//	uint32_t bix = bi + blockIdx.x * len2;
-	uint32_t bix = 0;
-	while (i < len1) {
-		if(a[ai + i != 0]) {
-			for(uint32_t j=0; j < len2; ++j) {
-				atomicAdd(&(c[i * len2 + j]), a[ai + i] * b[bix + j]);
-//				if (debug_row() && debug_thread())
-//					printf("vectOuterMultAdd: bid=%d, tid=%d, ai=%d, bix=%d, ci=%d, len1=%d, len2=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
-//							blockIdx.x, threadIdx.x, ai, bix, ci, len1, len2, ai+i, a[ai+i], bix+j, b[bix+j], i*len2+j, c[i*len2+j]);
-
-
-//				vectAdd_atomic<T, ProductOp<T>>(b, a[ai+i], c, bi, ci, len2, op);
-			}
-		}
-		i += blockDim.x;
-	}
-}
-
 /* --------------------------------------------------------------------------------------------------------------------
  * Binary to intermediate
  */
@@ -649,4 +621,20 @@ Vector<T>& vectMatrixMult(T* a, MatrixAccessor<T>& b, uint32_t ai, uint32_t bi, 
 	return c;
 }
 
+template<typename T>
+void vectOuterMultAdd(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint32_t len1, uint32_t len2) {
+	uint32_t i = threadIdx.x;
+	uint32_t bix = bi;
+	while (i < len1) {
+		if(a[ai + i != 0]) {
+			for(uint32_t j=0; j < len2; ++j) {
+				atomicAdd(&(c[i * len2 + j]), a[ai + i] * b[bix + j]);
+//				if (debug_row() && debug_thread())
+//					printf("vectOuterMultAdd: bid=%d, tid=%d, ai=%d, bix=%d, ci=%d, len1=%d, len2=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
+//							blockIdx.x, threadIdx.x, ai, bix, ci, len1, len2, ai+i, a[ai+i], bix+j, b[bix+j], i*len2+j, c[i*len2+j]);
+			}
+		}
+		i += blockDim.x;
+	}
+}
 #endif // SPOOF_UTILS_CUH

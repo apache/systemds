@@ -36,7 +36,7 @@ public class CompressionSettingsBuilder {
 	private String transposeInput;
 	private boolean skipList = true;
 	private int seed = -1;
-	private boolean investigateEstimate = false;
+	private boolean investigateEstimate = true;
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
 	private boolean sortValuesByLength = false;

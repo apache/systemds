@@ -72,7 +72,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 * @param compSettings   The Settings for how to compress this block, Here using information about the raw block if
 	 *                       it is transposed.
 	 */
-	protected ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
+	public ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
 		super(colIndicesList, transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows());
 
 		// prepare meta data

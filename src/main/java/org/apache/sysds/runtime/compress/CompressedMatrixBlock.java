@@ -113,19 +113,15 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	}
 
 	/**
-	 * "Copy" constructor to populate this compressed block with the uncompressed contents of a conventional block. Does
-	 * <b>not</b> compress the block. Only creates a shallow copy, and only does deep copy on compression.
+	 * "Copy" constructor to populate this compressed block with the uncompressed metadata contents of a conventional
+	 * block. Does not compress the block.
 	 * 
 	 * @param that matrix block
 	 */
 	protected CompressedMatrixBlock(MatrixBlock that) {
-		super(that.getNumRows(), that.getNumColumns(), that.isInSparseFormat());
-
-		// shallow copy (deep copy on compression, prevents unnecessary copy)
-		if(isInSparseFormat())
-			sparseBlock = that.getSparseBlock();
-		else
-			denseBlock = that.getDenseBlock();
+		super(that.getNumRows(), that.getNumColumns(), true);
+		sparseBlock = null;
+		denseBlock = null;
 		nonZeros = that.getNonZeros();
 	}
 
@@ -202,8 +198,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		Timing time = new Timing(true);
 
-		MatrixBlock ret = (nonZeros == -1) ? new MatrixBlock(rlen, clen, false, -1)
-			.allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
+		MatrixBlock ret =  new MatrixBlock(rlen, clen, false, -1).allocateBlock();
+		
+		// (nonZeros == -1) ? new MatrixBlock(rlen, clen, false, -1)
+			// .allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
 		// multi-threaded decompression
 		nonZeros = 0;
 		boolean overlapping = isOverlapping();
@@ -499,7 +497,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 				.rightMultByMatrix(_colGroups, that, ret, op.getNumThreads(), getMaxNumValues(), allowOverlap);
 		}
 		else {
-			ret = LibLeftMultBy.leftMultByMatrix(this, that,ret, op.getNumThreads());
+			ret = LibLeftMultBy.leftMultByMatrix(this, that, ret, op.getNumThreads());
 		}
 
 		if(transposeOutput) {
@@ -526,9 +524,9 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 				ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
 				return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 			}
-			else 
+			else
 				return LibLeftMultBy.leftMultByMatrixTransposed(m2, m1, ret, op.getNumThreads());
-			
+
 		}
 		else if(!transposeLeft && transposeRight) {
 			throw new DMLCompressionException("Not Implemented compressed Matrix Mult, to produce larger matrix");

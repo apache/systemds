@@ -24,9 +24,14 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-X = matrix(seq(1,3000), 60, 50, byrow=TRUE)/10000;
-X[,5:45] = matrix(0, 60, 41);
+X = matrix(seq(1,300), 60, 5, byrow=TRUE);
+# X[,5:45] = matrix(0, 60, 41);
+Xmax = ((rowMaxs(X)%*%matrix(1,1,5))+0.5)
+R = ((7+X)+(X-7)+(X^2<=7))/Xmax
 
-R = ((7+X)+(X-7)+(X^2<=7))/((rowMaxs(X)%*%matrix(1,1,50))+0.5)
+print.table(R[1,], digits=3, zero.print = ".")
+
+# print.table(Xmax, digits=3, zero.print = ".")
+
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

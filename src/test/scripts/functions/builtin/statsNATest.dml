@@ -1,0 +1,12 @@
+input_matrix = read($X);
+# replace zeros with NaN
+dataWithNa = replace(target=input_matrix, pattern = 0, replacement = NaN)
+[Out1,Out2,Out3,Out4,Out5,Out6,Out7,Out8] = statsNA(dataWithNa, $bins, FALSE)
+write(Out1, $Out1);
+write(Out2, $Out2);
+write(Out3, $Out3);
+write(Out4, $Out4);
+write(Out5, $Out5);
+write(Out6, $Out6);
+write(Out7, $Out7);
+write(Out8, $Out8);

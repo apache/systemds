@@ -158,17 +158,21 @@ public class CompressedMatrixBlockFactory {
 				compSettings.transposed = false;
 				break;
 			default:
-				compSettings.transposed = mb.getNumRows() > 1000000 || coCodeColGroups.size() > mb.getNumColumns() / 2;
+
+				if(original.isInSparseFormat()) {
+					boolean isAboveRowNumbers = mb.getNumRows() > 1000000;
+					boolean isAboveThreadToColumnRatio = coCodeColGroups.size() > mb.getNumColumns() / 2;
+					compSettings.transposed = isAboveRowNumbers || isAboveThreadToColumnRatio;
+				}
+				else
+					compSettings.transposed = false;
 		}
 	}
 
 	private void compressPhase() {
 		res = new CompressedMatrixBlock(original);
 		ColGroup[] colGroups = ColGroupFactory.compressColGroups(mb, null, coCodeColGroups, compSettings, k);
-		List<ColGroup> colGroupList = assignColumns(original.getNumColumns(),
-			colGroups,
-			mb,
-			compSettings);
+		List<ColGroup> colGroupList = assignColumns(original.getNumColumns(), colGroups, mb, compSettings);
 		res.allocateColGroupList(colGroupList);
 		logPhase();
 	}
@@ -252,6 +256,7 @@ public class CompressedMatrixBlockFactory {
 
 	private List<ColGroup> assignColumns(int numCols, ColGroup[] colGroups, MatrixBlock rawBlock,
 		CompressionSettings compSettings) {
+
 		// Find the columns that are not assigned yet, and assign them to uncompressed.
 		List<ColGroup> _colGroups = new ArrayList<>();
 		HashSet<Integer> remainingCols = seq(0, numCols - 1, 1);

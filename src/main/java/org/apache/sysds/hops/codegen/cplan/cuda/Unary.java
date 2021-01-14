@@ -175,7 +175,7 @@ public class Unary extends CodeTemplate {
 //					return sparse ? "	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
 //						"	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
 					return sparse ? "	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
-						"		Vector<T>& %TMP% = vect"+vectName+"Write(%IN1%, %POS1%, %LEN%, this);\n";
+						"		Vector<T>& %TMP% = vect"+vectName+"Write(%IN1%, static_cast<uint32_t>(%POS1%), %LEN%, this);\n";
 				}
 
 				case EXP:

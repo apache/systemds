@@ -59,7 +59,7 @@ public class Ternary extends CodeTemplate {
 							"		T %TMP% = %IN1%.val(rix, %IN3%-1);\n";
 
 				case LOOKUP_RVECT1:
-					return "	T[] %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1);\n";
+					return "\t\tVector<T>& %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1);\n";
 
 				default:
 					throw new RuntimeException("Invalid ternary type: " + this.toString());
@@ -97,7 +97,7 @@ public class Ternary extends CodeTemplate {
 				
 				
 				case LOOKUP_RVECT1:
-					return "	T[] %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1);\n";
+					return "\t\tVector<T>& %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1, this);\n";
 
 				default:
 					throw new RuntimeException("Invalid ternary type: "+this.toString());

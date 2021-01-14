@@ -315,4 +315,28 @@ public class CodegenUtils
 		LocalFileUtils.createLocalFileIfNotExist(tmp);
 		_workingDir = tmp;
 	}
+
+	/**
+	 * <p>Extension of org.apache.commons.lang.StringUtils
+	 * to account for negatives and decimals.</p>
+	 *
+	 * @param str  the String to check, may be null
+	 * @return <code>true</code> if only contains digits,-,., and is non-null
+	 */
+	public static boolean isNumeric(String str) {
+		if (str == null) {
+			return false;
+		}
+		int sz = str.length();
+		for (int i = 0; i < sz; i++) {
+			if (!Character.isDigit(str.charAt(i))) {
+				if((str.charAt(i) == '-') && (i == 0))
+					continue;
+//				if((str.charAt(i) == '.') && (sz > 1))
+//					continue;
+				return false;
+			}
+		}
+		return true;
+	}
 }

@@ -62,7 +62,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			select.appendValue(sampleRows[i], 0, 1);
 
 		MatrixBlock sampledMatrixBlock = data.removeEmptyOperations(new MatrixBlock(), !transposed, true, select);
-		if(!transposed && sampleRows.length > FORCE_TRANSPOSE_ON_SAMPLE_THRESHOLD) {
+		if(!transposed && sampledMatrixBlock.isInSparseFormat() && sampleRows.length > FORCE_TRANSPOSE_ON_SAMPLE_THRESHOLD) {
 			_transposed = true;
 			sampledMatrixBlock = LibMatrixReorg
 				.transpose(sampledMatrixBlock, new MatrixBlock(sampleRows.length, data.getNumRows(), true), 1);

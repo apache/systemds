@@ -23,19 +23,20 @@
 
 using uint32_t = unsigned int;
 
+#ifdef __CUDACC_RTC__
+
 //ToDo: move to separate file
 template <typename T>
 struct Vector {
 	T* data;
 	uint32_t length;
 
-	T* vals(uint32_t idx) { return &data[idx]; }
+	__device__ T* vals(uint32_t idx) { return &data[idx]; }
 
-	T& operator[](uint32_t idx) {
+	__device__ T& operator[](uint32_t idx) {
 	    return data[idx];
     }
 	
-#ifdef __CUDACC_RTC__
 	__device__ void print(const char* name, uint32_t end_ = 0, uint32_t start = 0, uint32_t bID = 0, uint32_t tID = 0) {
 		if(blockIdx.x == bID && threadIdx.x==tID) {
 			uint32_t end = end_;
@@ -46,7 +47,6 @@ struct Vector {
 				print("%4.3f ", data[i]);
 		}
 	}
-#endif // __CUDACC_RTC__
 };
 
 template <typename T, uint32_t ELEMENTS>
@@ -55,15 +55,15 @@ class RingBuffer {
 	int32_t pos;
 
 public:
-	void init(uint32_t offset, uint32_t length, T* buffer) {
+	__device__ void init(uint32_t offset, uint32_t length, T* buffer) {
 		pos = -1;
 		for(auto i=0;i<ELEMENTS;++i) {
-			vec[i].data = &buffer[offset + length * ELEMENTS];
+			vec[i].data = &buffer[offset + length * i];
 			vec[i].length = length;
 		}
 	}
 
-	Vector<T>& next() {
+	__device__ Vector<T>& next() {
 		pos = (pos+1>=ELEMENTS) ? 0 : pos+1;
 		return vec[pos];
 	}
@@ -71,14 +71,9 @@ public:
 
 template <typename T>
 struct SpoofOp {
-
-	// RingBuffer<T,ELEMENTS> temp_rb;
-	
-	virtual Vector<T>& getTempStorage(uint32_t len) = 0;
-	// Vector<T>& getTempStorage() {
-		// return temp_rb.next();
-	// }
+	__device__ virtual Vector<T>& getTempStorage(uint32_t len) = 0;
 };
+#endif // __CUDACC_RTC__
 
 template <typename T>
 struct Matrix {

@@ -34,6 +34,8 @@ import java.util.Queue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
+import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionBitSet;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
@@ -70,18 +72,8 @@ public class BitmapEncoder {
 		}
 		// multiple column selection (general case)
 		else {
-			ReaderColumnSelection reader = null;
-			if(rawBlock.isInSparseFormat() && transposed)
-				reader = new ReaderColumnSelectionSparseTransposed(rawBlock, colIndices);
-			else if(rawBlock.isInSparseFormat())
-				reader = new ReaderColumnSelectionSparse(rawBlock, colIndices);
-			else if(transposed)
-				reader = new ReaderColumnSelectionDenseTransposed(rawBlock, colIndices);
-			else
-				reader = new ReaderColumnSelectionDense(rawBlock, colIndices);
 			try {
-
-				res = extractBitmap(colIndices, reader);
+				res = extractBitmap(colIndices, ReaderColumnSelection.createReader(rawBlock, colIndices, transposed));
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException("Failed to extract bitmap", e);
@@ -207,6 +199,7 @@ public class BitmapEncoder {
 	 */
 	private static Bitmap extractBitmap(int[] colIndices, ReaderColumnSelection rowReader) {
 		// probe map for distinct items (for value or value groups)
+
 		DblArrayIntListHashMap distinctVals;
 		if(colIndices.length > 10) {
 			distinctVals = new DblArrayIntListHashMap(2048);

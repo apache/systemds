@@ -93,7 +93,7 @@ public class LibBinaryCellOp {
 		MatrixValue result) {
 		CompressedMatrixBlock ret = null;
 		if(result == null || !(result instanceof CompressedMatrixBlock))
-			ret = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns(), false);
+			ret = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns());
 		else {
 			ret = (CompressedMatrixBlock) result;
 			ret.reset(m1.getNumRows(), m1.getNumColumns());

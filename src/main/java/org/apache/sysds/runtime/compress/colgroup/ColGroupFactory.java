@@ -20,9 +20,7 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
@@ -30,8 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.BitmapEncoder;
@@ -49,7 +45,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
  * Factory pattern for constructing ColGroups.
  */
 public class ColGroupFactory {
-	private static final Log LOG = LogFactory.getLog(ColGroupFactory.class.getName());
+	// private static final Log LOG = LogFactory.getLog(ColGroupFactory.class.getName());
 
 	/**
 	 * The actual compression method, that handles the logic of compressing multiple columns together. This method also
@@ -145,15 +141,29 @@ public class ColGroupFactory {
 
 	private static ColGroup compressColGroup(MatrixBlock in, HashMap<Integer, Double> compRatios, int[] colIndexes,
 		CompressionSettings compSettings) {
+		return (compRatios == null) ? compressColGroupForced(in,
+			colIndexes,
+			compSettings) : compressColGroupCorrecting(in, compRatios, colIndexes, compSettings);
+
+	}
+
+	private static ColGroup compressColGroupForced(MatrixBlock in, int[] colIndexes, CompressionSettings compSettings) {
+
+		CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings, compSettings.transposed);
+		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, compSettings.transposed);
+		CompressedSizeInfoColGroup sizeInfo = new CompressedSizeInfoColGroup(
+			estimator.estimateCompressedColGroupSize(ubm), compSettings.validCompressions);
+		int numRows = compSettings.transposed ? in.getNumColumns() : in.getNumRows();
+		return compress(colIndexes, numRows, ubm, sizeInfo.getBestCompressionType(), compSettings, in);
+	}
+
+	private static ColGroup compressColGroupCorrecting(MatrixBlock in, HashMap<Integer, Double> compRatios,
+		int[] colIndexes, CompressionSettings compSettings) {
 
 		int[] allGroupIndices = colIndexes.clone();
 		CompressedSizeInfoColGroup sizeInfo;
-		// The compression type is decided based on a full bitmap since it
-		// will be reused for the actual compression step.
 		ABitmap ubm = null;
 		PriorityQueue<CompressedColumn> compRatioPQ = CompressedColumn.makePriorityQue(compRatios, colIndexes);
-
-		// Switching to exact estimator here, when doing the actual compression.
 		CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings, compSettings.transposed);
 
 		while(true) {
@@ -161,6 +171,7 @@ public class ColGroupFactory {
 			// STEP 1.
 			// Extract the entire input column list and observe compression ratio
 			ubm = BitmapEncoder.extractBitmap(colIndexes, in, compSettings.transposed);
+
 			sizeInfo = new CompressedSizeInfoColGroup(estimator.estimateCompressedColGroupSize(ubm),
 				compSettings.validCompressions);
 
@@ -175,14 +186,6 @@ public class ColGroupFactory {
 
 			// STEP 3.
 			// Finish the search and close this compression if the group show good compression.
-
-			// Seems a little early to stop here. Maybe reconsider how to decide when to stop.
-			// Also when comparing to the case of 1.0 compression ratio, it could be that we chose to compress a group
-			// worse than the individual columns.
-
-			// Furthermore performance of a compressed representation that does not compress much, is decremental to
-			// overall performance.
-
 			if(compRatio > 1.0 || compSettings.columnPartitioner == PartitionerType.COST) {
 				int rlen = compSettings.transposed ? in.getNumColumns() : in.getNumRows();
 				return compress(colIndexes, rlen, ubm, sizeInfo.getBestCompressionType(), compSettings, in);
@@ -191,7 +194,6 @@ public class ColGroupFactory {
 				// STEP 4.
 				// Try to remove the least compressible column from the columns to compress.
 				// Then repeat from Step 1.
-
 				allGroupIndices[compRatioPQ.poll().colIx] = -1;
 
 				if(colIndexes.length - 1 == 0) {
@@ -240,47 +242,4 @@ public class ColGroupFactory {
 				throw new DMLCompressionException("Not implemented ColGroup Type compressed in factory.");
 		}
 	}
-
-	/**
-	 * 
-	 * Method for producing the final ColGroupList stored inside the CompressedMatrixBlock.
-	 * 
-	 * TODO Redesign this method such that it does not utilize the null pointers to decide on which ColGroups should be
-	 * incompressable. This is done by changing both this method and compressColGroup inside this class.
-	 * 
-	 * @param numCols      The number of columns in input matrix
-	 * @param colGroups    The colgroups made to assign
-	 * @param rawBlock     The (maybe transposed) original MatrixBlock
-	 * @param compSettings The Compressionsettings used.
-	 * @return return the final ColGroupList.
-	 */
-	public static List<ColGroup> assignColumns(int numCols, ColGroup[] colGroups, MatrixBlock rawBlock,
-		CompressionSettings compSettings) {
-
-		List<ColGroup> _colGroups = new ArrayList<>();
-		HashSet<Integer> remainingCols = seq(0, numCols - 1, 1);
-		for(int j = 0; j < colGroups.length; j++) {
-			if(colGroups[j] != null) {
-				for(int col : colGroups[j].getColIndices())
-					remainingCols.remove(col);
-				_colGroups.add(colGroups[j]);
-			}
-		}
-
-		if(!remainingCols.isEmpty()) {
-			int[] list = remainingCols.stream().mapToInt(i -> i).toArray();
-			LOG.warn("Uncompressable Columns: " + Arrays.toString(list));
-			ColGroupUncompressed ucgroup = new ColGroupUncompressed(list, rawBlock, compSettings.transposed);
-			_colGroups.add(ucgroup);
-		}
-		return _colGroups;
-	}
-
-	private static HashSet<Integer> seq(int from, int to, int incr) {
-		HashSet<Integer> ret = new HashSet<>();
-		for(int i = from; i <= to; i += incr)
-			ret.add(i);
-		return ret;
-	}
-
 }

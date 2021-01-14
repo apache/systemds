@@ -17,20 +17,28 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.readers;
 
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class ReaderColumnSelectionDense extends ReaderColumnSelection {
-	protected MatrixBlock _data;
+public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection {
+	private double[] _data;
+	private int indexOff;
+	private int _numCols;
 
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionDense(MatrixBlock data, int[] colIndices) {
+	public ReaderColumnSelectionDenseSingleBlock(MatrixBlock data, int[] colIndices) {
 		super(colIndices, data.getNumRows());
-		_data = data;
+		_data = data.getDenseBlockValues();
+		indexOff = 0;
+		if(data.getDenseBlock().numBlocks() > 1)
+			throw new DMLCompressionException("Not handling multi block data reading in dense reader");
+
+		_numCols = data.getNumColumns();
 		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);
 	}
@@ -40,8 +48,9 @@ public class ReaderColumnSelectionDense extends ReaderColumnSelection {
 			return null;
 		_lastRow++;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data.quickGetValue(_lastRow, _colIndexes[i]);
+			reusableArr[i] = _data[indexOff + _colIndexes[i]];
 		}
+		indexOff += _numCols;
 		return reusableReturn;
 	}
 }

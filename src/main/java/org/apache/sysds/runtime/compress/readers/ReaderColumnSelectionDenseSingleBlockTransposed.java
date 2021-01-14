@@ -17,21 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.readers;
 
-import java.util.BitSet;
-
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class ReaderColumnSelectionBitSet extends ReaderColumnSelection {
-	protected BitSet _data;
+public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColumnSelection{
+	private double[] _data;
 
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionBitSet(BitSet data, int rows, int[] colIndices) {
-		super(colIndices, rows);
-		_data = data;
+	public ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, int[] colIndices) {
+		super(colIndices.clone(), data.getNumColumns() );
+		_data = data.getDenseBlockValues();
+		if(data.getDenseBlock().numBlocks() > 1)
+			throw new DMLCompressionException("Not handling multi block data reading in dense transposed reader");
+		
+		for(int i = 0; i < colIndices.length; i++){
+			colIndices[i] = colIndices[i] * data.getNumRows();
+		}
 		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);
 	}
@@ -41,7 +47,8 @@ public class ReaderColumnSelectionBitSet extends ReaderColumnSelection {
 			return null;
 		_lastRow++;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data.get(_lastRow * _colIndexes.length + i) ? 1 : 0;
+			reusableArr[i] = _data[_colIndexes[i]];
+			_colIndexes[i] += 1;
 		}
 		return reusableReturn;
 	}

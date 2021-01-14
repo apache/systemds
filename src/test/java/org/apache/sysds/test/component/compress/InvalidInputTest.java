@@ -35,7 +35,7 @@ public class InvalidInputTest {
         MatrixBlock a = new MatrixBlock(10,5,true);
         MatrixBlock b = new MatrixBlock(5,10,true);
         // Not the typical way of allocating a Compressed Matrix Block
-        MatrixBlock c = new CompressedMatrixBlock(10, 4, true); 
+        MatrixBlock c = new CompressedMatrixBlock(10, 4); 
         AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(k);
         c.aggregateBinaryOperations(a, b, new MatrixBlock(), abop);
     }

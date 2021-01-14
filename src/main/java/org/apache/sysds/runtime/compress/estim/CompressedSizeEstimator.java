@@ -206,4 +206,8 @@ public abstract class CompressedSizeEstimator {
 		}
 		return colIndexes;
 	}
+
+	public MatrixBlock getSample(){
+		return _data;
+	}
 }

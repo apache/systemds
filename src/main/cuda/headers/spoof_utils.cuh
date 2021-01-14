@@ -265,7 +265,10 @@ template<typename T>
 __device__ T vectMax(T* a, int ai, int len) {
 	MaxOp<T> agg_op;
 	IdentityOp<T> load_op;
-	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
+	T result = BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
+	if (debug_row() && debug_thread())
+		printf("bid=%d, tid=%d, vectMax=%4.3f\n", blockIdx.x, threadIdx.x, result);
+	return result;
 }
 
 template<typename T>
@@ -318,16 +321,6 @@ __device__ void vectWrite(T* a, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
 template<typename T>
 __device__ void vectWrite(T* a, T* c, uint32_t ci, uint32_t len) {
     vectWrite(a, c, 0, ci, len);
-}
-
-template<typename T>
-int vectDivWrite(T* a, T b, T* c, uint32_t ai, uint32_t len) {
-	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
-}
-
-template<typename T>
-int vectDivWrite(T a, T* b, T* c, uint32_t ai, uint32_t len) {
-	return vectWrite_<T, DivOp<T>>(a, b, c, ai, 0, len);
 }
 
 template<typename T>
@@ -439,7 +432,7 @@ int vectMatrixMult(T* a, MatrixAccessor<T>& b, T* c, uint32_t ai, uint32_t bi, u
 
 template<typename T>
 Vector<T>& vectPlusWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWriteBinary<T, SumOp<T>>(a, b, ai, len, fop);
+	return vectWriteBinary<T, SumOp<T>>(a, b, ai, len, fop, "Plus");
 }
 
 template<typename T>
@@ -454,7 +447,7 @@ Vector<T>& vectPlusWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, Spo
 
 template<typename T>
 Vector<T>& vectMinusWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWriteBinary<T, MinusOp<T>>(a, b, ai, len, fop);
+	return vectWriteBinary<T, MinusOp<T>>(a, b, ai, len, fop, "Minus");
 }
 
 template<typename T>
@@ -469,9 +462,6 @@ Vector<T>& vectMinusWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, Sp
 
 template<typename T>
 Vector<T>& vectMultWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-//	if(blockIdx.x == 1 && threadIdx.x < 2)
-//		printf("vectMultWrite: bid=%d, tid=%d, ai=%d, ci=%d, len=%d\n", blockIdx.x, threadIdx.x, ai, 0, len);
-	
 	return vectWriteBinary<T, ProductOp<T>>(a, b, ai, len, fop);
 }
 
@@ -482,7 +472,7 @@ Vector<T>& vectMultWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, Spo
 
 template<typename T>
 Vector<T>& vectDivWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWriteBinary<T, DivOp<T>>(a, b, ai, len, fop);
+	return vectWriteBinary<T, DivOp<T>>(a, b, ai, len, fop, "Div");
 }
 
 template<typename T>
@@ -517,7 +507,7 @@ Vector<T>& vectGreaterWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fo
 
 template<typename T>
 Vector<T>& vectLessequalWrite(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
-	return vectWriteBinary<T, LessEqualOp<T>>(a, b, ai, len, fop);
+	return vectWriteBinary<T, LessEqualOp<T>>(a, b, ai, len, fop, "Lessequal");
 }
 
 template<typename T>
@@ -567,12 +557,12 @@ void vectMultWrite(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, uint
  * Unary to intermediate
  */
 
- template<typename T>
+template<typename T>
 Vector<T>& vectExpWrite(T* a, int ai, int len, SpoofOp<T>* fop) {
 	return vectWriteUnary<T, ExpOp<T>>(a, ai, len, fop);
 }
 
- template<typename T>
+template<typename T>
 Vector<T>& vectSignWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
 	return vectWriteUnary<T, SignOp<T>>(a, ai, len, fop);
 }
@@ -597,6 +587,11 @@ Vector<T>& vectCumsumWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
 	if(debug_row() && debug_thread())
 		printf("vectCumsumWrite: TBI\n");
 	return fop->getTempStorage(len);
+}
+
+template<typename T>
+Vector<T>& vectPow2Write(T* a, int ai, int len, SpoofOp<T>* fop) {
+	return vectWriteUnary<T, Pow2Op<T>>(a, ai, len, fop);
 }
 
 /* --------------------------------------------------------------------------------------------------------------------

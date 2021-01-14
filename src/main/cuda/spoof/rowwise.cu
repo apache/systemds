@@ -64,5 +64,11 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c
 	SpoofRowwiseOp<T, NUM_B, NUM_TMP_VECT, TMP_VECT_LEN> spoof_op(a, b, c, scalars, tmp_stor, grix + rix);
 	uint32_t ai = rix * a->cols;
 	uint32_t ci = rix * c->cols;
+//	if(debug_row() && debug_thread()) {
+//		printf("c num cols = %d\n", c->cols);
+//		for (auto i = 0; i < c->cols; i++)
+//			printf("%4.3f ", c->data[i]);
+//
+//	}
 	spoof_op.exec(ai, ci, rix);
 };

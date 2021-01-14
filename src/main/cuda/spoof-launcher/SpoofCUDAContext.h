@@ -108,6 +108,7 @@ public:
 
 			if(out != nullptr) {
 				CHECK_CUDART(cudaMalloc((void **) &d_out, sizeof(Matrix<T>)));
+				//CHECK_CUDART(cudaMemset(out->data, 0, out->rows*out->cols*sizeof(T)));
 				CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void *>(out), sizeof(Matrix<T>),
 						cudaMemcpyHostToDevice));
 			}

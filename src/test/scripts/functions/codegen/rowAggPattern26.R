@@ -24,9 +24,16 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-X = matrix(seq(1,6000), 600, 10, byrow=TRUE);
-P = matrix(seq(1,3000), 600, 5, byrow=TRUE);
+X = matrix(seq(1,60), 6, 10, byrow=TRUE);
+P = matrix(seq(1,30), 6, 5, byrow=TRUE);
+
+print.table(X, digits=3, zero.print = ".")
+
+print.table(P, digits=3, zero.print = ".")
+
 
 R = t(P) %*% X;
+
+print.table(R, digits=3, zero.print = ".")
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

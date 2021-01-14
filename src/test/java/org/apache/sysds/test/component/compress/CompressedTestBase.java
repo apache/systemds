@@ -948,7 +948,7 @@ public abstract class CompressedTestBase extends TestBase {
 				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
 			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
 				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString(), true);
+				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
 			else
 				TestUtils.compareMatricesBitAvgDistance(d1, d2, 24000, 512, this.toString());
 		}

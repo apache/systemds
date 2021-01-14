@@ -103,4 +103,11 @@ struct GreaterOp {
     }
 };
 
+template<typename T>
+struct Pow2Op {
+	__device__  __forceinline__ static T exec(T a, T b) {
+		return a * a;
+	}
+};
+
 #endif //SYSTEMDS_OPERATORS_CUH

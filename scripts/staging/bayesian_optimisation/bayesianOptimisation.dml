@@ -1,5 +1,3 @@
-#s_bayesianOptimisation = function(string funcNameToMaximize, List[String] paramNames, List[Unknown] paramValues) return (List[String] optiHyperParams) {
-
 # INPUT PARAMETERS:
 # -----------------------------------------------------------------------------------------------------
 # NAME           TYPE           DEFAULT  MEANING
@@ -28,18 +26,20 @@ print(funcNameToMaximize);
 print(iterations);
 
 
-kernel_gaus = function(Matrix[Double] X1, Matrix[Double] X2, Double scale)
+kernel_gaus = function(Matrix[Double] X1, Matrix[Double] X2, Double variance)
   return (Matrix[Double] result)
 {
-    print("called gaus");
-    result = X1;
+
+    #TODO: What to do about multiple dimensional matrix?
+    square_distance = abs((X1 - t(X2))%*%t(X1-t(X2)));
+    result = exp((-1)*square_distance/(2 * variance));
 }
 
 l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B)
   return (Matrix[Double] loss)
-{    
+{
     print("called train function");
-     loss = as.matrix(sum((y - X%*%B)^2));
+    loss = as.matrix(sum((y - X%*%B)^2));
 }
 
 acquisition = function(Matrix[Double] X, Matrix[Double] y) 
@@ -66,7 +66,6 @@ m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTr
 
 
     # loop
-
     for (i in 1:iterations) {
         print("iteration" + i);
 
@@ -74,12 +73,13 @@ m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTr
         aquisition_result = eval(fAqu, aArgs);
 
         #tArgs = list(
+        #eval(fTain, tArgs);
 
-        kArgs = list(X, X, scale);
-        train_result = eval(kernel, kArgs);
+        kArgs = list(X, X, 2);
+        kernel_result = eval(kernel, kArgs);
 
 
-        print(toString(train_result));
+        print(toString(kernel_result));
     }
     B = X;
     opt = as.frame(y);

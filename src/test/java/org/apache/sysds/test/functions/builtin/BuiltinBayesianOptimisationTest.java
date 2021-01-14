@@ -17,7 +17,7 @@ public class BuiltinBayesianOptimisationTest extends AutomatedTestBase {
     private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinBayesianOptimisationTest.class.getSimpleName() + "/";
 
 	private final static int rows = 300;
-	private final static int cols = 20;
+	private final static int cols = 1;//20;
 
 	@Override
 	public void setUp()

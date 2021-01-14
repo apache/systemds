@@ -17,20 +17,22 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.readers;
 
 import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class ReaderColumnSelectionDenseTransposed extends ReaderColumnSelection {
-	protected MatrixBlock _data;
+public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumnSelection {
+	private DenseBlock _data;
 
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionDenseTransposed(MatrixBlock data, int[] colIndices) {
-		super(colIndices, data.getNumColumns() );
-		_data = data;
+	public ReaderColumnSelectionDenseMultiBlockTransposed(MatrixBlock data, int[] colIndices) {
+		super(colIndices.clone(), data.getNumColumns() );
+		_data = data.getDenseBlock();
+
 		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);
 	}
@@ -40,7 +42,7 @@ public class ReaderColumnSelectionDenseTransposed extends ReaderColumnSelection 
 			return null;
 		_lastRow++;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data.quickGetValue(_colIndexes[i], _lastRow);
+			reusableArr[i] = _data.get(_colIndexes[i],_lastRow);
 		}
 		return reusableReturn;
 	}

@@ -263,7 +263,7 @@ public class Dictionary extends ADictionary {
 			sb.append(_values[i]);
 			sb.append((i) % (colIndexes) == colIndexes - 1 ? " : " : ", ");
 		}
-		if(_values != null && _values.length > 1){
+		if(_values != null && _values.length > 0){
 			sb.append(_values[_values.length-1]);
 		}
 		sb.append("]");

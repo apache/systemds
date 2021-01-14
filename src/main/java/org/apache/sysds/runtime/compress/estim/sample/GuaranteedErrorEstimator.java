@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.estim.sample;
 
 import java.util.HashMap;
 
-import org.apache.sysds.runtime.compress.ReaderColumnSelection;
+import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 
 public class GuaranteedErrorEstimator {

@@ -106,10 +106,12 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	 * 
 	 * @param rl     number of rows in the block
 	 * @param cl     number of columns
-	 * @param sparse true if the UNCOMPRESSED representation of the block should be sparse
 	 */
-	public CompressedMatrixBlock(int rl, int cl, boolean sparse) {
-		super(rl, cl, sparse);
+	public CompressedMatrixBlock(int rl, int cl) {
+		super(rl, cl, true);
+		sparseBlock = null;
+		denseBlock = null;
+		nonZeros = -1;
 	}
 
 	/**
@@ -361,7 +363,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		// init result matrix
 		CompressedMatrixBlock ret2 = null;
 		if(ret == null || !(ret instanceof CompressedMatrixBlock)) {
-			ret2 = new CompressedMatrixBlock(m, n, isInSparseFormat());
+			ret2 = new CompressedMatrixBlock(m, n);
 		}
 		else {
 			ret2 = (CompressedMatrixBlock) ret;

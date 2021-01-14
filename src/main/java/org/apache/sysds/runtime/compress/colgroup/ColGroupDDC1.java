@@ -178,13 +178,13 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
-		if(op.sparseSafe || val0 == 0 || !_zeros) {
+		boolean isSparseSafeOp = op.sparseSafe || val0 == 0 || !_zeros;
+		if(isSparseSafeOp) 
 			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op), _data, _zeros, getCachedCounts());
-		}
-		else {
+		else 
 			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false,
 				getCachedCounts());
-		}
+		
 	}
 
 	@Override

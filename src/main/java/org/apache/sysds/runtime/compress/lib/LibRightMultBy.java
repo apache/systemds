@@ -235,28 +235,20 @@ public class LibRightMultBy {
 			ArrayList<RightMatrixMultTask> tasks = new ArrayList<>();
 
 			final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
-			int blklenRows = Math.max(blkz, (int) (Math.ceil((double) ret.getNumRows() / (2 * k))));
-			// int blklenRows = ret.getNumRows();
-			blklenRows = 4 * blkz;
+			int blklenRows = blkz * 2 / ret.getNumColumns();
+
 			try {
 				List<Future<Pair<int[], double[]>>> ag = pool.invokeAll(preAggregate(colGroups, that, that, v));
-				// DDC and RLE
+			
 				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
 					RightMatrixMultTask rmmt = new RightMatrixMultTask(colGroups, retV, ag, v, that.getNumColumns(),
-						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), false);
+						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()));
 					tasks.add(rmmt);
 				}
-				// blklenRows = // (blklenRows % blkz != 0) ? blkz - blklenRows % blkz : 0;
-				// OLE!
-				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
-					RightMatrixMultTask rmmt = new RightMatrixMultTask(colGroups, retV, ag, v, that.getNumColumns(),
-						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), true);
-					tasks.add(rmmt);
-				}
+
 				for(Future<Object> future : pool.invokeAll(tasks))
 					future.get();
-				tasks.clear();
-
+				pool.shutdown();
 			}
 			catch(InterruptedException | ExecutionException e) {
 				throw new DMLRuntimeException(e);
@@ -360,7 +352,6 @@ public class LibRightMultBy {
 
 	private static class RightMatrixMultTask implements Callable<Object> {
 		private final List<ColGroup> _colGroups;
-		// private final double[] _thatV;
 		private final double[] _retV;
 		private final List<Future<Pair<int[], double[]>>> _aggB;
 		private final Pair<Integer, int[]> _v;
@@ -368,41 +359,26 @@ public class LibRightMultBy {
 
 		private final int _rl;
 		private final int _ru;
-		private final boolean _skipOle;
 
 		protected RightMatrixMultTask(List<ColGroup> groups, double[] retV, List<Future<Pair<int[], double[]>>> aggB,
-			Pair<Integer, int[]> v, int numColumns, int rl, int ru, boolean skipOle) {
+			Pair<Integer, int[]> v, int numColumns, int rl, int ru) {
 			_colGroups = groups;
-			// _thatV = thatV;
 			_retV = retV;
 			_aggB = aggB;
 			_v = v;
 			_numColumns = numColumns;
 			_rl = rl;
 			_ru = ru;
-			_skipOle = skipOle;
 		}
 
 		@Override
 		public Object call() {
 			try {
-				ColGroupValue.setupThreadLocalMemory((_v.getLeft()));
+				ColGroupValue.setupThreadLocalMemory((_v.getLeft() + 1));
 				for(int j = 0; j < _colGroups.size(); j++) {
 					Pair<int[], double[]> aggb = _aggB.get(j).get();
-					if(_colGroups.get(j) instanceof ColGroupOLE) {
-						if(_skipOle) {
-							_colGroups.get(j)
-								.rightMultByMatrix(aggb.getLeft(), aggb.getRight(), _retV, _numColumns, _rl, _ru);
-						}
-					}
-					else {
-						if(!_skipOle) {
-							_colGroups.get(j)
-								.rightMultByMatrix(aggb.getLeft(), aggb.getRight(), _retV, _numColumns, _rl, _ru);
-						}
-					}
+					_colGroups.get(j).rightMultByMatrix(aggb.getLeft(), aggb.getRight(), _retV, _numColumns, _rl, _ru);
 				}
-				ColGroupValue.cleanupThreadLocalMemory();
 				return null;
 			}
 			catch(Exception e) {

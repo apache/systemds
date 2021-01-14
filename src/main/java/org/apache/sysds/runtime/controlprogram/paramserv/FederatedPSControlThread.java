@@ -60,7 +60,6 @@ import org.apache.sysds.utils.Statistics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -73,7 +72,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	private FederatedData _featuresData;
 	private FederatedData _labelsData;
-	private final long _localStartBatchNumVarID;
 	private final long _modelVarID;
 
 	// runtime balancing
@@ -93,8 +91,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		_numBatchesPerEpoch = numBatchesPerGlobalEpoch;
 		_runtimeBalancing = runtimeBalancing;
 		_weighing = weighing;
-		// generate the IDs for model and batch counter. These get overwritten on the federated worker each time
-		_localStartBatchNumVarID = FederationUtils.getNextFedDataID();
+		// generate the ID for the model
 		_modelVarID = FederationUtils.getNextFedDataID();
 	}
 
@@ -168,7 +165,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					_inst.getFunctionName(),
 					_ps.getAggInst().getFunctionName(),
 					_ec.getListObject("hyperparams"),
-					_localStartBatchNumVarID,
 					_modelVarID
 				)
 		));
@@ -196,12 +192,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		private final String _gradientsFunctionName;
 		private final String _aggregationFunctionName;
 		private final ListObject _hyperParams;
-		private final long _batchCounterVarID;
 		private final long _modelVarID;
 
 		protected SetupFederatedWorker(long batchSize, long dataSize, int possibleBatchesPerLocalEpoch,
 			String programString, String namespace, String gradientsFunctionName, String aggregationFunctionName,
-			ListObject hyperParams, long batchCounterVarID, long modelVarID)
+			ListObject hyperParams, long modelVarID)
 		{
 			super(new long[]{});
 			_batchSize = batchSize;
@@ -212,7 +207,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			_gradientsFunctionName = gradientsFunctionName;
 			_aggregationFunctionName = aggregationFunctionName;
 			_hyperParams = hyperParams;
-			_batchCounterVarID = batchCounterVarID;
 			_modelVarID = modelVarID;
 		}
 
@@ -229,7 +223,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable(Statement.PS_FED_GRADIENTS_FNAME, new StringObject(_gradientsFunctionName));
 			ec.setVariable(Statement.PS_FED_AGGREGATION_FNAME, new StringObject(_aggregationFunctionName));
 			ec.setVariable(Statement.PS_HYPER_PARAMS, _hyperParams);
-			ec.setVariable(Statement.PS_FED_BATCHCOUNTER_VARID, new IntObject(_batchCounterVarID));
 			ec.setVariable(Statement.PS_FED_MODEL_VARID, new IntObject(_modelVarID));
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
@@ -280,7 +273,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.removeVariable(Statement.PS_FED_NAMESPACE);
 			ec.removeVariable(Statement.PS_FED_GRADIENTS_FNAME);
 			ec.removeVariable(Statement.PS_FED_AGGREGATION_FNAME);
-			ec.removeVariable(Statement.PS_FED_BATCHCOUNTER_VARID);
 			ec.removeVariable(Statement.PS_FED_MODEL_VARID);
 			ParamservUtils.cleanupListObject(ec, Statement.PS_HYPER_PARAMS);
 			
@@ -408,15 +400,12 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		int numBatchesToCompute, int localStartBatchNum, boolean localUpdate)
 	{
 		Timing tFedCommunication = DMLScript.STATISTICS ? new Timing(true) : null;
-		// put local start batch num on federated worker
-		Future<FederatedResponse> putBatchCounterResponse = _featuresData.executeFederatedOperation(
-			new FederatedRequest(RequestType.PUT_VAR, _localStartBatchNumVarID, new IntObject(localStartBatchNum)));
 		// put current model on federated worker
 		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.PUT_VAR, _modelVarID, model));
 
 		try {
-			if(!putParamsResponse.get().isSuccessful() || !putBatchCounterResponse.get().isSuccessful())
+			if(!putParamsResponse.get().isSuccessful())
 				throw new DMLRuntimeException("FederatedLocalPSThread: put was not successful");
 		}
 		catch(Exception e) {
@@ -427,7 +416,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.EXEC_UDF, _featuresData.getVarID(),
 				new federatedComputeGradientsForNBatches(new long[]{_featuresData.getVarID(), _labelsData.getVarID(),
-				_localStartBatchNumVarID, _modelVarID}, numBatchesToCompute, localUpdate)
+				_modelVarID}, numBatchesToCompute, localUpdate, localStartBatchNum)
 		));
 
 		try {
@@ -454,11 +443,13 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		private static final long serialVersionUID = -3075901536748794832L;
 		int _numBatchesToCompute;
 		boolean _localUpdate;
+		int _localStartBatchNum;
 
-		protected federatedComputeGradientsForNBatches(long[] inIDs, int numBatchesToCompute, boolean localUpdate) {
+		protected federatedComputeGradientsForNBatches(long[] inIDs, int numBatchesToCompute, boolean localUpdate, int localStartBatchNum) {
 			super(inIDs);
 			_numBatchesToCompute = numBatchesToCompute;
 			_localUpdate = localUpdate;
+			_localStartBatchNum = localStartBatchNum;
 		}
 
 		@Override
@@ -467,8 +458,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// read in data by varid
 			MatrixObject features = (MatrixObject) data[0];
 			MatrixObject labels = (MatrixObject) data[1];
-			int localStartBatchNum = (int) ((IntObject) data[2]).getLongValue();
-			ListObject model = (ListObject) data[3];
+			ListObject model = (ListObject) data[2];
 
 			// get data from execution context
 			long batchSize = ((IntObject) ec.getVariable(Statement.PS_FED_BATCH_SIZE)).getLongValue();
@@ -509,7 +499,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			}
 
 			ListObject accGradients = null;
-			int currentLocalBatchNumber = localStartBatchNum;
+			int currentLocalBatchNumber = _localStartBatchNum;
 			// prepare execution context
 			ec.setVariable(Statement.PS_MODEL, model);
 			for (int batchCounter = 0; batchCounter < _numBatchesToCompute; batchCounter++) {
@@ -550,7 +540,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				ParamservUtils.cleanupListObject(ec, gradientsOutput.getName());
 				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
 				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
-				ec.removeVariable(ec.getVariable(Statement.PS_FED_BATCHCOUNTER_VARID).toString());
 			}
 
 			// model clean up

@@ -135,7 +135,7 @@ public class LibRelationalOp {
         Arrays.fill(values, 1);
 
         newColGroups.add(new ColGroupConst(colIndexes, rows, new Dictionary(values)));
-        CompressedMatrixBlock ret = new CompressedMatrixBlock(rows, cols, true);
+        CompressedMatrixBlock ret = new CompressedMatrixBlock(rows, cols);
         ret.allocateColGroupList(newColGroups);
         ret.setNonZeros(cols * rows);
         ret.setOverlapping(false);

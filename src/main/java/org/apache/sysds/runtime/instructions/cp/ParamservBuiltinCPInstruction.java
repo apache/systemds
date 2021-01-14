@@ -126,6 +126,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runFederated(ExecutionContext ec) {
+		Timing tExecutionTime = DMLScript.STATISTICS ? new Timing(true) : null;
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		LOG.info("PARAMETER SERVER");
 		LOG.info("[+] Running in federated mode");
@@ -203,6 +204,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				ret.get(); //error handling
 			// Fetch the final model from ps
 			ec.setVariable(output.getName(), ps.getResult());
+			if (DMLScript.STATISTICS)
+				Statistics.accPSExecutionTime((long) tExecutionTime.stop());
 		} catch (InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: unknown error: ", e);
 		} finally {

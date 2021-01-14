@@ -117,6 +117,7 @@ public class Statistics
 	private static final LongAdder sparkBroadcastCount = new LongAdder();
 
 	// Paramserv function stats (time is in milli sec)
+	private static final LongAdder psExecutionTime = new LongAdder();
 	private static final LongAdder psNumWorkers = new LongAdder();
 	private static final LongAdder psSetupTime = new LongAdder();
 	private static final LongAdder psGradientComputeTime = new LongAdder();
@@ -566,6 +567,10 @@ public class Statistics
 
 	public static void incWorkerNumber(long n) {
 		psNumWorkers.add(n);
+	}
+
+	public static void accPSExecutionTime(long n) {
+		psExecutionTime.add(n);
 	}
 
 	public static void accPSSetupTime(long t) {
@@ -1035,6 +1040,7 @@ public class Statistics
 								sparkCollect.longValue()*1e-9));
 			}
 			if (psNumWorkers.longValue() > 0) {
+				sb.append(String.format("Paramserv total execution time:\t%.3f secs.\n", psExecutionTime.doubleValue() / 1000));
 				sb.append(String.format("Paramserv total num workers:\t%d.\n", psNumWorkers.longValue()));
 				sb.append(String.format("Paramserv setup time:\t\t%.3f secs.\n", psSetupTime.doubleValue() / 1000));
 

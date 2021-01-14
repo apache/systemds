@@ -12,44 +12,6 @@
 #
 source("./scripts/staging/scalable_linalg/linalg_decomp.dml") as decomp
 
-funcNameToMaximize = $1;
-#paramNames = read($2);
-#paramValues = read($3);
-paramNames = list("reg", "tol", "maxi");
-paramValues = list(10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
-X = read($2);
-y = read($3);
-
-iterations = as.integer($4)
-outputDir = $5
-scale = 1
-#paramValues = $3;
-#print(funcNameToMaximize);
-#print(toString(paramNames));
-#print(toString(paramValues));
-#print(iterations);
-
-
-kernel_gaus = function(Matrix[Double] X1, Matrix[Double] X2, Double variance)
-  return (Matrix[Double] result)
-{
-    #TODO: What to do about multiple dimensional matrix?
-    square_distance = abs((X1 - t(X2))%*%t(X1-t(X2)));
-    result = exp((-1)*square_distance/(2 * variance));
-}
-
-l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B)
-  return (Matrix[Double] loss)
-{
-    print("called train function");
-    loss = as.matrix(sum((y - X%*%B)^2));
-}
-
-acquisition = function(Matrix[Double] X, Matrix[Double] y) 
-return (Double result) {
-    print("called aquisition");
-    result = 1;
-}
 
 m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTrain, String fAqu, String kernel, List[String] params, List[Unknown] paramValues, Integer iterations, Double scale=1, Boolean verbose = TRUE)
   return (Matrix[Double] B, Frame[Unknown] opt)
@@ -66,7 +28,6 @@ m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTr
       vect = as.matrix(paramValues[j,1]);
       paramVals[j,1:nrow(vect)] = t(vect);
     }
-
 
     # loop
     for (i in 1:iterations) {
@@ -92,13 +53,19 @@ m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTr
 
 
 N = 200;
-Xtrain = X[1:N,];
-ytrain = y[1:N,];
-Xtest = X[(N+1):nrow(X),];
-ytest = y[(N+1):nrow(X),];
+#Xtrain = X[1:N,];
+#ytrain = y[1:N,];
+#Xtest = X[(N+1):nrow(X),];
+#ytest = y[(N+1):nrow(X),];
+Xtrain = seq(0,10,0.1);
+trainFunctin = "sin";
+yTrain = Xtrain[1:50];
+yTarget = sin(yTrain);
 
+print(toString(Xtrain));
+print(toString(yTrain));
+print(toString(yTarget));
 
-result = m_bayesianOptimisation(Xtrain, ytrain, "lm", "l2norm", "kernel_gaus", paramNames, paramValues, iterations, 1, TRUE);
+result = m_bayesianOptimisation(Xtrain, yTrain, "sin", "l2norm", "kernel_gaus", paramNames, paramValues, iterations, 1, TRUE);
 
-write(result, outputDir);
 

@@ -2,9 +2,13 @@
 # -----------------------------------------------------------------------------------------------------
 # NAME           TYPE           DEFAULT  MEANING
 # -----------------------------------------------------------------------------------------------------
+# X              Matrix[Double]  ---     Model.
+# y              Matrix[Double]  ---     Targets.
 # fAqu           String          ---     Name of the aquisition function to optimize.
+# kernel         String          ---     Kernelfunction to use.
 # paramNames     Matrix[String]  ---     Name of the hyper parameters to optimize.
 # paramValues    Matrix[Double]  ---     Values of the hyper parameters to optimize.
+# iterations     Integer         ---     Number of training interations.  
 #
 source("./scripts/staging/scalable_linalg/linalg_decomp.dml") as decomp
 
@@ -20,16 +24,15 @@ iterations = as.integer($4)
 outputDir = $5
 scale = 1
 #paramValues = $3;
-print(funcNameToMaximize);
+#print(funcNameToMaximize);
 #print(toString(paramNames));
 #print(toString(paramValues));
-print(iterations);
+#print(iterations);
 
 
 kernel_gaus = function(Matrix[Double] X1, Matrix[Double] X2, Double variance)
   return (Matrix[Double] result)
 {
-
     #TODO: What to do about multiple dimensional matrix?
     square_distance = abs((X1 - t(X2))%*%t(X1-t(X2)));
     result = exp((-1)*square_distance/(2 * variance));
@@ -67,7 +70,7 @@ m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTr
 
     # loop
     for (i in 1:iterations) {
-        print("iteration" + i);
+        #print("iteration" + i);
 
         aArgs = list(X, y);
         aquisition_result = eval(fAqu, aArgs);
@@ -79,7 +82,7 @@ m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTr
         kernel_result = eval(kernel, kArgs);
 
 
-        print(toString(kernel_result));
+        #print(toString(kernel_result));
     }
     B = X;
     opt = as.frame(y);

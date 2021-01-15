@@ -23,4 +23,4 @@ X = read($1);
 Y = read($2);
 R = read($3)
 M = decisionTree(X = X, Y = Y, R = R);
-write(M, $3);
+write(M, $4);

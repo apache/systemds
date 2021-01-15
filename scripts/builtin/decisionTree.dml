@@ -63,9 +63,6 @@ m_decisionTree = function(
     impurity_queue = matrix(1, rows=1, cols=1)
     use_cols_queue = matrix(1, rows=ncol(X), cols=1)   # Add fist bool Vector with all cols <=> (use all cols)
     use_rows_queue = matrix(1, rows=nrow(X), cols=1)   # Add fist bool Vector with all rows <=> (use all rows)
-    # featureQueue = [inputData]
-    # misclassifiedQueue = [-1]
-    # depthQueue = [0]
     queue_length = 1
     M = matrix(0, rows = 0, cols = 0)
     while (queue_length > 0) {
@@ -127,7 +124,6 @@ dataQueueLength = function(Matrix[Double] queue)  return (Double len) {
 dataQueuePop = function(Matrix[Double] queue)  return (Matrix[Double] new_queue, Matrix[Double] node) {
     node = matrix(queue[,1], rows=1, cols=nrow(queue))     # reshape to force the creation of a new object
     node = matrix(node, rows=nrow(queue), cols=1)          # reshape to force the creation of a new object
-    #node = queue[,1]
     len = dataQueueLength(queue)
     if (len < 2) {
         new_queue = matrix(0,0,0)

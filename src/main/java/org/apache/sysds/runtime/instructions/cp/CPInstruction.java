@@ -95,6 +95,8 @@ public abstract class CPInstruction extends Instruction
 		
 		//robustness federated instructions (runtime assignment)
 		tmp = FEDInstructionUtils.checkAndReplaceCP(tmp, ec);
+		//NOTE: Retracing of lineage is not needed as the lineage trace
+		//is same for an instruction and its FED version.
 
 		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
 		

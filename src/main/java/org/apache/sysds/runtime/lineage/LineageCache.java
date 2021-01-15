@@ -36,12 +36,14 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -84,8 +86,10 @@ public class LineageCache
 		//NOTE: the check for computation CP instructions ensures that the output
 		// will always fit in memory and hence can be pinned unconditionally
 		if (LineageCacheConfig.isReusable(inst, ec)) {
-			ComputationCPInstruction cinst = (ComputationCPInstruction) inst;
-			LineageItem instLI = cinst.getLineageItem(ec).getValue();
+			ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
+			ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null; 
+				
+			LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue():cfinst.getLineageItem(ec).getValue();
 			List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liList = new ArrayList<>();
@@ -119,7 +123,10 @@ public class LineageCache
 					//create a placeholder if no reuse to avoid redundancy
 					//(e.g., concurrent threads that try to start the computation)
 					if(e == null && isMarkedForCaching(inst, ec)) {
-						putIntern(item.getKey(), cinst.output.getDataType(), null, null,  0);
+						if (cinst != null)
+							putIntern(item.getKey(), cinst.output.getDataType(), null, null,  0);
+						else
+							putIntern(item.getKey(), cfinst.output.getDataType(), null, null,  0);
 						//FIXME: different o/p datatypes for MultiReturnBuiltins.
 					}
 				}
@@ -134,9 +141,11 @@ public class LineageCache
 					if (inst instanceof MultiReturnBuiltinCPInstruction)
 						outName = ((MultiReturnBuiltinCPInstruction)inst).
 							getOutput(entry.getKey().getOpcode().charAt(entry.getKey().getOpcode().length()-1)-'0').getName(); 
-					else
+					else if (inst instanceof ComputationCPInstruction)
 						outName = cinst.output.getName();
-
+					else
+						outName = cfinst.output.getName();
+					
 					if (e.isMatrixValue())
 						ec.setMatrixOutput(outName, e.getMBValue());
 					else
@@ -248,7 +257,9 @@ public class LineageCache
 		if (LineageCacheConfig.isReusable(inst, ec) ) {
 			LineageItem item = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 			//This method is called only to put matrix value
-			MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
+			MatrixObject mo = inst instanceof ComputationCPInstruction ? 
+					ec.getMatrixObject(((ComputationCPInstruction) inst).output) :
+					ec.getMatrixObject(((ComputationFEDInstruction) inst).output);
 			synchronized( _cache ) {
 				putIntern(item, DataType.MATRIX, mo.acquireReadAndRelease(), null, computetime);
 			}
@@ -278,7 +289,9 @@ public class LineageCache
 				}
 			}
 			else
-				liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output)));
+				liData = inst instanceof ComputationCPInstruction ? 
+						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output))) :
+						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
 			synchronized( _cache ) {
 				for (Pair<LineageItem, Data> entry : liData) {
 					LineageItem item = entry.getKey();
@@ -287,6 +300,13 @@ public class LineageCache
 
 					if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
 						// Reusable instructions can return a frame (rightIndex). Remove placeholders.
+						_cache.remove(item);
+						continue;
+					}
+					
+					if (LineageCacheConfig.isOutputFederated(inst, data)) {
+						// Do not cache federated outputs (in the coordinator)
+						// Cannot skip putting the placeholder as the above is only known after execution
 						_cache.remove(item);
 						continue;
 					}
@@ -456,8 +476,13 @@ public class LineageCache
 		if (!LineageCacheConfig.getCompAssRW())
 			return true;
 
-		if (((ComputationCPInstruction)inst).output.isMatrix()) {
-			MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)inst).output);
+		CPOperand output = inst instanceof ComputationCPInstruction ? 
+				((ComputationCPInstruction)inst).output :
+				((ComputationFEDInstruction)inst).output;
+		if (output.isMatrix()) {
+			MatrixObject mo = inst instanceof ComputationCPInstruction ? 
+					ec.getMatrixObject(((ComputationCPInstruction)inst).output) :
+					ec.getMatrixObject(((ComputationFEDInstruction)inst).output);
 			//limit this to full reuse as partial reuse is applicable even for loop dependent operation
 			return !(LineageCacheConfig.getCacheType() == ReuseCacheType.REUSE_FULL  
 				&& !mo.isMarked());

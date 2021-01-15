@@ -19,6 +19,13 @@
 
 package org.apache.sysds.test.functions.transform;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -186,5 +193,24 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			rtplatform = rtold;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
+	}
+
+	private Encoder writeReadCompare (Encoder encoderIn) throws IOException, ClassNotFoundException
+	{
+		FileOutputStream fileOutputStream = new FileOutputStream("f.txt");
+		ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+		objectOutputStream.writeObject(encoderIn);
+		objectOutputStream.flush();
+		objectOutputStream.close();
+
+		FileInputStream fileInputStream = new FileInputStream("f.txt");
+		ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+		Encoder encoderOut = (Encoder) objectInputStream.readObject();
+		objectInputStream.close();
+
+		Assert.assertArrayEquals(encoderIn.getColList(), encoderOut.getColList());
+		Assert.assertEquals(encoderIn.getNumCols(), encoderOut.getNumCols());
+
+		return encoderOut;
 	}
 }

@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.io.Serializable;
 
 import org.apache.sysds.common.Types.ValueType;
@@ -31,7 +35,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * interface for decoding matrices to frames.
  * 
  */
-public abstract class Decoder implements Serializable
+public abstract class Decoder implements Externalizable
 {	
 	private static final long serialVersionUID = -1732411001366177787L;
 	
@@ -91,4 +95,31 @@ public abstract class Decoder implements Serializable
 	}
 	
 	public abstract void initMetaData(FrameBlock meta);
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default
+	 * hadoop writable serialization for efficient broadcast/rdd serialization.
+	 *
+	 * @param os object output
+	 * @throws IOException if IOException occurs
+	 */
+	@Override
+	public void writeExternal(ObjectOutput os)
+		throws IOException
+	{
+	}
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default
+	 * hadoop writable serialization for efficient broadcast/rdd deserialization.
+	 *
+	 * @param in object input
+	 * @throws IOException if IOException occur
+	 */
+	@Override
+	public void readExternal(ObjectInput in)
+		throws IOException
+	{
+
+	}
 }

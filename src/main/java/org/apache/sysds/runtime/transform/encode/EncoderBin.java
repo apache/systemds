@@ -295,4 +295,19 @@ public class EncoderBin extends Encoder
 			}
 		}
 	}
+
+	@Override public boolean equals(Object o) {
+		if(this == o)
+			return true;
+		if(o == null || getClass() != o.getClass())
+			return false;
+		EncoderBin that = (EncoderBin) o;
+		return Arrays.equals(_numBins, that._numBins) && Arrays.equals(_binMaxs, that._binMaxs);
+	}
+
+	@Override public int hashCode() {
+		int result = Arrays.hashCode(_numBins);
+		result = 31 * result + Arrays.hashCode(_binMaxs);
+		return result;
+	}
 }

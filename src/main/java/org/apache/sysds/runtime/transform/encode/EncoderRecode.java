@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.sysds.runtime.matrix.data.MatrixBlockDataInput;
@@ -178,7 +179,7 @@ public class EncoderRecode extends Encoder
 			map.remove(null);
 			map.remove("");
 		}
-		_rcdMapsPart = null;
+//		_rcdMapsPart = null;
 	}
 
 	@Override
@@ -315,15 +316,6 @@ public class EncoderRecode extends Encoder
 		for(Entry e1 : _rcdMaps.entrySet()) {
 			out.writeInt((Integer) e1.getKey());
 			out.writeInt(((HashMap) e1.getValue()).size());
-//			((HashMap<String, Long>) e1.getValue()).entrySet().forEach(e2 -> {
-//				try {
-//					out.writeUTF(e2.getKey());
-//					out.writeLong((Long) e2.getValue());
-//				}
-//				catch(IOException ex) {
-//					ex.printStackTrace();
-//				}
-//			});
 			for(Entry e2 : ((HashMap<String, Long>) e1.getValue()).entrySet()) {
 				out.writeUTF((String) e2.getKey());
 				out.writeLong((Long) e2.getValue());
@@ -332,19 +324,18 @@ public class EncoderRecode extends Encoder
 	}
 
 	@Override
-	public void read(DataInput in) throws IOException {
+	public void read(DataInput in)
+		throws IOException {
 		int size1 = in.readInt();
 		for(int i = 0; i < size1; i++) {
 			Integer key1 = in.readInt();
 			int size2 = in.readInt();
-
 			HashMap<String, Long> maps = new HashMap<>();
 			for(int j = 0; j < size2; j++){
 				String key2 = in.readUTF();
 				Long value = in.readLong();
 				maps.put(key2, value);
 			}
-
 			_rcdMaps.put(key1, maps);
 		}
 	}
@@ -378,5 +369,18 @@ public class EncoderRecode extends Encoder
 		// using Lop.DATATYPE_PREFIX separator to split token and code
 		int pos = value.toString().lastIndexOf(Lop.DATATYPE_PREFIX);
 		return new String[] {value.substring(0, pos), value.substring(pos+1)};
+	}
+
+	@Override public boolean equals(Object o) {
+		if(this == o)
+			return true;
+		if(o == null || getClass() != o.getClass())
+			return false;
+		EncoderRecode that = (EncoderRecode) o;
+		return Objects.equals(_rcdMaps, that._rcdMaps);
+	}
+
+	@Override public int hashCode() {
+		return Objects.hash(_rcdMaps);
 	}
 }

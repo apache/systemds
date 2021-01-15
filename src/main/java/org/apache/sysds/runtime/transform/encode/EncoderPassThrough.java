@@ -120,4 +120,5 @@ public class EncoderPassThrough extends Encoder
 	public void read(DataInput in) throws IOException {
 		//do nothing
 	}
+
 }

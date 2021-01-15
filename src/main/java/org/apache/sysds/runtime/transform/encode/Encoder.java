@@ -244,11 +244,19 @@ public abstract class Encoder implements Externalizable
 		throws IOException
 	{
 		os.writeInt(_clen);
-		os.writeInt(_colList.length);
-		for(int col : _colList)
-			os.writeInt(col);
+		if(_colList != null) {
+			os.writeInt(_colList.length);
+			for(int col : _colList)
+				os.writeInt(col);
+		} else os.writeInt(0);
 
 		write(os);
+
+//		os.writeInt(_clen);
+//		os.writeInt(_colList.length);
+//		for(int col : _colList)
+//			os.writeInt(col);
+//		write(os);
 	}
 
 	/**
@@ -256,17 +264,26 @@ public abstract class Encoder implements Externalizable
 	 * hadoop writable serialization for efficient broadcast/rdd deserialization.
 	 *
 	 * @param in object input
-	 * @throws IOException, ClassNotFoundException if occur
+	 * @throws IOException if IOException occur
 	 */
 	@Override
 	public void readExternal(ObjectInput in)
 		throws IOException
 	{
 		_clen = in.readInt();
-		_colList = new int[in.readInt()];
-		for(int i = 0; i < _colList.length; i++)
-			_colList[i] = in.readInt();
+		int size1 = in.readInt();
+		if(size1 != 0) {
+			_colList = new int[size1];
+			for(int i = 0; i < _colList.length; i++)
+				_colList[i] = in.readInt();
+		} else _colList = null;
 
 		read(in);
+
+//		_clen = in.readInt();
+//		_colList = new int[in.readInt()];
+//		for(int i = 0; i < _colList.length; i++)
+//			_colList[i] = in.readInt();
+//		read(in);
 	}
 }

@@ -27,6 +27,7 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -56,6 +57,10 @@ public class EncoderComposite extends Encoder
 
 	// needed for _encoders serialization
 	private enum  EncoderType { EncoderBin, EncoderComposite, EncoderDummycode, EncoderFeatureHash, EncoderMVImpute, EncoderOmit, EncoderPassThrough, EncoderRecode };
+
+	public EncoderComposite() {
+		super(null, -1);
+	}
 
 	public EncoderComposite(List<Encoder> encoders) {
 		super(null, -1);
@@ -117,6 +122,19 @@ public class EncoderComposite extends Encoder
 			throw ex;
 		}
 		return out;
+	}
+
+	@Override public boolean equals(Object o) {
+		if(this == o)
+			return true;
+		if(o == null || getClass() != o.getClass())
+			return false;
+		EncoderComposite that = (EncoderComposite) o;
+		return _encoders.equals(that._encoders) && Objects.equals(_meta, that._meta);
+	}
+
+	@Override public int hashCode() {
+		return Objects.hash(_encoders, _meta);
 	}
 
 	@Override
@@ -250,6 +268,7 @@ public class EncoderComposite extends Encoder
 	@Override
 	public void read(DataInput in) throws IOException {
 		int encodersSize = in.readInt();
+		_encoders = new ArrayList<>();
 		for(int i = 0; i < encodersSize; i++) {
 			EncoderType etype = EncoderType.values()[in.readByte()];
 			Encoder encoder = null;

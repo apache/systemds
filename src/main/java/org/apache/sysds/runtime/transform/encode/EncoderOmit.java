@@ -23,6 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
+
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -40,6 +42,21 @@ public class EncoderOmit extends Encoder
 
 	private boolean _federated = false;
 	private boolean[] _rmRows = new boolean[0];
+
+	@Override public boolean equals(Object o) {
+		if(this == o)
+			return true;
+		if(o == null || getClass() != o.getClass())
+			return false;
+		EncoderOmit that = (EncoderOmit) o;
+		return _federated == that._federated && Arrays.equals(_rmRows, that._rmRows);
+	}
+
+	@Override public int hashCode() {
+		int result = Objects.hash(_federated);
+		result = 31 * result + Arrays.hashCode(_rmRows);
+		return result;
+	}
 
 	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException 

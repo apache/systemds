@@ -60,11 +60,19 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 		MatrixObject U = ec.getMatrixObject(input2);
 		MatrixObject V = ec.getMatrixObject(input3);
 		ScalarObject eps = null;
+		MatrixObject MX = null;
 
 		if(qop.hasFourInputs()) {
-			eps = (_input4.getDataType() == DataType.SCALAR) ?
-				ec.getScalarInput(_input4) :
-				new DoubleObject(ec.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
+			if(wdivmm_type == WDivMMType.MULT_MINUS_4_LEFT || wdivmm_type == WDivMMType.MULT_MINUS_4_RIGHT)
+			{
+				MX = ec.getMatrixObject(_input4);
+			}
+			else
+			{
+				eps = (_input4.getDataType() == DataType.SCALAR) ?
+					ec.getScalarInput(_input4) :
+					new DoubleObject(ec.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
+			}
 		}
 
 		if(!(X.isFederated() && !U.isFederated() && !V.isFederated()))
@@ -76,6 +84,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 		FederatedRequest frInit2 = fedMap.broadcast(V);
 
 		FederatedRequest frInit3 = null;
+		FederatedRequest frInit3Arr[] = null;
 		FederatedRequest frCompute1 = null;
 		// broadcast scalar epsilon if there are four inputs
 		if(eps != null)
@@ -86,6 +95,13 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			frCompute1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2, input3, _input4},
 				new long[]{fedMap.getID(), frInit1[0].getID(), frInit2.getID(), frInit3.getID()});
+		}
+		else if(MX != null)
+		{
+			frInit3Arr = fedMap.broadcastSliced(MX, false);
+			frCompute1 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[]{input1, input2, input3, _input4},
+				new long[]{fedMap.getID(), frInit1[0].getID(), frInit2.getID(), frInit3Arr[0].getID()});
 		}
 		else
 		{
@@ -111,6 +127,17 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				frCompute1, frGet1,
 				frCleanup1, frCleanup2, frCleanup3, frCleanup4);
 		}
+		else if(frInit3Arr != null)
+		{
+			FederatedRequest frCleanup4 = fedMap.cleanup(getTID(), frInit3Arr[0].getID());
+			// execute federated instructions
+			fedMap.execute(getTID(), true,
+				frInit1, frInit2);
+			response = fedMap.execute(getTID(), true,
+				frInit3Arr,
+				frCompute1, frGet1,
+				frCleanup1, frCleanup2, frCleanup3, frCleanup4);
+		}
 		else
 		{
 			// execute federated instructions
@@ -126,10 +153,14 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 		}
-		else if(wdivmm_type.isRight())
+		else if(wdivmm_type.isRight() || wdivmm_type.isBasic())
 		{
 			// bind partial results from federated responses
 			ec.setMatrixOutput(output.getName(), FederationUtils.bind(response, false));
+		}
+		else
+		{
+			throw new DMLRuntimeException("Federated WDivMM only supported for BASIC, LEFT or RIGHT variants.");
 		}
 
 	}

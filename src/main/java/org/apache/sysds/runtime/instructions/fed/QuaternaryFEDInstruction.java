@@ -52,8 +52,9 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 			str = str.replace(ExecType.SPARK.name(), ExecType.CP.name());
 			str = str.replace("mapwcemm", "wcemm");
 			str = str.replace("mapwsloss", "wsloss");
-			if(str.contains("redwsloss")) {
+			if(str.contains("redwsloss") || str.contains("redwdivmm")) {
 				str = str.replace("redwsloss", "wsloss");
+				str = str.replace("redwdivmm", "wdivmm");
 				// remove booleans which indicate cacheU and cacheV for redwsloss
 				str = str.replace(Lop.OPERAND_DELIMITOR + "true", "");
 				str = str.replace(Lop.OPERAND_DELIMITOR + "false", "");
@@ -90,13 +91,6 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 					Double.parseDouble(in4.getName())) : new QuaternaryOperator(wcemm_type));
 				return new QuaternaryWCeMMFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
 			}
-			else if(opcode.equals("wsloss")) {
-				final WeightsType weights_type = WeightsType.valueOf(parts[6]);
-				if(weights_type.hasFourInputs())
-					checkDataTypes(DataType.MATRIX, in4);
-				qop = new QuaternaryOperator(weights_type);
-				return new QuaternaryWSLossFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
-			}
 			else if(opcode.equals("wdivmm"))
 			{
 				final WDivMMType wdivmm_type = WDivMMType.valueOf(parts[6]);
@@ -104,6 +98,13 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 					checkDataTypes(new DataType[]{DataType.SCALAR, DataType.MATRIX}, in4);
 				qop = new QuaternaryOperator(wdivmm_type);
 				return new QuaternaryWDivMMFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
+			}
+			else if(opcode.equals("wsloss")) {
+				final WeightsType weights_type = WeightsType.valueOf(parts[6]);
+				if(weights_type.hasFourInputs())
+					checkDataTypes(DataType.MATRIX, in4);
+				qop = new QuaternaryOperator(weights_type);
+				return new QuaternaryWSLossFEDInstruction(qop, in1, in2, in3, in4, out, opcode, str);
 			}
 		}
 		else if(opcode.equals("wsigmoid")) {

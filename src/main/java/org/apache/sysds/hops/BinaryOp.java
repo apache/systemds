@@ -943,7 +943,7 @@ public class BinaryOp extends MultiThreadedHop
 		}
 		else if(getDataType() == DataType.FRAME)
 		{
-			if(getInput().toString().split(",")[2].contains("UtilFunctions.jaccardSim"))
+			if(getInput().toString().contains("UtilFunctions.jaccardSim"))
 			{
 				setDim1(input1.getDim1());
 				setDim2(input1.getDim1());

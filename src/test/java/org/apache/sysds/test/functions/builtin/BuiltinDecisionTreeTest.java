@@ -63,10 +63,10 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
 
             double[][] Y = {
                     {1.0},
-                    {2.0},
-                    {3.0},
-                    {4.0},
-                    {5.0}
+                    {0.0},
+                    {0.0},
+                    {1.0},
+                    {0.0}
             };
 
             double[][] X = {
@@ -87,18 +87,19 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
             runTest(true, false, null, -1);
 
             HashMap<MatrixValue.CellIndex, Double> actual_M = readDMLMatrixFromOutputDir("M");
+            System.out.println("m is " + actual_M);
             HashMap<MatrixValue.CellIndex, Double> expected_M = new HashMap<MatrixValue.CellIndex, Double>();
 
             expected_M.put(new MatrixValue.CellIndex(1,1), 1.0);
             expected_M.put(new MatrixValue.CellIndex(1,3), 3.0);
-            expected_M.put(new MatrixValue.CellIndex(3,1), 5.0);
+            expected_M.put(new MatrixValue.CellIndex(3,1), 2.0);
             expected_M.put(new MatrixValue.CellIndex(1,2), 2.0);
             expected_M.put(new MatrixValue.CellIndex(2,1), 1.0);
             expected_M.put(new MatrixValue.CellIndex(5,1), 1.0);
             expected_M.put(new MatrixValue.CellIndex(4,1), 1.0);
             expected_M.put(new MatrixValue.CellIndex(5,3), 1.0);
             expected_M.put(new MatrixValue.CellIndex(5,2), 1.0);
-            expected_M.put(new MatrixValue.CellIndex(6,1), 3.45);
+            expected_M.put(new MatrixValue.CellIndex(6,1), 3.2);
 
             TestUtils.compareMatrices(expected_M, actual_M, eps, "Expected-DML", "Actual-DML");
         }

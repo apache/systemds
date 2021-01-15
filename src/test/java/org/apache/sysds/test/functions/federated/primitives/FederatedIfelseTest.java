@@ -44,9 +44,6 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 
 	private final static int blocksize = 1024;
 
-	private final static double eps = 1;
-	private final static int minPts = 5;
-
 	@Parameterized.Parameter()
 	public int rows;
 	@Parameterized.Parameter(1)
@@ -144,9 +141,8 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 
 		// compare via files
 		compareResults(1e-9);
-
-
-		//		Assert.assertTrue(heavyHittersContainsString("k+"));
+//		Assert.assertTrue(heavyHittersContainsString("fed_ifelse"));
+//		Assert.assertTrue(heavyHittersContainsString("k+"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

@@ -70,24 +70,23 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase
             };
 
             double[][] X = {
-                    {4.5, 4.0, 3.2, 2.8, 3.5},
-                    {1.9, 2.4, 5.0, 3.4, 2.9},
-                    {2.0, 1.1, 4.2, 4.9, 3.4},
-                    {2.3, 5.0, 3.5, 1.4, 1.8},
-                    {2.1, 1.1, 1.4, 1.0, 1.9},
+                    {4.5, 4.0, 3.0, 2.8, 3.5},
+                    {1.9, 2.4, 1.0, 3.4, 2.9},
+                    {2.0, 1.1, 1.0, 4.9, 3.4},
+                    {2.3, 5.0, 2.0, 1.4, 1.8},
+                    {2.1, 1.1, 3.0, 1.0, 1.9},
             };
             writeInputMatrixWithMTD("X", X, true);
             writeInputMatrixWithMTD("Y", Y, true);
 
             double[][] R = {
-                    {1.0, 1.0, 1.0, 1.0, 1.0},
+                    {1.0, 1.0, 3.0, 1.0, 1.0},
             };
             writeInputMatrixWithMTD("R", R, true);
 
             runTest(true, false, null, -1);
 
             HashMap<MatrixValue.CellIndex, Double> actual_M = readDMLMatrixFromOutputDir("M");
-            System.out.println("m is " + actual_M);
             HashMap<MatrixValue.CellIndex, Double> expected_M = new HashMap<MatrixValue.CellIndex, Double>();
 
             expected_M.put(new MatrixValue.CellIndex(1,1), 1.0);

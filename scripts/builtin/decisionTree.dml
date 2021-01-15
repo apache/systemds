@@ -26,15 +26,14 @@
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded
-# Y             String   ---          Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
-# R             String   " "          Location to read the matrix R which for each feature in X contains the following information
+# X       Matrix[Double]   ---        Feature matrix X; note that X needs to be both recoded and dummy coded
+# Y       Matrix[Double]   ---        Label matrix Y; note that Y needs to be both recoded and dummy coded
+# R       Matrix[Double]   " "        Matrix R which for each feature in X contains the following information
 #                                       - R[1,]: Row Vector which indicates if feature vector is scalar or categorical. 1 indicates
 #                                     a scalar feature vector, other positive Integers indicate the number of categories
 #                                     If R is not provided by default all variables are assumed to be scale
 # bins          Int      20           Number of equiheight bins per scale feature to choose thresholds
 # depth         Int      25           Maximum depth of the learned tree
-# M             String   ---          Location to write matrix M containing the learned tree
 # ---------------------------------------------------------------------------------------------
 # OUTPUT:
 # Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
@@ -142,7 +141,7 @@ dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Doubl
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
-# --------------------- Missuses matrix as a vectors for Doubles -------------------------------------------------------
+# --------------------- Using matrix as a vector for Doubles -------------------------------------------------------
 dataVectorLength = function(Matrix[Double] vector)  return (Double len) {
     len = nrow(vector)
 }
@@ -315,7 +314,7 @@ calcImpurity = function(
             threshold = possible_thresholds[, index]
         }
     }
-          #  [impurity, threshold] = calcImpurityFromThresholds(possible_thresholds)
+    #[impurity, threshold] = calcImpurityFromThresholds(possible_thresholds)
     #impurity = as.scalar(rand(rows=1, cols=1, min=0, max=1, pdf="uniform", sparsity=1))
     #threshold = rand(rows=1, cols=1, min=0, max=100, pdf="uniform", sparsity=1)
 }

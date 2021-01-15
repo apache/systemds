@@ -13,10 +13,9 @@
 source("./scripts/staging/scalable_linalg/linalg_decomp.dml") as decomp
 
 
-m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTrain, String fAqu, String kernel, List[String] params, List[Unknown] paramValues, Integer iterations, Double scale=1, Boolean verbose = TRUE)
+m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTrain, List[String] params, List[Unknown] paramValues, String fAqu, String kernel, Integer iterations, Boolean verbose = TRUE)
   return (Matrix[Double] B, Frame[Unknown] opt)
 {
-
     numParams = length(params);
     paramLens = matrix(0, numParams, 1);
     for( j in 1:numParams ) {
@@ -33,39 +32,18 @@ m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTr
     for (i in 1:iterations) {
         #print("iteration" + i);
 
-        aArgs = list(X, y);
-        aquisition_result = eval(fAqu, aArgs);
+        kArgs = list(X, X);
+        kernel_result = eval(kernel, kArgs);
+
+        #aArgs = list(X, y);
+        #aquisition_result = eval(fAqu, aArgs);
 
         #tArgs = list(
         #eval(fTain, tArgs);
 
-        kArgs = list(X, X, 2);
-        kernel_result = eval(kernel, kArgs);
-
-
-        #print(toString(kernel_result));
+        print(toString(kernel_result));
     }
     B = X;
     opt = as.frame(y);
     print("Works");
 }
-
-
-
-N = 200;
-#Xtrain = X[1:N,];
-#ytrain = y[1:N,];
-#Xtest = X[(N+1):nrow(X),];
-#ytest = y[(N+1):nrow(X),];
-Xtrain = seq(0,10,0.1);
-trainFunctin = "sin";
-yTrain = Xtrain[1:50];
-yTarget = sin(yTrain);
-
-print(toString(Xtrain));
-print(toString(yTrain));
-print(toString(yTarget));
-
-result = m_bayesianOptimisation(Xtrain, yTrain, "sin", "l2norm", "kernel_gaus", paramNames, paramValues, iterations, 1, TRUE);
-
-

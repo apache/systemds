@@ -1,13 +1,30 @@
 # Test
 source("./scripts/staging/bayesian_optimisation/bayesianOptimisation.dml") as bayOpt;
 
-kernel_gaus = function(Matrix[Double] X1, Matrix[Double] X2, Double variance)
+kernel_gaus_1d = function(Matrix[Double] X1, Matrix[Double] X2, Double variance)
   return (Matrix[Double] result)
 {
     #TODO: What to do about multiple dimensional matrix?
     square_distance = abs((X1 - t(X2))%*%t(X1-t(X2)));
     result = exp((-1)*square_distance/(2 * variance));
 }
+
+squared_exponential = function(Matrix[Double] X1, Matrix[Double] X2)
+  return (Matrix[Double] result)
+{
+    lenX = nrow(X1);
+    result = matrix(1, lenX, lenX);
+    for(i in 1:lenX) { #TODO: When using parfor, results are not getting merged, whole result is full of 1s.
+        for(j in 1:lenX) {
+            square_distance = abs(X1[i] - X2[j])^2;
+            result[i,j] = exp(square_distance/(-2));
+            #print(toString(a));
+
+        }
+    }
+    #print(toString(result));
+}
+
 
 l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B)
   return (Matrix[Double] loss)
@@ -25,21 +42,22 @@ return (Double result) {
 params = list("reg", "tol");
 paramValues = list(10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
 
-xTest = seq(0,10,0.1);
+xTest = seq(0,6,0.15);
 trainFunctin = "sin";
-xTrain = xTest[1:50];
+xTrain = xTest[1:20];
 yTrain = sin(xTrain);
+
 
 OptiHyperParams = bayOpt::m_bayesianOptimisation(
       X = xTrain
     , y = yTrain
     , fTrain = "sin"
-    , fAqu = "l2norm"
-    , kernel = "kernel_gaus"
     , params = params
     , paramValues = paramValues
-    , iterations = 20
-    , scale = 1
+    , fAqu = "l2norm"
+    , kernel = "squared_exponential"
+    #, kernel = "kernel_gaus_1d"
+    , iterations = 1
     , verbose = TRUE
 );
 

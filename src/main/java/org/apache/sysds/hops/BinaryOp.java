@@ -941,6 +941,14 @@ public class BinaryOp extends MultiThreadedHop
 			setDim1(0);
 			setDim2(0);
 		}
+		else if(getDataType() == DataType.FRAME)
+		{
+			if(getInput().toString().split(",")[2].contains("UtilFunctions.jaccardSim"))
+			{
+				setDim1(input1.getDim1());
+				setDim2(input1.getDim1());
+			}
+		}
 		else //MATRIX OUTPUT
 		{
 			//TODO quantile

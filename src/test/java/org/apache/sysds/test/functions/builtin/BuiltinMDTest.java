@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class BuiltinMDTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "matching_dependency";
 	private final static String TEST_DIR = "functions/builtin/";

@@ -25,7 +25,9 @@ import java.util.StringTokenizer;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.WeightedCrossEntropy;
 import org.apache.sysds.lops.WeightedCrossEntropyR;
@@ -974,6 +976,10 @@ public class InstructionUtils
 		default:
 			throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
 		}
+	}
+	
+	public static String createLiteralOperand(String val, ValueType vt) {
+		return InstructionUtils.concatOperandParts(val, DataType.SCALAR.name(), vt.name(), "true");
 	}
 	
 	public static String replaceOperand(String instStr, int operand, String newValue) {

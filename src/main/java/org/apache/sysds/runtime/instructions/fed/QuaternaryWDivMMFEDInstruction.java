@@ -41,10 +41,21 @@ import java.util.concurrent.Future;
 
 public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 {
-	// input1 ... federated X
-	// input2 ... U
-	// input3 ... V
-	// _input4 ... W (=epsilon)
+	/**
+	 * This instruction performs:
+	 *
+	 * Z = X * (U %*% t(V));
+	 *
+	 *
+	 * @param operator        Weighted Div Matrix Multiplication Federated Instruction.
+	 * @param in1             X
+	 * @param in2             U
+	 * @param in3             V
+	 * @param in4             W (=epsilon)
+	 * @param out             The Federated Result Z
+	 * @param opcode          ...
+	 * @param instruction_str ...
+	 */
 	protected QuaternaryWDivMMFEDInstruction(Operator operator,
 		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str)
 	{

@@ -19,13 +19,27 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.EncoderBin;
+import org.apache.sysds.runtime.transform.encode.EncoderComposite;
+import org.apache.sysds.runtime.transform.encode.EncoderDummycode;
+import org.apache.sysds.runtime.transform.encode.EncoderFeatureHash;
+import org.apache.sysds.runtime.transform.encode.EncoderMVImpute;
+import org.apache.sysds.runtime.transform.encode.EncoderOmit;
+import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
+import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 
 /**
  * Simple composite decoder that applies a list of decoders
@@ -38,6 +52,8 @@ public class DecoderComposite extends Decoder
 	private static final long serialVersionUID = 5790600547144743716L;
 	
 	private List<Decoder> _decoders = null;
+
+	private enum  DecoderType {DecoderDummycode, DecoderPassThrough, DecoderRecode};
 	
 	protected DecoderComposite(ValueType[] schema, List<Decoder> decoders) {
 		super(schema, null);
@@ -72,5 +88,43 @@ public class DecoderComposite extends Decoder
 	public void initMetaData(FrameBlock meta) {
 		for( Decoder decoder : _decoders )
 			decoder.initMetaData(meta);
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out)
+		throws IOException {
+		out.writeInt(_decoders.size());
+		for(Decoder decoder : _decoders) {
+			out.writeByte(DecoderType.valueOf(decoder.getClass().getSimpleName()).ordinal());
+			decoder.writeExternal(out);
+		}
+	}
+
+	@Override
+	public void readExternal(ObjectInput in)
+		throws IOException {
+		int decodersSize = in.readInt();
+		_decoders = new ArrayList<>();
+		for(int i = 0; i < decodersSize; i++) {
+			DecoderType dtype = DecoderType.values()[in.readByte()];
+			Decoder decoder = null;
+
+			// create instance
+			switch(dtype) {
+				case DecoderDummycode:
+					decoder = new DecoderDummycode(null, null);
+					break;
+				case DecoderPassThrough:
+					decoder = new DecoderPassThrough(null, null, null);
+					break;
+				case DecoderRecode:
+					decoder = new DecoderRecode(null, false, null);
+					break;
+				default:
+					throw new DMLRuntimeException("Unsupported Encoder Type used:  " + dtype);
+			}
+			decoder.readExternal(in);
+			_decoders.add(decoder);
+		}
 	}
 }

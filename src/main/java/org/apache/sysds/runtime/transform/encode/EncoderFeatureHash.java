@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.wink.json4j.JSONException;
@@ -150,13 +152,16 @@ public class EncoderFeatureHash extends Encoder
 	}
 
 	@Override
-	public void write(DataOutput out)
+	public void writeExternal(ObjectOutput out)
 		throws IOException {
+		super.writeExternal(out);
 		out.writeLong(_K);
 	}
 
 	@Override
-	public void read(DataInput in) throws IOException {
+	public void readExternal(ObjectInput in)
+		throws IOException {
+		super.readExternal(in);
 		_K = in.readLong();
 	}
 }

@@ -310,8 +310,9 @@ public class EncoderRecode extends Encoder
 	}
 
 	@Override
-	public void write(DataOutput out)
+	public void writeExternal(ObjectOutput out)
 		throws IOException {
+		super.writeExternal(out);
 		out.writeInt(_rcdMaps.size());
 		for(Entry e1 : _rcdMaps.entrySet()) {
 			out.writeInt((Integer) e1.getKey());
@@ -324,8 +325,9 @@ public class EncoderRecode extends Encoder
 	}
 
 	@Override
-	public void read(DataInput in)
+	public void readExternal(ObjectInput in)
 		throws IOException {
+		super.readExternal(in);
 		int size1 = in.readInt();
 		for(int i = 0; i < size1; i++) {
 			Integer key1 = in.readInt();

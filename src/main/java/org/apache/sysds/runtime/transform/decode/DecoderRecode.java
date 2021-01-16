@@ -19,11 +19,15 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
 import java.util.List;
+import java.util.Map;
+
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -134,5 +138,39 @@ public class DecoderRecode extends Decoder
 			idx++;
 		String id = entry.substring(ixq+2,idx); 
 		pair.set(token, id);
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out)
+		throws IOException {
+		super.writeExternal(out);
+		out.writeBoolean(_onOut);
+
+		out.writeInt(_rcMaps.length);
+		for(int i = 0; i < _rcMaps.length; i++) {
+			out.writeInt(_rcMaps[i].size());
+			for(Map.Entry e1 : _rcMaps[i].entrySet()) {
+				out.writeInt((Integer) e1.getKey());
+				//TODO it's actually Object
+				out.writeUTF((String) e1.getValue());
+			}
+		}
+	}
+
+	@Override
+	public void readExternal(ObjectInput in)
+		throws IOException {
+		super.readExternal(in);
+		_onOut = in.readBoolean();
+
+		_rcMaps = new HashMap[in.readInt()];
+		for(int i = 0; i < _rcMaps.length; i++) {
+			HashMap<Long, Object> maps = new HashMap<>();
+			for(int j = 0; j < in.readInt(); i++) {
+				//TODO it's actually Object
+				maps.put(in.readLong(), in.readUTF());
+			}
+			_rcMaps[i] = maps;
+		}
 	}
 }

@@ -107,6 +107,15 @@ public abstract class Decoder implements Externalizable
 	public void writeExternal(ObjectOutput os)
 		throws IOException
 	{
+		os.writeInt(_colList.length);
+		for(int col : _colList)
+			os.writeInt(col);
+
+		os.writeInt(_colnames.length);
+		for(int i = 0; i < _colnames.length; i++) {
+			os.writeByte(_schema[i].ordinal());
+			os.writeUTF(_colnames[i]);
+		}
 	}
 
 	/**
@@ -120,6 +129,17 @@ public abstract class Decoder implements Externalizable
 	public void readExternal(ObjectInput in)
 		throws IOException
 	{
+		//TODO schema is final
+		int[] colList = new int[in.readInt()];
+		for(int i = 0; i < colList.length; i++)
+			colList[i] = in.readInt();
 
+		int ncol = in.readInt();
+		ValueType[] schema = new ValueType[ncol];
+		_colnames = new String[ncol];
+		for(int j = 0; j < ncol; j++) {
+			schema[j] = ValueType.values()[in.readByte()];
+			_colnames[j] = in.readUTF();
+		}
 	}
 }

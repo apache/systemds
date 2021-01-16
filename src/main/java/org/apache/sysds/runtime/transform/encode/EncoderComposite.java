@@ -254,26 +254,27 @@ public class EncoderComposite extends Encoder
 	}
 
 	@Override
-	public void write(DataOutput out)
+	public void writeExternal(ObjectOutput out)
 		throws IOException {
 		out.writeInt(_encoders.size());
 		for(Encoder encoder : _encoders) {
 			out.writeByte(EncoderType.valueOf(encoder.getClass().getSimpleName()).ordinal());
 			// check cast
-			encoder.writeExternal((ObjectOutput) out);
+			encoder.writeExternal(out);
 		}
 		_meta.write(out);
 	}
 
 	@Override
-	public void read(DataInput in) throws IOException {
+	public void readExternal(ObjectInput in)
+		throws IOException {
 		int encodersSize = in.readInt();
 		_encoders = new ArrayList<>();
 		for(int i = 0; i < encodersSize; i++) {
 			EncoderType etype = EncoderType.values()[in.readByte()];
 			Encoder encoder = null;
 
-			// create instance of column group
+			// create instance
 			switch(etype) {
 				case EncoderBin:
 					encoder = new EncoderBin();
@@ -302,7 +303,7 @@ public class EncoderComposite extends Encoder
 				default:
 					throw new DMLRuntimeException("Unsupported Encoder Type used:  " + etype);
 			}
-			encoder.readExternal((ObjectInput) in);
+			encoder.readExternal(in);
 			_encoders.add(encoder);
 		}
 		FrameBlock meta = new FrameBlock();

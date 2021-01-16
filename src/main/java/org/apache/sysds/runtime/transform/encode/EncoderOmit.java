@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -217,8 +219,9 @@ public class EncoderOmit extends Encoder
 	}
 
 	@Override
-	public void write(DataOutput out)
+	public void writeExternal(ObjectOutput out)
 		throws IOException {
+		super.writeExternal(out);
 		out.writeBoolean(_federated);
 		out.writeInt(_rmRows.length);
 		for(boolean r : _rmRows)
@@ -226,7 +229,9 @@ public class EncoderOmit extends Encoder
 	}
 
 	@Override
-	public void read(DataInput in) throws IOException {
+	public void readExternal(ObjectInput in)
+		throws IOException {
+		super.readExternal(in);
 		if(_rmRows.length == 0) {
 			_federated = in.readBoolean();
 			_rmRows = new boolean[in.readInt()];

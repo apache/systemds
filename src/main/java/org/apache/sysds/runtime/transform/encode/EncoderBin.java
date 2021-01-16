@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.mutable.MutableDouble;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -53,7 +57,7 @@ public class EncoderBin extends Encoder
 	
 	//frame transform-apply attributes
 	//TODO binMins is redundant and could be removed
-	private double[][] _binMins = null;
+//	private double[][] _binMins = null;
 	private double[][] _binMaxs = null;
 
 	public EncoderBin(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
@@ -89,7 +93,6 @@ public class EncoderBin extends Encoder
 	private EncoderBin(int[] colList, int clen, int[] numBins, double[][] binMins, double[][] binMaxs) {
 		super(colList, clen);
 		_numBins = numBins;
-		_binMins = binMins;
 		_binMaxs = binMaxs;
 	}
 	
@@ -104,7 +107,6 @@ public class EncoderBin extends Encoder
 		if ( !isApplicable() )
 			return;
 		// initialize internal transformation metadata
-		_binMins = new double[_colList.length][];
 		_binMaxs = new double[_colList.length][];
 		
 		// derive bin boundaries from min/max per column
@@ -118,10 +120,8 @@ public class EncoderBin extends Encoder
 				min = Math.min(min, inVal);
 				max = Math.max(max, inVal);
 			}
-			_binMins[j] = new double[_numBins[j]];
 			_binMaxs[j] = new double[_numBins[j]];
 			for(int i=0; i<_numBins[j]; i++) {
-				_binMins[j][i] = min + i*(max-min)/_numBins[j];
 				_binMaxs[j][i] = min + (i+1)*(max-min)/_numBins[j];
 			}
 		}
@@ -156,7 +156,6 @@ public class EncoderBin extends Encoder
 				int corrColumn = (int) (col - (ixRange.colStart - 1));
 				colsList.add(corrColumn);
 				numBinsList.add(_numBins[i]);
-				binMinsList.add(_binMins[i]);
 				binMaxsList.add(_binMaxs[i]);
 			}
 		}
@@ -176,22 +175,21 @@ public class EncoderBin extends Encoder
 			EncoderBin otherBin = (EncoderBin) other;
 
 			// save the min, max as well as the number of bins for the column indexes
-			Map<Integer, MutableTriple<Integer, Double, Double>> ixBinsMap = new HashMap<>();
+			Map<Integer, MutablePair<Integer, Double>> ixBinsMap = new HashMap<>();
 			for(int i = 0; i < _colList.length; i++) {
 				ixBinsMap.put(_colList[i],
-					new MutableTriple<>(_numBins[i], _binMins[i][0], _binMaxs[i][_binMaxs[i].length - 1]));
+					new MutablePair<>(_numBins[i], _binMaxs[i][_binMaxs[i].length - 1]));
 			}
 			for(int i = 0; i < otherBin._colList.length; i++) {
 				int column = otherBin._colList[i] + (col - 1);
-				MutableTriple<Integer, Double, Double> entry = ixBinsMap.get(column);
+				MutablePair<Integer, Double> entry = ixBinsMap.get(column);
 				if(entry == null) {
 					ixBinsMap.put(column,
-						new MutableTriple<>(otherBin._numBins[i], otherBin._binMins[i][0],
+						new MutablePair<>(otherBin._numBins[i],
 							otherBin._binMaxs[i][otherBin._binMaxs[i].length - 1]));
 				}
 				else {
 					// num bins will match
-					entry.middle = Math.min(entry.middle, otherBin._binMins[i][0]);
 					entry.right = Math.max(entry.right, otherBin._binMaxs[i][otherBin._binMaxs[i].length - 1]);
 				}
 			}
@@ -200,21 +198,17 @@ public class EncoderBin extends Encoder
 
 			// use the saved values to fill the arrays again
 			_numBins = new int[_colList.length];
-			_binMins = new double[_colList.length][];
 			_binMaxs = new double[_colList.length][];
 
 			for(int i = 0; i < _colList.length; i++) {
 				int column = _colList[i];
-				MutableTriple<Integer, Double, Double> entry = ixBinsMap.get(column);
+				MutablePair<Integer, Double> entry = ixBinsMap.get(column);
 				_numBins[i] = entry.left;
 
-				double min = entry.middle;
 				double max = entry.right;
-				_binMins[i] = new double[_numBins[i]];
 				_binMaxs[i] = new double[_numBins[i]];
 				for(int j = 0; j < _numBins[i]; j++) {
-					_binMins[i][j] = min + j * (max - min) / _numBins[i];
-					_binMaxs[i][j] = min + (j + 1) * (max - min) / _numBins[i];
+					_binMaxs[i][j] = (j + 1) * max / _numBins[i];
 				}
 			}
 			return;
@@ -236,7 +230,6 @@ public class EncoderBin extends Encoder
 			meta.getColumnMetadata(colID-1).setNumDistinct(_numBins[j]);
 			for( int i=0; i<_binMaxs[j].length; i++ ) {
 				StringBuilder sb = new StringBuilder(16);
-				sb.append(_binMins[j][i]);
 				sb.append(Lop.DATATYPE_PREFIX);
 				sb.append(_binMaxs[j][i]);
 				meta.set(i, colID-1, sb.toString());
@@ -250,24 +243,22 @@ public class EncoderBin extends Encoder
 		if( meta == null || _binMaxs != null )
 			return;
 		//deserialize the frame meta data into internal state
-		_binMins = new double[_colList.length][];
 		_binMaxs = new double[_colList.length][];
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based
 			int nbins = (int)meta.getColumnMetadata()[colID-1].getNumDistinct();
-			_binMins[j] = new double[nbins];
 			_binMaxs[j] = new double[nbins];
 			for( int i=0; i<nbins; i++ ) {
 				String[] tmp = meta.get(i, colID-1).toString().split(Lop.DATATYPE_PREFIX);
-				_binMins[j][i] = Double.parseDouble(tmp[0]);
 				_binMaxs[j][i] = Double.parseDouble(tmp[1]);
 			}
 		}
 	}
 
 	@Override
-	public void write(DataOutput out)
+	public void writeExternal(ObjectOutput out)
 		throws IOException {
+		super.writeExternal(out);
 		//TODO no need to ser _binMin?
 		out.writeInt(_numBins.length);
 		out.writeInt(_binMaxs[0].length);
@@ -280,8 +271,9 @@ public class EncoderBin extends Encoder
 	}
 
 	@Override
-	public void read(DataInput in) throws IOException {
+	public void readExternal(ObjectInput in) throws IOException {
 		//TODO no need to ser _binMin?
+		super.readExternal(in);
 		if(_numBins == null && _binMaxs == null) {
 			int d1 = in.readInt();
 			int d2 = in.readInt();

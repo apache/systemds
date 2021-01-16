@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -338,17 +340,12 @@ public class EncoderMVImpute extends Encoder
 	}
 
 	@Override
-	public void write(DataOutput out)
+	public void writeExternal(ObjectOutput out)
 		throws IOException {
-		// TODO maybe do nothing
 		out.writeInt(_replacementList.length);
 		for(String replacement : _replacementList)
 			out.writeUTF(replacement);
 		out.writeInt(_rcList.size());
-
-//		out.writeInt(_rcList.size());
-//		for(Integer replacement : _rcList)
-//			out.writeInt(replacement);
 
 		out.writeInt(_hist.size());
 		for(Entry e1 : _hist.entrySet()) {
@@ -363,14 +360,11 @@ public class EncoderMVImpute extends Encoder
 	}
 
 	@Override
-	public void read(DataInput in) throws IOException {
-		//TODO maybe do nothing
+	public void readExternal(ObjectInput in)
+		throws IOException {
 		_replacementList = new String[in.readInt()];
 		for(int i = 0; i < _replacementList.length; i++)
 			_replacementList[i] = in.readUTF();
-
-//		for(int i = 0; i < in.readInt(); i++)
-//			_rcList.add(in.readInt());
 
 		int size1 = in.readInt();
 		for(int i = 0; i < size1; i++) {
@@ -383,7 +377,6 @@ public class EncoderMVImpute extends Encoder
 				Long value = in.readLong();
 				maps.put(key2, value);
 			}
-
 			_hist.put(key1, maps);
 		}
 	}

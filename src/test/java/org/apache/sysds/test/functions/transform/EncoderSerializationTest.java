@@ -126,7 +126,6 @@ public class EncoderSerializationTest extends AutomatedTestBase
 		spec.put("{\n \"ids\": true\n, \"dummycode\":[ 2, 7, 1 ]\n\n}", 3);
 		spec.put("{\n \"ids\": true\n, \"dummycode\":[ 2 ]\n\n}", 1);
 		spec.put("{\n \"ids\": true\n, \"dummycode\":[ 2, 7 ]\n\n}", 2);
-		System.out.println(spec.size());
 
 		switch( type ) {
 			case RECODE: runRecode(); break;

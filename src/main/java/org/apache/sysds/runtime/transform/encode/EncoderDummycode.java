@@ -239,12 +239,25 @@ public class EncoderDummycode extends Encoder
 	}
 
 	@Override
-	public void write(DataOutput out)
+	public void writeExternal(ObjectOutput out)
 		throws IOException {
+		super.writeExternal(out);
 		out.writeLong(_dummycodedLength);
 		out.writeInt(_domainSizes.length);
 		for(int size : _domainSizes)
 			out.writeInt(size);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in)
+		throws IOException {
+		super.readExternal(in);
+		_dummycodedLength = in.readLong();
+		if(_domainSizes == null || _domainSizes.length == 0) {
+			_domainSizes = new int[in.readInt()];
+			for(int i = 0; i < _domainSizes.length; i++)
+				_domainSizes[i] = in.readInt();
+		}
 	}
 
 	@Override public boolean equals(Object o) {
@@ -260,16 +273,5 @@ public class EncoderDummycode extends Encoder
 		int result = Objects.hash(_dummycodedLength);
 		result = 31 * result + Arrays.hashCode(_domainSizes);
 		return result;
-	}
-
-	@Override
-	public void read(DataInput in)
-		throws IOException {
-		_dummycodedLength = in.readLong();
-		if(_domainSizes == null || _domainSizes.length == 0) {
-			_domainSizes = new int[in.readInt()];
-			for(int i = 0; i < _domainSizes.length; i++)
-				_domainSizes[i] = in.readInt();
-		}
 	}
 }

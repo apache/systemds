@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
@@ -152,12 +151,13 @@ public class FEDInstructionUtils {
 				}
 			}
 		}
-		else if(inst instanceof MatrixIndexingCPInstruction) {
-			// matrix indexing
-			MatrixIndexingCPInstruction minst = (MatrixIndexingCPInstruction) inst;
+		else if(inst instanceof IndexingCPInstruction) {
+			// matrix and frame indexing
+			IndexingCPInstruction minst = (IndexingCPInstruction) inst;
 			if(inst.getOpcode().equalsIgnoreCase("rightIndex")
-				&& minst.input1.isMatrix() && ec.getCacheableData(minst.input1).isFederated()) {
-				fedinst = MatrixIndexingFEDInstruction.parseInstruction(minst.getInstructionString());
+				&& (minst.input1.isMatrix() || minst.input1.isFrame())
+				&& ec.getCacheableData(minst.input1).isFederated()) {
+				fedinst = IndexingFEDInstruction.parseInstruction(minst.getInstructionString());
 			}
 		}
 		else if(inst instanceof VariableCPInstruction ){

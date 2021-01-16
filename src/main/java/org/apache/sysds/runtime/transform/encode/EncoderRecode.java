@@ -19,14 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,20 +31,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 
-import org.apache.sysds.runtime.matrix.data.MatrixBlockDataInput;
-import org.apache.sysds.runtime.matrix.data.MatrixBlockDataOutput;
-import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
-import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
-import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.IndexRange;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class EncoderRecode extends Encoder
 {

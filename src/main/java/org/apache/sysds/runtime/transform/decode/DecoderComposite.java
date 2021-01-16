@@ -24,22 +24,12 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.encode.Encoder;
-import org.apache.sysds.runtime.transform.encode.EncoderBin;
-import org.apache.sysds.runtime.transform.encode.EncoderComposite;
-import org.apache.sysds.runtime.transform.encode.EncoderDummycode;
-import org.apache.sysds.runtime.transform.encode.EncoderFeatureHash;
-import org.apache.sysds.runtime.transform.encode.EncoderMVImpute;
-import org.apache.sysds.runtime.transform.encode.EncoderOmit;
-import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 
 /**
  * Simple composite decoder that applies a list of decoders

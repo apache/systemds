@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -31,13 +29,6 @@ import java.util.Objects;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC1;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC2;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.IndexRange;

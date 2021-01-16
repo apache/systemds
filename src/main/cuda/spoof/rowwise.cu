@@ -70,11 +70,12 @@ template<typename T, uint32_t NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LE
 __global__ void /*%TMP%*/SPOOF_OP_NAME_DENSE (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c, T* scalars, T* tmp_stor, uint32_t grix) {
 	const uint& rix = blockIdx.x;
 	SpoofRowwiseOp<T, NUM_B, NUM_TMP_VECT, TMP_VECT_LEN> spoof_op(a, b, c, scalars, tmp_stor, grix + rix);
-	if(debug_row() && debug_thread()) {
+if(false) {
+//	if(debug_row() && debug_thread()) {
 		printf("DENSE b rows=%d cols=%d nnz=%d\n", b->rows, b->cols, b->nnz);
 
 		for (auto i = 0; i < b->cols*b->rows; i++) {
-			printf("i=%d val=%4.3f\n", i, b[0].data[i]);
+			printf("i=%d val=%4.3f\n", i, spoof_op.b[0].val(0,i));
 		}
 //		dotProduct(spoof_op.a.vals(0), spoof_op.b[0].vals(0), 0, static_cast<uint32_t>(0), spoof_op.a.cols());
 	}

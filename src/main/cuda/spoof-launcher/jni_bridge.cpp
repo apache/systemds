@@ -101,25 +101,26 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 		jobject input_obj = env->CallObjectMethod(inputs_, ArrayList_get, i);
 		uint32_t m = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_rows));
 		uint32_t n = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_cols));
-//		double* in_ptr = reinterpret_cast<double*>(&inputs[i]);
-//		std::cout << static_cast<uint32_t>(inputs[i]) << " " << reinterpret_cast<double*>(inputs[i+1]) << std::endl;
+
 		in.push_back(Matrix<double>{reinterpret_cast<double*>(inputs[i+3]), reinterpret_cast<uint32_t*>(inputs[i+1]),
 										   reinterpret_cast<uint32_t*>(inputs[i+2]), m, n,
 										   static_cast<uint32_t>(inputs[i])});
 		std::cout << "input #" << i << " m=" << m << " n=" << n << std::endl;
 	}
 
-	jint num_inputs = env->CallIntMethod(inputs_, ArrayList_size);
+	jint num_side_inputs = (env->CallIntMethod(inputs_, ArrayList_size) - input_offset)*4;
 	std::vector<Matrix<double>> side_inputs;
-	for(auto i = input_offset; i < num_inputs; i++) {
+	for(auto i = 0; i < num_side_inputs; i+=4) {
 		jobject side_input_obj = env->CallObjectMethod(inputs_, ArrayList_get, i);
 		uint32_t m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
 		uint32_t n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));
-//		double** side_ptr = reinterpret_cast<double**>(sides[i-1]);
-//		side_info.push_back(Matrix<double>{reinterpret_cast<double*>(side_ptr[3]), reinterpret_cast<uint32_t *>(side_ptr[1]),
-//										   reinterpret_cast<uint32_t*>(side_ptr[2]), m, n,
-//										   *reinterpret_cast<uint32_t*>(side_ptr[0])});
-		
+
+//		std::cout << "sides["<<i << "]=" <<  sides[i] << std::endl;
+//		std::cout << "sides["<<i+1 << "]=" <<  sides[i+1] << std::endl;
+//		std::cout << "sides["<<i+2 << "]=" <<  sides[i+2] << std::endl;
+//		std::cout << "sides["<<i+3 << "]=" <<  sides[i+3] << std::endl;
+
+
 		side_inputs.push_back(Matrix<double>{reinterpret_cast<double*>(sides[i+3]), reinterpret_cast<uint32_t*>(sides[i+1]),
 									reinterpret_cast<uint32_t*>(sides[i+2]), m, n,
 									static_cast<uint32_t>(sides[i])});

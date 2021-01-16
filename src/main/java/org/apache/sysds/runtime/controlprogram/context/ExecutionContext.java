@@ -367,7 +367,7 @@ public class ExecutionContext {
 	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz) {
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
 		mo.getDataCharacteristics().setNonZeros(nnz);
-				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
 		return new Pair<>(mo, allocated);
 	}
 

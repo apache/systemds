@@ -102,7 +102,7 @@ public class CNodeRow extends CNodeTpl
 		tmp = tmp.replace("//%TMP%", varName);
 		tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", varName);
 		tmp = tmp.replace("//%BODY_dense%", tmpDense);
-		tmp = tmp.replace("%BODY_sparse%", tmpSparse);
+		tmp = tmp.replace("//%BODY_sparse%", tmpSparse);
 		
 		//replace outputs 
 		tmp = api == GeneratorAPI.JAVA ? tmp.replace("%OUT%", "c") :

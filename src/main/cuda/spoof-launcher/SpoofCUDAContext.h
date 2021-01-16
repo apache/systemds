@@ -147,8 +147,8 @@ public:
 					// CHECK_CUDART(cudaMemcpy(b1_transposed, b1, sizeof(T) * m * n, cudaMemcpyDeviceToDevice));
 
 //					std::cout << "--- b1_transposed:" << std::endl;
-					std::vector<T> tmp_b1t(m*n);
-					CHECK_CUDART(cudaMemcpy(tmp_b1t.data(), b1_transposed, sizeof(T) * tmp_b1t.size(), cudaMemcpyDeviceToHost));
+//					std::vector<T> tmp_b1t(m*n);
+//					CHECK_CUDART(cudaMemcpy(tmp_b1t.data(), b1_transposed, sizeof(T) * tmp_b1t.size(), cudaMemcpyDeviceToHost));
 //					for (auto i = 0; i < n; ++i) {
 //						for(auto j = i * m; j < (i+1) * m; ++j)
 //							std::cout << tmp_b1t[j] << " ";
@@ -176,7 +176,7 @@ public:
 //		        result = launch_cw_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
 //		        break;
 		    case SpoofOperator::OpType::RA:
-				result = launch_ra_kernel(op, d_in, d_out, d_sides, sides.size(), d_scalars, m, n, grix);
+				result = launch_ra_kernel(op, d_in, d_out, d_sides, sides.size(), d_scalars, m, n, grix, input[0].row_ptr!=nullptr);
 		        break;
 		    default:
 				std::cerr << "error: unknown spoof operator" << std::endl;
@@ -375,21 +375,9 @@ public:
 
 	template<typename T>
 	T launch_ra_kernel(SpoofOperator* op, Matrix<T>* d_in, Matrix<T>* d_out, Matrix<T>* d_sides, uint32_t num_sides,
-			T* d_scalars, uint32_t in_rows, uint32_t in_cols, uint32_t grix) {
+			T* d_scalars, uint32_t in_rows, uint32_t in_cols, uint32_t grix, bool sparse) {
 
 		T result = 0.0;
-		T *d_temp_agg_buf = nullptr;
-//		size_t out_buf_size = 0;
-//		if(d_out == nullptr) {
-//			out_buf_size = sizeof(T) * 1;
-//			CHECK_CUDART(cudaMalloc((void **) &d_out, out_buf_size));
-//
-//			// Matrix<T> out{in_ptrs[0], nullptr, nullptr, static_cast<uint32_t>(m), n, m*n};
-//			// CHECK_CUDART(cudaMalloc((void **)&d_in, sizeof(Matrix<T>)));
-//			// CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&in), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
-//
-//		}
-		
 		dim3 grid(in_rows, 1, 1);
 		dim3 block(NT, 1, 1);
 		unsigned int shared_mem_size = NT * sizeof(T);
@@ -404,14 +392,18 @@ public:
 			CHECK_CUDART(cudaMemset(d_temp, 0, temp_buf_size));
 		}
 
+		std::string name(op->name + "_DENSE");
+		if(sparse)
+			name = std::string(op->name + "_SPARSE");
+
 //#ifdef __DEBUG
 			// ToDo: connect output to SystemDS logging facilities
-			std::cout << "launching spoof rowwise kernel " << op->name << " with " << NT * in_rows << " threads in " << in_rows
+			std::cout << "launching spoof rowwise kernel " << name << " with " << NT * in_rows << " threads in " << in_rows
 				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by "
 				<< NT << " threads per row, adding " << temp_buf_size / 1024 << " kb of temp buffer in global memory." <<  std::endl;
 //#endif
 		
-		CHECK_CUDA(op->program.kernel(op->name)
+		CHECK_CUDA(op->program.kernel(name)
 				.instantiate(type_of(result), std::max(1u, num_sides), op->num_temp_vectors, tmp_len)
 				.configure(grid, block, shared_mem_size)
 				.launch(d_in, d_sides, d_out, d_scalars, d_temp, grix));

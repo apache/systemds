@@ -23,7 +23,7 @@
 X = matrix(seq(1,3000), 60, 50);
 X[,5:45] = matrix(0, 60, 41);
 # X[,2:4] = matrix(0, 60, 3);
-
+print(toString(X))
 R = ((7+X)+(X-7)+(X^2<=7))/(rowMaxs(X)+0.5)
 print(toString(R[1,]))
 write(R, $1)

@@ -98,14 +98,14 @@ public class SpoofCUDAInstruction extends GPUInstruction implements LineageTrace
 				else if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.ROW_AGG)
 					out_cols = 1;
 
-//			MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey();
 			GPUObject g = inputs.get(0).getGPUObject(ec.getGPUContext(0));
-			MatrixObject out_obj = (g.isSparse() ?
+			boolean sparseOut = g.isSparse() && _op.getSpoofTemplateType().contains("CW");
+			MatrixObject out_obj = sparseOut ?
 				(ec.getSparseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols, g.getNnz(getOpcode(), false)).getKey()) :
-				(ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey()));
+				(ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey());
 			
 			ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
-			_op.execute(inputs, scalars, out_obj, ec, g.isSparse());
+			_op.execute(inputs, scalars, out_obj, ec, sparseOut);
 			ec.releaseMatrixOutputForGPUInstruction(_out.getName());
 		}
 		else if (_out.getDataType() == Types.DataType.SCALAR) {

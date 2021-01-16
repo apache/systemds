@@ -99,8 +99,6 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 		// rows must be even
 		return Arrays.asList(new Object[][] {
 			// {rows, cols, rank, epsilon, sparsity}
-			// {1450, 1731, 75, 6.45, 0.01},
-			// {1450, 1731, 75, 6.45, 0.9},
 			{2402, 1103, 10, 1.321, 0.001},
 			{2402, 1103, 10, 1.321, 0.6}
 		});

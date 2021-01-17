@@ -207,6 +207,8 @@ public class Types
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
 		
+		COMPRESS, DECOMPRESS, 
+
 		//low-level operators //TODO used?
 		MULT2, MINUS1_MULT, MINUS_RIGHT, 
 		POW2, SUBTRACT_NZ;
@@ -235,6 +237,8 @@ public class Types
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
 				case COLNAMES:        return "colnames";
+				case COMPRESS:        return "compress";
+				case DECOMPRESS:      return "decompress";
 				case DETECTSCHEMA:    return "detectSchema";
 				case MULT2:           return "*2";
 				case NOT:             return "!";

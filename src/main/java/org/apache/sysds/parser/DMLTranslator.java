@@ -2481,6 +2481,12 @@ public class DMLTranslator
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
+		case COMPRESS:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.COMPRESS, expr);
+			break;
+		case DECOMPRESS:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.DECOMPRESS, expr);
+			break;
 
 		// Boolean binary
 		case XOR:
@@ -2691,7 +2697,6 @@ public class DMLTranslator
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
-		
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}

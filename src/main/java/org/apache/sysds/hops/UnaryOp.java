@@ -446,7 +446,9 @@ public class UnaryOp extends MultiThreadedHop
 	public boolean isExpensiveUnaryOperation()  {
 		return (_op == OpOp1.EXP 
 			|| _op == OpOp1.LOG
-			|| _op == OpOp1.SIGMOID);
+			|| _op == OpOp1.SIGMOID
+			|| _op == OpOp1.COMPRESS
+			|| _op == OpOp1.DECOMPRESS);
 	}
 	
 	public boolean isMetadataOperation() {

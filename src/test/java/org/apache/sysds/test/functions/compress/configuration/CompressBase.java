@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.compress;
+package org.apache.sysds.test.functions.compress.configuration;
 
 import static org.junit.Assert.assertTrue;
 

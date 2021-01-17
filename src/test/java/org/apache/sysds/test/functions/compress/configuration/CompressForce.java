@@ -17,16 +17,18 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.compress;
+package org.apache.sysds.test.functions.compress.configuration;
 
 import java.io.File;
 
-public class CompressLossyCost extends CompressCost {
+import org.junit.Test;
+
+public class CompressForce extends CompressBase {
 
 	public String TEST_NAME = "compress";
-	public String TEST_DIR = "functions/compress/cost/lossy";
-	public String TEST_CLASS_DIR = TEST_DIR + CompressLossyCost.class.getSimpleName() + "/";
-	private String TEST_CONF = "SystemDS-config-compress-lossy-cost.xml";
+	public String TEST_DIR = "functions/compress/force/";
+	public String TEST_CLASS_DIR = TEST_DIR + CompressForce.class.getSimpleName() + "/";
+	private String TEST_CONF = "SystemDS-config-compress.xml";
 	private File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 
 	protected String getTestClassDir() {
@@ -39,6 +41,21 @@ public class CompressLossyCost extends CompressCost {
 
 	protected String getTestDir() {
 		return TEST_DIR;
+	}
+
+	@Test
+	public void testTranspose() {
+		transpose(1, 1);
+	}
+
+	@Test
+	public void testSum(){
+		sum(0,1);
+	}
+	
+	@Test
+	public void testRowAggregate() {
+		rowAggregate(0,1);
 	}
 
 	/**

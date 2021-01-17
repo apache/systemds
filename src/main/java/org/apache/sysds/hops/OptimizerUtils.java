@@ -206,6 +206,12 @@ public class OptimizerUtils
 	 */
 	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
 
+	/**
+	 * This variable allows for insertion of Compress and decompress in the dml script from the user.
+	 * This is added because we want to have a way to test, and verify the correct placement of compress and decompress commands.
+	 */
+	public static final boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
+
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

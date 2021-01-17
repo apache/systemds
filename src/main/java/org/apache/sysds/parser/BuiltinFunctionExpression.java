@@ -19,6 +19,11 @@
 
 package org.apache.sysds.parser;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
@@ -26,15 +31,11 @@ import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DnnUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
@@ -1573,7 +1574,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize (id.getBlocksize());
 
 			break;
-
+		case COMPRESS:
+		case DECOMPRESS:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
+				checkNumParameters(1);
+				checkMatrixParam(getFirstExpr());
+				output.setDataType(DataType.MATRIX);
+				output.setDimensions(id.getDim2(), id.getDim1());
+				output.setBlocksize (id.getBlocksize());
+				output.setValueType(id.getValueType());
+			}
+			else
+				raiseValidateError("Compress instruction not allowed in dml script");
+			
+			break;
 		default:
 			if( isMathFunction() ) {
 				checkMathFunctionParam();

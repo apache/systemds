@@ -71,7 +71,7 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 
 		if(!(X.isFederated() && !U.isFederated() && !V.isFederated() && (W == null || !W.isFederated())))
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V, W) = (" + X.isFederated() + ", "
-				+ U.isFederated() + ", " + V.isFederated() + (W != null ? W.isFederated() : "none") + ")");
+				+ U.isFederated() + ", " + V.isFederated() + ", " + (W != null ? W.isFederated() : "none") + ")");
 
 		FederationMap fedMap = X.getFedMapping();
 		FederatedRequest[] frInit1 = fedMap.broadcastSliced(U, false);

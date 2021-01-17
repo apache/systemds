@@ -17,32 +17,32 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.readers;
 
 import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class ReaderColumnSelectionDense extends ReaderColumnSelection {
-	protected MatrixBlock _data;
+public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumnSelection {
+	private DenseBlock _data;
 
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionDense(MatrixBlock data, int[] colIndices, CompressionSettings compSettings) {
-		super(colIndices, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), compSettings);
-		_data = data;
+	public ReaderColumnSelectionDenseMultiBlockTransposed(MatrixBlock data, int[] colIndices) {
+		super(colIndices.clone(), data.getNumColumns() );
+		_data = data.getDenseBlock();
+
 		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);
 	}
-
 
 	protected DblArray getNextRow() {
 		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _compSettings.transposeInput ? _data.quickGetValue(_colIndexes[i], _lastRow) : _data
-				.quickGetValue(_lastRow, _colIndexes[i]);
+			reusableArr[i] = _data.get(_colIndexes[i],_lastRow);
 		}
 		return reusableReturn;
 	}

@@ -147,26 +147,26 @@ public class LinearAlgebraUtils {
 		}
 	}
 
-	public static void vectListAddDDC(final double[] values, double[] c, byte[] bix, final int rl, final int ru,
-		final int cl, final int cu, final int cut, final int numVals) {
+	public static void vectListAddDDC(int[] outputColumns, double[] values, double[] c, byte[] bix, int rl, int ru,
+		int cut, int numVals) {
 
 		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
 			int rowIdx = (bix[j] & 0xFF);
 			if(rowIdx < numVals)
-				for(int k = cl, h = rowIdx * (cu - cl); k < cu; k++, h++) {
-					// LOG.error((off + k) + " \t" + h);
-					c[off + k] += values[h];
-				}
+				for(int k = 0; k < outputColumns.length; k++)
+					c[off + outputColumns[k]] += values[rowIdx * outputColumns.length + k];
+
 		}
 	}
 
-	public static void vectListAddDDC(final double[] values, double[] c, char[] bix, final int rl, final int ru,
-		final int cl, final int cu, final int cut, final int numVals) {
+	public static void vectListAddDDC(int[] outputColumns, double[] values, double[] c, char[] bix, int rl, int ru,
+		int cut, int numVals) {
 		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
 			int rowIdx = bix[j];
 			if(rowIdx < numVals)
-				for(int k = cl, h = rowIdx * (cu - cl); k < cu; k++, h++)
-					c[off + k] += values[h];
+				for(int k = 0; k < outputColumns.length; k++)
+					c[off + outputColumns[k]] += values[rowIdx * outputColumns.length + k];
+
 		}
 	}
 
@@ -182,11 +182,19 @@ public class LinearAlgebraUtils {
 	 * @param cut    The total number of columns in c.
 	 * @param valOff The offset into the values list to start reading from.
 	 */
-	public static void vectListAdd(final double[] values, double[] c, final int rl, final int ru, final int cl,
-		final int cu, final int cut, final int valOff) {
+	public static void vectListAdd(double[] values, double[] c, int rl, int ru, int cl, int cu, int cut, int valOff) {
 		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
 			for(int k = cl, h = valOff; k < cu; k++, h++)
 				c[off + k] += values[h];
+		}
+	}
+
+	public static void vectListAdd(double[] preAggregatedValues, double[] c, int rl, int ru, int[] outputColumns, int cut,
+		int n) {
+		n = n * outputColumns.length;
+		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
+			for(int k = 0; k < outputColumns.length; k ++)
+				c[off + outputColumns[k]] += preAggregatedValues[n + k];
 		}
 	}
 
@@ -275,11 +283,11 @@ public class LinearAlgebraUtils {
 				int row = (ix < i) ? ix : i;
 				int col = (ix < i) ? i : ix;
 				// if(row == col) {
-					c.set(row, col, a[i]);
+				c.set(row, col, a[i]);
 				// }
 				// else {
-					// double v = c.get(row, col);
-					// c.set(row, col, a[i] + v);
+				// double v = c.get(row, col);
+				// c.set(row, col, a[i] + v);
 				// }
 			}
 	}

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test;
 
+import static java.lang.Math.ceil;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -27,12 +28,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -43,6 +47,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -52,13 +57,17 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
@@ -67,6 +76,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -106,7 +116,7 @@ public abstract class AutomatedTestBase {
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	public static final int FED_WORKER_WAIT = 1000; // in ms
-	public static final int FED_WORKER_WAIT_S = 30; // in ms
+	public static final int FED_WORKER_WAIT_S = 40; // in ms
 	
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
@@ -207,20 +217,34 @@ public abstract class AutomatedTestBase {
 	private static boolean outputBuffering = false;
 
 	static {
+		// Load configuration from setting file build by maven.
+		// If maven is not used as test setup, (as default in intellij for instance) default values are used.
+		// If one wants to use custom configurations, setup the IDE to build using maven, and set execution flags
+		// accordingly.
+		// Settings available can be found in the properties inside pom.xml.
+		// The custom configuration is required to run tests using GPU backend.
 		java.io.InputStream inputStream = Thread.currentThread().getContextClassLoader()
 			.getResourceAsStream("my.properties");
 		java.util.Properties properties = new Properties();
-		try {
-			properties.load(inputStream);
+		if(inputStream != null){
+			try {
+				properties.load(inputStream);
+			}
+			catch(IOException e) {
+				e.printStackTrace();
+			}
+			outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
+			boolean gpu = Boolean.parseBoolean(properties.getProperty("enableGPU"));
+			TEST_GPU = TEST_GPU || gpu;
+			boolean stats = Boolean.parseBoolean(properties.getProperty("enableStats"));
+			VERBOSE_STATS = VERBOSE_STATS || stats;
 		}
-		catch(IOException e) {
-			e.printStackTrace();
+		else{
+			// If no properties file exists.
+			outputBuffering = false;
+			TEST_GPU = false;
+			VERBOSE_STATS = false;
 		}
-		outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
-		boolean gpu = Boolean.parseBoolean(properties.getProperty("enableGPU"));
-		TEST_GPU = TEST_GPU || gpu;
-		boolean stats = Boolean.parseBoolean(properties.getProperty("enableStats"));
-		VERBOSE_STATS = VERBOSE_STATS || stats;
 	}
 
 	// Timestamp before test start.
@@ -588,6 +612,71 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * <p>
+	 * Takes a matrix (double[][]) and writes it in parts locally. Then it creates a federated MatrixObject
+	 * containing the local paths and the given ports. This federated MO is also written to disk with the provided name
+	 * When running federated workers locally on the specified ports this federated Matrix can then be used
+	 * for testing purposes. Just use read on input(name)
+	 * </p>
+	 *
+	 * @param name name of the matrix when writing to disk
+	 * @param matrix two dimensional matrix
+	 * @param numFederatedWorkers the number of federated workers
+	 * @param ports a list of port the length of the number of federated workers
+	 * @param ranges an array containing arrays of length to with the upper and lower bound (rows) for the slices
+	 */
+	protected void rowFederateLocallyAndWriteInputMatrixWithMTD(String name,
+		double[][] matrix, int numFederatedWorkers, List<Integer> ports, double[][] ranges)
+	{
+		// check matrix non empty
+		if(matrix.length == 0 || matrix[0].length == 0)
+			return;
+
+		int nrows = matrix.length;
+		int ncol = matrix[0].length;
+
+		// create federated MatrixObject
+		MatrixObject federatedMatrixObject = new MatrixObject(ValueType.FP64, 
+			Dag.getNextUniqueVarname(Types.DataType.MATRIX));
+		federatedMatrixObject.setMetaData(new MetaDataFormat(
+			new MatrixCharacteristics(nrows, ncol), Types.FileFormat.BINARY));
+
+		// write parts and generate FederationMap
+		HashMap<FederatedRange, FederatedData> fedHashMap = new HashMap<>();
+		for(int i = 0; i < numFederatedWorkers; i++) {
+			double lowerBound = ranges[i][0];
+			double upperBound = ranges[i][1];
+			double examplesForWorkerI = upperBound - lowerBound;
+			String path = name + "_" + (i + 1);
+
+			// write slice
+			writeInputMatrixWithMTD(path, Arrays.copyOfRange(matrix, (int)lowerBound, (int)upperBound),
+				false, new MatrixCharacteristics((long) examplesForWorkerI, ncol,
+				OptimizerUtils.DEFAULT_BLOCKSIZE, (long) examplesForWorkerI * ncol));
+
+			// generate fedmap entry
+			FederatedRange range = new FederatedRange(new long[]{(long) lowerBound, 0}, new long[]{(long) upperBound, ncol});
+			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), input(path));
+			fedHashMap.put(range, data);
+		}
+		
+		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
+		federatedMatrixObject.getFedMapping().setType(FederationMap.FType.ROW);
+
+		writeInputFederatedWithMTD(name, federatedMatrixObject, null);
+	}
+
+	protected double[][] generateBalancedFederatedRowRanges(int numFederatedWorkers, int dataSetSize) {
+		double[][] ranges = new double[numFederatedWorkers][2];
+		double examplesPerWorker = ceil( (double) dataSetSize / (double) numFederatedWorkers);
+		for(int i = 0; i < numFederatedWorkers; i++) {
+			ranges[i][0] = examplesPerWorker * i;
+			ranges[i][1] = Math.min(examplesPerWorker * (i + 1), dataSetSize);
+		}
+		return ranges;
+	}
+
+	/**
+	 * <p>
 	 * Adds a matrix to the input path and writes it to a file.
 	 * </p>
 	 *
@@ -749,6 +838,10 @@ public abstract class AutomatedTestBase {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
+	protected static HashMap<CellIndex, Double> readDMLMatrixFromExpectedDir(String fileName) {
+		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + EXPECTED_DIR + fileName);
+	}
+	
 	public HashMap<CellIndex, Double> readRMatrixFromExpectedDir(String fileName) {
 		if(LOG.isInfoEnabled())
 			LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
@@ -1090,22 +1183,17 @@ public abstract class AutomatedTestBase {
 
 			outputR = IOUtils.toString(child.getInputStream());
 			errorString = IOUtils.toString(child.getErrorStream());
-			if(LOG.isTraceEnabled()) {
-				LOG.trace("Standard Output from R:" + outputR);
-				LOG.trace("Standard Error from R:" + errorString);
-			}
-
+			
 			//
 			// To give any stream enough time to print all data, otherwise there
 			// are situations where the test case fails, even before everything
 			// has been printed
 			//
 			child.waitFor();
-
 			try {
 				if(child.exitValue() != 0) {
 					throw new Exception(
-						"ERROR: R has ended irregularly\n" + outputR + "\nscript file: " + executionFile);
+						"ERROR: R has ended irregularly\n" + buildOutputStringR(outputR, errorString) + "\nscript file: " + executionFile);
 				}
 			}
 			catch(IllegalThreadStateException ie) {
@@ -1113,6 +1201,10 @@ public abstract class AutomatedTestBase {
 				// correctly. However, give it a try, since R processed the
 				// script, therefore we can terminate the process.
 				child.destroy();
+			}
+
+			if(!outputBuffering) {
+				System.out.println(buildOutputStringR(outputR, errorString));
 			}
 
 			long t1 = System.nanoTime();
@@ -1138,6 +1230,16 @@ public abstract class AutomatedTestBase {
 				fail(errorMessage.toString());
 			}
 		}
+	}
+
+	private static String buildOutputStringR(String standardOut, String standardError){
+		StringBuilder sb = new StringBuilder();
+		sb.append("R Standard output :\n");
+		sb.append(standardOut);
+		sb.append("\nR Standard Error  :\n");
+		sb.append(standardError);
+		sb.append("\n");
+		return sb.toString();
 	}
 
 	/**
@@ -1429,7 +1531,11 @@ public abstract class AutomatedTestBase {
 	 * @return the thread associated with the worker.
 	 */
 	protected Thread startLocalFedWorkerThread(int port) {
-		return startLocalFedWorkerThread(port, FED_WORKER_WAIT);
+		return startLocalFedWorkerThread(port, null, FED_WORKER_WAIT);
+	}
+
+	protected Thread startLocalFedWorkerThread(int port, String[] otherArgs) {
+		return startLocalFedWorkerThread(port, otherArgs, FED_WORKER_WAIT);
 	}
 
 	/**
@@ -1442,11 +1548,17 @@ public abstract class AutomatedTestBase {
 	 * @return the thread associated with the worker.
 	 */
 	protected Thread startLocalFedWorkerThread(int port, int sleep) {
+		return startLocalFedWorkerThread(port, null, sleep);
+	}
+	protected Thread startLocalFedWorkerThread(int port, String[] otherArgs, int sleep) {
 		Thread t = null;
 		String[] fedWorkArgs = {"-w", Integer.toString(port)};
 		ArrayList<String> args = new ArrayList<>();
 
 		addProgramIndependentArguments(args);
+		
+		if (otherArgs != null)
+			args.addAll(Arrays.stream(otherArgs).collect(Collectors.toList()));
 
 		for(int i = 0; i < fedWorkArgs.length; i++)
 			args.add(fedWorkArgs[i]);

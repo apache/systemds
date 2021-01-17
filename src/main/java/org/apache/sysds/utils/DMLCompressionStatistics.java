@@ -21,15 +21,11 @@ package org.apache.sysds.utils;
 
 public class DMLCompressionStatistics {
 
-	// Compute compressed size info
+	private static double Phase0 = 0.0;
 	private static double Phase1 = 0.0;
-	// Co-code columns
 	private static double Phase2 = 0.0;
-	// Compress the columns
 	private static double Phase3 = 0.0;
-	// Share resources
 	private static double Phase4 = 0.0;
-	// Cleanup
 	private static double Phase5 = 0.0;
 
 	private static int DecompressSTCount = 0;
@@ -39,6 +35,9 @@ public class DMLCompressionStatistics {
 
 	public static void addCompressionTime(double time, int phase) {
 		switch(phase) {
+			case 0:
+				Phase0 += time;
+				break;
 			case 1:
 				Phase1 += time;
 				break;
@@ -78,8 +77,10 @@ public class DMLCompressionStatistics {
 	}
 
 	public static void display(StringBuilder sb) {
+		
 		sb.append(String.format(
-			"CLA Compression Phases (classify, group, compress, share, clean) :\t%.3f/%.3f/%.3f/%.3f/%.3f\n",
+			"CLA Compression Phases :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n",
+			Phase0 / 1000,
 			Phase1 / 1000,
 			Phase2 / 1000,
 			Phase3 / 1000,

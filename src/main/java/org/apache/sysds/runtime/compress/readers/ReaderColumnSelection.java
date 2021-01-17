@@ -17,11 +17,12 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.readers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /** Base class for all column selection readers. */
 public abstract class ReaderColumnSelection {
@@ -33,13 +34,10 @@ public abstract class ReaderColumnSelection {
 
 	private DblArray nonZeroReturn;
 
-	protected CompressionSettings _compSettings;
-
-	protected ReaderColumnSelection(int[] colIndexes, int numRows, CompressionSettings compSettings) {
+	protected ReaderColumnSelection(int[] colIndexes, int numRows) {
 		_colIndexes = colIndexes;
 		_numRows = numRows;
 		_lastRow = -1;
-		_compSettings = compSettings;
 	}
 
 	/**
@@ -59,10 +57,18 @@ public abstract class ReaderColumnSelection {
 		return _lastRow;
 	}
 
-	/**
-	 * Resets the reader to the first row.
-	 */
-	public void reset() {
-		_lastRow = -1;
+	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed) {
+		int[] in = colIndices.clone();
+		if(rawBlock.isInSparseFormat() && transposed)
+			return new ReaderColumnSelectionSparseTransposed(rawBlock, in);
+		else if(rawBlock.isInSparseFormat())
+			return new ReaderColumnSelectionSparse(rawBlock, in);
+		else if(rawBlock.getDenseBlock().numBlocks() > 1)
+			return transposed ? new ReaderColumnSelectionDenseMultiBlockTransposed(rawBlock,
+				in) : new ReaderColumnSelectionDenseMultiBlock(rawBlock, in);
+		else
+			return transposed ? new ReaderColumnSelectionDenseSingleBlockTransposed(rawBlock,
+				in) : new ReaderColumnSelectionDenseSingleBlock(rawBlock, in);
+
 	}
 }

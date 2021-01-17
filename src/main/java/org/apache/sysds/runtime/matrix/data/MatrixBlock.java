@@ -2819,10 +2819,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = checkType(thatValue);
 		MatrixBlock ret = checkType(result);
-		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
-			throw new RuntimeException("Block sizes are not matched for binary " +
-					"cell operations: "+this.rlen+"x"+this.clen+" vs "+ that.rlen+"x"+that.clen);
-		}
+		LibMatrixBincell.isValidDimensionsBinary(this, that);
 		
 		//compute output dimensions
 		boolean outer = (LibMatrixBincell.getBinaryAccessType(this, that)
@@ -2846,10 +2843,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		MatrixBlock that=checkType(thatValue);
-		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
-			throw new RuntimeException("block sizes are not matched for binary " +
-					"cell operations: "+this.rlen+"*"+this.clen+" vs "+ that.rlen+"*"+that.clen);
-		}
+		LibMatrixBincell.isValidDimensionsBinary(this, that);
 	
 		//estimate output sparsity
 		SparsityEstimate resultSparse = estimateSparsityOnBinary(this, that, op);
@@ -5326,21 +5320,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( resultBlock!=null )
 			resultBlock.recomputeNonZeros();
 	}
-	
+
 	/**
-	 *  D = ctable(seq,A,w)
-	 *  this &lt;- seq; thatMatrix &lt;- A; thatScalar &lt;- w; result &lt;- D
-	 *  
-	 * (i1,j1,v1) from input1 (this)
-	 * (i1,j1,v2) from input2 (that)
-	 * (w)  from scalar_input3 (scalarThat2)
-	 * 
 	 * @param thatMatrix matrix value
 	 * @param thatScalar scalar double
 	 * @param resultBlock result matrix block
+	 * @param updateClen when this matrix already has the desired number of columns updateClen can be set to false
 	 * @return resultBlock
 	 */
-	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock) {
+	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock, boolean updateClen) {
 		MatrixBlock that = checkType(thatMatrix);
 		CTable ctable = CTable.getCTableFnObject();
 		double w = thatScalar;
@@ -5357,8 +5345,27 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//update meta data (initially unknown number of columns)
 		//note: nnz maintained in ctable (via quickset)
-		resultBlock.clen = maxCol;
+		if(updateClen) {
+			resultBlock.clen = maxCol;
+		}
 		return resultBlock;
+	}
+
+	/**
+	 *  D = ctable(seq,A,w)
+	 *  this &lt;- seq; thatMatrix &lt;- A; thatScalar &lt;- w; result &lt;- D
+	 *
+	 * (i1,j1,v1) from input1 (this)
+	 * (i1,j1,v2) from input2 (that)
+	 * (w)  from scalar_input3 (scalarThat2)
+	 *
+	 * @param thatMatrix matrix value
+	 * @param thatScalar scalar double
+	 * @param resultBlock result matrix block
+	 * @return resultBlock
+	 */
+	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock) {
+		return ctableSeqOperations(thatMatrix, thatScalar, resultBlock, true);
 	}
 	
 	/**

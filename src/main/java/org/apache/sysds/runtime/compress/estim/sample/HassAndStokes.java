@@ -46,8 +46,7 @@ public class HassAndStokes {
 	 * @param solveCache A Hashmap containing information for getDuj2aEstimate
 	 * @return An estimation of distinct elements in the population.
 	 */
-	public static int haasAndStokes(ABitmap ubm, int nRows, int sampleSize,
-		HashMap<Integer, Double> solveCache) {
+	public static int haasAndStokes(ABitmap ubm, int nRows, int sampleSize, HashMap<Integer, Double> solveCache) {
 		// obtain value and frequency histograms
 		int numVals = ubm.getNumValues();
 		int[] freqCounts = FrequencyCount.get(ubm);

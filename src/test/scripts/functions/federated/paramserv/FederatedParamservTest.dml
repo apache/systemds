@@ -23,35 +23,15 @@ source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
 source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
 
 # create federated input matrices
-features = federated(addresses=list($X0, $X1),
-    ranges=list(list(0, 0), list($examples_per_worker, $num_features),
-                list($examples_per_worker, 0), list($examples_per_worker * 2, $num_features)))
+features = read($features)
+labels = read($labels)
 
-labels = federated(addresses=list($y0, $y1),
-    ranges=list(list(0, 0), list($examples_per_worker, $num_labels),
-                list($examples_per_worker, 0), list($examples_per_worker * 2, $num_labels)))
+print($weighing)
 
-epochs = $epochs
-batch_size = $batch_size
-learning_rate = $eta
-utype = $utype
-freq = $freq
-network_type = $network_type
-
-# currently ignored parameters
-workers = 1
-scheme = "DISJOINT_CONTIGUOUS"
-paramserv_mode = "LOCAL"
-
-# config for the cnn
-channels = $channels
-hin = $hin
-win = $win
-
-if(network_type == "TwoNN") {
-  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+if($network_type == "TwoNN") {
+  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighing, $eta, $seed)
 }
 else {
-  model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), channels, hin, win, epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+  model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighing, $eta, $channels, $hin, $win, $seed)
 }
 print(toString(model))

@@ -21,7 +21,6 @@ package org.apache.sysds.test.component.compress;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
@@ -43,7 +42,9 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public ParCompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettings compressionSettings, MatrixTypology matrixTypology, OverLapping ov) {
 		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
-			InfrastructureAnalyzer.getLocalParallelism());
+			2);
+		// super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
+		// 	InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	@Override

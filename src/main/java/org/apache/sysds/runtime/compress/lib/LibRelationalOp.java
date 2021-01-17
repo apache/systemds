@@ -28,7 +28,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -66,33 +65,13 @@ public class LibRelationalOp {
         }
     };
 
-    public static MatrixBlock relationalOperation(ScalarOperator sop, CompressedMatrixBlock m1, boolean overlapping) {
-
-        List<ColGroup> colGroups = m1.getColGroups();
-        if(overlapping) {
-            if(sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan ||
-                sop.fn instanceof GreaterThanEquals || sop.fn instanceof Equals || sop.fn instanceof NotEquals) {
-                return overlappingRelativeRelationalOperation(sop, m1);
-            }
-            else {
-                throw new DMLCompressionException("Invalid arguments to relational Operation");
-            }
-        }
-        else {
-            CompressedMatrixBlock ret = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns(), true);
-            List<ColGroup> newColGroups = new ArrayList<>();
-            for(ColGroup grp : colGroups) {
-                newColGroups.add(grp.scalarOperation(sop));
-            }
-            ret.allocateColGroupList(newColGroups);
-            ret.setNonZeros(-1);
-            ret.setOverlapping(false);
-            return (MatrixBlock) ret;
-        }
-
+    protected static boolean isValidForRelationalOperation(ScalarOperator sop, CompressedMatrixBlock m1) {
+        return m1.isOverlapping() &&
+            (sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan ||
+                sop.fn instanceof GreaterThanEquals || sop.fn instanceof Equals || sop.fn instanceof NotEquals);
     }
 
-    private static MatrixBlock overlappingRelativeRelationalOperation(ScalarOperator sop, CompressedMatrixBlock m1) {
+    public static MatrixBlock overlappingRelativeRelationalOperation(ScalarOperator sop, CompressedMatrixBlock m1) {
 
         List<ColGroup> colGroups = m1.getColGroups();
         boolean less = ((sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals) &&
@@ -156,7 +135,7 @@ public class LibRelationalOp {
         Arrays.fill(values, 1);
 
         newColGroups.add(new ColGroupConst(colIndexes, rows, new Dictionary(values)));
-        CompressedMatrixBlock ret = new CompressedMatrixBlock(rows, cols, true);
+        CompressedMatrixBlock ret = new CompressedMatrixBlock(rows, cols);
         ret.allocateColGroupList(newColGroups);
         ret.setNonZeros(cols * rows);
         ret.setOverlapping(false);
@@ -199,7 +178,7 @@ public class LibRelationalOp {
             res.setNonZeros(nnz);
         }
         else {
-            final int blkz = CompressionSettings.BITMAP_BLOCK_SZ / cols;
+            final int blkz = CompressionSettings.BITMAP_BLOCK_SZ / 2;
             ExecutorService pool = CommonThreadPool.get(k);
             ArrayList<RelationalTask> tasks = new ArrayList<>();
 
@@ -287,7 +266,12 @@ public class LibRelationalOp {
             }
 
             for(MinMaxGroup mmg : _minMax) {
-                mmg.g.decompressToBlock(tmp, _i * _blkz, Math.min((_i + 1) * _blkz, mmg.g.getNumRows()), 0, mmg.values);
+                mmg.g.decompressToBlockSafe(tmp,
+                    _i * _blkz,
+                    Math.min((_i + 1) * _blkz, mmg.g.getNumRows()),
+                    0,
+                    mmg.values,
+                    false);
             }
 
             for(int row = 0, off = _i * _blkz; row < _blkz && row < _rows - _i * _blkz; row++, off++) {

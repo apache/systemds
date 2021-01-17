@@ -1,0 +1,118 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#------------------------------------------------------------------------------------------------------------------
+
+# Implements builtin for deduplication using matching dependencies (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
+# and Jaccard distance.
+# 
+# INPUT PARAMETERS:
+# -----------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              DEFAULT     MEANING
+# -----------------------------------------------------------------------------------------------------------------
+# X               Frame               --       Input Frame X
+# LHSfeatures     Matrix[Integer]     --       A matrix 1xd with numbers of columns for MDs
+#                                              (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
+# LHSthreshold    Matrix[Double]      --       A matrix 1xd with threshold values in interval [0, 1] for MDs
+# RHSfeatures     Matrix[Integer]     --       A matrix 1xd with numbers of columns for MDs
+# RHSthreshold    Matrix[Double]      --       A matrix 1xd with threshold values in interval [0, 1] for MDs
+# verbose         Boolean             --       To print the output
+# -----------------------------------------------------------------------------------------------------------------
+#
+# Output(s)
+# -----------------------------------------------------------------------------------------------------------------
+# NAME                 TYPE         DEFAULT     MEANING
+# -----------------------------------------------------------------------------------------------------------------
+# MD              Matrix[Double]      ---       Matrix nx1 of duplicates
+
+s_mdedup = function(Frame[String] X, Matrix[Double] LHSfeatures, Matrix[Double] LHSthreshold,
+    Matrix[Double] RHSfeatures, Matrix[Double] RHSthreshold, Boolean verbose)
+  return(Matrix[Double] MD)
+{
+  n = nrow(X)
+  d = ncol(X)
+
+  if (0 > (ncol(LHSfeatures) + ncol(RHSfeatures)) > d)
+    stop("Invalid input: thresholds should in interval [0, " + d + "]")
+
+  if ((ncol(LHSfeatures) != ncol(LHSthreshold)) | (ncol(RHSfeatures) != ncol(RHSthreshold)))
+      stop("Invalid input: number of thresholds and columns to compare should be equal for LHS and RHS.")
+
+  if (max(LHSfeatures) > d | max(RHSfeatures) > d)
+    stop("Invalid input: feature values should be less than " + d)
+
+  if (sum(LHSthreshold > 1) > 0 | sum(RHSthreshold > 1) > 0)
+    stop("Invalid input: threshold values should be in the interval [0, 1].")
+
+  MD = matrix(0, n, 1)
+  LHS_MD = getMDAdjacency(X, LHSfeatures, LHSthreshold)
+  RHS_MD = matrix(0, n, n)
+
+  if (sum(LHS_MD) > 0) {
+    RHS_MD = getMDAdjacency(X, RHSfeatures, RHSthreshold)
+  }
+
+  MD = detectDuplicates(LHS_MD, RHS_MD)
+
+  if(verbose)
+    print(toString(MD))
+}
+
+getMDAdjacency = function(Frame[String] X, Matrix[Double] features, Matrix[Double] thresholds)
+  return(Matrix[Double] adjacency)
+{
+  n = nrow(X)
+  d = ncol(X)
+  adjacency = matrix(0, n, n)
+
+  i = 1
+  while (i <= ncol(features)) {
+    # slice col
+    pos = as.scalar(features[1, i])
+    Xi = X[, pos]
+    # distances between words in each row of col
+    dist = map(Xi, "(x, y) -> UtilFunctions.jaccardSim(x, y)")
+    jaccardDist = as.matrix(dist)
+    jaccardDist = jaccardDist + t(jaccardDist)
+    threshold = as.scalar(thresholds[1, i])
+
+    if(i == 1) {
+      adjacency = jaccardDist >= threshold
+    } else {
+      adjacency = adjacency & (jaccardDist >= threshold)
+    }
+
+    # break if one of MDs is false
+    if (sum(adjacency) == 0)
+      i = ncol(features)
+
+    i = i + 1
+  }
+}
+
+detectDuplicates = function(Matrix[Double] LHS_adj, Matrix[Double] RHS_adj)
+  return(Matrix[Double] MD)
+{
+
+  n = nrow(LHS_adj)
+  adjacency = LHS_adj * RHS_adj  
+  # find duplicates
+  colDuplicates = components(G=adjacency[1:n, 1:n], verbose=FALSE)
+  MD = colDuplicates * (rowSums(adjacency[1:n, 1:n]) > 0)
+}

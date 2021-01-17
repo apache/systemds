@@ -38,6 +38,7 @@ import org.apache.sysds.common.Types.ReturnType;
  */
 public enum Builtins {
 	//builtin functions
+	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),
 	ABSTAIN("abstain", true),
@@ -49,6 +50,7 @@ public enum Builtins {
 	ALS_TOPK_PREDICT("ALS_topk_predict", true),
 	ASIN("asin", false),
 	ATAN("atan", false),
+	AUTOENCODER2LAYER("autoencoder_2layer", true),
 	AVG_POOL("avg_pool", false),
 	AVG_POOL_BACKWARD("avg_pool_backward", false),
 	BATCH_NORM2D("batch_norm2d", false, ReturnType.MULTI_RETURN),
@@ -97,7 +99,9 @@ public enum Builtins {
 	DETECTSCHEMA("detectSchema", false),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
+	DISCOVER_MD("mdedup", true),
 	DIST("dist", true),
+	DMV("dmv", true),
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
@@ -165,7 +169,10 @@ public enum Builtins {
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	OUTLIER_SD("outlierBySd", true),
 	OUTLIER_IQR("outlierByIQR", true),
+	OUTLIER_ARIMA("outlierByArima",true),
 	PCA("pca", true),
+	PCAINVERSE("pcaInverse", true),
+	PCATRANSFORM("pcaTransform", true),
 	PNMF("pnmf", true),
 	PPCA("ppca", true),
 	PPRED("ppred", false),
@@ -198,6 +205,7 @@ public enum Builtins {
 	SMOTE("smote", true),
 	SOLVE("solve", false),
 	SPLIT("split", true),
+	STATSNA("statsNA", true),
 	SQRT("sqrt", false),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),

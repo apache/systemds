@@ -33,6 +33,9 @@ import java.util.Queue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
+import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionBitSet;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
@@ -55,38 +58,33 @@ public class BitmapEncoder {
 	/**
 	 * Generate uncompressed bitmaps for a set of columns in an uncompressed matrix block.
 	 * 
-	 * @param colIndices   Indexes (within the block) of the columns to extract
-	 * @param rawBlock     An uncompressed matrix block; can be dense or sparse
-	 * @param compSettings The compression settings used for the compression.
+	 * @param colIndices Indexes (within the block) of the columns to extract
+	 * @param rawBlock   An uncompressed matrix block; can be dense or sparse
+	 * @param transposed Boolean specifying if the rawblock was transposed.
 	 * @return uncompressed bitmap representation of the columns
 	 */
-	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, CompressionSettings compSettings) {
+	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, boolean transposed) {
 		// note: no sparse column selection reader because low potential
 		// single column selection
 		Bitmap res = null;
 		if(colIndices.length == 1) {
-			res = extractBitmap(colIndices[0], rawBlock, compSettings);
+			res = extractBitmap(colIndices[0], rawBlock, transposed);
 		}
 		// multiple column selection (general case)
 		else {
-			ReaderColumnSelection reader = null;
-			if(rawBlock.isInSparseFormat() && compSettings.transposeInput)
-				reader = new ReaderColumnSelectionSparse(rawBlock, colIndices, compSettings);
-			else
-				reader = new ReaderColumnSelectionDense(rawBlock, colIndices, compSettings);
+			try {
+				res = extractBitmap(colIndices, ReaderColumnSelection.createReader(rawBlock, colIndices, transposed));
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException("Failed to extract bitmap", e);
+			}
+		}
+		return res;
 
-			res = extractBitmap(colIndices, reader);
-		}
-		if(compSettings.lossy) {
-			return makeBitmapLossy(res);
-		}
-		else {
-			return res;
-		}
 	}
 
 	public static ABitmap extractBitmap(int[] colIndices, int rows, BitSet rawBlock, CompressionSettings compSettings) {
-		ReaderColumnSelection reader = new ReaderColumnSelectionBitSet(rawBlock, rows, colIndices, compSettings);
+		ReaderColumnSelection reader = new ReaderColumnSelectionBitSet(rawBlock, rows, colIndices);
 		Bitmap res = extractBitmap(colIndices, reader);
 		return res;
 	}
@@ -96,58 +94,98 @@ public class BitmapEncoder {
 	 * 
 	 * It counts the instances of zero, but skips storing the values.
 	 * 
-	 * @param colIndex     The index of the column
-	 * @param rawBlock     The Raw matrix block (that can be transposed)
-	 * @param compSettings The Compression settings used, in this instance to know if the raw block is transposed.
+	 * @param colIndex   The index of the column
+	 * @param rawBlock   The Raw matrix block (that can be transposed)
+	 * @param transposed Boolean specifying if the rawBlock is transposed or not.
 	 * @return Bitmap containing the Information of the column.
 	 */
-	private static Bitmap extractBitmap(int colIndex, MatrixBlock rawBlock, CompressionSettings compSettings) {
+	private static Bitmap extractBitmap(int colIndex, MatrixBlock rawBlock, boolean transposed) {
+		DoubleIntListHashMap hashMap = transposed ? extractHashMapTransposed(colIndex,
+			rawBlock) : extractHashMap(colIndex, rawBlock);
+		return makeBitmap(hashMap);
+	}
+
+	private static DoubleIntListHashMap extractHashMap(int colIndex, MatrixBlock rawBlock) {
 		// probe map for distinct items (for value or value groups)
 		DoubleIntListHashMap distinctVals = new DoubleIntListHashMap();
 
 		// scan rows and probe/build distinct items
-		final int m = compSettings.transposeInput ? rawBlock.getNumColumns() : rawBlock.getNumRows();
-		int numZeros = 0;
+		final int m = rawBlock.getNumRows();
 
-		if(rawBlock.isInSparseFormat() && compSettings.transposeInput) { // SPARSE and Transposed.
-			SparseBlock a = rawBlock.getSparseBlock();
-			if(a != null && !a.isEmpty(colIndex)) {
-				int apos = a.pos(colIndex);
-				int alen = a.size(colIndex);
-				numZeros = m - alen;
-				int[] aix = a.indexes(colIndex);
-				double[] avals = a.values(colIndex);
-
-				for(int j = apos; j < apos + alen; j++) {
-					IntArrayList lstPtr = distinctVals.get(avals[j]);
-					if(lstPtr == null) {
-						lstPtr = new IntArrayList();
-						distinctVals.appendValue(avals[j], lstPtr);
+		if((rawBlock.getNumRows() == 1 || rawBlock.getNumColumns() == 1) && !rawBlock.isInSparseFormat()) {
+			double[] values = rawBlock.getDenseBlockValues();
+			if(values != null)
+				for(int i = 0; i < values.length; i++) {
+					double val = values[i];
+					if(val != 0) {
+						distinctVals.appendValue(val, i);
 					}
-					lstPtr.appendValue(aix[j]);
+				}
+		}
+		else if(!rawBlock.isInSparseFormat() && rawBlock.getDenseBlock().blockSize() == 1) {
+			double[] values = rawBlock.getDenseBlockValues();
+			for(int i = 0, off = colIndex;
+				off < rawBlock.getNumRows() * rawBlock.getNumColumns();
+				i++, off += rawBlock.getNumColumns()) {
+				double val = values[off];
+				if(val != 0) {
+					distinctVals.appendValue(val, i);
 				}
 			}
 		}
 		else // GENERAL CASE
 		{
 			for(int i = 0; i < m; i++) {
-				double val = compSettings.transposeInput ? rawBlock.quickGetValue(colIndex, i) : rawBlock
-					.quickGetValue(i, colIndex);
+				double val = rawBlock.quickGetValue(i, colIndex);
 				if(val != 0) {
-					IntArrayList lstPtr = distinctVals.get(val);
-					if(lstPtr == null) {
-						lstPtr = new IntArrayList();
-						distinctVals.appendValue(val, lstPtr);
-					}
-					lstPtr.appendValue(i);
-				}
-				else {
-					numZeros++;
+					distinctVals.appendValue(val, i);
 				}
 			}
 		}
+		return distinctVals;
+	}
 
-		return makeBitmap(distinctVals, numZeros);
+	private static DoubleIntListHashMap extractHashMapTransposed(int colIndex, MatrixBlock rawBlock) {
+		// probe map for distinct items (for value or value groups)
+		DoubleIntListHashMap distinctVals = new DoubleIntListHashMap();
+
+		// scan rows and probe/build distinct items
+		final int m = rawBlock.getNumColumns();
+
+		if(rawBlock.isInSparseFormat()) { // SPARSE and Transposed.
+			SparseBlock a = rawBlock.getSparseBlock();
+			if(a != null && !a.isEmpty(colIndex)) {
+				int apos = a.pos(colIndex);
+				int alen = a.size(colIndex);
+				int[] aix = a.indexes(colIndex);
+				double[] avals = a.values(colIndex);
+
+				for(int j = apos; j < apos + alen; j++) {
+					distinctVals.appendValue(avals[j], aix[j]);
+				}
+			}
+		}
+		else if((rawBlock.getNumRows() == 1 || rawBlock.getNumColumns() == 1) && !rawBlock.isInSparseFormat()) {
+			double[] values = rawBlock.getDenseBlockValues();
+			if(values != null) {
+				for(int i = 0; i < values.length; i++) {
+					double val = values[i];
+					if(val != 0) {
+						distinctVals.appendValue(val, i);
+					}
+				}
+			}
+		}
+		else // GENERAL CASE
+		{
+			for(int i = 0; i < m; i++) {
+				double val = rawBlock.quickGetValue(colIndex, i);
+				if(val != 0) {
+					distinctVals.appendValue(val, i);
+				}
+			}
+		}
+		return distinctVals;
 	}
 
 	/**
@@ -161,6 +199,7 @@ public class BitmapEncoder {
 	 */
 	private static Bitmap extractBitmap(int[] colIndices, ReaderColumnSelection rowReader) {
 		// probe map for distinct items (for value or value groups)
+
 		DblArrayIntListHashMap distinctVals;
 		if(colIndices.length > 10) {
 			distinctVals = new DblArrayIntListHashMap(2048);
@@ -187,38 +226,38 @@ public class BitmapEncoder {
 				lstPtr.appendValue(rowReader.getCurrentRowIndex());
 			}
 		}
-		return makeBitmap(distinctVals, colIndices.length, zero);
+		return makeBitmap(distinctVals, zero, colIndices.length);
 	}
 
 	/**
 	 * Make the multi column Bitmap.
 	 * 
-	 * @param distinctVals The distinct values fround in the columns selected.
-	 * @param numColumns   Number of columns
+	 * @param distinctVals The distinct values found in the columns selected.
 	 * @param numZeros     Number of zero rows. aka rows only containing zero values.
+	 * @param numCols      Number of columns
 	 * @return The Bitmap.
 	 */
-	private static Bitmap makeBitmap(DblArrayIntListHashMap distinctVals, int numColumns, int numZeros) {
+	private static Bitmap makeBitmap(DblArrayIntListHashMap distinctVals, int numZeros, int numCols) {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
-		int numVals = distinctVals.size();
-		int numCols = numColumns;
-		double[] values = new double[numVals * numCols];
-		IntArrayList[] offsetsLists = new IntArrayList[numVals];
-		int bitmapIx = 0;
-		for(DArrayIListEntry val : distinctVals.extractValues()) {
-			System.arraycopy(val.key.getData(), 0, values, bitmapIx * numCols, numCols);
-			offsetsLists[bitmapIx++] = val.value;
+		ArrayList<DArrayIListEntry> mapEntries = distinctVals.extractValues();
+		if(!mapEntries.isEmpty()) {
+
+			int numVals = distinctVals.size();
+			double[] values = new double[numVals * numCols];
+			IntArrayList[] offsetsLists = new IntArrayList[numVals];
+			int bitmapIx = 0;
+			for(DArrayIListEntry val : mapEntries) {
+				System.arraycopy(val.key.getData(), 0, values, bitmapIx * numCols, numCols);
+				offsetsLists[bitmapIx++] = val.value;
+			}
+
+			return new Bitmap(numCols, offsetsLists, numZeros, values);
+		}
+		else {
+			return new Bitmap(numCols, null, numZeros, null);
 		}
 
-		// HACK; we make sure that the first sparse unsafe operation assume
-		// that we have entries with zero values. This makes the first sparse
-		// unsafe operation slightly slower, if the input compressed matrix is
-		// fully dense, aka containing no zero values.
-		// This is required for multi-column colGroups.
-		numZeros = (numColumns > 1) ? numZeros + 1 : numZeros;
-
-		return new Bitmap(numCols, offsetsLists, numZeros, values);
 	}
 
 	/**
@@ -228,7 +267,7 @@ public class BitmapEncoder {
 	 * @param numZeros     Number of zero values in the matrix
 	 * @return The single column Bitmap.
 	 */
-	private static Bitmap makeBitmap(DoubleIntListHashMap distinctVals, int numZeros) {
+	private static Bitmap makeBitmap(DoubleIntListHashMap distinctVals) {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
 		int numVals = distinctVals.size();
@@ -240,7 +279,7 @@ public class BitmapEncoder {
 			offsetsLists[bitmapIx++] = val.value;
 		}
 
-		return new Bitmap(1, offsetsLists, numZeros, values);
+		return new Bitmap(1, offsetsLists, 1, values);
 	}
 
 	/**
@@ -249,7 +288,7 @@ public class BitmapEncoder {
 	 * @param ubm The Uncompressed version of the bitmap.
 	 * @return A bitmap.
 	 */
-	private static ABitmap makeBitmapLossy(Bitmap ubm) {
+	public static ABitmap makeBitmapLossy(Bitmap ubm) {
 		final double[] fp = ubm.getValues();
 		if(fp.length == 0) {
 			return ubm;

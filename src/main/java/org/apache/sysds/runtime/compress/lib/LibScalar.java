@@ -27,11 +27,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.Dictionary;
@@ -39,8 +42,8 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -48,51 +51,39 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class LibScalar {
 
-	// private static final Log LOG = LogFactory.getLog(LibScalar.class.getName());
+	private static final Log LOG = LogFactory.getLog(LibScalar.class.getName());
 	private static final int MINIMUM_PARALLEL_SIZE = 8096;
 
-	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1, CompressedMatrixBlock ret,
-		boolean overlapping) {
-		if(sop instanceof LeftScalarOperator) {
-			if(sop.fn instanceof Minus) {
-				m1 = (CompressedMatrixBlock) scalarOperations(new RightScalarOperator(Multiply.getMultiplyFnObject(),
-					-1), m1, ret, overlapping);
-				return scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), sop.getConstant()),
-					m1,
-					ret,
-					overlapping);
-			}
-			else if(sop.fn instanceof Divide){
-				throw new DMLCompressionException("Not supported left hand side divide Compressed");
-			}
-			else if(sop.fn instanceof Power2) {
-				throw new DMLCompressionException("Left Power does not make sense.");
-			}
+	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1, MatrixValue result) {
+		// Special case handling of overlapping relational operations
+		if(LibRelationalOp.isValidForRelationalOperation(sop, m1)) {
+			return LibRelationalOp.overlappingRelativeRelationalOperation(sop, m1);
 		}
+
+		if(isInValidForCompressedOutput(m1, sop)) {
+			LOG.warn("scalar overlapping not supported for op: " + sop.fn);
+			MatrixBlock m1d = m1.decompress(sop.getNumThreads());
+			return m1d.scalarOperations(sop, result);
+		}
+
+		CompressedMatrixBlock ret = setupRet(m1, result);
 
 		List<ColGroup> colGroups = m1.getColGroups();
-		if(overlapping && !(sop.fn instanceof Multiply || sop.fn instanceof Divide)) {
-			if(sop.fn instanceof Plus || sop.fn instanceof Minus) {
-
-				// If the colGroup is overlapping we know there are no incompressable colGroups.
-				List<ColGroup> newColGroups = new ArrayList<>();
-				for(ColGroup grp : colGroups) {
-					ColGroupValue g = (ColGroupValue) grp;
-					newColGroups.add(g.copy());
-				}
-				int[] colIndexes = newColGroups.get(0).getColIndices();
-				double v = sop.executeScalar(0);
-				double[] values = new double[colIndexes.length];
-				Arrays.fill(values, v);
-				newColGroups.add(new ColGroupConst(colIndexes, ret.getNumRows(), new Dictionary(values)));
-				ret.allocateColGroupList(newColGroups);
-				ret.setOverlapping(true);
-				ret.setNonZeros(-1);
-			}
+		if(m1.isOverlapping() && !(sop.fn instanceof Multiply || sop.fn instanceof Divide)) {
+			ColGroup constOverlap = constOverlap(m1, sop);
+			List<ColGroup> newColGroups = (sop instanceof LeftScalarOperator &&
+				sop.fn instanceof Minus) ? processOverlappingSubtractionLeft(m1,
+					sop,
+					ret) : processOverlappingAddition(m1, sop, ret);
+			newColGroups.add(constOverlap);
+			ret.allocateColGroupList(newColGroups);
+			ret.setOverlapping(true);
 		}
 		else {
-			if(sop.getNumThreads() > 1) {
-				parallelScalarOperations(sop, colGroups, ret, sop.getNumThreads());
+			int threadsAvailable = (sop.getNumThreads() > 1) ? sop.getNumThreads() : OptimizerUtils
+				.getConstrainedNumThreads(-1);
+			if(threadsAvailable > 1) {
+				parallelScalarOperations(sop, colGroups, ret, threadsAvailable);
 			}
 			else {
 				// Apply the operation to each of the column groups.
@@ -103,16 +94,65 @@ public class LibScalar {
 				}
 				ret.allocateColGroupList(newColGroups);
 			}
-			ret.setNonZeros(-1);
 			ret.setOverlapping(m1.isOverlapping());
 		}
+
+		ret.setNonZeros(-1);
 
 		return ret;
 
 	}
 
+	private static CompressedMatrixBlock setupRet(CompressedMatrixBlock m1, MatrixValue result){
+		CompressedMatrixBlock ret;
+		if(result == null || !(result instanceof CompressedMatrixBlock))
+			ret = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns());
+		else{
+			ret = (CompressedMatrixBlock) result;
+			ret.setNumColumns(m1.getNumColumns());
+			ret.setNumRows(m1.getNumRows());
+		}
+		return ret;
+	}
+
+	private static ColGroup constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
+		int[] colIndexes = new int[m1.getNumColumns()];
+		for(int i = 0; i < colIndexes.length; i++)
+			colIndexes[i] = i;
+		double v = sop.executeScalar(0);
+		double[] values = new double[colIndexes.length];
+		Arrays.fill(values, v);
+		return new ColGroupConst(colIndexes, m1.getNumRows(), new Dictionary(values));
+	}
+
+	private static List<ColGroup> processOverlappingAddition(CompressedMatrixBlock m1, ScalarOperator sop,
+		CompressedMatrixBlock ret) {
+		List<ColGroup> newColGroups = new ArrayList<>();
+		for(ColGroup grp : m1.getColGroups())
+			newColGroups.add(((ColGroupValue) grp).copy());
+		return newColGroups;
+
+	}
+
+	private static List<ColGroup> processOverlappingSubtractionLeft(CompressedMatrixBlock m1, ScalarOperator sop,
+		CompressedMatrixBlock ret) {
+		List<ColGroup> newColGroups = new ArrayList<>();
+		for(ColGroup grp : m1.getColGroups())
+			newColGroups.add(
+				((ColGroupValue) grp).scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
+		return newColGroups;
+	}
+
+	private static boolean isInValidForCompressedOutput(CompressedMatrixBlock m1, ScalarOperator sop) {
+		return m1.isOverlapping() &&
+			(!(sop.fn instanceof Multiply || (sop.fn instanceof Divide && sop instanceof RightScalarOperator) ||
+				sop.fn instanceof Plus || sop.fn instanceof Minus));
+	}
+
 	private static void parallelScalarOperations(ScalarOperator sop, List<ColGroup> colGroups,
 		CompressedMatrixBlock ret, int k) {
+		if(colGroups == null)
+			return;
 		ExecutorService pool = CommonThreadPool.get(k);
 		List<ScalarTask> tasks = partition(sop, colGroups);
 		try {
@@ -140,7 +180,7 @@ public class LibScalar {
 			}
 			else {
 				int nv = ((ColGroupValue) grp).getNumValues() * grp.getColIndices().length;
-				if(nv < MINIMUM_PARALLEL_SIZE) {
+				if(nv < MINIMUM_PARALLEL_SIZE && !(grp instanceof ColGroupOLE)) {
 					small.add(grp);
 				}
 				else {

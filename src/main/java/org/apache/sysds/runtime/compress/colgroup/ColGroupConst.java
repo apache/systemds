@@ -22,11 +22,10 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.util.Iterator;
 
 import org.apache.sysds.runtime.DMLCompressionException;
-import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -49,11 +48,11 @@ public class ColGroupConst extends ColGroupValue {
 	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
 	 * 
 	 * @param colIndices The Colum indexes for the column group.
-	 * @param numRows	The number of rows contained in the group.
-	 * @param dict	   The dictionary containing one tuple for the entire compression.
+	 * @param numRows    The number of rows contained in the group.
+	 * @param dict       The dictionary containing one tuple for the entire compression.
 	 */
 	public ColGroupConst(int[] colIndices, int numRows, ADictionary dict) {
-		super(colIndices, numRows, dict);
+		super(colIndices, numRows, dict, null);
 	}
 
 	@Override
@@ -75,11 +74,11 @@ public class ColGroupConst extends ColGroupValue {
 
 	@Override
 	protected void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean) {
-		KahanObject kbuff = new KahanObject(0, 0);
+
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
-		double[] vals = _dict.sumAllRowsToDouble(kplus, kbuff, _colIndexes.length);
+		double[] vals = _dict.sumAllRowsToDouble(kplus, _colIndexes.length);
 		for(int rix = rl; rix < ru; rix++) {
-			setandExecute(c, kbuff, kplus2, vals[0], rix * (2 + (mean ? 1 : 0)));
+			setandExecute(c, kplus2, vals[0], rix * (2 + (mean ? 1 : 0)));
 		}
 	}
 
@@ -89,9 +88,10 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+	protected void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {
 		throw new DMLCompressionException(
-			"Row max not supported for Const since Const is used for overlapping ColGroups, You have to materialize rows and then calculate row max");
+			"Row max not supported for Const since Const is used for overlapping ColGroups,"
+				+ " You have to materialize rows and then calculate row max");
 	}
 
 	@Override
@@ -111,6 +111,11 @@ public class ColGroupConst extends ColGroupValue {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+		decompressToBlockSafe(target, rl, ru, offT, values, true);
+	}
+
+	@Override
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
 		final int ncol = getNumCols();
 
 		for(int i = rl; i < ru; i++, offT++)
@@ -162,20 +167,11 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
-		int cu) {
-
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+		int ru) {
 		for(int i = rl * thatNrColumns; i < ru * thatNrColumns; i += thatNrColumns)
-			for(int j = i + cl; j < i + cu; j++)
-				c[j] += preAggregatedB[j % thatNrColumns];
-
-	}
-
-	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		throw new DMLCompressionException(
-			"Depreciated and not supported right mult by sparse matrix Please preAggregate before calling");
+			for(int j = 0; j < outputColumns.length; j++)
+				c[outputColumns[j] + i] += preAggregatedB[j];
 	}
 
 	private double preAggregate(double[] a, int aRows) {
@@ -184,15 +180,6 @@ public class ColGroupConst extends ColGroupValue {
 			vals += a[off];
 		}
 		return vals;
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals) {
-		double preAggVals = preAggregate(a, 0);
-		double[] dictVals = getValues();
-		for(int i = 0; i < _colIndexes.length; i++) {
-			c[i] += preAggVals * dictVals[i];
-		}
 	}
 
 	@Override
@@ -216,10 +203,11 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] c, int numVals,
-		double[] values, int numRows, int numCols, int row, double[] MaterializedRow) {
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
+		double[] MaterializedRow) {
 		double v = 0;
-		for(int i = 0; i < spNrVals; i++) {
+		double[] sparseV = sb.values(row);
+		for(int i = sb.pos(row); i < sb.pos(row) + sb.size(row); i++) {
 			v += sparseV[i];
 		}
 		int offC = row * numCols;
@@ -259,5 +247,10 @@ public class ColGroupConst extends ColGroupValue {
 		for(int i = 0; i < ru - rl; i++) {
 			rnnz[i] = base;
 		}
+	}
+
+	@Override
+	public boolean isDense() {
+		return true;
 	}
 }

@@ -31,7 +31,7 @@ public class LineageItem {
 	private final long _id;
 	private final String _opcode;
 	private final String _data;
-	private final LineageItem[] _inputs;
+	private LineageItem[] _inputs;
 	private int _hash = 0;
 	private long _distLeaf2Node;
 	// init visited to true to ensure visited items are
@@ -91,6 +91,11 @@ public class LineageItem {
 	
 	public LineageItem[] getInputs() {
 		return _inputs;
+	}
+	
+	public void resetInputs() {
+		_inputs = null;
+		_hash = 0;
 	}
 	
 	public void setInput(int i, LineageItem item) {

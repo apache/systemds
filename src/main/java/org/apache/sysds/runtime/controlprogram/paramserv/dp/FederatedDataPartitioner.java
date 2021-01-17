@@ -24,10 +24,11 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 
 public class FederatedDataPartitioner {
-
 	private final DataPartitionFederatedScheme _scheme;
+	private final int _seed;
 
-	public FederatedDataPartitioner(Statement.FederatedPSScheme scheme) {
+	public FederatedDataPartitioner(Statement.FederatedPSScheme scheme, int seed) {
+		_seed = seed;
 		switch (scheme) {
 			case KEEP_DATA_ON_WORKER:
 				_scheme = new KeepDataOnWorkerFederatedScheme();
@@ -35,12 +36,21 @@ public class FederatedDataPartitioner {
 			case SHUFFLE:
 				_scheme = new ShuffleFederatedScheme();
 				break;
+			case REPLICATE_TO_MAX:
+				_scheme = new ReplicateToMaxFederatedScheme();
+				break;
+			case SUBSAMPLE_TO_MIN:
+				_scheme = new SubsampleToMinFederatedScheme();
+				break;
+			case BALANCE_TO_AVG:
+				_scheme = new BalanceToAvgFederatedScheme();
+				break;
 			default:
 				throw new DMLRuntimeException(String.format("FederatedDataPartitioner: not support data partition scheme '%s'", scheme));
 		}
 	}
 
 	public DataPartitionFederatedScheme.Result doPartitioning(MatrixObject features, MatrixObject labels) {
-		return _scheme.doPartitioning(features, labels);
+		return _scheme.partition(features, labels, _seed);
 	}
 }

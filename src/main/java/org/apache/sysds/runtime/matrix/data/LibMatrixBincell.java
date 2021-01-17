@@ -164,7 +164,7 @@ public class LibMatrixBincell
 			return BinaryAccessType.INVALID;
 	}
 
-	public static boolean isValidDimensionsBinary(MatrixBlock m1, MatrixBlock m2)
+	public static void isValidDimensionsBinary(MatrixBlock m1, MatrixBlock m2)
 	{
 		int rlen1 = m1.rlen;
 		int clen1 = m1.clen;
@@ -176,11 +176,15 @@ public class LibMatrixBincell
 		//2) MV operations w/ V either being a right-hand-side column or row vector 
 		//  (where one dimension needs to match and the other dimension is 1)
 		//3) VV outer vector operations w/ a common dimension of 1 
-		
-		return (   (rlen1 == rlen2 && clen1==clen2)            //MM 
-				|| (rlen1 == rlen2 && clen1 > 1 && clen2 == 1) //MVc
-				|| (clen1 == clen2 && rlen1 > 1 && rlen2 == 1) //MVr
-				|| (clen1 == 1 && rlen2 == 1 ) );              //VV
+		boolean isValid = (   (rlen1 == rlen2 && clen1==clen2)            //MM 
+							|| (rlen1 == rlen2 && clen1 > 1 && clen2 == 1) //MVc
+							|| (clen1 == clen2 && rlen1 > 1 && rlen2 == 1) //MVr
+							|| (clen1 == 1 && rlen2 == 1 ) );              //VV
+
+		if( !isValid ) {
+			throw new RuntimeException("Block sizes are not matched for binary " +
+					"cell operations: " + m1.rlen + "x" + m1.clen + " vs " + m2.rlen + "x" + m2.clen);
+		}
 	}
 
 	public static boolean isSparseSafeDivide(BinaryOperator op, MatrixBlock rhs)

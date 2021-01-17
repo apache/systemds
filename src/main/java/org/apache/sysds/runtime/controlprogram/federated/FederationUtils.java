@@ -78,6 +78,25 @@ public class FederationUtils {
 		return new FederatedRequest(RequestType.EXEC_INST, id, linst);
 	}
 
+	public static FederatedRequest[] callInstruction(String[] inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {
+		long id = getNextFedDataID();
+		String[] linst = inst;
+		FederatedRequest[] fr = new FederatedRequest[inst.length];
+		for(int j=0; j<inst.length; j++) {
+			for(int i = 0; i < varOldIn.length; i++) {
+				linst[j] = linst[j].replace(ExecType.SPARK.name(), ExecType.CP.name());
+				linst[j] = linst[j].replace(Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR + String.valueOf(id) + Lop.DATATYPE_PREFIX);
+
+				if(varOldIn[i] != null) {
+					linst[j] = linst[j].replace(Lop.OPERAND_DELIMITOR + varOldIn[i].getName() + Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR + String.valueOf(varNewIn[i]) + Lop.DATATYPE_PREFIX);
+					linst[j] = linst[j].replace("=" + varOldIn[i].getName(), "=" + String.valueOf(varNewIn[i])); //parameterized
+				}
+			}
+			fr[j] = new FederatedRequest(RequestType.EXEC_INST, id, (Object) linst[j]);
+		}
+		return fr;
+	}
+
 	public static MatrixBlock aggAdd(Future<FederatedResponse>[] ffr) {
 		try {
 			SimpleOperator op = new SimpleOperator(Plus.getPlusFnObject());
@@ -100,7 +119,7 @@ public class FederationUtils {
 			long size = 0;
 			for(int i=0; i<ffr.length; i++) {
 				Object input = ffr[i].get().getData()[0];
-				MatrixBlock tmp = (input instanceof ScalarObject) ? 
+				MatrixBlock tmp = (input instanceof ScalarObject) ?
 					new MatrixBlock(((ScalarObject)input).getDoubleValue()) : (MatrixBlock) input;
 				size += ranges[i].getSize(0);
 				sop1 = sop1.setConstant(ranges[i].getSize(0));
@@ -298,6 +317,10 @@ public class FederationUtils {
 		}
 	}
 
+	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr) {
+		return aggScalar(aop, ffr, null);
+	}
+
 	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, FederationMap map) {
 		if(!(aop.aggOp.increOp.fn instanceof KahanFunction || (aop.aggOp.increOp.fn instanceof Builtin &&
 			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN
@@ -347,7 +370,7 @@ public class FederationUtils {
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
 				+ aop.aggOp.increOp.fn.getClass().getSimpleName());
 	}
-	
+
 	public static FederationMap federateLocalData(CacheableData<?> data) {
 		long id = FederationUtils.getNextFedDataID();
 		FederatedLocalData federatedLocalData = new FederatedLocalData(id, data);

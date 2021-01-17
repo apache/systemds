@@ -243,6 +243,7 @@ public enum Builtins {
 	SCALE("scale", true, false),     //TODO parameterize center & scale
 	TIME("time", false),
 	CVLM("cvlm", true, false),
+	TOKENIZE("tokenize", false, true),
 	TOSTRING("toString", false, true),
 	TRANSFORMAPPLY("transformapply", false, true),
 	TRANSFORMCOLMAP("transformcolmap", false, true),

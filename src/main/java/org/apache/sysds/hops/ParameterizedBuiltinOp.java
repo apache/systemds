@@ -182,6 +182,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case REPLACE:
 			case LOWER_TRI:
 			case UPPER_TRI:
+			case TOKENIZE:
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:

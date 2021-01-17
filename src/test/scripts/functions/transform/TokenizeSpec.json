@@ -1,0 +1,6 @@
+{
+  "algo": "whitespace",
+  "out": "bow",
+  "id_col": 1,
+  "tokenize_col": 2
+}

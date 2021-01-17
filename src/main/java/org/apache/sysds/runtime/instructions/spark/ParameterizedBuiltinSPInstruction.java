@@ -73,6 +73,8 @@ import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.transform.meta.TfOffsetMap;
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Tuple2;
@@ -161,6 +163,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				|| opcode.equalsIgnoreCase("replace")
 				|| opcode.equalsIgnoreCase("lowertri")
 				|| opcode.equalsIgnoreCase("uppertri")
+				|| opcode.equalsIgnoreCase("tokenize")
 				|| opcode.equalsIgnoreCase("transformapply")
 				|| opcode.equalsIgnoreCase("transformdecode")) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
@@ -432,7 +435,26 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			mcOut.set(dirRows?lmaxVal:mcIn.getRows(), dirRows?mcIn.getRows():lmaxVal, (int)blen, -1);
 		}
-		else if ( opcode.equalsIgnoreCase("transformapply") ) 
+		else if ( opcode.equalsIgnoreCase("tokenize") )
+		{
+			//get input RDD and meta data
+			FrameObject fo = sec.getFrameObject(params.get("target"));
+			JavaPairRDD<Long,FrameBlock> in = (JavaPairRDD<Long,FrameBlock>)
+					sec.getRDDHandleForFrameObject(fo, FileFormat.BINARY);
+			DataCharacteristics mc = sec.getDataCharacteristics(params.get("target"));
+
+			//construct decoder and decode individual matrix blocks
+			Tokenizer tokenizer = TokenizerFactory.createTokenizer(params.get("spec"), null);
+			JavaPairRDD<Long,FrameBlock> out = in.mapToPair(
+					new RDDTokenizeFunction(tokenizer, mc.getBlocksize()));
+
+			//set output and maintain lineage/output characteristics
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), params.get("target"));
+			sec.getDataCharacteristics(output.getName());
+			sec.getFrameObject(output.getName()).setSchema(tokenizer.getSchema());
+		}
+		else if ( opcode.equalsIgnoreCase("transformapply") )
 		{
 			//get input RDD and meta data
 			FrameObject fo = sec.getFrameObject(params.get("target"));
@@ -784,6 +806,30 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 			
 			return new MatrixCell(val);
+		}
+	}
+
+	public static class RDDTokenizeFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock>
+	{
+		private static final long serialVersionUID = -8788298032616522019L;
+
+		private Tokenizer _tokenizer = null;
+		private int _blen = -1;
+
+		public RDDTokenizeFunction(Tokenizer tokenizer, int blen) {
+			_tokenizer = tokenizer;
+			_blen = blen;
+		}
+
+		@Override
+		public Tuple2<Long,FrameBlock> call(Tuple2<Long, FrameBlock> in)
+				throws Exception
+		{
+			long key = in._1();
+			FrameBlock blk = in._2();
+
+			FrameBlock fbout = _tokenizer.tokenize(blk, new FrameBlock(_tokenizer.getSchema()));
+			return new Tuple2<>(key, fbout);
 		}
 	}
 

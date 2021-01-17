@@ -173,7 +173,8 @@ public class ParameterizedBuiltin extends Lop
 				}
 				
 				break;
-			
+
+			case TOKENIZE:
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:

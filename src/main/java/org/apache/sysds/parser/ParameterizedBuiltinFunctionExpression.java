@@ -202,6 +202,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case ORDER:
 			validateOrder(output, conditional);
 			break;
+
+		case TOKENIZE:
+			validateTokenize(output, conditional);
+			break;
 		
 		case TRANSFORMAPPLY:
 			validateTransformApply(output, conditional);
@@ -334,6 +338,21 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 					String.format("Function %s should provide a string value for %s parameter.", fname, pname),
 					conditional);
 		}
+	}
+
+	private void validateTokenize(DataIdentifier output, boolean conditional)
+	{
+		//validate data / metadata (recode maps)
+		checkDataType("tokenize", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+
+		//validate specification
+		checkDataValueType(false, "tokenize", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
+
+		//set output dimensions
+		output.setDataType(DataType.FRAME);
+		output.setValueType(ValueType.STRING);
+		output.setDimensions(-1, -1);
 	}
 
 	// example: A = transformapply(target=X, meta=M, spec=s)

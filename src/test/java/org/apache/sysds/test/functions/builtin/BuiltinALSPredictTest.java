@@ -26,10 +26,13 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BuiltinALSTopKPredictTest extends AutomatedTestBase {
-    private final static String TEST_NAME = "ALS_topk_predict";
+public class BuiltinALSPredictTest extends AutomatedTestBase {
+    private final static String TEST_NAME = "ALS_predict";
     private final static String TEST_DIR = "functions/builtin/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinALSTopKPredictTest.class.getSimpleName() + "/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinALSPredictTest.class.getSimpleName() + "/";
+
+    private final static int rows = 5;
+    private final static int cols = 5;
 
     @Override
     public void setUp() {
@@ -37,11 +40,11 @@ public class BuiltinALSTopKPredictTest extends AutomatedTestBase {
     }
 
     @Test
-    public void testALSTopKPredict() {
-        runtestALSTopKPredict();
+    public void testALSPredict() {
+        runtestALSPredict();
     }
 
-    private void runtestALSTopKPredict(){
+    private void runtestALSPredict() {
 
         loadTestConfiguration(getTestConfiguration(TEST_NAME));
         String HOME = SCRIPT_DIR + TEST_DIR;
@@ -54,12 +57,12 @@ public class BuiltinALSTopKPredictTest extends AutomatedTestBase {
         proArgs.add(input("X"));
         proArgs.add(input("L"));
         proArgs.add(input("R"));
-        proArgs.add(input("V"));
-        proArgs.add(output("V_top_indices"));
-        proArgs.add(output("V_top_values"));
+        proArgs.add(String.valueOf(rows));
+        proArgs.add(String.valueOf(cols));
+        proArgs.add(output("Y"));
         programArgs = proArgs.toArray(new String[proArgs.size()]);
 
-        double[][] X = {{1, 2, 3, 4, 5}};
+        double[][] X = {{1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
         writeInputMatrixWithMTD("X", X, true);
 
         double[][] L = {{1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}};
@@ -68,10 +71,8 @@ public class BuiltinALSTopKPredictTest extends AutomatedTestBase {
         double[][] R = {{1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}};
         writeInputMatrixWithMTD("R", R, true);
 
-        double[][] V = {{1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}};
-        writeInputMatrixWithMTD("V", V, true);
-
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
     }
+
 
 }

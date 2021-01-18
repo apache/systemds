@@ -241,6 +241,7 @@ public class Types
 				case MULT2:           return "*2";
 				case NOT:             return "!";
 				case POW2:            return "^2";
+				case TYPEOF:          return "typeOf";
 				default:              return name().toLowerCase();
 			}
 		}
@@ -263,6 +264,7 @@ public class Types
 				case "*2":      return MULT2;
 				case "!":       return NOT;
 				case "^2":      return POW2;
+				case "typeOf":          return TYPEOF;
 				default:        return valueOf(opcode.toUpperCase());
 			}
 		}

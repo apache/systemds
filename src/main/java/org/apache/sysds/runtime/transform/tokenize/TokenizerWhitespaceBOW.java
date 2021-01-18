@@ -22,9 +22,13 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
+import java.util.*;
+
 public class TokenizerWhitespaceBOW extends Tokenizer {
 
     private static final long serialVersionUID = 9130577081982055688L;
+
+    private final String splitRegex = "\\s+";
 
     protected TokenizerWhitespaceBOW(Types.ValueType[] schema, int[] colList) {
         super(schema, colList);
@@ -32,17 +36,26 @@ public class TokenizerWhitespaceBOW extends Tokenizer {
 
     @Override
     public FrameBlock tokenize(FrameBlock in, FrameBlock out) {
-        String[][] data = {
-                {
-                        "id1", "token1", "10"
-                },
-                {
-                        "id1", "token2", "20"
-                },
-                {
-                        "id2", "token2", "30"
-                }
-        };
-        return new FrameBlock(getSchema(), data);
+
+        Iterator<String[]> iterator = in.getStringRowIterator();
+        iterator.forEachRemaining(s -> {
+            String key = s[0];
+            String text = s[1];
+            String[] tokens = text.split(splitRegex);
+            // Transform to Bag format internally
+            List<String> tokenList = Arrays.asList(tokens);
+            Set<String> tokenSet = new HashSet<>(tokenList);
+            // Sort alphabetically
+            List<String> sortedTokens = new ArrayList<>(tokenSet);
+            Collections.sort(sortedTokens);
+
+            for (String token: sortedTokens) {
+                String count = String.valueOf(Collections.frequency(tokenList, token));
+                String[] row = {key, token, count};
+                out.appendRow(row);
+            }
+        });
+
+        return out;
     }
 }

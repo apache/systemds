@@ -19,10 +19,14 @@
 #
 #-------------------------------------------------------------
 
-F1 = read($1, data_type="frame", format="csv", sep=" ");
-jspec1 = "{\"algo\": \"whitespace\",\"out\": \"bow\",\"id_col\": 1,\"tokenize_col\": 2}";
+F1 = read($1, data_type="frame", format="csv", sep=",");
+#jspec = "{\"algo\": \"whitespace\",\"out\": \"bow\",\"id_col\": 1,\"tokenize_col\": 2}";
+jspec = read($2, data_type="scalar", value_type="string");
 
-F2 = tokenize(target=F1, spec=jspec1);
+# Remove separtor to avoid bug with read CSV
+F1[,2] = map(F1[,2], "x -> x.replace(',', ' ')");
+
+F2 = tokenize(target=F1, spec=jspec);
 write(F2, $3, format="csv");
 
 #jspec2 = "{\"ids\": true, \"recode\": [1,2,3]}";

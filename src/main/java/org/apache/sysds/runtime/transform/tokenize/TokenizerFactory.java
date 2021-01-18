@@ -42,7 +42,7 @@ public class TokenizerFactory {
             int id_col = jSpec.getInt("id_col"); // TODO: multi id cols
             int tokenize_col = jSpec.getInt("tokenize_col");
             if (algo.equals("whitespace") && out.equals("bow")) {
-                tokenizer = new TokenizerWhitespaceBOW(new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.INT32}, null);
+                tokenizer = new TokenizerWhitespaceBOW(new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING}, null);
             } else {
                 throw new IllegalArgumentException("Combination of algorithm and output representation is not valid " +
                         "for tokenize {algo=" + algo + ", out=" + out + "}.");

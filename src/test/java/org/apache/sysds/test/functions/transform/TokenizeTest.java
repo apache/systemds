@@ -41,8 +41,7 @@ public class TokenizeTest extends AutomatedTestBase
     private static final String SPEC = "TokenizeSpec.json";
 
     //dataset and transform tasks without missing values
-//    private final static String DATASET 	= "csv_mix/quotes1.csv";
-    private final static String DATASET 	= "20news/20news_subset.csv";  // TODO: use untokenized as input
+    private final static String DATASET 	= "20news/20news_subset_untokenized.csv";  // TODO: use untokenized as input
 
     @Override
     public void setUp()  {
@@ -52,66 +51,36 @@ public class TokenizeTest extends AutomatedTestBase
     }
 
     @Test
-    public void testFrameReadMetaSingleNodeCSV() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, "csv", false, false);
+    public void testTokenizeSingleNodeCSV() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, "csv", false);
     }
 
     @Test
-    public void testFrameReadMetaSparkCSV() {
-        runTokenizeTest(ExecMode.SPARK, "csv", false, false);
+    public void testTokenizeSparkCSV() {
+        runTokenizeTest(ExecMode.SPARK, "csv", false);
     }
 
     @Test
-    public void testFrameReadMetaHybridCSV() {
-        runTokenizeTest(ExecMode.HYBRID, "csv", false, false);
+    public void testTokenizeHybridCSV() {
+        runTokenizeTest(ExecMode.HYBRID, "csv", false);
     }
 
     @Test
-    public void testFrameParReadMetaSingleNodeCSV() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, "csv", false, true);
+    public void testTokenizeParReadSingleNodeCSV() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, "csv", true);
     }
 
     @Test
-    public void testFrameParReadMetaSparkCSV() {
-        runTokenizeTest(ExecMode.SPARK, "csv", false, true);
+    public void testTokenizeParReadSparkCSV() {
+        runTokenizeTest(ExecMode.SPARK, "csv", true);
     }
 
     @Test
-    public void testFrameParReadMetaHybridCSV() {
-        runTokenizeTest(ExecMode.HYBRID, "csv", false, true);
+    public void testTokenizeParReadHybridCSV() {
+        runTokenizeTest(ExecMode.HYBRID, "csv", true);
     }
 
-    @Test
-    public void testFrameReadSubMetaSingleNodeCSV() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, "csv", true, false);
-    }
-
-    @Test
-    public void testFrameReadSubMetaSparkCSV() {
-        runTokenizeTest(ExecMode.SPARK, "csv", true, false);
-    }
-
-    @Test
-    public void testFrameReadSubMetaHybridCSV() {
-        runTokenizeTest(ExecMode.HYBRID, "csv", true, false);
-    }
-
-    @Test
-    public void testFrameParReadSubMetaSingleNodeCSV() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, "csv", true, true);
-    }
-
-    @Test
-    public void testFrameParReadSubMetaSparkCSV() {
-        runTokenizeTest(ExecMode.SPARK, "csv", true, true);
-    }
-
-    @Test
-    public void testFrameParReadSubMetaHybridCSV() {
-        runTokenizeTest(ExecMode.HYBRID, "csv", true, true);
-    }
-
-    private void runTokenizeTest(ExecMode rt, String ofmt, boolean subset, boolean parRead )
+    private void runTokenizeTest(ExecMode rt, String ofmt, boolean parRead )
     {
         //set runtime platform
         ExecMode rtold = rtplatform;
@@ -129,10 +98,9 @@ public class TokenizeTest extends AutomatedTestBase
             getAndLoadTestConfiguration(TEST_NAME1);
 
             String HOME = SCRIPT_DIR + TEST_DIR;
-            int nrows = subset ? 4 : 13;
             fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
             programArgs = new String[]{"-stats","-args",
-                    HOME + "input/" + DATASET, String.valueOf(nrows), output("R") };
+                    HOME + "input/" + DATASET, HOME + SPEC, output("R") };
 
             runTest(true, false, null, -1);
 

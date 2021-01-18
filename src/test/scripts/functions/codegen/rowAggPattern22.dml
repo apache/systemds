@@ -22,9 +22,33 @@
 
 X = matrix(seq(1,3000), 60, 50);
 X[,5:45] = matrix(0, 60, 41);
+print("X")
+print(toString(X[7:9,], decimal=4))
 # X[,2:4] = matrix(0, 60, 3);
 # print(toString(X))
+
 R = ((7+X)+(X-7)+(X^2<=7))/(rowMaxs(X)+0.5)
-print(toString(R[1:2,], decimal=4))
+# R = (X^2<=7)#/(rowMaxs(X)+0.5)
+# R = ((7+X)+(X-7)+(X^2<=7))
+# R1 = ((7+X))
+# R2 = (X-7)
+# print("R1")
+# print(toString(R1[1:2,], decimal=4))
+# 
+# print("R2")
+# print(toString(R2[1:2,], decimal=4))
+
+# Xx = ((7+X)+(X-7)+(X^2<=7))
+# Xmax = (rowMaxs(X)+0.5)
+# Xmax = ((rowMaxs(X)%*%matrix(1,1,50))+0.5)
+# R = Xx / Xmax
+
+# print("Xx")
+# print(toString(Xx[7:9,], decimal=4))
+# print("Xmax")
+# print(toString(Xmax[7:9,], decimal=4))
+# R = (rowMaxs(X)+0.5)
+print("R")
+print(toString(R[7:9,], decimal=4))
 print("R rows="+ nrow(R) + " cols=" + ncol(R))
 write(R, $1)

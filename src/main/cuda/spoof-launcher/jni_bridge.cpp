@@ -125,6 +125,23 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 									reinterpret_cast<uint32_t*>(sides[ptr_idx+2]), m, n,
 									static_cast<uint32_t>(sides[ptr_idx])});
 		
+		uint32_t* row_ptr = reinterpret_cast<uint32_t*>(sides[ptr_idx+1]);
+		uint32_t* col_idxs = reinterpret_cast<uint32_t*>(sides[ptr_idx+2]);
+		double* data_ptr = reinterpret_cast<double*>(sides[ptr_idx+3]);
+		if(row_ptr != nullptr) {
+			for (auto i = 0; i < 2/*m*/; ++i) {
+				uint32_t alen = row_ptr[i+1] - row_ptr[i];
+				std::cout << "row_start=" << row_ptr[i] << " row_end=" << row_ptr[i+1] << " alen[" << i << "]=" << alen << std::endl << " col_idxs:\n";
+				for (auto j = 0; j < alen; ++j) {
+					std::cout << " " << *col_idxs;
+				}
+				std::cout << "\ndata:" << std::endl;
+				for (auto j = 0; j < alen; ++j) {
+					std::cout << " " << *data_ptr;
+				}
+				std::cout << std::endl;
+			}
+		}
 		std::cout << "side input #" << input_idx << " m=" << m << " n=" << n << std::endl;
 	}
 

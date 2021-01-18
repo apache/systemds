@@ -77,7 +77,9 @@ public class BuiltinKNNTest extends AutomatedTestBase
       // {rows, cols, query_rows, query_cols, continuous, k_value, sparsity}
       // {1000, 500, 35, 450, true, 7, 0.1},
       // {1000, 500, 35, 450, true, 7, 0.9}
-      {10, 10, 10, 10, true, 7, 1}
+      // {10, 10, 3, 10, true, 7, 1}
+      {10, 2, 3, 2, true, 1, 1}
+      // {2000, 10, 20, 10, true, 200, 1}
     });
   }
 
@@ -95,14 +97,28 @@ public class BuiltinKNNTest extends AutomatedTestBase
 
     String HOME = SCRIPT_DIR + TEST_DIR;
 
-    double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
-    double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
+    double[][] X = {{0, 1},
+                    {10, -2},
+                    {1, 0},
+                    {2, 2},
+                    {-7, 3},
+                    {4, 8},
+                    {-1, -2},
+                    {-4, 0},
+                    {11, 6},
+                    {5, -6}};
+    double[][] T = {{4, -7},
+                    {1, 2},
+                    {-1, -1}};
+
+    // double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
+    // double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
     // double[][] CL = getRandomMatrix(rows, 1, 0, 1, 1, 7);
 
     double[][] CL = new double[rows][1];
     for(int counter = 0; counter < rows; counter++)
     {
-      CL[counter][0] = counter;
+      CL[counter][0] = counter + 1;
     }
 
     writeInputMatrixWithMTD("X", X, true);

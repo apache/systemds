@@ -24,17 +24,20 @@ m_knnbf = function(
     Matrix[Double] T,
     Integer k_value = 5
   ) return(
-    Matrix[Double] PR
+    Matrix[Double] NNR
   )
 {
-  # 1. Calculate squared euclidean distance matrix
-  D = calculateDistance(X, T);
-  # 2. Sort distance matrix
-  # 3. Return the k first entries
-  PR = sortAndGetK(D, k_value)
-  print(toString(PR))
-}
+  num_records = nrow(X);
+  num_queries = nrow(T);
 
+  D = matrix(0, rows = num_records, cols = num_queries);
+  NNR = matrix(0, rows = num_queries, cols = k_value);
+
+  for(i in 1 : num_queries) {
+   D[ , i] = calculateDistance(X, T[i, ]);
+   NNR[i, ] = sortAndGetK(D[ , i], k_value);
+  }
+}
 
 calculateDistance = function(
     Matrix[Double] R,
@@ -43,11 +46,23 @@ calculateDistance = function(
     Matrix[Double] distances
   )
 {
-  distances = l2norm(Q) %*% t(l2norm(R)) - 2.0 * R %*% t(Q);
-}
 
-l2norm = function(Matrix[Double] X) return (Matrix[Double] res) {
-  res = sqrt(rowSums(X * X));
+  num_records = nrow(R);
+  num_queries = nrow(Q);
+
+  NR = matrix(0, rows = num_records, cols = num_queries);
+  NQ = matrix(0, rows = num_records, cols = num_queries);
+
+  NR_row = rowSums(R ^ 2);
+  NQ_col = rowSums(Q ^ 2);
+  for(i in 1 : num_queries) {
+    NR[, i] = NR_row;
+  }
+  for(i in 1 : num_records) {
+    NQ[i, ] = NQ_col;
+  }
+
+  distances = NR + NQ - 2.0 * R %*% t(Q);
 }
 
 sortAndGetK = function(Matrix[Double] D, Integer k)
@@ -56,10 +71,6 @@ sortAndGetK = function(Matrix[Double] D, Integer k)
   if(nrow(D) < k)
     stop("can not pick "+k+" nearest neighbours from "+nrow(D)+" total instances")
 
-#--  # compute the euclidean distance
-#--  diff = X - instance
-#--  square_diff = diff^2
-#--  distance = sqrt(rowSums(square_diff))
   sort_dist = order(target = D, by = 1, decreasing= FALSE, index.return =  TRUE)
-  knn_ = sort_dist[2:k+1,]
+  knn_ = t(sort_dist[1:k,])
 }

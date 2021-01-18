@@ -49,13 +49,12 @@ if(is_continuous == 1)
 
 
 # ------ training -------
-#install.packages("class")
+install.packages("class")
 library(class)
 test_pred <- knn(train=data_train, test=data_test, cl=CL, k=K)
 print("-----------")
 print(test_pred)
 print("-----------")
-# NNR is native NNR, do we realy need to test that?
 writeMM(as(test_pred, "CsparseMatrix"), paste(args[4], "B", sep=""));
 
 ## feature importance with random forest

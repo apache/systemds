@@ -23,5 +23,9 @@ X = read($in_X)
 T = read($in_T)
 k = $in_k
 
-B = knnbf(X=X,  T=T, k_value = k)
-write(B, $out_B)
+print("X: " + toString(X));
+print("T: " + toString(T));
+
+NNR = knnbf(X=X,  T=T, k_value = k)
+
+write(NNR, $out_B)

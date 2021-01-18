@@ -640,6 +640,23 @@ Vector<T>& vectPow2Write(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, ui
 }
 
 /* --------------------------------------------------------------------------------------------------------------------
+ * Unary to output
+ */
+
+template<typename T>
+T vectCountnnz(T* a, uint32_t ai, uint32_t len) {
+	SumOp<T> agg_op;
+	NotEqualOp<T> load_op;
+	T result = BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
+	return result;
+}
+
+template<typename T>
+T vectCountnnz(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len) {
+	return alen;
+}
+
+/* --------------------------------------------------------------------------------------------------------------------
  *
  */
 
@@ -677,4 +694,6 @@ void vectOuterMultAdd(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, u
 		i += blockDim.x;
 	}
 }
+
+
 #endif // SPOOF_UTILS_CUH

@@ -109,7 +109,7 @@ public class SpoofCUDA extends SpoofOperator {
 		}
 		
 		long[] side_ptrs = new long[(inputs.size() - offset) * 4];
-		for(int i = offset; i < inputs.size(); i += 4) {
+		for(int i = offset; i < inputs.size(); i++) {
 			int j = (i - offset)  * 4;
 			if(inputs.get(i).getGPUObject(ec.getGPUContext(0)).isSparse()) {
 				side_ptrs[j] = ec.getGPUSparsePointerAddress(inputs.get(i)).nnz;

@@ -67,7 +67,7 @@ public class DMLConfig
 	public static final String DEFAULT_BLOCK_SIZE   = "sysds.defaultblocksize";
 	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
-	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg"; //auto, cost, true, false
+	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg"; // auto, cost, true, false
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
 	public static final String COMPRESSED_VALID_COMPRESSIONS = "sysds.compressed.valid.compressions";
 	public static final String COMPRESSED_OVERLAPPING = "sysds.compressed.overlapping"; // true, false

@@ -377,53 +377,37 @@ public abstract class Hop implements ParseInfo {
 		}	
 	}
 
-	private void constructAndSetCompressionLopIfRequired() 
-	{
-		//determine execution type
-		ExecType et = ExecType.CP;
-		if( OptimizerUtils.isSparkExecutionMode() 
-			&& getDataType()!=DataType.SCALAR )
-		{
-			//conditional checkpoint based on memory estimate in order to avoid unnecessary 
-			//persist and unpersist calls (4x the memory budget is conservative)
-			if(    OptimizerUtils.isHybridExecutionMode() 
-				&& 2*_outputMemEstimate < OptimizerUtils.getLocalMemBudget()
-				|| _etypeForced == ExecType.CP )
-			{
-				et = ExecType.CP;
-			}
-			else //default case
-			{
-				et = ExecType.SPARK;
-			}
-		}
-
-		//add reblock lop to output if required
-		if( _requiresCompression )
-		{
-			try
-			{
-				Lop compress = new Compression(getLops(), getDataType(), getValueType(), et);
-				setOutputDimensions( compress );
-				setLineNumbers( compress );
-				setLops( compress );
-			}
-			catch( LopsException ex ) {
-				throw new HopsException(ex);
-			}
-		}
-
-		if( _requiresDeCompression ){
+	private void constructAndSetCompressionLopIfRequired() {
+		if(_requiresCompression ^ _requiresDeCompression){ // xor
+			ExecType et = getExecutionModeForCompression();
+			Lop compressionInstruction = null;
 			try{
-				Lop decompress = new DeCompression(getLops(), getDataType(), getValueType(), et);
-				setOutputDimensions(decompress);
-				setLineNumbers(decompress);
-				setLops(decompress);
+				if( _requiresCompression ) 
+					compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et);
+				else if( _requiresDeCompression )
+					compressionInstruction = new DeCompression(getLops(), getDataType(), getValueType(), et);
 			}
-			catch(LopsException ex){
+			catch (LopsException ex) {
 				throw new HopsException(ex);
 			}
+			setOutputDimensions( compressionInstruction );
+			setLineNumbers( compressionInstruction );
+			setLops( compressionInstruction );
 		}
+	}
+
+	private ExecType getExecutionModeForCompression(){
+		ExecType et = ExecType.CP;
+		// conditional checkpoint based on memory estimate in order to avoid unnecessary 
+		// persist and unpersist calls (4x the memory budget is conservative)
+		if( OptimizerUtils.isSparkExecutionMode() && getDataType()!=DataType.SCALAR )
+			if( OptimizerUtils.isHybridExecutionMode() 
+				&& 2 * _outputMemEstimate < OptimizerUtils.getLocalMemBudget()
+				|| _etypeForced == ExecType.CP )
+				et = ExecType.CP;
+			else 
+				et = ExecType.SPARK;
+		return et;
 	}
 
 	public static Lop createOffsetLop( Hop hop, boolean repCols ) {

@@ -19,9 +19,10 @@
 
 package org.apache.sysds.common;
 
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class Types
 {
@@ -236,14 +237,9 @@ public class Types
 				case CUMPROD:         return "ucum*";
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
-				case COLNAMES:        return "colnames";
-				case COMPRESS:        return "compress";
-				case DECOMPRESS:      return "decompress";
-				case DETECTSCHEMA:    return "detectSchema";
 				case MULT2:           return "*2";
 				case NOT:             return "!";
 				case POW2:            return "^2";
-				case TYPEOF:          return "typeOf";
 				default:              return name().toLowerCase();
 			}
 		}
@@ -549,7 +545,7 @@ public class Types
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException("Unknown file format: "+fmt
-					+ " (valid values: "+Arrays.toString(FileFormat.values())+")");
+					+ " (valid values: " + Arrays.toString(FileFormat.values())+")");
 			}
 		}
 	}

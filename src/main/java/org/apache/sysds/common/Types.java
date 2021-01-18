@@ -237,6 +237,7 @@ public class Types
 				case CUMPROD:         return "ucum*";
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
+				case DETECTSCHEMA:    return "detectSchema";
 				case MULT2:           return "*2";
 				case NOT:             return "!";
 				case POW2:            return "^2";
@@ -258,6 +259,7 @@ public class Types
 				case "ucum*":   return CUMPROD;
 				case "ucumk+":  return CUMSUM;
 				case "ucumk+*": return CUMSUMPROD;
+				case "detectSchema":    return DETECTSCHEMA;
 				case "*2":      return MULT2;
 				case "!":       return NOT;
 				case "^2":      return POW2;

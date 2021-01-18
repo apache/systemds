@@ -20,7 +20,14 @@
 #-------------------------------------------------------------
 
 A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed = 1412)
-A = round(A)
-A = compress(A)
-A = decompress(A)
-print(sum(A))
+X = round(A)
+# Should compress here becuase the operation in the loop is optimal for compressed ops.
+
+num_centroids = 5
+C = rand(rows=num_centroids, cols=$cols, sparsity=1.0, min =$min, max=$max, seed = 1412)
+
+for(i in 1:10)
+{
+    D = -2 * (X %*% t(C)) + t(rowSums (C ^ 2))
+    print(sum (D))
+}

@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -1038,7 +1037,7 @@ public class Statistics
 					federatedExecuteUDFCount.longValue() + ".\n");
 			}
 
-			if( ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).contains("true")){
+			if(ConfigurationManager.isCompressionEnabled()){
 				DMLCompressionStatistics.display(sb);
 			}
 

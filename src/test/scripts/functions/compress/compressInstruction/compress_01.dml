@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max)
+A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed = 1412)
 A = round(A)
 A = compress(A)
 

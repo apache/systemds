@@ -19,8 +19,13 @@
 #
 #-------------------------------------------------------------
 
-A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed = 1412)
+A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed =14)
 A = round(A)
-A = compress(A)
-A = decompress(A)
-print(sum(A))
+# Should compress here becuase the A is used more than 3 times, on operations supported in compressed.
+B = A + 1
+C = A * 4
+D = sum(A)
+E = max(A)
+
+total = sum(B) + sum(C) + D + E
+print(total)

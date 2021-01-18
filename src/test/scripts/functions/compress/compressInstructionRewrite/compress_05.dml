@@ -19,8 +19,9 @@
 #
 #-------------------------------------------------------------
 
-A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed = 1412)
+A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed =14)
 A = round(A)
-A = compress(A)
-A = decompress(A)
-print(sum(A))
+# Should not compress here becuase the operation in the loop is not optimal for compressed ops.
+for(i in 1:10)
+    res = rowMaxs(A) + i
+print(sum(res))

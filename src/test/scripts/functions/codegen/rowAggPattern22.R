@@ -29,11 +29,13 @@ X[,5:45] = matrix(0, 60, 41);
 # X[,2:4] = matrix(0, 60, 3);
 
 Xmax = ((rowMaxs(X)%*%matrix(1,1,50))+0.5)
-R = ((7+X)+(X-7)+(X^2<=7))/Xmax
+Xx = ((7+X)+(X-7)+(X^2<=7))
+R = Xx/Xmax
 
 print.table(R[1,], digits=3, zero.print = ".")
 
-# print.table(Xmax, digits=3, zero.print = ".")
+print.table(Xx[1,], digits=3, zero.print = ".")
+print.table(Xmax[1,], digits=3, zero.print = ".")
 
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

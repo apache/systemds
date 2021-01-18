@@ -21,6 +21,8 @@
 #ifndef SYSTEMDS_VECTOR_WRITE_CUH
 #define SYSTEMDS_VECTOR_WRITE_CUH
 
+__device__ bool debug_row() { return blockIdx.x == 0; };
+__device__ bool debug_thread() { return threadIdx.x == 10; }
 
 // unary transform vector by OP and write to intermediate vector
 template<typename T, typename OP>
@@ -45,7 +47,7 @@ __device__ Vector<T>& vectWriteUnary(T* a, uint32_t* aix, uint32_t ai, uint32_t 
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < alen) {
 		c[aix[i]] = OP::exec(a[ai + i], 0); //ToDo: remove b from all unary ops
-		if (blockIdx.x == 0 && threadIdx.x == 0) {
+		if (debug_row() && debug_thread()) {
 			printf("vecWriteUnary->tmp: bid=%d, tid=%d, len=%d, a[%d]=%4.3f, c[%d]=%4.3f\n",
 				   blockIdx.x, threadIdx.x, len, ai + i, a[ai + i], aix[i], c[aix[i]]);
 		}
@@ -83,12 +85,12 @@ __device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t ai, uint32_t len, Spoo
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < len) {
 		c[i] = OP::exec(a[ai + i], b);
-		if (blockIdx.x == 9 && threadIdx.x == 0) {
+		if (debug_row() && debug_thread()) {
 			const char* name_ = "";
 			if(name != nullptr)
 				name_ = name;
-			printf("vecWriteBinary(%s) vs: bid=%d, tid=%d, len=%d, b=%4.3f, a[%d]=%4.3f, c[%d]=%4.3f\n",
-				   name_, blockIdx.x, threadIdx.x, len, b, ai + i, a[ai + i], i, c[i]);
+			printf("vecWriteBinary(%s)->tmp vs: bid=%d, tid=%d, len=%d, b=%4.3f, a[%d+%d=%d]=%4.3f, c[%d]=%4.3f\n",
+				   name_, blockIdx.x, threadIdx.x, len, b, ai, i, ai + i, a[ai + i], i, c[i]);
 		}
 		i += blockDim.x;
 	}
@@ -102,12 +104,12 @@ __device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t* aix, uint32_t ai, uin
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < alen) {
 		c[aix[i]] = OP::exec(a[ai + i], b);
-		if (blockIdx.x == 0 && threadIdx.x == 0) {
+		if (debug_row() && debug_thread()) {
 			const char* name_ = "";
 			if(name != nullptr)
 				name_ = name;
-			printf("vecWriteBinary(%s) vs: bid=%d, tid=%d, len=%d, b=%4.3f, a[%d]=%4.3f, c[%d]=%4.3f\n",
-				   name_, blockIdx.x, threadIdx.x, len, b, ai + i, a[ai + i], aix[i], c[aix[i]]);
+			printf("vecWriteBinary(%s)->tmp vs: bid=%d, tid=%d, len=%d, b=%4.3f, a[%d]=%4.3f, c[aix[%d]=%d]=%4.3f\n",
+				   name_, blockIdx.x, threadIdx.x, len, b, ai + i, a[ai + i], i, aix[i], c[aix[i]]);
 		}
 		i += blockDim.x;
 	}
@@ -122,8 +124,8 @@ __device__ Vector<T>& vectWriteBinary(T* a, T* b, uint32_t ai, uint32_t bi, uint
 	
 	while (i < len) {
 		c[i] = OP::exec(a[ai + i], b[bi + i]);
-		if (blockIdx.x == 0 && threadIdx.x == 0) {
-			printf("vecWriteBinary vv: bid=%d, tid=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
+		if (debug_row() && debug_thread()) {
+			printf("vecWriteBinary->tmp vv: bid=%d, tid=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
 				   blockIdx.x, threadIdx.x, len, ai + i, a[ai + i], bi+i, b[bi+i], i, c[i]);
 		}
 		i += blockDim.x;

@@ -31,8 +31,8 @@
 
 using uint32_t = unsigned int;
 
-__device__ bool debug_row() { return blockIdx.x == 0; };
-__device__ bool debug_thread() { return threadIdx.x == 0; }
+//static __device__  bool debug_row() { return blockIdx.x == 0; };
+//static __device__ bool debug_thread() { return threadIdx.x == 0; }
 
 __constant__ double DOUBLE_EPS = 1.11022E-16; // 2 ^ -53
 __constant__ double FLOAT_EPS = 1.49012E-08; // 2 ^ -26
@@ -142,7 +142,8 @@ __device__ T BLOCK_ROW_AGG(T *a, T *b, uint32_t len, AggOp agg_op, LoadOp load_o
 	}
 
 //		 if(blockIdx.x == 0 && threadIdx.x == 0)
-//		   printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
+	if(debug_row() && debug_thread())
+		   printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
 	
 	// each thread puts its local sum into shared memory
 	sdata[tid] = v;
@@ -222,7 +223,8 @@ __device__ T BLOCK_ROW_AGG(T *a, T *b, uint32_t len, AggOp agg_op, LoadOp load_o
 			smem[tid] = v = agg_op(v, smem[tid + 1]);
 		}
 //		 if(blockIdx.x==0 && threadIdx.x ==0)
-//		   printf("tid=%d smem[0]=%f\n", tid, smem[0]);
+		if(debug_row() && debug_thread())
+		   printf("tid=%d smem[0]=%f\n", tid, smem[0]);
 	}
 
 	__syncthreads();
@@ -267,14 +269,19 @@ __device__ T vectMax(T* a, uint32_t ai, uint32_t len) {
 	MaxOp<T> agg_op;
 	IdentityOp<T> load_op;
 	T result = BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
-	if (debug_row() && debug_thread())
-		printf("bid=%d, tid=%d, vectMax=%4.3f\n", blockIdx.x, threadIdx.x, result);
 	return result;
 }
 
 template<typename T>
 __device__ T vectMax(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len) {
 	T result = vectMax(avals, ai, alen);
+	if (debug_row() && debug_thread()) {
+		printf("bid=%d, tid=%d, len=%d, alen=%d, ai=%d vectMax=%4.3f\n", blockIdx.x, threadIdx.x, len, alen, ai,
+			   result);
+		for(auto i = 0; i < alen; ++i)
+			printf(" %4.3f", avals[aix[i]]);
+		printf("\n");
+	}
 	return alen < len ? MaxOp<T>::exec(result, 0.0) : result;
 }
 

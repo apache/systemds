@@ -92,13 +92,13 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME_SPARSE (Matrix<T>* a, Matrix<T>* b, Matri
 	spoof_op.aix = spoof_op.a.col_idxs(rix);
 	spoof_op.avals = spoof_op.a.vals(rix);
 
-	if(debug_row() && debug_thread()) {
-		printf("a rows=%d cols=%d nnz=%d\n", a->rows, a->cols, a->nnz);
-		printf("row_len(%d)=%d\n", rix, spoof_op.alen);
-		for (auto i = 0; i < spoof_op.alen; i++) {
-			printf("i=%d col=%d val=%4.3f\n", i, spoof_op.aix[i], spoof_op.avals[i]);
-		}
-	}
+//	if(debug_row() && debug_thread()) {
+//		printf("a rows=%d cols=%d nnz=%d\n", a->rows, a->cols, a->nnz);
+//		printf("row_len(%d)=%d\n", rix, spoof_op.alen);
+//		for (auto i = 0; i < spoof_op.alen; i++) {
+//			printf("i=%d col=%d val=%4.3f\n", i, spoof_op.aix[i], spoof_op.avals[i]);
+//		}
+//	}
 //	if(blockIdx.x == 0)
-		spoof_op.exec_sparse(rix * a->cols, rix * c->cols, rix);
+	spoof_op.exec_sparse(rix * a->cols, rix * c->cols, rix);
 }

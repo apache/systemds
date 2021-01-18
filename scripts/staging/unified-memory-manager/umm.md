@@ -19,9 +19,6 @@ limitations under the License.
 
 # Unified Memory Manager - Design Document
 
-| **Author(s)** | Philipp Ortner |
-:-------------- |:----------------------------------------------------|
-
 ## Description
 This document describes the initial design of an Unified Memory Manager proposed
 for SystemDS.
@@ -33,21 +30,21 @@ provided by the JVM.
 The UMM has a certain (% of JVM heap) amount of memory which it can distribute for operands
 and a buffer pool.
 
-Operands are the compiled programs variables which extends the base class 
-`Data`, e.g., `MatrixObject` and `StringObject`.
+Operations are the compiled programs variables which extends the base class 
+`Data`, for now only `MatrixObject`, `TensorObject` and `FrameObject`.
 The buffer pool manages
 in memory representation of dirty objects that don't exist on the HDFS or 
 other persistent memory. This is currently done by the `LazyWriteBuffer`. Intermediates
 could be represented in this buffer.
 
-These two memory areas each will have a min and max amount of memory it can
+The operations and buffer pool memory areas each will have a min and max amount of memory it can
 occupy, meaning that the boundary for the areas can shift dynamically depending
 on the current load.
 
 ||min|max|
 | ------------- |:-------------:| -----:|
 | operations  | 50% | 70% |
-| buffer pool | 15% | 30% |
+| buffer pool | 15% | 70% |
 
 The UMM will utilise the existing `CacheBlock` structure to manage the buffer
 pool area while it will use the new `OperandBlock (?)` structure to keep track of
@@ -60,38 +57,29 @@ For starters, we want to keep the API rather simple.
 /**
  * Pins the input block into main memory.
  * The provided block needs to fit into UMM boundaries.
+ * pin also logically moves the given block from the buffer pool to operation 
+ * memory, or adds the block to operation memory if it was not part of 
+ * the buffer pool (e.g., read from hdfs).
  */
 void pin(String, Block);
 
 /**
- * Unpins the input block from main memory.
+ * Moves the block from the operation memoery back to the buffer pool
+ * area or drops it is already in the buffer pool area.
  */
 void unpin(String);
 
 /**
- * Loads the block into memory and pins it, if not evicted just pins it(?)
+ * Reserves an specified amount in the operation memory.
  * The requested block needs to fit into UMM boundaries.
  */
-Block serve(String);
-
-/**
- * Reserves an specified amount in one of the two memory areas.
- * The requested block needs to fit into UMM boundaries.
- */
-Block reserve(Size, MemoryArea);
-
-/**
- * Resizes reserved memory in one of the two memory areas.
- * The requested block needs to fit into UMM boundaries.
- */
-Block resize_reserved(Size, MemoryArea);
+Block reserve(Size);
 
 ```
 
 The UMM will also needs to keep track of the current state for which it will 
 have a few member variables. A queue similar to the current `EvictionQueue` is used
-to add/remove entries but rather than having a FIFO eviction policy 
-this queue will use LRU.
+to add/remove entries with LRU as its eviction policy.
 
 
 ```java

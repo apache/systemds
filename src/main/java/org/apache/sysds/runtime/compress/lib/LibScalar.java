@@ -82,9 +82,8 @@ public class LibScalar {
 		else {
 			int threadsAvailable = (sop.getNumThreads() > 1) ? sop.getNumThreads() : OptimizerUtils
 				.getConstrainedNumThreads(-1);
-			if(threadsAvailable > 1) {
+			if(threadsAvailable > 1)
 				parallelScalarOperations(sop, colGroups, ret, threadsAvailable);
-			}
 			else {
 				// Apply the operation to each of the column groups.
 				// Most implementations will only modify metadata.
@@ -103,11 +102,11 @@ public class LibScalar {
 
 	}
 
-	private static CompressedMatrixBlock setupRet(CompressedMatrixBlock m1, MatrixValue result){
+	private static CompressedMatrixBlock setupRet(CompressedMatrixBlock m1, MatrixValue result) {
 		CompressedMatrixBlock ret;
 		if(result == null || !(result instanceof CompressedMatrixBlock))
 			ret = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns());
-		else{
+		else {
 			ret = (CompressedMatrixBlock) result;
 			ret.setNumColumns(m1.getNumColumns());
 			ret.setNumRows(m1.getNumRows());

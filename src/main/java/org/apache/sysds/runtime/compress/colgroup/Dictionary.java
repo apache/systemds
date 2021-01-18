@@ -176,7 +176,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public int getNumberOfValues(int nCol) {
-		return (_values == null) ? 0 : _values.length / nCol;
+		return (_values == null || nCol == 0) ? 0 : _values.length / nCol;
 	}
 
 	@Override

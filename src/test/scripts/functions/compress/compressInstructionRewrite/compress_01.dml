@@ -19,8 +19,7 @@
 #
 #-------------------------------------------------------------
 
-A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed = 1412)
+A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed =14)
+# Should not compress since the number of operations on A is to small.
 A = round(A)
-A = compress(A)
-A = decompress(A)
 print(sum(A))

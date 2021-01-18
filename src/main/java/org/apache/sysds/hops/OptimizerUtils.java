@@ -681,6 +681,21 @@ public class OptimizerUtils
 		double sp = getSparsity(rlen, clen, nnz);
 		return estimatePartitionedSizeExactSparsity(rlen, clen, blen, sp);
 	}
+
+	/**
+	 * Estimates the footprint (in bytes) for a partitioned in-memory representation of a
+	 * matrix with the hops dimensions and number of non-zeros nnz.
+	 * 
+	 * @param hop The hop to extract dimensions and nnz from
+	 * @return the memory estimate
+	 */
+	public static long estimatePartitionedSizeExactSparsity(Hop hop){
+		long rlen = hop.getDim1();
+		long clen = hop.getDim2();
+		int blen = hop.getBlocksize();
+		long nnz = hop.getNnz();
+		return  estimatePartitionedSizeExactSparsity(rlen, clen, blen, nnz);
+	}
 	
 	/**
 	 * Estimates the footprint (in bytes) for a partitioned in-memory representation of a
@@ -1152,6 +1167,13 @@ public class OptimizerUtils
 	public static double getSparsity( long dim1, long dim2, long nnz ) {
 		return ( dim1<=0 || dim2<=0 || nnz<0 ) ? 1.0 :
 			Math.min(((double)nnz)/dim1/dim2, 1.0);
+	}
+
+	public static double getSparsity(Hop hop){
+		long dim1 = hop.getDim1();
+		long dim2 = hop.getDim2();
+		long nnz = hop.getNnz();
+		return getSparsity(dim1, dim2, nnz);
 	}
 
 	public static double getSparsity(long[] dims, long nnz) {

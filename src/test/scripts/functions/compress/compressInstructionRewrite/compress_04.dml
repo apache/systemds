@@ -19,8 +19,9 @@
 #
 #-------------------------------------------------------------
 
-A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed = 1412)
+A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed =14)
 A = round(A)
-A = compress(A)
-A = decompress(A)
+# Should not compress here becuase the A operation in the loop is not comp supported
+for(i in 1:10)
+    A = t(A) 
 print(sum(A))

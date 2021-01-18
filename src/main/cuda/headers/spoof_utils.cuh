@@ -126,7 +126,7 @@ __device__ T BLOCK_ROW_AGG(T *a, T *b, uint32_t len, AggOp agg_op, LoadOp load_o
 	uint tid = threadIdx.x;
 
 	// Initalize shared mem and leave if tid > row length. 
-	if(tid >= len) { return sdata[tid] = AggOp::init();; }
+//	if(tid >= len) { return sdata[tid] = AggOp::init();; }
 
 	__syncthreads();
 	
@@ -142,8 +142,8 @@ __device__ T BLOCK_ROW_AGG(T *a, T *b, uint32_t len, AggOp agg_op, LoadOp load_o
 	}
 
 //		 if(blockIdx.x == 0 && threadIdx.x == 0)
-	if(debug_row() && debug_thread())
-		   printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
+//	if(debug_row() && debug_thread())
+//		   printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
 	
 	// each thread puts its local sum into shared memory
 	sdata[tid] = v;
@@ -223,8 +223,8 @@ __device__ T BLOCK_ROW_AGG(T *a, T *b, uint32_t len, AggOp agg_op, LoadOp load_o
 			smem[tid] = v = agg_op(v, smem[tid + 1]);
 		}
 //		 if(blockIdx.x==0 && threadIdx.x ==0)
-		if(debug_row() && debug_thread())
-		   printf("tid=%d smem[0]=%f\n", tid, smem[0]);
+//		if(debug_row() && debug_thread())
+//		   printf("tid=%d smem[0]=%f\n", tid, smem[0]);
 	}
 
 	__syncthreads();
@@ -274,14 +274,25 @@ __device__ T vectMax(T* a, uint32_t ai, uint32_t len) {
 
 template<typename T>
 __device__ T vectMax(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len) {
-	T result = vectMax(avals, ai, alen);
 	if (debug_row() && debug_thread()) {
-		printf("bid=%d, tid=%d, len=%d, alen=%d, ai=%d vectMax=%4.3f\n", blockIdx.x, threadIdx.x, len, alen, ai,
-			   result);
+//		printf("\naix[i]:\n");
+//		for(auto i = 0; i < alen; ++i)
+//			printf(" %d", aix[i]);
+		
+		printf("\navals[i]:\n");
 		for(auto i = 0; i < alen; ++i)
-			printf(" %4.3f", avals[aix[i]]);
+			printf(" %4.3f", avals[i]);
+		
+//		printf("\navals[aix[i]]:\n");
+//		for(auto i = 0; i < alen; ++i)
+//			printf(" %4.3f", avals[aix[i]]);
+
 		printf("\n");
 	}
+
+	T result = vectMax(avals, ai, alen);
+	if (blockIdx.x < 5 && debug_thread())
+		printf("bid=%d, tid=%d, len=%d, alen=%d, ai=%d vectMax=%4.3f\n", blockIdx.x, threadIdx.x, len, alen, ai, result);
 	return alen < len ? MaxOp<T>::exec(result, 0.0) : result;
 }
 
@@ -456,7 +467,7 @@ Vector<T>& vectPlusWrite(T a, T* b, uint32_t bi, uint32_t len, SpoofOp<T>* fop) 
 
 template<typename T>
 Vector<T>& vectPlusWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
-	return vectWriteBinary<T, SumOp<T>>(a, b, ai, bi, len, fop);
+	return vectWriteBinary<T, SumOp<T>>(a, b, ai, bi, len, fop, "Plus");
 }
 
 template<typename T>
@@ -620,12 +631,12 @@ Vector<T>& vectCumsumWrite(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
 
 template<typename T>
 Vector<T>& vectPow2Write(T* a, int ai, int len, SpoofOp<T>* fop) {
-	return vectWriteUnary<T, Pow2Op<T>>(a, ai, len, fop);
+	return vectWriteUnary<T, Pow2Op<T>>(a, ai, len, fop, "Pow2");
 }
 
 template<typename T>
 Vector<T>& vectPow2Write(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len, SpoofOp<T>* fop) {
-	return vectWriteUnary<T, Pow2Op<T>>(avals, aix, ai, alen, len, fop);
+	return vectWriteUnary<T, Pow2Op<T>>(avals, aix, ai, alen, len, fop, "Pow2");
 }
 
 /* --------------------------------------------------------------------------------------------------------------------

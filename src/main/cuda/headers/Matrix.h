@@ -65,6 +65,7 @@ public:
 
 	__device__ Vector<T>& next() {
 		pos = (pos+1>=ELEMENTS) ? 0 : pos+1;
+		__syncthreads();
 		return vec[pos];
 	}
 };

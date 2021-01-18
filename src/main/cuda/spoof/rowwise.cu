@@ -29,6 +29,7 @@
 #include "spoof_utils.cuh"
 #include "utils.cuh"
 #include "Matrix.h"
+#include "../headers/Matrix.h"
 
 template<typename T, int NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
 struct SpoofRowwiseOp //%HAS_TEMP_VECT%
@@ -44,9 +45,11 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 
 	//%TMP_MEM_DECLARATION%
 
-	SpoofRowwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) : scalars(scalars), grix(grix) {
+	SpoofRowwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
+			scalars(scalars), grix(grix), avals(A->data), aix(A->col_idx) {
 		a.init(A);
 		c.init(C);
+		alen = a.row_len(grix);
 		//%TMP_MEM%
 		if(B)
 			for(auto i = 0; i < NUM_B; ++i)
@@ -88,9 +91,9 @@ template<typename T, uint32_t NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LE
 __global__ void /*%TMP%*/SPOOF_OP_NAME_SPARSE (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c, T* scalars, T* tmp_stor, uint32_t grix) {
 	const uint& rix = blockIdx.x;
 	SpoofRowwiseOp<T, NUM_B, NUM_TMP_VECT, TMP_VECT_LEN> spoof_op(a, b, c, scalars, tmp_stor, grix + rix);
-	spoof_op.alen = spoof_op.a.row_len(rix);
-	spoof_op.aix = spoof_op.a.col_idxs(rix);
-	spoof_op.avals = spoof_op.a.vals(rix);
+//	spoof_op.alen = spoof_op.a.row_len(rix);
+//	spoof_op.aix = spoof_op.a.col_idxs(0);
+//	spoof_op.avals = spoof_op.a.vals(0);
 
 //	if(debug_row() && debug_thread()) {
 //		printf("a rows=%d cols=%d nnz=%d\n", a->rows, a->cols, a->nnz);
@@ -100,5 +103,5 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME_SPARSE (Matrix<T>* a, Matrix<T>* b, Matri
 //		}
 //	}
 //	if(blockIdx.x == 0)
-	spoof_op.exec_sparse(rix * a->cols, rix * c->cols, rix);
+	spoof_op.exec_sparse(a->row_ptr[rix], rix * c->cols, rix);
 }

@@ -257,6 +257,28 @@ public class Dictionary extends ADictionary {
 		return sb.toString();
 	}
 
+	@Override
+	protected void addMaxAndMin(double[] ret, int[] colIndexes){
+		if(_values == null || _values.length == 0)
+			return;
+		double[] mins = new double[colIndexes.length];
+		double[] maxs = new double[colIndexes.length];
+		for(int i = 0; i < colIndexes.length; i++){
+			mins[i] = _values[i];
+			maxs[i] = _values[i];
+		}
+		for(int i = colIndexes.length; i < _values.length; i++){
+			int idx = i % colIndexes.length;
+			mins[idx] = Math.min(_values[i], mins[idx]);
+			maxs[idx] = Math.max(_values[i], maxs[idx]);
+		}
+		for(int i = 0; i < colIndexes.length; i ++){
+			int idy = colIndexes[i]*2;
+			ret[idy] += mins[i];
+			ret[idy+1] += maxs[i];
+		}
+	}
+
 	public StringBuilder getString(StringBuilder sb, int colIndexes) {
 		sb.append("[");
 		for(int i = 0; i < _values.length-1; i++) {

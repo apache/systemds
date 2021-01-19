@@ -199,4 +199,15 @@ public abstract class ADictionary {
 	protected abstract double sum(int[] counts, int ncol, KahanFunction kplus);
 
 	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
+
+	/**
+	 * This method adds the max and min values contained in the dictionary to corresponding cells in the ret variable.
+	 * 
+	 * One use case for this method is the squash operation, to go from an overlapping state to normal compression.
+	 * 
+	 * @param ret The double array that contains all columns min and max.
+	 * @param colIndexes The column indexes contained in this dictionary.
+	 */
+	protected abstract void addMaxAndMin(double[] ret, int[] colIndexes);
+
 }

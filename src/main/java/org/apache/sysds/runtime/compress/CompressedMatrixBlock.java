@@ -55,7 +55,9 @@ import org.apache.sysds.runtime.compress.lib.LibCompAgg;
 import org.apache.sysds.runtime.compress.lib.LibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.LibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.LibScalar;
+import org.apache.sysds.runtime.compress.lib.LibSqueeze;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -65,6 +67,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -75,6 +78,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
 public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
@@ -104,8 +108,8 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	 * 
 	 * Use with caution, since it constructs an empty matrix block with nothing inside.
 	 * 
-	 * @param rl     number of rows in the block
-	 * @param cl     number of columns
+	 * @param rl number of rows in the block
+	 * @param cl number of columns
 	 */
 	public CompressedMatrixBlock(int rl, int cl) {
 		super(rl, cl, true);
@@ -200,11 +204,8 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		Timing time = new Timing(true);
 
-		MatrixBlock ret =  new MatrixBlock(rlen, clen, false, -1).allocateBlock();
-		
-		// (nonZeros == -1) ? new MatrixBlock(rlen, clen, false, -1)
-			// .allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
-		// multi-threaded decompression
+		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1).allocateBlock();
+
 		nonZeros = 0;
 		boolean overlapping = isOverlapping();
 		try {
@@ -241,6 +242,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			DMLCompressionStatistics.addDecompressTime(t, k);
 		}
 		return ret;
+	}
+
+	public CompressedMatrixBlock squeeze(int k) {
+		return LibSqueeze.squeeze(this, k);
 	}
 
 	/**
@@ -447,7 +452,6 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
-
 		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
 			return doubleCompressedAggregateBinaryOperations((CompressedMatrixBlock) m1,
 				(CompressedMatrixBlock) m2,
@@ -728,5 +732,25 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	public void setOverlapping(boolean overlapping) {
 		overlappingColGroups = overlapping;
+	}
+
+	@Override
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
+		printDecompressWarning("slice");
+		MatrixBlock tmp = decompress();
+		return tmp.slice(rl, ru, cl, cu, ret);
+	}
+
+	@Override
+	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, int blen,
+		int boundaryRlen, int boundaryClen) {
+		printDecompressWarning("slice");
+		try {
+			MatrixBlock tmp = decompress();
+			tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
+		}
+		catch(DMLRuntimeException ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 }

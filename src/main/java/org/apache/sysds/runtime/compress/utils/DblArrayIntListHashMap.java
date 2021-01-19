@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 
 import org.apache.commons.logging.Log;
@@ -134,7 +133,7 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 				ret.add(e);
 			}
 		}
-		Collections.sort(ret);
+		// Collections.sort(ret);
 		return ret;
 	}
 

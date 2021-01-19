@@ -26,14 +26,10 @@ import org.apache.sysds.runtime.compress.utils.DblArray;
 public class ReaderColumnSelectionBitSet extends ReaderColumnSelection {
 	protected BitSet _data;
 
-	private DblArray reusableReturn;
-	private double[] reusableArr;
 
 	public ReaderColumnSelectionBitSet(BitSet data, int rows, int[] colIndices) {
 		super(colIndices, rows);
 		_data = data;
-		reusableArr = new double[colIndices.length];
-		reusableReturn = new DblArray(reusableArr);
 	}
 
 	protected DblArray getNextRow() {

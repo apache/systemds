@@ -175,23 +175,27 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
 			// for(double[] row : d1) {
-			// 	LOG.error(Arrays.toString(row));
+			// LOG.error(Arrays.toString(row));
 			// }
 			// for(double[] row : d2) {
-			// 	LOG.error(Arrays.toString(row));
+			// LOG.error(Arrays.toString(row));
 			// }
 			int dim1 = (aggType == AggType.ROWSUMS || aggType == AggType.ROWSUMSSQ || aggType == AggType.ROWMAXS ||
 				aggType == AggType.ROWMINS || aggType == AggType.ROWMEAN) ? rows : 1;
 			int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||
 				aggType == AggType.COLMINS || aggType == AggType.COLMEAN) ? cols : 1;
 
-			assertTrue("dim 1 is not equal in non compressed res  is: " + d1.length    + "  Should be: " +  dim1, d1.length    == dim1);
-			assertTrue("dim 1 is not equal in compressed res      is: " + d2.length    + "  Should be: " +  dim1, d2.length    == dim1);
-			assertTrue("dim 2 is not equal in non compressed res  is: " + d1[0].length + "  Should be: " +  dim2, d1[0].length == dim2);
-			assertTrue("dim 2 is not equal in compressed res      is: " + d2[0].length + "  Should be: " +  dim2, d2[0].length == dim2);
+			assertTrue("dim 1 is not equal in non compressed res  is: " + d1.length + "  Should be: " + dim1,
+				d1.length == dim1);
+			assertTrue("dim 1 is not equal in compressed res      is: " + d2.length + "  Should be: " + dim1,
+				d2.length == dim1);
+			assertTrue("dim 2 is not equal in non compressed res  is: " + d1[0].length + "  Should be: " + dim2,
+				d1[0].length == dim2);
+			assertTrue("dim 2 is not equal in compressed res      is: " + d2[0].length + "  Should be: " + dim2,
+				d2[0].length == dim2);
 
 			String css = this.toString();
-			if(compressionSettings.lossy) {
+			if(compressionSettings.lossy ) {
 				if(aggType == AggType.COLSUMS) {
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * rows, css);
 				}
@@ -214,12 +218,15 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, true);
 				}
 			}
+			else if(overlappingType == OverLapping.SQUEEZE){
+				// TODO make better assumptions on range...
+				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.0, 0.90, css);
+			}
 			else {
 				if(aggType == AggType.ROWMEAN)
 					TestUtils.compareMatrices(d1, d2, 0.0001, css);
-				else if(overlappingType == OverLapping.COL || overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-					overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX)
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 128, css);
+				else if( OverLapping.effectOnOutput(overlappingType))
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.98, css);
 				else
 					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 128, css);
 			}

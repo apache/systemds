@@ -361,11 +361,36 @@ public class QDictionary extends ADictionary {
 		}
 	}
 
+	@Override
+	protected void addMaxAndMin(double[] ret, int[] colIndexes){
+		byte[] mins = new byte[colIndexes.length];
+		byte[] maxs = new byte[colIndexes.length];
+		for(int i = 0; i < colIndexes.length; i++){
+			mins[i] = _values[i];
+			maxs[i] = _values[i];
+		}
+		for(int i = colIndexes.length; i < _values.length; i++){
+			int idx = i % colIndexes.length;
+			mins[idx] = (byte) Math.min(_values[i], mins[idx]);
+			maxs[idx] = (byte) Math.max(_values[i], maxs[idx]);
+		}
+		for(int i = 0; i < colIndexes.length; i ++){
+			int idy = colIndexes[i]*2;
+			ret[idy] += mins[i] * _scale;
+			ret[idy+1] += maxs[i] * _scale;
+		}
+	}
+
 	public StringBuilder getString(StringBuilder sb, int colIndexes) {
 		for(int i = 0; i < size(); i++) {
 			sb.append(_values[i]);
 			sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n" : " ");
 		}
 		return sb;
+	}
+
+	public Dictionary makeDoubleDictionary(){
+		double[] doubleValues = getValues();
+		return new Dictionary(doubleValues);
 	}
 }

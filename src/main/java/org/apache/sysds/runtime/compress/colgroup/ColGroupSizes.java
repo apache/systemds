@@ -106,7 +106,6 @@ public class ColGroupSizes {
 	}
 
 	public static long estimateInMemorySizeUncompressed(int nrRows, int nrColumns, double sparsity) {
-		// LOG.error(nrRows + " " + nrColumns + " " + sparsity);
 		long size = 0;
 		// Since the Object is a col group the overhead from the Memory Size group is added
 		size += estimateInMemorySizeGroup(nrColumns);

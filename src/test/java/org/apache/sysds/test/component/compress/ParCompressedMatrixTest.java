@@ -41,10 +41,9 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	public ParCompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettings compressionSettings, MatrixTypology matrixTypology, OverLapping ov) {
-		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
-			2);
+		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov, 2);
 		// super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
-		// 	InfrastructureAnalyzer.getLocalParallelism());
+		// InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	@Override
@@ -71,23 +70,8 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// vector-matrix compressed
 			MatrixBlock ret2 = cmb.aggregateBinaryOperations(matrix, cmb, new MatrixBlock(), abop);
 
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy) {
-				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString());
-			}
-			else {
-				if(rows > 65000)
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.50, 0.99, this.toString());
-				else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-					overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-					overlappingType == OverLapping.COL)
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 50000, 1000, this.toString());
-				else
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 15000, 500, this.toString());
+			compareResultMatrices(ret1, ret2, 100);
 
-			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();

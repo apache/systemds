@@ -26,8 +26,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColumnSelection{
 	private double[] _data;
 
-	private DblArray reusableReturn;
-	private double[] reusableArr;
 
 	public ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, int[] colIndices) {
 		super(colIndices.clone(), data.getNumColumns() );
@@ -38,8 +36,6 @@ public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColum
 		for(int i = 0; i < colIndices.length; i++){
 			colIndices[i] = colIndices[i] * data.getNumRows();
 		}
-		reusableArr = new double[colIndices.length];
-		reusableReturn = new DblArray(reusableArr);
 	}
 
 	protected DblArray getNextRow() {

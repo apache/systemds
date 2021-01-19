@@ -96,6 +96,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		int[] astart = new int[numVals];
 		int[] apos = skipScan(numVals, rl, astart);
 
+		double[] c = target.getDenseBlockValues();
 		// cache conscious append via horizontal scans
 		for(int bi = rl; bi < ru; bi += blksz) {
 			int bimax = Math.min(bi + blksz, ru);
@@ -107,13 +108,25 @@ public class ColGroupRLE extends ColGroupOffset {
 				for(; bix < blen & start < bimax; bix += 2) {
 					start += _data[boff + bix];
 					int len = _data[boff + bix + 1];
-					for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++)
+					for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++){
+
+						int rc = i * target.getNumColumns();	
 						for(int j = 0; j < numCols; j++) {
-							if(values[off + j] != 0) {
-								double v = target.quickGetValue(i, _colIndexes[j]);
-								target.quickSetValue(i, _colIndexes[j], values[off + j] + v);
+								if(values[off + j] != 0) {
+									if(safe) {
+										double v = c[rc + _colIndexes[j]];
+										double nv = c[rc + _colIndexes[j]] + values[off + j];
+										if(v == 0.0 && nv != 0.0) {
+											target.setNonZeros(target.getNonZeros() + 1);
+										}
+										c[rc + _colIndexes[j]] = nv;
+									}
+									else {
+										c[rc + _colIndexes[j]] += values[off + j];
+									}
+								}
 							}
-						}
+					}
 					start += len;
 				}
 				apos[k] = bix;

@@ -119,10 +119,10 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
   termination_code = matrix (0, rows = num_runs, cols = 1);
   final_wcss = matrix (0, rows = num_runs, cols = 1);
   num_iterations = matrix (0, rows = num_runs, cols = 1);
-
   if( is_verbose )
     print ("Performing k-means iterations for all runs...");
 
+  X = compress(X)
   parfor (run_index in 1 : num_runs, check = 0)
   {
     C = All_Centroids [(num_centroids * (run_index - 1) + 1) : (num_centroids * run_index), ];
@@ -135,7 +135,14 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
     {
       # Compute Euclidean squared distances from records (X rows) to centroids (C rows)
       # without the C-independent term, then take the minimum for each record
-      D = -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
+      lhs = -2 * (X %*% t(C))
+      print(sum(lhs))
+      rhs = t(rowSums (C ^ 2))
+      print(sum(rhs))
+      D = lhs + rhs;
+      print(sum(D))
+      D = decompress(D)
+      print(sum(D))
       minD = rowMins (D);
       # Compute the current centroid-based within-cluster sum of squares (WCSS)
       wcss_old = wcss;

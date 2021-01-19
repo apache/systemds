@@ -95,7 +95,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.COL,
 		// OverLapping.MATRIX,
-		OverLapping.NONE, OverLapping.MATRIX_PLUS,
+		OverLapping.NONE, OverLapping.MATRIX_PLUS, OverLapping.SQUEEZE,
 		// OverLapping.MATRIX_MULT_NEGATIVE
 	};
 
@@ -187,6 +187,7 @@ public abstract class CompressedTestBase extends TestBase {
 				case MATRIX:
 				case MATRIX_MULT_NEGATIVE:
 				case MATRIX_PLUS:
+				case SQUEEZE:
 					tmp = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 2, 0.5, 1.5, 1.0, 2));
 					lossyTolerance = lossyTolerance * 160;
 					cols = 2;
@@ -214,6 +215,9 @@ public abstract class CompressedTestBase extends TestBase {
 						ScalarOperator sop = new LeftScalarOperator(Multiply.getMultiplyFnObject(), -1.3);
 						mb = mb.scalarOperations(sop, new MatrixBlock());
 						cmb = cmb.scalarOperations(sop, new MatrixBlock());
+					}
+					else if(ov == OverLapping.SQUEEZE) {
+						cmb = ((CompressedMatrixBlock) cmb).squeeze(_k);
 					}
 				}
 			}
@@ -265,13 +269,7 @@ public abstract class CompressedTestBase extends TestBase {
 			// LOG.error(decompressedMatrixBlock.slice(0,10, 0, decompressedMatrixBlock.getNumColumns()-1, null));
 			double[][] deCompressed = DataConverter.convertToDoubleMatrix(decompressedMatrixBlock);
 
-			if(compressionSettings.lossy)
-				TestUtils.compareMatrices(org, deCompressed, lossyTolerance, this.toString());
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(org, deCompressed, 32768, 124, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(org, deCompressed, 5, 1, this.toString());
+			compareResultMatrices(org, deCompressed);
 
 		}
 		catch(Exception e) {
@@ -933,24 +931,25 @@ public abstract class CompressedTestBase extends TestBase {
 		}
 	}
 
-	private void compareResultMatrices(MatrixBlock ret1, MatrixBlock ret2) {
+	protected void compareResultMatrices(double[][] d1, double[][] d2) {
+		if(compressionSettings.lossy)
+			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString());
+		else if(rows > 65000)
+			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
+		else if(OverLapping.effectOnOutput(overlappingType))
+			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
+		else
+			TestUtils.compareMatricesBitAvgDistance(d1, d2, 24000, 512, this.toString());
+
+	}
+
+	protected void compareResultMatrices(MatrixBlock ret1, MatrixBlock ret2) {
 		if(ret2 instanceof CompressedMatrixBlock)
 			ret2 = ((CompressedMatrixBlock) ret2).decompress();
 
 		// compare result with input
 		double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 		double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-		if(compressionSettings.lossy) {
-			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString());
-		}
-		else {
-			if(rows > 65000)
-				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 24000, 512, this.toString());
-		}
+		compareResultMatrices(d1, d2);
 	}
 }

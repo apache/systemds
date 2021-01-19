@@ -25,14 +25,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection {
 	private DenseBlock _data;
-	private DblArray reusableReturn;
-	private double[] reusableArr;
 
 	public ReaderColumnSelectionDenseMultiBlock(MatrixBlock data, int[] colIndices) {
 		super(colIndices, data.getNumRows());
 		_data = data.getDenseBlock();
-		reusableArr = new double[colIndices.length];
-		reusableReturn = new DblArray(reusableArr);
 	}
 
 	protected DblArray getNextRow() {

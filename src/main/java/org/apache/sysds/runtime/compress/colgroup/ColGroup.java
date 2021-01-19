@@ -220,6 +220,14 @@ public abstract class ColGroup implements Serializable {
 		decompressToBlockSafe(target, rl, ru, rl, values, safe);
 	}
 
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, boolean safe) {
+		decompressToBlockSafe(target, rl, ru, rl, getValues(), safe);
+	}
+
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, boolean safe) {
+		decompressToBlockSafe(target, rl, ru, offT, getValues(), safe);
+	}
+
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block without managing the number of
 	 * non zeros.
@@ -359,8 +367,8 @@ public abstract class ColGroup implements Serializable {
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
 	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
 	 * 
-	 * @param vector  row vector
-	 * @param result  matrix block result
+	 * @param vector row vector
+	 * @param result matrix block result
 	 */
 	public abstract void leftMultByRowVector(double[] vector, double[] result);
 

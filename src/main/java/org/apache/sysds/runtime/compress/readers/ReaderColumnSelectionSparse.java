@@ -31,9 +31,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
-	// reusable return
-	private DblArray reusableReturn;
-	private double[] reusableArr;
 
 	// an empty array to return if the entire row was 0.
 	private DblArray empty = new DblArray();
@@ -50,8 +47,6 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	 */
 	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes) {
 		super(colIndexes, data.getNumRows());
-		reusableArr = new double[colIndexes.length];
-		reusableReturn = new DblArray(reusableArr);
 		a = data.getSparseBlock();
 	}
 

@@ -34,6 +34,7 @@ import java.util.Queue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionBitSet;
@@ -82,6 +83,11 @@ public class BitmapEncoder {
 		}
 		return res;
 
+	}
+
+	public static ABitmap extractBitmap(int[] colIndices, CompressedMatrixBlock compressedBlock) {
+		Bitmap x =  extractBitmap(colIndices, ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices));
+		return makeBitmapLossy(x);
 	}
 
 	public static ABitmap extractBitmap(int[] colIndices, int rows, BitSet rawBlock, CompressionSettings compSettings) {
@@ -200,15 +206,8 @@ public class BitmapEncoder {
 	 */
 	private static Bitmap extractBitmap(int[] colIndices, ReaderColumnSelection rowReader) {
 		// probe map for distinct items (for value or value groups)
-
-		DblArrayIntListHashMap distinctVals;
-		if(colIndices.length > 10) {
-			distinctVals = new DblArrayIntListHashMap(2048);
-		}
-		else {
-			distinctVals = new DblArrayIntListHashMap();
-		}
-
+		DblArrayIntListHashMap distinctVals =  new DblArrayIntListHashMap();
+		
 		// scan rows and probe/build distinct items
 		DblArray cellVals = null;
 
@@ -243,7 +242,6 @@ public class BitmapEncoder {
 		// Convert inputs to arrays
 		ArrayList<DArrayIListEntry> mapEntries = distinctVals.extractValues();
 		if(!mapEntries.isEmpty()) {
-
 			int numVals = distinctVals.size();
 			double[] values = new double[numVals * numCols];
 			IntArrayList[] offsetsLists = new IntArrayList[numVals];
@@ -255,9 +253,9 @@ public class BitmapEncoder {
 
 			return new Bitmap(numCols, offsetsLists, numZeros, values);
 		}
-		else {
-			return new Bitmap(numCols, null, numZeros, null);
-		}
+		else 
+			return new Bitmap(numCols, new IntArrayList[0], numZeros, new double[0]);
+		
 
 	}
 

@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 
 /**
@@ -134,7 +133,7 @@ public class DoubleIntListHashMap extends CustomHashMap {
 				ret.add(e);
 			}
 		}
-		Collections.sort(ret);
+		// Collections.sort(ret);
 
 		return ret;
 	}

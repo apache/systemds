@@ -74,7 +74,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 						TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false);
 					else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
 						overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-						overlappingType == OverLapping.COL)
+						overlappingType == OverLapping.COL || overlappingType == OverLapping.SQUEEZE)
 						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 32768);
 					else
 						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0); // Should be exactly same value
@@ -104,18 +104,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(ret2 instanceof CompressedMatrixBlock)
 				ret2 = ((CompressedMatrixBlock) ret2).decompress();
 
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy)
-				TestUtils.compareMatrices(d1, d2, lossyTolerance);
-
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 128, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 0, 1, "Test Append Matrix");
-
+			compareResultMatrices(ret1, ret2);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -182,17 +171,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// decompress the compressed matrix block
 			MatrixBlock tmp = cmb2.decompress();
 
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(mb);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(tmp);
-			if(compressionSettings.lossy)
-				TestUtils.compareMatrices(d1, d2, lossyTolerance, this.toString());
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 128, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 0, 0, this.toString());
-
+			compareResultMatrices(mb, tmp);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

@@ -105,8 +105,8 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	 * 
 	 * Use with caution, since it constructs an empty matrix block with nothing inside.
 	 * 
-	 * @param rl     number of rows in the block
-	 * @param cl     number of columns
+	 * @param rl number of rows in the block
+	 * @param cl number of columns
 	 */
 	public CompressedMatrixBlock(int rl, int cl) {
 		super(rl, cl, true);
@@ -201,10 +201,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		Timing time = new Timing(true);
 
-		MatrixBlock ret =  new MatrixBlock(rlen, clen, false, -1).allocateBlock();
-		
+		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1).allocateBlock();
+
 		// (nonZeros == -1) ? new MatrixBlock(rlen, clen, false, -1)
-			// .allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
+		// .allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
 		// multi-threaded decompression
 		nonZeros = 0;
 		boolean overlapping = isOverlapping();
@@ -244,8 +244,8 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		return ret;
 	}
 
-	public CompressedMatrixBlock squash(){
-		return LibSqueeze.squeeze(this);
+	public CompressedMatrixBlock squeeze(int k) {
+		return LibSqueeze.squeeze(this, k);
 	}
 
 	/**
@@ -452,7 +452,6 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
-
 		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
 			return doubleCompressedAggregateBinaryOperations((CompressedMatrixBlock) m1,
 				(CompressedMatrixBlock) m2,

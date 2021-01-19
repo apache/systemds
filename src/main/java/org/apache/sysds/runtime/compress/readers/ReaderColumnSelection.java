@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.compress.readers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -34,10 +36,16 @@ public abstract class ReaderColumnSelection {
 
 	private DblArray nonZeroReturn;
 
+	protected DblArray reusableReturn;
+	protected double[] reusableArr;
+
 	protected ReaderColumnSelection(int[] colIndexes, int numRows) {
 		_colIndexes = colIndexes;
 		_numRows = numRows;
 		_lastRow = -1;
+
+		reusableArr = new double[colIndexes.length];
+		reusableReturn = new DblArray(reusableArr);
 	}
 
 	/**
@@ -58,7 +66,10 @@ public abstract class ReaderColumnSelection {
 	}
 
 	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed) {
+		if(colIndices.length <= 1)
+			throw new DMLCompressionException("Column selection reader should not be done on single column groups");
 		int[] in = colIndices.clone();
+
 		if(rawBlock.isInSparseFormat() && transposed)
 			return new ReaderColumnSelectionSparseTransposed(rawBlock, in);
 		else if(rawBlock.isInSparseFormat())
@@ -71,4 +82,12 @@ public abstract class ReaderColumnSelection {
 				in) : new ReaderColumnSelectionDenseSingleBlock(rawBlock, in);
 
 	}
+
+	public static ReaderColumnSelection createCompressedReader(CompressedMatrixBlock compBlock, int[] colIndices) {
+		if(colIndices.length <= 1)
+			throw new DMLCompressionException("Compressed reader should not be done on single column groups");
+		int[] in = colIndices.clone();
+		return new ReaderCompressedSelection(compBlock, in);
+	}
+
 }

@@ -35,7 +35,6 @@ import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
-import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -153,6 +152,8 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 				OpOp2.OR,
 				OpOp2.MODULUS);
 		}
+		if(LOG.isDebugEnabled() && satisfies)
+			LOG.debug("Operation Satisfies: " + hop);
 		return satisfies;
 	}
 
@@ -357,41 +358,53 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 
 		private void handleApplicableOps(Hop current) {
 			// Valid with uncompressed outputs
-			// tsmm
-			boolean compUCOut = (current instanceof AggBinaryOp && current.getDim2() <= current.getBlocksize() &&
-				((AggBinaryOp) current).checkTransposeSelf() == MMTSJType.LEFT);
+			boolean compUCOut = false;
+			// // tsmm
+			// compUCOut |= (current instanceof AggBinaryOp && current.getDim2() <= current.getBlocksize() &&
+			// ((AggBinaryOp) current).checkTransposeSelf() == MMTSJType.LEFT);
 
-			// mvmm
-			compUCOut |= (current instanceof AggBinaryOp && (current.getDim1() == 1 || current.getDim2() == 1));
-			compUCOut |= (HopRewriteUtils.isTransposeOperation(current) && current.getParent().size() == 1 &&
-				current.getParent().get(0) instanceof AggBinaryOp &&
-				(current.getParent().get(0).getDim1() == 1 || current.getParent().get(0).getDim2() == 1));
+			// // mvmm
+			// compUCOut |= (current instanceof AggBinaryOp && (current.getDim1() == 1 || current.getDim2() == 1));
+			// compUCOut |= (HopRewriteUtils.isTransposeOperation(current) && current.getParent().size() == 1 &&
+			// current.getParent().get(0) instanceof AggBinaryOp &&
+			// (current.getParent().get(0).getDim1() == 1 || current.getParent().get(0).getDim2() == 1));
+
+			compUCOut |= (current instanceof AggBinaryOp);
+			compUCOut |= HopRewriteUtils.isBinaryMatrixColVectorOperation(current);
+
+			boolean isAggregate = HopRewriteUtils
+				.isAggUnaryOp(current, AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN);
 
 			// If the aggregation function is done row wise.
-			boolean isAggregate = HopRewriteUtils.isAggUnaryOp(current, AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN);
-
 			if(isAggregate && current.getDim2() < 2 && current.getDim1() >= 1000)
 				inefficientSupportedOpsExecuted++;
 
 			compUCOut |= isAggregate;
 
 			// Valid compressed
-			// Compressed Output if the operation is Binary scalar
-			boolean compCOut = HopRewriteUtils.isBinaryMatrixScalarOperation(current);
+			boolean compCOut = false;
 
-			// Compressed Output if the operation is right Matrix Multiply
-			compCOut |= HopRewriteUtils.isBinaryMatrixMatrixOperation(current) &&
-				isCompressed(current.getInput().get(0));
+			// Compressed Output if the operation is Binary scalar
+			compCOut |= HopRewriteUtils.isBinaryMatrixScalarOperation(current);
+			compCOut |= HopRewriteUtils.isBinaryMatrixRowVectorOperation(current);
+
+			// Compressed Output possible through overlapping matrix.if the operation is right Matrix Multiply
+			compCOut |= (current instanceof AggBinaryOp) && isCompressed(current.getInput().get(0));
+			compUCOut = compCOut ? false : compUCOut;
 
 			// Compressed Output if the operation is column bind.
 			compCOut |= HopRewriteUtils.isBinary(current, OpOp2.CBIND);
 
 			boolean metaOp = HopRewriteUtils.isUnary(current, OpOp1.NROW, OpOp1.NCOL);
 			boolean applicable = compUCOut || compCOut || metaOp;
+
 			if(applicable)
 				numberCompressedOpsExecuted++;
-			else
+			else {
+				LOG.warn("Decompession op: " + current);
 				numberDecompressedOpsExecuted++;
+			}
+
 			nonApplicable |= !(applicable);
 
 			if(compCOut)
@@ -403,8 +416,24 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		}
 
 		private boolean isValidAggressiveCompression() {
+			if(LOG.isDebugEnabled())
+				LOG.debug(this.toString());
 			return (inefficientSupportedOpsExecuted < numberCompressedOpsExecuted) &&
-				(usedInLoop || numberCompressedOpsExecuted > 3) && !nonApplicable;
+				(usedInLoop || numberCompressedOpsExecuted > 3) && numberDecompressedOpsExecuted < 1;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Compressed ProbeStatus : hopID =" + startHopID);
+			sb.append("\n CLA Ops         : " + numberCompressedOpsExecuted);
+			sb.append("\n Decompress Ops  : " + numberDecompressedOpsExecuted);
+			sb.append("\n Inefficient Ops : " + inefficientSupportedOpsExecuted);
+			sb.append("\n foundStart " + foundStart + " inLoop " + usedInLoop + " condUpdate : " + condUpdate
+				+ " nonApplicable : " + nonApplicable);
+			sb.append("\n compressed Matrix: " + compMtx);
+			sb.append("\n Prog Fn " + procFn);
+			return sb.toString();
 		}
 
 	}

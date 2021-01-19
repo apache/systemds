@@ -273,7 +273,8 @@ public class LibRightMultBy {
 				ColGroupValue g = (ColGroupValue) colGroups.get(j);
 				Pair<int[], double[]> preAggregatedB = g
 					.preaggValues(v.getRight()[j], that, g.getValues(), 0, that.getNumColumns(), that.getNumColumns());
-				retCg.add(g.copyAndSet(preAggregatedB.getLeft(), preAggregatedB.getRight()));
+				if(preAggregatedB.getLeft().length > 0)
+					retCg.add(g.copyAndSet(preAggregatedB.getLeft(), preAggregatedB.getRight()));
 			}
 		}
 		else {
@@ -284,8 +285,9 @@ public class LibRightMultBy {
 
 				for(int j = 0; j < colGroups.size(); j++) {
 					Pair<int[], double[]> preAggregates = ag.get(j).get();
-					retCg.add(((ColGroupValue) colGroups.get(j)).copyAndSet(preAggregates.getLeft(),
-						preAggregates.getRight()));
+					if(preAggregates.getLeft().length > 0)
+						retCg.add(((ColGroupValue) colGroups.get(j)).copyAndSet(preAggregates.getLeft(),
+							preAggregates.getRight()));
 				}
 			}
 			catch(InterruptedException | ExecutionException e) {

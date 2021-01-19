@@ -794,6 +794,11 @@ public abstract class Hop implements ParseInfo {
 	
 	public abstract String getOpString();
 
+	@Override
+	public String toString(){
+		return super.getClass().getSimpleName() + "  " + getOpString();
+	}
+
 	// ========================================================================================
 	// Design doc: Memory estimation of GPU
 	// 1. Since not all operator are supported on GPU, isGPUEnabled indicates whether an operation 

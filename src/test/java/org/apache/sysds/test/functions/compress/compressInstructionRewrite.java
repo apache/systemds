@@ -38,10 +38,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class compressInstructionRewrite extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(compressInstructionRewrite.class.getName());
+    private static final Log LOG = LogFactory.getLog(compressInstructionRewrite.class.getName());
 
     private String TEST_CONF = "SystemDS-config-compress-cost.xml";
-	private File TEST_CONF_FILE = new File(SCRIPT_DIR + getTestDir(), TEST_CONF);
+    private File TEST_CONF_FILE = new File(SCRIPT_DIR + getTestDir(), TEST_CONF);
 
     protected String getTestClassDir() {
         return getTestDir() + this.getClass().getSimpleName() + "/";
@@ -53,11 +53,6 @@ public class compressInstructionRewrite extends AutomatedTestBase {
 
     protected String getTestDir() {
         return "functions/compress/compressInstructionRewrite/";
-    }
-
-    @Test
-    public void empty() {
-
     }
 
     @Test
@@ -81,18 +76,28 @@ public class compressInstructionRewrite extends AutomatedTestBase {
     }
 
     @Test
-    public void testCompressInstruction_04(){
+    public void testCompressInstruction_04() {
         compressTest(1, 1000, 0.2, ExecType.CP, 0, 5, 0, 0, "04");
     }
 
     @Test
-    public void testCompressInstruction_05(){
+    public void testCompressInstruction_05() {
         compressTest(3, 1000, 0.2, ExecType.CP, 0, 5, 0, 0, "05");
     }
 
     @Test
-    public void testCompressInstruction_06(){
+    public void testCompressInstruction_06() {
         compressTest(3, 1000, 0.2, ExecType.CP, 0, 5, 0, 1, "06");
+    }
+
+    @Test
+    public void testCompressInstruction_07() {
+        compressTest(6, 6000, 0.2, ExecType.CP, 0, 5, 0, 1, "07");
+    }
+
+    @Test
+    public void testCompressInstruction_08() {
+        compressTest(6, 6000, 0.2, ExecType.CP, 0, 5, 0, 1, "08");
     }
 
     public void compressTest(int cols, int rows, double sparsity, LopProperties.ExecType instType, int min, int max,
@@ -108,16 +113,15 @@ public class compressInstructionRewrite extends AutomatedTestBase {
                 "sparsity=" + sparsity, "min=" + min, "max= " + max};
 
             ByteArrayOutputStream stdout = runTest(null);
-            
+
             if(LOG.isDebugEnabled())
                 LOG.debug(stdout);
-            // LOG.error(stdout);
 
             int decompressCount = 0;
             decompressCount += DMLCompressionStatistics.getDecompressionCount();
             decompressCount += DMLCompressionStatistics.getDecompressionSTCount();
             long compressionCount = Statistics.getCPHeavyHitterCount("compress");
-            
+
             Assert.assertEquals(compressionCount, compressionCountsExpected);
             Assert.assertEquals(decompressionCountExpected, decompressCount);
             if(decompressionCountExpected > 0)
@@ -138,13 +142,13 @@ public class compressInstructionRewrite extends AutomatedTestBase {
         addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName()));
     }
 
-	/**
-	 * Override default configuration with custom test configuration to ensure scratch space and local temporary
-	 * directory locations are also updated.
-	 */
-	@Override
-	protected File getConfigTemplateFile() {
-		return TEST_CONF_FILE;
-	}
+    /**
+     * Override default configuration with custom test configuration to ensure scratch space and local temporary
+     * directory locations are also updated.
+     */
+    @Override
+    protected File getConfigTemplateFile() {
+        return TEST_CONF_FILE;
+    }
 
 }

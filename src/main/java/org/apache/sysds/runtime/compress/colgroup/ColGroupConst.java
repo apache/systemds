@@ -19,14 +19,11 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import java.util.Iterator;
-
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -129,28 +126,51 @@ public class ColGroupConst extends ColGroupValue {
 	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
 		int ncol = getNumCols();
 		double[] values = getValues();
-		for(int i = 0; i < _numRows; i++) {
+		for(int i = 0; i < _numRows; i++)
 			for(int colIx = 0; colIx < ncol; colIx++) {
 				int origMatrixColIx = getColIndex(colIx);
 				int col = colIndexTargets[origMatrixColIx];
 				double cellVal = values[colIx];
 				target.quickSetValue(i, col, target.quickGetValue(i, col) + cellVal);
 			}
-		}
+
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int colpos) {
+	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
 		double[] c = target.getDenseBlockValues();
 
 		int nnz = 0;
 		double v = _dict.getValue(Arrays.binarySearch(_colIndexes, colpos));
-		if(v != 0) {
+		if(v != 0)
 			for(int i = 0; i < c.length; i++)
 				c[i] += v;
-			nnz = _numRows;
-		}
+		nnz = _numRows;
+
 		target.setNonZeros(nnz);
+	}
+
+	@Override
+	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
+		double[] c = target.getDenseBlockValues();
+
+		int nnz = 0;
+		double v = _dict.getValue(Arrays.binarySearch(_colIndexes, colpos));
+		if(v != 0)
+			for(int i = 0; i < c.length; i++)
+				c[i] += v;
+		nnz = _numRows;
+
+		target.setNonZeros(nnz);
+	}
+
+	@Override
+	public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
+		double v = _dict.getValue(Arrays.binarySearch(_colIndexes, colpos));
+		if(v != 0)
+			for(int i = 0; i < c.length; i++)
+				c[i] += v;
+
 	}
 
 	@Override
@@ -224,16 +244,6 @@ public class ColGroupConst extends ColGroupValue {
 	@Override
 	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
 		return new ColGroupConst(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, true));
-	}
-
-	@Override
-	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
-		throw new DMLCompressionException("Unsupported Iterator of Const ColGroup");
-	}
-
-	@Override
-	public ColGroupRowIterator getRowIterator(int rl, int ru) {
-		throw new DMLCompressionException("Unsupported Row iterator of Const ColGroup");
 	}
 
 	@Override

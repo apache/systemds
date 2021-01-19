@@ -55,6 +55,7 @@ import org.apache.sysds.runtime.compress.lib.LibCompAgg;
 import org.apache.sysds.runtime.compress.lib.LibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.LibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.LibScalar;
+import org.apache.sysds.runtime.compress.lib.LibSqueeze;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -241,6 +242,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			DMLCompressionStatistics.addDecompressTime(t, k);
 		}
 		return ret;
+	}
+
+	public CompressedMatrixBlock squash(){
+		return LibSqueeze.squeeze(this);
 	}
 
 	/**

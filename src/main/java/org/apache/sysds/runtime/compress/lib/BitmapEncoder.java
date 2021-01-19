@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +34,7 @@ import java.util.Queue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionBitSet;
 import org.apache.sysds.runtime.compress.utils.ABitmap;

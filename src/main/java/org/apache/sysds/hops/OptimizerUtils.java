@@ -124,6 +124,13 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_BRANCH_REMOVAL = true;
 	
+	/**
+	 * Enables the removal of (par)for-loops when from, to, and increment are constants
+	 * (original literals or results of constant folding) and lead to an empty sequence,
+	 * i.e., (par)for-loops without a single iteration.
+	 */
+	public static boolean ALLOW_FOR_LOOP_REMOVAL = true;
+
 	public static boolean ALLOW_AUTO_VECTORIZATION = true;
 	
 	/**
@@ -300,6 +307,7 @@ public class OptimizerUtils
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 				IPA_NUM_REPETITIONS = 1;
 				ALLOW_BRANCH_REMOVAL = false;
+				ALLOW_FOR_LOOP_REMOVAL = false;
 				ALLOW_SUM_PRODUCT_REWRITES = false;
 				break;
 			// opt level 1: memory-based (no advanced rewrites)	
@@ -312,6 +320,7 @@ public class OptimizerUtils
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 				IPA_NUM_REPETITIONS = 1;
 				ALLOW_BRANCH_REMOVAL = false;
+				ALLOW_FOR_LOOP_REMOVAL = false;
 				ALLOW_SUM_PRODUCT_REWRITES = false;
 				ALLOW_LOOP_UPDATE_IN_PLACE = false;
 				break;
@@ -366,6 +375,7 @@ public class OptimizerUtils
 		ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
 		ALLOW_AUTO_VECTORIZATION = true;
 		ALLOW_BRANCH_REMOVAL = true;
+		ALLOW_FOR_LOOP_REMOVAL = true;
 		ALLOW_CONSTANT_FOLDING = true;
 		ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = true;
 		ALLOW_INTER_PROCEDURAL_ANALYSIS = true;

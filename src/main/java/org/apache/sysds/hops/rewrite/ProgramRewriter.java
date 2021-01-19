@@ -90,10 +90,12 @@ public class ProgramRewriter
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			
 			//add statement block rewrite rules
- 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL ) {
+			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding
-				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches
-			}
+			if( OptimizerUtils.ALLOW_FOR_LOOP_REMOVAL )
+				_sbRuleSet.add(  new RewriteRemoveForLoopEmptySequence()         ); //dependency: constant folding
+			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL || OptimizerUtils.ALLOW_FOR_LOOP_REMOVAL )
+				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches, remove for-loops
 			_sbRuleSet.add(      new RewriteCompressedReblock()                  ); // Compression Rewrite
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks

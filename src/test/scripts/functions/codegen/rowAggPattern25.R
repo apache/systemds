@@ -24,9 +24,12 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-X = matrix(seq(1,6000), 600, 10, byrow=TRUE);
+X = matrix(seq(1,60), 6, 10, byrow=TRUE);
 C = matrix(seq(1,40), 4, 10, byrow=TRUE);
-
-R = -2 * (X %*% t(C)) + matrix(1,nrow(X),1) %*% t(rowSums(C^2))
-
+A = t(rowSums(C^2))
+R = -2 * (X %*% t(C)) + matrix(1,nrow(X),1) %*% A
+print("A")
+print.table(A, digits=3, zero.print = ".")
+print("R")
+print.table(R, digits=3, zero.print = ".")
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

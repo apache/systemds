@@ -20,10 +20,15 @@
 #-------------------------------------------------------------
 
 
-X = matrix(seq(1,6000), 600, 10);
+X = matrix(seq(1,60), 6, 10);
 C = matrix(seq(1,40), 4, 10);
 while(FALSE){}
+A = t(rowSums(C^2))
+R = -2 * (X %*% t(C)) + A
 
-R = -2 * (X %*% t(C)) + t(rowSums(C^2))
+print("A")
+print(toString(A, decimal=4))
+print("R")
+print(toString(R, decimal=4))
 
 write(R, $1)

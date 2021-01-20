@@ -79,7 +79,8 @@ public class BuiltinKNNBFTest extends AutomatedTestBase
       // {1000, 500, 35, 450, true, 7, 0.1},
       // {1000, 500, 35, 450, true, 7, 0.9}
       // {15, 2, 2, 2, true, 2, 1}
-      {10, 2, 3, 2, true, 1, 1}
+      // {10, 2, 3, 2, true, 1, 1}
+      {150, 80, 15, 80, true, 21, 0.9}
     });
   }
 
@@ -97,23 +98,8 @@ public class BuiltinKNNBFTest extends AutomatedTestBase
 
     String HOME = SCRIPT_DIR + TEST_DIR;
 
-    double[][] X = {{0, 1},
-                    {10, -2},
-                    {1, 0},
-                    {2, 2},
-                    {-7, 3},
-                    {4, 8},
-                    {-1, -2},
-                    {-4, 0},
-                    {11, 6},
-                    {5, -6}};
-    double[][] T = {{4, -7},
-                    {1, 2},
-                    {-1, -1}};
-
-    // double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
-    // double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
-    // double[][] CL = getRandomMatrix(rows, 1, 0, 1, 1, 7);
+    double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
+    double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
 
     double[][] CL = new double[rows][1];
     for(int counter = 0; counter < rows; counter++)
@@ -125,29 +111,23 @@ public class BuiltinKNNBFTest extends AutomatedTestBase
     writeInputMatrixWithMTD("T", T, true);
     writeInputMatrixWithMTD("CL", CL, true);
 
+    fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+    programArgs = new String[] {"-stats", "-nvargs",
+      "in_X=" + input("X"), "in_T=" + input("T"), "in_CL=" + input("CL"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
+      "out_B=" + expected(OUTPUT_NAME)};
+    runTest(true, false, null, -1);
+
+
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
-    programArgs = new String[] {"-nvargs",
+    programArgs = new String[] {"-stats", "-nvargs",
       "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
       "out_B=" + output(OUTPUT_NAME)};
-
-    fullRScriptName = HOME + TEST_NAME + ".R";
-    rCmd = getRCmd(inputDir(), (continuous ? "1" : "0"), Integer.toString(k_value),
-			expectedDir());
-
-
-    System.out.println(programArgs);
-    // TODO: add this line when both test scripts are implemented
     runTest(true, false, null, -1);
-    runRScript(true);
 
-    HashMap<CellIndex, Double> refResults	= readRMatrixFromExpectedDir("B");
-    HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir("B");
+    HashMap<CellIndex, Double> refResults	= readDMLMatrixFromExpectedDir("B");
+    HashMap<CellIndex, Double> results = readDMLMatrixFromOutputDir("B");
 
-    System.out.println(refResults.toString());
-    System.out.println(fedResults.toString());
-
-    // TODO: add this line when both test scripts are implemented
-    compareResultsWithR(TEST_TOLERANCE);
+    TestUtils.compareMatrices(results, refResults, 0, "Res", "Ref");
 
     // restore execution mode
     setExecMode(platform_old);

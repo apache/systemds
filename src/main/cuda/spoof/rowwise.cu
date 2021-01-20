@@ -64,19 +64,37 @@ struct TempStorageImpl : public TempStorage<T> {
 //, public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>
 //TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>(tmp_stor),
 template<typename T, int NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
-struct SpoofRowwiseOp : public SpoofOp<T, NUM_B> //%HAS_TEMP_VECT%
+struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 {
+	MatrixAccessor<T> a;
+	MatrixAccessor<T> b[NUM_B];
+	MatrixAccessor<T> c;
+	T* scalars;
+	uint32_t grix;
+	T* avals;
+	uint32_t* aix;
+	uint32_t alen;
+	
 	T* scalars;
 	uint32_t grix;
 	
 	SpoofRowwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
-		SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix), //%INIT_TEMP_VECT%
-		        scalars(scalars), grix(grix) {}
+		/*SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix)*/ //%INIT_TEMP_VECT%
+		        scalars(scalars), grix(grix) {
+		
+		a.init(A);
+		c.init(C);
+		alen = a.row_len(grix);
+		
+		if(B)
+			for(auto i = 0; i < NUM_B; ++i)
+				b[i].init(&(B[i]));
+	}
 
 	__device__  __forceinline__ void exec_dense(uint32_t ai, uint32_t ci, uint32_t rix) {
-		MatrixAccessor<T>& a = this->a;
-		MatrixAccessor<T>* b = &(this->b[0]);
-		MatrixAccessor<T>& c = this->c;
+//		MatrixAccessor<T>& a = this->a;
+//		MatrixAccessor<T>* b = &(this->b[0]);
+//		MatrixAccessor<T>& c = this->c;
 //%BODY_dense%
 	}
 

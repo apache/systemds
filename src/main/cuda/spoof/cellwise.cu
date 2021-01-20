@@ -31,22 +31,31 @@
 #include "Matrix.h"
 
 template<typename T, int NUM_B>
-struct SpoofCellwiseOp : public SpoofOp<T, NUM_B> {
-//	T**b; T* scalars;
-//	int m, n, grix_;
-//	uint32_t m, n;
-
-	T* scalars;
-	uint32_t grix;
-	
-//	SpoofCellwiseOp(T** b, T* scalars, int m, int n, int grix) :
-//		b(b), scalars(scalars), m(m), n(n), grix_(grix) {}
-	SpoofCellwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
-			SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix), scalars(scalars), grix(grix){}
+struct SpoofCellwiseOp {
+		MatrixAccessor<T> A;
+		MatrixAccessor<T> b[NUM_B];
+		MatrixAccessor<T> c;
+		T* scalars;
+		uint32_t grix;
+		T* avals;
+		uint32_t* aix;
+		uint32_t alen;
+		uint32_t& n;
+		
+	SpoofCellwiseOp(Matrix<T>* _A, Matrix<T>* _B, Matrix<T>* _C, T* scalars, T* tmp_stor, uint32_t grix) :
+			/*SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix),*/n(_A->cols), scalars(scalars), grix(grix) {
+		A.init(_A);
+		c.init(_C);
+		alen = A.row_len(grix);
+		
+		if(_B)
+			for(auto i = 0; i < NUM_B; ++i)
+				b[i].init(&(_B[i]));
+	}
 
 	__device__  __forceinline__ T operator()(T a, uint32_t idx) {
-		uint32_t rix = idx / this->a.cols();
-		uint32_t cix = idx % this->a.cols();
+		uint32_t rix = idx / A.cols();
+		uint32_t cix = idx % A.cols();
 		grix+=rix;
 
 %BODY_dense%
@@ -58,7 +67,6 @@ struct SpoofCellwiseOp : public SpoofOp<T, NUM_B> {
 template<typename T, int NUM_B>
 __global__ void %TMP% (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c, T* scalars, T* tmp_stor, uint32_t grix) {
 	%AGG_OP%<T> agg_op;
-//	SpoofCellwiseOp<T> spoof_op(b, scalars, m, n, grix);
 	SpoofCellwiseOp<T, NUM_B> spoof_op(a, b, c, scalars, tmp_stor, grix);
-	%TYPE%<T, %AGG_OP%<T>, SpoofCellwiseOp<T, NUM_B>>(%INITIAL_VALUE%, agg_op, spoof_op);
+	%TYPE%<T, %AGG_OP%<T>, SpoofCellwiseOp<T, NUM_B>>(A, c, A.rows * A.cols, %INITIAL_VALUE%, agg_op, spoof_op);
 };

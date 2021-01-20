@@ -34,6 +34,8 @@ struct Matrix {
 	uint32_t nnz;
 };
 
+//#ifdef __CUDACC_RTC__
+#ifdef __CUDACC__
 template<typename T>
 class MatrixAccessor {
 	
@@ -46,14 +48,16 @@ class MatrixAccessor {
 	uint32_t* (MatrixAccessor::*_col_idxs)(uint32_t);
 	
 //	T (MatrixAccessor::*_val)(uint32_t, uint32_t);
-	T (MatrixAccessor::*_val_r)(uint32_t);
-	T (MatrixAccessor::*_val_rc)(uint32_t, uint32_t);
+	T& (MatrixAccessor::*_val_r)(uint32_t);
+	T& (MatrixAccessor::*_val_rc)(uint32_t, uint32_t);
 	T* (MatrixAccessor::*_vals)(uint32_t);
 
 public:
 	MatrixAccessor() = default;
-	MatrixAccessor(Matrix<T>* mat) { init(mat); }
-	void init(Matrix<T>* mat) {
+
+	__device__ MatrixAccessor(Matrix<T>* mat) { init(mat); }
+
+	__device__ void init(Matrix<T>* mat) {
 		_mat = mat;
 		
 		if (_mat->row_ptr == nullptr) {
@@ -84,20 +88,20 @@ public:
 		return (this->*_pos)(rix);
 	}
 	
-	T val(uint32_t r, uint32_t c) {
+	__device__ T& val(uint32_t r, uint32_t c) {
 		return (this->*_val_rc)(r, c);
 	}
 	
-	T val(uint32_t rix) {
+	__device__ T& val(uint32_t rix) {
 		return (this->*_val_r)(rix);
 	}
 
-	T* vals(uint32_t rix) {
+	__device__ T* vals(uint32_t rix) {
 		return (this->*_vals)(rix);
 	}
 
 	//ToDo: no sparse
-    T& operator[](uint32_t i) {
+    __device__ T& operator[](uint32_t i) {
 	    return _mat->data[i];
     }
     
@@ -110,23 +114,23 @@ public:
 	}
 
 private:
-	uint32_t len_dense() {
+	__device__ uint32_t len_dense() {
 		// ToDo: fix in SideInput upload
 //		return _mat->cols < 2 ? _mat->rows : _mat->cols;
 //		return _mat->cols;
 		return _mat->rows * _mat->cols;
 	}
 	
-	uint32_t pos_dense(uint32_t rix) {
+	__device__ uint32_t pos_dense(uint32_t rix) {
 		return _mat->cols * rix;
 	}
 	
-	uint32_t* cols_dense(uint32_t rix) {
+	__device__ uint32_t* cols_dense(uint32_t rix) {
 		printf("ERROR: no column indices array in a dense matrix! This will likely crash :-/\n");
 		return nullptr;
 	}
 	
-	T val_dense_rc(uint32_t r, uint32_t c) {
+	__device__ T& val_dense_rc(uint32_t r, uint32_t c) {
 //#ifdef __CUDACC_RTC__
 //		if(threadIdx.x == 0)
 //		printf("bid=%d, rows=%d, cols=%d [%d,%d]=%f\n", blockIdx.x, _mat->rows, _mat->cols,
@@ -135,47 +139,48 @@ private:
 		return _mat->data[_mat->cols * r + c];
 	}
 	
-	T val_dense_r(uint32_t rix) {
+	__device__ T& val_dense_r(uint32_t rix) {
 //		return &(_mat->data[_mat->cols * rix]);
 		return _mat->data[rix];
 	}
 
 	// ToDo: taken over from DenseBlockFP64 - doesn't feel right though
-	T* vals_dense_row(uint32_t rix) {
+	__device__ T* vals_dense_row(uint32_t rix) {
 		return &(_mat->data[rix]);
 //		return &(_mat->data[0]);
 	}
 	
-	uint32_t row_len_dense(uint32_t rix) {
+	__device__ uint32_t row_len_dense(uint32_t rix) {
 		return _mat->rows;
 	}
 	
 	//ToDo sparse accessors
-	uint32_t len_sparse() {
+	__device__ uint32_t len_sparse() {
 		return 0;
 	}
 	
-	uint32_t pos_sparse(uint32_t rix) {
+	__device__ uint32_t pos_sparse(uint32_t rix) {
 		return _mat->row_ptr[rix];
 	}
 	
-	uint32_t* cols_sparse(uint32_t rix) {
+	__device__ uint32_t* cols_sparse(uint32_t rix) {
 		return &_mat->col_idx[_mat->row_ptr[rix]];
 	}
 	
-	T val_sparse(uint32_t r, uint32_t c) {
+	__device__ T& val_sparse(uint32_t r, uint32_t c) {
 		return _mat->data[0];
 	}
 	
-	T* val_sparse_row(uint32_t rix) {
+	__device__ T* val_sparse_row(uint32_t rix) {
 //		return &(_mat->data[0]);
 		return &_mat->data[_mat->row_ptr[rix]];
 	}
 	
-	uint32_t row_len_sparse(uint32_t rix) {
+	__device__ uint32_t row_len_sparse(uint32_t rix) {
 		return _mat->row_ptr[rix+1]-_mat->row_ptr[rix];
 	}
 };
+#endif
 
 
 #ifdef __CUDACC_RTC__

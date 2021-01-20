@@ -225,11 +225,6 @@ public:
 	}
 };
 
-template<typename T>
-struct TempStorage {
-	__device__ virtual  Vector<T>& getTempStorage(uint32_t len) = 0;
-};
-
 template <typename T, int NUM_B>
 struct SpoofOp {
 	MatrixAccessor<T> a;

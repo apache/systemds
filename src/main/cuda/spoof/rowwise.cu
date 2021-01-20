@@ -31,18 +31,47 @@
 #include "Matrix.h"
 #include "../headers/Matrix.h"
 
-template<typename T, int NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
-struct SpoofRowwiseOp : public SpoofOp<T, NUM_B>, public TempStorage<T> //%HAS_TEMP_VECT%
-{
+template<typename T>
+struct TempStorage {
+		__device__ virtual  Vector<T>& getTempStorage(uint32_t len) = 0;
+};
+
+template<typename T, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN >
+struct TempStorageImpl : public TempStorage<T> {
 	//%TMP_MEM_DECLARATION%
+	
+//	TempStorage() {
+//		//%TMP_MEM%
+//	}
+	RingBuffer<T,NUM_TMP_VECT> temp_rb;
+	
+	TempStorageImpl(T* tmp_stor) {
+		if(tmp_stor) {
+			uint32_t tmp_row_offset = TMP_VECT_LEN * NUM_TMP_VECT * blockIdx.x;
+			temp_rb.init(tmp_row_offset, TMP_VECT_LEN, tmp_stor);
+		}
+	}
+	
+	__device__ Vector<T>& getTempStorage(uint32_t len) {
+		if(debug_row() && debug_thread())
+			printf("getTempStorage(len=%d)\n", len);
+		Vector<T>& vec = temp_rb.next();
+		vec.length = len;
+		return vec;
+	}
+	
+};
+//, public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>
+//TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>(tmp_stor),
+template<typename T, int NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
+struct SpoofRowwiseOp : public SpoofOp<T, NUM_B> //%HAS_TEMP_VECT%
+{
 	T* scalars;
 	uint32_t grix;
 	
 	SpoofRowwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
-		SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix), scalars(scalars), grix(grix) {}
-	{
-		//%TMP_MEM%
-	}
+		SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix), //%INIT_TEMP_VECT%
+		        scalars(scalars), grix(grix) {}
 
 	__device__  __forceinline__ void exec_dense(uint32_t ai, uint32_t ci, uint32_t rix) {
 		MatrixAccessor<T>& a = this->a;
@@ -57,13 +86,7 @@ struct SpoofRowwiseOp : public SpoofOp<T, NUM_B>, public TempStorage<T> //%HAS_T
 	}
 
 //%GET_TEMP_STORAGE%
-	__device__ Vector<T>& getTempStorage(uint32_t len) {
-		if(debug_row() && debug_thread())
-			printf("getTempStorage(len=%d)\n", len);
-		Vector<T>& vec = temp_rb.next();
-		vec.length = len;
-		return vec;
-	}
+
 };
 
 template<typename T, uint32_t NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>

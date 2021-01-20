@@ -141,22 +141,27 @@ public class CNodeRow extends CNodeTpl
 //			}
 //			_numVectors = seq_id;
 			tmp_stor_str_dec.append("\tuint32_t tmp_count = " + _numVectors + ";\n");
-			tmp = tmp.replace("//%TMP_MEM%", tmp_stor_str.toString());
-			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", tmp_stor_str_dec.toString());
-			String hasTempVectorStorage = " : public SpoofOp<T>";
+//			tmp = tmp.replace("//%TMP_MEM%", tmp_stor_str.toString());
+//			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", tmp_stor_str_dec.toString());
+			
+			String hasTempVectorStorage = ", public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>";
+			String initTempVectorStorage = "TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>(tmp_stor),";
 //			String getTempStorage = "\t__device__ Vector<T>& getTempStorage(uint32_t len) {\n" +
 //				"\t\tVector<T>& vec = temp_rb.next();\n" +
 //				"\t\tvec.length = len;\n" +
 //				"\t\treturn vec;\n" +
 //				"\t}\n";
 //			tmp = tmp.replace("//%GET_TEMP_STORAGE%", getTempStorage);
-//			tmp = tmp.replace("//%HAS_TEMP_VECT%", hasTempVectorStorage);
+			tmp = tmp.replace("//%HAS_TEMP_VECT%", hasTempVectorStorage);
+			tmp = tmp.replace("//%INIT_TEMP_VECT%", initTempVectorStorage);
 		}
 		else {
 			tmp = tmp.replace("//%TMP_MEM%", "");
 			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", "");
 			tmp = tmp.replace("//%GET_TEMP_STORAGE%","");
 			tmp = tmp.replace("//%HAS_TEMP_VECT%", "");
+			tmp = tmp.replace("//%INIT_TEMP_VECT%", "");
+			
 			
 		}
 		tmp = tmp.replace("%VECT_MEM%", String.valueOf(_numVectors));

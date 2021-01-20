@@ -22,10 +22,14 @@
 #define SPOOF_UTILS_CUH
 
 #include <math_constants.h>
-#include "Matrix.h"
-#include "vector_write.cuh"
 #include "vector_add.cuh"
 #include "operators.cuh"
+
+template<typename T>
+struct TempStorage;
+
+#include "Matrix.h"
+#include "vector_write.cuh"
 
 // #include "intellisense_cuda_intrinsics.h"
 

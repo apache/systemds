@@ -97,7 +97,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 	std::vector<Matrix<double>> in;
 	jint num_inputs = env->CallIntMethod(inputs_, ArrayList_size);
 	std::cout << "num inputs: " << num_inputs << " offsets: " << input_offset << std::endl;
-;
+	
 	for(auto ptr_idx = 0, input_idx = 0; input_idx < input_offset; ptr_idx+=4, input_idx++) {
 		jobject input_obj = env->CallObjectMethod(inputs_, ArrayList_get, input_idx);
 		uint32_t m = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_rows));

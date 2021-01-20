@@ -172,9 +172,10 @@ public:
 			}
 			
 		    switch(op->op_type) {
-//		    case SpoofOperator::OpType::CW:
+		    case SpoofOperator::OpType::CW:
 //		        result = launch_cw_kernel(op, in_ptrs, out_ptr, d_sides, d_scalars, m, n, grix);
-//		        break;
+				result = launch_cw_kernel(op, d_in, d_out, d_sides, sides.size(), d_scalars, m, n, grix, input[0].row_ptr!=nullptr);
+				break;
 		    case SpoofOperator::OpType::RA:
 				result = launch_ra_kernel(op, d_in, d_out, d_sides, sides.size(), d_scalars, m, n, grix, input[0].row_ptr!=nullptr);
 		        break;
@@ -253,102 +254,104 @@ public:
   }
 
 	template<typename T>
-	T launch_cw_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, T** d_sides, T* d_scalars, int m, int n, int grix) {
+	T launch_cw_kernel(SpoofOperator* op, Matrix<T>* d_in, Matrix<T>* d_out, Matrix<T>* d_sides, uint32_t num_sides,
+					   T* d_scalars, uint32_t in_rows, uint32_t in_cols, uint32_t grix, bool sparse) {
+//	T launch_cw_kernel(SpoofOperator* op, T **in_ptrs, T *out_ptr, T** d_sides, T* d_scalars, int m, int n, int grix) {
 
 		T result = 0.0;
-  	    uint32_t N = m * n;
+  	    uint32_t N = in_rows * in_cols;
   		size_t dev_buf_size = 0;
 		T *d_temp_agg_buf;
 
 		switch (op->agg_type) {
-		case SpoofOperator::AggType::FULL_AGG: {
+//		case SpoofOperator::AggType::FULL_AGG: {
+//			// num ctas
+//			int NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
+//			dim3 grid(NB, 1, 1);
+//			dim3 block(NT, 1, 1);
+//			unsigned int shared_mem_size = NT * sizeof(T);
+//
+//			size_t dev_buf_size = sizeof(T) * NB;
+//			CHECK_CUDART(cudaMalloc((void **)&d_temp_agg_buf, dev_buf_size));
+//#ifdef __DEBUG
+//			// ToDo: connect output to SystemDS logging facilities
+//			std::cout << "launching spoof cellwise kernel " << op->name << " with "
+//					<< NT * NB << " threads in " << NB << " blocks and "
+//					<< shared_mem_size
+//					<< " bytes of shared memory for full aggregation of "
+//					<< N << " elements"
+//					<< std::endl;
+//#endif
+//			CHECK_CUDA(op->program.kernel(op->name)
+//					.instantiate(type_of(result))
+//					.configure(grid, block, shared_mem_size)
+//					.launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix));
+//
+//			if(NB > 1) {
+//				std::string reduction_kernel_name = determine_agg_kernel<T>(op);
+//
+//				CUfunction reduce_kernel = reduction_kernels.find(reduction_kernel_name)->second;
+//				N = NB;
+//				int iter = 1;
+//				while (NB > 1) {
+//					void* args[3] = { &d_temp_agg_buf, &d_temp_agg_buf, &N};
+//
+//					NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
+//#ifdef __DEBUG
+//					std::cout << "agg iter " << iter++ << " launching spoof cellwise kernel " << op->name << " with "
+//                    << NT * NB << " threads in " << NB << " blocks and "
+//                    << shared_mem_size
+//                    << " bytes of shared memory for full aggregation of "
+//                    << N << " elements"
+//                    << std::endl;
+//#endif
+//					CHECK_CUDA(cuLaunchKernel(reduce_kernel,
+//							NB, 1, 1,
+//							NT, 1, 1,
+//							shared_mem_size, 0, args, 0));
+//							N = NB;
+//				}
+//			}
+//
+//			CHECK_CUDART(cudaMemcpy(&result, d_temp_agg_buf, sizeof(T), cudaMemcpyDeviceToHost));
+//			CHECK_CUDART(cudaFree(d_temp_agg_buf));
+//			break;
+//		}
+//		case SpoofOperator::AggType::COL_AGG: {
+//			// num ctas
+//			int NB = std::ceil((N + NT - 1) / NT);
+//			dim3 grid(NB, 1, 1);
+//			dim3 block(NT, 1, 1);
+//			unsigned int shared_mem_size = 0;
+//#ifdef __DEBUG
+//			std::cout << " launching spoof cellwise kernel " << op->name << " with "
+//					<< NT * NB << " threads in " << NB << " blocks for column aggregation of "
+//					<< N << " elements" << std::endl;
+//#endif
+//			CHECK_CUDA(op->program.kernel(op->name)
+//					.instantiate(type_of(result))
+//					.configure(grid, block)
+//					.launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
+//
+//			break;
+//		}
+		case SpoofOperator::AggType::ROW_AGG: {
 			// num ctas
-			int NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
+			int NB = in_rows;
 			dim3 grid(NB, 1, 1);
 			dim3 block(NT, 1, 1);
 			unsigned int shared_mem_size = NT * sizeof(T);
-
-			size_t dev_buf_size = sizeof(T) * NB;
-			CHECK_CUDART(cudaMalloc((void **)&d_temp_agg_buf, dev_buf_size));
-#ifdef __DEBUG
-			// ToDo: connect output to SystemDS logging facilities
-			std::cout << "launching spoof cellwise kernel " << op->name << " with "
-					<< NT * NB << " threads in " << NB << " blocks and "
-					<< shared_mem_size
-					<< " bytes of shared memory for full aggregation of "
-					<< N << " elements"
-					<< std::endl;
-#endif
-			CHECK_CUDA(op->program.kernel(op->name)
-					.instantiate(type_of(result))
-					.configure(grid, block, shared_mem_size)
-					.launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix));
-
-			if(NB > 1) {
-				std::string reduction_kernel_name = determine_agg_kernel<T>(op);
-
-				CUfunction reduce_kernel = reduction_kernels.find(reduction_kernel_name)->second;
-				N = NB;
-				int iter = 1;
-				while (NB > 1) {
-					void* args[3] = { &d_temp_agg_buf, &d_temp_agg_buf, &N};
-					
-					NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
-#ifdef __DEBUG
-					std::cout << "agg iter " << iter++ << " launching spoof cellwise kernel " << op->name << " with "
-                    << NT * NB << " threads in " << NB << " blocks and "
-                    << shared_mem_size
-                    << " bytes of shared memory for full aggregation of "
-                    << N << " elements"
-                    << std::endl;
-#endif
-					CHECK_CUDA(cuLaunchKernel(reduce_kernel, 
-							NB, 1, 1, 
-							NT, 1, 1,
-							shared_mem_size, 0, args, 0));
-							N = NB;
-				}
-			}
-                            
-			CHECK_CUDART(cudaMemcpy(&result, d_temp_agg_buf, sizeof(T), cudaMemcpyDeviceToHost));
-			CHECK_CUDART(cudaFree(d_temp_agg_buf));
-			break;
-		}
-		case SpoofOperator::AggType::COL_AGG: {
-			// num ctas
-			int NB = std::ceil((N + NT - 1) / NT);
-			dim3 grid(NB, 1, 1);
-			dim3 block(NT, 1, 1);
-			unsigned int shared_mem_size = 0;
-#ifdef __DEBUG
-			std::cout << " launching spoof cellwise kernel " << op->name << " with "
-					<< NT * NB << " threads in " << NB << " blocks for column aggregation of "
-					<< N << " elements" << std::endl;
-#endif
-			CHECK_CUDA(op->program.kernel(op->name)
-					.instantiate(type_of(result))
-					.configure(grid, block)
-					.launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
-			
-			break;
-		}
-		case SpoofOperator::AggType::ROW_AGG: {
-			// num ctas
-			int NB = m;
-			dim3 grid(NB, 1, 1);
-			dim3 block(NT, 1, 1);
-			unsigned int shared_mem_size = NT * sizeof(T);				
-#ifdef __DEBUG
+//#ifdef __DEBUG
 			std::cout << " launching spoof cellwise kernel " << op->name << " with "
 					<< NT * NB << " threads in " << NB << " blocks and "
 					<< shared_mem_size << " bytes of shared memory for row aggregation of "
 					<< N << " elements" << std::endl;
-#endif
+//#endif
 			CHECK_CUDA(op->program.kernel(op->name)
-					.instantiate(type_of(result))
-					.configure(grid, block, shared_mem_size)
-					.launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
-			
+							   .instantiate(type_of(result), std::max(1u, num_sides))
+							   .configure(grid, block, shared_mem_size)
+							   .launch(d_in, d_sides, d_out, d_scalars, nullptr, grix));
+
 			break;
 		}
 		case SpoofOperator::AggType::NO_AGG: 
@@ -358,16 +361,22 @@ public:
 			int NB = std::ceil((N + NT * VT - 1) / (NT * VT));
 			dim3 grid(NB, 1, 1);
 			dim3 block(NT, 1, 1);
+			uint32_t shared_mem_size = 0;
+
 #ifdef __DEBUG
 			std::cout << "launching spoof cellwise kernel " << op->name << " with " << NT * NB
 					<< " threads in " << NB << " blocks without aggregation for " 
 					<< N << " elements"
 					<< std::endl;
 #endif
+//			CHECK_CUDA(op->program.kernel(op->name)
+//					.instantiate(type_of(result))
+//					.configure(grid, block)
+//					.launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
 			CHECK_CUDA(op->program.kernel(op->name)
-					.instantiate(type_of(result))
-					.configure(grid, block)
-					.launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
+							   .instantiate(type_of(result), std::max(1u, num_sides))
+							   .configure(grid, block, shared_mem_size)
+							   .launch(d_in, d_sides, d_out, d_scalars, nullptr, grix));
 		}
 		}
 		return result;

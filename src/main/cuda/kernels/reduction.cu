@@ -52,20 +52,20 @@ extern "C" __global__ void reduce_sum_f(float *g_idata, float *g_odata, uint n) 
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
-template<typename T>
-__device__ void reduce_row_sum(T *g_idata, T *g_odata, uint rows, uint cols) {
-	SumOp<T> agg_op;
-	IdentityOp<T> spoof_op;
-	ROW_AGG<T, SumOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, 0.0, agg_op, spoof_op);
-}
-
-extern "C" __global__ void reduce_row_sum_d(double *g_idata, double *g_odata, uint rows, uint cols) {
-	reduce_row_sum(g_idata, g_odata, rows, cols);
-}
-
-extern "C" __global__ void reduce_row_sum_f(float *g_idata, float *g_odata, uint rows, uint cols) {
-	reduce_row_sum(g_idata, g_odata, rows, cols);
-}
+//template<typename T>
+//__device__ void reduce_row_sum(T *g_idata, T *g_odata, uint rows, uint cols) {
+//	SumOp<T> agg_op;
+//	IdentityOp<T> spoof_op;
+//	ROW_AGG<T, SumOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, 0.0, agg_op, spoof_op);
+//}
+//
+//extern "C" __global__ void reduce_row_sum_d(double *g_idata, double *g_odata, uint rows, uint cols) {
+//	reduce_row_sum(g_idata, g_odata, rows, cols);
+//}
+//
+//extern "C" __global__ void reduce_row_sum_f(float *g_idata, float *g_odata, uint rows, uint cols) {
+//	reduce_row_sum(g_idata, g_odata, rows, cols);
+//}
 
 /**
  * Do a summation over all columns of a matrix
@@ -118,20 +118,20 @@ extern "C" __global__ void reduce_max_f(float *g_idata, float *g_odata, uint n) 
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
-template<typename T>
-__device__ void reduce_row_max(T *g_idata, T *g_odata, uint rows, uint cols) {
-	MaxOp<T> agg_op;
-	IdentityOp<T> spoof_op;
-	ROW_AGG<T, MaxOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, -MAX<T>(), agg_op, spoof_op);
-}
+//template<typename T>
+//__device__ void reduce_row_max(T *g_idata, T *g_odata, uint rows, uint cols) {
+//	MaxOp<T> agg_op;
+//	IdentityOp<T> spoof_op;
+//	ROW_AGG<T, MaxOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, -MAX<T>(), agg_op, spoof_op);
+//}
 
-extern "C" __global__ void reduce_row_max_d(double *g_idata, double *g_odata, uint rows, uint cols) {
-	reduce_row_max(g_idata, g_odata, rows, cols);
-}
-
-extern "C" __global__ void reduce_row_max_f(float *g_idata, float *g_odata, uint rows, uint cols) {
-	reduce_row_max(g_idata, g_odata, rows, cols);
-}
+//extern "C" __global__ void reduce_row_max_d(double *g_idata, double *g_odata, uint rows, uint cols) {
+//	reduce_row_max(g_idata, g_odata, rows, cols);
+//}
+//
+//extern "C" __global__ void reduce_row_max_f(float *g_idata, float *g_odata, uint rows, uint cols) {
+//	reduce_row_max(g_idata, g_odata, rows, cols);
+//}
 
 /**
  * Do a max over all columns of a matrix
@@ -185,20 +185,20 @@ extern "C" __global__ void reduce_min_f(float *g_idata, float *g_odata, uint n) 
  * @param rows      number of rows in input matrix
  * @param cols      number of columns in input matrix
  */
-template<typename T>
-__device__ void reduce_row_min(T *g_idata, T *g_odata, uint rows, uint cols) {
-	MinOp<T> agg_op;
-	IdentityOp<T> spoof_op;
-	ROW_AGG<T, MinOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, MAX<T>(), agg_op, spoof_op);
-}
-
-extern "C" __global__ void reduce_row_min_d(double *g_idata, double *g_odata, uint rows, uint cols) {
-	reduce_row_min(g_idata, g_odata, rows, cols);
-}
-
-extern "C" __global__ void reduce_row_min_f(float *g_idata, float *g_odata, uint rows, uint cols) {
-	reduce_row_min(g_idata, g_odata, rows, cols);
-}
+//template<typename T>
+//__device__ void reduce_row_min(T *g_idata, T *g_odata, uint rows, uint cols) {
+//	MinOp<T> agg_op;
+//	IdentityOp<T> spoof_op;
+//	ROW_AGG<T, MinOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, MAX<T>(), agg_op, spoof_op);
+//}
+//
+//extern "C" __global__ void reduce_row_min_d(double *g_idata, double *g_odata, uint rows, uint cols) {
+//	reduce_row_min(g_idata, g_odata, rows, cols);
+//}
+//
+//extern "C" __global__ void reduce_row_min_f(float *g_idata, float *g_odata, uint rows, uint cols) {
+//	reduce_row_min(g_idata, g_odata, rows, cols);
+//}
 
 /**
  * Do a min over all columns of a matrix
@@ -266,17 +266,17 @@ extern "C" __global__ void reduce_col_sum_sq_f(float* g_idata, float* g_odata, u
 	reduce_col_sum_sq(g_idata, g_odata, rows, cols);
 }
 
-template<typename T>
-__device__ void reduce_row_sum_sq(T* g_idata, T* g_odata, uint rows, uint cols) {
-	SumSqOp<T> agg_op;
-	IdentityOp<T> spoof_op;
-	ROW_AGG<T, SumSqOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, (T)0.0, agg_op, spoof_op);
-}
-
-extern "C" __global__ void reduce_row_sum_sq_d(double* g_idata, double* g_odata, uint rows, uint cols) {
-	reduce_row_sum_sq(g_idata, g_odata, rows, cols);
-}
-
-extern "C" __global__ void reduce_row_sum_sq_f(float* g_idata, float* g_odata, uint rows, uint cols) {
-	reduce_row_sum_sq(g_idata, g_odata, rows, cols);
-}
+//template<typename T>
+//__device__ void reduce_row_sum_sq(T* g_idata, T* g_odata, uint rows, uint cols) {
+//	SumSqOp<T> agg_op;
+//	IdentityOp<T> spoof_op;
+//	ROW_AGG<T, SumSqOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, (T)0.0, agg_op, spoof_op);
+//}
+//
+//extern "C" __global__ void reduce_row_sum_sq_d(double* g_idata, double* g_odata, uint rows, uint cols) {
+//	reduce_row_sum_sq(g_idata, g_odata, rows, cols);
+//}
+//
+//extern "C" __global__ void reduce_row_sum_sq_f(float* g_idata, float* g_odata, uint rows, uint cols) {
+//	reduce_row_sum_sq(g_idata, g_odata, rows, cols);
+//}

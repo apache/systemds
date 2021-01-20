@@ -168,32 +168,35 @@ __device__ void FULL_AGG(
  * the value before writing it to its final location in global memory for each
  * row
  */
+//template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
+//__device__ void ROW_AGG(
+//		T *g_idata, ///< input data stored in device memory (of size rows*cols)
+//		T *g_odata,  ///< output/temporary array store in device memory (of size
+//		/// rows*cols)
+//		uint rows,  ///< rows in input and temporary/output arrays
+//		uint cols,  ///< columns in input and temporary/output arrays
+//		T initialValue,  ///< initial value for the reduction variable
+//		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
+//		SpoofCellwiseOp spoof_op) ///< Operation to perform before assigning this
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void ROW_AGG(
-		T *g_idata, ///< input data stored in device memory (of size rows*cols)
-		T *g_odata,  ///< output/temporary array store in device memory (of size
-		/// rows*cols)
-		uint rows,  ///< rows in input and temporary/output arrays
-		uint cols,  ///< columns in input and temporary/output arrays
-		T initialValue,  ///< initial value for the reduction variable
-		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
-		SpoofCellwiseOp spoof_op) ///< Operation to perform before assigning this
-{
+__device__ void ROW_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op)
+		{
 	auto sdata = shared_memory_proxy<T>();
 
 	// one block per row
-	if (blockIdx.x >= rows) {
+	if (blockIdx.x >= spoof_op.a.rows()) {
 		return;
 	}
 
 	uint block = blockIdx.x;
 	uint tid = threadIdx.x;
-	uint i = tid;
-	uint block_offset = block * cols;
+	uint32_t i = tid;
+	uint block_offset = block * spoof_op.a.cols();
 
-	T v = initialValue;
-	while (i < cols) {
-		v = reduction_op(v, spoof_op(g_idata[block_offset + i], i));
+//	T v = initialValue;
+	T v = reduction_op.init();
+	while (i < spoof_op.a.cols()) {
+		v = reduction_op(v, spoof_op(*(spoof_op.a.vals(block_offset + i)), i));
 		i += blockDim.x;
 	}
 
@@ -254,7 +257,7 @@ __device__ void ROW_AGG(
 
 	// write result for this block to global mem, modify it with assignment op
 	if (tid == 0)
-		g_odata[block] = sdata[0];
+		*(spoof_op.c.vals(block)) = sdata[0];
 }
 
 /**
@@ -299,15 +302,14 @@ __device__ void COL_AGG(T *g_idata, ///< input data stored in device memory (of 
 }
 
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void NO_AGG(T* g_idata, T* g_odata,  uint rows, uint cols,
-	T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op) 
+__device__ void NO_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op)
 {
-	int tid = blockIdx.x * blockDim.x + threadIdx.x;
-	int first_idx = tid * static_cast<int>(VT);
-	int last_idx = min(first_idx + static_cast<int>(VT), spoof_op.m * spoof_op.n);
+	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+	uint32_t first_idx = tid * static_cast<uint32_t>(VT);
+	uint32_t last_idx = min(first_idx + static_cast<uint32_t>(VT), spoof_op.a.rows() * spoof_op.a.cols());
 	#pragma unroll
-	for(int i = first_idx; i < last_idx; i++) {
-		g_odata[i] = spoof_op(g_idata[i], i);
+	for(auto i = first_idx; i < last_idx; i++) {
+		spoof_op.c[i] = spoof_op(spoof_op.a.val(i), i);
 	}
 }
 

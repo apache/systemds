@@ -28,28 +28,37 @@
 #include "reduction.cuh"
 #include "spoof_utils.cuh"
 #include "utils.cuh"
+#include "Matrix.h"
 
-template<typename T>
-struct SpoofCellwiseOp {
-	T**b; T* scalars;
-	int m, n, grix_;
+template<typename T, int NUM_B>
+struct SpoofCellwiseOp : public SpoofOp<T, NUM_B> {
+//	T**b; T* scalars;
+//	int m, n, grix_;
+//	uint32_t m, n;
 
-	SpoofCellwiseOp(T** b, T* scalars, int m, int n, int grix) :
-		b(b), scalars(scalars), m(m), n(n), grix_(grix) {}
+	T* scalars;
+	uint32_t grix;
+	
+//	SpoofCellwiseOp(T** b, T* scalars, int m, int n, int grix) :
+//		b(b), scalars(scalars), m(m), n(n), grix_(grix) {}
+	SpoofCellwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
+			SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix), scalars(scalars), grix(grix){}
 
-	__device__  __forceinline__ T operator()(T a, int idx) const {
-		int rix = idx / n;
-		int cix = idx % n;
-		int grix = grix_ + rix;
+	__device__  __forceinline__ T operator()(T a, uint32_t idx) {
+		uint32_t rix = idx / this->a.cols();
+		uint32_t cix = idx % this->a.cols();
+		grix+=rix;
 
 %BODY_dense%
 		return %OUT%;
 	}
 };
 
-template<typename T>
-__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {
+//__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {
+template<typename T, int NUM_B>
+__global__ void %TMP% (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c, T* scalars, T* tmp_stor, uint32_t grix) {
 	%AGG_OP%<T> agg_op;
-	SpoofCellwiseOp<T> spoof_op(b, scalars, m, n, grix);
-	%TYPE%<T, %AGG_OP%<T>, SpoofCellwiseOp<T>>(a, c, m, n, %INITIAL_VALUE%, agg_op, spoof_op);
+//	SpoofCellwiseOp<T> spoof_op(b, scalars, m, n, grix);
+	SpoofCellwiseOp<T, NUM_B> spoof_op(a, b, c, scalars, tmp_stor, grix);
+	%TYPE%<T, %AGG_OP%<T>, SpoofCellwiseOp<T, NUM_B>>(%INITIAL_VALUE%, agg_op, spoof_op);
 };

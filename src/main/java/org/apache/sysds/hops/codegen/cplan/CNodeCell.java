@@ -123,6 +123,9 @@ public class CNodeCell extends CNodeTpl
 
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false, api);
+		// ToDo: workaround to fix name clash of cell and row template
+		if(api == GeneratorAPI.CUDA)
+			tmpDense = tmpDense.replace("a.vals(0)", "a");
 		_output.resetGenerated();
 		
 		if(getVarname() == null)

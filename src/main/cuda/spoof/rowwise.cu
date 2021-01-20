@@ -32,32 +32,22 @@
 #include "../headers/Matrix.h"
 
 template<typename T, int NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
-struct SpoofRowwiseOp //%HAS_TEMP_VECT%
+struct SpoofRowwiseOp : public SpoofOp<T, NUM_B>, public TempStorage<T> //%HAS_TEMP_VECT%
 {
-	MatrixAccessor<T> a;
-	MatrixAccessor<T> b[NUM_B];
-	MatrixAccessor<T> c;
+	//%TMP_MEM_DECLARATION%
 	T* scalars;
 	uint32_t grix;
-	T* avals;
-	uint32_t* aix;
-	uint32_t alen;
-
-	//%TMP_MEM_DECLARATION%
-
+	
 	SpoofRowwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
-			scalars(scalars), grix(grix), avals(A->data), aix(A->col_idx) {
-		a.init(A);
-		c.init(C);
-		alen = a.row_len(grix);
+		SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix), scalars(scalars), grix(grix) {}
+	{
 		//%TMP_MEM%
-		if(B)
-			for(auto i = 0; i < NUM_B; ++i)
-				b[i].init(&(B[i]));
 	}
 
 	__device__  __forceinline__ void exec_dense(uint32_t ai, uint32_t ci, uint32_t rix) {
-		
+		MatrixAccessor<T>& a = this->a;
+		MatrixAccessor<T>* b = &(this->b[0]);
+		MatrixAccessor<T>& c = this->c;
 //%BODY_dense%
 	}
 
@@ -67,6 +57,13 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 	}
 
 //%GET_TEMP_STORAGE%
+	__device__ Vector<T>& getTempStorage(uint32_t len) {
+		if(debug_row() && debug_thread())
+			printf("getTempStorage(len=%d)\n", len);
+		Vector<T>& vec = temp_rb.next();
+		vec.length = len;
+		return vec;
+	}
 };
 
 template<typename T, uint32_t NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>
@@ -74,17 +71,22 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME_DENSE (Matrix<T>* a, Matrix<T>* b, Matrix
 	const uint& rix = blockIdx.x;
 	SpoofRowwiseOp<T, NUM_B, NUM_TMP_VECT, TMP_VECT_LEN> spoof_op(a, b, c, scalars, tmp_stor, grix + rix);
 if(false) {
-//	if(debug_row() && debug_thread()) {
-		printf("DENSE b rows=%d cols=%d nnz=%d\n", b->rows, b->cols, b->nnz);
-
-		for (auto i = 0; i < b->cols*b->rows; i++) {
-			printf("i=%d val=%4.3f\n", i, spoof_op.b[0].val(0,i));
+	if (debug_row() && debug_thread()) {
+		printf("DENSE c rows=%d cols=%d nnz=%d\n",
+			   spoof_op.c.rows(), spoof_op.c.cols(), spoof_op.c.nnz());
+		for (auto i = 0; i < spoof_op.c.len(); i++) {
+			printf("i=%d val=%4.3f\n", i, spoof_op.c.val(0,i));
 		}
-//		dotProduct(spoof_op.a.vals(0), spoof_op.b[0].vals(0), 0, static_cast<uint32_t>(0), spoof_op.a.cols());
+		
+//		printf("DENSE b[1] rows=%d cols=%d nnz=%d\n",
+//			   spoof_op.b[1].rows(), spoof_op.b[1].cols(), spoof_op.b[1].nnz());
+//		for (auto i = 0; i < spoof_op.b[1].len(); i++) {
+//			printf("i=%d val=%4.3f\n", i, spoof_op.b[1].val(0,i));
+//		}
 	}
+}
 //	return;
-//	if(blockIdx.x == 0 && threadIdx.x == 0)
-		spoof_op.exec_dense(rix * a->cols, rix * c->cols, rix);
+	spoof_op.exec_dense(rix * a->cols, rix * c->cols, rix);
 };
 
 template<typename T, uint32_t NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>

@@ -21,12 +21,12 @@
 #ifndef SYSTEMDS_VECTOR_WRITE_CUH
 #define SYSTEMDS_VECTOR_WRITE_CUH
 
-__device__ bool debug_row() { return blockIdx.x == 8; };
+__device__ bool debug_row() { return blockIdx.x == 0; };
 __device__ bool debug_thread() { return threadIdx.x == 0; }
 
 // unary transform vector by OP and write to intermediate vector
 template<typename T, typename OP>
-__device__ Vector<T>& vectWriteUnary(T* a, uint32_t ai, uint32_t len, SpoofOp<T>* fop) {
+__device__ Vector<T>& vectWriteUnary(T* a, uint32_t ai, uint32_t len, TempStorage<T>* fop) {
 	uint32_t i = threadIdx.x;
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < len) {
@@ -42,7 +42,7 @@ __device__ Vector<T>& vectWriteUnary(T* a, uint32_t ai, uint32_t len, SpoofOp<T>
 
 // unary transform vector by OP and write to intermediate vector
 template<typename T, typename OP>
-__device__ Vector<T>& vectWriteUnary(T* a, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len, SpoofOp<T>* fop, const char* name = nullptr) {
+__device__ Vector<T>& vectWriteUnary(T* a, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len, TempStorage<T>* fop, const char* name = nullptr) {
 	uint32_t i = threadIdx.x;
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < alen) {
@@ -72,7 +72,7 @@ __device__ void vectWriteUnary(T* a, T* c, uint32_t ai, uint32_t ci, uint32_t le
 
 // binary scalar-vector to intermediate vector
 template<typename T, typename OP>
-__device__ Vector<T>& vectWriteBinary(T a, T* b, uint32_t bi, uint32_t len, SpoofOp<T>* fop) {
+__device__ Vector<T>& vectWriteBinary(T a, T* b, uint32_t bi, uint32_t len, TempStorage<T>* fop) {
 	uint32_t i = threadIdx.x;
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < len) {
@@ -84,7 +84,7 @@ __device__ Vector<T>& vectWriteBinary(T a, T* b, uint32_t bi, uint32_t len, Spoo
 
 // binary vect-scalar to intermediate vector
 template<typename T, typename OP>
-__device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t ai, uint32_t len, SpoofOp<T>* fop, const char* name = nullptr) {
+__device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t ai, uint32_t len, TempStorage<T>* fop, const char* name = nullptr) {
 	uint32_t i = threadIdx.x;
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < len) {
@@ -105,12 +105,13 @@ __device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t ai, uint32_t len, Spoo
 
 // binary vect-scalar to intermediate vector
 template<typename T, typename OP>
-__device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len, SpoofOp<T>* fop, const char* name = nullptr) {
+__device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len, TempStorage<T>* fop, const char* name = nullptr) {
 	uint32_t i = threadIdx.x;
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < alen) {
 		c[aix[i]] = OP::exec(a[ai + i], b);
-		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
+		if (debug_row() && debug_thread()) {
+//		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
 			const char* name_ = "";
 			if(name != nullptr)
 				name_ = name;
@@ -124,14 +125,14 @@ __device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t* aix, uint32_t ai, uin
 
 // bianry vector-vector to intermediate vector
 template<typename T, typename OP>
-__device__ Vector<T>& vectWriteBinary(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, SpoofOp<T>* fop, const char* name = nullptr) {
+__device__ Vector<T>& vectWriteBinary(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, TempStorage<T>* fop, const char* name = nullptr) {
 	uint32_t i = threadIdx.x;
 	Vector<T>& c = fop->getTempStorage(len);
 	
 	while (i < len) {
 		c[i] = OP::exec(a[ai + i], b[bi + i]);
-//		if (debug_row() && debug_thread()) {
-		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
+		if (debug_row() && debug_thread()) {
+//		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
 //			printf("DvecWriteBinary->tmp vv: bid=%d, tid=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
 //				   blockIdx.x, threadIdx.x, len, ai + i, a[ai + i], bi+i, b[bi+i], i, c[i]);
 			const char* name_ = "";

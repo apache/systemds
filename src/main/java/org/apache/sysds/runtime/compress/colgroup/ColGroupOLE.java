@@ -962,139 +962,12 @@ public class ColGroupOLE extends ColGroupOffset {
 		return 0;
 	}
 
-	// @Override
-	// public Iterator<Integer> getIterator(int k) {
-	// return new OLEValueIterator(k, 0, _numRows);
-	// }
-
-	// @Override
-	// public Iterator<Integer> getIterator(int k, int rl, int ru) {
-	// return new OLEValueIterator(k, rl, ru);
-	// }
-
-	// @Override
-	// public ColGroupRowIterator getRowIterator(int rl, int ru) {
-	// return new OLERowIterator(rl, ru);
-	// }
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		return sb.toString();
 	}
-
-	// private class OLEValueIterator implements Iterator<Integer> {
-	// 	private final int _ru;
-	// 	private final int _boff;
-	// 	private final int _blen;
-	// 	private int _bix;
-	// 	private int _start;
-	// 	private int _slen;
-	// 	private int _spos;
-	// 	private int _rpos;
-
-	// 	public OLEValueIterator(int k, int rl, int ru) {
-	// 		_ru = ru;
-	// 		_boff = _ptr[k];
-	// 		_blen = len(k);
-
-	// 		// initialize position via segment-aligned skip-scan
-	// 		int lrl = rl - rl % CompressionSettings.BITMAP_BLOCK_SZ;
-	// 		_bix = skipScanVal(k, lrl);
-	// 		_start = lrl;
-
-	// 		// move position to actual rl boundary
-	// 		if(_bix < _blen) {
-	// 			_slen = _data[_boff + _bix];
-	// 			_spos = 0;
-	// 			_rpos = _data[_boff + _bix + 1];
-	// 			while(_rpos < rl)
-	// 				nextRowOffset();
-	// 		}
-	// 		else {
-	// 			_rpos = _ru;
-	// 		}
-	// 	}
-
-	// 	@Override
-	// 	public boolean hasNext() {
-	// 		return(_rpos < _ru);
-	// 	}
-
-	// 	@Override
-	// 	public Integer next() {
-	// 		if(!hasNext())
-	// 			throw new RuntimeException("No more OLE entries.");
-	// 		int ret = _rpos;
-	// 		nextRowOffset();
-	// 		return ret;
-	// 	}
-
-	// 	private void nextRowOffset() {
-	// 		if(_spos + 1 < _slen) {
-	// 			_spos++;
-	// 			_rpos = _start + _data[_boff + _bix + _spos + 1];
-	// 		}
-	// 		else {
-	// 			_start += CompressionSettings.BITMAP_BLOCK_SZ;
-	// 			_bix += _slen + 1;
-	// 			if(_bix < _blen) {
-	// 				_slen = _data[_boff + _bix];
-	// 				_spos = 0;
-	// 				_rpos = _start + _data[_boff + _bix + 1];
-	// 			}
-	// 			else {
-	// 				_rpos = _ru;
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// private class OLERowIterator extends ColGroupRowIterator {
-	// 	private final int[] _apos;
-	// 	private final int[] _vcodes;
-
-	// 	public OLERowIterator(int rl, int ru) {
-	// 		_apos = skipScan(getNumValues(), rl);
-	// 		_vcodes = new int[Math.min(CompressionSettings.BITMAP_BLOCK_SZ, ru - rl)];
-	// 		Arrays.fill(_vcodes, -1); // initial reset
-	// 		getNextSegment();
-	// 	}
-
-	// 	@Override
-	// 	public void next(double[] buff, int rowIx, int segIx, boolean last) {
-	// 		final int clen = _colIndexes.length;
-	// 		final int vcode = _vcodes[segIx];
-	// 		if(vcode >= 0) {
-	// 			// copy entire value tuple if necessary
-	// 			final double[] values = getValues();
-	// 			for(int j = 0, off = vcode * clen; j < clen; j++)
-	// 				buff[_colIndexes[j]] = values[off + j];
-	// 			// reset vcode to avoid scan on next segment
-	// 			_vcodes[segIx] = -1;
-	// 		}
-	// 		if(segIx + 1 == CompressionSettings.BITMAP_BLOCK_SZ && !last)
-	// 			getNextSegment();
-	// 	}
-
-	// 	private void getNextSegment() {
-	// 		// materialize value codes for entire segment in a
-	// 		// single pass over all values (store value code by pos)
-	// 		final int numVals = getNumValues();
-	// 		for(int k = 0; k < numVals; k++) {
-	// 			int boff = _ptr[k];
-	// 			int blen = len(k);
-	// 			int bix = _apos[k];
-	// 			if(bix >= blen)
-	// 				continue;
-	// 			int slen = _data[boff + bix];
-	// 			for(int i = 0, off = boff + bix + 1; i < slen; i++)
-	// 				_vcodes[_data[off + i]] = k;
-	// 			_apos[k] += slen + 1;
-	// 		}
-	// 	}
-	// }
 
 	/**
 	 * Encodes the bitmap in blocks of offsets. Within each block, the bits are stored as absolute offsets from the
@@ -1153,18 +1026,4 @@ public class ColGroupOLE extends ColGroupOffset {
 		// TODO Auto-generated method stub
 		// return 0;
 	}
-
-	// @Override
-	// public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
-	// 	// TODO Auto-generated method stub
-	// 	return null;
-	// }
-
-	// @Override
-	// public ColGroupRowIterator getRowIterator(int rl, int ru) {
-	// 	// TODO Auto-generated method stub
-	// 	return null;
-	// }
-
-
 }

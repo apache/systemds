@@ -932,8 +932,10 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	protected void compareResultMatrices(double[][] d1, double[][] d2) {
-		if(compressionSettings.lossy)
+		if(compressionSettings.lossy )
 			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString());
+		else if(overlappingType == OverLapping.SQUEEZE)
+			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString(), true);
 		else if(rows > 65000)
 			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
 		else if(OverLapping.effectOnOutput(overlappingType))

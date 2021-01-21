@@ -140,9 +140,9 @@ public class BitmapLossyEncoder {
 					lengths.put(scaledValues[idx], fullSizeOffsetsLists[idx].size());
 				}
 			}
-			else {
+			else
 				numZeroGroups++;
-			}
+
 		}
 
 		if(somethingToMerge) {
@@ -164,9 +164,8 @@ public class BitmapLossyEncoder {
 			}
 			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, numZeroGroups, scaledValuesReduced, scale);
 		}
-		else {
+		else
 			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists, numZeroGroups, scaledValues, scale);
-		}
 	}
 
 	/**
@@ -227,16 +226,15 @@ public class BitmapLossyEncoder {
 				Entry<List<Byte>, Queue<IntArrayList>> ent = x.next();
 				List<Byte> key = ent.getKey();
 				int row = idx * numColumns;
-				for(int off = 0; off < numColumns; off++) {
+				for(int off = 0; off < numColumns; off++)
 					scaledValuesReduced[row + off] = key.get(off);
-				}
+
 				Queue<IntArrayList> q = ent.getValue();
-				if(q.size() == 1) {
+				if(q.size() == 1)
 					newOffsetsLists[idx] = q.remove();
-				}
-				else {
+				else
 					newOffsetsLists[idx] = mergeOffsets(q, new int[lengths.get(key)]);
-				}
+
 				idx++;
 			}
 
@@ -260,15 +258,12 @@ public class BitmapLossyEncoder {
 		while(!offsets.isEmpty()) {
 			IntArrayList h = offsets.remove();
 			int[] v = h.extractValues();
-			for(int i = 0; i < h.size(); i++) {
+			for(int i = 0; i < h.size(); i++)
 				res[indexStart++] = v[i];
-			}
 		}
 		Arrays.sort(res);
 		return new IntArrayList(res);
 	}
-
-
 
 	/**
 	 * Utility method to scale all the values in the array to byte range
@@ -278,33 +273,21 @@ public class BitmapLossyEncoder {
 	 * @return the scaled values in byte
 	 */
 	private static byte[] scaleValuesToByte(double[] fp, double scale) {
-		byte[] res = getMemLocalByteArray(fp.length);
-		for(int idx = 0; idx < fp.length; idx++) {
+		byte[] res = getMemLocalByteArray(fp.length, false);
+		for(int idx = 0; idx < fp.length; idx++)
 			res[idx] = (byte) (Math.round(fp[idx] / scale));
-		}
+
 		return res;
 	}
 
 	public static ABitmap extractMapFromCompressedSingleColumn(CompressedMatrixBlock m, int columnId, double min,
 		double max) {
-		// public static void decompressToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
-
-		// LOG.error("Lossy Extract Min and Max...");
-		// LOG.error(min + " " + max);
-
 		double scale = get8BitScale(min, max);
 		final int blkSz = CompressionSettings.BITMAP_BLOCK_SZ;
 		Map<Byte, IntArrayList> values = new HashMap<>();
-		double[] tmp = getMemLocalDoubleArray(blkSz);
+		double[] tmp = getMemLocalDoubleArray(blkSz, true);
 		for(int i = 0; i < m.getNumRows(); i += blkSz) {
-			if(i > 0)
-				Arrays.fill(tmp, 0);
-
-			ColGroup.decompressColumnToBlock(tmp,
-				columnId,
-				i ,
-				Math.min(m.getNumRows(), (i +  blkSz)),
-				m.getColGroups());
+			ColGroup.decompressColumnToBlock(tmp, columnId, i, Math.min(m.getNumRows(), (i + blkSz)), m.getColGroups());
 
 			byte[] scaledValues = scaleValuesToByte(tmp, scale);
 			for(int j = 0, off = i; j < Math.min(m.getNumRows(), (i + blkSz)) - i; j++, off++) {
@@ -331,24 +314,36 @@ public class BitmapLossyEncoder {
 		// return BitmapLossyEncoder.makeBitmapLossy(BitmapEncoder.extractBitmap(new int[1], tmp, true));
 	}
 
-	private static byte[] getMemLocalByteArray(int length){
-		byte[] ar =  memPoolByteArray.get();
-		if(ar!= null && ar.length >= length)
+	private static byte[] getMemLocalByteArray(int length, boolean clean) {
+		byte[] ar = memPoolByteArray.get();
+		if(ar != null && ar.length >= length) {
+			if(clean)
+				for(int i = 0; i < length; i++)
+					ar[i] = 0;
 			return ar;
-		else{
+		}
+		else {
 			memPoolByteArray.set(new byte[length]);
 			return memPoolByteArray.get();
 		}
 	}
 
-	private static double[] getMemLocalDoubleArray(int length){
-		double[] ar =  memPoolDoubleArray.get();
-		if(ar!= null && ar.length >= length)
+	private static double[] getMemLocalDoubleArray(int length, boolean clean) {
+		double[] ar = memPoolDoubleArray.get();
+		if(ar != null && ar.length >= length) {
+			if(clean)
+				Arrays.fill(ar, 0.0);
 			return ar;
-		else{
+		}
+		else {
 			memPoolDoubleArray.set(new double[length]);
 			return memPoolDoubleArray.get();
 		}
+	}
+
+	public static void cleanMemPools() {
+		memPoolByteArray.remove();
+		memPoolDoubleArray.remove();
 	}
 
 	/**

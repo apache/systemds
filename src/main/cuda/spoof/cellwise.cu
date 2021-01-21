@@ -36,14 +36,14 @@ struct SpoofCellwiseOp {
 		MatrixAccessor<T> b[NUM_B];
 		MatrixAccessor<T> c;
 		T* scalars;
-		uint32_t grix;
+		uint32_t _grix;
 		T* avals;
 		uint32_t* aix;
 		uint32_t alen;
 		uint32_t& n;
 
 	SpoofCellwiseOp(Matrix<T>* _A, Matrix<T>* _B, Matrix<T>* _C, T* scalars, T* tmp_stor, uint32_t grix) :
-			/*SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix),*/ n(_A->cols), scalars(scalars), grix(grix) {
+			n(_A->cols), scalars(scalars), _grix(grix) {
 		A.init(_A);
 		c.init(_C);
 		alen = A.row_len(grix);
@@ -56,14 +56,13 @@ struct SpoofCellwiseOp {
 	__device__  __forceinline__ T operator()(T a, uint32_t idx) {
 		uint32_t rix = idx / A.cols();
 		uint32_t cix = idx % A.cols();
-		grix+=rix;
+		uint32_t grix=_grix + rix;
 
 %BODY_dense%
 		return %OUT%;
 	}
 };
 
-//__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {
 template<typename T, int NUM_B>
 __global__ void %TMP% (Matrix<T>* a, Matrix<T>* b, Matrix<T>* c, T* scalars, T* tmp_stor, uint32_t grix) {
 	%AGG_OP%<T> agg_op;

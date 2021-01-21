@@ -38,10 +38,8 @@ __device__ void reduce_sum(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32
 	IdentityOp<T> spoof_op;
 	FULL_AGG<T, SumOp<T>, IdentityOp<T>>(in, out, n, (T) 0.0, agg_op, spoof_op);
 }
+
 extern "C" __global__ void reduce_sum_d(Matrix<double>* in, Matrix<double>* out, uint32_t n) {
-//	MatrixAccessor<double> in(_in);
-//	MatrixAccessor<double> out(_out);
-//	reduce_sum(in, out, in.rows() * in.cols());
 	MatrixAccessor<double> _in(in);
 	MatrixAccessor<double> _out(out);
 	reduce_sum(&_in, &_out, n);
@@ -102,17 +100,19 @@ extern "C" __global__ void reduce_sum_d(Matrix<double>* in, Matrix<double>* out,
  * @param g_odata   output/temporary array stode in device memory (of size n)
  * @param n         size of the input and temporary/output arrays
  */
-//template<typename T>
-//__device__ void reduce_max(T *g_idata, T *g_odata, uint n) {
-//	MaxOp<T> agg_op;
-//	IdentityOp<T> spoof_op;
-//	FULL_AGG<T, MaxOp<T>, IdentityOp<T>>(g_idata, g_odata, n, 1, -MAX<T>(), agg_op, spoof_op);
-//}
-//
-//extern "C" __global__ void reduce_max_d(double *g_idata, double *g_odata, uint n) {
-//	reduce_max(g_idata, g_odata, n);
-//}
-//
+template<typename T>
+__device__ void reduce_max(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t n) {
+	MaxOp<T> agg_op;
+	IdentityOp<T> spoof_op;
+	FULL_AGG<T, MaxOp<T>, IdentityOp<T>>(in, out, n, -MAX<T>(), agg_op, spoof_op);
+}
+
+extern "C" __global__ void reduce_max_d(Matrix<double>* in, Matrix<double>* out, uint32_t n) {
+	MatrixAccessor<double> _in(in);
+	MatrixAccessor<double> _out(out);
+	reduce_max(&_in, &_out, n);
+}
+
 //extern "C" __global__ void reduce_max_f(float *g_idata, float *g_odata, uint n) {
 //	reduce_max(g_idata, g_odata, n);
 //}
@@ -168,17 +168,19 @@ extern "C" __global__ void reduce_sum_d(Matrix<double>* in, Matrix<double>* out,
  * @param g_odata   output/temporary array stode in device memory (of size n)
  * @param n         size of the input and temporary/output arrays
  */
-//template<typename T>
-//__device__ void reduce_min(T *g_idata, T *g_odata, uint n) {
-//	MinOp<T> agg_op;
-//	IdentityOp<T> spoof_op;
-//	FULL_AGG<T, MinOp<T>, IdentityOp<T>>(g_idata, g_odata, n, 1, MAX<T>(), agg_op, spoof_op);
-//}
-//
-//extern "C" __global__ void reduce_min_d(double *g_idata, double *g_odata, uint n) {
-//	reduce_min(g_idata, g_odata, n);
-//}
-//
+template<typename T>
+__device__ void reduce_min(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t n) {
+	MinOp<T> agg_op;
+	IdentityOp<T> spoof_op;
+	FULL_AGG<T, MinOp<T>, IdentityOp<T>>(in, out, n, MAX<T>(), agg_op, spoof_op);
+}
+
+extern "C" __global__ void reduce_min_d(Matrix<double>* in, Matrix<double>* out, uint32_t n) {
+	MatrixAccessor<double> _in(in);
+	MatrixAccessor<double> _out(out);
+	reduce_min(&_in, &_out, n);
+}
+
 //extern "C" __global__ void reduce_min_f(float *g_idata, float *g_odata, uint n) {
 //	reduce_min(g_idata, g_odata, n);
 //}

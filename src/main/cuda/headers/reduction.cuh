@@ -183,23 +183,24 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
 //		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
 //		SpoofCellwiseOp spoof_op) ///< Operation to perform before assigning this
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void ROW_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op) {
+__device__ void ROW_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N, T VT,  ReductionOp reduction_op,
+					   SpoofCellwiseOp spoof_op) {
 	auto sdata = shared_memory_proxy<T>();
 
 	// one block per row
-	if (blockIdx.x >= spoof_op.A.rows()) {
+	if (blockIdx.x >= in->rows()) {
 		return;
 	}
 
 	uint block = blockIdx.x;
 	uint tid = threadIdx.x;
 	uint32_t i = tid;
-	uint block_offset = block * spoof_op.A.cols();
+	uint block_offset = block * in->cols();
 
 //	T v = initialValue;
 	T v = reduction_op.init();
-	while (i < spoof_op.A.cols()) {
-		v = reduction_op(v, spoof_op(*(spoof_op.A.vals(block_offset + i)), i));
+	while (i < in->cols()) {
+		v = reduction_op(v, spoof_op(in->vals(block_offset + i), i));
 		i += blockDim.x;
 	}
 
@@ -260,7 +261,7 @@ __device__ void ROW_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_o
 
 	// write result for this block to global mem, modify it with assignment op
 	if (tid == 0)
-		*(spoof_op.c.vals(block)) = sdata[0];
+		out->val(block) = sdata[0];
 }
 
 /**
@@ -279,7 +280,8 @@ __device__ void ROW_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_o
  * column
  */
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void COL_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op) {
+__device__ void COL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N, T VT,  ReductionOp reduction_op,
+						SpoofCellwiseOp spoof_op) {
 //__device__ void COL_AGG(T *g_idata, ///< input data stored in device memory (of size rows*cols)
 //		T *g_odata,  ///< output/temporary array store in device memory (of size rows*cols)
 //		uint rows,  ///< rows in input and temporary/output arrays
@@ -290,19 +292,19 @@ __device__ void COL_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_o
 //
 //{
 	uint global_tid = blockIdx.x * blockDim.x + threadIdx.x;
-	if (global_tid >= spoof_op.A.cols()) {
+	if (global_tid >= in->cols()) {
 		return;
 	}
 
 	uint i = global_tid;
-	uint grid_size = spoof_op.A.cols();
+	uint grid_size = in->cols();
 	T val = reduction_op.init();
 
-	while (i < spoof_op.A.rows() * spoof_op.A.cols()) {
-		val = reduction_op(val, spoof_op(*(spoof_op.A.vals(i)), i));
+	while (i < N) {
+		val = reduction_op(val, spoof_op(*(in->vals(i)), i));
 		i += grid_size;
 	}
-	*(spoof_op.C.vals(global_tid)) = val;
+	out->val(global_tid) = val;
 }
 
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
@@ -313,7 +315,7 @@ __device__ void NO_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N
 	uint32_t last_idx = min(first_idx + static_cast<uint32_t>(VT), N);
 	#pragma unroll
 	for(auto i = first_idx; i < last_idx; i++) {
-		out->val(0, i) = spoof_op(in->val(0, i), i);
+		out->val(i) = spoof_op(in->val(0, i), i);
 	}
 }
 

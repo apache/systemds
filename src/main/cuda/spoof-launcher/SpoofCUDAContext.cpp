@@ -55,14 +55,14 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
 //  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_f", func));
 //
 //  // MIN
-//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_d"));
-//  ctx->reduction_kernels.insert(std::make_pair("reduce_min_d", func));
+  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_d"));
+  ctx->reduction_kernels.insert(std::make_pair("reduce_min_d", func));
 //  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_f"));
 //  ctx->reduction_kernels.insert(std::make_pair("reduce_min_f", func));
 //
 //  // MAX
-//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_d"));
-//  ctx->reduction_kernels.insert(std::make_pair("reduce_max_d", func));
+  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_d"));
+  ctx->reduction_kernels.insert(std::make_pair("reduce_max_d", func));
 //  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_f"));
 //  ctx->reduction_kernels.insert(std::make_pair("reduce_max_f", func));
 

@@ -32,6 +32,7 @@ struct Matrix {
 	uint32_t rows;
 	uint32_t cols;
 	uint32_t nnz;
+	typedef T value_type;
 };
 
 //#ifdef __CUDACC_RTC__

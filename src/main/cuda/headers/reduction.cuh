@@ -306,14 +306,14 @@ __device__ void COL_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_o
 }
 
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void NO_AGG(T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op)
+__device__ void NO_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N, T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op)
 {
 	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
 	uint32_t first_idx = tid * static_cast<uint32_t>(VT);
-	uint32_t last_idx = min(first_idx + static_cast<uint32_t>(VT), spoof_op.A.rows() * spoof_op.A.cols());
+	uint32_t last_idx = min(first_idx + static_cast<uint32_t>(VT), N);
 	#pragma unroll
 	for(auto i = first_idx; i < last_idx; i++) {
-		spoof_op.c[i] = spoof_op(spoof_op.A.val(i), i);
+		out->val(0, i) = spoof_op(in->val(0, i), i);
 	}
 }
 

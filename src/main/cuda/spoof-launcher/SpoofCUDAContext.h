@@ -119,8 +119,8 @@ public:
 				CHECK_CUDART(cudaMalloc((void **) &d_out, sizeof(Matrix<T>)));
 				T* d_out_data = nullptr;
 				CHECK_CUDART(cudaMalloc((void **) &d_out_data, sizeof(T) * num_blocks));
-				Matrix<T> scalar_out{d_out_data, 0, 0, 1, 1, 1};
-				CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void *>(&scalar_out), sizeof(Matrix<T>),
+				Matrix<T> agg_out{d_out_data, 0, 0, num_blocks, 1, num_blocks};
+				CHECK_CUDART(cudaMemcpy(d_out, reinterpret_cast<void *>(&agg_out), sizeof(Matrix<T>),
 										cudaMemcpyHostToDevice));
 			}
 			
@@ -237,6 +237,7 @@ public:
 	template<typename T>
 	void launch_cw_kernel(SpoofOperator* op, Matrix<T>* d_in, Matrix<T>* d_out, Matrix<T>* d_sides, uint32_t num_sides,
 					   T* d_scalars, uint32_t in_rows, uint32_t in_cols, uint32_t grix, bool sparse) {
+		T value_type;
 		uint32_t N = in_rows * in_cols;
 
 		switch (op->agg_type) {
@@ -262,7 +263,7 @@ public:
 //					.launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix));
 			
 			CHECK_CUDA(op->program.kernel(op->name)
-							   .instantiate(type_of(*(d_in->data)), std::max(1u, num_sides))
+							   .instantiate(type_of(value_type), std::max(1u, num_sides))
 							   .configure(grid, block, shared_mem_size)
 							   .launch(d_in, d_sides, d_out, d_scalars, nullptr, grix));
 			
@@ -305,7 +306,7 @@ public:
 					<< N << " elements" << std::endl;
 //#endif
 			CHECK_CUDA(op->program.kernel(op->name)
-							   .instantiate(type_of(*(d_in->data)), std::max(1u, num_sides))
+							   .instantiate(type_of(value_type), std::max(1u, num_sides))
 							   .configure(grid, block, shared_mem_size)
 							   .launch(d_in, d_sides, d_out, d_scalars, nullptr, grix));
 
@@ -324,7 +325,7 @@ public:
 					<< N << " elements" << std::endl;
 //#endif
 			CHECK_CUDA(op->program.kernel(op->name)
-							   .instantiate(type_of(*(d_in->data)), std::max(1u, num_sides))
+							   .instantiate(type_of(value_type), std::max(1u, num_sides))
 							   .configure(grid, block, shared_mem_size)
 							   .launch(d_in, d_sides, d_out, d_scalars, nullptr, grix));
 
@@ -339,18 +340,19 @@ public:
 			dim3 block(NT, 1, 1);
 			uint32_t shared_mem_size = 0;
 
-#ifdef __DEBUG
+//#ifdef __DEBUG
 			std::cout << "launching spoof cellwise kernel " << op->name << " with " << NT * NB
 					<< " threads in " << NB << " blocks without aggregation for " 
 					<< N << " elements"
 					<< std::endl;
-#endif
+//#endif
 //			CHECK_CUDA(op->program.kernel(op->name)
 //					.instantiate(type_of(result))
 //					.configure(grid, block)
 //					.launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
+
 			CHECK_CUDA(op->program.kernel(op->name)
-							   .instantiate(type_of(*(d_in->data)), std::max(1u, num_sides))
+							   .instantiate(type_of(value_type), std::max(1u, num_sides))
 							   .configure(grid, block, shared_mem_size)
 							   .launch(d_in, d_sides, d_out, d_scalars, nullptr, grix));
 		}
@@ -360,7 +362,7 @@ public:
 	template<typename T>
 	void launch_ra_kernel(SpoofOperator* op, Matrix<T>* d_in, Matrix<T>* d_out, Matrix<T>* d_sides, uint32_t num_sides,
 			T* d_scalars, uint32_t in_rows, uint32_t in_cols, uint32_t grix, bool sparse) {
-		
+		T value_type;
 		dim3 grid(in_rows, 1, 1);
 		dim3 block(NT, 1, 1);
 		unsigned int shared_mem_size = NT * sizeof(T);
@@ -385,9 +387,8 @@ public:
 				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by "
 				<< NT << " threads per row, adding " << temp_buf_size / 1024 << " kb of temp buffer in global memory." <<  std::endl;
 //#endif
-		
 		CHECK_CUDA(op->program.kernel(name)
-				.instantiate(type_of(*d_temp), std::max(1u, num_sides), op->num_temp_vectors, tmp_len)
+				.instantiate(type_of(value_type), std::max(1u, num_sides), op->num_temp_vectors, tmp_len)
 				.configure(grid, block, shared_mem_size)
 				.launch(d_in, d_sides, d_out, d_scalars, d_temp, grix));
 

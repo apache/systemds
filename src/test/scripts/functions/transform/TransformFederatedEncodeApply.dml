@@ -27,7 +27,8 @@ F1 = federated(type="frame", addresses=list($in_AH, $in_AL, $in_BH, $in_BL), ran
 
 jspec = read($TFSPEC, data_type="scalar", value_type="string");
 
-[X, M] = transformencode(target=F1, spec=jspec);
+for (i in 1:2)
+  [X, M] = transformencode(target=F1, spec=jspec);
 
 while(FALSE){}
 

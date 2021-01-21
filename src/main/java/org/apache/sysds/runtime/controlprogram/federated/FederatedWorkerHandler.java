@@ -352,6 +352,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			// reuse UDF outputs if available in lineage cache
 			if (LineageCache.reuse(udf, ec))
 				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
+				//FIXME: few UDFs (e.g. Rdiag, DiagMatrix) return additional data with response
 
 			// else execute the UDF
 			long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;

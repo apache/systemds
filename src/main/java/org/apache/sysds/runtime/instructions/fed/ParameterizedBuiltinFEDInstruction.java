@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,7 +28,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.zip.Adler32;
+import java.util.zip.Checksum;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
@@ -34,8 +39,10 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -588,8 +595,38 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		}
 
 		@Override
+		public List<Long> getOutputIds() {
+			return new ArrayList<>(Arrays.asList(_outputID));
+		}
+
+		@Override
 		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-			return null;
+			LineageItem[] liUdfInputs = Arrays.stream(getInputIDs())
+					.mapToObj(id -> ec.getLineage().get(String.valueOf(id))).toArray(LineageItem[]::new);
+			// calculate checksums for meta and decoder
+			Checksum checksum = new Adler32();
+			try {
+				long cbsize = LazyWriteBuffer.getCacheBlockSize(_meta);
+				DataOutput fout = new CacheDataOutput(new byte[(int)cbsize]);
+				_meta.write(fout);
+				byte bytes[] = ((CacheDataOutput) fout).getBytes();
+				checksum.update(bytes, 0, bytes.length);
+			}
+			catch (IOException e) {
+				throw new DMLRuntimeException("Failed to serialize cache block.");
+			}
+			CPOperand meta = new CPOperand(String.valueOf(checksum.getValue()), 
+					ValueType.INT64, DataType.SCALAR, true);
+			checksum.reset();
+			byte bytes[] = SerializationUtils.serialize(_decoder);
+			checksum.update(bytes, 0, bytes.length);
+			CPOperand decoder = new CPOperand(String.valueOf(checksum.getValue()), 
+					ValueType.INT64, DataType.SCALAR, true);
+			LineageItem[] otherInputs = LineageItemUtils.getLineage(ec, meta, decoder);
+			LineageItem[] liInputs = Stream.concat(Arrays.stream(liUdfInputs), Arrays.stream(otherInputs))
+					.toArray(LineageItem[]::new);
+			return Pair.of(String.valueOf(_outputID), 
+					new LineageItem(getClass().getSimpleName(), liInputs));
 		}
 	}
 

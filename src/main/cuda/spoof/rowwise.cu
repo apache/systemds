@@ -74,10 +74,7 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 	T* avals;
 	uint32_t* aix;
 	uint32_t alen;
-	
-	T* scalars;
-	uint32_t grix;
-	
+		
 	SpoofRowwiseOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
 		/*SpoofOp<T, NUM_B>(A, B, C, scalars, tmp_stor, grix)*/ //%INIT_TEMP_VECT%
 		        scalars(scalars), grix(grix) {

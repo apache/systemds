@@ -144,7 +144,7 @@ public class CNodeRow extends CNodeTpl
 //			tmp = tmp.replace("//%TMP_MEM%", tmp_stor_str.toString());
 //			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", tmp_stor_str_dec.toString());
 			
-			String hasTempVectorStorage = ", public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>";
+			String hasTempVectorStorage = ": public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>";
 			String initTempVectorStorage = "TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>(tmp_stor),";
 //			String getTempStorage = "\t__device__ Vector<T>& getTempStorage(uint32_t len) {\n" +
 //				"\t\tVector<T>& vec = temp_rb.next();\n" +

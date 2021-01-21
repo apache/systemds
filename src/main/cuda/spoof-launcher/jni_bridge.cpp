@@ -110,7 +110,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 	}
 
 	std::vector<Matrix<double>> side_inputs;
-	for(auto ptr_idx = 0, input_idx = input_offset; input_idx < num_inputs; ptr_idx+=4, input_idx++) {
+	for(uint32_t ptr_idx = 0, input_idx = input_offset; input_idx < num_inputs; ptr_idx+=4, input_idx++) {
 		jobject side_input_obj = env->CallObjectMethod(inputs_, ArrayList_get, input_idx);
 		uint32_t m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
 		uint32_t n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));

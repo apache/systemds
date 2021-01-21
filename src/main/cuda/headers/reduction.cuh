@@ -200,7 +200,7 @@ __device__ void ROW_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t 
 //	T v = initialValue;
 	T v = reduction_op.init();
 	while (i < in->cols()) {
-		v = reduction_op(v, spoof_op(in->vals(block_offset + i), i));
+		v = reduction_op(v, spoof_op(in->val(block_offset + i), i));
 		i += blockDim.x;
 	}
 
@@ -301,7 +301,7 @@ __device__ void COL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t 
 	T val = reduction_op.init();
 
 	while (i < N) {
-		val = reduction_op(val, spoof_op(*(in->vals(i)), i));
+		val = reduction_op(val, spoof_op(in->val(i), i));
 		i += grid_size;
 	}
 	out->val(global_tid) = val;

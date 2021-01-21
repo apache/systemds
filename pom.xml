@@ -615,6 +615,7 @@
 								<exclude>scripts/perftest/python/requirements.txt</exclude>
 								<!-- external sources -->
 								<exclude>src/main/cuda/ext/**</exclude>
+								<exclude>src/main/cuda/.idea/</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

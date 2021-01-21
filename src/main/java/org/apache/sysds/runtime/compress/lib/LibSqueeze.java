@@ -26,6 +26,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -34,13 +36,15 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
+import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class LibSqueeze {
 
-    // private static final Log LOG = LogFactory.getLog(LibSqueeze.class.getName());
+    private static final Log LOG = LogFactory.getLog(LibSqueeze.class.getName());
 
     public static CompressedMatrixBlock squeeze(CompressedMatrixBlock m, int k) {
 
@@ -49,7 +53,9 @@ public class LibSqueeze {
         ret.setNumRows(m.getNumRows());
 
         CompressionSettings cs = new CompressionSettingsBuilder().create();
-        List<ColGroup> retCg = (k <= 1) ? singleThreadSqueeze(m, cs) : multiThreadSqueeze(m, cs, k);
+
+        double[] minMaxes = extractMinMaxes(m);
+        List<ColGroup> retCg = (k <= 1) ? singleThreadSqueeze(m, cs, minMaxes) : multiThreadSqueeze(m, cs, k, minMaxes);
 
         ret.allocateColGroupList(retCg);
         ret.setOverlapping(false);
@@ -61,7 +67,20 @@ public class LibSqueeze {
         return ret;
     }
 
-    private static List<ColGroup> singleThreadSqueeze(CompressedMatrixBlock m, CompressionSettings cs) {
+    private static double[] extractMinMaxes(CompressedMatrixBlock m) {
+        double[] ret = new double[m.getNumColumns()*2];
+        for(ColGroup g : m.getColGroups())
+            if(g instanceof ColGroupValue)
+                ((ColGroupValue) g).addMinMax(ret);
+            else
+                throw new DMLCompressionException(
+                    "Not valid to squeeze if not all colGroups are of ColGroupValue type.");
+
+        return ret;
+    }
+
+    private static List<ColGroup> singleThreadSqueeze(CompressedMatrixBlock m, CompressionSettings cs,
+        double[] minMaxes) {
         List<ColGroup> retCg = new ArrayList<>();
 
         int blkSz = 1;
@@ -69,12 +88,13 @@ public class LibSqueeze {
             int[] columnIds = new int[Math.min(blkSz, m.getNumColumns() - i)];
             for(int j = 0; j < Math.min(blkSz, m.getNumColumns() - i); j++)
                 columnIds[j] = i + j;
-            retCg.add(extractNewGroup(m, cs, columnIds));
+            retCg.add(extractNewGroup(m, cs, columnIds, minMaxes));
         }
         return retCg;
     }
 
-    private static List<ColGroup> multiThreadSqueeze(CompressedMatrixBlock m, CompressionSettings cs, int k) {
+    private static List<ColGroup> multiThreadSqueeze(CompressedMatrixBlock m, CompressionSettings cs, int k,
+        double[] minMaxes) {
         List<ColGroup> retCg = new ArrayList<>();
         ExecutorService pool = CommonThreadPool.get(k);
         ArrayList<SqueezeTask> tasks = new ArrayList<>();
@@ -85,7 +105,7 @@ public class LibSqueeze {
                 int[] columnIds = new int[Math.min(blkSz, m.getNumColumns() - i)];
                 for(int j = 0; j < Math.min(blkSz, m.getNumColumns() - i); j++)
                     columnIds[j] = i + j;
-                tasks.add(new SqueezeTask(m, cs, columnIds));
+                tasks.add(new SqueezeTask(m, cs, columnIds, minMaxes));
             }
 
             for(Future<ColGroup> future : pool.invokeAll(tasks))
@@ -99,37 +119,46 @@ public class LibSqueeze {
         return retCg;
     }
 
-    private static ColGroup extractNewGroup(CompressedMatrixBlock m, CompressionSettings cs, int[] columnIds) {
+    private static ColGroup extractNewGroup(CompressedMatrixBlock m, CompressionSettings cs, int[] columnIds,
+        double[] minMaxes) {
 
         ABitmap map;
         if(columnIds.length > 1) {
+            LOG.error("Not Optimized Extraction...");
+            map = extractBitmap(columnIds, m);
+        }
+        else
+            map = BitmapLossyEncoder.extractMapFromCompressedSingleColumn(m,
+                columnIds[0],
+                minMaxes[columnIds[0] * 2],
+                minMaxes[columnIds[0] * 2 + 1]);
 
-            map = BitmapEncoder.extractBitmap(columnIds, m);
-        }
-        else {
-            MatrixBlock tmp = new MatrixBlock(m.getNumRows(), 1, false).allocateDenseBlock();
-            // public static void decompressToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
-            ColGroup.decompressToBlock(tmp, columnIds[0], m.getColGroups());
-            map = BitmapEncoder.extractBitmap(new int[1], tmp, true);
-        }
         ColGroup newGroup = ColGroupFactory.compress(columnIds, m.getNumRows(), map, CompressionType.DDC, cs, m);
         return newGroup;
+    }
+
+    private static ABitmap extractBitmap(int[] colIndices, CompressedMatrixBlock compressedBlock) {
+        Bitmap x = BitmapEncoder.extractBitmap(colIndices,
+            ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices));
+        return BitmapLossyEncoder.makeBitmapLossy(x);
     }
 
     private static class SqueezeTask implements Callable<ColGroup> {
         private final CompressedMatrixBlock _m;
         private final CompressionSettings _cs;
         private final int[] _columnIds;
+        private final double[] _minMaxes;
 
-        protected SqueezeTask(CompressedMatrixBlock m, CompressionSettings cs, int[] columnIds) {
+        protected SqueezeTask(CompressedMatrixBlock m, CompressionSettings cs, int[] columnIds, double[] minMaxes) {
             _m = m;
             _cs = cs;
             _columnIds = columnIds;
+            _minMaxes = minMaxes;
         }
 
         @Override
         public ColGroup call() {
-            return extractNewGroup(_m, _cs, _columnIds);
+            return extractNewGroup(_m, _cs, _columnIds, _minMaxes);
         }
     }
 }

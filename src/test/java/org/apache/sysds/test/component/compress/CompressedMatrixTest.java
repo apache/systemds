@@ -61,6 +61,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
+	@Ignore
 	public void testGetValue() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))

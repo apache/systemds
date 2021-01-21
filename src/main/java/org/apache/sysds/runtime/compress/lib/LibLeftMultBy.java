@@ -389,7 +389,7 @@ public class LibLeftMultBy {
 		// setup memory pool for reuse
 
 		for(int j = cl; j < cu; j++) {
-			ColGroup.decompressToBlock(lhs, j, groups);
+			ColGroup.decompressColumnToBlock(lhs, j, groups);
 			if(!lhs.isEmptyBlock(false)) {
 				leftMultByVectorTranspose(groups, lhs, tmpret, false, true, v, overlapping);
 				LinearAlgebraUtils.copyNonZerosToUpperTriangle(result, tmpret, j);
@@ -423,7 +423,7 @@ public class LibLeftMultBy {
 		ExecutorService pool = CommonThreadPool.get(k);
 		ArrayList<leftMultByVectorTransposeTask> tasks = new ArrayList<>();
 		for(int j = rl; j < ru; j++) {
-			ColGroup.decompressToBlock(lhs, j, thatGroups);
+			ColGroup.decompressColumnToBlock(lhs, j, thatGroups);
 			if(!lhs.isEmptyBlock(false)) {
 
 				try {
@@ -470,7 +470,7 @@ public class LibLeftMultBy {
 		tmpret.allocateDenseBlock();
 
 		for(int j = rl; j < ru; j++) {
-			ColGroup.decompressToBlock(lhs, j, thatGroups);
+			ColGroup.decompressColumnToBlock(lhs, j, thatGroups);
 			if(!lhs.isEmptyBlock(false)) {
 				for(ColGroup grp : thisGroups) {
 					grp.leftMultByRowVector(lhs.getDenseBlockValues(), tmpret.getDenseBlockValues());

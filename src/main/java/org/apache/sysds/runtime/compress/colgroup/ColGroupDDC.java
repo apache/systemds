@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
-import java.util.Iterator;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
@@ -28,7 +27,6 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -101,22 +99,53 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int colpos) {
+	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
 		int ncol = getNumCols();
 		double[] c = target.getDenseBlockValues();
 		double[] values = getValues();
 		int nnz = 0;
 		for(int i = 0; i < _numRows; i++) {
 			int index = getIndex(i);
-			if(index < getNumValues()) {
+			if(index < getNumValues()) 
 				nnz += ((c[i] += values[(index) * ncol + colpos]) != 0) ? 1 : 0;
-			}
-			else {
+			
+			else 
 				nnz++;
-			}
+			
 		}
 		target.setNonZeros(nnz);
 	}
+
+	@Override
+	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
+		int ncol = getNumCols();
+		double[] c = target.getDenseBlockValues();
+		double[] values = getValues();
+		final int numValues =  getNumValues();
+		int nnz = 0;
+		for(int i = 0, r = rl; i < ru-rl; i++, r++) {
+			int index = getIndex(r);
+			if(index < numValues) 
+				nnz += ((c[i] += values[(index) * ncol + colpos]) != 0) ? 1 : 0;
+			else 
+				nnz++;
+		}
+		target.setNonZeros(nnz);
+	}
+
+	@Override
+	public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
+		int ncol = getNumCols();
+		double[] values = getValues();
+		final int numValues =  getNumValues();
+		for(int i = 0, r = rl; i < ru-rl; i++, r++) {
+			int index = getIndex(r);
+			if(index < numValues)
+				c[i] += values[(index) * ncol + colpos];	
+		}
+	}
+
+
 
 	@Override
 	public double get(int r, int c) {
@@ -336,75 +365,75 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		}
 	}
 
-	@Override
-	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
-		// DDC iterator is always row major, so no need for custom handling
-		return new DDCIterator(rl, ru, inclZeros);
-	}
+	// @Override
+	// public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
+	// 	// DDC iterator is always row major, so no need for custom handling
+	// 	return new DDCIterator(rl, ru, inclZeros);
+	// }
 
-	@Override
-	public ColGroupRowIterator getRowIterator(int rl, int ru) {
-		return new DDCRowIterator(rl, ru);
-	}
+	// @Override
+	// public ColGroupRowIterator getRowIterator(int rl, int ru) {
+	// 	return new DDCRowIterator(rl, ru);
+	// }
 
-	private class DDCIterator implements Iterator<IJV> {
-		// iterator configuration
-		private final int _ru;
-		private final boolean _inclZeros;
+	// private class DDCIterator implements Iterator<IJV> {
+	// 	// iterator configuration
+	// 	private final int _ru;
+	// 	private final boolean _inclZeros;
 
-		// iterator state
-		private final IJV _buff = new IJV();
-		private int _rpos = -1;
-		private int _cpos = -1;
-		private double _value = 0;
+	// 	// iterator state
+	// 	private final IJV _buff = new IJV();
+	// 	private int _rpos = -1;
+	// 	private int _cpos = -1;
+	// 	private double _value = 0;
 
-		public DDCIterator(int rl, int ru, boolean inclZeros) {
-			_ru = ru;
-			_inclZeros = inclZeros;
-			_rpos = rl;
-			_cpos = -1;
-			getNextValue();
-		}
+	// 	public DDCIterator(int rl, int ru, boolean inclZeros) {
+	// 		_ru = ru;
+	// 		_inclZeros = inclZeros;
+	// 		_rpos = rl;
+	// 		_cpos = -1;
+	// 		getNextValue();
+	// 	}
 
-		@Override
-		public boolean hasNext() {
-			return(_rpos < _ru);
-		}
+	// 	@Override
+	// 	public boolean hasNext() {
+	// 		return(_rpos < _ru);
+	// 	}
 
-		@Override
-		public IJV next() {
-			_buff.set(_rpos, _colIndexes[_cpos], _value);
-			getNextValue();
-			return _buff;
-		}
+	// 	@Override
+	// 	public IJV next() {
+	// 		_buff.set(_rpos, _colIndexes[_cpos], _value);
+	// 		getNextValue();
+	// 		return _buff;
+	// 	}
 
-		private void getNextValue() {
-			do {
-				boolean nextRow = (_cpos + 1 >= getNumCols());
-				_rpos += nextRow ? 1 : 0;
-				_cpos = nextRow ? 0 : _cpos + 1;
-				if(_rpos >= _ru)
-					return; // reached end
-				_value = _dict.getValue(getIndex(_rpos, _cpos));
-			}
-			while(!_inclZeros && _value == 0);
-		}
-	}
+	// 	private void getNextValue() {
+	// 		do {
+	// 			boolean nextRow = (_cpos + 1 >= getNumCols());
+	// 			_rpos += nextRow ? 1 : 0;
+	// 			_cpos = nextRow ? 0 : _cpos + 1;
+	// 			if(_rpos >= _ru)
+	// 				return; // reached end
+	// 			_value = _dict.getValue(getIndex(_rpos, _cpos));
+	// 		}
+	// 		while(!_inclZeros && _value == 0);
+	// 	}
+	// }
 
-	private class DDCRowIterator extends ColGroupRowIterator {
-		public DDCRowIterator(int rl, int ru) {
-			// do nothing
-		}
+	// private class DDCRowIterator extends ColGroupRowIterator {
+	// 	public DDCRowIterator(int rl, int ru) {
+	// 		// do nothing
+	// 	}
 
-		public void next(double[] buff, int rowIx, int segIx, boolean last) {
-			// copy entire value tuple to output row
-			final int clen = getNumCols();
-			final int off = getIndex(rowIx) * clen;
-			final double[] values = getValues();
-			for(int j = 0; j < clen; j++)
-				buff[_colIndexes[j]] = values[off + j];
-		}
-	}
+	// 	public void next(double[] buff, int rowIx, int segIx, boolean last) {
+	// 		// copy entire value tuple to output row
+	// 		final int clen = getNumCols();
+	// 		final int off = getIndex(rowIx) * clen;
+	// 		final double[] values = getValues();
+	// 		for(int j = 0; j < clen; j++)
+	// 			buff[_colIndexes[j]] = values[off + j];
+	// 	}
+	// }
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -31,7 +30,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -264,11 +262,29 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract void decompressToBlock(MatrixBlock target, int[] colIndexTargets);
 
-	public static void decompressToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
+	public static void decompressColumnToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
 		for(ColGroup g : colGroups) {
 			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
 			if(groupColIndex >= 0) {
-				g.decompressToBlock(target, groupColIndex);
+				g.decompressColumnToBlock(target, groupColIndex);
+			}
+		}
+	}
+
+	public static void decompressColumnToBlock(MatrixBlock target, int colIndex, int rl, int ru, List<ColGroup> colGroups) {
+		for(ColGroup g : colGroups) {
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0) {
+				g.decompressColumnToBlock(target, groupColIndex, rl, ru);
+			}
+		}
+	}
+
+	public static void decompressColumnToBlock(double[] target, int colIndex, int rl, int ru, List<ColGroup> colGroups) {
+		for(ColGroup g : colGroups) {
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0) {
+				g.decompressColumnToBlock(target, groupColIndex, rl, ru);
 			}
 		}
 	}
@@ -279,7 +295,30 @@ public abstract class ColGroup implements Serializable {
 	 * @param target dense output vector
 	 * @param colpos column to decompress, error if larger or equal numCols
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int colpos);
+	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos);
+
+
+	/**
+	 * Decompress to block.
+	 * 
+	 * @param target dense output vector
+	 * @param colpos column to decompress, error if larger or equal numCols
+	 * @param rl the Row to start decompression from
+	 * @param ru the Row to end decompression at
+	 */
+	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru);
+
+
+	/**
+	 * Decompress to dense array.
+	 * 
+	 * @param target dense output vector double array.
+	 * @param colpos column to decompress, error if larger or equal numCols
+	 * @param rl the Row to start decompression from
+	 * @param ru the Row to end decompression at
+	 */
+	public abstract void decompressColumnToBlock(double[] target, int colpos, int rl, int ru);
+
 
 	/**
 	 * Serializes column group to data output.
@@ -460,26 +499,26 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c, int rl, int ru);
 
-	/**
-	 * Create a column group iterator for a row index range.
-	 * 
-	 * @param rl        row lower index, inclusive
-	 * @param ru        row upper index, exclusive
-	 * @param inclZeros include zero values into scope of iterator
-	 * @param rowMajor  use a row major iteration order
-	 * @return an iterator instance
-	 */
-	public abstract Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor);
+	// /**
+	//  * Create a column group iterator for a row index range.
+	//  * 
+	//  * @param rl        row lower index, inclusive
+	//  * @param ru        row upper index, exclusive
+	//  * @param inclZeros include zero values into scope of iterator
+	//  * @param rowMajor  use a row major iteration order
+	//  * @return an iterator instance
+	//  */
+	// public abstract Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor);
 
-	/**
-	 * Create a dense row iterator for a row index range. This iterator implies the inclusion of zeros and row-major
-	 * iteration order.
-	 * 
-	 * @param rl row lower index, inclusive
-	 * @param ru row upper index, exclusive
-	 * @return an iterator instance
-	 */
-	public abstract ColGroupRowIterator getRowIterator(int rl, int ru);
+	// /**
+	//  * Create a dense row iterator for a row index range. This iterator implies the inclusion of zeros and row-major
+	//  * iteration order.
+	//  * 
+	//  * @param rl row lower index, inclusive
+	//  * @param ru row upper index, exclusive
+	//  * @return an iterator instance
+	//  */
+	// public abstract ColGroupRowIterator getRowIterator(int rl, int ru);
 
 	/**
 	 * Count the number of non-zeros per row

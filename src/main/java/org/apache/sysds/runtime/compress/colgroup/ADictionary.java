@@ -199,4 +199,13 @@ public abstract class ADictionary {
 	protected abstract double sum(int[] counts, int ncol, KahanFunction kplus);
 
 	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
+
+	/**
+	 * This method adds the max and min values contained in the dictionary to corresponding cells in the ret variable.
+	 * 
+	 * @param ret The double array that contains all cloumns min and max.
+	 * @param colIndexes The column Indexes contained in this dictionary.
+	 */
+	protected abstract void addMaxAndMin(double[] ret, int[] colIndexes);
+
 }

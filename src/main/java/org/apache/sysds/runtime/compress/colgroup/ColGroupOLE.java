@@ -20,8 +20,8 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
-import java.util.Iterator;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
@@ -85,7 +85,6 @@ public class ColGroupOLE extends ColGroupOffset {
 		return ColGroupType.OLE;
 	}
 
-
 	@Override
 	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
 
@@ -136,48 +135,48 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colixTargets) {
-		if(getNumValues() > 1) {
-			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-			final int numCols = getNumCols();
-			final int numVals = getNumValues();
-			final double[] values = getValues();
+		// if(getNumValues() > 1) {
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
+		final double[] values = getValues();
 
-			// cache blocking config and position array
-			int[] apos = new int[numVals];
-			int[] cix = new int[numCols];
+		// cache blocking config and position array
+		int[] apos = new int[numVals];
+		int[] cix = new int[numCols];
 
-			// prepare target col indexes
-			for(int j = 0; j < numCols; j++)
-				cix[j] = colixTargets[_colIndexes[j]];
+		// prepare target col indexes
+		for(int j = 0; j < numCols; j++)
+			cix[j] = colixTargets[_colIndexes[j]];
 
-			// cache conscious append via horizontal scans
-			for(int bi = 0; bi < _numRows; bi += blksz) {
-				for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					if(bix >= blen)
-						continue;
-					int len = _data[boff + bix];
-					int pos = boff + bix + 1;
-					for(int i = pos; i < pos + len; i++)
-						for(int j = 0, rix = bi + _data[i]; j < numCols; j++)
-							if(values[off + j] != 0) {
-								double v = target.quickGetValue(rix, _colIndexes[j]);
-								target.setValue(rix, cix[j], values[off + j] + v);
-							}
-					apos[k] += len + 1;
-				}
+		// cache conscious append via horizontal scans
+		for(int bi = 0; bi < _numRows; bi += blksz) {
+			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				if(bix >= blen)
+					continue;
+				int len = _data[boff + bix];
+				int pos = boff + bix + 1;
+				for(int i = pos; i < pos + len; i++)
+					for(int j = 0, rix = bi + _data[i]; j < numCols; j++)
+						if(values[off + j] != 0) {
+							double v = target.quickGetValue(rix, _colIndexes[j]);
+							target.setValue(rix, cix[j], values[off + j] + v);
+						}
+				apos[k] += len + 1;
 			}
 		}
-		else {
-			// call generic decompression with decoder
-			super.decompressToBlock(target, colixTargets);
-		}
+		// }
+		// else {
+		// // call generic decompression with decoder
+		// super.decompressToBlock(target, colixTargets);
+		// }
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int colpos) {
+	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		int numCols = getNumCols();
 		int numVals = getNumValues();
@@ -208,6 +207,73 @@ public class ColGroupOLE extends ColGroupOffset {
 			}
 		}
 		target.setNonZeros(nnz);
+	}
+
+	@Override
+	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		int numCols = getNumCols();
+		int numVals = getNumValues();
+		double[] c = target.getDenseBlockValues();
+		double[] values = getValues();
+
+		// cache blocking config and position array
+		int[] apos = skipScan(numVals, rl);
+
+		// cache conscious append via horizontal scans
+		int nnz = 0;
+		for(int bi = (rl / blksz) + blksz; bi < ru; bi += blksz) {
+			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				if(bix >= blen)
+					continue;
+				int len = _data[boff + bix];
+				int pos = boff + bix + 1;
+				for(int i = pos; i < pos + len; i++) {
+					int index = bi + _data[i];
+					if(index > rl && index < ru){
+						c[index - rl] += values[off + colpos];
+						nnz++;
+					}
+				}
+				apos[k] += len + 1;
+			}
+		}
+		target.setNonZeros(nnz);
+	}
+
+	@Override
+	public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		int numCols = getNumCols();
+		int numVals = getNumValues();
+		double[] values = getValues();
+
+		// cache blocking config and position array
+		int[] apos = skipScan(numVals, rl);
+
+		// cache conscious append via horizontal scans
+		for(int bi = (rl / blksz) + blksz; bi < ru; bi += blksz) {
+			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				if(bix >= blen)
+					continue;
+				int len = _data[boff + bix];
+				int pos = boff + bix + 1;
+				for(int i = pos; i < pos + len; i++) {
+					int index = bi + _data[i];
+					if(index > rl && index < ru)
+						c[index - rl] += values[off + colpos];
+				}
+				apos[k] += len + 1;
+			}
+		}
 	}
 
 	@Override
@@ -409,7 +475,7 @@ public class ColGroupOLE extends ColGroupOffset {
 
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
-	
+
 		if(numVals > 1 && _numRows > blksz * 2) {
 			final int blksz2 = blksz * 2;
 			int[] apos = skipScan(numVals, rl);
@@ -896,20 +962,20 @@ public class ColGroupOLE extends ColGroupOffset {
 		return 0;
 	}
 
-	@Override
-	public Iterator<Integer> getIterator(int k) {
-		return new OLEValueIterator(k, 0, _numRows);
-	}
+	// @Override
+	// public Iterator<Integer> getIterator(int k) {
+	// return new OLEValueIterator(k, 0, _numRows);
+	// }
 
-	@Override
-	public Iterator<Integer> getIterator(int k, int rl, int ru) {
-		return new OLEValueIterator(k, rl, ru);
-	}
+	// @Override
+	// public Iterator<Integer> getIterator(int k, int rl, int ru) {
+	// return new OLEValueIterator(k, rl, ru);
+	// }
 
-	@Override
-	public ColGroupRowIterator getRowIterator(int rl, int ru) {
-		return new OLERowIterator(rl, ru);
-	}
+	// @Override
+	// public ColGroupRowIterator getRowIterator(int rl, int ru) {
+	// return new OLERowIterator(rl, ru);
+	// }
 
 	@Override
 	public String toString() {
@@ -918,117 +984,117 @@ public class ColGroupOLE extends ColGroupOffset {
 		return sb.toString();
 	}
 
-	private class OLEValueIterator implements Iterator<Integer> {
-		private final int _ru;
-		private final int _boff;
-		private final int _blen;
-		private int _bix;
-		private int _start;
-		private int _slen;
-		private int _spos;
-		private int _rpos;
+	// private class OLEValueIterator implements Iterator<Integer> {
+	// 	private final int _ru;
+	// 	private final int _boff;
+	// 	private final int _blen;
+	// 	private int _bix;
+	// 	private int _start;
+	// 	private int _slen;
+	// 	private int _spos;
+	// 	private int _rpos;
 
-		public OLEValueIterator(int k, int rl, int ru) {
-			_ru = ru;
-			_boff = _ptr[k];
-			_blen = len(k);
+	// 	public OLEValueIterator(int k, int rl, int ru) {
+	// 		_ru = ru;
+	// 		_boff = _ptr[k];
+	// 		_blen = len(k);
 
-			// initialize position via segment-aligned skip-scan
-			int lrl = rl - rl % CompressionSettings.BITMAP_BLOCK_SZ;
-			_bix = skipScanVal(k, lrl);
-			_start = lrl;
+	// 		// initialize position via segment-aligned skip-scan
+	// 		int lrl = rl - rl % CompressionSettings.BITMAP_BLOCK_SZ;
+	// 		_bix = skipScanVal(k, lrl);
+	// 		_start = lrl;
 
-			// move position to actual rl boundary
-			if(_bix < _blen) {
-				_slen = _data[_boff + _bix];
-				_spos = 0;
-				_rpos = _data[_boff + _bix + 1];
-				while(_rpos < rl)
-					nextRowOffset();
-			}
-			else {
-				_rpos = _ru;
-			}
-		}
+	// 		// move position to actual rl boundary
+	// 		if(_bix < _blen) {
+	// 			_slen = _data[_boff + _bix];
+	// 			_spos = 0;
+	// 			_rpos = _data[_boff + _bix + 1];
+	// 			while(_rpos < rl)
+	// 				nextRowOffset();
+	// 		}
+	// 		else {
+	// 			_rpos = _ru;
+	// 		}
+	// 	}
 
-		@Override
-		public boolean hasNext() {
-			return(_rpos < _ru);
-		}
+	// 	@Override
+	// 	public boolean hasNext() {
+	// 		return(_rpos < _ru);
+	// 	}
 
-		@Override
-		public Integer next() {
-			if(!hasNext())
-				throw new RuntimeException("No more OLE entries.");
-			int ret = _rpos;
-			nextRowOffset();
-			return ret;
-		}
+	// 	@Override
+	// 	public Integer next() {
+	// 		if(!hasNext())
+	// 			throw new RuntimeException("No more OLE entries.");
+	// 		int ret = _rpos;
+	// 		nextRowOffset();
+	// 		return ret;
+	// 	}
 
-		private void nextRowOffset() {
-			if(_spos + 1 < _slen) {
-				_spos++;
-				_rpos = _start + _data[_boff + _bix + _spos + 1];
-			}
-			else {
-				_start += CompressionSettings.BITMAP_BLOCK_SZ;
-				_bix += _slen + 1;
-				if(_bix < _blen) {
-					_slen = _data[_boff + _bix];
-					_spos = 0;
-					_rpos = _start + _data[_boff + _bix + 1];
-				}
-				else {
-					_rpos = _ru;
-				}
-			}
-		}
-	}
+	// 	private void nextRowOffset() {
+	// 		if(_spos + 1 < _slen) {
+	// 			_spos++;
+	// 			_rpos = _start + _data[_boff + _bix + _spos + 1];
+	// 		}
+	// 		else {
+	// 			_start += CompressionSettings.BITMAP_BLOCK_SZ;
+	// 			_bix += _slen + 1;
+	// 			if(_bix < _blen) {
+	// 				_slen = _data[_boff + _bix];
+	// 				_spos = 0;
+	// 				_rpos = _start + _data[_boff + _bix + 1];
+	// 			}
+	// 			else {
+	// 				_rpos = _ru;
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	private class OLERowIterator extends ColGroupRowIterator {
-		private final int[] _apos;
-		private final int[] _vcodes;
+	// private class OLERowIterator extends ColGroupRowIterator {
+	// 	private final int[] _apos;
+	// 	private final int[] _vcodes;
 
-		public OLERowIterator(int rl, int ru) {
-			_apos = skipScan(getNumValues(), rl);
-			_vcodes = new int[Math.min(CompressionSettings.BITMAP_BLOCK_SZ, ru - rl)];
-			Arrays.fill(_vcodes, -1); // initial reset
-			getNextSegment();
-		}
+	// 	public OLERowIterator(int rl, int ru) {
+	// 		_apos = skipScan(getNumValues(), rl);
+	// 		_vcodes = new int[Math.min(CompressionSettings.BITMAP_BLOCK_SZ, ru - rl)];
+	// 		Arrays.fill(_vcodes, -1); // initial reset
+	// 		getNextSegment();
+	// 	}
 
-		@Override
-		public void next(double[] buff, int rowIx, int segIx, boolean last) {
-			final int clen = _colIndexes.length;
-			final int vcode = _vcodes[segIx];
-			if(vcode >= 0) {
-				// copy entire value tuple if necessary
-				final double[] values = getValues();
-				for(int j = 0, off = vcode * clen; j < clen; j++)
-					buff[_colIndexes[j]] = values[off + j];
-				// reset vcode to avoid scan on next segment
-				_vcodes[segIx] = -1;
-			}
-			if(segIx + 1 == CompressionSettings.BITMAP_BLOCK_SZ && !last)
-				getNextSegment();
-		}
+	// 	@Override
+	// 	public void next(double[] buff, int rowIx, int segIx, boolean last) {
+	// 		final int clen = _colIndexes.length;
+	// 		final int vcode = _vcodes[segIx];
+	// 		if(vcode >= 0) {
+	// 			// copy entire value tuple if necessary
+	// 			final double[] values = getValues();
+	// 			for(int j = 0, off = vcode * clen; j < clen; j++)
+	// 				buff[_colIndexes[j]] = values[off + j];
+	// 			// reset vcode to avoid scan on next segment
+	// 			_vcodes[segIx] = -1;
+	// 		}
+	// 		if(segIx + 1 == CompressionSettings.BITMAP_BLOCK_SZ && !last)
+	// 			getNextSegment();
+	// 	}
 
-		private void getNextSegment() {
-			// materialize value codes for entire segment in a
-			// single pass over all values (store value code by pos)
-			final int numVals = getNumValues();
-			for(int k = 0; k < numVals; k++) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = _apos[k];
-				if(bix >= blen)
-					continue;
-				int slen = _data[boff + bix];
-				for(int i = 0, off = boff + bix + 1; i < slen; i++)
-					_vcodes[_data[off + i]] = k;
-				_apos[k] += slen + 1;
-			}
-		}
-	}
+	// 	private void getNextSegment() {
+	// 		// materialize value codes for entire segment in a
+	// 		// single pass over all values (store value code by pos)
+	// 		final int numVals = getNumValues();
+	// 		for(int k = 0; k < numVals; k++) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = _apos[k];
+	// 			if(bix >= blen)
+	// 				continue;
+	// 			int slen = _data[boff + bix];
+	// 			for(int i = 0, off = boff + bix + 1; i < slen; i++)
+	// 				_vcodes[_data[off + i]] = k;
+	// 			_apos[k] += slen + 1;
+	// 		}
+	// 	}
+	// }
 
 	/**
 	 * Encodes the bitmap in blocks of offsets. Within each block, the bits are stored as absolute offsets from the
@@ -1080,4 +1146,25 @@ public class ColGroupOLE extends ColGroupOffset {
 
 		return encodedBlocks;
 	}
+
+	@Override
+	public double get(int r, int c) {
+		throw new NotImplementedException("Not Implemented get(r,c) after removal of iterators in colgroups");
+		// TODO Auto-generated method stub
+		// return 0;
+	}
+
+	// @Override
+	// public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
+	// 	// TODO Auto-generated method stub
+	// 	return null;
+	// }
+
+	// @Override
+	// public ColGroupRowIterator getRowIterator(int rl, int ru) {
+	// 	// TODO Auto-generated method stub
+	// 	return null;
+	// }
+
+
 }

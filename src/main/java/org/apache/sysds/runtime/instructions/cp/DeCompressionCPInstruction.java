@@ -45,16 +45,9 @@ public class DeCompressionCPInstruction extends ComputationCPInstruction {
 		// Get matrix block input
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
 
-		if(in instanceof CompressedMatrixBlock){
-			// MatrixBlock out = ((CompressedMatrixBlock)in).decompress(OptimizerUtils.getConstrainedNumThreads(-1));
-
-			MatrixBlock out = ((CompressedMatrixBlock)in).squeeze(OptimizerUtils.getConstrainedNumThreads(-1));
-			ec.releaseMatrixInput(input1.getName());
-			ec.setMatrixOutput(output.getName(), out);
-		} else{
-			MatrixBlock out = in;
-			ec.releaseMatrixInput(input1.getName());
-			ec.setMatrixOutput(output.getName(), out);
-		}
+		// MatrixBlock out = ((CompressedMatrixBlock)in).decompress(OptimizerUtils.getConstrainedNumThreads(-1));
+		MatrixBlock out = (in instanceof CompressedMatrixBlock)?((CompressedMatrixBlock)in).squeeze(OptimizerUtils.getConstrainedNumThreads(-1)): in;
+		ec.releaseMatrixInput(input1.getName());
+		ec.setMatrixOutput(output.getName(), out);
 	}
 }

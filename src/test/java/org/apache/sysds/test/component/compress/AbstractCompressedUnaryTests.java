@@ -195,7 +195,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 				d2[0].length == dim2);
 
 			String css = this.toString();
-			if(compressionSettings.lossy) {
+			if(compressionSettings.lossy ) {
 				if(aggType == AggType.COLSUMS) {
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * rows, css);
 				}
@@ -218,13 +218,15 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, true);
 				}
 			}
+			else if(overlappingType == OverLapping.SQUEEZE){
+				// TODO make better assumptions on range...
+				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.0, 0.90, css);
+			}
 			else {
 				if(aggType == AggType.ROWMEAN)
 					TestUtils.compareMatrices(d1, d2, 0.0001, css);
-				else if(overlappingType == OverLapping.COL || overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-					overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-					overlappingType == OverLapping.SQUEEZE)
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 128, css);
+				else if( OverLapping.effectOnOutput(overlappingType))
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.98, css);
 				else
 					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 128, css);
 			}

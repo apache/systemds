@@ -94,7 +94,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 				_dict = new Dictionary(((Bitmap) ubm).getValues());
 				break;
 			case Lossy:
-				_dict = new QDictionary((BitmapLossy) ubm);
+				_dict = new QDictionary((BitmapLossy) ubm).makeDoubleDictionary();
 				_lossy = true;
 				break;
 		}
@@ -132,6 +132,11 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 
 	public ADictionary getDictionary() {
 		return _dict;
+	}
+
+
+	public void addMinMax(double[] ret){
+		_dict.addMaxAndMin(ret, _colIndexes);
 	}
 
 	protected void setDictionary(ADictionary dict) {

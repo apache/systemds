@@ -113,6 +113,9 @@ public class CNodeBinary extends CNode {
 			String [] tmp = this.name().split("_");
 			return StringUtils.capitalize(tmp[1].toLowerCase());
 		}
+		
+		public boolean isNotSupportedBySpoofCUDA() {
+			return this == VECT_BIASADD || this == VECT_BIASMULT;}
 	}
 	
 	private final BinType _type;
@@ -422,6 +425,11 @@ public class CNodeBinary extends CNode {
 	@Override
 	public boolean isSupported(GeneratorAPI api) {
 		boolean is_supported = (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA);
+		
+		// ToDo: support these
+		if(api == GeneratorAPI.CUDA)
+			is_supported = !_type.isNotSupportedBySpoofCUDA();
+		
 		int i = 0;
 		while(is_supported && i < _inputs.size()) {
 			CNode in = _inputs.get(i++);

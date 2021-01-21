@@ -41,6 +41,9 @@ public class TokenizerFactory {
             String out = jSpec.getString("out");
             int id_col = jSpec.getInt("id_col"); // TODO: multi id cols
             int tokenize_col = jSpec.getInt("tokenize_col");
+
+            // Note that internal representation should be independent from output representation
+
             if (algo.equals("whitespace") && out.equals("bow")) {
                 tokenizer = new TokenizerWhitespaceBOW(new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING}, null);
             } else {

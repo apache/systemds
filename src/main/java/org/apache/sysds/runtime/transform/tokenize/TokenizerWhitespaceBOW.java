@@ -23,6 +23,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TokenizerWhitespaceBOW extends Tokenizer {
 
@@ -36,6 +37,26 @@ public class TokenizerWhitespaceBOW extends Tokenizer {
 
     @Override
     public FrameBlock tokenize(FrameBlock in, FrameBlock out) {
+        // First comment to internal representation
+        DocumentsToTokenList documentsToTokenList = tokenizePre(in);
+        // Then convert to output representation
+        return tokenizePost(documentsToTokenList, out);
+    }
+
+    class Token {
+        String token;
+//        int start;
+//        int end;
+
+        public Token(String token) {
+            this.token = token;
+        }
+    }
+
+    class DocumentsToTokenList extends HashMap<String, List<Token>> {}
+
+    public DocumentsToTokenList tokenizePre(FrameBlock in) {
+        DocumentsToTokenList documentsToTokenList = new DocumentsToTokenList();
 
         Iterator<String[]> iterator = in.getStringRowIterator();
         iterator.forEachRemaining(s -> {
@@ -43,11 +64,17 @@ public class TokenizerWhitespaceBOW extends Tokenizer {
             String text = s[1];
             String[] tokens = text.split(splitRegex);
             // Transform to Bag format internally
-            List<String> tokenList = Arrays.asList(tokens);
-            Set<String> tokenSet = new HashSet<>(tokenList);
-            // Sort alphabetically
-            List<String> sortedTokens = new ArrayList<>(tokenSet);
-            Collections.sort(sortedTokens);
+            List<Token> tokenList = Arrays.stream(tokens).map(Token::new).collect(Collectors.toList());
+            documentsToTokenList.put(key, tokenList);
+        });
+
+        return documentsToTokenList;
+    }
+
+    public FrameBlock tokenizePost(DocumentsToTokenList tl, FrameBlock out) {
+        tl.forEach((key, tokenList) -> {
+            // Sort alphabetically and remove duplicates
+            List<String> sortedTokens = tokenList.stream().map(token -> token.token).distinct().sorted().collect(Collectors.toList());
 
             for (String token: sortedTokens) {
                 String count = String.valueOf(Collections.frequency(tokenList, token));

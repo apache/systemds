@@ -2026,15 +2026,22 @@ The following example uses <code>transformapply()</code> with the input matrix a
 
 ### Processing Frames
 
-The built-in function <code>map()</code> provides support for the lambda expressions.
-
-**Table F5**: Frame map built-in function
+**Table F5**: Frame processing built-in functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
-map() | It will execute the given lambda expression on a frame.| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and <br/>y is a String containing the lambda expression to be executed on frame X. | X = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> y = "lambda expression" <br/> Z = map(X, y) <br/> # Dimensions of Z = Dimensions of X; <br/> example: <br/> <code> Z = map(X, "x -> x.charAt(2)")     </code>
+map() | It will execute the given lambda expression on a frame.| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and <br/>y is a String containing the lambda expression to be executed on frame X. | [map](#map) 
+tokenize() | Transforms a frame to tokenized frame using specification. Tokenization is valid only for string columns. | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Outputs: &lt;matrix&gt;, &lt;frame&gt; | [tokenize](#tokenize)
 
-Example let X = 
+#### map
+
+The built-in function <code>map()</code> provides support for the lambda expressions.
+
+Simple example
+
+    X = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> y = "lambda expression" <br/> Z = map(X, y) <br/> # Dimensions of Z = Dimensions of X; <br/> example: <br/> <code> Z = map(X, "x -> x.charAt(2)")     </code>
+
+Example with data let X = 
 
     # FRAME: nrow = 10, ncol = 1
     # C1 
@@ -2067,6 +2074,24 @@ print(toString(Z)) </code>
       WEST
       EAST
 
+
+#### tokenize
+
+Simple example
+
+    X = read(“file1”, data_type=”frame”, rows=3, cols=2, format=”binary”);
+    spec = "{\"algo\": \"whitespace\",\"out\": \"bow\",\"id_col\": 1,\"tokenize_col\": 2}";
+    Y = tokenize(target=X, spec=jspec);
+    write(Y, "file2");
+    
+Example spec
+
+    {
+      "algo": "whitespace",
+      "out": "bow",
+      "id_col": 1,
+      "tokenize_col": 2
+    }
 
 * * *
 

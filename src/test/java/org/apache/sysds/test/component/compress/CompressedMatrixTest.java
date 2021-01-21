@@ -71,11 +71,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				for(int j = 0; j < cols; j++) {
 					double ulaVal = mb.quickGetValue(i, j);
 					double claVal = cmb.getValue(i, j); // calls quickGetValue internally
-					if(compressionSettings.lossy)
+					if(compressionSettings.lossy || overlappingType == OverLapping.SQUEEZE)
 						TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false);
-					else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-						overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-						overlappingType == OverLapping.COL || overlappingType == OverLapping.SQUEEZE)
+					else if(OverLapping.effectOnOutput(overlappingType))
 						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 32768);
 					else
 						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0); // Should be exactly same value
@@ -105,7 +103,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(ret2 instanceof CompressedMatrixBlock)
 				ret2 = ((CompressedMatrixBlock) ret2).decompress();
 
-			compareResultMatrices(ret1, ret2);
+			compareResultMatrices(ret1, ret2, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -172,7 +170,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// decompress the compressed matrix block
 			MatrixBlock tmp = cmb2.decompress();
 
-			compareResultMatrices(mb, tmp);
+			compareResultMatrices(mb, tmp, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

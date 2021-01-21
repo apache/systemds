@@ -95,7 +95,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 				break;
 			case Lossy:
 				_dict = new QDictionary((BitmapLossy) ubm).makeDoubleDictionary();
-				_lossy = true;
+				// _lossy = true;
 				break;
 		}
 	}

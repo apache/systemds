@@ -234,7 +234,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				int pos = boff + bix + 1;
 				for(int i = pos; i < pos + len; i++) {
 					int index = bi + _data[i];
-					if(index > rl && index < ru){
+					if(index >= rl && index < ru){
 						c[index - rl] += values[off + colpos];
 						nnz++;
 					}
@@ -268,7 +268,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				int pos = boff + bix + 1;
 				for(int i = pos; i < pos + len; i++) {
 					int index = bi + _data[i];
-					if(index > rl && index < ru)
+					if(index >= rl && index < ru)
 						c[index - rl] += values[off + colpos];
 				}
 				apos[k] += len + 1;

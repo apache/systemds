@@ -23,6 +23,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TokenizerWhitespaceBOW extends Tokenizer {
@@ -73,11 +74,13 @@ public class TokenizerWhitespaceBOW extends Tokenizer {
 
     public FrameBlock tokenizePost(DocumentsToTokenList tl, FrameBlock out) {
         tl.forEach((key, tokenList) -> {
+            // Creating the counts for BoW
+            Map<String, Long> tokenCounts = tokenList.stream().collect(Collectors.groupingBy(token -> token.token, Collectors.counting()));
             // Sort alphabetically and remove duplicates
             List<String> sortedTokens = tokenList.stream().map(token -> token.token).distinct().sorted().collect(Collectors.toList());
 
             for (String token: sortedTokens) {
-                String count = String.valueOf(Collections.frequency(tokenList, token));
+                String count = String.valueOf(tokenCounts.get(token));
                 String[] row = {key, token, count};
                 out.appendRow(row);
             }

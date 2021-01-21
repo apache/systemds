@@ -57,9 +57,6 @@ m_gaussianClassifier = function(Matrix[Double] D, Matrix[Double] C, Double varSm
   nClasses = max(C)
   nFeats = ncol(D)
 
-  #Set varSmoothing (to prevent numerical errors)
-  varSmoothing = 1e-9
-
   #Compute means, variances and priors
   classCounts = aggregate(target=C, groups=C, fn="count", ngroups=as.integer(nClasses));
   classMeans = aggregate(target=D, groups=C, fn="mean", ngroups=as.integer(nClasses));
@@ -109,7 +106,7 @@ m_gaussianClassifier = function(Matrix[Double] D, Matrix[Double] C, Double varSm
   if (verbose)
   {
     results = matrix(0, rows=nSamples, cols=nClasses)
-    for (class in 1:nClasses)
+    parfor (class in 1:nClasses)
     {
       for (i in 1:nSamples)
       {

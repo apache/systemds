@@ -99,13 +99,3 @@ writeMM(as(classPriors, "CsparseMatrix"), paste(args[3], "priors", sep=""));
 writeMM(as(classMeans, "CsparseMatrix"), paste(args[3], "means", sep=""));
 writeMM(as(determinants, "CsparseMatrix"), paste(args[3], "determinants", sep=""));
 writeMM(as(stackedInvCovs, "CsparseMatrix"), paste(args[3], "invcovs", sep=""));
-
-
-
-
-
-
-
-
-
-

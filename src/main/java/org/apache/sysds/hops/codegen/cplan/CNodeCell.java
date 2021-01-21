@@ -133,6 +133,21 @@ public class CNodeCell extends CNodeTpl
 		else
 			tmp = tmp.replace("%TMP%", getVarname());
 		
+		if(tmpDense.contains("grix"))
+			tmp = tmp.replace("//%NEED_GRIX%", "\t\tuint32_t grix=_grix + rix;");
+		else
+			tmp = tmp.replace("//%NEED_GRIX%", "");
+		
+		if(tmpDense.contains("rix"))
+			tmp = tmp.replace("//%NEED_RIX%", "\t\tuint32_t rix = idx / A.cols();\n");
+		else
+			tmp = tmp.replace("//%NEED_RIX%", "");
+		
+		if(tmpDense.contains("cix"))
+			tmp = tmp.replace("//%NEED_CIX%", "\t\tuint32_t cix = idx % A.cols();");
+		else
+			tmp = tmp.replace("//%NEED_CIX%", "");
+		
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
 		//return last TMP
@@ -143,7 +158,10 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replace("%AGG_OP_NAME%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
 		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
-
+		
+		// maybe empty lines
+		//tmp = tmp.replaceAll("(?m)^[ \t]*\r?\n", "");
+		
 		if(api == GeneratorAPI.CUDA) {
 			// ToDo: initial_value is misused to pass VT (values per thread) to no_agg operator
 			String agg_op = "IdentityOp";

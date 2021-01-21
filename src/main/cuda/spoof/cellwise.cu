@@ -54,9 +54,9 @@ struct SpoofCellwiseOp {
 	}
 
 	__device__  __forceinline__ T operator()(T a, uint32_t idx) {
-		uint32_t rix = idx / A.cols();
-		uint32_t cix = idx % A.cols();
-		uint32_t grix=_grix + rix;
+//%NEED_RIX%
+//%NEED_CIX%
+//%NEED_GRIX%
 
 %BODY_dense%
 		return %OUT%;

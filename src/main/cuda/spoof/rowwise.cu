@@ -89,9 +89,6 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 	}
 
 	__device__  __forceinline__ void exec_dense(uint32_t ai, uint32_t ci, uint32_t rix) {
-//		MatrixAccessor<T>& a = this->a;
-//		MatrixAccessor<T>* b = &(this->b[0]);
-//		MatrixAccessor<T>& c = this->c;
 //%BODY_dense%
 	}
 
@@ -99,9 +96,6 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 
 //%BODY_sparse%
 	}
-
-//%GET_TEMP_STORAGE%
-
 };
 
 template<typename T, uint32_t NUM_B, uint32_t NUM_TMP_VECT, uint32_t TMP_VECT_LEN>

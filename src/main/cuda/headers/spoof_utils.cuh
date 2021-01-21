@@ -56,7 +56,17 @@ __device__ T getValue(T* data, int rowIndex) {
 }
 
 template<typename T>
-__device__ T getValue(T* data, int n, int rowIndex, int colIndex) {
+__device__ T getValue(MatrixAccessor<T> data, int rowIndex) {
+	return data[rowIndex];
+}
+
+template<typename T>
+__device__ T getValue(T* data, uint32_t n, uint32_t rowIndex, uint32_t colIndex) {
+	return data[rowIndex * n + colIndex];
+}
+
+template<typename T>
+__device__ T getValue(MatrixAccessor<T>& data, uint32_t n, uint32_t rowIndex, uint32_t colIndex) {
 	return data[rowIndex * n + colIndex];
 }
 

@@ -127,8 +127,8 @@ public:
 			if (!sides.empty()) {
 				if(op->TB1) {
 					T* b1 = sides[0].data;
-					uint32_t& m = sides[0].rows;
-					uint32_t& n = sides[0].cols;
+					uint32_t m = sides[0].rows;
+					uint32_t n = sides[0].cols;
 					
 					cudaMalloc(reinterpret_cast<void**>(&b1_transposed), sizeof(T) * m * n);
 					double alpha = 1.0;

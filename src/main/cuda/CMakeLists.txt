@@ -90,7 +90,7 @@ endif()
 
 set(SPOOF_HEADERS 
 	spoof-launcher/jni_bridge.h
-	spoof-launcher/SpoofCUDAContext.h headers/Matrix.h)
+	spoof-launcher/SpoofCUDAContext.h headers/Matrix.h headers/TempStorage.cuh)
 set(SPOOF_SOURCES 
 	spoof-launcher/jni_bridge.cpp
 	spoof-launcher/SpoofCUDAContext.cpp)

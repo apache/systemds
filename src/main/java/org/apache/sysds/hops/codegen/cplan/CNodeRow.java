@@ -119,68 +119,15 @@ public class CNodeRow extends CNodeTpl
 			TemplateUtils.containsBinary(_output, BinType.VECT_MATRIXMULT)));
 
 		if(api == GeneratorAPI.CUDA && _numVectors > 0) {
-			StringBuilder tmp_stor_str = new StringBuilder();
-			StringBuilder tmp_stor_str_dec = new StringBuilder();
-
-			tmp_stor_str.append("TMP_STORAGE = tmp_stor;\n");
-			tmp_stor_str.append("\t\ttmp_row_offset = TMP_VECT_LEN * tmp_count * blockIdx.x;\n");
-			tmp_stor_str.append("\t\ttemp_rb.init(tmp_row_offset, TMP_VECT_LEN, tmp_stor);\n");
-
-			tmp_stor_str_dec.append(
-					"T* TMP_STORAGE;\n" +
-					"\tuint32_t tmp_row_offset;\n" +
-					"\tRingBuffer<T,NUM_TMP_VECT> temp_rb;\n");
-
-//			int seq_id = 0;
-//			for(int i = 0; i < _numVectors; ++i) {
-//				if(tmp.contains("tmp_offset_")) {
-//					tmp = tmp.replaceFirst("tmp_offset_", "tmp_offset" + seq_id++);
-//					tmp_stor_str.append("\t\ttmp_offset" + i + " = tmp_len*" + i + ";\n");
-//					tmp_stor_str_dec.append("\tuint32_t tmp_offset" + i + ";\n");
-//				}
-//			}
-//			_numVectors = seq_id;
-			tmp_stor_str_dec.append("\tuint32_t tmp_count = " + _numVectors + ";\n");
-//			tmp = tmp.replace("//%TMP_MEM%", tmp_stor_str.toString());
-//			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", tmp_stor_str_dec.toString());
-			
-			String hasTempVectorStorage = ": public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>";
-			String initTempVectorStorage = "TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>(tmp_stor),";
-//			String getTempStorage = "\t__device__ Vector<T>& getTempStorage(uint32_t len) {\n" +
-//				"\t\tVector<T>& vec = temp_rb.next();\n" +
-//				"\t\tvec.length = len;\n" +
-//				"\t\treturn vec;\n" +
-//				"\t}\n";
-//			tmp = tmp.replace("//%GET_TEMP_STORAGE%", getTempStorage);
-			tmp = tmp.replace("//%HAS_TEMP_VECT%", hasTempVectorStorage);
-			tmp = tmp.replace("//%INIT_TEMP_VECT%", initTempVectorStorage);
+			tmp = tmp.replace("//%HAS_TEMP_VECT%", ": public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>");
+			tmp = tmp.replace("/*%INIT_TEMP_VECT%*/", ", TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>(tmp_stor)");
 		}
 		else {
-			tmp = tmp.replace("//%TMP_MEM%", "");
-			tmp = tmp.replace("//%TMP_MEM_DECLARATION%", "");
-			tmp = tmp.replace("//%GET_TEMP_STORAGE%","");
 			tmp = tmp.replace("//%HAS_TEMP_VECT%", "");
-			tmp = tmp.replace("//%INIT_TEMP_VECT%", "");
-			
-			
+			tmp = tmp.replace("/*%INIT_TEMP_VECT%*/", "");
 		}
 		tmp = tmp.replace("%VECT_MEM%", String.valueOf(_numVectors));
 
-		//		// replace temp storage occurrences in CUDA code
-//		if(api == GeneratorAPI.CUDA) {
-//			String dType = isSinglePrecision() ? "float" : "double";
-//			StringBuilder declarations = new StringBuilder();
-//			Arrays.stream(tmp.split("\\r?\\n")).forEach(line -> {
-//				if(line.contains("_STORAGE"))
-//					declarations.append("__device__ " + dType + " " +
-//						line.substring(line.indexOf("&TMP") + 1, line.indexOf("[0];")) + "[3072];\n");
-//				});
-//
-//			if(!declarations.toString().isEmpty())
-//				tmp = tmp.replace("//%TMP_MEM%", declarations.toString());
-//			else
-//				tmp = tmp.replace("//%TMP_MEM%", "");
-//		}
 		return tmp;
 	}
 	

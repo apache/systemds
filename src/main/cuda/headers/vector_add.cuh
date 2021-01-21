@@ -29,9 +29,9 @@ __device__ uint32_t vectAdd_atomic(T* a, T b, T* c, uint32_t ai, uint32_t ci, ui
 	uint i = tid;
 	
 	while (i < len) {
-		if(blockIdx.x == 0 && threadIdx.x < 4)
-			printf("vectAdd_atomic: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, b=%f, c[%d]=%f, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai,
-				   ci, len, b, ci + i, op(a[ai + i], b), ai+i, a[ai + i]);
+//		if(blockIdx.x == 0 && threadIdx.x < 4)
+//			printf("vectAdd_atomic: bid=%d, tid=%d, ai=%d, ci=%d, len=%d, b=%f, c[%d]=%f, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai,
+//				   ci, len, b, ci + i, op(a[ai + i], b), ai+i, a[ai + i]);
 		
 		atomicAdd(&(c[ci + i]), op(a[ai + i], b));
 		i += blockDim.x;

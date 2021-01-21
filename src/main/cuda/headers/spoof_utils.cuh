@@ -249,11 +249,11 @@ template<typename T>
 __device__ T dotProduct(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len) {
 	SumOp<T> agg_op;
 	ProductOp<T> load_op;
-	if(debug_row() && debug_thread())
-		printf("dot len = %d\n", len);
+//	if(debug_row() && debug_thread())
+//		printf("dot len = %d\n", len);
 	T ret =  BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
-	if(debug_row() && debug_thread())
-		printf("bid=%d, ai=%d, dot=%f\n", blockIdx.x, ai, ret);
+//	if(debug_row() && debug_thread())
+//		printf("bid=%d, ai=%d, dot=%f\n", blockIdx.x, ai, ret);
 	return ret;
 }
 
@@ -289,25 +289,25 @@ __device__ T vectMax(T* a, uint32_t ai, uint32_t len) {
 
 template<typename T>
 __device__ T vectMax(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len) {
-	if (debug_row() && debug_thread()) {
+//	if (debug_row() && debug_thread()) {
 //		printf("\naix[i]:\n");
 //		for(auto i = 0; i < alen; ++i)
 //			printf(" %d", aix[i]);
 		
-		printf("\navals[i]:\n");
-		for(auto i = 0; i < alen; ++i)
-			printf(" %4.3f", avals[i]);
+//		printf("\navals[i]:\n");
+//		for(auto i = 0; i < alen; ++i)
+//			printf(" %4.3f", avals[i]);
 		
 //		printf("\navals[aix[i]]:\n");
 //		for(auto i = 0; i < alen; ++i)
 //			printf(" %4.3f", avals[aix[i]]);
 
-		printf("\n");
-	}
+//		printf("\n");
+//	}
 
 	T result = vectMax(avals, ai, alen);
-	if (blockIdx.x < 5 && debug_thread())
-		printf("bid=%d, tid=%d, len=%d, alen=%d, ai=%d vectMax=%4.3f\n", blockIdx.x, threadIdx.x, len, alen, ai, result);
+//	if (blockIdx.x < 5 && debug_thread())
+//		printf("bid=%d, tid=%d, len=%d, alen=%d, ai=%d vectMax=%4.3f\n", blockIdx.x, threadIdx.x, len, alen, ai, result);
 	return alen < len ? MaxOp<T>::exec(result, 0.0) : result;
 }
 
@@ -482,8 +482,8 @@ Vector<T>& vectPlusWrite(T a, T* b, uint32_t bi, uint32_t len, TempStorage<T>* f
 
 template<typename T>
 Vector<T>& vectPlusWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, TempStorage<T>* fop) {
-	if(debug_row() && debug_thread())
-		printf("vectPlusWrite bid=%d ai=%d bi=%d len=%d\n", blockIdx.x,ai, bi, len);
+//	if(debug_row() && debug_thread())
+//		printf("vectPlusWrite bid=%d ai=%d bi=%d len=%d\n", blockIdx.x,ai, bi, len);
 	return vectWriteBinary<T, SumOp<T>>(a, b, ai, bi, len, fop, "Plus");
 }
 
@@ -519,7 +519,7 @@ Vector<T>& vectMultWrite(T* a, T b, uint32_t ai, uint32_t len, TempStorage<T>* f
 
 template<typename T>
 Vector<T>& vectMultWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, TempStorage<T>* fop) {
-	return vectWriteBinary<T, ProductOp<T>>(a, b, ai, bi, len, fop);
+	return vectWriteBinary<T, ProductOp<T>>(a, b, ai, bi, len, fop, "Mult");
 }
 
 template<typename T>
@@ -682,18 +682,15 @@ Vector<T>& vectMatrixMult(T* a, MatrixAccessor<T>& b, uint32_t ai, uint32_t bi, 
 
 	uint32_t m2clen = b.len() / len;
 	Vector<T>& c = fop->getTempStorage(m2clen);
-	if(debug_row() && debug_thread())
-		printf("vectMatrixMult bid=%d ai=%d bi=%d len=%d m2clen=%d\n", blockIdx.x,ai, bi, len, m2clen);
+//	if(debug_row() && debug_thread())
+//		printf("vectMatrixMult bid=%d ai=%d bi=%d len=%d m2clen=%d b.rows()=%d b.cols()=%d\n", blockIdx.x,ai, bi, len, m2clen, b.rows(), b.cols());
 
 	for(uint32_t j = 0, bix = bi; j < m2clen; ++j, bix+=len) {
 		T result = dotProduct(a, b.vals(0), ai, bix, len);
-//		T result = -3.14;
 		if(threadIdx.x == 0) {
-			if(debug_row())
-				printf("vectMatrixMult bid=%d bix=%d len=%d m2clen=%d c[%d]=%4.3f\n", blockIdx.x, bix, len, m2clen, bi+j, result);
+//			if(debug_row())
+//				printf("vectMatrixMult bid=%d bix=%d len=%d m2clen=%d c[%d]=%4.3f\n", blockIdx.x, bix, len, m2clen, bi+j, result);
 			c[bi + j] = result;
-			if (debug_row() && debug_thread())
-				printf("bla");
 		}
 	}
 	return c;

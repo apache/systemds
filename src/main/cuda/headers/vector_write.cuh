@@ -31,10 +31,10 @@ __device__ Vector<T>& vectWriteUnary(T* a, uint32_t ai, uint32_t len, TempStorag
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < len) {
 		c[i] = OP::exec(a[ai + i], 0); //ToDo: remove b from all unary ops
-		if (blockIdx.x == 0) {
-			printf("DvecWriteUnary->tmp: bid=%d, tid=%d, len=%d, ai=%d, a[%d]=%4.3f, c[%d]=%4.3f\n",
-					blockIdx.x, threadIdx.x, len, ai, ai + i, a[ai + i], i, c[i]);
-		}
+//		if (blockIdx.x == 0) {
+//			printf("DvecWriteUnary->tmp: bid=%d, tid=%d, len=%d, ai=%d, a[%d]=%4.3f, c[%d]=%4.3f\n",
+//					blockIdx.x, threadIdx.x, len, ai, ai + i, a[ai + i], i, c[i]);
+//		}
 		i += blockDim.x;
 	}
 	return c;
@@ -48,13 +48,13 @@ __device__ Vector<T>& vectWriteUnary(T* a, uint32_t* aix, uint32_t ai, uint32_t 
 	while (i < alen) {
 		c[aix[i]] = OP::exec(a[ai + i], 0); //ToDo: remove b from all unary ops
 //		if (debug_row() && debug_thread()) {
-		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
-			const char* name_ = "";
-			if(name != nullptr)
-				name_ = name;
-			printf("SvecWriteUnary(%s)->tmp: bid=%d, tid=%d, len=%d, a[%d+%d=%d]=%4.3f, c[%d]=%4.3f\n",
-				   name_, blockIdx.x, threadIdx.x, len, ai, i, ai + i, a[ai + i], aix[i], c[aix[i]]);
-		}
+//		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
+//			const char* name_ = "";
+//			if(name != nullptr)
+//				name_ = name;
+//			printf("SvecWriteUnary(%s)->tmp: bid=%d, tid=%d, len=%d, a[%d+%d=%d]=%4.3f, c[%d]=%4.3f\n",
+//				   name_, blockIdx.x, threadIdx.x, len, ai, i, ai + i, a[ai + i], aix[i], c[aix[i]]);
+//		}
 		i += blockDim.x;
 	}
 	return c;
@@ -89,15 +89,15 @@ __device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t ai, uint32_t len, Temp
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < len) {
 		c[i] = OP::exec(a[ai + i], b);
-		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
-//		if (debug_row() && threadIdx.x > 40 && threadIdx.x < 50) {
-//		if (debug_row() && threadIdx.x < 10) {
-			const char* name_ = "";
-			if(name != nullptr)
-				name_ = name;
-			printf("DvecWriteBinary(%s)->tmp vs: bid=%d, tid=%d, len=%d, b=%4.3f, a[%d+%d=%d]=%4.3f, c[%d]=%4.3f\n",
-				   name_, blockIdx.x, threadIdx.x, len, b, ai, i, ai + i, a[ai + i], i, c[i]);
-		}
+//		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
+////		if (debug_row() && threadIdx.x > 40 && threadIdx.x < 50) {
+////		if (debug_row() && threadIdx.x < 10) {
+//			const char* name_ = "";
+//			if(name != nullptr)
+//				name_ = name;
+//			printf("DvecWriteBinary(%s)->tmp vs: bid=%d, tid=%d, len=%d, b=%4.3f, a[%d+%d=%d]=%4.3f, c[%d]=%4.3f\n",
+//				   name_, blockIdx.x, threadIdx.x, len, b, ai, i, ai + i, a[ai + i], i, c[i]);
+//		}
 		i += blockDim.x;
 	}
 	return c;
@@ -110,14 +110,14 @@ __device__ Vector<T>& vectWriteBinary(T* a, T b, uint32_t* aix, uint32_t ai, uin
 	Vector<T>& c = fop->getTempStorage(len);
 	while (i < alen) {
 		c[aix[i]] = OP::exec(a[ai + i], b);
-		if (debug_row() && debug_thread()) {
-//		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
-			const char* name_ = "";
-			if(name != nullptr)
-				name_ = name;
-			printf("SvecWriteBinary(%s)->tmp vs: bid=%d, tid=%d, len=%d, b=%4.3f, a[%d]=%4.3f, c[aix[%d]=%d]=%4.3f\n",
-				   name_, blockIdx.x, threadIdx.x, len, b, ai + i, a[ai + i], i, aix[i], c[aix[i]]);
-		}
+//		if (debug_row() && debug_thread()) {
+////		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
+//			const char* name_ = "";
+//			if(name != nullptr)
+//				name_ = name;
+//			printf("SvecWriteBinary(%s)->tmp vs: bid=%d, tid=%d, len=%d, b=%4.3f, a[%d]=%4.3f, c[aix[%d]=%d]=%4.3f\n",
+//				   name_, blockIdx.x, threadIdx.x, len, b, ai + i, a[ai + i], i, aix[i], c[aix[i]]);
+//		}
 		i += blockDim.x;
 	}
 	return c;
@@ -131,16 +131,13 @@ __device__ Vector<T>& vectWriteBinary(T* a, T* b, uint32_t ai, uint32_t bi, uint
 	
 	while (i < len) {
 		c[i] = OP::exec(a[ai + i], b[bi + i]);
-		if (debug_row() && debug_thread()) {
-//		if (debug_row() && ((threadIdx.x < 10) || (threadIdx.x > 40 && threadIdx.x < 50))) {
-//			printf("DvecWriteBinary->tmp vv: bid=%d, tid=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
-//				   blockIdx.x, threadIdx.x, len, ai + i, a[ai + i], bi+i, b[bi+i], i, c[i]);
-			const char* name_ = "";
-			if(name != nullptr)
-				name_ = name;
-			printf("DvecWriteBinary(%s)->tmp vv: bid=%d, tid=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
-				   name_, blockIdx.x, threadIdx.x, len, ai + i, a[ai + i], bi+i, b[bi+i], i, c[i]);
-		}
+//		if (debug_row() && debug_thread()) {
+//			const char* name_ = "";
+//			if(name != nullptr)
+//				name_ = name;
+//			printf("DvecWriteBinary(%s)->tmp vv: bid=%d, tid=%d, len=%d, a[%d]=%4.3f, b[%d]=%4.3f, c[%d]=%4.3f\n",
+//				   name_, blockIdx.x, threadIdx.x, len, ai + i, a[ai + i], bi+i, b[bi+i], i, c[i]);
+//		}
 		i += blockDim.x;
 	}
 	return c;

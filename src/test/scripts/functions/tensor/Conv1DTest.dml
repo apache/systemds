@@ -1,0 +1,65 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/conv1d.dml") as conv1d
+
+#print("Input: " + $imgSize + ", " + $numImg + ", " + $numChannels + ", " + $numFilters + ", " + $filterSize + ", " + $stride + ", " + $pad);
+# Assumption: NCW image format
+x=matrix(seq(1, $numImg*$numChannels*$imgSize), rows=$numImg, cols=$numChannels*$imgSize)
+w=matrix(seq(1, $numFilters*$numChannels*$filterSize), rows=$numFilters, cols=$numChannels*$filterSize)
+b=matrix(seq(1, $numFilters), rows=$numFilters, cols=1)
+
+if($sparseVal1) {
+zero_mask = (x - mean(x)*1.5) > 0
+x = x * zero_mask
+}
+else {
+x = x - mean(x)
+}
+if($sparseVal2) {
+zero_mask = (w - mean(w)*1.5) > 0
+w = w * zero_mask
+}
+else {
+w = w - mean(w)
+}
+#print("x")
+#print("rows: " + nrow(x))
+#print("cols: " + ncol(x))
+#print(toString(x))
+
+#print("w")
+#print("rows: " + nrow(w))
+#print("cols: " + ncol(w))
+#print(toString(w))
+
+#print("b")
+#print("rows: " + nrow(b))
+#print("cols: " + ncol(b))
+#print(toString(b))
+output = conv1d::forward(x, w, $pad, $stride, $numImg, $numChannels, $imgSize, $numFilters, $filterSize, b)
+#output = bias_add(output, b)
+print("output")
+print("rows: " + nrow(output))
+print("cols: " + ncol(output))
+print(toString(output))
+
+write(output, $output, format="text")

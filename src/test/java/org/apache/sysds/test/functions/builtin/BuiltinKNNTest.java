@@ -47,8 +47,6 @@ public class BuiltinKNNTest extends AutomatedTestBase
 
   private final static String OUTPUT_NAME = "B";
 
-  private final static Double TEST_TOLERANCE = 1e-9;
-
   @Parameterized.Parameter()
   public int rows;
   @Parameterized.Parameter(1)
@@ -75,11 +73,7 @@ public class BuiltinKNNTest extends AutomatedTestBase
   {
     return Arrays.asList(new Object[][] {
       // {rows, cols, query_rows, query_cols, continuous, k_value, sparsity}
-      // {1000, 500, 35, 450, true, 7, 0.1},
-      // {1000, 500, 35, 450, true, 7, 0.9}
-      // {10, 10, 3, 10, true, 7, 1}
       {10, 2, 3, 2, true, 1, 1}
-      // {2000, 10, 20, 10, true, 200, 1}
     });
   }
 
@@ -97,6 +91,7 @@ public class BuiltinKNNTest extends AutomatedTestBase
 
     String HOME = SCRIPT_DIR + TEST_DIR;
 
+    // create Train and Test data
     double[][] X = {{0, 1},
                     {10, -2},
                     {1, 0},
@@ -110,10 +105,6 @@ public class BuiltinKNNTest extends AutomatedTestBase
     double[][] T = {{4, -7},
                     {1, 2},
                     {-1, -1}};
-
-    // double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 255);
-    // double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
-    // double[][] CL = getRandomMatrix(rows, 1, 0, 1, 1, 7);
 
     double[][] CL = new double[rows][1];
     for(int counter = 0; counter < rows; counter++)
@@ -134,21 +125,15 @@ public class BuiltinKNNTest extends AutomatedTestBase
     rCmd = getRCmd(inputDir(), (continuous ? "1" : "0"), Integer.toString(k_value),
 			expectedDir());
 
-    // TODO: add this line when both test scripts are implemented
+    // execute tests
     runTest(true, false, null, -1);
     runRScript(true);
-
-    System.out.println(CL[0][0] + " | " + CL[1][0] + " | " + CL[2][0] + " | " + CL[3][0] + " | " + CL[4][0]);
 
     HashMap<CellIndex, Double> refResults	= readRMatrixFromExpectedDir("B");
     HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir("B");
 
-    System.out.println(refResults.toString());
-    System.out.println(fedResults.toString());
-
-    // TODO: add this line when both test scripts are implemented
-    compareResultsWithR(TEST_TOLERANCE);
-
+    // compare test results of RScript with dml script
+    compareResultsWithR(0);
 
     // restore execution mode
     setExecMode(platform_old);

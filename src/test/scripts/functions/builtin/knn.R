@@ -27,13 +27,6 @@ data_train            <- as.matrix(readMM(paste(args[1], "/X.mtx", sep="")))
 data_test             <- as.matrix(readMM(paste(args[1], "/T.mtx", sep="")))
 CL                    <- as.matrix(readMM(paste(args[1], "/CL.mtx", sep="")))
 
-# str(data_train)
-# str(data_test)
-# str(CL)
-## depends how i get the labels/catagories, maybe they are in the training/testing set
-# data_train_labels     <- as.matrix(read.csv(args[3], stringsAsFactors = FALSE))
-# data_test_labels      <- as.matrix(read.csv(args[4], stringsAsFactors = FALSE))
-
 is_continuous <- as.integer(args[2])
 K <- as.integer(args[3])
 
@@ -51,14 +44,15 @@ if(is_continuous == 1)
 # ------ training -------
 install.packages("class")
 library(class)
-test_pred <- knn(train=data_train, test=data_test, cl=CL, k=K)
-print("-----------")
-print(test_pred)
-print("-----------")
+
+test_pred <- matrix(nrow=NROW(data_test), ncol=0);
+for(i in 1 : K) {
+  test_pred <- cbind(test_pred, knn(train=data_train, test=data_test, cl=CL, k=i));
+}
 writeMM(as(test_pred, "CsparseMatrix"), paste(args[4], "B", sep=""));
 
+
 ## feature importance with random forest
-#install.packages("randomForest")
-#library(randomForest)
-#rf <- randomForest(as.factor(CL)~., data=dat)
-#rf$importance
+install.packages("randomForest")
+library(randomForest)
+rf <- randomForest(as.factor(CL)~., data=data_train)

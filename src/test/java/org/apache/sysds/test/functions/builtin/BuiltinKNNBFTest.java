@@ -48,8 +48,6 @@ public class BuiltinKNNBFTest extends AutomatedTestBase
 
   private final static String OUTPUT_NAME = "B";
 
-  private final static Double TEST_TOLERANCE = 1e-9;
-
   @Parameterized.Parameter()
   public int rows;
   @Parameterized.Parameter(1)
@@ -76,10 +74,6 @@ public class BuiltinKNNBFTest extends AutomatedTestBase
   {
     return Arrays.asList(new Object[][] {
       // {rows, cols, query_rows, query_cols, continuous, k_value, sparsity}
-      // {1000, 500, 35, 450, true, 7, 0.1},
-      // {1000, 500, 35, 450, true, 7, 0.9}
-      // {15, 2, 2, 2, true, 2, 1}
-      // {10, 2, 3, 2, true, 1, 1}
       {150, 80, 15, 80, true, 21, 0.9}
     });
   }
@@ -111,13 +105,14 @@ public class BuiltinKNNBFTest extends AutomatedTestBase
     writeInputMatrixWithMTD("T", T, true);
     writeInputMatrixWithMTD("CL", CL, true);
 
+    // execute reference test
     fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
     programArgs = new String[] {"-stats", "-nvargs",
       "in_X=" + input("X"), "in_T=" + input("T"), "in_CL=" + input("CL"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
       "out_B=" + expected(OUTPUT_NAME)};
     runTest(true, false, null, -1);
 
-
+    // execute actual test
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
     programArgs = new String[] {"-stats", "-nvargs",
       "in_X=" + input("X"), "in_T=" + input("T"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),

@@ -38,7 +38,16 @@ public class TokenizerFactory {
             JSONObject jSpec = new JSONObject(spec);
 
             String algo = jSpec.getString("algo");
+            JSONObject algoParams = null;
+            if (jSpec.has("algo_params")) {
+                algoParams = jSpec.getJSONObject("algo_params");
+            }
+
             String out = jSpec.getString("out");
+            JSONObject outParams = null;
+            if (jSpec.has("out_params")) {
+                outParams = jSpec.getJSONObject("out_params");
+            }
             int idCol = jSpec.getInt("id_col"); // TODO: multi id cols
             int tokenizeCol = jSpec.getInt("tokenize_col");
 
@@ -46,14 +55,19 @@ public class TokenizerFactory {
             TokenizerPost tokenizerPost;
 
             // Note that internal representation should be independent from output representation
+
+            // Algorithm to transform tokens into internal token representation
             if (algo.equals("whitespace")) {
-                tokenizerPre = new TokenizerPreWhitespace(idCol, tokenizeCol);
+                tokenizerPre = new TokenizerPreWhitespaceSplit(idCol, tokenizeCol);
+            } else if (algo.equals("ngram")) {
+                tokenizerPre = new TokenizerPreNgram(idCol, tokenizeCol, algoParams);
             } else {
                 throw new IllegalArgumentException("Algorithm {algo=" + algo + "} is not supported.");
             }
 
+            // Transform tokens to output representation
             if (out.equals("count")) {
-                tokenizerPost = new TokenizerPostCount();
+                tokenizerPost = new TokenizerPostCount(outParams);
             } else if (out.equals("position")) {
                 tokenizerPost = new TokenizerPostPosition();
             } else {

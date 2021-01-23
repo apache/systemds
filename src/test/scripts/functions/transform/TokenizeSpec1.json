@@ -1,6 +1,9 @@
 {
   "algo": "whitespace",
   "out": "count",
+  "out_params": {
+    "sort_alpha": true
+  },
   "id_col": 1,
   "tokenize_col": 2
 }

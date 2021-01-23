@@ -42,7 +42,7 @@ public class TokenizeTest extends AutomatedTestBase
     private static final String SPEC2 = "TokenizeSpec2.json";
 
     //dataset and transform tasks without missing values
-    private final static String DATASET 	= "20news/20news_subset_untokenized.csv";  // TODO: use untokenized as input
+    private final static String DATASET 	= "20news/20news_subset_untokenized.csv";
 
     @Override
     public void setUp()  {

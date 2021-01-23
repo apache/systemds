@@ -1,5 +1,9 @@
 {
-  "algo": "whitespace",
+  "algo": "ngram",
+  "algo_params": {
+    "min_gram": 2,
+    "max_gram": 3
+  },
   "out": "position",
   "id_col": 1,
   "tokenize_col": 2

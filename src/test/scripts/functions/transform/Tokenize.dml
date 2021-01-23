@@ -20,7 +20,8 @@
 #-------------------------------------------------------------
 
 F1 = read($1, data_type="frame", format="csv", sep=",");
-#jspec = "{\"algo\": \"whitespace\",\"out\": \"bow\",\"id_col\": 1,\"tokenize_col\": 2}";
+# Example spec:
+#jspec = "{\"algo\": \"whitespace\",\"out\": \"count\",\"id_col\": 1,\"tokenize_col\": 2}";
 jspec = read($2, data_type="scalar", value_type="string");
 
 # Remove separator to avoid bug with read CSV
@@ -29,9 +30,7 @@ F1[,2] = map(F1[,2], "x -> x.replace(',', ' ')");
 F2 = tokenize(target=F1, spec=jspec);
 write(F2, $3, format="csv");
 
+# Afterward, you can transform it into a matrix:
 #jspec2 = "{\"ids\": true, \"recode\": [1,2,3]}";
 #[X, M] = transformencode(target=F2, spec=jspec2);
-
-#M = M[1:$2,]
-#print(toString(M))
-#write(M, $3, format="csv");
+#print(toString(X))

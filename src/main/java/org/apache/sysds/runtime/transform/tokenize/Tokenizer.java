@@ -25,8 +25,10 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
 
-public abstract class Tokenizer implements Serializable {
+public class Tokenizer implements Serializable {
 
     private static final long serialVersionUID = 7155673772374114577L;
     protected static final Log LOG = LogFactory.getLog(Tokenizer.class.getName());
@@ -34,14 +36,38 @@ public abstract class Tokenizer implements Serializable {
     protected final Types.ValueType[] _schema;
     protected final int[] _colList;
 
-    protected Tokenizer(Types.ValueType[] schema, int[] colList) {
+    private final TokenizerPre tokenizerPre;
+    private final TokenizerPost tokenizerPost;
+
+    protected Tokenizer(Types.ValueType[] schema, int[] colList, TokenizerPre tokenizerPre, TokenizerPost tokenizerPost) {
         _schema = schema;
         _colList = colList;
+        this.tokenizerPre = tokenizerPre;
+        this.tokenizerPost = tokenizerPost;
     }
 
     public Types.ValueType[] getSchema() {
         return _schema;
     }
 
-    public abstract FrameBlock tokenize(FrameBlock in, FrameBlock out);
+    public FrameBlock tokenize(FrameBlock in, FrameBlock out) {
+        // First comment to internal representation
+        DocumentsToTokenList documentsToTokenList = tokenizerPre.tokenizePre(in);
+        // Then convert to output representation
+        return tokenizerPost.tokenizePost(documentsToTokenList, out);
+    }
+
+    static class Token {
+        String textToken;
+        int startIndex;
+        int endIndex;
+
+        public Token(String token, int starItndex) {
+            this.textToken = token;
+            this.startIndex = starItndex;
+            this.endIndex = starItndex + token.length();
+        }
+    }
+
+    static class DocumentsToTokenList extends HashMap<String, List<Token>> {}
 }

@@ -42,14 +42,26 @@ public class TokenizerFactory {
             int id_col = jSpec.getInt("id_col"); // TODO: multi id cols
             int tokenize_col = jSpec.getInt("tokenize_col");
 
-            // Note that internal representation should be independent from output representation
+            TokenizerPre tokenizerPre;
+            TokenizerPost tokenizerPost;
 
-            if (algo.equals("whitespace") && out.equals("bow")) {
-                tokenizer = new TokenizerWhitespaceBOW(new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING}, null);
+            // Note that internal representation should be independent from output representation
+            if (algo.equals("whitespace")) {
+                tokenizerPre = new TokenizerPreWhitespace();
             } else {
-                throw new IllegalArgumentException("Combination of algorithm and output representation is not valid " +
-                        "for tokenize {algo=" + algo + ", out=" + out + "}.");
+                throw new IllegalArgumentException("Algorithm {algo=" + algo + "} is not supported.");
             }
+
+            if (out.equals("count")) {
+                tokenizerPost = new TokenizerPostCount();
+            } else if (out.equals("position")) {
+                tokenizerPost = new TokenizerPostPosition();
+            } else {
+                throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");
+            }
+
+            Types.ValueType[] outSchema = new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING};
+            tokenizer = new Tokenizer(outSchema, null,  tokenizerPre, tokenizerPost);
 
         }
         catch(Exception ex) {

@@ -38,7 +38,8 @@ public class TokenizeTest extends AutomatedTestBase
     private static final String TEST_DIR = "functions/transform/";
     private static final String TEST_CLASS_DIR = TEST_DIR + TokenizeTest.class.getSimpleName() + "/";
 
-    private static final String SPEC = "TokenizeSpec.json";
+    private static final String SPEC1 = "TokenizeSpec1.json";
+    private static final String SPEC2 = "TokenizeSpec2.json";
 
     //dataset and transform tasks without missing values
     private final static String DATASET 	= "20news/20news_subset_untokenized.csv";  // TODO: use untokenized as input
@@ -51,37 +52,68 @@ public class TokenizeTest extends AutomatedTestBase
     }
 
     @Test
-    public void testTokenizeSingleNodeCSV() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, "csv", false);
+    public void testTokenizeSingleNodeSpec1() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC1,false);
     }
 
     @Test
-    public void testTokenizeSparkCSV() {
-        runTokenizeTest(ExecMode.SPARK, "csv", false);
+    public void testTokenizeSparkSpec1() {
+        runTokenizeTest(ExecMode.SPARK, SPEC1, false);
     }
 
     @Test
-    public void testTokenizeHybridCSV() {
-        runTokenizeTest(ExecMode.HYBRID, "csv", false);
+    public void testTokenizeHybridSpec1() {
+        runTokenizeTest(ExecMode.HYBRID, SPEC1, false);
     }
 
     @Test
-    public void testTokenizeParReadSingleNodeCSV() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, "csv", true);
+    public void testTokenizeParReadSingleNodeSpec1() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC1, true);
     }
 
     @Test
-    public void testTokenizeParReadSparkCSV() {
-        runTokenizeTest(ExecMode.SPARK, "csv", true);
+    public void testTokenizeParReadSparkSpec1() {
+        runTokenizeTest(ExecMode.SPARK, SPEC1, true);
     }
 
     @Test
-    public void testTokenizeParReadHybridCSV() {
-        runTokenizeTest(ExecMode.HYBRID, "csv", true);
+    public void testTokenizeParReadHybridSpec1() {
+        runTokenizeTest(ExecMode.HYBRID, SPEC1, true);
     }
 
-    private void runTokenizeTest(ExecMode rt, String ofmt, boolean parRead )
+    @Test
+    public void testTokenizeSingleNodeSpec2() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC2,false);
+    }
+
+    @Test
+    public void testTokenizeSparkSpec2() {
+        runTokenizeTest(ExecMode.SPARK, SPEC2, false);
+    }
+
+    @Test
+    public void testTokenizeHybridSpec2() {
+        runTokenizeTest(ExecMode.HYBRID, SPEC2, false);
+    }
+
+    @Test
+    public void testTokenizeParReadSingleNodeSpec2() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC2, true);
+    }
+
+    @Test
+    public void testTokenizeParReadSparkSpec2() {
+        runTokenizeTest(ExecMode.SPARK, SPEC2, true);
+    }
+
+    @Test
+    public void testTokenizeParReadHybridSpec2() {
+        runTokenizeTest(ExecMode.HYBRID, SPEC2, true);
+    }
+
+    private void runTokenizeTest(ExecMode rt, String spec, boolean parRead )
     {
+        String ofmt = "csv";
         //set runtime platform
         ExecMode rtold = rtplatform;
         rtplatform = rt;
@@ -100,7 +132,7 @@ public class TokenizeTest extends AutomatedTestBase
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
             programArgs = new String[]{"-stats","-args",
-                    HOME + "input/" + DATASET, HOME + SPEC, output("R") };
+                    HOME + "input/" + DATASET, HOME + spec, output("R") };
 
             runTest(true, false, null, -1);
 

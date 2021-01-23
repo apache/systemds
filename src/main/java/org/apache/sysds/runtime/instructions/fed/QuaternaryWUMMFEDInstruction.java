@@ -28,18 +28,20 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
+public class QuaternaryWUMMFEDInstruction extends QuaternaryFEDInstruction {
 
 	/**
 	 * This instruction performs:
 	 *
-	 * UV = U %*% t(V); Z = X * log(1 / (1 + exp(-UV)));
+	 * Z = X / exp(U %*% t(V));
 	 *
-	 * @param operator        Weighted Sigmoid Federated Instruction.
+	 *
+	 * @param operator        Weighted Unary Matrix Multiplication Federated Instruction.
 	 * @param in1             X
 	 * @param in2             U
 	 * @param in3             V
@@ -47,7 +49,7 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 	 * @param opcode          ...
 	 * @param instruction_str ...
 	 */
-	protected QuaternaryWSigmoidFEDInstruction(Operator operator, CPOperand in1, CPOperand in2, CPOperand in3,
+	protected QuaternaryWUMMFEDInstruction(Operator operator, CPOperand in1, CPOperand in2, CPOperand in3,
 		CPOperand out, String opcode, String instruction_str) {
 		super(FEDType.Quaternary, operator, in1, in2, in3, out, opcode, instruction_str);
 	}
@@ -58,7 +60,7 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 		MatrixObject U = ec.getMatrixObject(input2);
 		MatrixObject V = ec.getMatrixObject(input3);
 
-		if(!(X.isFederated() && !U.isFederated() && !V.isFederated()))
+		if(!(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated()))
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V) = (" + X.isFederated() + ", "
 				+ U.isFederated() + ", " + V.isFederated() + ")");
 
@@ -67,8 +69,7 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 		FederatedRequest frInit2 = fedMap.broadcast(V);
 
 		FederatedRequest frCompute1 = FederationUtils.callInstruction(instString,
-			output,
-			new CPOperand[] {input1, input2, input3},
+			output, new CPOperand[] {input1, input2, input3},
 			new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID()});
 
 		// get partial results from federated workers
@@ -84,6 +85,5 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 
 		// bind partial results from federated responses
 		ec.setMatrixOutput(output.getName(), FederationUtils.bind(response, false));
-
 	}
 }

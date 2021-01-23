@@ -33,6 +33,10 @@ import org.apache.sysds.hops.IndexingOp;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp1;
@@ -60,6 +64,9 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  */
 public class ParForStatementBlock extends ForStatementBlock 
 {
+	private static final boolean LDEBUG = false; //internal local debug level
+	protected static final Log LOG = LogFactory.getLog(ParForStatementBlock.class.getName());
+	
 	//external parameter names 
 	private static HashSet<String> _paramNames;
 	public static final String CHECK            = "check";       //run loop dependency analysis
@@ -139,6 +146,13 @@ public class ParForStatementBlock extends ForStatementBlock
 		//initialize function cache
 		if( USE_FN_CACHE ) {
 			_fncache = new HashMap<>();
+		}
+		
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("org.apache.sysds.parser.ParForStatementBlock")
+				.setLevel(Level.TRACE);
+			System.out.println();
 		}
 	}
 	
@@ -908,7 +922,15 @@ public class ParForStatementBlock extends ForStatementBlock
 						incr = ((IntIdentifier)ip.getIncrementExpr()).getValue();
 					else 
 						incr = ( low <= up ) ? 1 : -1;
-
+					
+					//normalize bounds to positive increment (for dependency analysis only)
+					if( incr < 0 ) {
+						long tmp = low;
+						low = up;
+						up = tmp;
+						incr *= -1; //positive increment
+					}
+					
 					_bounds._lower.put(ip.getIterVar()._name, low);
 					_bounds._upper.put(ip.getIterVar()._name, up);
 					_bounds._increment.put(ip.getIterVar()._name, incr);
@@ -1093,7 +1115,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			//min/max bound 
 			int len = Math.max(f1._b.length, f2._b.length);
 			boolean invalid = false;
-			for( int i=0; i<len; i++ ) 
+			for( int i=0; i<len; i++ )
 			{
 				String var=(f1._b.length>i) ? f1._vars[i] : f2._vars[i];
 				if( !_bounds._lower.containsKey(var) || !_bounds._upper.containsKey(var) ) {

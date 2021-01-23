@@ -116,6 +116,7 @@ public enum Builtins {
 	GET_PERMUTATIONS("getPermutations", true),
 	GLM("glm", true),
 	GMM("gmm", true),
+	GMM_PREDICT("gmmPredict", true),
 	GNMF("gnmf", true),
 	GRID_SEARCH("gridSearch", true),
 	HYPERBAND("hyperband", true),

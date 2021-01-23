@@ -29,7 +29,6 @@ import org.apache.sysds.test.TestConfiguration;
 
 public class ForLoopPredicateTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "for_pred1a"; //const
 	private final static String TEST_NAME2 = "for_pred1b"; //const seq
 	private final static String TEST_NAME3 = "for_pred2a"; //var
@@ -37,6 +36,8 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 	private final static String TEST_NAME5 = "for_pred3a"; //expression
 	private final static String TEST_NAME6 = "for_pred3b"; //expression seq
 	private final static String TEST_NAME7 = "for_pred1a_seq"; //const seq two parameters (this tests is only for parser)
+	private final static String TEST_NAME8 = "parfor_pred1_neg"; //to:from (negative increment)
+	private final static String TEST_NAME9 = "parfor_pred2_neg"; //2:1 (negative increment, two steps)
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ForLoopPredicateTest.class.getSimpleName() + "/";
 	
@@ -45,8 +46,7 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 	private final static int increment = 1;
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{"R"}));
@@ -54,102 +54,103 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[]{"R"}));
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[]{"R"}));
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[]{"R"}));
 	}
 
 	@Test
-	public void testForConstIntegerPredicate() 
-	{
+	public void testForConstIntegerPredicate() {
 		runForPredicateTest(1, true);
 	}
 	
 	@Test
-	public void testForConstIntegerSeq2ParametersPredicate() 
-	{
+	public void testForConstIntegerSeq2ParametersPredicate() {
 		runForPredicateTest(7, true);
 	}
 	
 	@Test
-	public void testForConstIntegerSeqPredicate() 
-	{
+	public void testForConstIntegerSeqPredicate() {
 		runForPredicateTest(2, true);
 	}
 	
 	@Test
-	public void testForVariableIntegerPredicate() 
-	{
+	public void testForVariableIntegerPredicate() {
 		runForPredicateTest(3, true);
 	}
 	
 	@Test
-	public void testForVariableIntegerSeqPredicate() 
-	{
+	public void testForVariableIntegerSeqPredicate() {
 		runForPredicateTest(4, true);
 	}
 	
 	@Test
-	public void testForExpressionIntegerPredicate() 
-	{
+	public void testForExpressionIntegerPredicate() {
 		runForPredicateTest(5, true);
 	}
 	
 	@Test
-	public void testForExpressionIntegerSeqPredicate() 
-	{
+	public void testForExpressionIntegerSeqPredicate() {
 		runForPredicateTest(6, true);
 	}
 
 	@Test
-	public void testForConstDoublePredicate() 
-	{
+	public void testForConstDoublePredicate() {
 		runForPredicateTest(1, false);
 	}
 	
 	@Test
-	public void testForConstDoubleSeq2ParametersPredicate() 
-	{
+	public void testForConstDoubleSeq2ParametersPredicate() {
 		runForPredicateTest(7, false);
 	}
 	
 	@Test
-	public void testForConstDoubleSeqPredicate() 
-	{
+	public void testForConstDoubleSeqPredicate() {
 		runForPredicateTest(2, false);
 	}
 	
 	@Test
-	public void testForVariableDoublePredicate() 
-	{
+	public void testForVariableDoublePredicate() {
 		runForPredicateTest(3, false);
 	}
 	
 	@Test
-	public void testForVariableDoubleSeqPredicate() 
-	{
+	public void testForVariableDoubleSeqPredicate() {
 		runForPredicateTest(4, false);
 	}
 	
 	@Test
-	public void testForExpressionDoublePredicate() 
-	{
+	public void testForExpressionDoublePredicate() {
 		runForPredicateTest(5, false);
 	}
 	
 	@Test
-	public void testForExpressionDoubleSeqPredicate() 
-	{
+	public void testForExpressionDoubleSeqPredicate() {
 		runForPredicateTest(6, false);
 	}
 	
-	/**
-	 * 
-	 * @param testNum
-	 * @param intScalar
-	 */
-	private void runForPredicateTest( int testNum, boolean intScalar )
+	@Test
+	public void testParFor1IntNegativeIncrement() {
+		runForPredicateTest(8, true, true);
+	}
+	
+	@Test
+	public void testParFor1DoubleNegativeIncrement() {
+		runForPredicateTest(8, false, true);
+	}
+	
+	@Test
+	public void testParFor2IntNegativeIncrement() {
+		runForPredicateTest(9, true, true);
+	}
+	
+	private void runForPredicateTest( int testNum, boolean intScalar ) {
+		runForPredicateTest(testNum, intScalar, false);
+	}
+	
+	private void runForPredicateTest( int testNum, boolean intScalar, boolean negative )
 	{
 		String TEST_NAME = null;
-		switch( testNum )
-		{
+		switch( testNum ) {
 			case 1: TEST_NAME = TEST_NAME1; break;
 			case 2: TEST_NAME = TEST_NAME2; break;
 			case 3: TEST_NAME = TEST_NAME3; break;
@@ -157,6 +158,8 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 			case 5: TEST_NAME = TEST_NAME5; break;
 			case 6: TEST_NAME = TEST_NAME6; break;
 			case 7: TEST_NAME = TEST_NAME7; break;
+			case 8: TEST_NAME = TEST_NAME8; break;
+			case 9: TEST_NAME = TEST_NAME9; break;
 		}
 		
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -164,14 +167,12 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 		Object valFrom = null;
 		Object valTo = null;
 		Object valIncrement = null;
-		if( intScalar )
-		{
+		if( intScalar ) {
 			valFrom = Integer.valueOf((int)Math.round(from));
 			valTo = Integer.valueOf((int)Math.round(to));
 			valIncrement = Integer.valueOf(increment);
 		}
-		else
-		{
+		else {
 			valFrom = new Double(from);
 			valTo = new Double(to);
 			valIncrement = new Double(increment);
@@ -196,5 +197,4 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 		Assert.assertEquals( Double.valueOf(Math.ceil((Math.round(to)-Math.round(from)+1)/increment)),
 				             dmlfile.get(new CellIndex(1,1)));
 	}
-	
 }

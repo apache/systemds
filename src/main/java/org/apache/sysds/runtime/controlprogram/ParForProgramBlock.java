@@ -569,7 +569,8 @@ public class ParForProgramBlock extends ForProgramBlock
 				+ "of variable '" + _iterPredVar + "' must evaluate to a non-zero value.");
 		
 		//early exit on num iterations = zero
-		_numIterations = computeNumIterations(from, to, incr);
+		_numIterations = UtilFunctions.getSeqLength(
+			from.getDoubleValue(), to.getDoubleValue(), incr.getDoubleValue());
 		if( _numIterations <= 0 )
 			return; //avoid unnecessary optimization/initialization
 		
@@ -1518,10 +1519,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			if( _monitor ) 
 				StatisticMonitor.putPfPwMapping(_ID, _pwIDs[i]);
 		}
-	}
-
-	private static long computeNumIterations( IntObject from, IntObject to, IntObject incr ) {
-		return (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
 	}
 	
 	/**

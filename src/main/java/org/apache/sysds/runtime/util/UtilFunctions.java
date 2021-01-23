@@ -405,9 +405,12 @@ public class UtilFunctions {
 		//a very small increment. Hence, we use a different formulation 
 		//that exhibits better numerical stability by avoiding the subtraction
 		//of numbers of different magnitude.
-		if( check && (Double.isNaN(from) || Double.isNaN(to) || Double.isNaN(incr) 
+		if( (isSpecial(from) || isSpecial(to) || isSpecial(incr) 
 			|| (from > to && incr > 0) || (from < to && incr < 0)) ) {
-			throw new RuntimeException("Invalid seq parameters: ("+from+", "+to+", "+incr+")");
+			if( check )
+				throw new RuntimeException("Invalid seq parameters: ("+from+", "+to+", "+incr+")");
+			else
+				return 0; // invalid loop configuration
 		}
 		return 1L + (long) Math.floor(to/incr - from/incr);
 	}
@@ -588,6 +591,10 @@ public class UtilFunctions {
 			if( c[i] < 48 || c[i] > 57 )
 				return false;
 		return true;
+	}
+	
+	public static boolean isSpecial(double value) {
+		return Double.isNaN(value) || Double.isInfinite(value);
 	}
 	
 	public static int[] getSortedSampleIndexes(int range, int sampleSize) {

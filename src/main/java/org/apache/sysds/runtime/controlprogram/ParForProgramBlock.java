@@ -77,6 +77,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
@@ -558,21 +559,25 @@ public class ParForProgramBlock extends ForProgramBlock
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 
 		// evaluate from, to, incr only once (assumption: known at for entry)
-		IntObject from = executePredicateInstructions( 1, _fromInstructions, ec );
-		IntObject to   = executePredicateInstructions( 2, _toInstructions, ec );
-		IntObject incr = (_incrementInstructions == null || _incrementInstructions.isEmpty()) ? 
-			new IntObject((from.getLongValue()<=to.getLongValue()) ? 1 : -1) :
-			executePredicateInstructions( 3, _incrementInstructions, ec );
+		ScalarObject from0 = executePredicateInstructions(1, _fromInstructions, ec, false);
+		ScalarObject to0   = executePredicateInstructions(2, _toInstructions, ec, false);
+		ScalarObject incr0 = (_incrementInstructions == null || _incrementInstructions.isEmpty()) ? 
+			new IntObject((from0.getLongValue()<=to0.getLongValue()) ? 1 : -1) :
+			executePredicateInstructions( 3, _incrementInstructions, ec, false);
 		
-		if ( incr.getLongValue() == 0 ) //would produce infinite loop
+		if ( incr0.getLongValue() == 0 ) //would produce infinite loop
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment "
 				+ "of variable '" + _iterPredVar + "' must evaluate to a non-zero value.");
 		
-		//early exit on num iterations = zero
-		_numIterations = UtilFunctions.getSeqLength(
-			from.getDoubleValue(), to.getDoubleValue(), incr.getDoubleValue());
+		//early exit on num iterations (e.g., for invalid loop bounds)
+		_numIterations = UtilFunctions.getSeqLength( 
+			from0.getDoubleValue(), to0.getDoubleValue(), incr0.getDoubleValue(), false);
 		if( _numIterations <= 0 )
 			return; //avoid unnecessary optimization/initialization
+		
+		IntObject from = new IntObject(from0.getLongValue());
+		IntObject to = new IntObject(to0.getLongValue());
+		IntObject incr = new IntObject(incr0.getLongValue());
 		
 		///////
 		//OPTIMIZATION of ParFOR body (incl all child parfor PBs)

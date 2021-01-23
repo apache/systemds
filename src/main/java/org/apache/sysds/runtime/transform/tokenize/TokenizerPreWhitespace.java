@@ -2,7 +2,6 @@ package org.apache.sysds.runtime.transform.tokenize;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +11,14 @@ public class TokenizerPreWhitespace implements TokenizerPre {
     private static final long serialVersionUID = 539127244034913364L;
 
     private final String splitRegex = "\\s+";
+
+    private int idCol;
+    private int tokenizeCol;
+
+    public TokenizerPreWhitespace(int idCol, int tokenizeCol) {
+        this.idCol = idCol;
+        this.tokenizeCol = tokenizeCol;
+    }
 
     public List<Tokenizer.Token> splitToTokens(String text) {
         List<Tokenizer.Token> tokenList = new ArrayList<>();
@@ -31,8 +38,9 @@ public class TokenizerPreWhitespace implements TokenizerPre {
 
         Iterator<String[]> iterator = in.getStringRowIterator();
         iterator.forEachRemaining(s -> {
-            String key = s[0];
-            String text = s[1];
+            // Convert index value to Java (0-based) from DML (1-based)
+            String key = s[idCol - 1];
+            String text = s[tokenizeCol - 1];
             // Transform to Bag format internally
             List<Tokenizer.Token> tokenList = splitToTokens(text);
             documentsToTokenList.put(key, tokenList);

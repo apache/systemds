@@ -1,5 +1,6 @@
 package org.apache.sysds.runtime.transform.tokenize;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.util.List;
@@ -26,5 +27,11 @@ public class TokenizerPostCount implements TokenizerPost{
         });
 
         return out;
+    }
+
+    @Override
+    public Types.ValueType[] getOutSchema() {
+        // Not sure why INT64 is required here, but CP Instruction fails otherwise
+        return new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.INT64};
     }
 }

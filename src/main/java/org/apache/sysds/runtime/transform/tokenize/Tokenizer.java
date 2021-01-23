@@ -39,8 +39,8 @@ public class Tokenizer implements Serializable {
     private final TokenizerPre tokenizerPre;
     private final TokenizerPost tokenizerPost;
 
-    protected Tokenizer(Types.ValueType[] schema, int[] colList, TokenizerPre tokenizerPre, TokenizerPost tokenizerPost) {
-        _schema = schema;
+    protected Tokenizer(int[] colList, TokenizerPre tokenizerPre, TokenizerPost tokenizerPost) {
+        _schema = tokenizerPost.getOutSchema();
         _colList = colList;
         this.tokenizerPre = tokenizerPre;
         this.tokenizerPost = tokenizerPost;

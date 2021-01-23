@@ -46,6 +46,8 @@ public enum Builtins {
 	ALS("als", true),
 	ALS_CG("alsCG", true),
 	ALS_DS("alsDS", true),
+	ALS_PREDICT("alsPredict", true),
+	ALS_TOPK_PREDICT("alsTopkPredict", true),
 	ASIN("asin", false),
 	ATAN("atan", false),
 	AUTOENCODER2LAYER("autoencoder_2layer", true),

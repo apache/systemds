@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.fed;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -43,7 +44,11 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOp
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryMatrixMatrixSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryMatrixScalarSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorBroadcastSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantilePickSPInstruction;
@@ -252,6 +257,17 @@ public class FEDInstructionUtils {
 				Data data = ec.getVariable(instruction.input1);
 				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
 					fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
+				}
+			}
+			else if (inst instanceof BinaryMatrixScalarSPInstruction
+				|| inst instanceof BinaryMatrixMatrixSPInstruction
+				|| inst instanceof BinaryTensorTensorSPInstruction
+				|| inst instanceof BinaryTensorTensorBroadcastSPInstruction) {
+				BinarySPInstruction instruction = (BinarySPInstruction) inst;
+				Data data = ec.getVariable(instruction.input1);
+				if((data instanceof MatrixObject && ((MatrixObject)data).isFederated())
+					|| (data instanceof TensorObject && ((TensorObject)data).isFederated())) {
+					fedinst = BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
 			}
 		}

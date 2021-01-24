@@ -152,7 +152,7 @@ public class FederatedAlsCGTest extends AutomatedTestBase
 		TestUtils.shutdownThreads(thread1, thread2);
 
 		// check for federated operations
-		// Assert.assertTrue(heavyHittersContainsString("fed_!="));
+		Assert.assertTrue(heavyHittersContainsString("fed_!="));
 		Assert.assertTrue(heavyHittersContainsString("fed_fedinit"));
 		Assert.assertTrue(heavyHittersContainsString("fed_wdivmm"));
 		Assert.assertTrue(heavyHittersContainsString("fed_wsloss"));

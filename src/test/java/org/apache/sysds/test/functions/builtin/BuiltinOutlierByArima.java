@@ -111,7 +111,7 @@ public class BuiltinOutlierByArima extends AutomatedTestBase {
 			HashMap<CellIndex, Double> time_series_SYSTEMDS = readDMLMatrixFromOutputDir("result");
 			HashMap<CellIndex, Double> time_series_real = readRMatrixFromExpectedDir("result");
 
-			double tol = Math.pow(10, -14);
+			double tol = Math.pow(10, -12);
 			if (repairMethod == 3)
 				TestUtils.compareScalars(time_series_real.size()-num_outliers, time_series_SYSTEMDS.size(), tol);
 			else

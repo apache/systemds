@@ -124,6 +124,13 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_BRANCH_REMOVAL = true;
 	
+	/**
+	 * Enables the removal of (par)for-loops when from, to, and increment are constants
+	 * (original literals or results of constant folding) and lead to an empty sequence,
+	 * i.e., (par)for-loops without a single iteration.
+	 */
+	public static boolean ALLOW_FOR_LOOP_REMOVAL = true;
+
 	public static boolean ALLOW_AUTO_VECTORIZATION = true;
 	
 	/**
@@ -205,6 +212,12 @@ public class OptimizerUtils
 	 * 
 	 */
 	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
+
+	/**
+	 * This variable allows for insertion of Compress and decompress in the dml script from the user.
+	 * This is added because we want to have a way to test, and verify the correct placement of compress and decompress commands.
+	 */
+	public static final boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 
 	//////////////////////
 	// Optimizer levels //
@@ -294,6 +307,7 @@ public class OptimizerUtils
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 				IPA_NUM_REPETITIONS = 1;
 				ALLOW_BRANCH_REMOVAL = false;
+				ALLOW_FOR_LOOP_REMOVAL = false;
 				ALLOW_SUM_PRODUCT_REWRITES = false;
 				break;
 			// opt level 1: memory-based (no advanced rewrites)	
@@ -306,6 +320,7 @@ public class OptimizerUtils
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 				IPA_NUM_REPETITIONS = 1;
 				ALLOW_BRANCH_REMOVAL = false;
+				ALLOW_FOR_LOOP_REMOVAL = false;
 				ALLOW_SUM_PRODUCT_REWRITES = false;
 				ALLOW_LOOP_UPDATE_IN_PLACE = false;
 				break;
@@ -360,6 +375,7 @@ public class OptimizerUtils
 		ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
 		ALLOW_AUTO_VECTORIZATION = true;
 		ALLOW_BRANCH_REMOVAL = true;
+		ALLOW_FOR_LOOP_REMOVAL = true;
 		ALLOW_CONSTANT_FOLDING = true;
 		ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = true;
 		ALLOW_INTER_PROCEDURAL_ANALYSIS = true;
@@ -674,6 +690,21 @@ public class OptimizerUtils
 	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long blen, long nnz)  {
 		double sp = getSparsity(rlen, clen, nnz);
 		return estimatePartitionedSizeExactSparsity(rlen, clen, blen, sp);
+	}
+
+	/**
+	 * Estimates the footprint (in bytes) for a partitioned in-memory representation of a
+	 * matrix with the hops dimensions and number of non-zeros nnz.
+	 * 
+	 * @param hop The hop to extract dimensions and nnz from
+	 * @return the memory estimate
+	 */
+	public static long estimatePartitionedSizeExactSparsity(Hop hop){
+		long rlen = hop.getDim1();
+		long clen = hop.getDim2();
+		int blen = hop.getBlocksize();
+		long nnz = hop.getNnz();
+		return  estimatePartitionedSizeExactSparsity(rlen, clen, blen, nnz);
 	}
 	
 	/**
@@ -1146,6 +1177,13 @@ public class OptimizerUtils
 	public static double getSparsity( long dim1, long dim2, long nnz ) {
 		return ( dim1<=0 || dim2<=0 || nnz<0 ) ? 1.0 :
 			Math.min(((double)nnz)/dim1/dim2, 1.0);
+	}
+
+	public static double getSparsity(Hop hop){
+		long dim1 = hop.getDim1();
+		long dim2 = hop.getDim2();
+		long nnz = hop.getNnz();
+		return getSparsity(dim1, dim2, nnz);
 	}
 
 	public static double getSparsity(long[] dims, long nnz) {

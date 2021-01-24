@@ -39,10 +39,10 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 
 	/**
 	 * This Instruction performs a Weighted Sigmoid Loss function as follows:
-	 * 
+	 *
 	 * Z = sum(W * (X - (U %*% t(V))) ^ 2)
-	 * 
-	 * @param operator Weighted Sigmoid Loss 
+	 *
+	 * @param operator Weighted Sigmoid Loss
 	 * @param in1 X
 	 * @param in2 U
 	 * @param in3 V
@@ -71,7 +71,7 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 
 		if(!(X.isFederated() && !U.isFederated() && !V.isFederated() && (W == null || !W.isFederated())))
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V, W) = (" + X.isFederated() + ", "
-				+ U.isFederated() + ", " + V.isFederated() + (W != null ? W.isFederated() : "none") + ")");
+				+ U.isFederated() + ", " + V.isFederated() + ", " + (W != null ? W.isFederated() : "none") + ")");
 
 		FederationMap fedMap = X.getFedMapping();
 		FederatedRequest[] frInit1 = fedMap.broadcastSliced(U, false);

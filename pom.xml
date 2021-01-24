@@ -543,6 +543,7 @@
 						</executions>
 						<configuration>
 							<excludes>
+								<exclude>scripts/perftest/results/**</exclude>
 								<exclude>.gitignore</exclude>
 								<exclude>.gitmodules</exclude>
 								<exclude>.repository/</exclude>

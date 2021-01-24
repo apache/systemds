@@ -84,11 +84,19 @@ public class PlanningCoCoder {
 		}
 
 		// brute force grouping within each partition
-		return (k > 1) ? getCocodingGroupsBruteForce(bins,
+		List<int[]> coCodeColGroups = (k > 1) ? getCocodingGroupsBruteForce(bins,
 			groupColsInfo,
 			sizeEstimator,
 			numRows,
 			k) : getCocodingGroupsBruteForce(bins, groupColsInfo, sizeEstimator, numRows);
+
+		if(LOG.isDebugEnabled()) {
+			StringBuilder sb = new StringBuilder();
+			for(int[] group : coCodeColGroups)
+				sb.append(Arrays.toString(group));
+			LOG.debug(sb.toString());
+		}
+		return coCodeColGroups;
 	}
 
 	private static List<int[]> getCocodingGroupsBruteForce(List<int[]> bins,

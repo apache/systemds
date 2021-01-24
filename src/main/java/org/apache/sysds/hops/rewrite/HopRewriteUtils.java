@@ -1118,6 +1118,12 @@ public class HopRewriteUtils
 			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()
 			&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown() && hop.getInput().get(1).getDim2() == 1;
 	}
+
+	public static boolean isBinaryMatrixRowVectorOperation(Hop hop) {
+		return hop instanceof BinaryOp 
+			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()
+			&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown() && hop.getInput().get(1).getDim1() == 1;
+	}
 	
 	public static boolean isUnary(Hop hop, OpOp1 type) {
 		return hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==type;

@@ -25,11 +25,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -103,21 +101,9 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	}
 
 	@Override
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
-		int cu) {
-		LinearAlgebraUtils.vectListAddDDC(preAggregatedB, c, _data, rl, ru, cl, cu, thatNrColumns, getNumValues());
-	}
-
-	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		if(rows.length > 1) {
-			throw new NotImplementedException("Not Implemented CoCoded right Sparse Multiply");
-		}
-		for(int i = 0; i < rows[0].size(); i++) {
-			double[] vals = sparsePreaggValues(numVals, rows[0].values()[i], false, dictVals);
-			LinearAlgebraUtils.vectListAdd(vals, c, _data, rl, ru, rows[0].indexes()[i] * _numRows);
-		}
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	int ru) {
+		LinearAlgebraUtils.vectListAddDDC(outputColumns, preAggregatedB, c, _data, rl, ru, thatNrColumns, getNumValues());
 	}
 
 	@Override
@@ -192,13 +178,13 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
-		if(op.sparseSafe || val0 == 0 || !_zeros) {
+		boolean isSparseSafeOp = op.sparseSafe || val0 == 0 || !_zeros;
+		if(isSparseSafeOp) 
 			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op), _data, _zeros, getCachedCounts());
-		}
-		else {
+		else 
 			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false,
 				getCachedCounts());
-		}
+		
 	}
 
 	@Override

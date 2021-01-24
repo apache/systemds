@@ -30,7 +30,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlock.Type;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.matrix.data.IJV;
@@ -70,10 +69,10 @@ public class ColGroupUncompressed extends ColGroup {
 	 * @param colIndicesList Indices (relative to the current block) of the columns that this column group represents.
 	 * @param rawBlock       The uncompressed block; uncompressed data must be present at the time that the constructor
 	 *                       is called
-	 * @param compSettings   The Settings for how to compress this block, Here using information about the raw block if
-	 *                       it is transposed.
+	 * @param transposed     Says if the input matrix raw block have been transposed. This should not ever be true since
+	 *                       we still have the original matrixBlock in case of aborting the compression.
 	 */
-	protected ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
+	public ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
 		super(colIndicesList, transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows());
 
 		// prepare meta data
@@ -201,11 +200,6 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		decompressToBlock(target, rl, ru, rl);
-	}
-
-	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
 		// empty block, nothing to add to output
 		if(_data.isEmptyBlock(false))
@@ -320,19 +314,13 @@ public class ColGroupUncompressed extends ColGroup {
 		LibMatrixMult.matrixMult(_data, subMatrix, result);
 	}
 
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
-		int cu) {
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+		int ru) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
 	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] vector, double[] c, int numVals) {
+	public void leftMultByRowVector(double[] vector, double[] c) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 

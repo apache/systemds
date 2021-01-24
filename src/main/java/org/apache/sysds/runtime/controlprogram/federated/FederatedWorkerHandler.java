@@ -48,8 +48,11 @@ import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
@@ -271,7 +274,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// set variable and construct empty response
 		ec.setVariable(varname, data);
 		if (DMLScript.LINEAGE)
-			// TODO: Identify MO uniquely. Use Adler32 checksum.
 			ec.getLineage().set(varname, new LineageItem(String.valueOf(request.getChecksum(0))));
 
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
@@ -340,10 +342,25 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedUDF udf = (FederatedUDF) request.getParam(0);
 		Data[] inputs = Arrays.stream(udf.getInputIDs()).mapToObj(id -> ec.getVariable(String.valueOf(id)))
 			.map(PrivacyMonitor::handlePrivacy).toArray(Data[]::new);
-
-		// execute user-defined function
+		
+		// trace lineage
+		if (DMLScript.LINEAGE)
+			LineageItemUtils.traceFedUDF(ec, udf);
+		
+		// reuse or execute user-defined function
 		try {
-			return udf.execute(ec, inputs);
+			// reuse UDF outputs if available in lineage cache
+			if (LineageCache.reuse(udf, ec))
+				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
+				//FIXME: few UDFs (e.g. Rdiag, DiagMatrix) return additional data with response
+
+			// else execute the UDF
+			long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+			FederatedResponse res = udf.execute(ec, inputs);
+			long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+			//cacheUDFOutputs(udf, inputs, t1-t0, ec);
+			LineageCache.putValue(udf, ec, t1-t0);
+			return res;
 		}
 		catch(DMLPrivacyException | FederatedWorkerHandlerException ex){
 			throw ex;
@@ -354,7 +371,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(msg));
 		}
 	}
-
+	
 	private FederatedResponse execClear() {
 		try {
 			_ecm.clear();

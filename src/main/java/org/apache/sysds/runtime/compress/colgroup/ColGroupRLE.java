@@ -24,12 +24,10 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -86,11 +84,6 @@ public class ColGroupRLE extends ColGroupOffset {
 	@Override
 	protected ColGroupType getColGroupType() {
 		return ColGroupType.RLE;
-	}
-
-	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockSafe(target, rl, ru, offT, values, true);
 	}
 
 	@Override
@@ -351,8 +344,8 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
-		int cu) {
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+		int ru) {
 		final int nrVals = getNumValues();
 		for(int k = 0; k < nrVals; k++) {
 			int boff = _ptr[k];
@@ -379,68 +372,14 @@ public class ColGroupRLE extends ColGroupOffset {
 					c,
 					Math.max(rl, start + lstart),
 					Math.min(start + lstart + llen, ru),
-					cl,
-					cu,
-					thatNrColumns,
-					k * (cu - cl));
+					outputColumns,
+					thatNrColumns,k);
 				if(start + lstart + llen >= ru)
 					break;
 				start += lstart + llen;
 				bix += 2;
 			}
 		}
-	}
-
-	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		if(rows.length > 1) {
-			throw new NotImplementedException("Not Implemented CoCoded right Sparse Multiply");
-		}
-		for(int k = 0; k < numVals; k++) {
-			int boff = _ptr[k];
-			int blen = len(k);
-			for(int i = 0; i < rows[0].size(); i++) {
-				int column = rows[0].indexes()[i];
-				double val = sumValuesSparse(k, rows, dictVals, i);
-				int bix = 0;
-				int start = 0 + column * _numRows;
-
-				// scan to beginning offset if necessary
-				if(rl > 0) { // rl aligned with blksz
-					while(bix < blen) {
-						int lstart = _data[boff + bix]; // start
-						int llen = _data[boff + bix + 1]; // len
-						if(start + lstart + llen >= rl + column * _numRows)
-							break;
-						start += lstart + llen;
-						bix += 2;
-					}
-				}
-
-				// compute partial results, not aligned
-				while(bix < blen) {
-					int lstart = _data[boff + bix];
-					int llen = _data[boff + bix + 1];
-					LinearAlgebraUtils.vectAdd(val,
-						c,
-						Math.max(rl + column * _numRows, start + lstart),
-						Math.min(start + lstart + llen, ru + column * _numRows) -
-							Math.max(rl + column * _numRows, start + lstart));
-					if(start + lstart + llen >= ru + column * _numRows)
-						break;
-					start += lstart + llen;
-					bix += 2;
-				}
-			}
-		}
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals) {
-		numVals = (numVals == -1) ? getNumValues() : numVals;
-		final double[] values = getValues();
-		leftMultByRowVector(a, c, numVals, values);
 	}
 
 	@Override

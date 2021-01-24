@@ -23,7 +23,6 @@ import java.util.Iterator;
 
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -168,20 +167,11 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
-		int cu) {
-
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+		int ru) {
 		for(int i = rl * thatNrColumns; i < ru * thatNrColumns; i += thatNrColumns)
-			for(int j = i + cl; j < i + cu; j++)
-				c[j] += preAggregatedB[j % thatNrColumns];
-
-	}
-
-	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		throw new DMLCompressionException(
-			"Depreciated and not supported right mult by sparse matrix Please preAggregate before calling");
+			for(int j = 0; j < outputColumns.length; j++)
+				c[outputColumns[j] + i] += preAggregatedB[j];
 	}
 
 	private double preAggregate(double[] a, int aRows) {
@@ -190,15 +180,6 @@ public class ColGroupConst extends ColGroupValue {
 			vals += a[off];
 		}
 		return vals;
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals) {
-		double preAggVals = preAggregate(a, 0);
-		double[] dictVals = getValues();
-		for(int i = 0; i < _colIndexes.length; i++) {
-			c[i] += preAggVals * dictVals[i];
-		}
 	}
 
 	@Override
@@ -269,7 +250,7 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public boolean isDense(){
+	public boolean isDense() {
 		return true;
 	}
 }

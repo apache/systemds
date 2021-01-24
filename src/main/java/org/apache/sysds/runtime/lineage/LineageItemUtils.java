@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -47,6 +48,7 @@ import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -114,7 +116,11 @@ public class LineageItemUtils {
 		sb.append("(").append(getString(li)).append(") ");
 		
 		if (li.isLeaf()) {
-			sb.append(li.getData()).append(" ");
+			if (li.getOpcode().startsWith(LPLACEHOLDER))
+				//This is a special node. Serialize opcode instead of data
+				sb.append(li.getOpcode()).append(" ");
+			else
+				sb.append(li.getData()).append(" ");
 		} else {
 			if (li.getType() == LineageItemType.Dedup)
 				sb.append(li.getOpcode()).append(li.getData()).append(" ");
@@ -132,6 +138,25 @@ public class LineageItemUtils {
 	public static LineageItem[] getLineage(ExecutionContext ec, CPOperand... operands) {
 		return Arrays.stream(operands).filter(c -> c!=null)
 			.map(c -> ec.getLineage().getOrCreate(c)).toArray(LineageItem[]::new);
+	}
+	
+	public static void traceFedUDF(ExecutionContext ec, FederatedUDF udf) {
+		if (udf.getLineageItem(ec) == null)
+			//TODO: trace all UDFs
+			return;
+
+		if (!(udf instanceof LineageTraceable))
+			throw new DMLRuntimeException("Unknown Federated UDF (" + udf.getClass().getSimpleName() + ") traced.");
+		LineageTraceable ludf = (LineageTraceable) udf;
+		if (ludf.hasSingleLineage()) {
+			Pair<String, LineageItem> item = udf.getLineageItem(ec);
+			ec.getLineage().set(item.getKey(), item.getValue());
+		}
+		else {
+			Pair<String, LineageItem>[] items = udf.getLineageItems(ec);
+			for (Pair<String, LineageItem> item : items)
+				ec.getLineage().set(item.getKey(), item.getValue());
+		}
 	}
 	
 	public static void constructLineageFromHops(Hop[] roots, String claName, Hop[] inputs, HashMap<Long, Hop> spoofmap) {

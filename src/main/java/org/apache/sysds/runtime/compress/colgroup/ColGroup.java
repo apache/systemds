@@ -30,7 +30,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -191,17 +190,35 @@ public abstract class ColGroup implements Serializable {
 	 * @param rl     row lower
 	 * @param ru     row upper
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru);
+	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+		decompressToBlockSafe(target, rl, ru, rl, getValues(), true);
+	}
 
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block.
 	 * 
 	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl     row lower
-	 * @param ru     row upper
-	 * @param offT   The offset into the target matrix block to decompress to.
+	 * @param rl     The row to start at
+	 * @param ru     The row to end at
+	 * @param offT   The rowOffset into target to decompress to.
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT);
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlockSafe(target, rl, ru, offT, getValues(), true);
+	}
+
+	/**
+	 * Decompress the contents of this column group into the target matrixBlock, it is assumed that the target matrix
+	 * Block have the same number of columns and at least the number of rows ru.
+	 * 
+	 * @param target The target matrixBlock to decompress into
+	 * @param rl     The row to start at
+	 * @param ru     The row to end at
+	 * @param values The dictionary values materialized.
+	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
+	 */
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, double[] values, boolean safe) {
+		decompressToBlockSafe(target, rl, ru, rl, values, safe);
+	}
 
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block without managing the number of
@@ -212,7 +229,7 @@ public abstract class ColGroup implements Serializable {
 	 * @param ru     row upper
 	 * @param offT   Offset into target to assign from
 	 * @param values The Values materialized in the dictionary
-	 * @param safe   If the number of non zeros should be ignored.
+	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
 	 */
 	public abstract void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values,
 		boolean safe);
@@ -226,7 +243,9 @@ public abstract class ColGroup implements Serializable {
 	 * @param offT   The offset into the target matrix block to decompress to.
 	 * @param values The Values materialized in the dictionary
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values);
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+		decompressToBlockSafe(target, rl, ru, offT, values, true);
+	}
 
 	/**
 	 * Decompress the contents of this column group into uncompressed packed columns
@@ -326,33 +345,15 @@ public abstract class ColGroup implements Serializable {
 	 * Note that there is no b argument, but the b is aggregated into the values needed for assignment and addition into
 	 * output.
 	 * 
+	 * @param outputColumns  The Columns that are affected by the right multiplication.
 	 * @param preAggregatedB The preAggregated values that is to be put into c
 	 * @param c              The output matrix
 	 * @param thatNrColumns  The number of columns in B (before aggregation)
 	 * @param rl             The row index to start the multiplication from
 	 * @param ru             The row index to stop the multiplication at
-	 * @param cl             The column index to start from
-	 * @param cu             The row index to stop at.
 	 */
-	public abstract void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru,
-		int cl, int cu);
-
-	/**
-	 * Sparse right multiply by matrix, for which the compressed matrix is on the left and the uncompressed sparse is on
-	 * the right. This call differ from the other right multiply by not having a preAggregation phase.
-	 * 
-	 * This should only be called in very sparse situations.
-	 * 
-	 * @param rows      The sparse rows
-	 * @param c         The output matrix linearized
-	 * @param numVals   The number of values in the dictionary
-	 * @param dictVals  The materialized dictionary
-	 * @param nrColumns The number of columns in the matrix to multiply with and also in the output
-	 * @param rl        The row index to start at
-	 * @param ru        The row index to stop at.
-	 */
-	public abstract void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals,
-		int nrColumns, int rl, int ru);
+	public abstract void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns,
+		int rl, int ru);
 
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
@@ -360,9 +361,8 @@ public abstract class ColGroup implements Serializable {
 	 * 
 	 * @param vector  row vector
 	 * @param result  matrix block result
-	 * @param numVals The Number of values contained in the Column.
 	 */
-	public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals);
+	public abstract void leftMultByRowVector(double[] vector, double[] result);
 
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
@@ -501,8 +501,7 @@ public abstract class ColGroup implements Serializable {
 	 * Is dense, signals that the entire column group is allocated an processed. This is useful in Row wise min and max
 	 * for instance, to avoid having to scan through each row to look for empty rows.
 	 * 
-	 * an example where it is true is DDC, Const and Uncompressed.
-	 * examples where false is OLE and RLE.
+	 * an example where it is true is DDC, Const and Uncompressed. examples where false is OLE and RLE.
 	 * 
 	 * @return returns if the colgroup is allocated in a dense fashion.
 	 */

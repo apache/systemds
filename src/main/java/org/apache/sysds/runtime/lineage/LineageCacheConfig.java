@@ -21,12 +21,15 @@ package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
+import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
 
 import java.util.Comparator;
 
@@ -40,7 +43,7 @@ public class LineageCacheConfig
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
 		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
-		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm"
+		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -186,6 +189,7 @@ public class LineageCacheConfig
 
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		boolean insttype = inst instanceof ComputationCPInstruction 
+			|| inst instanceof ComputationFEDInstruction
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
@@ -193,7 +197,8 @@ public class LineageCacheConfig
 			|| (inst instanceof DataGenCPInstruction) && ((DataGenCPInstruction) inst).isMatrixCall());
 		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)
 			&& ec.getMatrixObject(((ComputationCPInstruction)inst).input1).getUpdateType().isInPlace();
-		return insttype && rightop && !updateInplace;
+		boolean federatedOutput = false;
+		return insttype && rightop && !updateInplace && !federatedOutput;
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
@@ -203,6 +208,16 @@ public class LineageCacheConfig
 		long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
 		long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
 		return(c1 == 1 || c2 == 1);
+	}
+	
+	public static boolean isOutputFederated(Instruction inst, Data data) {
+		if (!(inst instanceof ComputationFEDInstruction))
+			return false;
+		// return true if the output matrixobject is federated
+		if (inst instanceof ComputationFEDInstruction)
+			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+				return true;
+		return false;
 	}
 	
 	public static void setConfigTsmmCbind(ReuseCacheType ct) {

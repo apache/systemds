@@ -92,8 +92,10 @@ public abstract class JolEstimateTest {
 	@Test
 	public void compressedSizeInfoEstimatorExact() {
 		try {
-			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0).setValidCompressions(EnumSet.of(getCT())).create();
-			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs, true);
+			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+				.setValidCompressions(EnumSet.of(getCT())).create();
+			cs.transposed = true;
+			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs);
 
 			CompressedSizeInfoColGroup csi = cse.estimateCompressedColGroupSize();
 			long estimateCSI = csi.getCompressionSize(getCT());
@@ -119,7 +121,8 @@ public abstract class JolEstimateTest {
 	public void compressedSizeInfoEstimatorExactLossy() {
 		try {
 			// CompressionSettings cs = new CompressionSettings(1.0);
-			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, csl, true);
+			csl.transposed = true;
+			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, csl);
 			CompressedSizeInfoColGroup csi = cse.estimateCompressedColGroupSize();
 			long estimateCSI = csi.getCompressionSize(getCT());
 			long estimateObject = cgl.estimateInMemorySize();
@@ -140,25 +143,4 @@ public abstract class JolEstimateTest {
 		}
 	}
 
-	// @Test
-	// public void compressedSizeInfoEstimatorSampler() {
-	// try {
-	// CompressionSettings cs = new CompressionSettingsBuilder().copySettings(this.cs).setSamplingRatio(0.1).create();
-	// CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs);
-	// CompressedSizeInfoColGroup csi = cse.computeCompressedSizeInfos(1).compressionInfo[0];
-	// long estimateCSI = csi.getCompressionSize(getCT());
-	// long estimateObject = cg.estimateInMemorySize();
-	// String errorMessage = "CSI Sampled estimate " + estimateCSI + " should be larger than actual "
-	// + estimateObject + " but not more than " + (tolerance + kbTolerance) + " off";
-	// if(!(estimateCSI == estimateObject)) {
-	// System.out.println("NOT EXACTLY THE SAME IN SAMPLING! " + errorMessage);
-	// }
-	// boolean res = Math.abs(estimateCSI - estimateObject) <= tolerance + kbTolerance;
-	// assertTrue(errorMessage, res);
-	// }
-	// catch(Exception e) {
-	// e.printStackTrace();
-	// assertTrue("Failed Test", false);
-	// }
-	// }
 }

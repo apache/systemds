@@ -45,7 +45,10 @@ public class BuiltinKNNTest extends AutomatedTestBase
   private final static String TEST_DIR = "functions/builtin/";
   private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinKNNTest.class.getSimpleName() + "/";
 
-  private final static String OUTPUT_NAME = "B";
+  private final static String OUTPUT_NAME_NNR = "NNR";
+  private final static String OUTPUT_NAME_PR = "PR";
+
+  private final static double TEST_TOLERANCE = 1.5;
 
   @Parameterized.Parameter()
   public int rows;
@@ -65,7 +68,7 @@ public class BuiltinKNNTest extends AutomatedTestBase
   @Override
   public void setUp()
   {
-    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {OUTPUT_NAME}));
+    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {OUTPUT_NAME_NNR, OUTPUT_NAME_PR}));
   }
 
   @Parameterized.Parameters
@@ -73,7 +76,7 @@ public class BuiltinKNNTest extends AutomatedTestBase
   {
     return Arrays.asList(new Object[][] {
       // {rows, cols, query_rows, query_cols, continuous, k_value, sparsity}
-      {10, 2, 3, 2, true, 3, 1}
+      {100, 20, 3, 20, true, 3, 1}
     });
   }
 
@@ -108,7 +111,7 @@ public class BuiltinKNNTest extends AutomatedTestBase
     fullDMLScriptName = HOME + TEST_NAME + ".dml";
     programArgs = new String[] {"-stats", "-nvargs",
       "in_X=" + input("X"), "in_T=" + input("T"), "in_CL=" + input("CL"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
-      "out_B=" + output(OUTPUT_NAME)};
+      "out_NNR=" + output(OUTPUT_NAME_NNR), "out_PR=" + output(OUTPUT_NAME_PR)};
 
     fullRScriptName = HOME + TEST_NAME + ".R";
     rCmd = getRCmd(inputDir(), (continuous ? "1" : "0"), Integer.toString(k_value),
@@ -118,11 +121,16 @@ public class BuiltinKNNTest extends AutomatedTestBase
     runTest(true, false, null, -1);
     runRScript(true);
 
-    HashMap<CellIndex, Double> refResults	= readRMatrixFromExpectedDir("B");
-    HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir("B");
+    // compare test results of RScript with dml script via files
+    HashMap<CellIndex, Double> refNNR	= readRMatrixFromExpectedDir("NNR");
+    HashMap<CellIndex, Double> resNNR = readDMLMatrixFromOutputDir("NNR");
 
-    // compare test results of RScript with dml script
-    compareResultsWithR(0);
+    TestUtils.compareMatrices(resNNR, refNNR, 0, "ResNNR", "RefNNR");
+
+    double[][] refPR	= TestUtils.convertHashMapToDoubleArray(readRMatrixFromExpectedDir("PR"));
+    double[][] resPR = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("PR"));
+
+    TestUtils.compareMatricesAvgRowDistance(refPR, resPR, query_rows, query_cols, TEST_TOLERANCE);
 
     // restore execution mode
     setExecMode(platform_old);

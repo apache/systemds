@@ -30,27 +30,25 @@ CL                    <- as.matrix(readMM(paste(args[1], "/CL.mtx", sep="")))
 is_continuous <- as.integer(args[2])
 K <- as.integer(args[3])
 
-# ---- normalize -----
-normalize <- function(x) { return ((x - min(x)) / (max(x) - min(x))) }
-
-if(is_continuous == 1)
-{
-  # normalize all but last col (last is our target col)
-  data_train_n <- as.data.frame(lapply(data_train[1:NCOL(data_train)], normalize))
-  data_test_n  <- as.data.frame(lapply(data_test[1:NCOL(data_test)], normalize))
-}
-
-
-# ------ training -------
 install.packages("FNN");
 library(FNN);
+set.seed(10);
 tmp_data = rbind(data_train, data_test);
 knn_neighbors <- get.knn(tmp_data, k=K);
 knn_neighbors <- (tail(knn_neighbors$nn.index, NROW(data_test)));
-writeMM(as(knn_neighbors, "CsparseMatrix"), paste(args[4], "B", sep=""));
+writeMM(as(knn_neighbors, "CsparseMatrix"), paste(args[4], "NNR", sep=""));
 
 
-## feature importance with random forest
-install.packages("randomForest")
-library(randomForest)
-rf <- randomForest(as.factor(CL)~., data=data_train)
+# ------ training -------
+install.packages("class")
+library(class)
+
+set.seed(10);
+test_pred <- knn(train=data_train, test=data_test, cl=CL, k=K);
+print("test_pred:")
+print(test_pred)
+PR_val <- matrix( , nrow=0, ncol=NCOL(data_test));
+for(i in 1:NROW(data_test)) {
+  PR_val <- rbind(PR_val, data_train[test_pred[i] , ])
+}
+writeMM(as(PR_val, "CsparseMatrix"), paste(args[4], "PR", sep=""));

@@ -41,98 +41,98 @@ import org.apache.sysds.runtime.util.HDFSTool;
 @RunWith(value = Parameterized.class)
 public class BuiltinKNNTest extends AutomatedTestBase
 {
-  private final static String TEST_NAME = "knn";
-  private final static String TEST_DIR = "functions/builtin/";
-  private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinKNNTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "knn";
+	private final static String TEST_DIR = "functions/builtin/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinKNNTest.class.getSimpleName() + "/";
 
-  private final static String OUTPUT_NAME_NNR = "NNR";
-  private final static String OUTPUT_NAME_PR = "PR";
+	private final static String OUTPUT_NAME_NNR = "NNR";
+	private final static String OUTPUT_NAME_PR = "PR";
 
-  private final static double TEST_TOLERANCE = 1.5;
+	private final static double TEST_TOLERANCE = 1.5;
 
-  @Parameterized.Parameter()
-  public int rows;
-  @Parameterized.Parameter(1)
-  public int cols;
-  @Parameterized.Parameter(2)
-  public int query_rows;
-  @Parameterized.Parameter(3)
-  public int query_cols;
-  @Parameterized.Parameter(4)
-  public boolean continuous;
-  @Parameterized.Parameter(5)
-  public int k_value;
-  @Parameterized.Parameter(6)
-  public double sparsity;
+	@Parameterized.Parameter()
+	public int rows;
+	@Parameterized.Parameter(1)
+	public int cols;
+	@Parameterized.Parameter(2)
+	public int query_rows;
+	@Parameterized.Parameter(3)
+	public int query_cols;
+	@Parameterized.Parameter(4)
+	public boolean continuous;
+	@Parameterized.Parameter(5)
+	public int k_value;
+	@Parameterized.Parameter(6)
+	public double sparsity;
 
-  @Override
-  public void setUp()
-  {
-    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {OUTPUT_NAME_NNR, OUTPUT_NAME_PR}));
-  }
+	@Override
+	public void setUp()
+	{
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {OUTPUT_NAME_NNR, OUTPUT_NAME_PR}));
+	}
 
-  @Parameterized.Parameters
-  public static Collection<Object[]> data()
-  {
-    return Arrays.asList(new Object[][] {
-      // {rows, cols, query_rows, query_cols, continuous, k_value, sparsity}
-      {100, 20, 3, 20, true, 3, 1}
-    });
-  }
+	@Parameterized.Parameters
+	public static Collection<Object[]> data()
+	{
+		return Arrays.asList(new Object[][] {
+			// {rows, cols, query_rows, query_cols, continuous, k_value, sparsity}
+			{100, 20, 3, 20, true, 3, 1}
+		});
+	}
 
-  @Test
-  public void testKNN()
-  {
-    runKNNTest(ExecMode.SINGLE_NODE);
-  }
+	@Test
+	public void testKNN()
+	{
+		runKNNTest(ExecMode.SINGLE_NODE);
+	}
 
-  private void runKNNTest(ExecMode exec_mode)
-  {
-    ExecMode platform_old = setExecMode(exec_mode);
+	private void runKNNTest(ExecMode exec_mode)
+	{
+		ExecMode platform_old = setExecMode(exec_mode);
 
-    getAndLoadTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
 
-    String HOME = SCRIPT_DIR + TEST_DIR;
+		String HOME = SCRIPT_DIR + TEST_DIR;
 
-    // create Train and Test data
-    double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 75);
-    double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
+		// create Train and Test data
+		double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 75);
+		double[][] T = getRandomMatrix(query_rows, query_cols, 0, 1, 1, 65);
 
-    double[][] CL = new double[rows][1];
-    for(int counter = 0; counter < rows; counter++)
-    {
-      CL[counter][0] = counter + 1;
-    }
+		double[][] CL = new double[rows][1];
+		for(int counter = 0; counter < rows; counter++)
+		{
+			CL[counter][0] = counter + 1;
+		}
 
-    writeInputMatrixWithMTD("X", X, true);
-    writeInputMatrixWithMTD("T", T, true);
-    writeInputMatrixWithMTD("CL", CL, true);
+		writeInputMatrixWithMTD("X", X, true);
+		writeInputMatrixWithMTD("T", T, true);
+		writeInputMatrixWithMTD("CL", CL, true);
 
-    fullDMLScriptName = HOME + TEST_NAME + ".dml";
-    programArgs = new String[] {"-stats", "-nvargs",
-      "in_X=" + input("X"), "in_T=" + input("T"), "in_CL=" + input("CL"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
-      "out_NNR=" + output(OUTPUT_NAME_NNR), "out_PR=" + output(OUTPUT_NAME_PR)};
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-stats", "-nvargs",
+			"in_X=" + input("X"), "in_T=" + input("T"), "in_CL=" + input("CL"), "in_continuous=" + (continuous ? "1" : "0"), "in_k=" + Integer.toString(k_value),
+			"out_NNR=" + output(OUTPUT_NAME_NNR), "out_PR=" + output(OUTPUT_NAME_PR)};
 
-    fullRScriptName = HOME + TEST_NAME + ".R";
-    rCmd = getRCmd(inputDir(), (continuous ? "1" : "0"), Integer.toString(k_value),
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = getRCmd(inputDir(), (continuous ? "1" : "0"), Integer.toString(k_value),
 			expectedDir());
 
-    // execute tests
-    runTest(true, false, null, -1);
-    runRScript(true);
+		// execute tests
+		runTest(true, false, null, -1);
+		runRScript(true);
 
-    // compare test results of RScript with dml script via files
-    HashMap<CellIndex, Double> refNNR	= readRMatrixFromExpectedDir("NNR");
-    HashMap<CellIndex, Double> resNNR = readDMLMatrixFromOutputDir("NNR");
+		// compare test results of RScript with dml script via files
+		HashMap<CellIndex, Double> refNNR	= readRMatrixFromExpectedDir("NNR");
+		HashMap<CellIndex, Double> resNNR = readDMLMatrixFromOutputDir("NNR");
 
-    TestUtils.compareMatrices(resNNR, refNNR, 0, "ResNNR", "RefNNR");
+		TestUtils.compareMatrices(resNNR, refNNR, 0, "ResNNR", "RefNNR");
 
-    double[][] refPR	= TestUtils.convertHashMapToDoubleArray(readRMatrixFromExpectedDir("PR"));
-    double[][] resPR = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("PR"));
+		double[][] refPR	= TestUtils.convertHashMapToDoubleArray(readRMatrixFromExpectedDir("PR"));
+		double[][] resPR = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("PR"));
 
-    TestUtils.compareMatricesAvgRowDistance(refPR, resPR, query_rows, query_cols, TEST_TOLERANCE);
+		TestUtils.compareMatricesAvgRowDistance(refPR, resPR, query_rows, query_cols, TEST_TOLERANCE);
 
-    // restore execution mode
-    setExecMode(platform_old);
-  }
+		// restore execution mode
+		setExecMode(platform_old);
+	}
 }

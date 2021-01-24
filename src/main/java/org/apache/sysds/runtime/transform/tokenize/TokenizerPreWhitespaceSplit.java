@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -31,8 +32,8 @@ public class TokenizerPreWhitespaceSplit implements TokenizerPre {
 
     private final String splitRegex = "\\s+";
 
-    private int idCol;
-    private int tokenizeCol;
+    private final int idCol;
+    private final int tokenizeCol;
 
     public TokenizerPreWhitespaceSplit(int idCol, int tokenizeCol) {
         this.idCol = idCol;
@@ -52,8 +53,8 @@ public class TokenizerPreWhitespaceSplit implements TokenizerPre {
     }
 
     @Override
-    public Tokenizer.DocumentsToTokenList tokenizePre(FrameBlock in) {
-        Tokenizer.DocumentsToTokenList documentsToTokenList = new Tokenizer.DocumentsToTokenList();
+    public HashMap<String, List<Tokenizer.Token>> tokenizePre(FrameBlock in) {
+        HashMap<String, List<Tokenizer.Token>> documentsToTokenList = new HashMap<String, List<Tokenizer.Token>>();
 
         Iterator<String[]> iterator = in.getStringRowIterator();
         iterator.forEachRemaining(s -> {

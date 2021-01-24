@@ -437,13 +437,13 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		}
 		else if ( opcode.equalsIgnoreCase("tokenize") )
 		{
-			//get input RDD and meta data
+			//get input RDD data
 			FrameObject fo = sec.getFrameObject(params.get("target"));
 			JavaPairRDD<Long,FrameBlock> in = (JavaPairRDD<Long,FrameBlock>)
 					sec.getRDDHandleForFrameObject(fo, FileFormat.BINARY);
 			DataCharacteristics mc = sec.getDataCharacteristics(params.get("target"));
 
-			//construct decoder and decode individual matrix blocks
+			//construct tokenizer and tokenize text
 			Tokenizer tokenizer = TokenizerFactory.createTokenizer(params.get("spec"), null);
 			JavaPairRDD<Long,FrameBlock> out = in.mapToPair(
 					new RDDTokenizeFunction(tokenizer, mc.getBlocksize()));

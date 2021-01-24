@@ -51,23 +51,21 @@ public class Tokenizer implements Serializable {
     }
 
     public FrameBlock tokenize(FrameBlock in, FrameBlock out) {
-        // First comment to internal representation
-        DocumentsToTokenList documentsToTokenList = tokenizerPre.tokenizePre(in);
+        // First convert to internal representation
+        HashMap<String, List<Token>> documentsToTokenList = tokenizerPre.tokenizePre(in);
         // Then convert to output representation
         return tokenizerPost.tokenizePost(documentsToTokenList, out);
     }
 
     static class Token {
         String textToken;
-        int startIndex;
-        int endIndex;
+        long startIndex;
+        long endIndex;
 
-        public Token(String token, int starItndex) {
+        public Token(String token, long startIndex) {
             this.textToken = token;
-            this.startIndex = starItndex;
-            this.endIndex = starItndex + token.length();
+            this.startIndex = startIndex;
+            this.endIndex = startIndex + token.length();
         }
     }
-
-    static class DocumentsToTokenList extends HashMap<String, List<Token>> {}
 }

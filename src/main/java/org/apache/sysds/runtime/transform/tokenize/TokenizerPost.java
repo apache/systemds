@@ -23,8 +23,10 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
 
 public interface TokenizerPost extends Serializable {
-    FrameBlock tokenizePost(Tokenizer.DocumentsToTokenList tl, FrameBlock out);
+    FrameBlock tokenizePost(HashMap<String, List<Tokenizer.Token>> tl, FrameBlock out);
     Types.ValueType[] getOutSchema();
 }

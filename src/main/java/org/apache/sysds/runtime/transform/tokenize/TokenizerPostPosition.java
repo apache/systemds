@@ -22,13 +22,15 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
+import java.util.HashMap;
+import java.util.List;
+
 public class TokenizerPostPosition implements TokenizerPost{
     @Override
-    public FrameBlock tokenizePost(Tokenizer.DocumentsToTokenList tl, FrameBlock out) {
+    public FrameBlock tokenizePost(HashMap<String, List<Tokenizer.Token>> tl, FrameBlock out) {
         tl.forEach((key, tokenList) -> {
             for (Tokenizer.Token token: tokenList) {
-                String position = String.valueOf(token.startIndex);
-                String[] row = {key, position, token.textToken};
+                Object[] row = {key, token.startIndex, token.textToken};
                 out.appendRow(row);
             }
         });

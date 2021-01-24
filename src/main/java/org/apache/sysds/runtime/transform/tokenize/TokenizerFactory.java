@@ -75,7 +75,6 @@ public class TokenizerFactory {
             }
 
             tokenizer = new Tokenizer(null,  tokenizerPre, tokenizerPost);
-
         }
         catch(Exception ex) {
             throw new DMLRuntimeException(ex);

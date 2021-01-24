@@ -25,6 +25,7 @@ import org.apache.wink.json4j.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -71,7 +72,7 @@ public class TokenizerPreNgram implements TokenizerPre {
             int startSlice = Math.max(i, 0);
             int endSlice = Math.min(i + params.maxGram, tokenLen);
             String substring = wordTokens.textToken.substring(startSlice, endSlice);
-            int tokenStart = wordTokens.startIndex + startSlice;
+            long tokenStart = wordTokens.startIndex + startSlice;
             ngramTokens.add(new Tokenizer.Token(substring, tokenStart));
         }
 
@@ -89,10 +90,10 @@ public class TokenizerPreNgram implements TokenizerPre {
     }
 
     @Override
-    public Tokenizer.DocumentsToTokenList tokenizePre(FrameBlock in) {
-        Tokenizer.DocumentsToTokenList docToWordTokens = tokenizerPreWhitespaceSplit.tokenizePre(in);
+    public HashMap<String, List<Tokenizer.Token>> tokenizePre(FrameBlock in) {
+        HashMap<String, List<Tokenizer.Token>> docToWordTokens = tokenizerPreWhitespaceSplit.tokenizePre(in);
 
-        Tokenizer.DocumentsToTokenList docToNgramTokens = new Tokenizer.DocumentsToTokenList();
+        HashMap<String, List<Tokenizer.Token>> docToNgramTokens = new HashMap<>();
         for (Map.Entry<String, List<Tokenizer.Token>> wordTokens : docToWordTokens.entrySet()) {
             List<Tokenizer.Token> ngramTokens = wordTokenListToNgrams(wordTokens.getValue());
             docToNgramTokens.put(wordTokens.getKey(), ngramTokens);

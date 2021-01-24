@@ -25,6 +25,7 @@ import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,7 +56,7 @@ public class TokenizerPostCount implements TokenizerPost{
     }
 
     @Override
-    public FrameBlock tokenizePost(Tokenizer.DocumentsToTokenList tl, FrameBlock out) {
+    public FrameBlock tokenizePost(HashMap<String, List<Tokenizer.Token>> tl, FrameBlock out) {
         tl.forEach((key, tokenList) -> {
             // Creating the counts for BoW
             Map<String, Long> tokenCounts = tokenList.stream().collect(Collectors.groupingBy(token -> token.textToken, Collectors.counting()));
@@ -68,8 +69,8 @@ public class TokenizerPostCount implements TokenizerPost{
             List<String> outputTokens = distinctTokenStream.collect(Collectors.toList());
 
             for (String token: outputTokens) {
-                String count = String.valueOf(tokenCounts.get(token));
-                String[] row = {key, token, count};
+                long count = tokenCounts.get(token);
+                Object[] row = {key, token, count};
                 out.appendRow(row);
             }
         });

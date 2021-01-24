@@ -22,7 +22,9 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
 
 public interface TokenizerPre extends Serializable {
-    Tokenizer.DocumentsToTokenList tokenizePre(FrameBlock in);
+    HashMap<String, List<Tokenizer.Token>> tokenizePre(FrameBlock in);
 }

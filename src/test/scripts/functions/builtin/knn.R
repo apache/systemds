@@ -42,14 +42,12 @@ if(is_continuous == 1)
 
 
 # ------ training -------
-install.packages("class")
-library(class)
-
-test_pred <- matrix(nrow=NROW(data_test), ncol=0);
-for(i in 1 : K) {
-  test_pred <- cbind(test_pred, knn(train=data_train, test=data_test, cl=CL, k=i));
-}
-writeMM(as(test_pred, "CsparseMatrix"), paste(args[4], "B", sep=""));
+install.packages("FNN");
+library(FNN);
+tmp_data = rbind(data_train, data_test);
+knn_neighbors <- get.knn(tmp_data, k=K);
+knn_neighbors <- (tail(knn_neighbors$nn.index, NROW(data_test)));
+writeMM(as(knn_neighbors, "CsparseMatrix"), paste(args[4], "B", sep=""));
 
 
 ## feature importance with random forest

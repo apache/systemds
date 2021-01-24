@@ -5,6 +5,6 @@
     "max_gram": 3
   },
   "out": "position",
-  "id_col": 1,
-  "tokenize_col": 2
+  "id_cols": [1,2],
+  "tokenize_col": 3
 }

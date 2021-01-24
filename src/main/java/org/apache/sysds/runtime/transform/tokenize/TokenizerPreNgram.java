@@ -25,9 +25,7 @@ import org.apache.wink.json4j.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TokenizerPreNgram implements TokenizerPre {
     private static final long serialVersionUID = -6297904316677723802L;
@@ -56,8 +54,8 @@ public class TokenizerPreNgram implements TokenizerPre {
         }
     }
 
-    public TokenizerPreNgram(int idCol, int tokenizeCol, JSONObject params) throws JSONException {
-        this.tokenizerPreWhitespaceSplit = new TokenizerPreWhitespaceSplit(idCol, tokenizeCol);
+    public TokenizerPreNgram(List<Integer> idCols, int tokenizeCol, JSONObject params) throws JSONException {
+        this.tokenizerPreWhitespaceSplit = new TokenizerPreWhitespaceSplit(idCols, tokenizeCol, params);
         this.params = new Params(params);
     }
 
@@ -90,13 +88,15 @@ public class TokenizerPreNgram implements TokenizerPre {
     }
 
     @Override
-    public HashMap<String, List<Tokenizer.Token>> tokenizePre(FrameBlock in) {
-        HashMap<String, List<Tokenizer.Token>> docToWordTokens = tokenizerPreWhitespaceSplit.tokenizePre(in);
+    public List<Tokenizer.DocumentToTokens> tokenizePre(FrameBlock in) {
+        List<Tokenizer.DocumentToTokens> docToWordTokens = tokenizerPreWhitespaceSplit.tokenizePre(in);
 
-        HashMap<String, List<Tokenizer.Token>> docToNgramTokens = new HashMap<>();
-        for (Map.Entry<String, List<Tokenizer.Token>> wordTokens : docToWordTokens.entrySet()) {
-            List<Tokenizer.Token> ngramTokens = wordTokenListToNgrams(wordTokens.getValue());
-            docToNgramTokens.put(wordTokens.getKey(), ngramTokens);
+        List<Tokenizer.DocumentToTokens> docToNgramTokens = new ArrayList<>();
+        for (Tokenizer.DocumentToTokens docToTokens: docToWordTokens) {
+            List<Object> keys = docToTokens.keys;
+            List<Tokenizer.Token> wordTokens = docToTokens.tokens;
+            List<Tokenizer.Token> ngramTokens = wordTokenListToNgrams(wordTokens);
+            docToNgramTokens.add(new Tokenizer.DocumentToTokens(keys, ngramTokens));
         }
         return docToNgramTokens;
     }

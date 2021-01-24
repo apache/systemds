@@ -4,6 +4,6 @@
   "out_params": {
     "sort_alpha": true
   },
-  "id_col": 1,
-  "tokenize_col": 2
+  "id_cols": [2],
+  "tokenize_col": 3
 }

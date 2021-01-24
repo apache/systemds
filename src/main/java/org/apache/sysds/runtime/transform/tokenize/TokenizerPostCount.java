@@ -25,7 +25,7 @@ import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -56,8 +56,10 @@ public class TokenizerPostCount implements TokenizerPost{
     }
 
     @Override
-    public FrameBlock tokenizePost(HashMap<String, List<Tokenizer.Token>> tl, FrameBlock out) {
-        tl.forEach((key, tokenList) -> {
+    public FrameBlock tokenizePost(List<Tokenizer.DocumentToTokens> tl, FrameBlock out) {
+        for (Tokenizer.DocumentToTokens docToToken: tl) {
+            List<Object> keys = docToToken.keys;
+            List<Tokenizer.Token> tokenList = docToToken.tokens;
             // Creating the counts for BoW
             Map<String, Long> tokenCounts = tokenList.stream().collect(Collectors.groupingBy(token -> token.textToken, Collectors.counting()));
             // Remove duplicate strings
@@ -69,18 +71,30 @@ public class TokenizerPostCount implements TokenizerPost{
             List<String> outputTokens = distinctTokenStream.collect(Collectors.toList());
 
             for (String token: outputTokens) {
+                // Create a row per token
                 long count = tokenCounts.get(token);
-                Object[] row = {key, token, count};
+                List<Object> rowList = new ArrayList<>(keys);
+                rowList.add(token);
+                rowList.add(count);
+                Object[] row = new Object[rowList.size()];
+                rowList.toArray(row);
                 out.appendRow(row);
             }
-        });
+        };
 
         return out;
     }
 
     @Override
-    public Types.ValueType[] getOutSchema() {
+    public Types.ValueType[] getOutSchema(int numIdCols) {
+        Types.ValueType[] schema = new Types.ValueType[numIdCols + 2];
+        int i = 0;
+        for (; i < numIdCols; i++) {
+            schema[i] = Types.ValueType.STRING;
+        }
+        schema[i] = Types.ValueType.STRING;
         // Not sure why INT64 is required here, but CP Instruction fails otherwise
-        return new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.INT64};
+        schema[i+1] = Types.ValueType.INT64;
+        return schema;
     }
 }

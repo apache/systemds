@@ -22,25 +22,46 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
-import java.util.HashMap;
+import org.apache.wink.json4j.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class TokenizerPostPosition implements TokenizerPost{
+
+    public TokenizerPostPosition(JSONObject params) {
+        // No configurable params yet
+    }
+
     @Override
-    public FrameBlock tokenizePost(HashMap<String, List<Tokenizer.Token>> tl, FrameBlock out) {
-        tl.forEach((key, tokenList) -> {
+    public FrameBlock tokenizePost(List<Tokenizer.DocumentToTokens> tl, FrameBlock out) {
+        for (Tokenizer.DocumentToTokens docToToken: tl) {
+            List<Object> keys = docToToken.keys;
+            List<Tokenizer.Token> tokenList = docToToken.tokens;
             for (Tokenizer.Token token: tokenList) {
-                Object[] row = {key, token.startIndex, token.textToken};
+                // Create a row per token
+                List<Object> rowList = new ArrayList<>(keys);
+                rowList.add(token.startIndex);
+                rowList.add(token.textToken);
+                Object[] row = new Object[rowList.size()];
+                rowList.toArray(row);
                 out.appendRow(row);
             }
-        });
+        };
 
         return out;
     }
 
     @Override
-    public Types.ValueType[] getOutSchema() {
+    public Types.ValueType[] getOutSchema(int numIdCols) {
+        Types.ValueType[] schema = new Types.ValueType[numIdCols + 2];
+        int i = 0;
+        for (; i < numIdCols; i++) {
+            schema[i] = Types.ValueType.STRING;
+        }
         // Not sure why INT64 is required here, but CP Instruction fails otherwise
-        return new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.INT64, Types.ValueType.STRING};
+        schema[i] = Types.ValueType.INT64;
+        schema[i+1] = Types.ValueType.STRING;
+        return schema;
     }
 }

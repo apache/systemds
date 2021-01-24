@@ -22,6 +22,10 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.wink.json4j.JSONObject;
+import org.apache.wink.json4j.JSONArray;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TokenizerFactory {
 
@@ -37,19 +41,29 @@ public class TokenizerFactory {
             //parse transform specification
             JSONObject jSpec = new JSONObject(spec);
 
+            // tokenization needs an algorithm (with algorithm specific params)
             String algo = jSpec.getString("algo");
             JSONObject algoParams = null;
             if (jSpec.has("algo_params")) {
                 algoParams = jSpec.getJSONObject("algo_params");
             }
 
+            // tokenization needs an output representation (with representation specific params)
             String out = jSpec.getString("out");
             JSONObject outParams = null;
             if (jSpec.has("out_params")) {
                 outParams = jSpec.getJSONObject("out_params");
             }
-            int idCol = jSpec.getInt("id_col"); // TODO: multi id cols
+
+            // tokenization needs a text column to tokenize
             int tokenizeCol = jSpec.getInt("tokenize_col");
+
+            // tokenization needs one or more idCols that define the document and are replicated per token
+            List<Integer> idCols = new ArrayList<>();
+            JSONArray idColsJsonArray = jSpec.getJSONArray("id_cols");
+            for (int i=0; i < idColsJsonArray.length(); i++) {
+                idCols.add(idColsJsonArray.getInt(i));
+            }
 
             TokenizerPre tokenizerPre;
             TokenizerPost tokenizerPost;
@@ -58,9 +72,9 @@ public class TokenizerFactory {
 
             // Algorithm to transform tokens into internal token representation
             if (algo.equals("whitespace")) {
-                tokenizerPre = new TokenizerPreWhitespaceSplit(idCol, tokenizeCol);
+                tokenizerPre = new TokenizerPreWhitespaceSplit(idCols, tokenizeCol, algoParams);
             } else if (algo.equals("ngram")) {
-                tokenizerPre = new TokenizerPreNgram(idCol, tokenizeCol, algoParams);
+                tokenizerPre = new TokenizerPreNgram(idCols, tokenizeCol, algoParams);
             } else {
                 throw new IllegalArgumentException("Algorithm {algo=" + algo + "} is not supported.");
             }
@@ -69,12 +83,12 @@ public class TokenizerFactory {
             if (out.equals("count")) {
                 tokenizerPost = new TokenizerPostCount(outParams);
             } else if (out.equals("position")) {
-                tokenizerPost = new TokenizerPostPosition();
+                tokenizerPost = new TokenizerPostPosition(outParams);
             } else {
                 throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");
             }
 
-            tokenizer = new Tokenizer(null,  tokenizerPre, tokenizerPost);
+            tokenizer = new Tokenizer(idCols.size(),  tokenizerPre, tokenizerPost);
         }
         catch(Exception ex) {
             throw new DMLRuntimeException(ex);

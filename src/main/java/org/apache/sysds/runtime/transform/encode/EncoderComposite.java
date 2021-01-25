@@ -253,7 +253,9 @@ public class EncoderComposite extends Encoder
 			// check cast
 			encoder.writeExternal(out);
 		}
-		_meta.write(out);
+		out.writeBoolean(_meta != null);
+		if(_meta != null)
+			_meta.write(out);
 	}
 
 	@Override
@@ -263,7 +265,7 @@ public class EncoderComposite extends Encoder
 		_encoders = new ArrayList<>();
 		for(int i = 0; i < encodersSize; i++) {
 			EncoderType etype = EncoderType.values()[in.readByte()];
-			Encoder encoder = null;
+			Encoder encoder;
 
 			// create instance
 			switch(etype) {
@@ -297,9 +299,10 @@ public class EncoderComposite extends Encoder
 			encoder.readExternal(in);
 			_encoders.add(encoder);
 		}
-		FrameBlock meta = new FrameBlock();
-		// check cast
-		meta.readFields(in);
-		_meta = meta;
+		if (in.readBoolean()) {
+			FrameBlock meta = new FrameBlock();
+			meta.readFields(in);
+			_meta = meta;
+		}
 	}
 }

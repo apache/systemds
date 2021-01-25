@@ -23,6 +23,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.lang.reflect.Field;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -41,7 +42,6 @@ public abstract class Decoder implements Externalizable
 	protected final ValueType[] _schema;
 	protected final int[] _colList;
 	protected String[] _colnames = null;
-	
 	protected Decoder(ValueType[] schema, int[] colList) {
 		_schema = schema;
 		_colList = colList;
@@ -106,14 +106,21 @@ public abstract class Decoder implements Externalizable
 	public void writeExternal(ObjectOutput os)
 		throws IOException
 	{
-		os.writeInt(_colList.length);
-		for(int col : _colList)
-			os.writeInt(col);
+		int size1 = _colList == null ? 0 : _colList.length;
+		os.writeInt(size1);
+		for(int i = 0; i < size1; i++)
+			os.writeInt(_colList[i]);
 
-		os.writeInt(_colnames.length);
-		for(int i = 0; i < _colnames.length; i++) {
-			os.writeByte(_schema[i].ordinal());
-			os.writeUTF(_colnames[i]);
+		int size2 = _colnames == null ? 0 : _colnames.length;
+		os.writeInt(size2);
+		for(int j = 0; j < size2; j++) {
+			os.writeUTF(_colnames[j]);
+		}
+
+		int size3 = _schema == null ? 0 : _schema.length;
+		os.writeInt(size3);
+		for(int j = 0; j < size3; j++) {
+			os.writeByte(_schema[j].ordinal());
 		}
 	}
 
@@ -128,17 +135,36 @@ public abstract class Decoder implements Externalizable
 	public void readExternal(ObjectInput in)
 		throws IOException
 	{
-		//TODO schema is final
-		int[] colList = new int[in.readInt()];
-		for(int i = 0; i < colList.length; i++)
+		int size1 = in.readInt();
+		int[] colList = size1 == 0 ? null : new int[size1];
+		for(int i = 0; i < size1; i++)
 			colList[i] = in.readInt();
 
-		int ncol = in.readInt();
-		ValueType[] schema = new ValueType[ncol];
-		_colnames = new String[ncol];
-		for(int j = 0; j < ncol; j++) {
-			schema[j] = ValueType.values()[in.readByte()];
+		int size2 = in.readInt();
+		_colnames = size2 == 0 ? null : new String[size2];
+		for(int j = 0; j < size2; j++) {
 			_colnames[j] = in.readUTF();
+		}
+
+		int size3 = in.readInt();
+		ValueType[] schema = size3 == 0 ? null : new ValueType[size3];
+		for(int j = 0; j < size3; j++) {
+			schema[j] = ValueType.values()[in.readByte()];
+		}
+
+		try {
+			Field cLField = Decoder.class.getDeclaredField("_colList");
+			cLField.setAccessible(true);
+			cLField.set(this, colList);
+			cLField.setAccessible(false);
+
+			Field schemaField = Decoder.class.getDeclaredField("_schema");
+			schemaField.setAccessible(true);
+			schemaField.set(this, schema);
+			schemaField.setAccessible(false);
+		}
+		catch(NoSuchFieldException | IllegalAccessException e) {
+			e.printStackTrace();
 		}
 	}
 }

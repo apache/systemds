@@ -40,7 +40,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class DecoderComposite extends Decoder
 {
 	private static final long serialVersionUID = 5790600547144743716L;
-	
+
 	private List<Decoder> _decoders = null;
 
 	private enum  DecoderType {DecoderDummycode, DecoderPassThrough, DecoderRecode};
@@ -49,6 +49,8 @@ public class DecoderComposite extends Decoder
 		super(schema, null);
 		_decoders = decoders;
 	}
+
+	public DecoderComposite() { super(null, null); }
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
@@ -83,6 +85,7 @@ public class DecoderComposite extends Decoder
 	@Override
 	public void writeExternal(ObjectOutput out)
 		throws IOException {
+		super.writeExternal(out);
 		out.writeInt(_decoders.size());
 		for(Decoder decoder : _decoders) {
 			out.writeByte(DecoderType.valueOf(decoder.getClass().getSimpleName()).ordinal());
@@ -93,11 +96,12 @@ public class DecoderComposite extends Decoder
 	@Override
 	public void readExternal(ObjectInput in)
 		throws IOException {
+		super.readExternal(in);
 		int decodersSize = in.readInt();
 		_decoders = new ArrayList<>();
 		for(int i = 0; i < decodersSize; i++) {
 			DecoderType dtype = DecoderType.values()[in.readByte()];
-			Decoder decoder = null;
+			Decoder decoder;
 
 			// create instance
 			switch(dtype) {

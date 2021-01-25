@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -47,7 +48,11 @@ public class DecoderRecode extends Decoder
 
 	private HashMap<Long, Object>[] _rcMaps = null;
 	private boolean _onOut = false;
-	
+
+	private enum  RcdValue {Integer, Long, String, Double, Byte, Float};
+
+	public DecoderRecode() { super(null, null); }
+
 	protected DecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols) {
 		super(schema, rcCols);
 		_onOut = onOut;
@@ -145,14 +150,22 @@ public class DecoderRecode extends Decoder
 		throws IOException {
 		super.writeExternal(out);
 		out.writeBoolean(_onOut);
-
 		out.writeInt(_rcMaps.length);
 		for(int i = 0; i < _rcMaps.length; i++) {
 			out.writeInt(_rcMaps[i].size());
 			for(Map.Entry e1 : _rcMaps[i].entrySet()) {
-				out.writeInt((Integer) e1.getKey());
-				//TODO it's actually Object
-				out.writeUTF((String) e1.getValue());
+				out.writeLong((Long) e1.getKey());
+				RcdValue type = RcdValue.valueOf(e1.getValue().getClass().getSimpleName());
+				out.writeByte(type.ordinal());
+				switch(type) {
+					case Integer: out.writeInt((Integer) e1.getValue()); break;
+					case Byte: out.writeByte((Byte) e1.getValue()); break;
+					case Long: out.writeLong((Long) e1.getValue()); break;
+					case Float: out.writeFloat((Float) e1.getValue()); break;
+					case Double: out.writeDouble((Double) e1.getValue()); break;
+					case String: out.writeUTF((String) e1.getValue()); break;
+					default: throw new DMLRuntimeException("Unsupported Decoder map Object type used:  " + type);
+				}
 			}
 		}
 	}
@@ -162,13 +175,24 @@ public class DecoderRecode extends Decoder
 		throws IOException {
 		super.readExternal(in);
 		_onOut = in.readBoolean();
-
 		_rcMaps = new HashMap[in.readInt()];
 		for(int i = 0; i < _rcMaps.length; i++) {
 			HashMap<Long, Object> maps = new HashMap<>();
-			for(int j = 0; j < in.readInt(); i++) {
-				//TODO it's actually Object
-				maps.put(in.readLong(), in.readUTF());
+			int size = in.readInt();
+			for(int j = 0; j < size; j++) {
+				Long k = in.readLong();
+				Object v;
+				RcdValue type = RcdValue.values()[in.readByte()];
+				switch(type) {
+					case Integer: v = in.readInt(); break;
+					case Byte: v = in.readByte(); break;
+					case Long:  v =  in.readLong(); break;
+					case Float:  v = in.readFloat(); break;
+					case Double:  v = in.readDouble(); break;
+					case String:  v = in.readUTF(); break;
+					default: throw new DMLRuntimeException("Unsupported Decoder map Object type used:  " + type);
+				}
+				maps.put(k, v);
 			}
 			_rcMaps[i] = maps;
 		}

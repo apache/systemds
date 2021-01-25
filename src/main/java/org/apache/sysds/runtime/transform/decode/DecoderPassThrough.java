@@ -42,11 +42,13 @@ public class DecoderPassThrough extends Decoder
 	
 	private int[] _dcCols = null;
 	private int[] _srcCols = null;
-	
+
 	protected DecoderPassThrough(ValueType[] schema, int[] ptCols, int[] dcCols) {
 		super(schema, ptCols);
 		_dcCols = dcCols;
 	}
+
+	public DecoderPassThrough() { super(null, null); }
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {

@@ -62,7 +62,7 @@ public class DMLOptions {
 	public boolean              lineage       = false;            // whether compute lineage trace
 	public boolean              lineage_dedup = false;            // whether deduplicate lineage items
 	public ReuseCacheType       linReuseType  = ReuseCacheType.NONE; // reuse type (full, partial, hybrid)
-	public LineageCachePolicy   linCachePolicy= LineageCachePolicy.HYBRID; // lineage cache eviction policy
+	public LineageCachePolicy   linCachePolicy= LineageCachePolicy.COSTNSIZE; // lineage cache eviction policy
 	public boolean              lineage_estimate = false;         // whether estimate reuse benefits
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
@@ -136,8 +136,6 @@ public class DMLOptions {
 							dmlOptions.linCachePolicy = LineageCachePolicy.COSTNSIZE;
 						else if (lineageType.equalsIgnoreCase("policy_dagheight"))
 							dmlOptions.linCachePolicy = LineageCachePolicy.DAGHEIGHT;
-						else if (lineageType.equalsIgnoreCase("policy_hybrid"))
-							dmlOptions.linCachePolicy = LineageCachePolicy.HYBRID;
 						else if (lineageType.equalsIgnoreCase("estimate"))
 							dmlOptions.lineage_estimate = lineageType.equalsIgnoreCase("estimate");
 						else

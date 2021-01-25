@@ -35,28 +35,22 @@
 # trans_continuous      Boolean  FALSE  Y   Option flag for continuous feature transformed to [-1,1]:
 #                                           FALSE = do not transform continuous variable;
 #                                           TRUE = transform continuous variable;
+# k_value               int      5      Y   k value for KNN, ignore if select_k enable
 # select_k              Boolean  FALSE  Y   Use k selection algorithm to estimate k
 #                                           ( TRUE means yes )
 # k_min                 int      1      Y   Min k value(  available if select_k = 1 )
 # k_max                 int      100    Y   Max k value(  available if select_k = 1 )
 # select_feature        Boolean  FALSE  Y   Use feature selection algorithm to select feature
 #                                           ( TRUE means yes )
-
-
-# TODO: what type should that parameter have?
-# START_SELECTED        Matrix   ---    Y   feature selection initinal value
-
-
 # feature_max           int      10     Y   Max feature selection
 # interval              int      1000   Y   Interval value for K selecting (  available if select_k = 1 )
 # feature_importance    Boolean  FALSE      Y   Use feature importance algorithm to estimate each feature
 #                                           ( TRUE means yes )
-# k_value               int      5      Y   k value for KNN, ignore if select_k enable
 # predict_con_tg        int      0      Y   Continuous  target predict function: mean(=0) or
 #                                           median(=1)
-# fmt                   String   "text" Y   Matrix output format for MB, ML, usually "text" or "csv"
+# START_SELECTED        Matrix   ---    Y   feature selection initinal value
 # ---------------------------------------------------------------------------------------------
-# OUTPUT: Matrix PR, Matrix NNR, Matrix FEATURE_IMPORTANCE_VALUE
+# OUTPUT: Matrix NNR, Matrix PR, Matrix FEATURE_IMPORTANCE_VALUE
 #
 
 m_knn = function(
@@ -65,7 +59,6 @@ m_knn = function(
     Matrix[Double] CL,
     Integer CL_T = 0,
     Integer trans_continuous = 0,
-#--    Integer predict_con_tg = 0,
     Integer k_value = 5,
     Integer select_k = 0,
     Integer k_min = 1,
@@ -76,8 +69,6 @@ m_knn = function(
     Integer feature_importance = 0,
     Integer predict_con_tg = 0,
     Matrix[Double] START_SELECTED = matrix(0, 0, 0)
-#--    Matrix[Double] FEATURE_SELECTED = matrix(0, 0, 0),
-#--    String FEATURE_IMPORTANCE_VALUE = " "
 )return(
     Matrix[Double] NNR_matrix,
     Matrix[Double] CL_matrix,
@@ -278,8 +269,6 @@ eliminateModel = function (  double s_err_mean, double s_err_vars, integer i_row
    d_delta = 0.001;
    tmp_d_delta = cdf(
        target = ( -d_gamma - s_err_mean  ) / s_err_vars, dist="t",df=i_row-1  );
-   #print( "m_err_mean=" + m_err_mean + ",m_err_variance=" +
-   #   m_err_variance + ",tmp_d_delta=" + tmp_d_delta  );
    if( tmp_d_delta < d_delta  ){
        out_b_inactived = TRUE;
    }
@@ -296,7 +285,7 @@ getErr = function (  matrix[double] in_m_neighbor_value,
         m_correct = in_m_neighbor_value != in_m_cl[1:i_row,];
     }else{
         #continues
-        m_correct = (in_m_neighbor_value - in_m_cl[1:i_row,])^2;#ppred( in_m_neighbor_value,in_m_cl,"-" );
+        m_correct = (in_m_neighbor_value - in_m_cl[1:i_row,])^2;
     }
     out_m_err = ( rowSums( m_correct[,1:i_col] )/( i_col ) );
 }
@@ -337,19 +326,16 @@ return(
    #Step 1. For each k in [k_min,k_max] ( k_min has default value 1, k_max has default value 100 )
    #in parallel select relevant features using FS+BRACE or schemata search described in Section 7.
    parfor( i in k_min:k_max,check=0 ){
-       #print( " ************** " + i  + " ****************" );
        [m_selected_feature,d_err] =
            getSelectedFeature( in_m_data,in_m_data_target,in_i_is_categorical
            ,in_m_init_selected,in_i_max_select,i,interval );
        m_err[1,i] = d_err;
        m_feature[i,] = m_selected_feature;
-       #print( "err:" + d_err );
    }
    #Step 2. Output the combination of features and k with the smallest LOOCV error.
    i_min_err_index = as.integer( as.scalar( rowIndexMin( m_err ) ) );
    out_m_selected_feature = m_feature[i_min_err_index,];
    out_i_selected_k = i_min_err_index + k_min - 1;
-   #print( "min err k is " + out_i_selected_k );
 }
 
 getFeatureImportance = function (
@@ -465,9 +451,6 @@ getSelectedKBase = function(matrix[double] in_m_data,
 
    parfor(i in 1 : ncol(m_err))
    {
-     # m_err_i = m_err - m_err[,i];
-     # m_err_i_mean = colMeans(m_err_i);
-     # m_err_i_vars = colVars(m_err_i);
      parfor(j in 1 : ncol(m_err), check = 0)
      {
        b_execute_block = TRUE;
@@ -493,7 +476,6 @@ getSelectedKBase = function(matrix[double] in_m_data,
      }
    }
 
-   # m_tmp = ppred(colSums(m_active_flag_tmp), 1, ">=");
    m_active_flag =  ((m_active_flag + m_active_flag_tmp) >= 1);
    i_active_model_number = -sum(m_active_flag - 1);
 
@@ -583,14 +565,12 @@ return(
        m_iter_err_sum = matrix( 0,1,i_n_column+1 );
        m_iter_err_sum_squared = matrix( 0,1,i_n_column+1 );
        while( b_continue_loop ){
-           #print( "*************" + i_iter + "*************" );
            i_process_item = i_iter*interval;
            if(  i_process_item >= i_n_record ){
                i_process_item = i_n_record;
                b_continue_loop = FALSE;
            }
            i_process_begin_item = (i_iter - 1)*interval + 1
-           #i_process_begin_item = 1
            i_process_end_item = i_process_item
            m_err = matrix( d_max_err_value,i_process_end_item - i_process_begin_item + 1,i_n_column+1 );
            if( b_no_feature_selected == TRUE ){
@@ -632,7 +612,7 @@ return(
            }else{
                m_active_flag_tmp = cbind( m_feature_selected_flag,matrix( 1,1,1 ) );
            }
-           s_rows_number = i_process_item#nrow(m_err);
+           s_rows_number = i_process_item
            m_iter_err_sum = colSums(m_err) + m_iter_err_sum
            m_iter_err_sum_squared = colSums(m_err ^ 2) + m_iter_err_sum_squared
            m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
@@ -640,12 +620,6 @@ return(
                    2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
            m_err_vars = sqrt(m_err_vars)
            parfor( i in 1:ncol( m_err ) ){
-               #m_err_i_mean = (m_iter_err_sum - m_iter_err_sum[,i])/s_rows_number
-               #m_err_i_vars = (m_iter_err_sum_squared + m_err_i_mean ^2 * s_rows_number -
-               #   2 * m_iter_err_sum * m_err_i_mean) / (s_rows_number-1)
-               #m_err_i_vars = sqrt(m_err_i_vars)
-               #m_err_i_mean = m_err_mean[i,]
-               #m_err_i_vars = m_err_vars[i,]
                parfor( j in 1:ncol( m_err ) ,check=0){
                    b_execute_block = TRUE;
                    if( j==i ) b_execute_block = FALSE;
@@ -654,7 +628,6 @@ return(
                    if( as.scalar( m_active_flag_tmp[1,j] ) == 1 )  b_execute_block = FALSE;
                    #j has dropped, ignore this case
                    if( b_execute_block ){
-                       #print( "i=" + i + ",j=" + j );
                        b_flag = eliminateModel( as.scalar(m_err_mean[i,j]),as.scalar(m_err_vars[i,j]),s_rows_number);
                        if(  b_flag == TRUE ){
                            m_active_flag_tmp[1,i] = 1;

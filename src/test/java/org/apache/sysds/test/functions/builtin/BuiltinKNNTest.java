@@ -48,7 +48,7 @@ public class BuiltinKNNTest extends AutomatedTestBase
 	private final static String OUTPUT_NAME_NNR = "NNR";
 	private final static String OUTPUT_NAME_PR = "PR";
 
-	private final static double TEST_TOLERANCE = 1.5;
+	private final static double TEST_TOLERANCE = 0.15;
 
 	@Parameterized.Parameter()
 	public int rows;

@@ -2097,7 +2097,7 @@ print(toString(dist)) </code>
 Simple example
 
     X = read(“file1”, data_type=”frame”, rows=3, cols=2, format=”binary”);
-    spec = "{\"algo\": \"whitespace\",\"out\": \"bow\",\"id_col\": 1,\"tokenize_col\": 2}";
+    spec = "{\"algo\": \"whitespace\",\"out\": \"count\",\"id_cols\": [1],\"tokenize_col\": 2}";
     Y = tokenize(target=X, spec=jspec);
     write(Y, "file2");
     
@@ -2105,10 +2105,29 @@ Example spec
 
     {
       "algo": "whitespace",
-      "out": "bow",
-      "id_col": 1,
+      "out": "count",
+      "id_cols": \[1\],
       "tokenize_col": 2
     }
+
+The frame is tokenized along the `tokenize_col` and replicates the `id_cols`.
+
+The output frame can be converted into a matrix with the transform functions. For instance, using `transformencode` with `recode`, followed by `table`.
+
+**Table F6**: Tokenizer Algorithms for `algo` field
+
+Algorithm | Algo Description | Parameters | Spec Example
+-------- | ----------- | ---------- | -------
+whitespace | Splits the tokens along whitespace characters. | None | `"{\"algo\": \"whitespace\",\"out\": \"count\",\"out_params\": {\"sort_alpha\": true},\"id_cols\": \[2\],\"tokenize_col\": 3}"`
+ngram | Pretokenizes using `whitespace` then splits the tokens into ngrams | `min_gram` and `max_gram` specify the length of the ngrams. | `"{\"algo\": \"ngram\",\"algo_params\": {\"min_gram\": 2,\"max_gram\": 3},\"out\": \"position\",\"id_cols\": \[1,2\],\"tokenize_col\": 3}"`
+
+**Table F7**: Output Representations of Tokens for `out` field
+
+Out Representation | Format Description | Parameters | Format Example
+-------- | ----------- | ---------- | -------
+count | Outputs the `id_cols`, the `tokens`, and the number of token `occurences` per document. | `sort_alpha` specifies whether the tokens are sorted alphanumerically per document. | `id1,id2,token1,3`
+position | Outputs the `id_cols`, the `position` within the document, and the `token`. | None | `id1,id2,0,token1`
+
 
 * * *
 

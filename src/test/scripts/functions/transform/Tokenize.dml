@@ -20,14 +20,17 @@
 #-------------------------------------------------------------
 
 F1 = read($1, data_type="frame", format="csv", sep=",");
+
+# Example Preprocessing:
+# F1[,4] = map(F1[,4], "x -> x.toLowerCase()");
+
 # Example spec:
-#jspec = "{\"algo\": \"whitespace\",\"out\": \"count\",\"id_col\": 1,\"tokenize_col\": 2}";
+# jspec = "{\"algo\": \"whitespace\",\"out\": \"count\",\"id_col\": [2],\"tokenize_col\": 3}";
+
 jspec = read($2, data_type="scalar", value_type="string");
 
-# Remove separator to avoid bug with read CSV
-F1[,2] = map(F1[,2], "x -> x.replace(',', ' ')");
-
-F2 = tokenize(target=F1, spec=jspec);
+# If slicing is performed, then only the remaining columns are considered for tokenizer spec:
+F2 = tokenize(target=F1[,2:4], spec=jspec);
 write(F2, $3, format="csv");
 
 # Afterward, you can transform it into a matrix:

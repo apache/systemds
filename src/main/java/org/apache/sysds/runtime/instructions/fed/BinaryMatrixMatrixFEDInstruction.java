@@ -75,8 +75,8 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			else if(mo2.getNumRows() == 1 && mo2.getNumColumns() > 1) { //MV row vector
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()});
-				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
+					new long[]{mo1.getFedMapping().getID(), fr1.getID()});
+				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 				//execute federated instruction and cleanup intermediates
 				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 			}

@@ -19,6 +19,7 @@
 package org.apache.sysds.test.functions.dnn;
 
 import java.util.HashMap;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -44,218 +45,116 @@ public class Conv1DTest extends AutomatedTestBase
 
 	@Test
 	public void testSimpleConv1DDenseSingleBatchSingleChannelSingleFilter(){
-		int numImg = 4; int imgSize = 4; int numChannels = 1; int numFilters = 1; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+		int numImg = 1; int imgSize = 4; int numChannels = 1; int numFilters = 1; int filterSize = 2; int stride = 1; int pad = 0;
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		expected.put(new CellIndex(1,1), 3.0);
+		expected.put(new CellIndex(1,2), 5.0);
+		expected.put(new CellIndex(1,3), 7.0);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
+	}
+
+	private void fillExpected(HashMap<CellIndex, Double> expected, int rowNum, int rowLength, double value1, double value2){
+		for ( int m = 1; m <= rowLength; m+=2){
+			expected.put(new CellIndex(rowNum,m), value1);
+			expected.put(new CellIndex(rowNum,m+1), value2);
+		}
 	}
 
 	@Test
 	public void testConv1DDense1() {
 		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpected(expected, 1, 6, 21.0, 39.0);
+		fillExpected(expected, 2, 6, 75.0, 93.0);
+		fillExpected(expected, 3, 6, 129.0, 147.0);
+		fillExpected(expected, 4, 6, 183.0, 201.0);
+		fillExpected(expected, 5, 6, 237.0, 255.0);
+
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
 	}
 
+	private void fillExpectedRepeated(HashMap<CellIndex, Double> expected,int repetitionNum, double[] values, int row){
+		int colPointer = 1;
+		for (int i = 1; i <= repetitionNum;i++){
+			for(double value : values) {
+				expected.put(new CellIndex(row, colPointer), value);
+				colPointer++;
+			}
+		}
+	}
 
 	@Test
 	public void testConv1DDense2() {
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpectedRepeated(expected, 3, new double[]{136.,264.,392.,520.},1);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
 	}
 
 	@Test
 	public void testConv1DDense3() {
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpectedRepeated(expected, 3, new double[]{78.,200.,328.,456.,414.},1);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
 	}
 
 	@Test
 	public void testConv1DDense4() {
 		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpectedRepeated(expected,3,new double[]{1.,5.,9.,13.,17.,10.},1);
+		fillExpectedRepeated(expected,3,new double[]{11.,25.,29.,33.,37.,20.},2);
+		fillExpectedRepeated(expected,3,new double[]{21.,45.,49.,53.,57.,30.},3);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
 	}
 
 	@Test
 	public void testConv1DDense5() {
 		int numImg = 3; int imgSize = 8; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpectedRepeated(expected,3,new double[]{3.,10.,21.,33.,45.,57.,69.,81.,58.,31.},1);
+		fillExpectedRepeated(expected,3,new double[]{35.,74.,117.,129.,141.,153.,165.,177.,122.,63.},2);
+		fillExpectedRepeated(expected,3,new double[]{67.,138.,213.,225.,237.,249.,261.,273.,186.,95.},3);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
 	}
 
 	@Test
 	public void testConv1DDense6() {
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpectedRepeated(expected,3,new double[]{136.,200.,264.,328.,392.,456.,520.},1);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false,expected);
 	}
 
 	@Test
 	public void testConv1DDense7() {
 		int numImg = 3; int imgSize = 64; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		double[] firstExpected = IntStream.iterate(3,n -> n+2).limit(63).mapToDouble(i->(double)i).toArray();
+		double[] secondExpected = IntStream.iterate(131,n -> n+2).limit(63).mapToDouble(i->(double)i).toArray();
+		double[] thirdExpected = IntStream.iterate(259,n -> n+2).limit(63).mapToDouble(i->(double)i).toArray();
+		fillExpectedRepeated(expected,3,firstExpected,1);
+		fillExpectedRepeated(expected,3,secondExpected,2);
+		fillExpectedRepeated(expected,3,thirdExpected,3);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
 	}
-
-	@Test
-	public void testConv1DSparse1a() {
-		int numImg = 64; int imgSize = 16; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	@Test
-	public void testConv1DSparse2a() {
-		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	@Test
-	public void testConv1DSparse3a() {
-		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	@Test
-	public void testConv1DSparse4a() {
-		int numImg = 64; int imgSize = 16; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	@Test
-	public void testConv1DSparse5a() {
-		int numImg = 64; int imgSize = 16; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	@Test
-	public void testConv1DSparse6a() {
-		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	@Test
-	public void testConv1DSparse7a() {
-		int numImg = 64; int imgSize = 16; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	@Test
-	public void testConv1DSparse1b() {
-		int numImg = 64; int imgSize = 16; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
-	}
-
-	@Test
-	public void testConv1DSparse2b() {
-		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
-	}
-
-	@Test
-	public void testConv1DSparse3b() {
-		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
-	}
-
-	@Test
-	public void testConv1DSparse4b() {
-		int numImg = 64; int imgSize = 16; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
-	}
-
-	@Test
-	public void testConv1DSparse5b() {
-		int numImg = 64; int imgSize = 16; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
-	}
-
-	@Test
-	public void testConv1DSparse6b() {
-		int numImg = 64; int imgSize = 16; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
-	}
-
-	@Test
-	public void testConv1DSparse7b() {
-		int numImg = 64; int imgSize = 16; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
-	}
-
-	// --------------------------------------------
-
 
 	@Test
 	public void testConv1DDense1SP()
 	{
 		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
-	}
-
-	@Test
-	public void testConv1DDense2SP()
-	{
-		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
-	}
-
-	@Test
-	public void testConv1DDense3SP()
-	{
-		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
-	}
-
-	@Test
-	public void testConv1DDense4SP()
-	{
-		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
-	}
-
-	@Test
-	public void testConv1DDense5SP()
-	{
-		int numImg = 3; int imgSize = 8; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 2;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
-	}
-
-	@Test
-	public void testConv1DDense6SP()
-	{
-		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
-	}
-
-	@Test
-	public void testConv1DDense7SP()
-	{
-		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
-	}
-
-	@Test
-	public void testConv1DSparse1SP()
-	{
-		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
-	}
-
-	@Test
-	public void testConv1DSparse2SP()
-	{
-		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	@Test
-	public void testConv1DSparse3SP()
-	{
-		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
-	}
-
-	public void testConv1DSparse4SP()
-	{
-		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, true);
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpected(expected, 1, 12, 21.0, 39.0);
+		fillExpected(expected, 2, 12, 75.0, 93.0);
+		fillExpected(expected, 3, 12, 129.0, 147.0);
+		fillExpected(expected, 4, 12, 183.0, 201.0);
+		fillExpected(expected, 5, 12, 237.0, 255.0);
+		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
 	}
 
 	public void runConv1DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters,
-		int filterSize, int stride, int pad, boolean sparse1, boolean sparse2)
+		int filterSize, int stride, int pad, boolean sparse1, boolean sparse2, HashMap<CellIndex, Double> expected)
 	{
 		ExecMode platformOld = rtplatform;
 		switch( et ){
@@ -289,20 +188,13 @@ public class Conv1DTest extends AutomatedTestBase
 				"sparseVal2=" + sparseVal2
 			};
 
-			/*fullRScriptName = SCRIPT_HOME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + imgSize + " " + numImg +
-				" " + numChannels + " " + numFilters +
-				" " + filterSize + " " + stride + " " + pad + " " + expectedDir() +
-				" " + sparseVal1 + " " + sparseVal2;*/
-
-			// Run DML and R scripts
+			// Run DML
 			runTest(true, false, null, -1);
-			//runRScript(true);
 
-			//HashMap<CellIndex, Double> bHM = readRMatrixFromExpectedDir("B");
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("output");
-			//TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "B-R");
 			System.out.println(dmlfile.toString());
+			if ( expected != null)
+				TestUtils.compareMatrices(dmlfile, expected, epsilon, "B-DML", "B-R");
 		}
 		finally {
 			rtplatform = platformOld;

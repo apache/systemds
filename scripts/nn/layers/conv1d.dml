@@ -21,7 +21,27 @@
 
 source("scripts/nn/util.dml") as util
 
-forward = function(matrix[double] input, matrix[double] filter, int pad, int stride, int numImg, int numChannels, int imgSize, int numFilters, int filterSize, matrix[double] bias)
+forward = function(matrix[double] input, matrix[double] filter, int pad, int stride, int numInput, int numChannels, int inputWidth, int numFilters, int filterSize, matrix[double] bias)
     return (matrix[double] out) {
-  out = conv2d(input, filter, padding=[pad,pad], stride=[stride, stride], input_shape=[numImg,numChannels,1,imgSize], filter_shape=[numFilters,numChannels,1,filterSize], bias=bias)
+  /*
+  * Computes the forward pass for a 1D spatial convolutional layer
+  * by reshaping the input to fit conv2d.
+  *
+  * Inputs:
+  *  - input: Inputs, of shape (N, C*W).
+  *  - filter: Weights, of shape (F, C*W).
+  *  - pad: Padding for left and right sides of input elements.
+  *  - stride: Stride for moving filter.
+  *  - numInput: Number of input elements N
+  *  - numChannels: Number of input channels (dimensionality of input depth).
+  *  - inputWidth: Input width.
+  *  - numFilters: Number of filters F
+  *  - filterSize: Filter width.
+  *  - bias: Biases, of shape (F, 1).
+  *
+  * Outputs:
+  *  - out: Outputs, of shape (N, F*Wout).
+  *  - Wout: Output width.
+  */
+  out = conv2d(input, filter, padding=[0,pad], stride=[1, stride], input_shape=[numInput,numChannels,1,inputWidth], filter_shape=[numFilters,numChannels,1,filterSize], bias=bias)
 }

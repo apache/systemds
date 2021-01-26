@@ -21,45 +21,34 @@
 
 source("scripts/nn/layers/conv1d.dml") as conv1d
 
-#print("Input: " + $imgSize + ", " + $numImg + ", " + $numChannels + ", " + $numFilters + ", " + $filterSize + ", " + $stride + ", " + $pad);
-# Assumption: NCW image format
-x=matrix(seq(1, $numImg*$numChannels*$imgSize), rows=$numImg, cols=$numChannels*$imgSize)
-w=matrix(seq(1, $numFilters*$numChannels*$filterSize), rows=$numFilters, cols=$numChannels*$filterSize)
+# Build input
+rowBuild = seq(1,$numChannels*$imgSize,$numChannels)
+if ( $numChannels > 1 & $imgSize > 1 ){
+  for ( i in 2:$numChannels ){
+    rowBuild = rbind(rowBuild, seq(i,$numChannels*$imgSize,$numChannels))
+  }
+}
+
+colBuild = rowBuild
+if ( $numImg > 1 ){
+  for ( j in 2:$numImg ){
+    rowBuild = seq((j-1)*$imgSize*$numChannels+1,j*$imgSize*$numChannels,$numChannels)
+  if ( $numChannels > 1 ){
+    for ( i in 2:$numChannels ){
+      rowBuild = rbind(rowBuild, seq((j-1)*$imgSize*$numChannels+i,j*$numChannels*$imgSize,$numChannels))
+    }
+  }
+  colBuild = cbind(colBuild, rowBuild)
+  }
+}
+
+# Set input variables
+x = t(colBuild)
+w=matrix(1,rows=$numFilters, cols=$numChannels*$filterSize)
 b=matrix(seq(1, $numFilters), rows=$numFilters, cols=1)
 
-if($sparseVal1) {
-zero_mask = (x - mean(x)*1.5) > 0
-x = x * zero_mask
-}
-else {
-x = x - mean(x)
-}
-if($sparseVal2) {
-zero_mask = (w - mean(w)*1.5) > 0
-w = w * zero_mask
-}
-else {
-w = w - mean(w)
-}
-#print("x")
-#print("rows: " + nrow(x))
-#print("cols: " + ncol(x))
-#print(toString(x))
-
-#print("w")
-#print("rows: " + nrow(w))
-#print("cols: " + ncol(w))
-#print(toString(w))
-
-#print("b")
-#print("rows: " + nrow(b))
-#print("cols: " + ncol(b))
-#print(toString(b))
+# Call function
 output = conv1d::forward(x, w, $pad, $stride, $numImg, $numChannels, $imgSize, $numFilters, $filterSize, b)
-#output = bias_add(output, b)
-print("output")
-print("rows: " + nrow(output))
-print("cols: " + ncol(output))
-print(toString(output))
 
+#Write output
 write(output, $output, format="text")

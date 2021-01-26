@@ -57,6 +57,7 @@ import org.apache.sysds.runtime.compress.lib.LibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.LibScalar;
 import org.apache.sysds.runtime.compress.lib.LibSqueeze;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -66,6 +67,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -76,6 +78,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
 public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
@@ -732,5 +735,25 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	public void setOverlapping(boolean overlapping) {
 		overlappingColGroups = overlapping;
+	}
+
+	@Override
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
+		printDecompressWarning("slice");
+		MatrixBlock tmp = decompress();
+		return tmp.slice(rl, ru, cl, cu, ret);
+	}
+
+	@Override
+	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, int blen,
+		int boundaryRlen, int boundaryClen) {
+		printDecompressWarning("slice");
+		try {
+			MatrixBlock tmp = decompress();
+			tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
+		}
+		catch(DMLRuntimeException ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 }

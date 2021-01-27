@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
@@ -108,24 +107,24 @@ public class ColGroupRLE extends ColGroupOffset {
 				for(; bix < blen & start < bimax; bix += 2) {
 					start += _data[boff + bix];
 					int len = _data[boff + bix + 1];
-					for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++){
+					for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++) {
 
-						int rc = i * target.getNumColumns();	
+						int rc = i * target.getNumColumns();
 						for(int j = 0; j < numCols; j++) {
-								if(values[off + j] != 0) {
-									if(safe) {
-										double v = c[rc + _colIndexes[j]];
-										double nv = c[rc + _colIndexes[j]] + values[off + j];
-										if(v == 0.0 && nv != 0.0) {
-											target.setNonZeros(target.getNonZeros() + 1);
-										}
-										c[rc + _colIndexes[j]] = nv;
+							if(values[off + j] != 0) {
+								if(safe) {
+									double v = c[rc + _colIndexes[j]];
+									double nv = c[rc + _colIndexes[j]] + values[off + j];
+									if(v == 0.0 && nv != 0.0) {
+										target.setNonZeros(target.getNonZeros() + 1);
 									}
-									else {
-										c[rc + _colIndexes[j]] += values[off + j];
-									}
+									c[rc + _colIndexes[j]] = nv;
+								}
+								else {
+									c[rc + _colIndexes[j]] += values[off + j];
 								}
 							}
+						}
 					}
 					start += len;
 				}
@@ -138,50 +137,50 @@ public class ColGroupRLE extends ColGroupOffset {
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colixTargets) {
 		// if(getNumValues() > 1) {
-			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-			final int numCols = getNumCols();
-			final int numVals = getNumValues();
-			final double[] values = getValues();
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
+		final double[] values = getValues();
 
-			// position and start offset arrays
-			int[] apos = new int[numVals];
-			int[] astart = new int[numVals];
-			int[] cix = new int[numCols];
+		// position and start offset arrays
+		int[] apos = new int[numVals];
+		int[] astart = new int[numVals];
+		int[] cix = new int[numCols];
 
-			// prepare target col indexes
-			for(int j = 0; j < numCols; j++)
-				cix[j] = colixTargets[_colIndexes[j]];
+		// prepare target col indexes
+		for(int j = 0; j < numCols; j++)
+			cix[j] = colixTargets[_colIndexes[j]];
 
-			// cache conscious append via horizontal scans
-			for(int bi = 0; bi < _numRows; bi += blksz) {
-				int bimax = Math.min(bi + blksz, _numRows);
-				for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					if(bix >= blen)
-						continue;
-					int start = astart[k];
-					for(; bix < blen & start < bimax; bix += 2) {
-						start += _data[boff + bix];
-						int len = _data[boff + bix + 1];
-						for(int i = start; i < start + len; i++)
-							for(int j = 0; j < numCols; j++)
-								if(values[off + j] != 0) {
-									double v = target.quickGetValue(i, _colIndexes[j]);
-									target.setValue(i, _colIndexes[j], values[off + j] + v);
-								}
+		// cache conscious append via horizontal scans
+		for(int bi = 0; bi < _numRows; bi += blksz) {
+			int bimax = Math.min(bi + blksz, _numRows);
+			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				if(bix >= blen)
+					continue;
+				int start = astart[k];
+				for(; bix < blen & start < bimax; bix += 2) {
+					start += _data[boff + bix];
+					int len = _data[boff + bix + 1];
+					for(int i = start; i < start + len; i++)
+						for(int j = 0; j < numCols; j++)
+							if(values[off + j] != 0) {
+								double v = target.quickGetValue(i, _colIndexes[j]);
+								target.setValue(i, _colIndexes[j], values[off + j] + v);
+							}
 
-						start += len;
-					}
-					apos[k] = bix;
-					astart[k] = start;
+					start += len;
 				}
+				apos[k] = bix;
+				astart[k] = start;
 			}
+		}
 		// }
 		// else {
-		// 	// call generic decompression with decoder
-		// 	super.decompressToBlock(target, colixTargets);
+		// // call generic decompression with decoder
+		// super.decompressToBlock(target, colixTargets);
 		// }
 	}
 
@@ -250,7 +249,7 @@ public class ColGroupRLE extends ColGroupOffset {
 				for(; bix < blen & start < bimax; bix += 2) {
 					start += _data[boff + bix];
 					int len = _data[boff + bix + 1];
-					if(start + len >= rl){
+					if(start + len >= rl) {
 						int offsetStart = Math.max(start, rl);
 						for(int i = offsetStart; i < Math.min(start + len, bimax); i++)
 							c[i - rl] += values[off + colpos];
@@ -290,7 +289,7 @@ public class ColGroupRLE extends ColGroupOffset {
 				for(; bix < blen & start < bimax; bix += 2) {
 					start += _data[boff + bix];
 					int len = _data[boff + bix + 1];
-					if(start + len >= rl){
+					if(start + len >= rl) {
 						int offsetStart = Math.max(start, rl);
 						for(int i = offsetStart; i < Math.min(start + len, bimax); i++)
 							c[i - rl] += values[off + colpos];
@@ -302,7 +301,6 @@ public class ColGroupRLE extends ColGroupOffset {
 			}
 		}
 	}
-
 
 	@Override
 	public int[] getCounts(int[] counts) {
@@ -466,7 +464,8 @@ public class ColGroupRLE extends ColGroupOffset {
 					Math.max(rl, start + lstart),
 					Math.min(start + lstart + llen, ru),
 					outputColumns,
-					thatNrColumns,k);
+					thatNrColumns,
+					k);
 				if(start + lstart + llen >= ru)
 					break;
 				start += lstart + llen;
@@ -883,8 +882,34 @@ public class ColGroupRLE extends ColGroupOffset {
 		}
 	}
 
+	@Override
+	public double get(int r, int c) {
+
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int numVals = getNumValues();
+		int offset = r % blksz;
+		int[] apos = skipScan(numVals, r);
+		for(int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			// int blen = len(k);
+			int bix = apos[k];
+			int curRunStartOff = _data[boff + bix];
+			int curRunEnd = _data[boff + bix + 1];
+			if(offset >= curRunStartOff && offset < curRunEnd)
+				return _dict.getValue(k * _colIndexes.length + c);
+
+		}
+
+		return 0;
+	}
+
 	/////////////////////////////////
 	// internal helper functions
+
+	private int[] skipScan(int numVals, int rl) {
+		int[] astart = new int[numVals];
+		return skipScan(numVals, rl, astart);
+	}
 
 	/**
 	 * Scans to given row_lower position by scanning run length fields. Returns array of positions for all values and
@@ -1038,10 +1063,5 @@ public class ColGroupRLE extends ColGroupOffset {
 		for(int i = 0; i < buf.size(); i++)
 			ret[i] = buf.get(i);
 		return ret;
-	}
-
-	@Override
-	public double get(int r, int c) {
-		throw new NotImplementedException("Not Implemented get(r,c) after removal of iterators in colgroups");
 	}
 }

@@ -271,7 +271,8 @@ public abstract class ColGroup implements Serializable {
 		}
 	}
 
-	public static void decompressColumnToBlock(MatrixBlock target, int colIndex, int rl, int ru, List<ColGroup> colGroups) {
+	public static void decompressColumnToBlock(MatrixBlock target, int colIndex, int rl, int ru,
+		List<ColGroup> colGroups) {
 		for(ColGroup g : colGroups) {
 			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
 			if(groupColIndex >= 0) {
@@ -280,7 +281,8 @@ public abstract class ColGroup implements Serializable {
 		}
 	}
 
-	public static void decompressColumnToBlock(double[] target, int colIndex, int rl, int ru, List<ColGroup> colGroups) {
+	public static void decompressColumnToBlock(double[] target, int colIndex, int rl, int ru,
+		List<ColGroup> colGroups) {
 		for(ColGroup g : colGroups) {
 			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
 			if(groupColIndex >= 0) {
@@ -297,28 +299,25 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos);
 
-
 	/**
 	 * Decompress to block.
 	 * 
 	 * @param target dense output vector
 	 * @param colpos column to decompress, error if larger or equal numCols
-	 * @param rl the Row to start decompression from
-	 * @param ru the Row to end decompression at
+	 * @param rl     the Row to start decompression from
+	 * @param ru     the Row to end decompression at
 	 */
 	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru);
-
 
 	/**
 	 * Decompress to dense array.
 	 * 
 	 * @param target dense output vector double array.
 	 * @param colpos column to decompress, error if larger or equal numCols
-	 * @param rl the Row to start decompression from
-	 * @param ru the Row to end decompression at
+	 * @param rl     the Row to start decompression from
+	 * @param ru     the Row to end decompression at
 	 */
 	public abstract void decompressColumnToBlock(double[] target, int colpos, int rl, int ru);
-
 
 	/**
 	 * Serializes column group to data output.
@@ -500,24 +499,24 @@ public abstract class ColGroup implements Serializable {
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c, int rl, int ru);
 
 	// /**
-	//  * Create a column group iterator for a row index range.
-	//  * 
-	//  * @param rl        row lower index, inclusive
-	//  * @param ru        row upper index, exclusive
-	//  * @param inclZeros include zero values into scope of iterator
-	//  * @param rowMajor  use a row major iteration order
-	//  * @return an iterator instance
-	//  */
+	// * Create a column group iterator for a row index range.
+	// *
+	// * @param rl row lower index, inclusive
+	// * @param ru row upper index, exclusive
+	// * @param inclZeros include zero values into scope of iterator
+	// * @param rowMajor use a row major iteration order
+	// * @return an iterator instance
+	// */
 	// public abstract Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor);
 
 	// /**
-	//  * Create a dense row iterator for a row index range. This iterator implies the inclusion of zeros and row-major
-	//  * iteration order.
-	//  * 
-	//  * @param rl row lower index, inclusive
-	//  * @param ru row upper index, exclusive
-	//  * @return an iterator instance
-	//  */
+	// * Create a dense row iterator for a row index range. This iterator implies the inclusion of zeros and row-major
+	// * iteration order.
+	// *
+	// * @param rl row lower index, inclusive
+	// * @param ru row upper index, exclusive
+	// * @return an iterator instance
+	// */
 	// public abstract ColGroupRowIterator getRowIterator(int rl, int ru);
 
 	/**
@@ -553,4 +552,16 @@ public abstract class ColGroup implements Serializable {
 	 * @return returns if the colgroup is allocated in a dense fashion.
 	 */
 	public abstract boolean isDense();
+
+	/**
+	 * Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns.
+	 * If the ColGroup slicing from does not contain any columns within the range null is returned.
+	 * 
+	 * @param cl The lower bound of the columns to select
+	 * @param cu the upper bound of the columns to select (not inclusive).
+	 * @return A cloned Column Group, with a copied pointer to the old column groups index structure, but reduced
+	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
+	 */
+	public abstract ColGroup sliceColumns(int cl, int cu);
+
 }

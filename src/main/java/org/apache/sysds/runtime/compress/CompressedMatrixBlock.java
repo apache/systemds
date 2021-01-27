@@ -739,21 +739,54 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	@Override
 	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
-		printDecompressWarning("slice");
-		MatrixBlock tmp = decompress();
-		return tmp.slice(rl, ru, cl, cu, ret);
+		validateSliceArgument(rl, ru, cl, cu);
+		MatrixBlock tmp;
+		if(rl == ru && cl == cu) {
+			// get a single index, and return in a matrixBlock
+			tmp = new MatrixBlock(1, 1, 0);
+			tmp.appendValue(0, 0, getValue(rl, cl));
+			return tmp;
+		}
+		else if(cl == 0 && cu == getNumColumns() - 1) {
+			// Row Slice. Potential optimization if the slice contains enough rows.
+			// +1 since the implementation arguments for slice is inclusive values for ru and cu.
+			// and it is not inclusive in decompression, and construction of MatrixBlock.
+			tmp = new MatrixBlock(ru + 1 - rl, getNumColumns(), false).allocateDenseBlock();
+			for(ColGroup g : getColGroups())
+				g.decompressToBlock(tmp, rl, ru + 1, 0);
+			return tmp;
+		}
+		else if(rl == 0 && ru == getNumRows() - 1) {
+			tmp = sliceColumns(cl, cu);
+		}
+		else {
+			printDecompressWarning("slice");
+			tmp = decompress();
+			tmp = tmp.slice(rl, ru, cl, cu, ret);
+		}
+		return tmp;
+	}
+
+	private CompressedMatrixBlock sliceColumns(int cl, int cu) {
+		CompressedMatrixBlock ret = new CompressedMatrixBlock(this.getNumRows(), cu + 1 - cl);
+
+		List<ColGroup> newColGroups = new ArrayList<>();
+		for(ColGroup grp : getColGroups()) {
+			ColGroup slice = grp.sliceColumns(cl, cu + 1);
+			if(slice != null)
+				newColGroups.add(slice);
+		}
+		ret.allocateColGroupList(newColGroups);
+
+		return ret;
 	}
 
 	@Override
 	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, int blen,
 		int boundaryRlen, int boundaryClen) {
-		printDecompressWarning("slice");
-		try {
-			MatrixBlock tmp = decompress();
-			tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
-		}
-		catch(DMLRuntimeException ex) {
-			throw new RuntimeException(ex);
-		}
+		printDecompressWarning(
+			"slice for distribution to spark. (Could be implemented such that it does not decompress)");
+		MatrixBlock tmp = decompress();
+		tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
 	}
 }

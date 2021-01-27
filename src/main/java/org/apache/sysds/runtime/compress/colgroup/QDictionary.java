@@ -393,4 +393,19 @@ public class QDictionary extends ADictionary {
 		double[] doubleValues = getValues();
 		return new Dictionary(doubleValues);
 	}
+
+	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns){
+		int numberTuples = getNumberOfValues(previousNumberOfColumns);
+		int tupleLengthAfter = idxEnd - idxStart;
+		byte[] newDictValues = new byte[tupleLengthAfter * numberTuples];
+		int orgOffset = idxStart;
+		int targetOffset = 0;
+		for(int v = 0; v < numberTuples; v++){
+			for(int c = 0; c< tupleLengthAfter; c++, orgOffset++, targetOffset++){
+				newDictValues[targetOffset] = _values[orgOffset];
+			}
+			orgOffset += previousNumberOfColumns - idxEnd + idxStart;
+		}
+		return new QDictionary(newDictValues, _scale);
+	}
 }

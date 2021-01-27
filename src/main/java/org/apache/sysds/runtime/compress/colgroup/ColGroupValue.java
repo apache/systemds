@@ -134,8 +134,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		return _dict;
 	}
 
-
-	public void addMinMax(double[] ret){
+	public void addMinMax(double[] ret) {
 		_dict.addMaxAndMin(ret, _colIndexes);
 	}
 
@@ -258,14 +257,14 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		return ret;
 	}
 
-	private int[] getAggregateColumnsSetDense(double[] b, int cl, int cu, int cut){
+	private int[] getAggregateColumnsSetDense(double[] b, int cl, int cu, int cut) {
 		Set<Integer> aggregateColumnsSet = new HashSet<>();
 		final int retCols = (cu - cl);
-		for(int k = 0; k <  _colIndexes.length; k ++) {
+		for(int k = 0; k < _colIndexes.length; k++) {
 			int rowIdxOffset = _colIndexes[k] * cut;
 			for(int h = cl; h < cu; h++) {
 				double v = b[rowIdxOffset + h];
-				if(v != 0.0){
+				if(v != 0.0) {
 					aggregateColumnsSet.add(h);
 				}
 			}
@@ -284,7 +283,9 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		int[] aggregateColumns = getAggregateColumnsSetDense(b, cl, cu, cut);
 		double[] ret = new double[numVals * aggregateColumns.length];
 
-		for(int k = 0, off = 0; k < numVals * _colIndexes.length; k += _colIndexes.length, off += aggregateColumns.length) {
+		for(int k = 0, off = 0;
+			k < numVals * _colIndexes.length;
+			k += _colIndexes.length, off += aggregateColumns.length) {
 			for(int h = 0; h < _colIndexes.length; h++) {
 				int idb = _colIndexes[h] * cut;
 				double v = dictVals[k + h];
@@ -298,7 +299,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		return new ImmutablePair<>(aggregateColumns, ret);
 	}
 
-	private int[] getAggregateColumnsSetSparse(SparseBlock b){
+	private int[] getAggregateColumnsSetSparse(SparseBlock b) {
 		Set<Integer> aggregateColumnsSet = new HashSet<>();
 
 		for(int h = 0; h < _colIndexes.length; h++) {
@@ -321,7 +322,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 
 		int[] aggregateColumns = getAggregateColumnsSetSparse(b);
 
-		double[] ret = new double[numVals *aggregateColumns.length];
+		double[] ret = new double[numVals * aggregateColumns.length];
 
 		for(int h = 0; h < _colIndexes.length; h++) {
 			int colIdx = _colIndexes[h];
@@ -332,15 +333,17 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 				for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++) {
 					while(aggregateColumns[retIdx] < sIndexes[i])
 						retIdx++;
-					if(sIndexes[i] == aggregateColumns[retIdx] )
-						for(int j = 0, offOrg = h; j < numVals * aggregateColumns.length; j += aggregateColumns.length, offOrg += _colIndexes.length) {
+					if(sIndexes[i] == aggregateColumns[retIdx])
+						for(int j = 0, offOrg = h;
+							j < numVals * aggregateColumns.length;
+							j += aggregateColumns.length, offOrg += _colIndexes.length) {
 							ret[j + retIdx] += dictVals[offOrg] * sValues[i];
 						}
 				}
 			}
 		}
 
-		return new ImmutablePair<> (aggregateColumns, ret);
+		return new ImmutablePair<>(aggregateColumns, ret);
 	}
 
 	public Pair<int[], double[]> preaggValues(int numVals, MatrixBlock b, double[] dictVals, int cl, int cu, int cut) {
@@ -479,8 +482,8 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	}
 
 	public static void setupThreadLocalMemory(int len) {
-		if(memPool.get() == null || memPool.get().getLeft().length < len){
-			Pair<int[], double[]> p = new ImmutablePair<>(new int[len],new double[len] );
+		if(memPool.get() == null || memPool.get().getLeft().length < len) {
+			Pair<int[], double[]> p = new ImmutablePair<>(new int[len], new double[len]);
 			memPool.set(p);
 		}
 	}
@@ -497,7 +500,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 			return new double[len];
 		}
 
-		if(p.getValue().length < len){
+		if(p.getValue().length < len) {
 			setupThreadLocalMemory(len);
 			return p.getValue();
 		}
@@ -515,8 +518,8 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		// sanity check for missing setup
 		if(p == null)
 			return new int[len + 1];
-		 
-		if(p.getKey().length < len){
+
+		if(p.getKey().length < len) {
 			setupThreadLocalMemory(len);
 			return p.getKey();
 		}
@@ -623,7 +626,7 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	 * 
 	 * @return a shallow copy of the colGroup.
 	 */
-	public ColGroup copy() {
+	public ColGroupValue copy() {
 		try {
 			ColGroupValue clone = (ColGroupValue) this.clone();
 			return clone;
@@ -641,4 +644,58 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		leftMultByRowVector(a, result, numVals, values);
 
 	}
+
+	@Override
+	public ColGroup sliceColumns(int cl, int cu) {
+		if(cu - cl == 1)
+			return sliceSingleColumn(cl);
+		else
+			return sliceMultiColumns(cl, cu);
+	}
+
+	private ColGroup sliceSingleColumn(int col) {
+		ColGroupValue ret = (ColGroupValue) copy();
+
+		int idx = Arrays.binarySearch(_colIndexes, col);
+		// Binary search returns negative value if the column is not found.
+		// Therefore return null, if the column is not inside this colGroup.
+		if(idx >= 0) {
+			ret._colIndexes = new int[1];
+			ret._colIndexes[0] = _colIndexes[idx] - col;
+			if(_colIndexes.length == 1)
+				ret._dict = ret._dict.clone();
+			else
+				ret._dict = ret._dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+
+			return ret;
+		}
+		else
+			return null;
+	}
+
+	private ColGroup sliceMultiColumns(int cl, int cu) {
+		ColGroupValue ret = (ColGroupValue) copy();
+		int idStart = 0;
+		int idEnd = 0;
+		for(int i = 0; i < _colIndexes.length; i++) {
+			if(_colIndexes[i] < cl)
+				idStart++;
+			if(_colIndexes[i] < cu)
+				idEnd++;
+		}
+		int numberOfOutputColumns = idEnd - idStart;
+		if(numberOfOutputColumns > 0) {
+			ret._dict = ret._dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+
+			ret._colIndexes = new int[numberOfOutputColumns];
+			// Incrementing idStart here so make sure that the dictionary is extracted before
+			for(int i = 0; i < numberOfOutputColumns; i++) {
+				ret._colIndexes[i] = _colIndexes[idStart++] - cl;
+			}
+			return ret;
+		}
+		else
+			return null;
+	}
+
 }

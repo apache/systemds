@@ -509,4 +509,9 @@ public class ColGroupUncompressed extends ColGroup {
 		// they are dense in the sense of compression.
 		return true;
 	}
+
+	@Override
+	public ColGroup sliceColumns(int cl, int cu){
+		throw new NotImplementedException("Not implemented slice columns");
+	}
 }

@@ -478,8 +478,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	}
 
 	protected void printDecompressWarning(String operation) {
-		LOG.warn("Operation '" + operation + "' not supported yet - decompressing for ULA operations.");
-
+		LOG.error("Operation '" + operation + "' not supported yet - decompressing for ULA operations.");
 	}
 
 	protected void printDecompressWarning(String operation, MatrixBlock m2) {

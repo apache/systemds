@@ -24,6 +24,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -340,10 +341,25 @@ public class EncoderMVImpute extends Encoder
 	@Override
 	public void writeExternal(ObjectOutput out)
 		throws IOException {
-		out.writeInt(_replacementList.length);
-		for(String replacement : _replacementList)
-			out.writeUTF(replacement);
+		super.writeExternal(out);
+
+		for(int i = 0; i < _colList.length; i++) {
+			out.writeByte(_mvMethodList[i].ordinal());
+			out.writeLong(_countList[i]);
+		}
+
+		List<String> notNullReplacements = new ArrayList<>(Arrays.asList(_replacementList));
+		notNullReplacements.removeAll(Collections.singleton(null));
+		out.writeInt(notNullReplacements.size());
+		for(int i = 0; i < _replacementList.length; i++)
+			if(_replacementList[i] != null) {
+				out.writeInt(i);
+				out.writeUTF(_replacementList[i]);
+			}
+
 		out.writeInt(_rcList.size());
+		for(int rc: _rcList)
+			out.writeInt(rc);
 
 		out.writeInt(_hist.size());
 		for(Entry e1 : _hist.entrySet()) {
@@ -354,16 +370,36 @@ public class EncoderMVImpute extends Encoder
 				out.writeLong((Long) e2.getValue());
 			}
 		}
-
 	}
 
 	@Override
 	public void readExternal(ObjectInput in)
 		throws IOException {
-		_replacementList = new String[in.readInt()];
-		for(int i = 0; i < _replacementList.length; i++)
-			_replacementList[i] = in.readUTF();
+		super.readExternal(in);
 
+		_mvMethodList = new MVMethod[_colList.length];
+		_countList = new long[_colList.length];
+		_meanList = new KahanObject[_colList.length];
+		_replacementList = new String[_colList.length];
+
+		for(int i = 0; i < _colList.length; i++) {
+			_mvMethodList[i] = MVMethod.values()[in.readByte()];
+			_countList[i] = in.readLong();
+			_meanList[i] = new KahanObject(0, 0);
+		}
+
+		int size4 =  in.readInt();
+		for(int i = 0; i < size4; i++) {
+			int index = in.readInt();
+			_replacementList[index] = in.readUTF();
+		}
+
+		int size3 = in.readInt();
+		_rcList = new ArrayList<Integer>();
+		for(int j = 0; j < size3; j++)
+			_rcList.add(in.readInt());
+
+		_hist = new HashMap<>();
 		int size1 = in.readInt();
 		for(int i = 0; i < size1; i++) {
 			Integer key1 = in.readInt();

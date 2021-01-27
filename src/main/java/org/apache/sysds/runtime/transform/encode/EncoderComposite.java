@@ -247,6 +247,7 @@ public class EncoderComposite extends Encoder
 	@Override
 	public void writeExternal(ObjectOutput out)
 		throws IOException {
+//		super.writeExternal(out);
 		out.writeInt(_encoders.size());
 		for(Encoder encoder : _encoders) {
 			out.writeByte(EncoderType.valueOf(encoder.getClass().getSimpleName()).ordinal());
@@ -261,6 +262,7 @@ public class EncoderComposite extends Encoder
 	@Override
 	public void readExternal(ObjectInput in)
 		throws IOException {
+//		super.readExternal(in);
 		int encodersSize = in.readInt();
 		_encoders = new ArrayList<>();
 		for(int i = 0; i < encodersSize; i++) {

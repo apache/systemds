@@ -760,10 +760,15 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			tmp = sliceColumns(cl, cu);
 		}
 		else {
-			printDecompressWarning("slice");
-			tmp = decompress();
-			tmp = tmp.slice(rl, ru, cl, cu, ret);
+			// In the case where an internal matrix is sliced out, then first slice out the columns
+			// to an compressed intermediate.
+			tmp = sliceColumns(cl, cu);
+			// Then call slice recursively, to do the row slice.
+			// Since we do not copy the index structure but simply maintain a pointer to the original
+			// this is fine.
+			tmp = tmp.slice(rl, ru, 0, tmp.getNumColumns()-1, ret);
 		}
+		ret = tmp;
 		return tmp;
 	}
 

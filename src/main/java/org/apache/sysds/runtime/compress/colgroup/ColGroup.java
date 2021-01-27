@@ -325,28 +325,25 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos);
 
-
 	/**
 	 * Decompress to block.
 	 * 
 	 * @param target dense output vector
 	 * @param colpos column to decompress, error if larger or equal numCols
-	 * @param rl the Row to start decompression from
-	 * @param ru the Row to end decompression at
+	 * @param rl     the Row to start decompression from
+	 * @param ru     the Row to end decompression at
 	 */
 	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru);
-
 
 	/**
 	 * Decompress to dense array.
 	 * 
 	 * @param target dense output vector double array.
 	 * @param colpos column to decompress, error if larger or equal numCols
-	 * @param rl the Row to start decompression from
-	 * @param ru the Row to end decompression at
+	 * @param rl     the Row to start decompression from
+	 * @param ru     the Row to end decompression at
 	 */
 	public abstract void decompressColumnToBlock(double[] target, int colpos, int rl, int ru);
-
 
 	/**
 	 * Serializes column group to data output.
@@ -560,4 +557,16 @@ public abstract class ColGroup implements Serializable {
 	 * @return returns if the colgroup is allocated in a dense fashion.
 	 */
 	public abstract boolean isDense();
+
+	/**
+	 * Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns.
+	 * If the ColGroup slicing from does not contain any columns within the range null is returned.
+	 * 
+	 * @param cl The lower bound of the columns to select
+	 * @param cu the upper bound of the columns to select (not inclusive).
+	 * @return A cloned Column Group, with a copied pointer to the old column groups index structure, but reduced
+	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
+	 */
+	public abstract ColGroup sliceColumns(int cl, int cu);
+
 }

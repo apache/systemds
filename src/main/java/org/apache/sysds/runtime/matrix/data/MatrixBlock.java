@@ -3884,10 +3884,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			(int)ixrange.colStart, (int)ixrange.colEnd, true, ret);
 	}
 	
+	/**
+	 * Slice out a row block
+	 * @param rl The row lower to start from 
+	 * @param ru The row lower to end at
+	 * @return The sliced out matrix block.
+	 */
 	public MatrixBlock slice(int rl, int ru) {
-		return slice(rl, ru, 0, clen-1, true, new MatrixBlock());
+		return slice(rl, ru, 0, clen-1, true, null);
 	}
 	
+	public MatrixBlock slice(int rl, int ru, int cl, int cu){
+		return slice(rl, ru, cl, cu, true, null);
+	}
+
 	@Override
 	public MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) {
 		return slice(rl, ru, cl, cu, true, ret);
@@ -3897,21 +3907,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * Method to perform rightIndex operation for a given lower and upper bounds in row and column dimensions.
 	 * Extracted submatrix is returned as "result". Note: This operation is now 0-based.
 	 * 
-	 * @param rl row lower
-	 * @param ru row upper
-	 * @param cl column lower
-	 * @param cu column upper
-	 * @param deep should perform deep copy
-	 * @param ret output matrix block
+	 * This means that if you call with rl == ru then you get 1 row output.
+	 * 
+	 * @param rl row lower if this value is bellow 0 or above the number of rows contained in the matrix an execption is thrown
+	 * @param ru row upper if this value is bellow rl or above the number of rows contained in the matrix an exception is thrown
+	 * @param cl column lower if this value us bellow 0 or above the number of columns contained in the matrix an exception is thrown
+	 * @param cu column upper if this value us bellow cl or above the number of columns contained in the matrix an exception is thrown
+	 * @param deep should perform deep copy, this is relelvant in cases where the matrix is in sparse format,
+	 *            or the entire matrix is sliced out
+	 * @param ret output sliced out matrix block
 	 * @return matrix block output matrix block
 	 */
 	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
-		// check the validity of bounds
-		if ( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
-				|| cl < 0 || cl >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
-			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " 
-				+ "must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"]");
-		}
+		validateSliceArgument(rl, ru, cl, cu);
 		
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
@@ -3941,6 +3949,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		
 		return result;
+	}
+
+	protected void validateSliceArgument(int rl, int ru, int cl, int cu){
+		// check the validity of bounds
+		if ( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
+				|| cl < 0 || cl >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " 
+				+ "must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"]");
+		}
 	}
 
 	private void sliceSparse(int rl, int ru, int cl, int cu, boolean deep, MatrixBlock dest) {
@@ -4025,14 +4042,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		int rowCut, int colCut, int blen, int boundaryRlen, int boundaryClen)
 	{
 		MatrixBlock topleft=null, topright=null, bottomleft=null, bottomright=null;
-		Iterator<IndexedMatrixValue> p=outlist.iterator();
+		Iterator<IndexedMatrixValue> p = outlist.iterator();
 		int blockRowFactor=blen, blockColFactor=blen;
 		if(rowCut>range.rowEnd)
 			blockRowFactor=boundaryRlen;
 		if(colCut>range.colEnd)
 			blockColFactor=boundaryClen;
 		
-		int minrowcut=(int)Math.min(rowCut,range.rowEnd);
+		int minrowcut=(int)Math.min(rowCut, range.rowEnd);
 		int mincolcut=(int)Math.min(colCut, range.colEnd);
 		int maxrowcut=(int)Math.max(rowCut, range.rowStart);
 		int maxcolcut=(int)Math.max(colCut, range.colStart);
@@ -4040,9 +4057,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if(range.rowStart<rowCut && range.colStart<colCut)
 		{
 			topleft=(MatrixBlock) p.next().getValue();
-			//topleft.reset(blockRowFactor, blockColFactor, 
-			//		checkSparcityOnSlide(rowCut-(int)range.rowStart, colCut-(int)range.colStart, blockRowFactor, blockColFactor));
-			
 			topleft.reset(blockRowFactor, blockColFactor, 
 					estimateSparsityOnSlice(minrowcut-(int)range.rowStart, mincolcut-(int)range.colStart, blockRowFactor, blockColFactor));
 		}
@@ -4065,43 +4079,36 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					estimateSparsityOnSlice((int)range.rowEnd-maxrowcut+1, (int)range.colEnd-maxcolcut+1, boundaryRlen, boundaryClen));
 		}
 		
-		if(sparse)
-		{
-			if(sparseBlock!=null)
-			{
-				int r=(int)range.rowStart;
-				for(; r<Math.min(Math.min(rowCut, sparseBlock.numRows()), range.rowEnd+1); r++)
-					sliceHelp(r, range, colCut, topleft, topright, blen-rowCut, blen, blen);
-				
-				for(; r<=Math.min(range.rowEnd, sparseBlock.numRows()-1); r++)
-					sliceHelp(r, range, colCut, bottomleft, bottomright, -rowCut, blen, blen);
-			}
+		if(sparse && sparseBlock!=null){
+			int r=(int)range.rowStart;
+			for(; r<Math.min(Math.min(rowCut, sparseBlock.numRows()), range.rowEnd+1); r++)
+				sliceHelp(r, range, colCut, topleft, topright, blen-rowCut, blen, blen);
+			
+			for(; r<=Math.min(range.rowEnd, sparseBlock.numRows()-1); r++)
+				sliceHelp(r, range, colCut, bottomleft, bottomright, -rowCut, blen, blen);
 		}
-		else {
-			if(denseBlock!=null)
+		else if(denseBlock!=null){
+			double[] a = getDenseBlockValues();
+			int i=((int)range.rowStart)*clen;
+			int r=(int) range.rowStart;
+			for(; r<Math.min(rowCut, range.rowEnd+1); r++)
 			{
-				double[] a = getDenseBlockValues();
-				int i=((int)range.rowStart)*clen;
-				int r=(int) range.rowStart;
-				for(; r<Math.min(rowCut, range.rowEnd+1); r++)
-				{
-					int c=(int) range.colStart;
-					for(; c<Math.min(colCut, range.colEnd+1); c++)
-						topleft.appendValue(r+blen-rowCut, c+blen-colCut, a[i+c]);
-					for(; c<=range.colEnd; c++)
-						topright.appendValue(r+blen-rowCut, c-colCut, a[i+c]);
-					i+=clen;
-				}
-				
-				for(; r<=range.rowEnd; r++)
-				{
-					int c=(int) range.colStart;
-					for(; c<Math.min(colCut, range.colEnd+1); c++)
-						bottomleft.appendValue(r-rowCut, c+blen-colCut, a[i+c]);
-					for(; c<=range.colEnd; c++)
-						bottomright.appendValue(r-rowCut, c-colCut, a[i+c]);
-					i+=clen;
-				}
+				int c=(int) range.colStart;
+				for(; c<Math.min(colCut, range.colEnd+1); c++)
+					topleft.appendValue(r+blen-rowCut, c+blen-colCut, a[i+c]);
+				for(; c<=range.colEnd; c++)
+					topright.appendValue(r+blen-rowCut, c-colCut, a[i+c]);
+				i+=clen;
+			}
+			
+			for(; r<=range.rowEnd; r++)
+			{
+				int c=(int) range.colStart;
+				for(; c<Math.min(colCut, range.colEnd+1); c++)
+					bottomleft.appendValue(r-rowCut, c+blen-colCut, a[i+c]);
+				for(; c<=range.colEnd; c++)
+					bottomright.appendValue(r-rowCut, c-colCut, a[i+c]);
+				i+=clen;
 			}
 		}
 	}

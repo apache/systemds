@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
@@ -113,7 +112,6 @@ public class ColGroupOLE extends ColGroupOffset {
 						int rc = rix * target.getNumColumns();
 						for(int j = 0; j < numCols; j++) {
 							if(safe) {
-
 								double v = c[rc + _colIndexes[j]];
 								double nv = c[rc + _colIndexes[j]] + values[off + j];
 								if(v == 0.0 && nv != 0.0) {
@@ -903,6 +901,30 @@ public class ColGroupOLE extends ColGroupOffset {
 		}
 	}
 
+	@Override
+	public double get(int r, int c) {
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int numVals = getNumValues();
+		int idColOffset = Arrays.binarySearch(_colIndexes, c);
+		if(idColOffset < 0)
+			return 0;
+		int[] apos = skipScan(numVals, r);
+		int offset = r % blksz;
+		for(int k = 0; k < numVals; k++) {
+			int boff = _ptr[k];
+			int blen = len(k);
+			int bix = apos[k];
+			int slen = _data[boff + bix];
+			for(int blckIx = 1; blckIx <= slen && blckIx < blen; blckIx++) {
+				if(_data[boff + bix + blckIx] == offset)
+					return _dict.getValue(k * _colIndexes.length + idColOffset);
+				else if(_data[boff + bix + blckIx] > offset)
+					continue;
+			}
+		}
+		return 0;
+	}
+
 	/////////////////////////////////
 	// internal helper functions
 
@@ -1010,10 +1032,4 @@ public class ColGroupOLE extends ColGroupOffset {
 		return encodedBlocks;
 	}
 
-	@Override
-	public double get(int r, int c) {
-		throw new NotImplementedException("Not Implemented get(r,c) after removal of iterators in colgroups");
-		// TODO Auto-generated method stub
-		// return 0;
-	}
 }

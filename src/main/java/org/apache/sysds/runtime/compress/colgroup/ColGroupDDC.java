@@ -156,12 +156,11 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 		// get value
 		int index = getIndex(r);
-		if(index < getNumValues()) {
+		if(index < getNumValues()) 
 			return _dict.getValue(index * _colIndexes.length + ix);
-		}
-		else {
+		else 
 			return 0.0;
-		}
+		
 	}
 
 	@Override

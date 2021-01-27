@@ -241,6 +241,19 @@ public class OperationsOnMatrixValues
 			return value1.aggregateBinaryOperations(value1, value2, valueOut, op);
 	}
 
+	/**
+	 * Slice used in broadcasting matrix blocks for spark, since this slice up a given matrix
+	 * into blocks.
+	 * 
+	 * The slice call here returns a single block inside the idx range specified
+	 * 
+	 * @param ixrange Index range containing the row lower, row upper, col lower and col upper bounds
+	 * @param blen The block size specified, this should align with the ranges.
+	 * @param iix The block row index
+	 * @param jix The block column index
+	 * @param in The Cache block to slice out
+	 * @return A List containing pairs of MatrixIndices and CacheBlocks either containing MatrixBlock or FrameBlocks
+	 */
 	@SuppressWarnings("rawtypes")
 	public static List performSlice(IndexRange ixrange, int blen, int iix, int jix, CacheBlock in) {
 		if( in instanceof MatrixBlock )
@@ -253,12 +266,13 @@ public class OperationsOnMatrixValues
 	@SuppressWarnings("rawtypes")
 	public static List performSlice(IndexRange ixrange, int blen, int iix, int jix, MatrixBlock in) {
 		IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), in);
-		ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
-		performSlice(imv, ixrange, blen, outlist);
+		ArrayList<IndexedMatrixValue> outlist = performSlice(imv, ixrange, blen);
 		return SparkUtils.fromIndexedMatrixBlockToPair(outlist);
 	}
 
-	public static void performSlice(IndexedMatrixValue in, IndexRange ixrange, int blen, ArrayList<IndexedMatrixValue> outlist) {
+	public static ArrayList<IndexedMatrixValue> performSlice(IndexedMatrixValue in, IndexRange ixrange, int blen) {
+		
+		ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 		long cellIndexTopRow = UtilFunctions.computeCellIndex(in.getIndexes().getRowIndex(), blen, 0);
 		long cellIndexBottomRow = UtilFunctions.computeCellIndex(in.getIndexes().getRowIndex(), blen, in.getValue().getNumRows()-1);
 		long cellIndexLeftCol = UtilFunctions.computeCellIndex(in.getIndexes().getColumnIndex(), blen, 0);
@@ -271,7 +285,7 @@ public class OperationsOnMatrixValues
 		
 		//check if block is outside the indexing range
 		if(cellIndexOverlapTop>cellIndexOverlapBottom || cellIndexOverlapLeft>cellIndexOverlapRight) {
-			return;
+			return  outlist;
 		}
 		
 		IndexRange tmpRange = new IndexRange(
@@ -308,13 +322,14 @@ public class OperationsOnMatrixValues
 		for(long r=resultBlockIndexTop; r<=resultBlockIndexBottom; r++)
 			for(long c=resultBlockIndexLeft; c<=resultBlockIndexRight; c++)
 			{
-				IndexedMatrixValue out=new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
+				IndexedMatrixValue out = new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
 				out.getIndexes().setIndexes(r, c);
 				outlist.add(out);
 			}
 		
 		//execute actual slice operation
 		in.getValue().slice(outlist, tmpRange, rowCut, colCut, blen, boundaryRlen, boundaryClen);
+		return outlist;
 	}
 
 	public static void performShift(IndexedMatrixValue in, IndexRange ixrange, int blen, long rlen, long clen, ArrayList<IndexedMatrixValue> outlist) {
@@ -399,8 +414,7 @@ public class OperationsOnMatrixValues
 	@SuppressWarnings("rawtypes")
 	public static ArrayList performSlice(IndexRange ixrange, int blen, int iix, int jix, FrameBlock in) {
 		Pair<Long, FrameBlock> lfp = new Pair<>(new Long(((iix-1)*blen)+1), in);
-		ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<>();
-		performSlice(lfp, ixrange, blen, outlist);
+		ArrayList<Pair<Long, FrameBlock>> outlist = performSlice(lfp, ixrange, blen);
 	
 		return outlist;
 	}
@@ -409,12 +423,13 @@ public class OperationsOnMatrixValues
 	/**
 	 * This function will get slice of the input frame block overlapping in overall slice(Range), slice has requested for.
 	 * 
-	 * @param in ?
+	 * @param in A Pair of row index to assign the sliced block and input frame block to slice.
 	 * @param ixrange index range
 	 * @param blen block length
-	 * @param outlist list of pairs of frame blocks
+	 * @return Returns an ArrayList containing pairs of long ids and FrameBlocks
 	 */
-	public static void performSlice(Pair<Long,FrameBlock> in, IndexRange ixrange, int blen, ArrayList<Pair<Long,FrameBlock>> outlist) {
+	public static ArrayList<Pair<Long, FrameBlock>> performSlice(Pair<Long,FrameBlock> in, IndexRange ixrange, int blen) {
+		ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<>();
 		long index = in.getKey();
 		FrameBlock block = in.getValue();
 		
@@ -432,7 +447,7 @@ public class OperationsOnMatrixValues
 		
 		//check if block is outside the indexing range
 		if(cellIndexOverlapTop>cellIndexOverlapBottom || cellIndexOverlapLeft>cellIndexOverlapRight) {
-			return;
+			return outlist;
 		}
 		
 		// Create IndexRange for the slice to be performed on this block.
@@ -460,6 +475,7 @@ public class OperationsOnMatrixValues
 		
 		//execute actual slice operation
 		block.slice(outlist, tmpRange, rowCut);
+		return outlist;
 	}
 
 	public static void performShift(Pair<Long,FrameBlock> in, IndexRange ixrange, int blenLeft, long rlen, long clen, ArrayList<Pair<Long,FrameBlock>> outlist) {

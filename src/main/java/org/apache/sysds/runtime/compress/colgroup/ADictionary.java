@@ -203,7 +203,7 @@ public abstract class ADictionary {
 	/**
 	 * This method adds the max and min values contained in the dictionary to corresponding cells in the ret variable.
 	 * 
-	 * @param ret The double array that contains all cloumns min and max.
+	 * @param ret        The double array that contains all cloumns min and max.
 	 * @param colIndexes The column Indexes contained in this dictionary.
 	 */
 	protected abstract void addMaxAndMin(double[] ret, int[] colIndexes);
@@ -212,7 +212,8 @@ public abstract class ADictionary {
 	 * Modify the dictionary by removing columns not within the index range.
 	 * 
 	 * @param idxStart The column index to start at.
-	 * @param idxEnd The column index to end at (not inclusive)
+	 * @param idxEnd   The column index to end at (not inclusive)
+	 * @return A dictionary containing the sliced out columns values only.
 	 */
 	public abstract ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns);
 }

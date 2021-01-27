@@ -426,6 +426,7 @@ public class OperationsOnMatrixValues
 	 * @param in A Pair of row index to assign the sliced block and input frame block to slice.
 	 * @param ixrange index range
 	 * @param blen block length
+	 * @return Returns an ArrayList containing pairs of long ids and FrameBlocks
 	 */
 	public static ArrayList<Pair<Long, FrameBlock>> performSlice(Pair<Long,FrameBlock> in, IndexRange ixrange, int blen) {
 		ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<>();

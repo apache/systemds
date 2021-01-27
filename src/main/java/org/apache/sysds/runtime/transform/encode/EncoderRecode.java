@@ -307,11 +307,12 @@ public class EncoderRecode extends Encoder
 		for(Entry e1 : _rcdMaps.entrySet()) {
 			out.writeInt((Integer) e1.getKey());
 			out.writeInt(((HashMap) e1.getValue()).size());
-			for(Entry e2 : ((HashMap<String, Long>) e1.getValue()).entrySet()) {
-				out.writeUTF((String) e2.getKey());
-				out.writeLong((Long) e2.getValue());
+			for(Entry<String, Long> e2 : ((HashMap<String, Long>) e1.getValue()).entrySet()) {
+				out.writeUTF(e2.getKey());
+				out.writeLong(e2.getValue());
 			}
 		}
+//		private HashMap<Integer, HashSet<Object>> _rcdMapsPart = null;
 	}
 
 	@Override
@@ -330,6 +331,7 @@ public class EncoderRecode extends Encoder
 			}
 			_rcdMaps.put(key1, maps);
 		}
+		prepareBuildPartial();
 	}
 
 	/**

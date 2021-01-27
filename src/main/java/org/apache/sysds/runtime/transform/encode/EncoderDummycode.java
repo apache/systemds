@@ -241,9 +241,10 @@ public class EncoderDummycode extends Encoder
 		throws IOException {
 		super.writeExternal(out);
 		out.writeLong(_dummycodedLength);
-		out.writeInt(_domainSizes.length);
-		for(int size : _domainSizes)
-			out.writeInt(size);
+		int size1 = _domainSizes == null ? 0 : _domainSizes.length;
+		out.writeInt(size1);
+		for(int i = 0; i < size1; i++)
+			out.writeInt(_domainSizes[i]);
 	}
 
 	@Override

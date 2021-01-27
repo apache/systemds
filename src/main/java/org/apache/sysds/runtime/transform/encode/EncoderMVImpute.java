@@ -64,7 +64,7 @@ public class EncoderMVImpute extends Encoder
 	private String[] _replacementList = null; // replacements: for global_mean, mean; and for global_mode, recode id of mode category
 	private List<Integer> _rcList = null;
 	private HashMap<Integer,HashMap<String,Long>> _hist = null;
-	
+
 	public String[] getReplacements() { return _replacementList; }
 	public KahanObject[] getMeans()   { return _meanList; }
 	
@@ -342,7 +342,6 @@ public class EncoderMVImpute extends Encoder
 	public void writeExternal(ObjectOutput out)
 		throws IOException {
 		super.writeExternal(out);
-
 		for(int i = 0; i < _colList.length; i++) {
 			out.writeByte(_mvMethodList[i].ordinal());
 			out.writeLong(_countList[i]);
@@ -361,15 +360,17 @@ public class EncoderMVImpute extends Encoder
 		for(int rc: _rcList)
 			out.writeInt(rc);
 
-		out.writeInt(_hist.size());
-		for(Entry e1 : _hist.entrySet()) {
-			out.writeInt((Integer) e1.getKey());
-			out.writeInt(((HashMap) e1.getValue()).size());
-			for(Entry e2 : ((HashMap<String, Long>) e1.getValue()).entrySet()) {
-				out.writeUTF((String) e2.getKey());
-				out.writeLong((Long) e2.getValue());
+		int histSize = _hist == null ? 0 : _hist.size();
+		out.writeInt(histSize);
+		if (histSize > 0)
+			for(Entry e1 : _hist.entrySet()) {
+				out.writeInt((Integer) e1.getKey());
+				out.writeInt(((HashMap) e1.getValue()).size());
+				for(Entry e2 : ((HashMap<String, Long>) e1.getValue()).entrySet()) {
+					out.writeUTF((String) e2.getKey());
+					out.writeLong((Long) e2.getValue());
+				}
 			}
-		}
 	}
 
 	@Override

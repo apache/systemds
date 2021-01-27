@@ -28,7 +28,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -78,7 +77,9 @@ public class FederatedLogicalTest extends AutomatedTestBase
 		return Arrays.asList(new Object[][] {
 			// {rows, cols, sparsity}
 			{100, 75, 0.01},
-			{100, 75, 0.9}
+			{100, 75, 0.9},
+			{2, 75, 0.01},
+			{2, 75, 0.9}
 		});
 	}
 
@@ -150,73 +151,61 @@ public class FederatedLogicalTest extends AutomatedTestBase
 
 	//---------------------------MATRIX MATRIX--------------------------
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixGreaterSingleNode() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.GREATER, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixGreaterSpark() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.GREATER, ExecMode.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixLessSingleNode() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixLessSpark() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS, ExecMode.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixEqualsSingleNode() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.EQUALS, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixEqualsSpark() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.EQUALS, ExecMode.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixNotEqualsSingleNode() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.NOT_EQUALS, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixNotEqualsSpark() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.NOT_EQUALS, ExecMode.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixGreaterEqualsSingleNode() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.GREATER_EQUALS, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixGreaterEqualsSpark() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.GREATER_EQUALS, ExecMode.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixLessEqualsSingleNode() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS_EQUALS, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
 	public void federatedLogicalMatrixLessEqualsSpark() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS_EQUALS, ExecMode.SPARK);
 	}

@@ -211,8 +211,9 @@ public abstract class ADictionary {
 	/**
 	 * Modify the dictionary by removing columns not within the index range.
 	 * 
-	 * @param idxStart The column index to start at.
-	 * @param idxEnd   The column index to end at (not inclusive)
+	 * @param idxStart                The column index to start at.
+	 * @param idxEnd                  The column index to end at (not inclusive)
+	 * @param previousNumberOfColumns The number of columns contained in the dictionary.
 	 * @return A dictionary containing the sliced out columns values only.
 	 */
 	public abstract ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns);

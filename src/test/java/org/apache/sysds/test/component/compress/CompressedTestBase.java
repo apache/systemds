@@ -31,6 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -105,8 +106,8 @@ public abstract class CompressedTestBase extends TestBase {
 		// CLA TESTS!
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 			.setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true),
-		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-		// .setValidCompressions(EnumSet.of(CompressionType.OLE)).setInvestigateEstimate(true),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+			.setValidCompressions(EnumSet.of(CompressionType.OLE)).setInvestigateEstimate(true),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 			.setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setInvestigateEstimate(true),
@@ -934,6 +935,72 @@ public abstract class CompressedTestBase extends TestBase {
 			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
+	}
+
+	@Test
+	public void testSliceRows() {
+		testSlice(rows / 5, Math.min(rows - 1, (rows / 5) * 2), 0, cols - 1);
+	}
+
+	@Test
+	public void testSliceFirstColumn() {
+		testSlice(0, rows - 1, 0, 0);
+	}
+
+	@Test
+	public void testSliceLastColumn() {
+		testSlice(0, rows - 1, cols - 1, cols - 1);
+	}
+
+	@Test
+	public void testSliceAllButFirstColumn() {
+		testSlice(0, rows - 1, Math.min(1,cols-1), cols - 1);
+	}
+
+	@Test
+	public void testSliceInternal() {
+		testSlice(rows / 5,
+			Math.min(rows - 1, (rows / 5) * 2),
+			Math.min(cols - 1, cols / 5),
+			Math.min(cols - 1, cols / 5 + 1));
+	}
+
+	@Test
+	public void testSliceFirstValue() {
+		testSlice(0, 0, 0, 0);
+	}
+
+	@Test
+	public void testSliceEntireMatrix() {
+		testSlice(0, rows - 1, 0, cols - 1);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void TestSliceInvalid_01() {
+		testSlice(-1, 0, 0, 0);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void TestSliceInvalid_02() {
+		testSlice(rows, rows, 0, 0);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void TestSliceInvalid_03() {
+		testSlice(0, 0, cols, cols);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void TestSliceInvalid_04() {
+		testSlice(0, 0, -1, 0);
+	}
+
+	public void testSlice(int rl, int ru, int cl, int cu) {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return;
+		MatrixBlock ret2 = cmb.slice(rl, ru, cl, cu);
+		MatrixBlock ret1 = mb.slice(rl, ru, cl, cu);
+		compareResultMatrices(ret1, ret2, 1);
 	}
 
 	protected void compareResultMatrices(double[][] d1, double[][] d2, double toleranceMultiplier) {

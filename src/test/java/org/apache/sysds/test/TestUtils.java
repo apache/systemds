@@ -832,7 +832,7 @@ public class TestUtils
 	 * @param y value 2
 	 * @return Percent distance
 	 */
-	private static double getPercentDistance(double x, double y, boolean ignoreZero){
+	public static double getPercentDistance(double x, double y, boolean ignoreZero){
 		if (Double.isNaN(x) && Double.isNaN(y))
 			return 1.0;
 		if (Double.isInfinite(x) && Double.isInfinite(y))

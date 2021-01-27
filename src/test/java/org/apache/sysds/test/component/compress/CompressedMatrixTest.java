@@ -61,23 +61,22 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	@Ignore
 	public void testGetValue() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
-
 			for(int i = 0; i < rows; i++)
 				for(int j = 0; j < cols; j++) {
 					double ulaVal = mb.quickGetValue(i, j);
 					double claVal = cmb.getValue(i, j); // calls quickGetValue internally
 					if(compressionSettings.lossy || overlappingType == OverLapping.SQUEEZE)
 						TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false);
-					else if(OverLapping.effectOnOutput(overlappingType))
-						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 32768);
+					else if(OverLapping.effectOnOutput(overlappingType)){
+						double percentDistance = TestUtils.getPercentDistance(ulaVal, claVal, true);
+						assertTrue(percentDistance > .99);
+					}
 					else
 						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0); // Should be exactly same value
-
 				}
 		}
 		catch(Exception e) {

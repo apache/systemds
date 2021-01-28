@@ -33,21 +33,20 @@ colBuild = rowBuild
 if ( $numImg > 1 ){
   for ( j in 2:$numImg ){
     rowBuild = seq((j-1)*$imgSize*$numChannels+1,j*$imgSize*$numChannels,$numChannels)
-  if ( $numChannels > 1 ){
-    for ( i in 2:$numChannels ){
-      rowBuild = rbind(rowBuild, seq((j-1)*$imgSize*$numChannels+i,j*$numChannels*$imgSize,$numChannels))
+    if ( $numChannels > 1 ){
+      for ( i in 2:$numChannels ){
+        rowBuild = rbind(rowBuild, seq((j-1)*$imgSize*$numChannels+i,j*$numChannels*$imgSize,$numChannels))
+      }
     }
-  }
-  colBuild = cbind(colBuild, rowBuild)
+    colBuild = cbind(colBuild, rowBuild)
   }
 }
 
 # Set input variables
 x = t(colBuild)
 w=matrix(1,rows=$numFilters, cols=$numChannels*$filterSize)
+dout = conv1d::forward(x, w, $pad, $stride, $numImg, $numChannels, $imgSize, $numFilters, $filterSize)
 
-# Call function
-output = conv1d::forward(x, w, $pad, $stride, $numImg, $numChannels, $imgSize, $numFilters, $filterSize)
-
+output = conv1d::backward_filter(x, dout, $pad, $stride, $numImg, $numChannels, $imgSize, $numFilters, $filterSize)
 #Write output
 write(output, $output, format="text")

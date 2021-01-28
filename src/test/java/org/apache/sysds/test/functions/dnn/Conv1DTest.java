@@ -32,7 +32,9 @@ import org.apache.sysds.test.TestUtils;
 
 public class Conv1DTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "Conv1DTest";
+	private final static String TEST_NAME_1 = "Conv1DTest";
+	private final static String TEST_NAME_2 = "Conv1DBackwardDataTest";
+	private final static String TEST_NAME_3 = "Conv1DBackwardFilterTest";
 	private final static String TEST_DIR = "functions/tensor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + Conv1DTest.class.getSimpleName() + "/";
 	private final static double epsilon=0.0000000001;
@@ -40,7 +42,9 @@ public class Conv1DTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"output"}));
+		addTestConfiguration(TEST_NAME_1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_1, new String[] {"output"}));
+		addTestConfiguration(TEST_NAME_2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_2, new String[] {"output"}));
+		addTestConfiguration(TEST_NAME_3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_3, new String[] {"output"}));
 	}
 
 	@Test
@@ -50,14 +54,7 @@ public class Conv1DTest extends AutomatedTestBase
 		expected.put(new CellIndex(1,1), 3.0);
 		expected.put(new CellIndex(1,2), 5.0);
 		expected.put(new CellIndex(1,3), 7.0);
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
-	}
-
-	private void fillExpected(HashMap<CellIndex, Double> expected, int rowNum, int rowLength, double value1, double value2){
-		for ( int m = 1; m <= rowLength; m+=2){
-			expected.put(new CellIndex(rowNum,m), value1);
-			expected.put(new CellIndex(rowNum,m+1), value2);
-		}
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
 	}
 
 	@Test
@@ -70,17 +67,7 @@ public class Conv1DTest extends AutomatedTestBase
 		fillExpected(expected, 4, 6, 183.0, 201.0);
 		fillExpected(expected, 5, 6, 237.0, 255.0);
 
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
-	}
-
-	private void fillExpectedRepeated(HashMap<CellIndex, Double> expected,int repetitionNum, double[] values, int row){
-		int colPointer = 1;
-		for (int i = 1; i <= repetitionNum;i++){
-			for(double value : values) {
-				expected.put(new CellIndex(row, colPointer), value);
-				colPointer++;
-			}
-		}
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
 	}
 
 	@Test
@@ -88,7 +75,7 @@ public class Conv1DTest extends AutomatedTestBase
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
 		HashMap<CellIndex, Double> expected = new HashMap<>();
 		fillExpectedRepeated(expected, 3, new double[]{136.,264.,392.,520.},1);
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
 	}
 
 	@Test
@@ -96,7 +83,7 @@ public class Conv1DTest extends AutomatedTestBase
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
 		HashMap<CellIndex, Double> expected = new HashMap<>();
 		fillExpectedRepeated(expected, 3, new double[]{78.,200.,328.,456.,414.},1);
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
 	}
 
 	@Test
@@ -106,7 +93,7 @@ public class Conv1DTest extends AutomatedTestBase
 		fillExpectedRepeated(expected,3,new double[]{1.,5.,9.,13.,17.,10.},1);
 		fillExpectedRepeated(expected,3,new double[]{11.,25.,29.,33.,37.,20.},2);
 		fillExpectedRepeated(expected,3,new double[]{21.,45.,49.,53.,57.,30.},3);
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
 	}
 
 	@Test
@@ -116,7 +103,7 @@ public class Conv1DTest extends AutomatedTestBase
 		fillExpectedRepeated(expected,3,new double[]{3.,10.,21.,33.,45.,57.,69.,81.,58.,31.},1);
 		fillExpectedRepeated(expected,3,new double[]{35.,74.,117.,129.,141.,153.,165.,177.,122.,63.},2);
 		fillExpectedRepeated(expected,3,new double[]{67.,138.,213.,225.,237.,249.,261.,273.,186.,95.},3);
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
 	}
 
 	@Test
@@ -124,7 +111,7 @@ public class Conv1DTest extends AutomatedTestBase
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 1; int pad = 0;
 		HashMap<CellIndex, Double> expected = new HashMap<>();
 		fillExpectedRepeated(expected,3,new double[]{136.,200.,264.,328.,392.,456.,520.},1);
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false,expected);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
 	}
 
 	@Test
@@ -137,7 +124,7 @@ public class Conv1DTest extends AutomatedTestBase
 		fillExpectedRepeated(expected,3,firstExpected,1);
 		fillExpectedRepeated(expected,3,secondExpected,2);
 		fillExpectedRepeated(expected,3,thirdExpected,3);
-		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
 	}
 
 	@Test
@@ -150,11 +137,67 @@ public class Conv1DTest extends AutomatedTestBase
 		fillExpected(expected, 3, 12, 129.0, 147.0);
 		fillExpected(expected, 4, 12, 183.0, 201.0);
 		fillExpected(expected, 5, 12, 237.0, 255.0);
-		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false, expected);
+		runConv1DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_1);
+	}
+
+	@Test
+	public void testConv1DBackwardDataDense1() {
+		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 3; int filterSize = 1; int stride = 1; int pad = 0;
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpectedRepeated(expected,3,new double[]{6.,15.,24.},1);
+		fillExpectedRepeated(expected,3,new double[]{33.,42.,51.},2);
+		fillExpectedRepeated(expected,3,new double[]{60.,69.,78.},3);
+		fillExpectedRepeated(expected,3,new double[]{87.,96.,105.},4);
+		fillExpectedRepeated(expected,3,new double[]{114.,123.,132.},5);
+
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_2);
+	}
+
+	@Test
+	public void testConv1DBackwardFilterDense1() {
+		int numImg = 2; int imgSize = 3; int numChannels = 2; int numFilters = 3; int filterSize = 1; int stride = 1; int pad = 0;
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpectedRepeatedCol(expected,3,new double[]{608.,686.});
+
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_3);
+	}
+
+	@Test
+	public void testConv1DBackwardFilterDense2() {
+		int numImg = 2; int imgSize = 3; int numChannels = 2; int numFilters = 3; int filterSize = 2; int stride = 1; int pad = 0;
+		HashMap<CellIndex, Double> expected = new HashMap<>();
+		fillExpectedRepeatedCol(expected,3,new double[]{680.,888.,784.,992.});
+
+		runConv1DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, expected, TEST_NAME_3);
+	}
+
+	private void fillExpected(HashMap<CellIndex, Double> expected, int rowNum, int rowLength, double value1, double value2){
+		for ( int m = 1; m <= rowLength; m+=2){
+			expected.put(new CellIndex(rowNum,m), value1);
+			expected.put(new CellIndex(rowNum,m+1), value2);
+		}
+	}
+
+	private void fillExpectedRepeated(HashMap<CellIndex, Double> expected,int repetitionNum, double[] values, int row){
+		int colPointer = 1;
+		for (int i = 1; i <= repetitionNum;i++){
+			for(double value : values) {
+				expected.put(new CellIndex(row, colPointer), value);
+				colPointer++;
+			}
+		}
+	}
+
+	private void fillExpectedRepeatedCol(HashMap<CellIndex, Double> expected,int repetitionRows, double[] values){
+		for ( int i = 1; i <= repetitionRows; i++){
+			for ( int j = 1; j <= values.length; j++ ){
+				expected.put(new CellIndex(i,j), values[j-1]);
+			}
+		}
 	}
 
 	public void runConv1DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters,
-		int filterSize, int stride, int pad, boolean sparse1, boolean sparse2, HashMap<CellIndex, Double> expected)
+		int filterSize, int stride, int pad, HashMap<CellIndex, Double> expected, String TEST_NAME)
 	{
 		ExecMode platformOld = rtplatform;
 		switch( et ){
@@ -167,8 +210,6 @@ public class Conv1DTest extends AutomatedTestBase
 
 		try
 		{
-			String sparseVal1 = String.valueOf(sparse1).toUpperCase();
-			String sparseVal2 = String.valueOf(sparse2).toUpperCase();
 			getAndLoadTestConfiguration(TEST_NAME);
 
 			String SCRIPT_HOME = SCRIPT_DIR + TEST_DIR + TEST_NAME;
@@ -183,9 +224,7 @@ public class Conv1DTest extends AutomatedTestBase
 				"filterSize=" + filterSize,
 				"stride=" + stride,
 				"pad=" + pad,
-				"output=" + output("output"),
-				"sparseVal1=" + sparseVal1,
-				"sparseVal2=" + sparseVal2
+				"output=" + output("output")
 			};
 
 			// Run DML

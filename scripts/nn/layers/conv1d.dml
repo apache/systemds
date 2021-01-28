@@ -21,7 +21,7 @@
 
 source("scripts/nn/util.dml") as util
 
-forward = function(matrix[double] input, matrix[double] filter, int pad, int stride, int numInput, int numChannels, int inputWidth, int numFilters, int filterSize, matrix[double] bias)
+forward = function(matrix[double] input, matrix[double] filter, int pad, int stride, int numInput, int numChannels, int inputWidth, int numFilters, int filterSize)
     return (matrix[double] out) {
   /*
   * Computes the forward pass for a 1D spatial convolutional layer
@@ -37,11 +37,55 @@ forward = function(matrix[double] input, matrix[double] filter, int pad, int str
   *  - inputWidth: Input width.
   *  - numFilters: Number of filters F
   *  - filterSize: Filter width.
-  *  - bias: Biases, of shape (F, 1).
   *
   * Outputs:
   *  - out: Outputs, of shape (N, F*Wout).
-  *  - Wout: Output width.
   */
-  out = conv2d(input, filter, padding=[0,pad], stride=[1, stride], input_shape=[numInput,numChannels,1,inputWidth], filter_shape=[numFilters,numChannels,1,filterSize], bias=bias)
+  out = conv2d(input, filter, padding=[0,pad], stride=[1, stride], input_shape=[numInput,numChannels,1,inputWidth], filter_shape=[numFilters,numChannels,1,filterSize])
+}
+
+backward_data = function(matrix[double] filter, matrix[double] dout, int pad, int stride, int numInput, int numChannels, int inputWidth, int numFilters, int filterSize)
+    return (matrix[double] out) {
+  /*
+  * Computes the backward pass regarding the input data for a 1D spatial convolutional layer
+  * by reshaping the input to fit conv2d backward data pass.
+  *
+  * Inputs:
+  *  - filter: Weights, of shape (F, C*W).
+  *  - dout: Output of the forward pass
+  *  - pad: Padding for left and right sides of input elements.
+  *  - stride: Stride for moving filter.
+  *  - numInput: Number of input elements N
+  *  - numChannels: Number of input channels (dimensionality of input depth).
+  *  - inputWidth: Input width.
+  *  - numFilters: Number of filters F
+  *  - filterSize: Filter width.
+  *
+  * Outputs:
+  *  - out: gradients based on the input data of the convolution.
+  */
+  out = conv2d_backward_data(filter, dout, stride=[1, stride], padding=[0, pad], input_shape=[numInput, numChannels, 1, inputWidth], filter_shape=[numFilters, numChannels, 1, filterSize] )
+}
+
+backward_filter = function(matrix[double] input, matrix[double] dout, int pad, int stride, int numInput, int numChannels, int inputWidth, int numFilters, int filterSize)
+    return (matrix[double] out) {
+  /*
+  * Computes the backward pass regarding the filter for a 1D spatial convolutional layer
+  * by reshaping the input to fit conv2d backward data pass.
+  *
+  * Inputs:
+  *  - input: Inputs, of shape (N, C*W).
+  *  - dout: Output of the forward pass
+  *  - pad: Padding for left and right sides of input elements.
+  *  - stride: Stride for moving filter.
+  *  - numInput: Number of input elements N
+  *  - numChannels: Number of input channels (dimensionality of input depth).
+  *  - inputWidth: Input width.
+  *  - numFilters: Number of filters F
+  *  - filterSize: Filter width.
+  *
+  * Outputs:
+  *  - out: gradients bsaed on the filter of the convolution.
+  */
+  out = conv2d_backward_filter(input, dout, stride=[1, stride], padding=[0, pad], input_shape=[numInput, numChannels, 1, inputWidth], filter_shape=[numFilters, numChannels, 1, filterSize] )
 }

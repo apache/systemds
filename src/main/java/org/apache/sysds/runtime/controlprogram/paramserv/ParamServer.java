@@ -203,11 +203,15 @@ public abstract class ParamServer
 						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
 						// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
 						// BSP epoch case every time
-						if (LOG.isInfoEnabled() && _validationPossible &&
-								(_freq == Statement.PSFrequency.EPOCH ||
-							 	(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
-							LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
-							validate();
+						if ((_freq == Statement.PSFrequency.EPOCH ||
+							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+
+							if(LOG.isInfoEnabled())
+								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+
+							if(_validationPossible)
+								validate();
+
 							_epochCounter++;
 							_syncCounter = 0;
 						}
@@ -222,18 +226,19 @@ public abstract class ParamServer
 				}
 				case ASP: {
 					updateGlobalModel(gradients);
-					if(LOG.isInfoEnabled()) {
-						// This if works similarly to the one for BSP, but divides the sync couter through the number of workers,
-						// creating "Pseudo Epochs"
-						if (LOG.isInfoEnabled() && _validationPossible &&
-								((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
-								 (_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0))) {
+					// This if works similarly to the one for BSP, but divides the sync couter through the number of workers,
+					// creating "Pseudo Epochs"
+					if ((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
+						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0)) {
 
+						if(LOG.isInfoEnabled())
 							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
+
+						if(_validationPossible)
 							validate();
-							_epochCounter++;
-							_syncCounter = 0;
-						}
+
+						_epochCounter++;
+						_syncCounter = 0;
 					}
 
 					broadcastModel(workerID);
@@ -332,7 +337,9 @@ public abstract class ParamServer
 		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 
 		// Log validation results
-		LOG.info("[+] PARAMSERV: validation-loss: " + loss + " validation-accuracy: " + accuracy);
+		if(LOG.isInfoEnabled())
+			LOG.info("[+] PARAMSERV: validation-loss: " + loss + " validation-accuracy: " + accuracy);
+
 		if(tValidate != null)
 			Statistics.accPSValidationTime((long) tValidate.stop());
 	}

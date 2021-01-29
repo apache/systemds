@@ -95,7 +95,7 @@
     <sysds.gpu.memory.allocator>cuda</sysds.gpu.memory.allocator>
 
     <!-- enables disk spilling for lineage cache -->
-    <sysds.lineage.cachespill>true</sysds.lineage.cachespill>
+    <sysds.lineage.cachespill>false</sysds.lineage.cachespill>
 
     <!-- enables compiler assisted partial rewrites (e.g. Append-TSMM) -->
     <sysds.lineage.compilerassisted>true</sysds.lineage.compilerassisted>

@@ -29,6 +29,7 @@ import org.apache.spark.util.AccumulatorV2;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -50,6 +51,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.EncoderBin;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderMVImpute;
@@ -57,10 +59,12 @@ import org.apache.sysds.runtime.transform.encode.EncoderMVImpute.MVMethod;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.transform.meta.TfOffsetMap;
+
 import scala.Tuple2;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -113,14 +117,14 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				in.lookup(1L).get(0).getColumnNames() : null; 
 			
 			//step 1: build transform meta data
-			Encoder encoderBuild = EncoderFactory.createEncoder(spec, colnames,
-				fo.getSchema(), (int)fo.getNumColumns(), null);
+			EncoderComposite encoderBuild = (EncoderComposite) EncoderFactory
+				.createEncoder(spec, colnames, fo.getSchema(), (int)fo.getNumColumns(), null);
 			
-			MaxLongAccumulator accMax = registerMaxLongAccumulator(sec.getSparkContext()); 
+			MaxLongAccumulator accMax = registerMaxLongAccumulator(sec.getSparkContext());
 			JavaRDD<String> rcMaps = in
 				.mapPartitionsToPair(new TransformEncodeBuildFunction(encoderBuild))
 				.distinct().groupByKey()
-				.flatMap(new TransformEncodeGroupFunction(accMax));
+				.flatMap(new TransformEncodeGroupFunction(encoderBuild, accMax));
 			if( containsMVImputeEncoder(encoderBuild) ) {
 				EncoderMVImpute mva = getMVImputeEncoder(encoderBuild);
 				rcMaps = rcMaps.union(
@@ -241,34 +245,47 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = 6336375833412029279L;
 
-		private EncoderRecode _raEncoder = null;
+		private EncoderComposite _encoder = null;
 		
-		public TransformEncodeBuildFunction(Encoder encoder) {
-			for( Encoder cEncoder : ((EncoderComposite)encoder).getEncoders() )
-				if( cEncoder instanceof EncoderRecode )
-					_raEncoder = (EncoderRecode)cEncoder;
+		public TransformEncodeBuildFunction(EncoderComposite encoder) {
+			_encoder = encoder;
 		}
 		
 		@Override
 		public Iterator<Tuple2<Integer, Object>> call(Iterator<Tuple2<Long, FrameBlock>> iter)
 			throws Exception 
 		{
-			//build meta data (e.g., recode maps)
-			if( _raEncoder != null ) {
-				_raEncoder.prepareBuildPartial();
-				while( iter.hasNext() )
-					_raEncoder.buildPartial(iter.next()._2());
-			}
+			//build meta data (e.g., recoding recode maps and binning min/max)
+			_encoder.prepareBuildPartial();
+			while( iter.hasNext() )
+				_encoder.buildPartial(iter.next()._2());
+			
+			//encoder-specific outputs
+			EncoderRecode raEncoder = (EncoderRecode)_encoder.getEncoder(EncoderRecode.class);
+			EncoderBin baEncoder = (EncoderBin)_encoder.getEncoder(EncoderBin.class);
+			ArrayList<Tuple2<Integer,Object>> ret = new ArrayList<>();
 			
 			//output recode maps as columnID - token pairs
-			ArrayList<Tuple2<Integer,Object>> ret = new ArrayList<>();
-			HashMap<Integer,HashSet<Object>> tmp = _raEncoder.getCPRecodeMapsPartial();
-			for( Entry<Integer,HashSet<Object>> e1 : tmp.entrySet() )
-				for( Object token : e1.getValue() )
-					ret.add(new Tuple2<>(e1.getKey(), token));
-			if( _raEncoder != null )
-				_raEncoder.getCPRecodeMapsPartial().clear();
-		
+			if( raEncoder != null ) {
+				HashMap<Integer,HashSet<Object>> tmp = raEncoder.getCPRecodeMapsPartial();
+				for( Entry<Integer,HashSet<Object>> e1 : tmp.entrySet() )
+					for( Object token : e1.getValue() )
+						ret.add(new Tuple2<>(e1.getKey(), token));
+				if( raEncoder != null )
+					raEncoder.getCPRecodeMapsPartial().clear();
+			}
+			
+			//output binning column min/max as columnID - min/max pairs
+			if( baEncoder != null ) {
+				int[] colIDs = baEncoder.getColList();
+				double[] colMins = baEncoder.getColMins();
+				double[] colMaxs = baEncoder.getColMaxs();
+				for(int j=0; j<colIDs.length; j++) {
+					ret.add(new Tuple2<>(colIDs[j], String.valueOf(colMins[j])));
+					ret.add(new Tuple2<>(colIDs[j], String.valueOf(colMaxs[j])));
+				}
+			}
+			
 			return ret.iterator();
 		}
 	}
@@ -285,9 +302,11 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = -1034187226023517119L;
 
-		private MaxLongAccumulator _accMax = null;
+		private final EncoderComposite _encoder;
+		private final MaxLongAccumulator _accMax;
 		
-		public TransformEncodeGroupFunction( MaxLongAccumulator accMax ) {
+		public TransformEncodeGroupFunction(EncoderComposite encoder, MaxLongAccumulator accMax) {
+			_encoder = encoder;
 			_accMax = accMax;
 		}
 		
@@ -295,22 +314,48 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		public Iterator<String> call(Tuple2<Integer, Iterable<Object>> arg0)
 			throws Exception 
 		{
-			String colID = String.valueOf(arg0._1());
+			String scolID = String.valueOf(arg0._1());
+			int colID = Integer.parseInt(scolID);
 			Iterator<Object> iter = arg0._2().iterator();
-			
 			ArrayList<String> ret = new ArrayList<>();
-			StringBuilder sb = new StringBuilder();
+			
 			long rowID = 1;
-			while( iter.hasNext() ) {
-				sb.append(rowID);
-				sb.append(' ');
-				sb.append(colID);
-				sb.append(' ');
-				sb.append(EncoderRecode.constructRecodeMapEntry(
-						iter.next().toString(), rowID));
-				ret.add(sb.toString());
-				sb.setLength(0); 
-				rowID++;
+			StringBuilder sb = new StringBuilder();
+			
+			//handle recode maps
+			if( _encoder.isEncoder(colID, EncoderRecode.class) ) {
+				while( iter.hasNext() ) {
+					sb.append(rowID).append(' ').append(scolID).append(' ');
+					sb.append(EncoderRecode.constructRecodeMapEntry(iter.next().toString(), rowID));
+					ret.add(sb.toString());
+					sb.setLength(0); 
+					rowID++;
+				}
+			}
+			//handle bin boundaries
+			else if( _encoder.isEncoder(colID, EncoderBin.class) ) {
+				EncoderBin baEncoder = (EncoderBin)_encoder.getEncoder(EncoderBin.class);
+				double min = Double.MAX_VALUE;
+				double max = -Double.MAX_VALUE;
+				while( iter.hasNext() ) {
+					double value = Double.parseDouble(iter.next().toString());
+					min = Math.min(min, value);
+					max = Math.max(max, value);
+				}
+				int j = Arrays.binarySearch(baEncoder.getColList(), colID);
+				baEncoder.computeBins(j, min, max);
+				double[] binMins = baEncoder.getBinMins(j);
+				double[] binMaxs = baEncoder.getBinMaxs(j);
+				for(int i=0; i<binMins.length; i++) {
+					sb.append(rowID).append(' ').append(scolID).append(' ');
+					sb.append(binMins[i]).append(Lop.DATATYPE_PREFIX).append(binMaxs[i]);
+					ret.add(sb.toString());
+					sb.setLength(0);
+					rowID++;
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Unsupported metadata output for encoder: \n"+_encoder);
 			}
 			_accMax.add(rowID-1);
 			

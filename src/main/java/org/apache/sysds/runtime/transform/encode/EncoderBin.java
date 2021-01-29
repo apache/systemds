@@ -50,10 +50,14 @@ public class EncoderBin extends Encoder
 	protected int[] _numBins = null;
 	
 	//frame transform-apply attributes
+	// a) column bin boundaries
 	//TODO binMins is redundant and could be removed
 	private double[][] _binMins = null;
 	private double[][] _binMaxs = null;
-
+	// b) column min/max (for partial build)
+	private double[] _colMins = null;
+	private double[] _colMaxs = null;
+	
 	public EncoderBin(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException, IOException 
 	{
@@ -91,6 +95,22 @@ public class EncoderBin extends Encoder
 		_binMaxs = binMaxs;
 	}
 	
+	public double[] getColMins() {
+		return _colMins;
+	}
+	
+	public double[] getColMaxs() {
+		return _colMaxs;
+	}
+	
+	public double[] getBinMins(int j) {
+		return _binMins[j];
+	}
+	
+	public double[] getBinMaxs(int j) {
+		return _binMaxs[j];
+	}
+	
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
 		build(in);
@@ -101,9 +121,6 @@ public class EncoderBin extends Encoder
 	public void build(FrameBlock in) {
 		if ( !isApplicable() )
 			return;
-		// initialize internal transformation metadata
-		_binMins = new double[_colList.length][];
-		_binMaxs = new double[_colList.length][];
 		
 		// derive bin boundaries from min/max per column
 		for(int j=0; j <_colList.length; j++) {
@@ -116,12 +133,49 @@ public class EncoderBin extends Encoder
 				min = Math.min(min, inVal);
 				max = Math.max(max, inVal);
 			}
-			_binMins[j] = new double[_numBins[j]];
-			_binMaxs[j] = new double[_numBins[j]];
-			for(int i=0; i<_numBins[j]; i++) {
-				_binMins[j][i] = min + i*(max-min)/_numBins[j];
-				_binMaxs[j][i] = min + (i+1)*(max-min)/_numBins[j];
+			computeBins(j, min, max);
+		}
+	}
+	
+	public void computeBins(int j, double min, double max) {
+		// ensure allocated internal transformation metadata
+		if( _binMins == null || _binMaxs == null ) {
+			_binMins = new double[_colList.length][];
+			_binMaxs = new double[_colList.length][];
+		}
+		_binMins[j] = new double[_numBins[j]];
+		_binMaxs[j] = new double[_numBins[j]];
+		for(int i=0; i<_numBins[j]; i++) {
+			_binMins[j][i] = min + i*(max-min)/_numBins[j];
+			_binMaxs[j][i] = min + (i+1)*(max-min)/_numBins[j];
+		}
+	}
+	
+	public void prepareBuildPartial() {
+		//ensure allocated min/max arrays
+		if( _colMins == null ) {
+			_colMins = new double[_colList.length];
+			_colMaxs = new double[_colList.length];
+		}
+	}
+	
+	public void buildPartial(FrameBlock in) {
+		if ( !isApplicable() )
+			return;
+		
+		// derive bin boundaries from min/max per column
+		for(int j=0; j <_colList.length; j++) {
+			double min = Double.POSITIVE_INFINITY;
+			double max = Double.NEGATIVE_INFINITY;
+			int colID = _colList[j];
+			for( int i=0; i<in.getNumRows(); i++ ) {
+				double inVal = UtilFunctions.objectToDouble(
+					in.getSchema()[colID-1], in.get(i, colID-1));
+				min = Math.min(min, inVal);
+				max = Math.max(max, inVal);
 			}
+			_colMins[j] = min;
+			_colMaxs[j] = max;
 		}
 	}
 	

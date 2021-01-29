@@ -133,10 +133,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN, false);
 	}
 	
-//	@Test
-//	public void testHomesBinningIDsSparkCSV() {
-//		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN, false);
-//	}
+	@Test
+	public void testHomesBinningIDsSparkCSV() {
+		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN, false);
+	}
 	
 	@Test
 	public void testHomesBinningIDsHybridCSV() {
@@ -148,10 +148,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, false);
 	}
 
-//	@Test
-//	public void testHomesBinningDummyIDsSparkCSV() {
-//		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN_DUMMY, false);
-//	}
+	@Test
+	public void testHomesBinningDummyIDsSparkCSV() {
+		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN_DUMMY, false);
+	}
 	
 	@Test
 	public void testHomesBinningDummyIDsHybridCSV() {
@@ -238,10 +238,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN, true);
 	}
 	
-//	@Test
-//	public void testHomesBinningColnamesSparkCSV() {
-//		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN, true);
-//	}
+	@Test
+	public void testHomesBinningColnamesSparkCSV() {
+		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN, true);
+	}
 	
 	@Test
 	public void testHomesBinningColnamesHybridCSV() {
@@ -253,10 +253,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, true);
 	}
 	
-//	@Test
-//	public void testHomesBinningDummyColnamesSparkCSV() {
-//		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN_DUMMY, true);
-//	}
+	@Test
+	public void testHomesBinningDummyColnamesSparkCSV() {
+		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN_DUMMY, true);
+	}
 	
 	@Test
 	public void testHomesBinningDummyColnamesHybridCSV() {

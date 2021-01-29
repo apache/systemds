@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -59,6 +60,22 @@ public class EncoderComposite extends Encoder
 		return _encoders;
 	}
 	
+	public Encoder getEncoder(Class<?> type) {
+		for( Encoder encoder : _encoders ) {
+			if( encoder.getClass().equals(type) )
+				return encoder;
+		}
+		return null;
+	}
+	
+	public boolean isEncoder(int colID, Class<?> type) {
+		for( Encoder encoder : _encoders ) {
+			if( encoder.getClass().equals(type) )
+				return ArrayUtils.contains(encoder.getColList(), colID);
+		}
+		return false;
+	}
+	
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
 		try {
@@ -91,7 +108,19 @@ public class EncoderComposite extends Encoder
 			encoder.build(in);
 	}
 	
-	@Override 
+	@Override
+	public void prepareBuildPartial() {
+		for( Encoder encoder : _encoders )
+			encoder.prepareBuildPartial();
+	}
+	
+	@Override
+	public void buildPartial(FrameBlock in) {
+		for( Encoder encoder : _encoders )
+			encoder.buildPartial(in);
+	}
+	
+	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		try {
 			for( Encoder encoder : _encoders )

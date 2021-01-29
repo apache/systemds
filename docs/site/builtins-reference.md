@@ -1,6 +1,6 @@
 ---
 layout: site
-title: Buildin Reference
+title: Built-in Reference
 ---
 <!--
 {% comment %}
@@ -70,7 +70,7 @@ limitations under the License.
 The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level functions
 to support all kinds of use cases.
 
-A builtin ir either implemented on a compiler level or as DML scripts that are loaded at compile time.
+A builtin is either implemented on a compiler level or as DML scripts that are loaded at compile time.
 
 # Built-In Construction Functions
 

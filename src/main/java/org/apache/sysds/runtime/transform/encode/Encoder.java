@@ -119,6 +119,22 @@ public abstract class Encoder implements Serializable
 	public abstract void build(FrameBlock in);
 	
 	/**
+	 * Allocates internal data structures for partial build.
+	 */
+	public void prepareBuildPartial() {
+		//do nothing
+	}
+	
+	/**
+	 * Partial build of internal data structures (e.g., in distributed spark operations).
+	 * 
+	 * @param in input frame block
+	 */
+	public void buildPartial(FrameBlock in) {
+		//do nothing
+	}
+	
+	/**
 	 * Encode input data blockwise according to existing transform meta
 	 * data (transform apply).
 	 * 

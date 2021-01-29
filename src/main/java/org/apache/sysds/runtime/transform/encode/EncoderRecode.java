@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 
-public class EncoderRecode extends Encoder 
+public class EncoderRecode extends Encoder
 {
 	private static final long serialVersionUID = 8213163881283341874L;
 	
@@ -139,13 +139,15 @@ public class EncoderRecode extends Encoder
 	protected void putCode(HashMap<String,Long> map, String key) {
 		map.put(key, Long.valueOf(map.size()+1));
 	}
-	
+
+	@Override
 	public void prepareBuildPartial() {
 		//ensure allocated partial recode map
 		if( _rcdMapsPart == null )
 			_rcdMapsPart = new HashMap<>();
 	}
 
+	@Override
 	public void buildPartial(FrameBlock in) {
 		if( !isApplicable() )
 			return;

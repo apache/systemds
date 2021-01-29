@@ -19,7 +19,10 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -31,14 +34,13 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * interface for decoding matrices to frames.
  * 
  */
-public abstract class Decoder implements Serializable
+public abstract class Decoder implements Externalizable
 {	
 	private static final long serialVersionUID = -1732411001366177787L;
 	
-	protected final ValueType[] _schema;
-	protected final int[] _colList;
+	protected ValueType[] _schema;
+	protected int[] _colList;
 	protected String[] _colnames = null;
-	
 	protected Decoder(ValueType[] schema, int[] colList) {
 		_schema = schema;
 		_colList = colList;
@@ -91,4 +93,60 @@ public abstract class Decoder implements Serializable
 	}
 	
 	public abstract void initMetaData(FrameBlock meta);
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default
+	 * hadoop writable serialization for efficient broadcast/rdd serialization.
+	 *
+	 * @param os object output
+	 * @throws IOException if IOException occurs
+	 */
+	@Override
+	public void writeExternal(ObjectOutput os)
+		throws IOException
+	{
+		int size1 = (_colList == null) ? 0 : _colList.length;
+		os.writeInt(size1);
+		for(int i = 0; i < size1; i++)
+			os.writeInt(_colList[i]);
+
+		int size2 = (_colnames == null) ? 0 : _colnames.length;
+		os.writeInt(size2);
+		for(int j = 0; j < size2; j++)
+			os.writeUTF(_colnames[j]);
+
+		int size3 = (_schema == null) ? 0 : _schema.length;
+		os.writeInt(size3);
+		for(int j = 0; j < size3; j++)
+			os.writeByte(_schema[j].ordinal());
+	}
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default
+	 * hadoop writable serialization for efficient broadcast/rdd deserialization.
+	 *
+	 * @param in object input
+	 * @throws IOException if IOException occur
+	 */
+	@Override
+	public void readExternal(ObjectInput in)
+		throws IOException
+	{
+		int size1 = in.readInt();
+		_colList = (size1 == 0) ? null : new int[size1];
+		for(int i = 0; i < size1; i++)
+			_colList[i] = in.readInt();
+
+		int size2 = in.readInt();
+		_colnames = (size2 == 0) ? null : new String[size2];
+		for(int j = 0; j < size2; j++) {
+			_colnames[j] = in.readUTF();
+		}
+
+		int size3 = in.readInt();
+		_schema = (size3 == 0) ? null : new ValueType[size3];
+		for(int j = 0; j < size3; j++) {
+			_schema[j] = ValueType.values()[in.readByte()];
+		}
+	}
 }

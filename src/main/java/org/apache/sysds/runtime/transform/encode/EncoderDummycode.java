@@ -19,11 +19,15 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -230,5 +234,44 @@ public class EncoderDummycode extends Encoder
 		}
 		
 		return out;
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		out.writeLong(_dummycodedLength);
+		int size1 = _domainSizes == null ? 0 : _domainSizes.length;
+		out.writeInt(size1);
+		for(int i = 0; i < size1; i++)
+			out.writeInt(_domainSizes[i]);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		_dummycodedLength = in.readLong();
+		if(_domainSizes == null || _domainSizes.length == 0) {
+			_domainSizes = new int[in.readInt()];
+			for(int i = 0; i < _domainSizes.length; i++)
+				_domainSizes[i] = in.readInt();
+		}
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if(this == o)
+			return true;
+		if(o == null || getClass() != o.getClass())
+			return false;
+		EncoderDummycode that = (EncoderDummycode) o;
+		return _dummycodedLength == that._dummycodedLength
+			&& Arrays.equals(_domainSizes, that._domainSizes);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hash(_dummycodedLength);
+		result = 31 * result + Arrays.hashCode(_domainSizes);
+		return result;
 	}
 }

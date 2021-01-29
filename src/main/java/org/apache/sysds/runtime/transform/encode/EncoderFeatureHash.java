@@ -19,14 +19,18 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 /**
  * Class used for feature hashing transformation of frames. 
@@ -143,5 +147,17 @@ public class EncoderFeatureHash extends Encoder
 			int colID = _colList[j]; //1-based
 			_K = UtilFunctions.parseToLong(meta.get(0, colID-1).toString());
 		}
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		out.writeLong(_K);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		_K = in.readLong();
 	}
 }

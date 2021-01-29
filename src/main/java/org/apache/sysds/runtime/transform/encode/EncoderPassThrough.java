@@ -64,8 +64,8 @@ public class EncoderPassThrough extends Encoder
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				Object val = in.get(i, col);
 				out.quickSetValue(i, col, (val==null||(vt==ValueType.STRING 
-						&& val.toString().isEmpty())) ? Double.NaN : 
-						UtilFunctions.objectToDouble(vt, val));
+					&& val.toString().isEmpty())) ? Double.NaN : 
+					UtilFunctions.objectToDouble(vt, val));
 			}
 		}
 		

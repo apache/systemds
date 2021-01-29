@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -119,6 +122,28 @@ public class DecoderDummycode extends Decoder
 			_clPos[j] = off + colID;
 			_cuPos[j] = _clPos[j] + ndist;
 			off += ndist - 1;
+		}
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput os) throws IOException {
+		super.writeExternal(os);
+		os.writeInt(_clPos.length);
+		for(int i = 0; i < _clPos.length; i++) {
+			os.writeInt(_clPos[i]);
+			os.writeInt(_cuPos[i]);
+		}
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		int size = in.readInt();
+		_clPos = new int[size];
+		_cuPos = new int[size];
+		for(int i = 0; i < size; i++) {
+			_clPos[i] = in.readInt();
+			_cuPos[i] = in.readInt();
 		}
 	}
 }

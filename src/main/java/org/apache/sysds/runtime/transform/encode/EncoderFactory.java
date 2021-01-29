@@ -38,6 +38,17 @@ import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
 public class EncoderFactory 
 {
+	public enum EncoderType {
+		Bin,
+		Dummycode,
+		FeatureHash,
+		MVImpute,
+		Omit,
+		PassThrough,
+		Recode
+	};
+
+	
 	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
 	}
@@ -140,6 +151,40 @@ public class EncoderFactory
 			throw new DMLRuntimeException(ex);
 		}
 		return encoder;
+	}
+	
+	public static int getEncoderType(Encoder encoder) {
+		if( encoder instanceof EncoderBin )
+			return EncoderType.Bin.ordinal();
+		else if( encoder instanceof EncoderDummycode )
+			return EncoderType.Dummycode.ordinal();
+		else if( encoder instanceof EncoderFeatureHash )
+			return EncoderType.FeatureHash.ordinal();
+		else if( encoder instanceof EncoderMVImpute )
+			return EncoderType.MVImpute.ordinal();
+		else if( encoder instanceof EncoderOmit )
+			return EncoderType.Omit.ordinal();
+		else if( encoder instanceof EncoderPassThrough )
+			return EncoderType.PassThrough.ordinal();
+		else if( encoder instanceof EncoderRecode )
+			return EncoderType.Recode.ordinal();
+		throw new DMLRuntimeException("Unsupported encoder type: "
+			+ encoder.getClass().getCanonicalName());
+	}
+	
+	public static Encoder createInstance(int type) {
+		EncoderType etype = EncoderType.values()[type];
+		switch(etype) {
+			case Bin:         return new EncoderBin();
+			case Dummycode:   return new EncoderDummycode();
+			case FeatureHash: return new EncoderFeatureHash();
+			case MVImpute:    return new EncoderMVImpute();
+			case Omit:        return new EncoderOmit();
+			case PassThrough: return new EncoderPassThrough();
+			case Recode:      return new EncoderRecode();
+			default:
+				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
+		}
 	}
 	
 	private static HashMap<String, Integer> getColumnPositions(String[] colnames) {

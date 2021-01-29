@@ -19,9 +19,13 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types.ValueType;
@@ -42,7 +46,11 @@ public class EncoderComposite extends Encoder
 	
 	private List<Encoder> _encoders = null;
 	private FrameBlock _meta = null;
-	
+
+	public EncoderComposite() {
+		super(null, -1);
+	}
+
 	public EncoderComposite(List<Encoder> encoders) {
 		super(null, -1);
 		_encoders = encoders;
@@ -131,6 +139,22 @@ public class EncoderComposite extends Encoder
 			throw ex;
 		}
 		return out;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if(this == o)
+			return true;
+		if(o == null || getClass() != o.getClass())
+			return false;
+		EncoderComposite that = (EncoderComposite) o;
+		return _encoders.equals(that._encoders)
+			&& Objects.equals(_meta, that._meta);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(_encoders, _meta);
 	}
 
 	@Override
@@ -247,5 +271,33 @@ public class EncoderComposite extends Encoder
 			sb.append("\n");
 		}
 		return sb.toString();
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeInt(_encoders.size());
+		for(Encoder encoder : _encoders) {
+			out.writeByte(EncoderFactory.getEncoderType(encoder));
+			encoder.writeExternal(out);
+		}
+		out.writeBoolean(_meta != null);
+		if(_meta != null)
+			_meta.write(out);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		int encodersSize = in.readInt();
+		_encoders = new ArrayList<>();
+		for(int i = 0; i < encodersSize; i++) {
+			Encoder encoder = EncoderFactory.createInstance(in.readByte());
+			encoder.readExternal(in);
+			_encoders.add(encoder);
+		}
+		if (in.readBoolean()) {
+			FrameBlock meta = new FrameBlock();
+			meta.readFields(in);
+			_meta = meta;
+		}
 	}
 }

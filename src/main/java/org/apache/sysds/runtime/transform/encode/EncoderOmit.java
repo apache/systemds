@@ -19,7 +19,12 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Arrays;
+import java.util.Objects;
+
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -194,5 +199,42 @@ public class EncoderOmit extends Encoder
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		//do nothing
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		out.writeBoolean(_federated);
+		out.writeInt(_rmRows.length);
+		for(boolean r : _rmRows)
+			out.writeBoolean(r);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		if(_rmRows.length == 0) {
+			_federated = in.readBoolean();
+			_rmRows = new boolean[in.readInt()];
+			for(int i = 0; i < _rmRows.length; i++)
+				_rmRows[i] = in.readBoolean();
+		}
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if(this == o)
+			return true;
+		if(o == null || getClass() != o.getClass())
+			return false;
+		EncoderOmit that = (EncoderOmit) o;
+		return _federated == that._federated && Arrays.equals(_rmRows, that._rmRows);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hash(_federated);
+		result = 31 * result + Arrays.hashCode(_rmRows);
+		return result;
 	}
 }

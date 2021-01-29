@@ -586,7 +586,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			// OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
 			OptimizationWrapper.optimize(_optMode, sb, this, ec, _monitor); //core optimize
 		}
-		
+
 		///////
 		//DATA PARTITIONING of read-only parent variables of type (matrix,unpartitioned)
 		///////

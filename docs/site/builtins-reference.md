@@ -45,7 +45,7 @@ limitations under the License.
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
-    * [`lmpredict`-Function](#lmpredict-function)
+    * [`lmPredict`-Function](#lmPredict-function)
     * [`mice`-Function](#mice-function)
     * [`multiLogReg`-Function](#multiLogReg-function)
     * [`pnmf`-Function](#pnmf-function)
@@ -183,7 +183,7 @@ y = toOneHot(X, numClasses)
 ## `cvlm`-Function
 
 The `cvlm`-function is used for cross-validation of the provided data model. This function follows a non-exhaustive
-cross validation method. It uses [`lm`](#lm-function) and [`lmpredict`](#lmpredict-function) functions to solve the linear
+cross validation method. It uses [`lm`](#lm-function) and [`lmPredict`](#lmPredict-function) functions to solve the linear
 regression and to predict the class of a feature vector with no intercept, shifting, and rescaling.
 
 ### Usage
@@ -425,7 +425,7 @@ Through multiple parallel brackets and consecutive trials it will return the hyp
 on a validation dataset. A set of hyper parameter combinations is drawn from uniform distributions with given ranges; Those
 make up the candidates for `hyperband`.
 Notes: 
-* `hyperband` is hard-coded for `lmCG`, and uses `lmpredict` for validation
+* `hyperband` is hard-coded for `lmCG`, and uses `lmPredict` for validation
 * `hyperband` is hard-coded to use the number of iterations as a resource 
 * `hyperband` can only optimize continuous hyperparameters
 
@@ -778,14 +778,14 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 lmCG(X = X, y = y, maxi = 10)
 ```
 
-## `lmpredict`-Function
+## `lmPredict`-Function
 
-The `lmpredict`-function predicts the class of a feature vector.
+The `lmPredict`-function predicts the class of a feature vector.
 
 ### Usage
 
 ```r
-lmpredict(X, w)
+lmPredict(X=X, B=w)
 ```
 
 ### Arguments
@@ -793,8 +793,11 @@ lmpredict(X, w)
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vector(s). |
-| w       | Matrix[Double] | required | 1-column matrix of weights. |
-| icpt    | Matrix[Double] | `0`      | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
+| B       | Matrix[Double] | required | 1-column matrix of weights. |
+| ytest   | Matrix[Double] | optional | Optional test labels, used only for verbose output. |
+| icpt    | Integer        | 0        | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
+| verbose | Boolean        | FALSE    | Print various statistics for evaluating accuracy. |
+
 
 ### Returns
 
@@ -808,7 +811,7 @@ lmpredict(X, w)
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
-yp = lmpredict(X, w)
+yp = lmPredict(X = X, B = w)
 ```
 
 ## `mice`-Function

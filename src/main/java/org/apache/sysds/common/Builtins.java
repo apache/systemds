@@ -144,7 +144,7 @@ public enum Builtins {
 	LM("lm", true),
 	LMCG("lmCG", true),
 	LMDS("lmDS", true),
-	LMPREDICT("lmpredict", true),
+	LMPREDICT("lmPredict", true),
 	LOG("log", false),
 	LOGSUMEXP("logSumExp", true),
 	LSTM("lstm", false, ReturnType.MULTI_RETURN),

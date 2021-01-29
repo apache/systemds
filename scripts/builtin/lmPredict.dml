@@ -19,17 +19,24 @@
 #
 #-------------------------------------------------------------
 
-m_lmpredict = function(Matrix[Double] X, Matrix[Double] w, Integer icpt = 0) return (Matrix[Double] y) {
-  intercept_status = icpt;
+m_lmPredict = function(Matrix[Double] X, Matrix[Double] B, 
+  Matrix[Double] ytest = matrix(0,1,1), Integer icpt = 0, Boolean verbose = FALSE) 
+  return (Matrix[Double] yhat)
+{
+  intercept = ifelse(icpt==0, matrix(0,1,ncol(B)), B[nrow(B),]);
+  yhat = X %*% B[1:ncol(X)] + matrix(1,nrow(X),1) %*% intercept;
 
-  if (intercept_status == 0) {
-    y = X %*% w
-  }
-  else if (intercept_status == 1) {
-    ones_n = matrix (1, rows = nrow (X), cols = 1);
-    X = cbind (X, ones_n);
-    y = X %*% w;
-  } else {
-    #ToDo: icpt == 2
+  if( verbose ) {
+    y_residual = ytest - yhat;
+    avg_res = sum(y_residual) / nrow(ytest);
+    ss_res = sum(y_residual^2);
+    ss_avg_res = ss_res - nrow(ytest) * avg_res^2;
+    R2 = 1 - ss_res / (sum(ytest^2) - nrow(ytest) * (sum(ytest)/nrow(ytest))^2);
+    print("\nAccuracy:" +
+          "\n--sum(ytest) = " + sum(ytest) +
+          "\n--sum(yhat) = " + sum(yhat) +
+          "\n--AVG_RES_Y: " + avg_res +
+          "\n--SS_AVG_RES_Y: " + ss_avg_res +
+          "\n--R2: " + R2 );
   }
 }

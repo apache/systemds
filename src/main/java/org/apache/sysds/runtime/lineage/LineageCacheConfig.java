@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -77,7 +79,7 @@ public class LineageCacheConfig
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
-	private static boolean _allowSpill = false;
+	//private static boolean _allowSpill = false;
 	// Minimum reliable spilling estimate in milliseconds.
 	public static final double MIN_SPILL_TIME_ESTIMATE = 10;
 	// Minimum reliable data size for spilling estimate in MB.
@@ -170,7 +172,7 @@ public class LineageCacheConfig
 	static {
 		//setup static configuration parameters
 		REUSE_OPCODES = OPCODES;
-		setSpill(true); 
+		//setSpill(true); 
 		setCachePolicy(LineageCachePolicy.COSTNSIZE);
 		setCompAssRW(true);
 	}
@@ -308,13 +310,15 @@ public class LineageCacheConfig
 		return (WEIGHTS[2] > 0);
 	}
 
-	public static void setSpill(boolean toSpill) {
+	/*public static void setSpill(boolean toSpill) {
 		_allowSpill = toSpill;
 		// NOTE: _allowSpill only enables/disables disk spilling, but has 
 		// no control over eviction order of cached items.
-	}
+	}*/
 	
 	public static boolean isSetSpill() {
-		return _allowSpill;
+		// Check if cachespill set in SystemDS-config (default true)
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
+		return conf.getBooleanValue(DMLConfig.LINEAGECACHESPILL);
 	}
 }

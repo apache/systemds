@@ -77,20 +77,21 @@ public class DMLCompressionStatistics {
 	}
 
 	public static void display(StringBuilder sb) {
-		
-		sb.append(String.format(
-			"CLA Compression Phases :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n",
-			Phase0 / 1000,
-			Phase1 / 1000,
-			Phase2 / 1000,
-			Phase3 / 1000,
-			Phase4 / 1000,
-			Phase5 / 1000));
-		sb.append(String.format("Decompression Counts (Single , Multi) thread                     :\t%d/%d\n",
-			DecompressSTCount,
-			DecompressMTCount));
-		sb.append(String.format("Dedicated Decompression Time (Single , Multi) thread             :\t%.3f/%.3f\n",
-			DecompressST / 1000,
-			DecompressMT / 1000));
+		if(Phase0 > 0.0){ //  If compression have been used
+			sb.append(String.format(
+				"CLA Compression Phases :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n",
+				Phase0 / 1000,
+				Phase1 / 1000,
+				Phase2 / 1000,
+				Phase3 / 1000,
+				Phase4 / 1000,
+				Phase5 / 1000));
+			sb.append(String.format("Decompression Counts (Single , Multi) thread                     :\t%d/%d\n",
+				DecompressSTCount,
+				DecompressMTCount));
+			sb.append(String.format("Dedicated Decompression Time (Single , Multi) thread             :\t%.3f/%.3f\n",
+				DecompressST / 1000,
+				DecompressMT / 1000));
+		}
 	}
 }

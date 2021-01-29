@@ -158,7 +158,8 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			JavaPairRDD<Long,FrameBlock> tmp = in
 				.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = FrameRDDConverterUtils
-				.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
+				.binaryBlockToMatrixBlock(tmp, mcOut, mcOut)
+				.cache(); //best effort cache as reblock not at hop level
 			
 			//set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(_outputs.get(0).getName(), out);

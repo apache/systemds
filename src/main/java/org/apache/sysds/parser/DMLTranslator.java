@@ -1036,13 +1036,13 @@ public class DMLTranslator
 				
 				DataOp ae = (DataOp)processExpression(source, target, ids);
 				String formatName = os.getExprParam(DataExpression.FORMAT_TYPE).toString();
-				ae.setInputFormatType(Expression.convertFormatType(formatName));
+				ae.setFileFormat(Expression.convertFormatType(formatName));
 
 				if (ae.getDataType() == DataType.SCALAR ) {
 					ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 				}
 				else {
-					switch(ae.getInputFormatType()) {
+					switch(ae.getFileFormat()) {
 					case TEXT:
 					case MM:
 					case CSV:
@@ -1059,7 +1059,7 @@ public class DMLTranslator
 						ae.setOutputParams(ae.getDim1(), ae.getDim2(), -1, ae.getUpdateType(), -1);
 						break;
 						default:
-							throw new LanguageException("Unrecognized file format: " + ae.getInputFormatType());
+							throw new LanguageException("Unrecognized file format: " + ae.getFileFormat());
 					}
 				}
 				
@@ -1553,7 +1553,7 @@ public class DMLTranslator
 				if (ae instanceof DataOp && ((DataOp) ae).getOp() != OpOpData.SQLREAD &&
 						((DataOp) ae).getOp() != OpOpData.FEDERATED) {
 					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
-					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
+					((DataOp)ae).setFileFormat(Expression.convertFormatType(formatName));
 				}
 				return ae;
 			}

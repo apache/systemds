@@ -1377,7 +1377,7 @@ public class HopRewriteUtils
 	public static boolean alwaysRequiresReblock(Hop hop) {
 		return (hop instanceof DataOp
 			&& ((DataOp)hop).getOp()==OpOpData.PERSISTENTREAD
-			 && ((DataOp)hop).getInputFormatType()!=FileFormat.BINARY);
+			 && ((DataOp)hop).getFileFormat()!=FileFormat.BINARY);
 	}
 	
 	public static boolean containsOp(ArrayList<Hop> candidates, Class<? extends Hop> clazz) {

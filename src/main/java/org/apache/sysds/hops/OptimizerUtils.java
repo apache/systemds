@@ -775,7 +775,7 @@ public class OptimizerUtils
 
 	public static long estimateSizeTextOutput(long rows, long cols, long nnz, FileFormat fmt) {
 		long bsize = MatrixBlock.estimateSizeOnDisk(rows, cols, nnz);
-		if( fmt.isIJVFormat() )
+		if( fmt.isIJV() )
 			return bsize * 3;
 		else if( fmt == FileFormat.LIBSVM )
 			return Math.round(bsize * 2.5);
@@ -941,8 +941,8 @@ public class OptimizerUtils
 			ret &= ( p.getExecType()==ExecType.CP 
 				||(p instanceof AggBinaryOp && allowsToFilterEmptyBlockOutputs(p) )
 				||(HopRewriteUtils.isReorg(p, ReOrgOp.RESHAPE, ReOrgOp.TRANS) && allowsToFilterEmptyBlockOutputs(p) )
-				||(HopRewriteUtils.isData(p, OpOpData.PERSISTENTWRITE) && ((DataOp)p).getInputFormatType()==FileFormat.TEXT))
-				&& !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getInputFormatType()!=FileFormat.TEXT) ); //no function call or transient write
+				||(HopRewriteUtils.isData(p, OpOpData.PERSISTENTWRITE) && ((DataOp)p).getFileFormat()==FileFormat.TEXT))
+				&& !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getFileFormat()!=FileFormat.TEXT) ); //no function call or transient write
 		}
 		return ret;
 	}

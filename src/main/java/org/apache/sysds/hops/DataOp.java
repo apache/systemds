@@ -98,7 +98,7 @@ public class DataOp extends Hop {
 		setNnz(nnz);
 		
 		if( dop == OpOpData.TRANSIENTREAD )
-			setInputFormatType(FileFormat.BINARY);
+			setFileFormat(FileFormat.BINARY);
 	}
 
 	public DataOp(String l, DataType dt, ValueType vt, OpOpData dop,
@@ -136,7 +136,7 @@ public class DataOp extends Hop {
 			index++;
 		}
 		if (dop == OpOpData.TRANSIENTREAD ){
-			setInputFormatType(FileFormat.BINARY);
+			setFileFormat(FileFormat.BINARY);
 		}
 		
 		if( params.containsKey(DataExpression.READROWPARAM) )
@@ -158,7 +158,7 @@ public class DataOp extends Hop {
 		_fileName = fname;
 
 		if (dop == OpOpData.TRANSIENTWRITE || dop == OpOpData.FUNCTIONOUTPUT )
-			setInputFormatType(FileFormat.BINARY);
+			setFileFormat(FileFormat.BINARY);
 	}
 	
 	/**
@@ -196,7 +196,7 @@ public class DataOp extends Hop {
 		}
 
 		if (dop == OpOpData.TRANSIENTWRITE)
-			setInputFormatType(FileFormat.BINARY);
+			setFileFormat(FileFormat.BINARY);
 	}
 
 	/** Check for N (READ) or N+1 (WRITE) inputs. */
@@ -280,27 +280,27 @@ public class DataOp extends Hop {
 		{
 			case TRANSIENTREAD:
 				l = new Data(_op, null, inputLops, getName(), null, 
-						getDataType(), getValueType(), getInputFormatType());
+						getDataType(), getValueType(), getFileFormat());
 				setOutputDimensions(l);
 				break;
 				
 			case PERSISTENTREAD:
 				l = new Data(_op, null, inputLops, getName(), null, 
-						getDataType(), getValueType(), getInputFormatType());
+						getDataType(), getValueType(), getFileFormat());
 				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
 				break;
 				
 			case PERSISTENTWRITE:
 			case FUNCTIONOUTPUT:
 				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null, 
-					getDataType(), getValueType(), getInputFormatType());
+					getDataType(), getValueType(), getFileFormat());
 				((Data)l).setExecType(et);
 				setOutputDimensions(l);
 				break;
 				
 			case TRANSIENTWRITE:
 				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null,
-						getDataType(), getValueType(), getInputFormatType());
+						getDataType(), getValueType(), getFileFormat());
 				setOutputDimensions(l);
 				break;
 				
@@ -327,11 +327,11 @@ public class DataOp extends Hop {
 
 	}
 
-	public void setInputFormatType(FileFormat ft) {
+	public void setFileFormat(FileFormat ft) {
 		_inFormat = ft;
 	}
 
-	public FileFormat getInputFormatType() {
+	public FileFormat getFileFormat() {
 		return _inFormat;
 	}
 	

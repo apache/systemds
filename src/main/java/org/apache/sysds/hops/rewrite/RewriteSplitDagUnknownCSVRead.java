@@ -152,7 +152,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 		{
 			DataOp dop = (DataOp) hop;
 			if(    dop.getOp() == OpOpData.PERSISTENTREAD
-				&& dop.getInputFormatType() == FileFormat.CSV
+				&& dop.getFileFormat() == FileFormat.CSV
 				&& !dop.dimsKnown()
 				&& !HopRewriteUtils.hasOnlyWriteParents(dop, true, false) )
 			{

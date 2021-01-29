@@ -1344,7 +1344,7 @@ public class Recompiler
 		}
 		//special case for persistent reads with unknown size (read-after-write)
 		else if( HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD)
-			&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormat.CSV
+			&& !hop.dimsKnown() && ((DataOp)hop).getFileFormat()!=FileFormat.CSV
 			&& !ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA) )
 		{
 			//update hop with read meta data

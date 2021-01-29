@@ -500,7 +500,7 @@ public class Types
 		FEDERATED, // A federated matrix
 		PROTO;  // protocol buffer representation
 		
-		public boolean isIJVFormat() {
+		public boolean isIJV() {
 			return this == TEXT || this == MM;
 		}
 		

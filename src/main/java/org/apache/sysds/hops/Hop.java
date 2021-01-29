@@ -311,7 +311,7 @@ public abstract class Hop implements ParseInfo {
 			{
 				if( this instanceof DataOp  // CSV
 					&& ((DataOp)this).getOp() == OpOpData.PERSISTENTREAD
-					&& ((DataOp)this).getInputFormatType() == FileFormat.CSV  )
+					&& ((DataOp)this).getFileFormat() == FileFormat.CSV  )
 				{
 					reblock = new CSVReBlock( input, getBlocksize(), 
 						getDataType(), getValueType(), et);

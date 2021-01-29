@@ -60,17 +60,21 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		if(hop.isVisited())
 			return;
 		
-		// The reblocking is performed after transform, and hence checkpoint only non-transformed reads.
-		if( (hop instanceof DataOp && ((DataOp)hop).getOp()==OpOpData.PERSISTENTREAD)
-			|| hop.requiresReblock() )
-		{
+		// Inject checkpoints after persistent reads (for binary matrices only), or
+		// after reblocks that cause expensive shuffling. However, carefully avoid
+		// unnecessary frame checkpoints (e.g., binary data or csv that do not cause 
+		// shuffle) in order to prevent excessive garbage collection due to possibly
+		// many small string objects. An alternative would be serialized caching.
+		boolean isMatrix = hop.getDataType().isMatrix();
+		boolean isPRead = hop instanceof DataOp  && ((DataOp)hop).getOp()==OpOpData.PERSISTENTREAD;
+		boolean isFrameException = hop.getDataType().isFrame() && isPRead && !((DataOp)hop).getFileFormat().isIJV();
+		
+		if( (isMatrix && isPRead) || (hop.requiresReblock() && !isFrameException) ) {
 			//make given hop for checkpointing (w/ default storage level)
 			//note: we do not recursively process childs here in order to prevent unnecessary checkpoints
 			hop.setRequiresCheckpoint(true);
 		}
-		else
-		{
-			//process childs
+		else {
 			if( hop.getInput() != null ) {
 				//process all childs (prevent concurrent modification by index access)
 				for( int i=0; i<hop.getInput().size(); i++ )

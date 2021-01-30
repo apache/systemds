@@ -39,11 +39,13 @@ public class BroadcastObject<T extends CacheBlock> extends LineageObject {
 	public void setNonPartitionedBroadcast(Broadcast<T> bvar, long size) {
 		_npbcRef = new SoftReference<>(bvar);
 		_npbcSize = size;
+		_pbcSize = -1;
 	}
 
 	public void setPartitionedBroadcast(PartitionedBroadcast<T> bvar, long size) {
 		_pbcRef = new SoftReference<>(bvar);
 		_pbcSize = size;
+		_npbcSize = -1;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -55,12 +57,8 @@ public class BroadcastObject<T extends CacheBlock> extends LineageObject {
 		return _npbcRef.get();
 	}
 
-	public long getPartitionedBroadcastSize() {
-		return _pbcSize;
-	}
-
-	public long getNonPartitionedBroadcastSize() {
-		return _npbcSize;
+	public long getSize() {
+		return Math.max(_pbcSize, _npbcSize);
 	}
 
 	public boolean isPartitionedBroadcastValid() {

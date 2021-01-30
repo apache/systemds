@@ -1,0 +1,100 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/util.dml") as util
+
+forward = function(matrix[double] input, matrix[double] filter, int pad, int stride,
+  int numInput, int numChannels, int inputWidth, int numFilters, int filterSize)
+  return (matrix[double] out)
+{
+  /*
+  * Computes the forward pass for a 1D spatial convolutional layer
+  * by reshaping the input to fit conv2d.
+  *
+  * Inputs:
+  *  - input: Inputs, of shape (N, C*W).
+  *  - filter: Weights, of shape (F, C*W).
+  *  - pad: Padding for left and right sides of input elements.
+  *  - stride: Stride for moving filter.
+  *  - numInput: Number of input elements N
+  *  - numChannels: Number of input channels (dimensionality of input depth).
+  *  - inputWidth: Input width.
+  *  - numFilters: Number of filters F
+  *  - filterSize: Filter width.
+  *
+  * Outputs:
+  *  - out: Outputs, of shape (N, F*Wout).
+  */
+  out = conv2d(input, filter, padding=[0,pad], stride=[1, stride], 
+	  input_shape=[numInput,numChannels,1,inputWidth], filter_shape=[numFilters,numChannels,1,filterSize])
+}
+
+backward_data = function(matrix[double] filter, matrix[double] dout, int pad, int stride,
+  int numInput, int numChannels, int inputWidth, int numFilters, int filterSize)
+  return (matrix[double] out)
+{
+  /*
+  * Computes the backward pass regarding the input data for a 1D spatial convolutional layer
+  * by reshaping the input to fit conv2d backward data pass.
+  *
+  * Inputs:
+  *  - filter: Weights, of shape (F, C*W).
+  *  - dout: Output of the forward pass
+  *  - pad: Padding for left and right sides of input elements.
+  *  - stride: Stride for moving filter.
+  *  - numInput: Number of input elements N
+  *  - numChannels: Number of input channels (dimensionality of input depth).
+  *  - inputWidth: Input width.
+  *  - numFilters: Number of filters F
+  *  - filterSize: Filter width.
+  *
+  * Outputs:
+  *  - out: gradients based on the input data of the convolution.
+  */
+  out = conv2d_backward_data(filter, dout, stride=[1,stride], padding=[0,pad], 
+	  input_shape=[numInput,numChannels,1,inputWidth], filter_shape=[numFilters,numChannels,1,filterSize])
+}
+
+backward_filter = function(matrix[double] input, matrix[double] dout, int pad, int stride, 
+  int numInput, int numChannels, int inputWidth, int numFilters, int filterSize)
+  return (matrix[double] out)
+{
+  /*
+  * Computes the backward pass regarding the filter for a 1D spatial convolutional layer
+  * by reshaping the input to fit conv2d backward data pass.
+  *
+  * Inputs:
+  *  - input: Inputs, of shape (N, C*W).
+  *  - dout: Output of the forward pass
+  *  - pad: Padding for left and right sides of input elements.
+  *  - stride: Stride for moving filter.
+  *  - numInput: Number of input elements N
+  *  - numChannels: Number of input channels (dimensionality of input depth).
+  *  - inputWidth: Input width.
+  *  - numFilters: Number of filters F
+  *  - filterSize: Filter width.
+  *
+  * Outputs:
+  *  - out: gradients bsaed on the filter of the convolution.
+  */
+  out = conv2d_backward_filter(input, dout, stride=[1,stride], padding=[0,pad], 
+	  input_shape=[numInput,numChannels,1,inputWidth], filter_shape=[numFilters,numChannels,1,filterSize])
+}

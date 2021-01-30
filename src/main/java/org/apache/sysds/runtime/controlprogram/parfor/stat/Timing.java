@@ -26,27 +26,22 @@ package org.apache.sysds.runtime.controlprogram.parfor.stat;
  */
 public class Timing 
 {
-
-	
 	private long _start = -1;
 	
 	public Timing() {
 		//default constructor
 	}
 	
-	public Timing(boolean start)
-	{
+	public Timing(boolean start) {
 		//init and start the timer
-		if( start ){
+		if( start )
 			start();
-		}
 	}
 	
 	/**
 	 * Starts the time measurement.
 	 */
-	public void start()
-	{
+	public void start() {
 		_start = System.nanoTime();
 	}
 	
@@ -56,16 +51,15 @@ public class Timing
 	 * 
 	 * @return duration between start and stop
 	 */
-	public double stop()
-	{
+	public double stop() {
 		if( _start == -1 )
 			throw new RuntimeException("Stop time measurement without prior start is invalid.");
 	
-		long end = System.nanoTime();		
+		long end = System.nanoTime();
 		double duration = ((double)(end-_start))/1000000;
 		
 		//carry end time over
-		_start = end;		
+		_start = end;
 		return duration;
 	}
 	
@@ -73,11 +67,8 @@ public class Timing
 	 * Measures and returns the time since the last start() or stop() invocation,
 	 * restarts the measurement, and prints the last measurement to STDOUT.
 	 */
-	public void stopAndPrint()
-	{
+	public void stopAndPrint() {
 		double tmp = stop();
-		
 		System.out.println("PARFOR: time = "+tmp+"ms");
 	}
-	
 }

@@ -38,9 +38,11 @@ import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.utils.Statistics;
@@ -57,15 +59,30 @@ public abstract class ParamServer
 	//aggregation service
 	protected ExecutionContext _ec;
 	private Statement.PSUpdateType _updateType;
+	private Statement.PSFrequency _freq;
 
 	private FunctionCallCPInstruction _inst;
 	private String _outputName;
 	private boolean[] _finishedStates;  // Workers' finished states
 	private ListObject _accGradients = null;
 
+	private boolean _validationPossible;
+	private FunctionCallCPInstruction _valInst;
+	private String _lossOutput;
+	private String _accuracyOutput;
+
+	private int _syncCounter = 0;
+	private int _epochCounter = 0 ;
+	private int _numBatchesPerEpoch;
+
+	private int _numWorkers;
+
 	protected ParamServer() {}
 
-	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
+	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
+		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc,
+		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels)
+	{
 		// init worker queues and global model
 		_modelMap = new HashMap<>(workerNum);
 		IntStream.range(0, workerNum).forEach(i -> {
@@ -77,8 +94,15 @@ public abstract class ParamServer
 		// init aggregation service
 		_ec = ec;
 		_updateType = updateType;
+		_freq = freq;
 		_finishedStates = new boolean[workerNum];
 		setupAggFunc(_ec, aggFunc);
+
+		if(valFunc != null && numBatchesPerEpoch > 0) {
+			setupValFunc(_ec, valFunc, valFeatures, valLabels);
+		}
+		_numBatchesPerEpoch = numBatchesPerEpoch;
+		_numWorkers = workerNum;
 		
 		// broadcast initial model
 		broadcastModel(true);
@@ -110,6 +134,39 @@ public abstract class ParamServer
 			func.getInputParamNames(), outputNames, "aggregate function");
 	}
 
+	protected void setupValFunc(ExecutionContext ec, String valFunc, MatrixObject valFeatures, MatrixObject valLabels) {
+		String[] cfn = DMLProgram.splitFunctionKey(valFunc);
+		String ns = cfn[0];
+		String fname = cfn[1];
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, false);
+		ArrayList<DataIdentifier> inputs = func.getInputParams();
+		ArrayList<DataIdentifier> outputs = func.getOutputParams();
+
+		// Check the output of the validate function
+		if (outputs.size() != 2) {
+			throw new DMLRuntimeException(String.format("The output of the '%s' function should provide the loss and the accuracy in that order", valFunc));
+		}
+		if (outputs.get(0).getDataType() != DataType.SCALAR || outputs.get(1).getDataType() != DataType.SCALAR) {
+			throw new DMLRuntimeException(String.format("The outputs of the '%s' function should both be scalars", valFunc));
+		}
+		_lossOutput = outputs.get(0).getName();
+		_accuracyOutput = outputs.get(1).getName();
+
+		CPOperand[] boundInputs = inputs.stream()
+			.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
+			.toArray(CPOperand[]::new);
+		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
+			.collect(Collectors.toCollection(ArrayList::new));
+		_valInst = new FunctionCallCPInstruction(ns, fname, false, boundInputs,
+			func.getInputParamNames(), outputNames, "validate function");
+
+		// write validation data to execution context. hyper params are already in ec
+		_ec.setVariable(Statement.PS_VAL_FEATURES, valFeatures);
+		_ec.setVariable(Statement.PS_VAL_LABELS, valLabels);
+
+		_validationPossible = true;
+	}
+
 	public abstract void push(int workerID, ListObject value);
 
 	public abstract ListObject pull(int workerID);
@@ -119,7 +176,7 @@ public abstract class ParamServer
 		// so we could return directly the result model
 		return _model;
 	}
-	
+
 	protected synchronized void updateGlobalModel(int workerID, ListObject gradients) {
 		try {
 			if (LOG.isDebugEnabled()) {
@@ -143,6 +200,22 @@ public abstract class ParamServer
 							updateGlobalModel(_accGradients);
 							_accGradients = null;
 						}
+
+						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
+						// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
+						// BSP epoch case every time
+						if ((_freq == Statement.PSFrequency.EPOCH ||
+							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+
+							if(LOG.isInfoEnabled())
+								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+
+							if(_validationPossible)
+								validate();
+
+							_epochCounter++;
+							_syncCounter = 0;
+						}
 						
 						// Broadcast the updated model
 						resetFinishedStates();
@@ -154,6 +227,21 @@ public abstract class ParamServer
 				}
 				case ASP: {
 					updateGlobalModel(gradients);
+					// This if works similarly to the one for BSP, but divides the sync couter through the number of workers,
+					// creating "Pseudo Epochs"
+					if ((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
+						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0)) {
+
+						if(LOG.isInfoEnabled())
+							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
+
+						if(_validationPossible)
+							validate();
+
+						_epochCounter++;
+						_syncCounter = 0;
+					}
+
 					broadcastModel(workerID);
 					break;
 				}
@@ -162,14 +250,14 @@ public abstract class ParamServer
 			}
 		} 
 		catch (Exception e) {
-			throw new DMLRuntimeException("Aggregation service failed: ", e);
+			throw new DMLRuntimeException("Aggregation or validation service failed: ", e);
 		}
 	}
 
 	private void updateGlobalModel(ListObject gradients) {
 		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
 		_model = updateLocalModel(_ec, gradients, _model);
-		if (DMLScript.STATISTICS)
+		if (DMLScript.STATISTICS && tAgg != null)
 			Statistics.accPSAggregationTime((long) tAgg.stop());
 	}
 
@@ -226,12 +314,35 @@ public abstract class ParamServer
 
 	private void broadcastModel(int workerID) throws InterruptedException {
 		Timing tBroad = DMLScript.STATISTICS ? new Timing(true) : null;
-
 		//broadcast copy of model to specific worker, cleaned up by worker
 		_modelMap.get(workerID).put(ParamservUtils.copyList(_model, false));
-
-		if (DMLScript.STATISTICS)
+		if (DMLScript.STATISTICS && tBroad != null)
 			Statistics.accPSModelBroadcastTime((long) tBroad.stop());
+	}
+
+	/**
+	 * Checks the current model against the validation set
+	 */
+	private synchronized void validate() {
+		Timing tValidate = DMLScript.STATISTICS ? new Timing(true) : null;
+		_ec.setVariable(Statement.PS_MODEL, _model);
+
+		// Invoke the validation function
+		_valInst.processInstruction(_ec);
+
+		// Get the validation results
+		double loss = ((DoubleObject) _ec.getVariable(_lossOutput)).getDoubleValue();
+		double accuracy = ((DoubleObject) _ec.getVariable(_accuracyOutput)).getDoubleValue();
+
+		// cleanup
+		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+
+		// Log validation results
+		if(LOG.isInfoEnabled())
+			LOG.info("[+] PARAMSERV: validation-loss: " + loss + " validation-accuracy: " + accuracy);
+
+		if(tValidate != null)
+			Statistics.accPSValidationTime((long) tValidate.stop());
 	}
 
 	public FunctionCallCPInstruction getAggInst() {

@@ -55,8 +55,8 @@ public class FederatedProdTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{20, 12, true},
-			{20, 12, false}
+			{100, 12, true},
+			{100, 12, false}
 		});
 	}
 
@@ -87,10 +87,10 @@ public class FederatedProdTest extends AutomatedTestBase {
 			c = cols;
 		}
 
-		double[][] X1 = getRandomMatrix(r, c, 1, 5, 1, 3);
-		double[][] X2 = getRandomMatrix(r, c, 1, 5, 1, 7);
-		double[][] X3 = getRandomMatrix(r, c, 1, 5, 1, 8);
-		double[][] X4 = getRandomMatrix(r, c, 1, 5, 1, 9);
+		double[][] X1 = getRandomMatrix(r, c, 0, 2, 1, 3);
+		double[][] X2 = getRandomMatrix(r, c, 0, 2, 1, 7);
+		double[][] X3 = getRandomMatrix(r, c, 0, 2, 1, 8);
+		double[][] X4 = getRandomMatrix(r, c, 0, 2, 1, 9);
 
 		MatrixCharacteristics mc = new MatrixCharacteristics(r, c, blocksize, r * c);
 		writeInputMatrixWithMTD("X1", X1, false, mc);
@@ -135,6 +135,8 @@ public class FederatedProdTest extends AutomatedTestBase {
 
 		// compare via files
 		compareResults(1e-9);
+
+		Assert.assertTrue(heavyHittersContainsString("fed_ua*"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

@@ -33,18 +33,24 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.data.DenseBlockFP32;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.CM;
+import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -335,10 +341,14 @@ public class FederationUtils {
 
 		try {
 			if(aop.aggOp.increOp.fn instanceof Multiply){
-				double mult = 1; //prod *
-				for( Future<FederatedResponse> fr : ffr )
-					mult *= ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
-				return new DoubleObject(mult);
+				MatrixBlock ret = new MatrixBlock(ffr.length, 1, false);
+				MatrixBlock res = new MatrixBlock(0);
+				for(int i = 0; i < ffr.length; i++)
+					ret.setValue(i, 0, ((ScalarObject)ffr[i].get().getData()[0]).getDoubleValue());
+				LibMatrixAgg.aggregateUnaryMatrix(ret, res,
+					new AggregateUnaryOperator(new AggregateOperator(1, Multiply.getMultiplyFnObject()),
+						ReduceAll.getReduceAllFnObject()));
+				return new DoubleObject(res.quickGetValue(0, 0));
 			}
 			else if(aop.aggOp.increOp.fn instanceof Builtin){
 				// then we know it is a Min or Max based on the previous check.

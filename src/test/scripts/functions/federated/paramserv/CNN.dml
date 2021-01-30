@@ -65,13 +65,10 @@ source("scripts/nn/optim/sgd_nesterov.dml") as sgd_nesterov
  *       - W4: 4th layer weights (parameters) matrix, of shape (N3, K)
  *       - b4: 4th layer biases vector, of shape (1, K)
  */
-train = function(matrix[double] X, matrix[double] y,
-                 matrix[double] X_val, matrix[double] y_val,
-                 int epochs, int batch_size, double eta,
-                 int C, int Hin, int Win,
-                 int seed = -1)
-    return (list[unknown] model) {
-
+train = function(matrix[double] X, matrix[double] y, matrix[double] X_val,
+  matrix[double] y_val, int epochs, int batch_size, double eta, int C, int Hin,
+	int Win, int seed = -1) return (list[unknown] model)
+{
   N = nrow(X)
   K = ncol(y)
 
@@ -162,12 +159,11 @@ train = function(matrix[double] X, matrix[double] y,
  *       - b4: 4th layer biases vector, of shape (1, K)
  */
 train_paramserv = function(matrix[double] X, matrix[double] y,
-                 matrix[double] X_val, matrix[double] y_val,
-                 int num_workers, int epochs, string utype, string freq, int batch_size, string scheme, string runtime_balancing, string weighing,
-                 double eta, int C, int Hin, int Win,
-                 int seed = -1)
-    return (list[unknown] model) {
-
+  matrix[double] X_val, matrix[double] y_val, int num_workers, int epochs,
+  string utype, string freq, int batch_size, string scheme, string runtime_balancing,
+  string weighing, double eta, int C, int Hin, int Win, int seed = -1)
+  return (list[unknown] model)
+{
   N = nrow(X)
   K = ncol(y)
 
@@ -210,6 +206,7 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   model = paramserv(model=model, features=X, labels=y, val_features=X_val, val_labels=y_val,
     upd="./src/test/scripts/functions/federated/paramserv/CNN.dml::gradients",
     agg="./src/test/scripts/functions/federated/paramserv/CNN.dml::aggregation",
+    val="./src/test/scripts/functions/federated/paramserv/CNN.dml::validate",
     k=num_workers, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size,
     scheme=scheme, runtime_balancing=runtime_balancing, weighing=weighing, hyperparams=hyperparams, seed=seed)
 }
@@ -267,7 +264,7 @@ predict = function(matrix[double] X, int C, int Hin, int Win, int batch_size, li
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
   iters = ceil(N / batch_size)
-  parfor(i in 1:iters, check=0) {
+  for(i in 1:iters, check=0) {
     # Get next batch
     beg = ((i-1) * batch_size) %% N + 1
     end = min(N, beg + batch_size - 1)
@@ -318,6 +315,25 @@ eval = function(matrix[double] probs, matrix[double] y)
   loss = cross_entropy_loss::forward(probs, y)
   correct_pred = rowIndexMax(probs) == rowIndexMax(y)
   accuracy = mean(correct_pred)
+}
+
+/*
+ * Gives the accuracy and loss for a model and given feature and label matrices
+ *
+ * This function is a combination of the predict and eval function used for validation.
+ * For inputs see eval and predict.
+ *
+ * Outputs:
+ *  - loss: Scalar loss, of shape (1).
+ *  - accuracy: Scalar accuracy, of shape (1).
+ */
+validate = function(matrix[double] val_features, matrix[double] val_labels, 
+  list[unknown] model, list[unknown] hyperparams) 
+	return (double loss, double accuracy)
+{
+  [loss, accuracy] = eval(predict(val_features, as.integer(as.scalar(hyperparams["C"])),
+    as.integer(as.scalar(hyperparams["Hin"])), as.integer(as.scalar(hyperparams["Win"])), 
+    32, model), val_labels)
 }
 
 # Should always use 'features' (batch features), 'labels' (batch labels),
@@ -371,7 +387,7 @@ gradients = function(list[unknown] model,
   # Compute loss & accuracy for training data
   loss = cross_entropy_loss::forward(probs, labels)
   accuracy = mean(rowIndexMax(probs) == rowIndexMax(labels))
-  print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
+  # print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
 
   # Compute data backward pass
   ## loss

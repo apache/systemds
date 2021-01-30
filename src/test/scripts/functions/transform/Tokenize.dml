@@ -35,12 +35,12 @@ write(F2, $3, format="csv");
 
 # Get followup spec, depending on test case
 if (ncol(F2) == 3) {
-    jspec2 = "{\"ids\": true, \"recode\": [1,2,3]}";
+    jspec2 = "{\"ids\": true, \"recode\": [1,2]}";
 } else {
-    jspec2 = "{\"ids\": true, \"recode\": [1,2,3,4]}";
+    jspec2 = "{\"ids\": true, \"recode\": [1,2,4]}";
 }
 
 # Afterward, you can transform it into a matrix:
 [X, M] = transformencode(target=F2, spec=jspec2);
-# print(toString(M));
-# print(toString(X));
+print(toString(X, rows=3, cols=3));
+print(toString(M, rows=3, cols=3));

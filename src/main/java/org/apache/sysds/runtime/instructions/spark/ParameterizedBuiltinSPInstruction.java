@@ -452,9 +452,10 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), params.get("target"));
 			// Counting used to get the data characteristics.
-			long numRows = out.count();
+			Integer numRows = out.mapValues((FrameBlock::getNumRows)).values().reduce(Integer::sum);
+			int numCols = tokenizer.getSchema().length;
 			sec.getDataCharacteristics(output.getName()).set(
-					numRows, tokenizer.getSchema().length, mc.getBlocksize());
+					numRows, numCols, mc.getBlocksize());
 			sec.getFrameObject(output.getName()).setSchema(tokenizer.getSchema());
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply") )

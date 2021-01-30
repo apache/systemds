@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
@@ -222,6 +223,14 @@ public class FEDInstructionUtils {
 			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
 			if(instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class && instruction.isFederated(ec))
 				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
+		}
+		else if(inst instanceof CtableCPInstruction) {
+			CtableCPInstruction cinst = (CtableCPInstruction) inst;
+			if(inst.getOpcode().equalsIgnoreCase("ctable")
+				&& ( ec.getCacheableData(cinst.input1).isFederated(FType.ROW)
+				|| (cinst.input2.isMatrix() && ec.getCacheableData(cinst.input2).isFederated(FType.ROW))
+				|| (cinst.input3.isMatrix() && ec.getCacheableData(cinst.input3).isFederated(FType.ROW))))
+				fedinst = CtableFEDInstruction.parseInstruction(cinst.getInstructionString());
 		}
 
 		//set thread id for federated context management

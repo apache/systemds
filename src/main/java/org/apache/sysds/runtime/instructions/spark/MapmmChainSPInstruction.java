@@ -104,12 +104,12 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		MatrixBlock out = null;
 		if( _chainType == ChainType.XtXv ) {
 			JavaRDD<MatrixBlock> tmp = inX.values().map(new RDDMapMMChainFunction(inV));
-			out = RDDAggregateUtils.sumStable(tmp);		
+			out = RDDAggregateUtils.sumStable(tmp);
 		}
 		else { // ChainType.XtwXv / ChainType.XtXvy
 			PartitionedBroadcast<MatrixBlock> inW = sec.getBroadcastForVariable( _input3.getName() );
 			JavaRDD<MatrixBlock> tmp = inX.map(new RDDMapMMChainFunction2(inV, inW, _chainType));
-			out = RDDAggregateUtils.sumStable(tmp);		
+			out = RDDAggregateUtils.sumStable(tmp);
 		}
 		
 		//put output block into symbol table (no lineage because single block)

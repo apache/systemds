@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.concurrent.Future;
 
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -56,7 +57,13 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
+
+		AggregateUnaryOperator aggun = null;
+		if(opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin"))
+			aggun = InstructionUtils.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), 1);
+		else
+			aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
+
 		if(InstructionUtils.getExecType(str) == ExecType.SPARK)
 			str = InstructionUtils.replaceOperand(str, 4, "-1");
 		return new AggregateUnaryFEDInstruction(aggun, in1, out, opcode, str);
@@ -77,11 +84,9 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();
 
-		if(instString.contains("uarimin") && in.isFederated(FederationMap.FType.COL))
-			instString = instString.replace(getOpcode(), getOpcode().replace("uarimin", "fuarimin"));
-		else if (instString.contains("uarimax") && in.isFederated(FederationMap.FType.COL))
-			instString = instString.replace(getOpcode(), getOpcode().replace("uarimax", "fuarimax"));
-		System.out.println(instString);
+		if((instOpcode.equalsIgnoreCase("uarimax") || instOpcode.equalsIgnoreCase("uarimin")) && in.isFederated(FederationMap.FType.COL))
+			instString = InstructionUtils.replaceOperand(instString, 5, "2");
+
 		//create federated commands for aggregation
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});

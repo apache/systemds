@@ -234,7 +234,14 @@ public class PartialAggregate extends Lop
 		if( getExecType() == ExecType.SPARK )
 			sb.append( _aggtype );
 		else if( getExecType() == ExecType.CP )
-			sb.append( _numThreads );	
+			sb.append( _numThreads );
+
+		//number of outputs, valid for fed instruction
+		if(getOpcode().equalsIgnoreCase("uarimin")
+			|| getOpcode().equalsIgnoreCase("uarimax")) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append("1");
+		}
 		
 		return sb.toString();
 	}

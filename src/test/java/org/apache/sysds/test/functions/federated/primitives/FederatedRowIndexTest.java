@@ -67,11 +67,11 @@ public class FederatedRowIndexTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testRemoveEmptyCP() {
-		runAggregateOperationTest(ExecMode.SINGLE_NODE);
+	public void testRowIndexCP() {
+		runRowIndexTest(ExecMode.SINGLE_NODE);
 	}
 
-	private void runAggregateOperationTest(ExecMode execMode) {
+	private void runRowIndexTest(ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -136,7 +136,7 @@ public class FederatedRowIndexTest extends AutomatedTestBase {
 
 		runTest(null);
 
-		// compare via files
+//		 compare via files
 		compareResults(1e-9);
 
 		Assert.assertTrue(heavyHittersContainsString("fed_uarimax"));

@@ -451,7 +451,10 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), params.get("target"));
-			sec.getDataCharacteristics(output.getName());
+			// Counting used to get the data characteristics.
+			long numRows = out.count();
+			sec.getDataCharacteristics(output.getName()).set(
+					numRows, tokenizer.getSchema().length, mc.getBlocksize());
 			sec.getFrameObject(output.getName()).setSchema(tokenizer.getSchema());
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply") )

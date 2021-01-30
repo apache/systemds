@@ -33,7 +33,14 @@ jspec = read($2, data_type="scalar", value_type="string");
 F2 = tokenize(target=F1[,2:4], spec=jspec);
 write(F2, $3, format="csv");
 
+# Get followup spec, depending on test case
+if (ncol(F2) == 3) {
+    jspec2 = "{\"ids\": true, \"recode\": [1,2,3]}";
+} else {
+    jspec2 = "{\"ids\": true, \"recode\": [1,2,3,4]}";
+}
+
 # Afterward, you can transform it into a matrix:
-#jspec2 = "{\"ids\": true, \"recode\": [1,2,3]}";
-#[X, M] = transformencode(target=F2, spec=jspec2);
-#print(toString(X))
+[X, M] = transformencode(target=F2, spec=jspec2);
+# print(toString(M));
+# print(toString(X));

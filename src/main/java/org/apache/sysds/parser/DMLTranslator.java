@@ -2439,19 +2439,24 @@ public class DMLTranslator
 				else {
 					Hop outDim1 = processExpression(source._args[2], null, hops);
 					Hop outDim2 = processExpression(source._args[3], null, hops);
-					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop, outDim1, outDim2);
+					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(),
+						OpOp3.CTABLE, expr, expr2, weightHop, outDim1, outDim2, new LiteralOp(true));
 				}
 				break;
 				
 			case 3:
 			case 5:
+			case 6:
 				// example DML statement: F = ctable(A,B,W) or F = ctable(A,B,W,10,15) 
 				if (numTableArgs == 3) 
 					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3);
 				else {
 					Hop outDim1 = processExpression(source._args[3], null, hops);
 					Hop outDim2 = processExpression(source._args[4], null, hops);
-					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3, outDim1, outDim2);
+					Hop outputEmptyBlocks = numTableArgs == 6 ?
+						processExpression(source._args[5], null, hops) : new LiteralOp(true);
+					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(),
+						OpOp3.CTABLE, expr, expr2, expr3, outDim1, outDim2, outputEmptyBlocks);
 				}
 				break;
 				

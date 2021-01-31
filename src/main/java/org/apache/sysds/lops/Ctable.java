@@ -33,14 +33,15 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class Ctable extends Lop 
 {
-	private boolean _ignoreZeros = false;
+	private final boolean _ignoreZeros;
+	private final boolean _outputEmptyBlocks;
 	
-	public enum OperationTypes { 
-		CTABLE_TRANSFORM, 
-		CTABLE_TRANSFORM_SCALAR_WEIGHT, 
+	public enum OperationTypes {
+		CTABLE_TRANSFORM,
+		CTABLE_TRANSFORM_SCALAR_WEIGHT,
 		CTABLE_TRANSFORM_HISTOGRAM, 
-		CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM, 
-		CTABLE_EXPAND_SCALAR_WEIGHT, 
+		CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM,
+		CTABLE_EXPAND_SCALAR_WEIGHT,
 		INVALID;
 		public boolean hasSecondInput() {
 			return this == CTABLE_TRANSFORM
@@ -57,13 +58,14 @@ public class Ctable extends Lop
 	
 
 	public Ctable(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		this(inputLops, op, dt, vt, false, et);
+		this(inputLops, op, dt, vt, false, true, et);
 	}
 	
-	public Ctable(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, boolean ignoreZeros, ExecType et) {
+	public Ctable(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, boolean ignoreZeros, boolean outputEmptyBlocks, ExecType et) {
 		super(Lop.Type.Ctable, dt, vt);
 		init(inputLops, op, et);
 		_ignoreZeros = ignoreZeros;
+		_outputEmptyBlocks = outputEmptyBlocks;
 	}
 	
 	private void init(Lop[] inputLops, OperationTypes op, ExecType et) {
@@ -111,8 +113,7 @@ public class Ctable extends Lop
 	 * @return operation type
 	 */
 	 
-	public OperationTypes getOperationType()
-	{
+	public OperationTypes getOperationType() {
 		return operation;
 	}
 
@@ -128,28 +129,19 @@ public class Ctable extends Lop
 			sb.append( "ctableexpand" );
 		sb.append( OPERAND_DELIMITOR );
 		
-		if ( getInputs().get(0).getDataType() == DataType.SCALAR ) {
-			sb.append ( getInputs().get(0).prepScalarInputOperand(getExecType()) );
-		}
-		else {
-			sb.append( getInputs().get(0).prepInputOperand(input1));
-		}
+		sb.append( getInputs().get(0).getDataType() == DataType.SCALAR ?
+			getInputs().get(0).prepScalarInputOperand(getExecType()) :
+			getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
 		
-		if ( getInputs().get(1).getDataType() == DataType.SCALAR ) {
-			sb.append ( getInputs().get(1).prepScalarInputOperand(getExecType()) );
-		}
-		else {
-			sb.append( getInputs().get(1).prepInputOperand(input2));
-		}
+		sb.append( getInputs().get(1).getDataType() == DataType.SCALAR ?
+			getInputs().get(1).prepScalarInputOperand(getExecType()) :
+			getInputs().get(1).prepInputOperand(input2));
 		sb.append( OPERAND_DELIMITOR );
 		
-		if ( getInputs().get(2).getDataType() == DataType.SCALAR ) {
-			sb.append ( getInputs().get(2).prepScalarInputOperand(getExecType()) );
-		}
-		else {
-			sb.append( getInputs().get(2).prepInputOperand(input3));
-		}
+		sb.append( getInputs().get(2).getDataType() == DataType.SCALAR ?
+			getInputs().get(2).prepScalarInputOperand(getExecType()) :
+			getInputs().get(2).prepInputOperand(input3));
 		sb.append( OPERAND_DELIMITOR );
 		
 		if ( this.getInputs().size() > 3 ) {
@@ -178,6 +170,10 @@ public class Ctable extends Lop
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _ignoreZeros );
+		if( getExecType() == ExecType.SPARK ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _outputEmptyBlocks );
+		}
 		
 		return sb.toString();
 	}

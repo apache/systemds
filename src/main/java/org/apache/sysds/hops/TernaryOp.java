@@ -89,7 +89,7 @@ public class TernaryOp extends Hop
 	// Constructor the case where TertiaryOp (table, in particular) has
 	// output dimensions
 	public TernaryOp(String l, DataType dt, ValueType vt, OpOp3 o,
-			Hop inp1, Hop inp2, Hop inp3, Hop inp4, Hop inp5) {
+			Hop inp1, Hop inp2, Hop inp3, Hop inp4, Hop inp5, Hop inp6) {
 		super(l, dt, vt);
 		_op = o;
 		getInput().add(0, inp1);
@@ -97,11 +97,13 @@ public class TernaryOp extends Hop
 		getInput().add(2, inp3);
 		getInput().add(3, inp4);
 		getInput().add(4, inp5);
+		getInput().add(5, inp6);
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
 		inp3.getParent().add(this);
 		inp4.getParent().add(this);
 		inp5.getParent().add(this);
+		inp6.getParent().add(this);
 		_dimInputsPresent = true;
 	}
 
@@ -293,14 +295,22 @@ public class TernaryOp extends Hop
 		Ctable.OperationTypes ternaryOp = isSequenceRewriteApplicable(true) ? 
 			Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
 		boolean ignoreZeros = false;
+		boolean outputEmptyBlocks = (getInput().size() == 6) ?
+			HopRewriteUtils.getBooleanValue((LiteralOp)getInput(5)) : true;
 		
 		if( isMatrixIgnoreZeroRewriteApplicable() ) { 
-			ignoreZeros = true; //table - rmempty - rshape
-			inputLops[0] = ((ParameterizedBuiltinOp)getInput().get(0)).getTargetHop().getInput().get(0).constructLops();
-			inputLops[1] = ((ParameterizedBuiltinOp)getInput().get(1)).getTargetHop().getInput().get(0).constructLops();
+			ignoreZeros = true; //table - rmempty - rshape --> table
+			inputLops[0] = ((ParameterizedBuiltinOp)getInput(0)).getTargetHop().getInput(0).constructLops();
+			inputLops[1] = ((ParameterizedBuiltinOp)getInput(1)).getTargetHop().getInput(0).constructLops();
+		}
+		else if( isCTableReshapeRewriteApplicable(et, ternaryOp) ) {
+			//table - reshape --> table
+			inputLops[0] = ((ReorgOp)getInput(0)).getInput(0).constructLops();
+			inputLops[1] = ((ReorgOp)getInput(1)).getInput(0).constructLops();
 		}
 		
-		Ctable ternary = new Ctable(inputLops, ternaryOp, getDataType(), getValueType(), ignoreZeros, et);
+		Ctable ternary = new Ctable(inputLops, ternaryOp,
+			getDataType(), getValueType(), ignoreZeros, outputEmptyBlocks, et);
 		
 		ternary.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), -1);
 		setLineNumbers(ternary);
@@ -709,5 +719,27 @@ public class TernaryOp extends Hop
 		}
 		
 		return ret;
+	}
+	
+	public boolean isCTableReshapeRewriteApplicable(ExecType et, Ctable.OperationTypes opType) {
+		//early abort if rewrite globally not allowed
+		if( !ALLOW_CTABLE_SEQUENCE_REWRITES || _op!=OpOp3.CTABLE || et!=ExecType.CP )
+			return false;
+		
+		//1) check for ctable CTABLE_TRANSFORM_SCALAR_WEIGHT
+		if( opType==Ctable.OperationTypes.CTABLE_TRANSFORM_SCALAR_WEIGHT ) {
+			Hop input1 = getInput().get(0);
+			Hop input2 = getInput().get(1);
+			//2) check for reshape pair
+			if(    input1 instanceof ReorgOp && ((ReorgOp)input1).getOp()==ReOrgOp.RESHAPE
+				&& input2 instanceof ReorgOp && ((ReorgOp)input2).getOp()==ReOrgOp.RESHAPE )
+			{
+				//common byrow parameter
+				return input1.getInput(4) == input2.getInput(4) //CSE
+					|| input1.getInput(4).compare(input2.getInput(4));
+			}
+		}
+		
+		return false;
 	}
 }

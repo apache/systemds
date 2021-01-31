@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -58,7 +59,7 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 		MatrixObject U = ec.getMatrixObject(input2);
 		MatrixObject V = ec.getMatrixObject(input3);
 
-		if(!(X.isFederated() && !U.isFederated() && !V.isFederated()))
+		if(!(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated()))
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V) = (" + X.isFederated() + ", "
 				+ U.isFederated() + ", " + V.isFederated() + ")");
 

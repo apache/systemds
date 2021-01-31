@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -59,17 +60,17 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 		MatrixObject U = ec.getMatrixObject(input2);
 		MatrixObject V = ec.getMatrixObject(input3);
 		ScalarObject eps = null;
-		
+
 		if(qop.hasFourInputs()) {
 			eps = (_input4.getDataType() == DataType.SCALAR) ?
 				ec.getScalarInput(_input4) :
 				new DoubleObject(ec.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
 		}
 
-		if(!(X.isFederated() && !U.isFederated() && !V.isFederated()))
+		if(!(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated()))
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V) = ("
 				+X.isFederated()+", "+U.isFederated()+", "+V.isFederated()+")");
-		
+
 		FederationMap fedMap = X.getFedMapping();
 		FederatedRequest[] fr1 = fedMap.broadcastSliced(U, false);
 		FederatedRequest fr2 = fedMap.broadcast(V);
@@ -90,7 +91,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 			new CPOperand[]{input1, input2, input3},
 			new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID()});
 		}
-		
+
 		FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
 		FederatedRequest frClean1 = fedMap.cleanup(getTID(), frComp.getID());
 		FederatedRequest frClean2 = fedMap.cleanup(getTID(), fr1[0].getID());
@@ -108,7 +109,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 			response = fedMap.execute(getTID(), true, fr1, fr2,
 				frComp, frGet, frClean1, frClean2, frClean3);
 		}
-		
+
 		//aggregate partial results from federated responses
 		AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 		ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));

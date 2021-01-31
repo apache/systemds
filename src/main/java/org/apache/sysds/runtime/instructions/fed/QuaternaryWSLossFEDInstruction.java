@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -69,7 +70,7 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 			W = ec.getMatrixObject(_input4);
 		}
 
-		if(!(X.isFederated() && !U.isFederated() && !V.isFederated() && (W == null || !W.isFederated())))
+		if(!(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated() && (W == null || !W.isFederated())))
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V, W) = (" + X.isFederated() + ", "
 				+ U.isFederated() + ", " + V.isFederated() + ", " + (W != null ? W.isFederated() : "none") + ")");
 

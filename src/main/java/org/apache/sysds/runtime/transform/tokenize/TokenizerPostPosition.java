@@ -29,6 +29,8 @@ import java.util.List;
 
 public class TokenizerPostPosition implements TokenizerPost{
 
+    private static final long serialVersionUID = 3563407270742660830L;
+
     public TokenizerPostPosition(JSONObject params) {
         // No configurable params yet
     }
@@ -48,7 +50,7 @@ public class TokenizerPostPosition implements TokenizerPost{
                 rowList.toArray(row);
                 out.appendRow(row);
             }
-        };
+        }
 
         return out;
     }

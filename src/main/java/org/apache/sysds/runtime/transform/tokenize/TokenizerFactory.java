@@ -71,21 +71,30 @@ public class TokenizerFactory {
             // Note that internal representation should be independent from output representation
 
             // Algorithm to transform tokens into internal token representation
-            if (algo.equals("whitespace")) {
-                tokenizerPre = new TokenizerPreWhitespaceSplit(idCols, tokenizeCol, algoParams);
-            } else if (algo.equals("ngram")) {
-                tokenizerPre = new TokenizerPreNgram(idCols, tokenizeCol, algoParams);
-            } else {
-                throw new IllegalArgumentException("Algorithm {algo=" + algo + "} is not supported.");
+            switch (algo) {
+                case "whitespace":
+                    tokenizerPre = new TokenizerPreWhitespaceSplit(idCols, tokenizeCol, algoParams);
+                    break;
+                case "ngram":
+                    tokenizerPre = new TokenizerPreNgram(idCols, tokenizeCol, algoParams);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Algorithm {algo=" + algo + "} is not supported.");
             }
 
             // Transform tokens to output representation
-            if (out.equals("count")) {
-                tokenizerPost = new TokenizerPostCount(outParams);
-            } else if (out.equals("position")) {
-                tokenizerPost = new TokenizerPostPosition(outParams);
-            } else {
-                throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");
+            switch (out) {
+                case "count":
+                    tokenizerPost = new TokenizerPostCount(outParams);
+                    break;
+                case "position":
+                    tokenizerPost = new TokenizerPostPosition(outParams);
+                    break;
+                case "hash":
+                    tokenizerPost = new TokenizerPostHash(outParams);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");
             }
 
             tokenizer = new Tokenizer(idCols.size(),  tokenizerPre, tokenizerPost);

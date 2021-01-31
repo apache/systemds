@@ -40,6 +40,7 @@ public class TokenizeTest extends AutomatedTestBase
 
     private static final String SPEC1 = "TokenizeSpec1.json";
     private static final String SPEC2 = "TokenizeSpec2.json";
+    private static final String SPEC3 = "TokenizeSpec3.json";
 
     //dataset and transform tasks without missing values
     private final static String DATASET 	= "20news/20news_subset_untokenized.csv";
@@ -109,6 +110,36 @@ public class TokenizeTest extends AutomatedTestBase
     @Test
     public void testTokenizeParReadHybridSpec2() {
         runTokenizeTest(ExecMode.HYBRID, SPEC2, true);
+    }
+
+    @Test
+    public void testTokenizeSingleNodeSpec3() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC3,false);
+    }
+
+    @Test
+    public void testTokenizeSparkSpec3() {
+        runTokenizeTest(ExecMode.SPARK, SPEC3, false);
+    }
+
+    @Test
+    public void testTokenizeHybridSpec3() {
+        runTokenizeTest(ExecMode.HYBRID, SPEC3, false);
+    }
+
+    @Test
+    public void testTokenizeParReadSingleNodeSpec3() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC3, true);
+    }
+
+    @Test
+    public void testTokenizeParReadSparkSpec3() {
+        runTokenizeTest(ExecMode.SPARK, SPEC3, true);
+    }
+
+    @Test
+    public void testTokenizeParReadHybridSpec3() {
+        runTokenizeTest(ExecMode.HYBRID, SPEC3, true);
     }
 
     private void runTokenizeTest(ExecMode rt, String spec, boolean parRead )

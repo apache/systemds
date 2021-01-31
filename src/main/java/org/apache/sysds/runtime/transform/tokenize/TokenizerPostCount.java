@@ -80,7 +80,7 @@ public class TokenizerPostCount implements TokenizerPost{
                 rowList.toArray(row);
                 out.appendRow(row);
             }
-        };
+        }
 
         return out;
     }

@@ -53,7 +53,7 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e,
   foffe = t(cumsum(t(fdom)))
   rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
   cix = matrix(X + foffb, m*n, 1);
-  X2 = table(rix, cix); #one-hot encoded
+  X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
 
   # initialize statistics and basic slices
   n2 = ncol(X2);     # one-hot encoded features

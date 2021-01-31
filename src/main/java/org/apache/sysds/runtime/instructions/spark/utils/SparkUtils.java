@@ -127,12 +127,16 @@ public class SparkUtils
 			return in.getNumPartitions();
 		return getNumPreferredPartitions(dc);
 	}
-	
+
 	public static int getNumPreferredPartitions(DataCharacteristics dc) {
+		return getNumPreferredPartitions(dc, true);
+	}
+	
+	public static int getNumPreferredPartitions(DataCharacteristics dc, boolean outputEmptyBlocks) {
 		if( !dc.dimsKnown() )
 			return SparkExecutionContext.getDefaultParallelism(true);
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-		double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(dc);
+		double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(dc, outputEmptyBlocks);
 		return (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
 	}
 	

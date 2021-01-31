@@ -1471,6 +1471,10 @@ public class SparkExecutionContext extends ExecutionContext
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
 			getRDDHandleForMatrixObject(mo, FileFormat.BINARY);
 
+		//avoid unnecessary repartitioning/caching if data already partitioned
+		if( SparkUtils.isHashPartitioned(in) )
+			return;
+		
 		//avoid unnecessary caching of input in order to reduce memory pressure
 		if( mo.getRDDHandle().allowsShortCircuitRead()
 			&& isRDDMarkedForCaching(in.id()) && !isRDDCached(in.id()) ) {

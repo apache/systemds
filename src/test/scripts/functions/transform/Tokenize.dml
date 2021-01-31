@@ -42,5 +42,6 @@ if (ncol(F2) == 3) {
 
 # Afterward, you can transform it into a matrix:
 [X, M] = transformencode(target=F2, spec=jspec2);
+X = table(X[1,], X[2,], X[3,]);
 print(toString(X, rows=3, cols=3));
 print(toString(M, rows=3, cols=3));

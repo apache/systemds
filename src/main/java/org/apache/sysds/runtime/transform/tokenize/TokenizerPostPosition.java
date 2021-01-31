@@ -41,7 +41,8 @@ public class TokenizerPostPosition implements TokenizerPost{
             for (Tokenizer.Token token: tokenList) {
                 // Create a row per token
                 List<Object> rowList = new ArrayList<>(keys);
-                rowList.add(token.startIndex);
+                // Convert to 1-based index for DML
+                rowList.add(token.startIndex + 1);
                 rowList.add(token.textToken);
                 Object[] row = new Object[rowList.size()];
                 rowList.toArray(row);

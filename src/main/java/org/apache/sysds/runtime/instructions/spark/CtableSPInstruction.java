@@ -24,6 +24,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Ctable;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -130,7 +131,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 				sec.getScalarInput(input3).getLongValue();
 		}
 		mcOut.set(dim1, dim2, mc1.getBlocksize());
-		mcOut.setNonZerosBound(mc1.getRows());
+		mcOut.setNonZerosBound(mc1.getLength()); //vector or matrix
 		if( !mcOut.dimsKnown() )
 			throw new DMLRuntimeException("Unknown ctable output dimensions: "+mcOut);
 		
@@ -189,6 +190,13 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 			sec.addLineageRDD(output.getName(), input2.getName());
 		if( ctableOp.hasThirdInput() )
 			sec.addLineageRDD(output.getName(), input3.getName());
+		
+		//post-processing to obtain sparsity of ultra-sparse outputs
+		long memUB = OptimizerUtils.estimateSizeExactSparsity(
+			mcOut.getRows(), mcOut.getCols(), mcOut.getNonZerosBound());
+		if( !OptimizerUtils.exceedsCachingThreshold(mcOut.getCols(), memUB) //< mem budget
+			&& memUB < OptimizerUtils.estimateSizeExactSparsity(mcOut))
+			sec.getMatrixObject(output).acquireReadAndRelease();
 	}
 
 	private static class CTableFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock[]>>, MatrixIndexes, MatrixBlock> 

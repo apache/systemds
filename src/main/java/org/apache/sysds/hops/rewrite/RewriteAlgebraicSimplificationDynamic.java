@@ -2643,7 +2643,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	{
 		//pattern: table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
 		//note: this rewrite supports both left/right sequence 
-		if(    hi instanceof TernaryOp && hi.getInput().size()==5 //table without weights 
+		if(    hi instanceof TernaryOp && hi.getInput().size()==6 //table without weights 
 			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(2), 1) ) //i.e., weight of 1
 		{
 			Hop first = hi.getInput().get(0);

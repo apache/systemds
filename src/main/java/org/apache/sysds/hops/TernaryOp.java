@@ -570,7 +570,7 @@ public class TernaryOp extends Hop
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		TernaryOp ret = new TernaryOp();	
+		TernaryOp ret = new TernaryOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);
@@ -723,7 +723,7 @@ public class TernaryOp extends Hop
 	
 	public boolean isCTableReshapeRewriteApplicable(ExecType et, Ctable.OperationTypes opType) {
 		//early abort if rewrite globally not allowed
-		if( !ALLOW_CTABLE_SEQUENCE_REWRITES || _op!=OpOp3.CTABLE || et!=ExecType.CP )
+		if( !ALLOW_CTABLE_SEQUENCE_REWRITES || _op!=OpOp3.CTABLE || (et!=ExecType.CP && et!=ExecType.SPARK) )
 			return false;
 		
 		//1) check for ctable CTABLE_TRANSFORM_SCALAR_WEIGHT

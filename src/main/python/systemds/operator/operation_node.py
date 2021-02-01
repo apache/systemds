@@ -95,29 +95,12 @@ class OperationNode(DAGNode):
                 print(self._script.dml_script)
 
             if lineage:
-                result_variables, self._lineage_trace = self._script.execute(
-                    lineage)
+                result_variables, self._lineage_trace = self._script.execute_with_lineage()
             else:
-                result_variables = self._script.execute(lineage)
+                result_variables = self._script.execute()
 
-            if self.output_type == OutputType.DOUBLE:
-                self._result_var = result_variables.getDouble(
-                    self._script.out_var_name[0])
-            elif self.output_type == OutputType.MATRIX:
-                self._result_var = matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
-                                                         result_variables.getMatrixBlock(self._script.out_var_name[0]))
-            elif self.output_type == OutputType.LIST:
-                self._result_var = []
-                for idx, v in enumerate(self._script.out_var_name):
-                    if(self._output_types == None):
-                        self._result_var.append(matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
-                                                                      result_variables.getMatrixBlock(v)))
-                    elif(self._output_types[idx] == OutputType.MATRIX):
-                        self._result_var.append(matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
-                                                                      result_variables.getMatrixBlock(v)))
-                    else:
-                        self._result_var.append(result_variables.getDouble(
-                            self._script.out_var_name[idx]))
+            self._result_var =  self.__parse_output_result_variables(result_variables)
+
         if verbose:
             for x in self.sds_context.get_stdout():
                 print(x)
@@ -128,6 +111,31 @@ class OperationNode(DAGNode):
             return self._result_var, self._lineage_trace
         else:
             return self._result_var
+
+    def __parse_output_result_variables(self, result_variables):
+        if self.output_type == OutputType.DOUBLE:
+            return self.__parse_output_result_double(result_variables, self._script.out_var_name[0])
+        elif self.output_type == OutputType.MATRIX:
+            return self.__parse_output_result_matrix(result_variables, self._script.out_var_name[0])
+        elif self.output_type == OutputType.LIST:
+            return self.__parse_output_result_list(result_variables)
+
+    def __parse_output_result_double(self, result_variables, var_name):
+        return result_variables.getDouble(var_name)
+    
+    def __parse_output_result_matrix(self, result_variables, var_name):
+        return matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
+                                         result_variables.getMatrixBlock(var_name))
+
+    def __parse_output_result_list(self, result_variables):
+        result_var = []
+        for idx, v in enumerate(self._script.out_var_name):
+            if(self._output_types == None or self._output_types[idx] == OutputType.MATRIX):
+                result_var.append(self.__parse_output_result_matrix(result_variables,v))
+            else:
+                result_var.append(result_variables.getDouble(
+                    self._script.out_var_name[idx]))
+        return result_var
 
     def get_lineage_trace(self) -> str:
         """Get the lineage trace for this node.
@@ -501,8 +509,9 @@ class OperationNode(DAGNode):
         other._check_matrix_op()
 
         if self.shape[1] != other.shape[1]:
-            raise ValueError("The input matrices to rbind does not have the same number of columns")
-        
+            raise ValueError(
+                "The input matrices to rbind does not have the same number of columns")
+
         return OperationNode(self.sds_context, 'rbind', [self, other], shape=(self.shape[0] + other.shape[0], self.shape[1]))
 
     def cbind(self, other) -> 'OperationNode':
@@ -516,6 +525,7 @@ class OperationNode(DAGNode):
         other._check_matrix_op()
 
         if self.shape[0] != other.shape[0]:
-            raise ValueError("The input matrices to cbind does not have the same number of columns")
-        
+            raise ValueError(
+                "The input matrices to cbind does not have the same number of columns")
+
         return OperationNode(self.sds_context, 'cbind', [self, other], shape=(self.shape[0], self.shape[1] + other.shape[1]))

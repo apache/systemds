@@ -38,6 +38,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
@@ -117,6 +118,7 @@ public class Statistics
 	private static final LongAdder sparkBroadcastCount = new LongAdder();
 
 	// Paramserv function stats (time is in milli sec)
+	private static final Timing psExecutionTimer = new Timing(false);
 	private static final LongAdder psExecutionTime = new LongAdder();
 	private static final LongAdder psNumWorkers = new LongAdder();
 	private static final LongAdder psSetupTime = new LongAdder();
@@ -571,6 +573,14 @@ public class Statistics
 		psNumWorkers.add(n);
 	}
 
+	public static Timing getPSExecutionTimer() {
+		return psExecutionTimer;
+	}
+
+	public static double getPSExecutionTime() {
+		return psExecutionTime.doubleValue();
+	}
+
 	public static void accPSExecutionTime(long n) {
 		psExecutionTime.add(n);
 	}
@@ -601,6 +611,10 @@ public class Statistics
 
 	public static void accPSRpcRequestTime(long t) {
 		psRpcRequestTime.add(t);
+	}
+
+	public static double getPSValidationTime() {
+		return psValidationTime.doubleValue();
 	}
 
 	public static void accPSValidationTime(long t) {

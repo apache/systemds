@@ -13,35 +13,102 @@
 source("./scripts/staging/scalable_linalg/linalg_decomp.dml") as decomp
 
 
-m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String fTrain, List[String] params, List[Unknown] paramValues, String fAqu, String kernel, Integer iterations, Boolean verbose = TRUE)
+posterior = function(Matrix[Double] xNew, Matrix[Double] xTrain, Matrix[Double] yTrain, String kernel)
+return (Matrix[Double] mean, Matrix[Double] variance)
+{
+
+    KArgs = list(xTrain, xTrain);
+    K = eval(kernel, KArgs);
+
+    KsArgs = list(xTrain, xNew);
+    Ks = eval(kernel, KsArgs);
+
+    KssArgs = list(xNew, xNew);
+    Kss = eval(kernel, KssArgs);
+
+    K_inv = inv(K);
+
+    mean = t(Ks) %*% K_inv %*% yTrain;
+    variance = Kss - t(Ks) %*% K_inv %*% Ks;
+}
+
+getListOfParamCombinations = function(List[String] params, list[Unknown] paramValues, Boolean verbose)
+return (Matrix[Unknown] HP)
+{
+  # Step 0) preparation of parameters, lengths, and values in convenient form
+  numParams = length(params);
+  paramLens = matrix(0, numParams, 1);
+  for( j in 1:numParams ) {
+    vect = as.matrix(paramValues[j,1]);
+    paramLens[j,1] = nrow(vect);
+  }
+  paramVals = matrix(0, numParams, max(paramLens));
+  for( j in 1:numParams ) {
+    vect = as.matrix(paramValues[j,1]);
+    paramVals[j,1:nrow(vect)] = t(vect);
+  }
+  cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
+  numConfigs = prod(paramLens);
+
+  # Step 1) materialize hyper-parameter combinations
+  # (simplify debugging and compared to compute negligible)
+  HP = matrix(0, numConfigs, numParams);
+  parfor( i in 1:nrow(HP) ) {
+    for( j in 1:numParams )
+      HP[i,j] = paramVals[j,as.scalar(((i-1)/cumLens[j,1])%%paramLens[j,1]+1)];
+  }
+
+  if( verbose )
+    print("GridSeach: Hyper-parameter combinations: \n"+toString(HP));
+}
+
+m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String objective, String predictive, List[String] params, List[Unknown] paramValues, String acquisition, List[Unknown] fAquParam, String kernel, Integer iterations, Boolean verbose = TRUE)
   return (Matrix[Double] B, Frame[Unknown] opt)
 {
     numParams = length(params);
-    paramLens = matrix(0, numParams, 1);
-    for( j in 1:numParams ) {
-      vect = as.matrix(paramValues[j,1]);
-      paramLens[j,1] = nrow(vect);
-    }
-    paramVals = matrix(0, numParams, max(paramLens));
-    for( j in 1:numParams ) {
-      vect = as.matrix(paramValues[j,1]);
-      paramVals[j,1:nrow(vect)] = t(vect);
-    }
+
+    HP = getListOfParamCombinations(params, paramValues, verbose);
+    currentBestHP = HP[1,];
+
+    Rbeta = matrix(0, nrow(HP), ncol(X));
+    Rloss = matrix(0, nrow(HP), 1);
 
     # loop
     for (i in 1:iterations) {
         #print("iteration" + i);
 
+
+        /*
+        oldMax = 1;
+
+        aArgs = list(X, oldMax);
+        aquisition_result = eval(acquisition, aArgs);
+
+
         kArgs = list(X, X);
         kernel_result = eval(kernel, kArgs);
 
-        #aArgs = list(X, y);
-        #aquisition_result = eval(fAqu, aArgs);
 
-        #tArgs = list(
-        #eval(fTain, tArgs);
 
-        print(toString(kernel_result));
+        #print(toString(kernel_result));
+        
+        */
+
+        tArgs = list(X, y)
+        for ( j in 1:numParams) {
+            tArgs = append(tArgs, as.scalar(currentBestHP[1,j]));
+        }
+
+        result = eval(objective, tArgs);
+        print(toString(result));
+
+        /*
+        pArgs = list(X, y, t(result));
+        loss = eval(predictive, pArgs);
+        print(toString(loss));
+        
+
+        */
     }
     B = X;
     opt = as.frame(y);

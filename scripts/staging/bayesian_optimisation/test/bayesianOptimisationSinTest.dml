@@ -33,28 +33,48 @@ l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B)
     loss = as.matrix(sum((y - X%*%B)^2));
 }
 
-acquisition = function(Matrix[Double] X, Matrix[Double] y) 
+probabilityOfImprovement = function(Matrix[Double] targets, Double oldMax, Double tradeOff=1 )
+  return (Double result)
+{
+
+    aquisitions = matrix(0, nrow(targets), 1);
+
+    for(i in 1:nrow(targets)) {
+      target = targets[i] - tradeOff;
+      aquisitions[i] = pnorm(target=target, mean=mean(targets), sd = var(targets))
+    }
+
+    result = max(aquisitions);
+}
+
+acquisition = function(Matrix[Double] X, Matrix[Double] y)
 return (Double result) {
     print("called aquisition");
     result = 1;
 }
 
-params = list("reg", "tol");
-paramValues = list(10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
+params = list("icpt", "reg", "tol", "maxi", "verbose");
+paramValues = list(as.matrix(0), 10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3), as.matrix(TRUE));
 
-xTest = seq(0,6,0.15);
-trainFunctin = "sin";
-xTrain = xTest[1:20];
-yTrain = sin(xTrain);
+N = 200
+X = read($1);
+y = read($2);
 
+xTrain = X[1:N,];
+yTrain = y[1:N,];
+
+Xtest = X[(N+1):nrow(X),];
+ytest = y[(N+1):nrow(X),];
 
 OptiHyperParams = bayOpt::m_bayesianOptimisation(
       X = xTrain
     , y = yTrain
-    , fTrain = "sin"
+    , objective = "lm"
+    , predictive = "l2norm"
     , params = params
     , paramValues = paramValues
-    , fAqu = "l2norm"
+    , acquisition = "probabilityOfImprovement"
+    , fAquParam = list(1)
     , kernel = "squared_exponential"
     #, kernel = "kernel_gaus_1d"
     , iterations = 1

@@ -237,6 +237,10 @@ m_sherlock = function (matrix[double] A) return (double m) {
   processed_val_labels = transform_apply_labels(load_processed_val_labels(), meta_data)
   [w0, W, V] = fmRegression::train(processed_train_values, processed_train_labels,
     processed_val_values, processed_val_labels)
+  write(w0, "../sherlock-project/data/data/short/w0")
+  write(W, "../sherlock-project/data/data/short/W")
+  write(V, "../sherlock-project/data/data/short/V")
+
 }
 
 

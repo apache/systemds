@@ -71,7 +71,7 @@ public class DMLConfig
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
 	public static final String COMPRESSED_VALID_COMPRESSIONS = "sysds.compressed.valid.compressions";
 	public static final String COMPRESSED_OVERLAPPING = "sysds.compressed.overlapping"; // true, false
-	public static final String COMPRESSED_SAMPLING_RATIO = "sysds.compressed.sampling.ratio"; // 0.1
+	public static final String COMPRESSED_SAMPLING_RATIO = "sysds.compressed.sampling.ratio"; 
 	public static final String COMPRESSED_COCODE    = "sysds.compressed.cocode"; // COST
 	public static final String COMPRESSED_TRANSPOSE = "sysds.compressed.transpose"; // true, false, auto.
 	public static final String NATIVE_BLAS          = "sysds.native.blas";

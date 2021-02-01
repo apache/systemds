@@ -24,7 +24,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.sysds.api.mlcontext.Frame;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -36,7 +39,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 
 public class UtilFunctions {
-	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
+	 private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
 	//for accurate cast of double values to int and long 
 	//IEEE754: binary64 (double precision) eps = 2^(-53) = 1.11 * 10^(-16)
@@ -835,5 +838,33 @@ public class UtilFunctions {
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
 	}
 
+	public static FrameBlock getSplittedString (String input) {
+		//Frame f = new Frame();
+		String[] string_array = input.split("'[ ]*,[ ]*'");
+		ValueType[] schema = new ValueType[string_array.length];
+		for(int i=0; i< string_array.length; i++)
+			schema[i] = ValueType.STRING;
+		FrameBlock fb = new FrameBlock(schema);
+		fb.appendRow(string_array);
+		List<String>r = Arrays.asList(string_array);
+		System.out.println("converted FrameBlock: " + fb.toString());
+		return fb;//.subList(0,2);
+	}
 
+	public static String[] getSplittedStringAsArray (String input) {
+		//Frame f = new Frame();
+		String[] string_array = input.split("'[ ]*,[ ]*'");
+		return string_array;//.subList(0,2);
+	}
+
+	public static ArrayList<String> getSplittedStringAsList (String input) {
+		//Frame f = new Frame();
+		String[] string_array = input.split("'[ ]*,[ ]*'");
+		ArrayList<String> al = new ArrayList<>();
+		al.addAll(Arrays.asList(string_array));
+
+		Arrays.stream(new Exception("I am here").getStackTrace()).forEach(LOG::debug);
+
+		return al;
+	}
 }

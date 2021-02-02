@@ -70,51 +70,53 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 			W = ec.getMatrixObject(_input4);
 		}
 
-		if(!(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated() && (W == null || !W.isFederated())))
+		if(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated() && (W == null || !W.isFederated())) {
+			FederationMap fedMap = X.getFedMapping();
+			FederatedRequest[] frInit1 = fedMap.broadcastSliced(U, false);
+			FederatedRequest frInit2 = fedMap.broadcast(V);
+
+			FederatedRequest[] frInit3 = null;
+			FederatedRequest frCompute1 = null;
+			if(W != null) {
+				frInit3 = fedMap.broadcastSliced(W, false);
+				frCompute1 = FederationUtils.callInstruction(instString,
+					output,
+					new CPOperand[] {input1, input2, input3, _input4},
+					new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID(), frInit3[0].getID()});
+			}
+			else {
+				frCompute1 = FederationUtils.callInstruction(instString,
+					output,
+					new CPOperand[] {input1, input2, input3},
+					new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID()});
+			}
+
+			FederatedRequest frGet1 = new FederatedRequest(RequestType.GET_VAR, frCompute1.getID());
+			FederatedRequest frCleanup1 = fedMap.cleanup(getTID(), frCompute1.getID());
+			FederatedRequest frCleanup2 = fedMap.cleanup(getTID(), frInit1[0].getID());
+			FederatedRequest frCleanup3 = fedMap.cleanup(getTID(), frInit2.getID());
+
+			Future<FederatedResponse>[] response;
+			if(frInit3 != null) {
+				FederatedRequest frCleanup4 = fedMap.cleanup(getTID(), frInit3[0].getID());
+				// execute federated instructions
+				fedMap.execute(getTID(), true, frInit1, frInit2);
+				response = fedMap
+					.execute(getTID(), true, frInit3, frCompute1, frGet1, frCleanup1, frCleanup2, frCleanup3, frCleanup4);
+			}
+			else {
+				// execute federated instructions
+				response = fedMap
+					.execute(getTID(), true, frInit1, frInit2, frCompute1, frGet1, frCleanup1, frCleanup2, frCleanup3);
+			}
+
+			// aggregate partial results from federated responses
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
+		}
+		else {
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V, W) = (" + X.isFederated() + ", "
-				+ U.isFederated() + ", " + V.isFederated() + ", " + (W != null ? W.isFederated() : "none") + ")");
-
-		FederationMap fedMap = X.getFedMapping();
-		FederatedRequest[] frInit1 = fedMap.broadcastSliced(U, false);
-		FederatedRequest frInit2 = fedMap.broadcast(V);
-
-		FederatedRequest[] frInit3 = null;
-		FederatedRequest frCompute1 = null;
-		if(W != null) {
-			frInit3 = fedMap.broadcastSliced(W, false);
-			frCompute1 = FederationUtils.callInstruction(instString,
-				output,
-				new CPOperand[] {input1, input2, input3, _input4},
-				new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID(), frInit3[0].getID()});
+			+ U.isFederated() + ", " + V.isFederated() + ", " + (W != null ? W.isFederated() : "none") + ")");
 		}
-		else {
-			frCompute1 = FederationUtils.callInstruction(instString,
-				output,
-				new CPOperand[] {input1, input2, input3},
-				new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID()});
-		}
-
-		FederatedRequest frGet1 = new FederatedRequest(RequestType.GET_VAR, frCompute1.getID());
-		FederatedRequest frCleanup1 = fedMap.cleanup(getTID(), frCompute1.getID());
-		FederatedRequest frCleanup2 = fedMap.cleanup(getTID(), frInit1[0].getID());
-		FederatedRequest frCleanup3 = fedMap.cleanup(getTID(), frInit2.getID());
-
-		Future<FederatedResponse>[] response;
-		if(frInit3 != null) {
-			FederatedRequest frCleanup4 = fedMap.cleanup(getTID(), frInit3[0].getID());
-			// execute federated instructions
-			fedMap.execute(getTID(), true, frInit1, frInit2);
-			response = fedMap
-				.execute(getTID(), true, frInit3, frCompute1, frGet1, frCleanup1, frCleanup2, frCleanup3, frCleanup4);
-		}
-		else {
-			// execute federated instructions
-			response = fedMap
-				.execute(getTID(), true, frInit1, frInit2, frCompute1, frGet1, frCleanup1, frCleanup2, frCleanup3);
-		}
-
-		// aggregate partial results from federated responses
-		AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-		ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
 	}
 }

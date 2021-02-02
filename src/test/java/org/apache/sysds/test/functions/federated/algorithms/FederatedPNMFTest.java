@@ -80,22 +80,22 @@ public class FederatedPNMFTest extends AutomatedTestBase
 
 	@Test
 	public void federatedPNMFSingleNode() {
-		federatedPNMF(TEST_NAME, ExecMode.SINGLE_NODE);
+		federatedPNMF(ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void federatedPNMFSpark() {
-		federatedPNMF(TEST_NAME, ExecMode.SPARK);
+		federatedPNMF(ExecMode.SPARK);
 	}
 
 // -----------------------------------------------------------------------------
 
-	public void federatedPNMF(String testname, ExecMode execMode)
+	public void federatedPNMF(ExecMode execMode)
 	{
 		// store the previous platform config to restore it after the test
 		ExecMode platform_old = setExecMode(execMode);
 
-		getAndLoadTestConfiguration(testname);
+		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		int fed_rows = rows / 2;
@@ -103,8 +103,8 @@ public class FederatedPNMFTest extends AutomatedTestBase
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 1, 2, 1, 13);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 1, 2, 1, 2);
+		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 13);
+		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 2);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
@@ -116,17 +116,17 @@ public class FederatedPNMFTest extends AutomatedTestBase
 		Thread thread1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread thread2 = startLocalFedWorkerThread(port2);
 
-		getAndLoadTestConfiguration(testname);
+		getAndLoadTestConfiguration(TEST_NAME);
 
 		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + testname + "Reference.dml";
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-stats", "-nvargs",
 			"in_X1=" + input("X1"), "in_X2=" + input("X2"), "in_rank=" + Integer.toString(rank), "in_max_iter=" + Integer.toString(max_iter),
 			"out_Z=" + expected(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
-		fullDMLScriptName = HOME + testname + ".dml";
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),

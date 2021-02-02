@@ -59,32 +59,33 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 		MatrixObject U = ec.getMatrixObject(input2);
 		MatrixObject V = ec.getMatrixObject(input3);
 
-		if(!(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated()))
+		if(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated()) {
+			FederationMap fedMap = X.getFedMapping();
+			FederatedRequest[] frInit1 = fedMap.broadcastSliced(U, false);
+			FederatedRequest frInit2 = fedMap.broadcast(V);
+
+			FederatedRequest frCompute1 = FederationUtils.callInstruction(instString,
+				output,
+				new CPOperand[] {input1, input2, input3},
+				new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID()});
+
+			// get partial results from federated workers
+			FederatedRequest frGet1 = new FederatedRequest(RequestType.GET_VAR, frCompute1.getID());
+
+			FederatedRequest frCleanup1 = fedMap.cleanup(getTID(), frCompute1.getID());
+			FederatedRequest frCleanup2 = fedMap.cleanup(getTID(), frInit1[0].getID());
+			FederatedRequest frCleanup3 = fedMap.cleanup(getTID(), frInit2.getID());
+
+			// execute federated instructions
+			Future<FederatedResponse>[] response = fedMap
+				.execute(getTID(), true, frInit1, frInit2, frCompute1, frGet1, frCleanup1, frCleanup2, frCleanup3);
+
+			// bind partial results from federated responses
+			ec.setMatrixOutput(output.getName(), FederationUtils.bind(response, false));
+		}
+		else {
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V) = (" + X.isFederated() + ", "
-				+ U.isFederated() + ", " + V.isFederated() + ")");
-
-		FederationMap fedMap = X.getFedMapping();
-		FederatedRequest[] frInit1 = fedMap.broadcastSliced(U, false);
-		FederatedRequest frInit2 = fedMap.broadcast(V);
-
-		FederatedRequest frCompute1 = FederationUtils.callInstruction(instString,
-			output,
-			new CPOperand[] {input1, input2, input3},
-			new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID()});
-
-		// get partial results from federated workers
-		FederatedRequest frGet1 = new FederatedRequest(RequestType.GET_VAR, frCompute1.getID());
-
-		FederatedRequest frCleanup1 = fedMap.cleanup(getTID(), frCompute1.getID());
-		FederatedRequest frCleanup2 = fedMap.cleanup(getTID(), frInit1[0].getID());
-		FederatedRequest frCleanup3 = fedMap.cleanup(getTID(), frInit2.getID());
-
-		// execute federated instructions
-		Future<FederatedResponse>[] response = fedMap
-			.execute(getTID(), true, frInit1, frInit2, frCompute1, frGet1, frCleanup1, frCleanup2, frCleanup3);
-
-		// bind partial results from federated responses
-		ec.setMatrixOutput(output.getName(), FederationUtils.bind(response, false));
-
+			+ U.isFederated() + ", " + V.isFederated() + ")");
+		}
 	}
 }

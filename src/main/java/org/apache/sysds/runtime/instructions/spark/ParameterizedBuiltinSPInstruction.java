@@ -154,8 +154,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			} 
 			else if (opcode.equalsIgnoreCase("rmempty")) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str,
-						parts.length > 6 ? Boolean.parseBoolean(parts[5]) : false);
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func),
+					paramsMap, out, opcode, str, Boolean.parseBoolean(parts[parts.length-2]));
 			}
 			else if (opcode.equalsIgnoreCase("rexpand")
 				|| opcode.equalsIgnoreCase("replace")
@@ -428,9 +428,13 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddInVar);
 			
-			//update output statistics (required for correctness)
+			//update output statistics (required for correctness, nnz unknown due to cut-off)
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			mcOut.set(dirRows?lmaxVal:mcIn.getRows(), dirRows?mcIn.getRows():lmaxVal, (int)blen, -1);
+			mcOut.setNonZerosBound(mcIn.getRows());
+			
+			//post-processing to obtain sparsity of ultra-sparse outputs
+			SparkUtils.postprocessUltraSparseOutput(sec.getMatrixObject(output), mcOut);
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply") ) 
 		{

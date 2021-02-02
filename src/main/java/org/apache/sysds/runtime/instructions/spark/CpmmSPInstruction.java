@@ -88,7 +88,8 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		
-		if( !_outputEmptyBlocks || _aggtype == SparkAggType.SINGLE_BLOCK ) {
+		if( !_outputEmptyBlocks || _aggtype == SparkAggType.SINGLE_BLOCK
+			|| mc1.isNoEmptyBlocks() || mc2.isNoEmptyBlocks() ) {
 			//prune empty blocks of ultra-sparse matrices
 			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
 			in2 = in2.filter(new FilterNonEmptyBlocksFunction());
@@ -133,7 +134,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 				sec.setMatrixOutput(output.getName(), out2);
 			}
 			else { //DEFAULT: MULTI_BLOCK
-				if( !_outputEmptyBlocks )
+				if( !_outputEmptyBlocks || mc1.isNoEmptyBlocks() || mc2.isNoEmptyBlocks() )
 					out = out.filter(new FilterNonEmptyBlocksFunction());
 				out = RDDAggregateUtils.sumByKeyStable(out, false);
 				

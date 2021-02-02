@@ -29,7 +29,8 @@ import java.io.Serializable;
 public abstract class DataCharacteristics implements Serializable {
 	private static final long serialVersionUID = 3411056029517599342L;
 
-	protected int _blocksize;
+	protected int _blocksize;                 // squared block size
+	protected boolean _noEmptyBlocks = false; // does not materialize empty blocks
 	
 	public DataCharacteristics set(long nr, long nc, int blen) {
 		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int): should never get called in the base class");
@@ -78,6 +79,16 @@ public abstract class DataCharacteristics implements Serializable {
 	public DataCharacteristics setBlocksize(int blen){
 		_blocksize = blen;
 		return this;
+	}
+	
+
+	public DataCharacteristics setNoEmptyBlocks(boolean flag) {
+		_noEmptyBlocks = flag;
+		return this;
+	}
+	
+	public boolean isNoEmptyBlocks() {
+		return _noEmptyBlocks;
 	}
 
 	public long getNumBlocks() {

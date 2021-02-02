@@ -25,17 +25,17 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
 public abstract class CSVTestBase extends AutomatedTestBase {
-    protected final static String TEST_DIR = "functions/io/csv/";
-    protected static final Log LOG = LogFactory.getLog(CSVTestBase.class.getName());
-    protected final static double eps = 1e-9;
+	protected final static String TEST_DIR = "functions/io/csv/";
+	protected static final Log LOG = LogFactory.getLog(CSVTestBase.class.getName());
+	protected final static double eps = 1e-9;
 
-    protected abstract String getTestClassDir();
+	protected abstract String getTestClassDir();
 
-    protected abstract String getTestName();
+	protected abstract String getTestName();
 
-    @Override
-    public void setUp() {
-        addTestConfiguration(getTestName(),
-            new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"Rout"}));
-    }
+	@Override
+	public void setUp() {
+		addTestConfiguration(getTestName(),
+			new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"Rout"}));
+	}
 }

@@ -33,25 +33,25 @@ public abstract class ReadCSVTest extends CSVTestBase {
 		return "transfusion_" + getId();
 	}
 
-	 @Test
-	 public void testCSV_Sequential_CP1() {
-	 	runCSVTest(getId(), ExecMode.SINGLE_NODE, false);
-	 }
+	@Test
+	public void testCSV_Sequential_CP1() {
+		runCSVTest(getId(), ExecMode.SINGLE_NODE, false);
+	}
 
-	 @Test
-	 public void testCSV_Parallel_CP1() {
-	 	runCSVTest(getId(), ExecMode.SINGLE_NODE, true);
-	 }
+	@Test
+	public void testCSV_Parallel_CP1() {
+		runCSVTest(getId(), ExecMode.SINGLE_NODE, true);
+	}
 
-	 @Test
-	 public void testCSV_Sequential_CP() {
-	 	runCSVTest(getId(), ExecMode.HYBRID, false);
-	 }
+	@Test
+	public void testCSV_Sequential_CP() {
+		runCSVTest(getId(), ExecMode.HYBRID, false);
+	}
 
-	 @Test
-	 public void testCSV_Parallel_CP() {
-	 	runCSVTest(getId(), ExecMode.HYBRID, true);
-	 }
+	@Test
+	public void testCSV_Parallel_CP() {
+		runCSVTest(getId(), ExecMode.HYBRID, true);
+	}
 
 	@Test
 	public void testCSV_SP() {
@@ -73,8 +73,8 @@ public abstract class ReadCSVTest extends CSVTestBase {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
 			TestConfiguration config = getTestConfiguration(getTestName());
-
 			loadTestConfiguration(config);
+			setOutputBuffering(true); //otherwise NPEs
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String inputMatrixNameNoExtension = HOME + INPUT_DIR + getInputCSVFileName();

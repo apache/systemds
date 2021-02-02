@@ -111,11 +111,11 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		{
 			//determine need for coalesce or repartition, and csr conversion
 			int numPartitions = SparkUtils.getNumPreferredPartitions(mcIn, in);
-			boolean coalesce = ( 1.2*numPartitions < in.getNumPartitions()
+			boolean coalesce = ( 1.4 * numPartitions < in.getNumPartitions()
 				&& !SparkUtils.isHashPartitioned(in) && in.getNumPartitions()
 				> SparkExecutionContext.getDefaultParallelism(true));
 			boolean repartition = mcIn.dimsKnown(true) && mcIn.isUltraSparse()
-				&& numPartitions > in.getNumPartitions();
+				&& numPartitions > 1.4 * in.getNumPartitions();
 			boolean mcsr2csr = input1.getDataType()==DataType.MATRIX 
 				&& OptimizerUtils.checkSparseBlockCSRConversion(mcIn)
 				&& !_level.equals(Checkpoint.SER_STORAGE_LEVEL);
@@ -153,11 +153,9 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			//actual checkpoint into given storage level
 			out = out.persist( _level );
 			
-			//trigger nnz computation for datasets that are forced to spark by their dimensions
-			//(larger than MAX_INT) to handle ultra-sparse data sets during recompilation because
-			//otherwise these their nnz would never be evaluated due to lazy evaluation in spark
-			if( input1.isMatrix() && mcIn.dimsKnown() 
-				&& !mcIn.dimsKnown(true) && !OptimizerUtils.isValidCPDimensions(mcIn) ) {
+			//trigger nnz computation for all cached (i.e., read-only) datasets 
+			//otherwise their nnz would never be evaluated due to lazy evaluation in spark
+			if( input1.isMatrix() && mcIn.dimsKnown() && !mcIn.dimsKnown(true) ) {
 				mcIn.setNonZeros(SparkUtils.getNonZeros((JavaPairRDD<MatrixIndexes,MatrixBlock>)out));
 			}
 		}

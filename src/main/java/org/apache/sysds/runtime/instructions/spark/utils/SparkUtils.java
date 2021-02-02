@@ -28,6 +28,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.IndexedTensorBlock;
@@ -129,7 +130,7 @@ public class SparkUtils
 	}
 
 	public static int getNumPreferredPartitions(DataCharacteristics dc) {
-		return getNumPreferredPartitions(dc, true);
+		return getNumPreferredPartitions(dc, !dc.isNoEmptyBlocks());
 	}
 	
 	public static int getNumPreferredPartitions(DataCharacteristics dc, boolean outputEmptyBlocks) {
@@ -265,12 +266,25 @@ public class SparkUtils
 		return ret;
 	}
 	
+	@SuppressWarnings("unchecked")
+	public static long getNonZeros(MatrixObject mo) {
+		return getNonZeros((JavaPairRDD<MatrixIndexes, MatrixBlock>)mo.getRDDHandle().getRDD());
+	}
+	
 	public static long getNonZeros(JavaPairRDD<MatrixIndexes, MatrixBlock> input) {
 		//note: avoid direct lambda expression due reduce unnecessary GC overhead
 		return input.filter(new FilterNonEmptyBlocksFunction())
 			.values().mapPartitions(new RecomputeNnzFunction()).reduce((a,b)->a+b);
 	}
 
+	public static void postprocessUltraSparseOutput(MatrixObject mo, DataCharacteristics mcOut) {
+		long memUB = OptimizerUtils.estimateSizeExactSparsity(
+			mcOut.getRows(), mcOut.getCols(), mcOut.getNonZerosBound());
+		if( !OptimizerUtils.exceedsCachingThreshold(mcOut.getCols(), memUB) //< mem budget
+			&& memUB < OptimizerUtils.estimateSizeExactSparsity(mcOut))
+			mo.acquireReadAndRelease();
+	}
+	
 	private static class AnalyzeCellDataCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixCell>, DataCharacteristics>
 	{
 		private static final long serialVersionUID = 8899395272683723008L;

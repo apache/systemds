@@ -59,42 +59,82 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 
 	@Test
 	public void testTop4HybridDP() {
-		runSliceFinderTest(4, true, ExecMode.HYBRID);
+		runSliceFinderTest(4, true, false, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop4SinglenodeDP() {
-		runSliceFinderTest(4, true, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(4, true, false, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testTop4HybridTP() {
-		runSliceFinderTest(4, false, ExecMode.HYBRID);
+		runSliceFinderTest(4, false, false, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop4SinglenodeTP() {
-		runSliceFinderTest(4, false, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(4, false, false, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testTop10HybridDP() {
-		runSliceFinderTest(10, true, ExecMode.HYBRID);
+		runSliceFinderTest(10, true, false, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop10SinglenodeDP() {
-		runSliceFinderTest(10, true, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(10, true, false, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testTop10HybridTP() {
-		runSliceFinderTest(10, false, ExecMode.HYBRID);
+		runSliceFinderTest(10, false, false, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop10SinglenodeTP() {
-		runSliceFinderTest(10, false, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(10, false, false, ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testTop4HybridDPSel() {
+		runSliceFinderTest(4, true, true, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTop4SinglenodeDPSel() {
+		runSliceFinderTest(4, true, true, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testTop4HybridTPSel() {
+		runSliceFinderTest(4, false, true, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTop4SinglenodeTPSel() {
+		runSliceFinderTest(4, false, true, ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testTop10HybridDPSel() {
+		runSliceFinderTest(10, true, true, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTop10SinglenodeDPSel() {
+		runSliceFinderTest(10, true, true, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testTop10HybridTPSel() {
+		runSliceFinderTest(10, false, true, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTop10SinglenodeTPSel() {
+		runSliceFinderTest(10, false, true, ExecMode.SINGLE_NODE);
 	}
 	
 //	@Test
@@ -102,7 +142,7 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 //		runSliceFinderTest(10, false, ExecMode.SPARK);
 //	}
 	
-	private void runSliceFinderTest(int K, boolean dp, ExecMode mode) {
+	private void runSliceFinderTest(int K, boolean dp, boolean selCols, ExecMode mode) {
 		ExecMode platformOld = setExecMode(mode);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -124,8 +164,8 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 			
 			//execute main test
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("X"), input("e"),
-				String.valueOf(K),String.valueOf(!dp).toUpperCase(),
+			programArgs = new String[]{"-args", input("X"), input("e"), String.valueOf(K),
+				String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(),
 				String.valueOf(VERBOSE).toUpperCase(), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + String.valueOf(K) 

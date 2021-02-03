@@ -43,6 +43,8 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
     Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE)
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D)
 {
+	t1 = time();
+	
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
   D = matrix(0, 0, 5); 
   
@@ -67,7 +69,7 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
 
   if( verbose ) {
     [maxsc, minsc] = analyzeTopK(TKC);
-    print("SliceFinder: initial top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc)
+    print("SliceFinder: initial top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc+" (time="+(time()-t1)+")")
     D = rbind(D, t(as.matrix(list(1, n2, nrow(S), maxsc, minsc))));
   }
 
@@ -116,6 +118,7 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
       valid = as.integer(sum(R[,2]>0 & R[,4]>=minSup));
       print(" -- valid slices after eval: "+valid+"/"+nrow(S));
       print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc);
+      print(" -- (time="+(time()-t1)+")")
       D = rbind(D, t(as.matrix(list(level, nrow(S), valid, maxsc, minsc))));
     }
   }

@@ -225,10 +225,10 @@ public class CompressedMatrixBlockFactory {
 					LOG.debug("--compression Hash collisions:" + DblArrayIntListHashMap.hashMissCount);
 					DblArrayIntListHashMap.hashMissCount = 0;
 					break;
+				// case 4:
+				// 	LOG.debug("--compression phase " + phase++ + " Share     : " + _stats.getLastTimePhase());
+				// 	break;
 				case 4:
-					LOG.debug("--compression phase " + phase++ + " Share     : " + _stats.getLastTimePhase());
-					break;
-				case 5:
 					LOG.debug("--num col groups: " + res.getColGroups().size());
 					LOG.debug("--compression phase " + phase++ + " Cleanup   : " + _stats.getLastTimePhase());
 					LOG.debug("--col groups types " + _stats.getGroupsTypesString());

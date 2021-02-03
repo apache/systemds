@@ -50,12 +50,14 @@ m_scale = function(Matrix[Double] X, Boolean center, Boolean scale)
 
     ScaleFactor = sqrt(colSums(X^2)/(N-1))
 
-    # Replace entries in the scale factor that are 0 with 1.
-    # To avoid division by 0, introducing NaN to the ouput.
+    # Replace entries in the scale factor that are 0 and NaN with 1.
+    # To avoid division by 0 or NaN, introducing NaN to the ouput.
+    ScaleFactor = replace(target=ScaleFactor,
+      pattern=NaN, replacement=1);
     ScaleFactor = replace(target=ScaleFactor,
       pattern=0, replacement=1);
-    
-    X = X/ScaleFactor
+
+    X = X / ScaleFactor
 
   }
   else{

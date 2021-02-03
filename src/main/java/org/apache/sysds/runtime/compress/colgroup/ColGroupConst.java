@@ -65,11 +65,6 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	protected void computeSum(double[] c, KahanFunction kplus) {
-		c[0] += _dict.sum(getCounts(), _colIndexes.length, kplus);
-	}
-
-	@Override
 	protected void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean) {
 
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();

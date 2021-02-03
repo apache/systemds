@@ -196,7 +196,9 @@ public abstract class ADictionary {
 
 	protected abstract void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus);
 
-	protected abstract double sum(int[] counts, int ncol, KahanFunction kplus);
+	protected abstract double sum(int[] counts, int ncol);
+
+	protected abstract double sumsq(int[] counts, int ncol);
 
 	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
 

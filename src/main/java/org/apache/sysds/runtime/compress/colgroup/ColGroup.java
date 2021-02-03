@@ -77,10 +77,10 @@ public abstract class ColGroup implements Serializable {
 	 * ColGroup Implementation Contains zero row. Note this is not if it contains a zero value. If false then the stored
 	 * values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
 	 */
-	protected boolean _zeros;
+	protected boolean _zeros = false;
 
 	/** boolean specifying if the column group is encoded lossy */
-	protected boolean _lossy;
+	protected boolean _lossy = false;
 
 	/** Empty constructor, used for serializing into an empty new object of ColGroup. */
 	protected ColGroup() {
@@ -274,6 +274,15 @@ public abstract class ColGroup implements Serializable {
 			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
 			if(groupColIndex >= 0) {
 				g.decompressColumnToBlock(target, groupColIndex);
+			}
+		}
+	}
+
+	public static void decompressColumnToArray(double[] target, int colIndex, List<ColGroup> colGroups){
+		for(ColGroup g: colGroups){
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0){
+				g.decompressColumnToBlock(target, groupColIndex, 0, g._numRows);
 			}
 		}
 	}

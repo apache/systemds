@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
@@ -62,7 +63,7 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public double[] getValues() {
-		if(_values == null){
+		if(_values == null) {
 			return new double[0];
 		}
 		double[] res = new double[_values.length];
@@ -186,15 +187,16 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public QDictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
-	
-		if (_values == null){
-			if (sparseSafe){
+
+		if(_values == null) {
+			if(sparseSafe) {
 				return new QDictionary(null, 1);
-			} else{
+			}
+			else {
 				_values = new byte[0];
 			}
 		}
-			
+
 		double[] temp = sparseSafe ? new double[_values.length] : new double[_values.length + colIndexes.length];
 		double max = Math.abs(fn.execute(0, v[0]));
 		final int colL = colIndexes.length;
@@ -207,7 +209,7 @@ public class QDictionary extends ADictionary {
 			}
 		}
 		if(!sparseSafe)
-			for(; i <size() + colL; i++) {
+			for(; i < size() + colL; i++) {
 				temp[i] = fn.execute(0, v[colIndexes[i % colL]]);
 				double absTemp = Math.abs(temp[i]);
 				if(absTemp > max) {
@@ -225,7 +227,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public int size(){
+	public int size() {
 		return _values == null ? 0 : _values.length;
 	}
 
@@ -273,7 +275,7 @@ public class QDictionary extends ADictionary {
 		if(nrColumns == 1 && kplus instanceof KahanPlus)
 			return getValues(); // shallow copy of values
 
-		final int numVals =  getNumberOfValues(nrColumns);
+		final int numVals = getNumberOfValues(nrColumns);
 		double[] ret = ColGroupValue.allocDVector(numVals, false);
 		for(int k = 0; k < numVals; k++) {
 			ret[k] = sumRow(k, kplus, nrColumns);
@@ -284,9 +286,10 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	protected double sumRow(int k, KahanFunction kplus, int nrColumns) {
-		if (_values == null) return 0;
+		if(_values == null)
+			return 0;
 		int valOff = k * nrColumns;
-		
+
 		if(kplus instanceof KahanPlus) {
 			int res = 0;
 			for(int i = 0; i < nrColumns; i++) {
@@ -336,48 +339,54 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sum(int[] counts, int ncol, KahanFunction kplus) {
-		if(!(kplus instanceof KahanPlusSq)) {
-			int sum = 0;
-			int valOff = 0;
-			for(int k = 0; k < getNumberOfValues(ncol); k++) {
-				int countK = counts[k];
-				for(int j = 0; j < ncol; j++) {
-					sum += countK * getValueByte(valOff++);
-				}
-			}
-			return sum * _scale;
-		}
-		else {
-			KahanObject kbuff = new KahanObject(0, 0);
-			int valOff = 0;
-			for(int k = 0; k < getNumberOfValues(ncol); k++) {
-				int countK = counts[k];
-				for(int j = 0; j < ncol; j++) {
-					kplus.execute3(kbuff, getValue(valOff++), countK);
-				}
-			}
-			return kbuff._sum;
-		}
+	protected double sum(int[] counts, int ncol) {
+		throw new NotImplementedException("Not Implemented");
+		// if(!(kplus instanceof KahanPlusSq)) {
+		// int sum = 0;
+		// int valOff = 0;
+		// for(int k = 0; k < getNumberOfValues(ncol); k++) {
+		// int countK = counts[k];
+		// for(int j = 0; j < ncol; j++) {
+		// sum += countK * getValueByte(valOff++);
+		// }
+		// }
+		// return sum * _scale;
+		// }
+		// else {
+		// KahanObject kbuff = new KahanObject(0, 0);
+		// int valOff = 0;
+		// for(int k = 0; k < getNumberOfValues(ncol); k++) {
+		// int countK = counts[k];
+		// for(int j = 0; j < ncol; j++) {
+		// kplus.execute3(kbuff, getValue(valOff++), countK);
+		// }
+		// }
+		// return kbuff._sum;
+		// }
 	}
 
 	@Override
-	protected void addMaxAndMin(double[] ret, int[] colIndexes){
+	protected double sumsq(int[] counts, int ncol) {
+		throw new NotImplementedException("Not Implemented");
+	}
+
+	@Override
+	protected void addMaxAndMin(double[] ret, int[] colIndexes) {
 		byte[] mins = new byte[colIndexes.length];
 		byte[] maxs = new byte[colIndexes.length];
-		for(int i = 0; i < colIndexes.length; i++){
+		for(int i = 0; i < colIndexes.length; i++) {
 			mins[i] = _values[i];
 			maxs[i] = _values[i];
 		}
-		for(int i = colIndexes.length; i < _values.length; i++){
+		for(int i = colIndexes.length; i < _values.length; i++) {
 			int idx = i % colIndexes.length;
 			mins[idx] = (byte) Math.min(_values[i], mins[idx]);
 			maxs[idx] = (byte) Math.max(_values[i], maxs[idx]);
 		}
-		for(int i = 0; i < colIndexes.length; i ++){
-			int idy = colIndexes[i]*2;
+		for(int i = 0; i < colIndexes.length; i++) {
+			int idy = colIndexes[i] * 2;
 			ret[idy] += mins[i] * _scale;
-			ret[idy+1] += maxs[i] * _scale;
+			ret[idy + 1] += maxs[i] * _scale;
 		}
 	}
 
@@ -389,19 +398,19 @@ public class QDictionary extends ADictionary {
 		return sb;
 	}
 
-	public Dictionary makeDoubleDictionary(){
+	public Dictionary makeDoubleDictionary() {
 		double[] doubleValues = getValues();
 		return new Dictionary(doubleValues);
 	}
 
-	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns){
+	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		int numberTuples = getNumberOfValues(previousNumberOfColumns);
 		int tupleLengthAfter = idxEnd - idxStart;
 		byte[] newDictValues = new byte[tupleLengthAfter * numberTuples];
 		int orgOffset = idxStart;
 		int targetOffset = 0;
-		for(int v = 0; v < numberTuples; v++){
-			for(int c = 0; c< tupleLengthAfter; c++, orgOffset++, targetOffset++){
+		for(int v = 0; v < numberTuples; v++) {
+			for(int c = 0; c < tupleLengthAfter; c++, orgOffset++, targetOffset++) {
 				newDictValues[targetOffset] = _values[orgOffset];
 			}
 			orgOffset += previousNumberOfColumns - idxEnd + idxStart;

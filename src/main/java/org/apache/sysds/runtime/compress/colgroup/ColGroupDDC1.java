@@ -60,7 +60,6 @@ public class ColGroupDDC1 extends ColGroupDDC {
 				zeroIx = numVals;
 			}
 			Arrays.fill(_data, (byte) zeroIx);
-			_zeros = true;
 		}
 
 		// iterate over values and write dictionary codes

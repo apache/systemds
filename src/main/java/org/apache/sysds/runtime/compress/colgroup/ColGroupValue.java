@@ -82,13 +82,13 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	 */
 	protected ColGroupValue(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
 		super(colIndices, numRows);
-		_lossy = false;
-		_zeros = ubm.containsZero();
+		
+		_zeros = ubm.getNumOffsets() < (long) numRows;
 
 		// sort values by frequency, if requested
-		if(cs.sortValuesByLength && numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
+		if(cs.sortValuesByLength && numRows > CompressionSettings.BITMAP_BLOCK_SZ)
 			ubm.sortValuesByFrequency();
-		}
+		
 		switch(ubm.getType()) {
 			case Full:
 				_dict = new Dictionary(((Bitmap) ubm).getValues());
@@ -516,8 +516,10 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 		Pair<int[], double[]> p = memPool.get();
 
 		// sanity check for missing setup
-		if(p == null)
+		if(p == null){
+			// LOG.error("No Cached Int Vector");
 			return new int[len + 1];
+		}
 
 		if(p.getKey().length < len) {
 			setupThreadLocalMemory(len);
@@ -596,7 +598,13 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 
 	public abstract int[] getCounts(int rl, int ru, int[] out);
 
-	protected abstract void computeSum(double[] c, KahanFunction kplus);
+	protected void computeSum(double[] c, KahanFunction kplus){
+
+		if(kplus instanceof KahanPlusSq)
+			c[0] += _dict.sumsq(getCounts(), _colIndexes.length);
+		else
+			c[0] += _dict.sum(getCounts(), _colIndexes.length);
+	}	
 
 	protected abstract void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean);
 

@@ -234,18 +234,34 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sum(int[] counts, int ncol, KahanFunction kplus) {
+	protected double sum(int[] counts, int ncol) {
 		if(_values == null)
 			return 0;
-		KahanObject kbuff = new KahanObject(0, 0);
+		double out = 0;
 		int valOff = 0;
 		for(int k = 0; k < _values.length / ncol; k++) {
 			int countK = counts[k];
 			for(int j = 0; j < ncol; j++) {
-				kplus.execute3(kbuff, getValue(valOff++), countK);
+				out +=  getValue(valOff++) *  countK;
 			}
 		}
-		return kbuff._sum;
+		return out;
+	}
+
+	@Override
+	protected double sumsq(int[] counts, int ncol) {
+		if(_values == null)
+			return 0;
+		double out = 0;
+		int valOff = 0;
+		for(int k = 0; k < _values.length / ncol; k++) {
+			int countK = counts[k];
+			for(int j = 0; j < ncol; j++) {
+				double val = getValue(valOff++);
+				out +=  val * val  * countK;
+			}
+		}
+		return out;
 	}
 
 	@Override

@@ -40,6 +40,8 @@ import org.apache.sysds.runtime.util.DataConverter;
  */
 public class LibCommonsMath 
 {
+	// private static final Log LOG = LogFactory.getLog(LibCommonsMath.class.getName());
+
 	static final double RELATIVE_SYMMETRY_THRESHOLD = 1e-6;
 
 	private LibCommonsMath() {

@@ -170,16 +170,12 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			MatrixBlock ret1 = mb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, true);
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, true);
-			// LOG.error(cmb);
+			// LOG.error(ret1);
+			// LOG.error(ret2);
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			// for(double[] row : d1) {
-			// LOG.error(Arrays.toString(row));
-			// }
-			// for(double[] row : d2) {
-			// LOG.error(Arrays.toString(row));
-			// }
+
 			int dim1 = (aggType == AggType.ROWSUMS || aggType == AggType.ROWSUMSSQ || aggType == AggType.ROWMAXS ||
 				aggType == AggType.ROWMINS || aggType == AggType.ROWMEAN) ? rows : 1;
 			int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||

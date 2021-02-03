@@ -62,6 +62,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			lbitmaps[i] = genOffsetBitmap(ubm.getOffsetsList(i).extractValues(), ubm.getNumOffsets(i));
 			totalLen += lbitmaps[i].length;
 		}
+
 		// compact bitmaps to linearized representation
 		createCompressedBitmaps(numVals, totalLen, lbitmaps);
 
@@ -514,64 +515,74 @@ public class ColGroupOLE extends ColGroupOffset {
 	@Override
 	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+
+		if(numVals >= 1 && _numRows > blksz)
+			leftMultByRowVectorBlocking(a, c, numVals, values);
+		else
+			leftMultByRowVectorNonBlocking(a, c, numVals, values);
+
+	}
+
+	private void leftMultByRowVectorBlocking(double[] a, double[] c, int numVals, double[] values) {
+		// cache blocking config (see matrix-vector mult for explanation)
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
+		final int blksz2 = 2 * blksz;
 
-		if(numVals >= 1 && _numRows > blksz) {
-			// cache blocking config (see matrix-vector mult for explanation)
-			final int blksz2 = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
+		// step 1: prepare position and value arrays
 
-			// step 1: prepare position and value arrays
+		// current pos per OLs / output values
+		int[] apos = allocIVector(numVals, true);
+		double[] cvals = allocDVector(numVals, true);
 
-			// current pos per OLs / output values
-			int[] apos = allocIVector(numVals, true);
-			double[] cvals = allocDVector(numVals, true);
+		// step 2: cache conscious matrix-vector via horizontal scans
+		for(int ai = 0; ai < _numRows; ai += blksz2) {
+			int aimax = Math.min(ai + blksz2, _numRows);
 
-			// step 2: cache conscious matrix-vector via horizontal scans
-			for(int ai = 0; ai < _numRows; ai += blksz2) {
-				int aimax = Math.min(ai + blksz2, _numRows);
-
-				// horizontal segment scan, incl pos maintenance
-				for(int k = 0; k < numVals; k++) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					double vsum = 0;
-
-					for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
-						// prepare length, start, and end pos
-						int len = _data[boff + bix];
-						int pos = boff + bix + 1;
-
-						// iterate over bitmap blocks and compute partial results (a[i]*1)
-						vsum += LinearAlgebraUtils.vectSum(a, _data, ii, pos, len);
-						bix += len + 1;
-					}
-
-					apos[k] = bix;
-					cvals[k] += vsum;
-				}
-			}
-
-			// step 3: scale partial results by values and write to global output
-			for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols)
-				for(int j = 0; j < numCols; j++)
-					c[_colIndexes[j]] += cvals[k] * values[valOff + j];
-		}
-		else {
-			// iterate over all values and their bitmaps
-			for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols) {
+			// horizontal segment scan, incl pos maintenance
+			for(int k = 0; k < numVals; k++) {
 				int boff = _ptr[k];
 				int blen = len(k);
-
-				// iterate over bitmap blocks and add partial results
+				int bix = apos[k];
 				double vsum = 0;
-				for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
-					vsum += LinearAlgebraUtils.vectSum(a, _data, off, boff + bix + 1, _data[boff + bix]);
 
-				// scale partial results by values and write results
-				for(int j = 0; j < numCols; j++)
-					c[_colIndexes[j]] += vsum * values[valOff + j];
+				for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
+					// prepare length, start, and end pos
+					int len = _data[boff + bix];
+					int pos = boff + bix + 1;
+
+					// iterate over bitmap blocks and compute partial results (a[i]*1)
+					vsum += LinearAlgebraUtils.vectSum(a, _data, ii, pos, len);
+					bix += len + 1;
+				}
+
+				apos[k] = bix;
+				cvals[k] += vsum;
 			}
+		}
+
+		// step 3: scale partial results by values and write to global output
+		for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols)
+			for(int j = 0; j < numCols; j++)
+				c[_colIndexes[j]] += cvals[k] * values[valOff + j];
+	}
+
+	private void leftMultByRowVectorNonBlocking(double[] a, double[] c, int numVals, double[] values) {
+		// iterate over all values and their bitmaps
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int numCols = getNumCols();
+		for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols) {
+			int boff = _ptr[k];
+			int blen = len(k);
+
+			// iterate over bitmap blocks and add partial results
+			double vsum = 0;
+			for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
+				vsum += LinearAlgebraUtils.vectSum(a, _data, off, boff + bix + 1, _data[boff + bix]);
+
+			// scale partial results by values and write results
+			for(int j = 0; j < numCols; j++)
+				c[_colIndexes[j]] += vsum * values[valOff + j];
 		}
 	}
 
@@ -656,82 +667,92 @@ public class ColGroupOLE extends ColGroupOffset {
 		double[] tmpA) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
+		if(numVals > 1 && _numRows > blksz)
+			leftMultBySparseMatrixBlocking(sb, c, values, numRows, numCols, row, tmpA, numVals);
+		else
+			leftMultBySparseMatrixNonBlock(sb, c, values, numRows, numCols, row, tmpA, numVals);
+
+	}
+
+	private void leftMultBySparseMatrixBlocking(SparseBlock sb, double[] c, double[] values, int numRows, int numCols,
+		int row, double[] tmpA, int numVals) {
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		int sparseEndIndex = sb.size(row) + sb.pos(row);
 		int[] indexes = sb.indexes(row);
 		double[] sparseV = sb.values(row);
-		if(numVals > 1 && _numRows > blksz) {
 
-			// cache blocking config (see matrix-vector mult for explanation)
-			final int blksz2 = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
+		// cache blocking config (see matrix-vector mult for explanation)
+		final int blksz2 = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
 
-			// step 1: prepare position and value arrays
-			int[] apos = allocIVector(numVals, true);
-			double[] cvals = allocDVector(numVals, true);
-			// step 2: cache conscious matrix-vector via horizontal scans
-			int pI = sb.pos(row);
-			for(int ai = 0; ai < _numRows; ai += blksz2) {
-				int aimax = Math.min(ai + blksz2, _numRows);
-				Arrays.fill(tmpA, 0);
-				for(; pI < sparseEndIndex && indexes[pI] < aimax; pI++) {
-					if(indexes[pI] >= ai)
-						tmpA[indexes[pI] - ai] = sparseV[pI];
-				}
-
-				// horizontal segment scan, incl pos maintenance
-				for(int k = 0; k < numVals; k++) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					double vsum = 0;
-					for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
-						int len = _data[boff + bix];
-						int pos = boff + bix + 1;
-						int blockId = (ii / blksz) % 2;
-						vsum += LinearAlgebraUtils.vectSum(tmpA, _data, blockId * blksz, pos, len);
-						bix += len + 1;
-					}
-
-					apos[k] = bix;
-					cvals[k] += vsum;
-				}
+		// step 1: prepare position and value arrays
+		int[] apos = allocIVector(numVals, true);
+		double[] cvals = allocDVector(numVals, true);
+		// step 2: cache conscious matrix-vector via horizontal scans
+		int pI = sb.pos(row);
+		for(int ai = 0; ai < _numRows; ai += blksz2) {
+			int aimax = Math.min(ai + blksz2, _numRows);
+			Arrays.fill(tmpA, 0);
+			for(; pI < sparseEndIndex && indexes[pI] < aimax; pI++) {
+				if(indexes[pI] >= ai)
+					tmpA[indexes[pI] - ai] = sparseV[pI];
 			}
 
-			int offC = row * numCols;
-			// step 3: scale partial results by values and write to global output
-			for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length)
-				for(int j = 0; j < _colIndexes.length; j++) {
-					int colIx = _colIndexes[j] + offC;
-					c[colIx] += cvals[k] * values[valOff + j];
-				}
-
-		}
-		else {
-			for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
+			// horizontal segment scan, incl pos maintenance
+			for(int k = 0; k < numVals; k++) {
 				int boff = _ptr[k];
 				int blen = len(k);
+				int bix = apos[k];
 				double vsum = 0;
-				int pI = sb.pos(row);
-				for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz) {
-					// blockId = off / blksz;
-					Arrays.fill(tmpA, 0);
-					for(; pI < sparseEndIndex && indexes[pI] < off + blksz; pI++) {
-						if(indexes[pI] >= off)
-							tmpA[indexes[pI] - off] = sparseV[pI];
-					}
-					vsum += LinearAlgebraUtils.vectSum(tmpA, _data, 0, boff + bix + 1, _data[boff + bix]);
+				for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
+					int len = _data[boff + bix];
+					int pos = boff + bix + 1;
+					int blockId = (ii / blksz) % 2;
+					vsum += LinearAlgebraUtils.vectSum(tmpA, _data, blockId * blksz, pos, len);
+					bix += len + 1;
 				}
 
-				for(int j = 0; j < _colIndexes.length; j++) {
-					int Voff = _colIndexes[j] + row * numCols;
-					c[Voff] += vsum * values[valOff + j];
-				}
+				apos[k] = bix;
+				cvals[k] += vsum;
 			}
 		}
+
+		int offC = row * numCols;
+		// step 3: scale partial results by values and write to global output
+		for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length)
+			for(int j = 0; j < _colIndexes.length; j++) {
+				int colIx = _colIndexes[j] + offC;
+				c[colIx] += cvals[k] * values[valOff + j];
+			}
+
 	}
 
-	@Override
-	protected final void computeSum(double[] c, KahanFunction kplus) {
-		c[0] += _dict.sum(getCounts(), _colIndexes.length, kplus);
+	private void leftMultBySparseMatrixNonBlock(SparseBlock sb, double[] c, double[] values, int numRows, int numCols,
+		int row, double[] tmpA, int numVals) {
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		int sparseEndIndex = sb.size(row) + sb.pos(row);
+		int[] indexes = sb.indexes(row);
+		double[] sparseV = sb.values(row);
+
+		for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
+			int boff = _ptr[k];
+			int blen = len(k);
+			double vsum = 0;
+			int pI = sb.pos(row);
+			for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz) {
+				// blockId = off / blksz;
+				Arrays.fill(tmpA, 0);
+				for(; pI < sparseEndIndex && indexes[pI] < off + blksz; pI++) {
+					if(indexes[pI] >= off)
+						tmpA[indexes[pI] - off] = sparseV[pI];
+				}
+				vsum += LinearAlgebraUtils.vectSum(tmpA, _data, 0, boff + bix + 1, _data[boff + bix]);
+			}
+
+			for(int j = 0; j < _colIndexes.length; j++) {
+				int Voff = _colIndexes[j] + row * numCols;
+				c[Voff] += vsum * values[valOff + j];
+			}
+		}
 	}
 
 	@Override

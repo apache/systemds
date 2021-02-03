@@ -57,17 +57,16 @@ public class LibRightMultBy {
 	public static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v, boolean allowOverlap) {
 
-		if(that instanceof CompressedMatrixBlock) {
+		if(that instanceof CompressedMatrixBlock)
 			LOG.info("Decompression Right matrix");
-		}
+		
 		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
 
-		if(allowOverlappingOutput(colGroups, allowOverlap)) {
+		if(allowOverlappingOutput(colGroups, allowOverlap)) 
 			return rightMultByMatrixOverlapping(colGroups, that, ret, k, v);
-		}
-		else {
+		else 
 			return rightMultByMatrixNonOverlapping(colGroups, that, ret, k, v);
-		}
+		
 	}
 
 	private static boolean allowOverlappingOutput(List<ColGroup> colGroups, boolean allowOverlap) {
@@ -118,7 +117,6 @@ public class LibRightMultBy {
 		ret.setNumColumns(cl);
 		ret.setNumRows(rl);
 		CompressedMatrixBlock retC = (CompressedMatrixBlock) ret;
-		retC.setOverlapping(true);
 		ret = rightMultByMatrixCompressed(colGroups, that, retC, k, v);
 		return ret;
 	}
@@ -260,12 +258,11 @@ public class LibRightMultBy {
 	private static MatrixBlock rightMultByMatrixCompressed(List<ColGroup> colGroups, MatrixBlock that,
 		CompressedMatrixBlock ret, int k, Pair<Integer, int[]> v) {
 
-		for(ColGroup grp : colGroups) {
-			if(grp instanceof ColGroupUncompressed) {
+		for(ColGroup grp : colGroups) 
+			if(grp instanceof ColGroupUncompressed) 
 				throw new DMLCompressionException(
 					"Right Mult by dense with compressed output is not efficient to do with uncompressed Compressed ColGroups and therefore not supported.");
-			}
-		}
+			
 
 		List<ColGroup> retCg = new ArrayList<>();
 		if(k == 1) {
@@ -295,9 +292,9 @@ public class LibRightMultBy {
 			}
 		}
 		ret.allocateColGroupList(retCg);
-		ret.setOverlapping(true);
+		if(retCg.size() > 1)
+			ret.setOverlapping(true);
 		ret.setNonZeros(-1);
-
 		return ret;
 	}
 

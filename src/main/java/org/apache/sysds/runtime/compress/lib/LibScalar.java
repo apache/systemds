@@ -60,7 +60,7 @@ public class LibScalar {
 			return LibRelationalOp.overlappingRelativeRelationalOperation(sop, m1);
 		}
 
-		if(isInValidForCompressedOutput(m1, sop)) {
+		if(isInvalidForCompressedOutput(m1, sop)) {
 			LOG.warn("scalar overlapping not supported for op: " + sop.fn);
 			MatrixBlock m1d = m1.decompress(sop.getNumThreads());
 			return m1d.scalarOperations(sop, result);
@@ -142,7 +142,7 @@ public class LibScalar {
 		return newColGroups;
 	}
 
-	private static boolean isInValidForCompressedOutput(CompressedMatrixBlock m1, ScalarOperator sop) {
+	private static boolean isInvalidForCompressedOutput(CompressedMatrixBlock m1, ScalarOperator sop) {
 		return m1.isOverlapping() &&
 			(!(sop.fn instanceof Multiply || (sop.fn instanceof Divide && sop instanceof RightScalarOperator) ||
 				sop.fn instanceof Plus || sop.fn instanceof Minus));

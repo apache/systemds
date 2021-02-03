@@ -64,6 +64,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			totalLen += lbitmaps[k].length;
 		}
 
+
 		// compact bitmaps to linearized representation
 		createCompressedBitmaps(numVals, totalLen, lbitmaps);
 	}
@@ -727,10 +728,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
 	}
 
-	@Override
-	protected final void computeSum(double[] c, KahanFunction kplus) {
-		c[0] += _dict.sum(getCounts(), _colIndexes.length, kplus);
-	}
+
 
 	@Override
 	protected final void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean) {

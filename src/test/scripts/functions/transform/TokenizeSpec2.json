@@ -2,7 +2,8 @@
   "algo": "ngram",
   "algo_params": {
     "min_gram": 2,
-    "max_gram": 3
+    "max_gram": 3,
+    "regex": "\\\\W+"
   },
   "out": "position",
   "id_cols": [1,2],

@@ -40,13 +40,11 @@ public class TokenizerPostCount implements TokenizerPost{
 
         private static final long serialVersionUID = 5121697674346781880L;
 
-        public boolean sort_alpha;
+        public boolean sort_alpha = false;
 
         public Params(JSONObject json) throws JSONException {
-            if (json.has("sort_alpha")) {
+            if (json != null && json.has("sort_alpha")) {
                 this.sort_alpha = json.getBoolean("sort_alpha");
-            } else {
-                this.sort_alpha = false;
             }
         }
     }

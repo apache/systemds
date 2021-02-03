@@ -22,13 +22,11 @@ public class TokenizerPostHash implements TokenizerPost{
 
         private static final long serialVersionUID = -256069061414241795L;
 
-        public int num_features;
+        public int num_features = 1048576;  // 2^20
 
         public Params(JSONObject json) throws JSONException {
-            if (json.has("num_features")) {
+            if (json != null && json.has("num_features")) {
                 this.num_features = json.getInt("num_features");
-            } else {
-                this.num_features = 1048576;  // 2^20
             }
         }
     }

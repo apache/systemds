@@ -1,5 +1,5 @@
 {
-  "algo": "whitespace",
+  "algo": "split",
   "out": "count",
   "out_params": {
     "sort_alpha": true

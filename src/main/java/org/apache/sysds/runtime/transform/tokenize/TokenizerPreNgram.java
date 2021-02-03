@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TokenizerPreNgram implements TokenizerPre {
+
     private static final long serialVersionUID = -6297904316677723802L;
     
     public TokenizerPreWhitespaceSplit tokenizerPreWhitespaceSplit;
@@ -37,19 +38,15 @@ public class TokenizerPreNgram implements TokenizerPre {
 
         private static final long serialVersionUID = -6516419749810062677L;
 
-        public int minGram;
-        public int maxGram;
+        public int minGram = 1;
+        public int maxGram = 2;
 
         public Params(JSONObject json) throws JSONException {
-            if (json.has("min_gram")) {
+            if (json != null && json.has("min_gram")) {
                 this.minGram = json.getInt("min_gram");
-            } else {
-                this.minGram = 1;
             }
-            if (json.has("max_gram")) {
+            if (json != null && json.has("max_gram")) {
                 this.maxGram = json.getInt("max_gram");
-            } else {
-                this.maxGram = 2;
             }
         }
     }

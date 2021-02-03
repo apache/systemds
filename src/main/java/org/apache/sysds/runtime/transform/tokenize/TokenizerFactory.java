@@ -72,7 +72,7 @@ public class TokenizerFactory {
 
             // Algorithm to transform tokens into internal token representation
             switch (algo) {
-                case "whitespace":
+                case "split":
                     tokenizerPre = new TokenizerPreWhitespaceSplit(idCols, tokenizeCol, algoParams);
                     break;
                 case "ngram":

@@ -118,8 +118,11 @@ public class Builtin extends ValueFunction
 		return bFunc;
 	}
 	
-	public static boolean isBuiltinCode(ValueFunction fn, BuiltinCode code) {
-		return (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode() == code);
+	public static boolean isBuiltinCode(ValueFunction fn, BuiltinCode... codes) {
+		for( BuiltinCode code : codes )
+			if (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode() == code)
+				return true;
+		return false;
 	}
 
 	public static boolean isBuiltinFnObject(String str) {

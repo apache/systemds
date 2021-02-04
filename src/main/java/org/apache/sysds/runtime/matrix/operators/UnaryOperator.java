@@ -20,6 +20,7 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
@@ -54,5 +55,15 @@ public class UnaryOperator extends Operator
 	
 	public boolean isInplace() {
 		return inplace;
+	}
+	
+	public double getPattern() {
+		switch( ((Builtin)fn).bFunc ) {
+			case ISNAN:
+			case ISNA:   return Double.NaN;
+			default:
+				throw new DMLRuntimeException(
+					"No pattern existing for "+((Builtin)fn).bFunc.name());
+		}
 	}
 }

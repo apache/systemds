@@ -2677,6 +2677,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else
 			ret.reset(rlen, n, sp);
 		
+		//early abort for comparisons w/ special values
+		if( Builtin.isBuiltinCode(op.fn, BuiltinCode.ISNAN, BuiltinCode.ISNA))
+			if( !containsValue(op.getPattern()) )
+				return ret; //avoid unnecessary allocation
+		
 		//core execute
 		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) {
 			//e.g., cumsum/cumprod/cummin/cumax/cumsumprod

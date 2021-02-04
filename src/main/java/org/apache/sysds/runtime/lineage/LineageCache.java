@@ -32,6 +32,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
@@ -236,10 +237,10 @@ public class LineageCache
 	}
 	
 	//Reuse federated UDFs
-	public static boolean reuse(FederatedUDF udf, ExecutionContext ec) 
+	public static FederatedResponse reuse(FederatedUDF udf, ExecutionContext ec) 
 	{
 		if (ReuseCacheType.isNone() || udf.getOutputIds() == null)
-			return false;
+			return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 		//TODO: reuse only those UDFs which are part of reusable instructions
 		
 		boolean reuse = false;
@@ -249,7 +250,8 @@ public class LineageCache
 		//TODO: support multi-return UDFs
 		if (udf.getLineageItem(ec) == null)
 			//TODO: trace all UDFs
-			return false;
+			return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
+
 		LineageItem li = udf.getLineageItem(ec).getValue();
 		li.setDistLeaf2Node(1); //to save from early eviction
 		LineageCacheEntry e = null;
@@ -282,20 +284,27 @@ public class LineageCache
 			reuse = false;
 		
 		if (reuse) {
-			udfOutputs.forEach((var, val) -> {
+			FederatedResponse res = null;
+			for (Map.Entry<String, Data> entry : udfOutputs.entrySet()) {
+				String var = entry.getKey();
+				Data val = entry.getValue();
 				//cleanup existing data bound to output name
 				Data exdata = ec.removeVariable(var);
 				if (exdata != val)
 					ec.cleanupDataObject(exdata);
 				//add or replace data in the symbol table
 				ec.setVariable(var, val);
-			});
+				//build and return a federated response
+				res = LineageItemUtils.setUDFResponse(udf, (MatrixObject) val);
+			}
 
 			if (DMLScript.STATISTICS)
 				//TODO: dedicated stats for federated reuse
 				LineageCacheStatistics.incrementInstHits();
+			
+			return res;
 		}
-		return reuse;
+		return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 	}
 	
 	public static boolean probe(LineageItem key) {

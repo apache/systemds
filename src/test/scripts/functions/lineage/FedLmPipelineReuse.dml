@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+Fin = federated(addresses=list($in_X1, $in_X2),
+    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
+y = read($in_Y)
+
+# one hot encoding categorical, other passthrough
+Fall = as.frame(Fin)
+jspec = "{ ids:true, dummycode:[1] }"
+[X,M] = transformencode(target=Fall, spec=jspec)
+print("ncol(X) = "+ncol(X))
+
+# clipping out of value ranges
+colSD = colSds(X)
+colMean = (colMeans(X))
+upperBound = colMean + 1.5 * colSD
+lowerBound = colMean - 1.5 * colSD
+outFilter = (X < lowerBound) | (X > upperBound)
+X = X - outFilter*X + outFilter*colMeans(X);
+
+# normalization
+X = scale(X=X, center=TRUE, scale=TRUE);
+
+# split training and testing
+[Xtrain , Xtest, ytrain, ytest] = split(X=X, Y=y, cont=$cont, seed=7)
+
+# train regression model with different hyperparameters
+for (i in 1:10) {
+  reg = 1e-3 + (0 * 0.001);
+  B = lm(X=Xtrain, y=ytrain, icpt=1, reg=reg, tol=1e-9, verbose=TRUE);
+  # TODO: find the best beta
+}
+
+# model evaluation on test split
+yhat = lmPredict(X=Xtest, B=B, icpt=1, ytest=ytest, verbose=TRUE);
+
+# write trained model and meta data
+write(B, $out)

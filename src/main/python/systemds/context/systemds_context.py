@@ -123,10 +123,10 @@ class SystemDSContext(object):
             if rep > 3: 
                 raise Exception("Failed to start SystemDS context with " + rep + " repeated tries")
             else:
-                ret += 1
+                rep += 1
                 print("Failed to startup JVM process, retrying: " + rep)
                 sleep(rep) # Sleeping increasingly long time, maybe this helps.
-                return self.__try_startup()
+                return self.__try_startup(command, rep)
 
     def __verify_startup(self, process):
         first_stdout = process.stdout.readline()

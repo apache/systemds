@@ -321,7 +321,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			counts[k] = count;
 		}
 		if(_zeros) {
-			counts[counts.length - 1] = _numRows * _colIndexes.length - sum;
+			counts[counts.length - 1] = _numRows - sum;
 		}
 		return counts;
 	}
@@ -347,7 +347,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			counts[k] = count;
 		}
 		if(_zeros) {
-			counts[counts.length - 1] = (ru - rl) * _colIndexes.length - sum;
+			counts[counts.length - 1] = (ru - rl) - sum;
 		}
 		return counts;
 	}
@@ -801,10 +801,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		}
 	}
 
-	@Override
-	protected final void computeColSums(double[] c, KahanFunction kplus) {
-		_dict.colSum(c, getCounts(), _colIndexes, kplus);
-	}
+
 
 	@Override
 	protected final void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {

@@ -275,13 +275,16 @@ public class ColGroupOLE extends ColGroupOffset {
 		int sum = 0;
 		for(int k = 0; k < numVals; k++) {
 			int blen = len(k);
-			int blocks = _numRows / CompressionSettings.BITMAP_BLOCK_SZ + 1;
-			int count = blen - blocks;
+			int count = 0;
+			int boff = _ptr[k];
+			int bix = 0;
+			for(; bix < blen ; bix += _data[boff + bix] + 1)
+				count += _data[boff + bix];
 			sum += count;
 			counts[k] = count;
 		}
 		if(_zeros) {
-			counts[counts.length - 1] = _numRows * _colIndexes.length - sum;
+			counts[counts.length - 1] = _numRows - sum;
 		}
 		return counts;
 	}
@@ -302,7 +305,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			counts[k] = count;
 		}
 		if(_zeros) {
-			counts[counts.length - 1] = (ru - rl) * _colIndexes.length - sum;
+			counts[counts.length - 1] = (ru - rl) - sum;
 		}
 		return counts;
 	}
@@ -820,10 +823,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		}
 	}
 
-	@Override
-	protected final void computeColSums(double[] c, KahanFunction kplus) {
-		_dict.colSum(c, getCounts(), _colIndexes, kplus);
-	}
+
 
 	@Override
 	protected final void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {
@@ -843,7 +843,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			// iterate over bitmap blocks and add values
 			int slen;
 			int bix = skipScanVal(k, rl);
-			for(int off = bix * blksz; bix < blen && off < ru; bix += slen + 1, off += blksz) {
+			for(int off = ((rl + 1) / blksz) * blksz; bix < blen && off < ru; bix += slen + 1, off += blksz) {
 				slen = _data[boff + bix];
 				for(int i = 1; i <= slen; i++) {
 					int rix = off + _data[boff + bix + i];
@@ -1049,7 +1049,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			inputIx += blockSz;
 			blockStartIx += blockSz + 1;
 		}
-
+		
 		return encodedBlocks;
 	}
 

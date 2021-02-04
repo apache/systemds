@@ -515,6 +515,8 @@ public class Statistics
 		federatedGetCount.reset();
 		federatedExecuteInstructionCount.reset();
 		federatedExecuteUDFCount.reset();
+
+		DMLCompressionStatistics.reset();
 	}
 
 	public static void resetJITCompileTime(){

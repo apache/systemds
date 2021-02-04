@@ -565,7 +565,9 @@ public abstract class ColGroup implements Serializable {
 	 * 
 	 * @return returns if the colgroup is allocated in a dense fashion.
 	 */
-	public abstract boolean isDense();
+	public boolean isDense(){
+		return ! _zeros;
+	}
 
 	/**
 	 * Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns.

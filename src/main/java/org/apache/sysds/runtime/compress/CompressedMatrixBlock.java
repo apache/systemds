@@ -67,6 +67,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -77,6 +78,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
@@ -279,14 +281,14 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		// TODO Optimize Quick Get Value, to located the correct column group without having to search for it
 		if(isOverlapping()) {
 			double v = 0.0;
-			for(ColGroup group : _colGroups) 
-				if(Arrays.binarySearch(group.getColIndices(), c) >= 0) 
+			for(ColGroup group : _colGroups)
+				if(Arrays.binarySearch(group.getColIndices(), c) >= 0)
 					v += group.get(r, c);
 			return v;
 		}
 		else {
-			for(ColGroup group : _colGroups) 
-				if(Arrays.binarySearch(group.getColIndices(), c) >= 0) 
+			for(ColGroup group : _colGroups)
+				if(Arrays.binarySearch(group.getColIndices(), c) >= 0)
 					return group.get(r, c);
 			return 0;
 		}
@@ -359,6 +361,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	@Override
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		return LibBinaryCellOp.binaryOperations(op, this, thatValue, result);
+	}
+
+	public MatrixBlock binaryOperationsLeft(BinaryOperator op, MatrixValue thatValue, MatrixValue result){
+		return LibBinaryCellOp.binaryOperationsLeft(op, this, thatValue, result);
 	}
 
 	@Override
@@ -793,5 +799,82 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			"slice for distribution to spark. (Could be implemented such that it does not decompress)");
 		MatrixBlock tmp = decompress();
 		tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
+	}
+
+	@Override
+	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
+		printDecompressWarning("unaryOperations");
+		MatrixBlock tmp = decompress();
+		return tmp.unaryOperations(op, result);
+	}
+
+	// @Override
+	// public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
+	// MatrixBlock ret = checkType(result);
+
+	// // estimate the sparsity structure of result matrix
+	// // by default, we guess result.sparsity=input.sparsity, unless not sparse safe
+	// boolean sp = this.sparse && op.sparseSafe;
+
+	// //allocate output
+	// int n = Builtin.isBuiltinCode(op.fn, BuiltinCode.CUMSUMPROD) ? 1 : clen;
+	// if( ret == null )
+	// ret = new MatrixBlock(rlen, n, sp, sp ? nonZeros : rlen*n);
+	// else
+	// ret.reset(rlen, n, sp);
+
+	// //core execute
+	// if( LibMatrixAgg.isSupportedUnaryOperator(op) ) {
+	// //e.g., cumsum/cumprod/cummin/cumax/cumsumprod
+	// if( op.getNumThreads() > 1 )
+	// ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op, op.getNumThreads());
+	// else
+	// ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
+	// }
+	// else if(!sparse && !isEmptyBlock(false)
+	// && OptimizerUtils.isMaxLocalParallelism(op.getNumThreads())) {
+	// //note: we apply multi-threading in a best-effort manner here
+	// //only for expensive operators such as exp, log, sigmoid, because
+	// //otherwise allocation, read and write anyway dominates
+	// ret.allocateDenseBlock(false);
+	// DenseBlock a = getDenseBlock();
+	// DenseBlock c = ret.getDenseBlock();
+	// for(int bi=0; bi<a.numBlocks(); bi++) {
+	// double[] avals = a.valuesAt(bi), cvals = c.valuesAt(bi);
+	// Arrays.parallelSetAll(cvals, i -> op.fn.execute(avals[i]));
+	// }
+	// ret.recomputeNonZeros();
+	// }
+	// else {
+	// //default execute unary operations
+	// if(op.sparseSafe)
+	// sparseUnaryOperations(op, ret);
+	// else
+	// denseUnaryOperations(op, ret);
+	// }
+
+	// //ensure empty results sparse representation
+	// //(no additional memory requirements)
+	// if( ret.isEmptyBlock(false) )
+	// ret.examSparsity();
+
+	// return ret;
+	// }
+	@Override
+	public double max() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", -1);
+		return aggregateUnaryOperations(op, null, 1000, null).getValue(0, 0);
+	}
+
+	@Override
+	public double sum() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", -1);
+		return aggregateUnaryOperations(op, null, 1000, null).getValue(0, 0);
+	}
+
+	@Override
+	public double sumSq() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+", -1);
+		return aggregateUnaryOperations(op, null, 1000, null).getValue(0, 0);
 	}
 }

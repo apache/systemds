@@ -50,7 +50,6 @@ import org.apache.sysds.runtime.matrix.operators.COVOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
-import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.SortUtils;
 
@@ -146,13 +145,6 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 
 	//////////////////////////////////////////
 	// Graceful fallback to uncompressed linear algebra
-
-	@Override
-	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
-		printDecompressWarning("unaryOperations");
-		MatrixBlock tmp = decompress();
-		return tmp.unaryOperations(op, result);
-	}
 
 	@Override
 	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {

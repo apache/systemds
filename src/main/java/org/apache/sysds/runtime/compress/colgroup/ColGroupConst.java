@@ -253,9 +253,4 @@ public class ColGroupConst extends ColGroupValue {
 			rnnz[i] = base;
 		}
 	}
-
-	@Override
-	public boolean isDense() {
-		return true;
-	}
 }

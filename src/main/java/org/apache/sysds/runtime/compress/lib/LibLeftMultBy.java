@@ -768,8 +768,7 @@ public class LibLeftMultBy {
 			}
 			if(_rl != _ru)
 				leftMultByTransposeSelf(_groups, _ret, _v, nCol - _ru, nCol - _rl, _cl, _cu, _overlapping);
-
-it			return null;
+			return null;
 		}
 	}
 

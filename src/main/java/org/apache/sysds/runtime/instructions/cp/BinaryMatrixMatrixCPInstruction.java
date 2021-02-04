@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.AbstractCompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -60,10 +61,14 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 		if(inBlock1 instanceof CompressedMatrixBlock && inBlock2 instanceof CompressedMatrixBlock){
 			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
 		} else if(inBlock2 instanceof CompressedMatrixBlock){
-			LOG.error("Binary CP instruction decompressing " + bop);
-			LOG.error("inBlock2 stats: " + inBlock2.getNumRows() + "  " +inBlock2.getNumColumns());
-			inBlock2 = AbstractCompressedMatrixBlock.getUncompressed(inBlock2);
-			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+			if((bop.fn instanceof Multiply)){
+				retBlock = ((CompressedMatrixBlock)inBlock2).binaryOperationsLeft(bop, inBlock1, new MatrixBlock());
+			}else{
+				LOG.error("Binary CP instruction decompressing " + bop);
+				LOG.error("inBlock2 stats: " + inBlock2.getNumRows() + "  " +inBlock2.getNumColumns());
+				inBlock2 = AbstractCompressedMatrixBlock.getUncompressed(inBlock2);
+				retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+			}
 		} else {
 			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
 		}

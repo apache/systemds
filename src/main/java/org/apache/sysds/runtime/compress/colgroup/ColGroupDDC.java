@@ -180,13 +180,6 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		}
 	}
 
-
-
-	@Override
-	protected void computeColSums(double[] c, KahanFunction kplus) {
-		_dict.colSum(c, getCounts(), _colIndexes, kplus);
-	}
-
 	@Override
 	protected void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean) {
 		final int numVals = getNumValues();
@@ -412,8 +405,4 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	 */
 	protected abstract void setData(int r, int code);
 
-	@Override
-	public boolean isDense(){
-		return true;
-	}
 }

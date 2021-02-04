@@ -247,7 +247,8 @@ public enum Builtins {
 	QEXP("qexp", false, true),
 	REPLACE("replace", false, true),
 	RMEMPTY("removeEmpty", false, true),
-	SCALE("scale", true, false),     //TODO parameterize center & scale
+	SCALE("scale", true, false),
+	SCALEAPPLY("scaleApply", true, false),
 	TIME("time", false),
 	CVLM("cvlm", true, false),
 	TOSTRING("toString", false, true),

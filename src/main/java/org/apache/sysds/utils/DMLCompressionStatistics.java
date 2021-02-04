@@ -33,6 +33,23 @@ public class DMLCompressionStatistics {
 	private static int DecompressMTCount = 0;
 	private static double DecompressMT = 0.0;
 
+	public static void reset() {
+		Phase0 = 0.0;
+		Phase1 = 0.0;
+		Phase2 = 0.0;
+		Phase3 = 0.0;
+		Phase4 = 0.0;
+		Phase5 = 0.0;
+		DecompressSTCount = 0;
+		DecompressST = 0.0;
+		DecompressMTCount = 0;
+		DecompressMT = 0.0;
+	}
+
+	public static boolean haveCompressed(){
+		return Phase0 > 0;
+	}
+
 	public static void addCompressionTime(double time, int phase) {
 		switch(phase) {
 			case 0:
@@ -77,9 +94,8 @@ public class DMLCompressionStatistics {
 	}
 
 	public static void display(StringBuilder sb) {
-		if(Phase0 > 0.0){ //  If compression have been used
-			sb.append(String.format(
-				"CLA Compression Phases :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n",
+		if(haveCompressed()) { // If compression have been used
+			sb.append(String.format("CLA Compression Phases :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n",
 				Phase0 / 1000,
 				Phase1 / 1000,
 				Phase2 / 1000,

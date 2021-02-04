@@ -166,19 +166,13 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	 */
 	public final int[] getCounts() {
 		if(counts == null) {
-
-			counts = new int[getNumValues() + 1];
-			// if(_zeros) {
-			// tmp = allocIVector(getNumValues() + 1, true);
-			// }
-			// else {
-			// tmp = allocIVector(getNumValues(), true);
-			// }
-			return getCounts(counts);
-		}
-		else {
+			counts = getCounts(new int[getNumValues() + (_zeros ? 1 : 0)]);
+			// LOG.error(Arrays.toString(counts));
 			return counts;
 		}
+		else 
+			return counts;
+		
 	}
 
 	public final int[] getCachedCounts() {
@@ -443,7 +437,6 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 				op.aggOp.increOp.fn instanceof Mean) ? KahanPlus
 					.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
 			boolean mean = op.aggOp.increOp.fn instanceof Mean;
-
 			if(op.indexFn instanceof ReduceAll)
 				computeSum(c.getDenseBlockValues(), kplus);
 			else if(op.indexFn instanceof ReduceCol)
@@ -599,7 +592,6 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 	public abstract int[] getCounts(int rl, int ru, int[] out);
 
 	protected void computeSum(double[] c, KahanFunction kplus){
-
 		if(kplus instanceof KahanPlusSq)
 			c[0] += _dict.sumsq(getCounts(), _colIndexes.length);
 		else
@@ -608,7 +600,9 @@ public abstract class ColGroupValue extends ColGroup implements Cloneable {
 
 	protected abstract void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean);
 
-	protected abstract void computeColSums(double[] c, KahanFunction kplus);
+	protected void computeColSums(double[] c, KahanFunction kplus) {
+		_dict.colSum(c, getCounts(), _colIndexes, kplus);
+	}
 
 	protected abstract void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru);
 

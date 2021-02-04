@@ -212,8 +212,4 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		return sb.toString();
 	}
 
-	@Override
-	public boolean isDense(){
-		return false;
-	}
 }

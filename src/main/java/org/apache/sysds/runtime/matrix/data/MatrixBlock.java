@@ -19,6 +19,22 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.math3.random.Well1024a;
@@ -30,6 +46,8 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.lib.LibBinaryCellOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -94,22 +112,6 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.NativeHelper;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.stream.IntStream;
 
 
 public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
@@ -3619,7 +3621,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		for( MatrixBlock in : inputs ) {
 			if( in.isEmptyBlock(false) )
 				continue;
-			if( in.isInSparseFormat() ) {
+			if(in instanceof CompressedMatrixBlock){
+				in = LibBinaryCellOp.binaryMVRow((CompressedMatrixBlock) in,c, null, new BinaryOperator(Plus.getPlusFnObject())  );
+			}
+			else if( in.isInSparseFormat() ) {
 				SparseBlock a = in.getSparseBlock();
 				if( a.isEmpty(i) ) continue;
 				LibMatrixMult.vectAdd(a.values(i), c, a.indexes(i), a.pos(i), cix, a.size(i));

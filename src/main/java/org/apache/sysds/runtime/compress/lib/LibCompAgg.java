@@ -83,7 +83,6 @@ public class LibCompAgg {
             outputMatrix.dropLastRowsOrColumns(op.aggOp.correction);
 
         outputMatrix.recomputeNonZeros();
-        memPool.remove();
 
         return outputMatrix;
     }
@@ -131,10 +130,10 @@ public class LibCompAgg {
             // compute all compressed column groups
             if(op.indexFn instanceof ReduceCol) {
                 final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
-                int blklen = Math.max((int) Math.ceil((double) m1.getNumRows() / (op.getNumThreads() * 2)), blkz);
-                blklen += (blklen % blkz != 0) ? blkz - blklen % blkz : 0;
-
-                for(int i = 0; i < op.getNumThreads() & i * blklen < m1.getNumRows(); i++)
+                // int blklen = Math.max((int) Math.ceil((double) m1.getNumRows() / (op.getNumThreads() * 2)), blkz);
+                // blklen += (blklen % blkz != 0) ? blkz - blklen % blkz : 0;
+                int blklen = blkz * 4;
+                for(int i = 0; i * blklen < m1.getNumRows(); i++)
                     tasks.add(new UnaryAggregateTask(m1.getColGroups(), ret, i * blklen,
                         Math.min((i + 1) * blklen, m1.getNumRows()), op, m1.getNumColumns()));
 
@@ -142,7 +141,8 @@ public class LibCompAgg {
             else {
                 List<List<ColGroup>> grpParts = createTaskPartitionNotIncludingUncompressable(m1.getColGroups(), k);
                 for(List<ColGroup> grp : grpParts)
-                    tasks.add(new UnaryAggregateTask(grp, ret, 0, m1.getNumRows(), op, m1.getNumColumns()));
+                    tasks.add(new UnaryAggregateTask(grp, ret, 0, m1.getNumRows(), op, m1.getNumColumns(),
+                        m1.isOverlapping()));
             }
 
             List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
@@ -154,6 +154,15 @@ public class LibCompAgg {
                     aggregateResults(ret, futures, op);
                 else
                     sumResults(ret, futures);
+            else if(op.indexFn instanceof ReduceRow && m1.isOverlapping()) {
+                if(op.aggOp.increOp.fn instanceof Builtin)
+                    aggregateResultVectors(ret, futures, op);
+                else
+                    sumResultVectors(ret, futures);
+            }
+            else
+                for(Future<MatrixBlock> f : futures)
+                    f.get();
         }
         catch(InterruptedException | ExecutionException e) {
             throw new DMLRuntimeException(e);
@@ -171,6 +180,19 @@ public class LibCompAgg {
 
     }
 
+    private static void sumResultVectors(MatrixBlock ret, List<Future<MatrixBlock>> futures)
+        throws InterruptedException, ExecutionException {
+
+        double[] retVals = ret.getDenseBlockValues();
+        for(Future<MatrixBlock> rtask : futures) {
+            double[] taskResult = rtask.get().getDenseBlockValues();
+            for(int i = 0; i < retVals.length; i++) {
+                retVals[i] += taskResult[i];
+            }
+        }
+        ret.setNonZeros(ret.getNumColumns());
+    }
+
     private static void aggregateResults(MatrixBlock ret, List<Future<MatrixBlock>> futures, AggregateUnaryOperator op)
         throws InterruptedException, ExecutionException {
         double val = ret.quickGetValue(0, 0);
@@ -179,6 +201,18 @@ public class LibCompAgg {
             val = op.aggOp.increOp.fn.execute(val, tmp);
         }
         ret.quickSetValue(0, 0, val);
+    }
+
+    private static void aggregateResultVectors(MatrixBlock ret, List<Future<MatrixBlock>> futures,
+        AggregateUnaryOperator op) throws InterruptedException, ExecutionException {
+        double[] retVals = ret.getDenseBlockValues();
+        for(Future<MatrixBlock> rtask : futures) {
+            double[] taskResult = rtask.get().getDenseBlockValues();
+            for(int i = 0; i < retVals.length; i++) {
+                retVals[i] = op.aggOp.increOp.fn.execute(retVals[i] ,  taskResult[i]);
+            }
+        }
+        ret.setNonZeros(ret.getNumColumns());
     }
 
     private static void aggregateSingleThreaded(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op) {
@@ -337,19 +371,22 @@ public class LibCompAgg {
     private static void aggregateUnaryBuiltinRowOperation(AggregateUnaryOperator op, List<ColGroup> groups,
         MatrixBlock ret, int rl, int ru, int numColumns) {
 
-        int[] rnnz = new int[ru - rl];
+        int[] rnnz = null;
         int numberDenseColumns = 0;
         for(ColGroup grp : groups) {
             grp.unaryAggregateOperations(op, ret, rl, ru);
             if(grp.isDense())
                 numberDenseColumns += grp.getNumCols();
-            else
+            else{
+                if (rnnz == null)
+                    rnnz = new int[ru -  rl];
                 grp.countNonZerosPerRow(rnnz, rl, ru);
+            }
         }
-
-        for(int row = rl; row < ru; row++)
-            if(rnnz[row] + numberDenseColumns < numColumns)
-                ret.quickSetValue(row, 0, op.aggOp.increOp.fn.execute(ret.quickGetValue(row, 0), 0.0));
+        if(rnnz != null)
+            for(int row = rl; row < ru; row++)
+                if(rnnz[row-rl] + numberDenseColumns < numColumns)
+                    ret.quickSetValue(row, 0, op.aggOp.increOp.fn.execute(ret.quickGetValue(row, 0), 0.0));
 
     }
 
@@ -401,6 +438,28 @@ public class LibCompAgg {
             else // colSums / rowSums
                 _ret = ret;
 
+        }
+
+        protected UnaryAggregateTask(List<ColGroup> groups, MatrixBlock ret, int rl, int ru, AggregateUnaryOperator op,
+            int numColumns, boolean overlapping) {
+            _groups = groups;
+            _op = op;
+            _rl = rl;
+            _ru = ru;
+            _numColumns = numColumns;
+
+            if(_op.indexFn instanceof ReduceAll || (_op.indexFn instanceof ReduceRow && overlapping)) {
+                _ret = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
+                _ret.allocateDenseBlock();
+                if(_op.aggOp.increOp.fn instanceof Builtin)
+                    System.arraycopy(ret.getDenseBlockValues(),
+                        0,
+                        _ret.getDenseBlockValues(),
+                        0,
+                        ret.getNumRows() * ret.getNumColumns());
+            }
+            else // colSums / rowSums
+                _ret = ret;
         }
 
         @Override

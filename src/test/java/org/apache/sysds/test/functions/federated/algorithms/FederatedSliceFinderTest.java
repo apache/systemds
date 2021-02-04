@@ -166,7 +166,7 @@ public class FederatedSliceFinderTest extends AutomatedTestBase {
 		loadTestConfiguration(config);
 
 
-		//execute main test
+//		//execute main test
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[]{"-stats", "100", "-args",
 			input("X1"), input("X2"), input("X3"), input("X4"), input("e"),
@@ -176,33 +176,34 @@ public class FederatedSliceFinderTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-explain", "-stats", "100", "-nvargs",
+		programArgs = new String[] {"-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
-			"rows=" + X.length, "cols=" + X[0].length, "e=" + input("e"),
-			"K=" + String.valueOf(K), "tpEval=" + String.valueOf(!dp).toUpperCase(),
+			"rows=" + X.length, "cols=" + X[0].length,
+			"in_e=" + input("e"), "in_K=" + K,
+			"in_tpEval=" + String.valueOf(!dp).toUpperCase(),
 			"verbose="+ String.valueOf(VERBOSE).toUpperCase(),
-			"out_R" + output("R")
+			"out_R=" + output("R")
 		};
 		runTest(true, false, null, -1);
 
 		// compare via files
-//		compareResults(1e-9);
-//
-//		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_transformencode"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_uacmax"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_uark+"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_uarimax"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_tsmm"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_min"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_rshape"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_replace"));
-//		Assert.assertTrue(heavyHittersContainsString("fed_uppertri"));
+		compareResults(1e-9);
+
+		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
+		Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
+		Assert.assertTrue(heavyHittersContainsString("fed_transformencode"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uacmax"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uark+"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uarimax"));
+		Assert.assertTrue(heavyHittersContainsString("fed_tsmm"));
+		Assert.assertTrue(heavyHittersContainsString("fed_min"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
+		Assert.assertTrue(heavyHittersContainsString("fed_rshape"));
+		Assert.assertTrue(heavyHittersContainsString("fed_replace"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uppertri"));
 		//		Assert.assertTrue(heavyHittersContainsString("fed_leftIndex"));
 		//		Assert.assertTrue(heavyHittersContainsString("fed_ucumk+"));
 		//		Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
@@ -218,8 +219,6 @@ public class FederatedSliceFinderTest extends AutomatedTestBase {
 
 		TestUtils.shutdownThreads(t1, t2, t3, t4);
 
-		rtplatform = platformOld;
-		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-
+		resetExecMode(platformOld);
 	}
 }

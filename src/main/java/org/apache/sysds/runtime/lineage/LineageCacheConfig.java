@@ -200,12 +200,22 @@ public class LineageCacheConfig
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
-		ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
-		if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
-			return false;
-		long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
-		long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
-		return(c1 == 1 || c2 == 1);
+		if (inst instanceof ComputationFEDInstruction) {
+			ComputationFEDInstruction fedinst = (ComputationFEDInstruction) inst;
+			if (!fedinst.input1.isMatrix() || !fedinst.input2.isMatrix())
+				return false;
+			long c1 = ec.getMatrixObject(fedinst.input1).getNumColumns();
+			long c2 = ec.getMatrixObject(fedinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
+		else { //CPInstruction
+			ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
+			if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
+				return false;
+			long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
+			long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
 	}
 	
 	public static boolean isOutputFederated(Instruction inst, Data data) {

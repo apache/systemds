@@ -236,4 +236,6 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	}
 
 	public GeneratorAPI getGeneratorAPI() { return api; }
+	
+	public void setGeneratorAPI(GeneratorAPI _api) { api = _api; }
 }

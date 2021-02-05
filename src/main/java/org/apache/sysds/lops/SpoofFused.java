@@ -34,7 +34,7 @@ public class SpoofFused extends Lop
 	private final int _numThreads;
 	private final String _genVarName;
 
-	private GeneratorAPI _api;
+	private final GeneratorAPI _api;
 	public SpoofFused(ArrayList<Lop> inputs, DataType dt, ValueType vt, Class<?> cla, GeneratorAPI api,
 					  String genVarName, int k, ExecType etype) {
 		super(Type.SpoofFused, dt, vt);
@@ -110,10 +110,14 @@ public class SpoofFused extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _api);
 		sb.append( OPERAND_DELIMITOR );
-		if(_class != null)
-			sb.append( _class.getName() );
+		if(_api == GeneratorAPI.CUDA)
+			if(_genVarName.contains("codegen"))
+				sb.append(_genVarName);
+			else
+				sb.append("codegen.").append(_genVarName);
 		else
-			sb.append("codegen." + _genVarName);
+			sb.append( _class.getName() );
+			
 
 
 		for(int i=0; i < inputs.length; i++) {

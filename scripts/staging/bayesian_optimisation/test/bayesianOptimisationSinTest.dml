@@ -78,6 +78,7 @@ OptiHyperParams = bayOpt::m_bayesianOptimisation(
     , kernel = "squared_exponential"
     #, kernel = "kernel_gaus_1d"
     , iterations = 1
+    , randomSamples = 2
     , verbose = TRUE
 );
 

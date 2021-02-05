@@ -8,32 +8,62 @@
 # kernel         String          ---     Kernelfunction to use.
 # paramNames     Matrix[String]  ---     Name of the hyper parameters to optimize.
 # paramValues    Matrix[Double]  ---     Values of the hyper parameters to optimize.
-# iterations     Integer         ---     Number of training interations.  
+# iterations     Integer         ---     Number of training interations.
 #
 source("./scripts/staging/scalable_linalg/linalg_decomp.dml") as decomp
 
 
-posterior = function(Matrix[Double] xNew, Matrix[Double] xTrain, Matrix[Double] yTrain, String kernel)
-return (Matrix[Double] mean, Matrix[Double] variance)
+m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String objective, String predictive, List[String] params, List[Unknown] paramValues, String acquisition, List[Unknown] fAquParam, String kernel, Integer iterations, Integer randomSamples = 0, Boolean verbose = TRUE)
+  return (Matrix[Double] B, Frame[Unknown] opt)
 {
+    numParams = length(params);
 
-    KArgs = list(xTrain, xTrain);
-    K = eval(kernel, KArgs);
+    HP = getMatrixOfParamCombinations(params, paramValues, verbose);
+    initState = getModelWithRandomInit(X, y, objective, predictive, HP, numParams, randomSamples, verbose);
+    currentBestHP = HP[1,];
 
-    KsArgs = list(xTrain, xNew);
-    Ks = eval(kernel, KsArgs);
+    Rbeta = matrix(0, nrow(HP), ncol(X));
+    Rloss = matrix(0, nrow(HP), 1);
 
-    KssArgs = list(xNew, xNew);
-    Kss = eval(kernel, KssArgs);
+    # loop
+    for (i in 1:iterations) {
+        #print("iteration" + i);
 
-    K_inv = inv(K);
 
-    mean = t(Ks) %*% K_inv %*% yTrain;
-    variance = Kss - t(Ks) %*% K_inv %*% Ks;
+        /*
+        oldMax = 1;
+
+        aArgs = list(X, oldMax);
+        aquisition_result = eval(acquisition, aArgs);
+
+        kArgs = list(X, X);
+        kernel_result = eval(kernel, kArgs);
+        */
+
+
+        tArgs = list(X, y)
+        for ( j in 1:numParams) {
+            tArgs = append(tArgs, as.scalar(currentBestHP[1,j]));
+        }
+
+        result = eval(objective, tArgs);
+        #print(toString(result));
+
+
+        pArgs = list(X, y, result);
+        predResult = eval(predictive, pArgs);
+        #print(toString(loss));
+
+
+    }
+    B = X;
+    opt = as.frame(y);
+    print("Works");
 }
 
-getListOfParamCombinations = function(List[String] params, list[Unknown] paramValues, Boolean verbose)
-return (Matrix[Unknown] HP)
+
+getMatrixOfParamCombinations = function(List[String] params, list[Unknown] paramValues, Boolean verbose)
+return (Matrix[Double] HP)
 {
   # Step 0) preparation of parameters, lengths, and values in convenient form
   numParams = length(params);
@@ -59,58 +89,64 @@ return (Matrix[Unknown] HP)
   }
 
   if( verbose )
-    print("GridSeach: Hyper-parameter combinations: \n"+toString(HP));
+    print("BayesianOptimization: Hyper-parameter combinations: \n"+toString(HP));
 }
 
-m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String objective, String predictive, List[String] params, List[Unknown] paramValues, String acquisition, List[Unknown] fAquParam, String kernel, Integer iterations, Boolean verbose = TRUE)
-  return (Matrix[Double] B, Frame[Unknown] opt)
-{
-    numParams = length(params);
+getModelWithRandomInit = function(Matrix[Double] X, Matrix[Double] y, String objective, String predictive, Matrix[Double] HP, Integer numParams, Integer numOfSamples, Boolean verbose = TRUE)
+return(Matrix[Double] predResults, Frame[Unknown] hyperParameters) {
+  samples = sample(nrow(HP), numOfSamples);
+  predResults = matrix(0, numOfSamples, 1);
+  hyperParameters = as.frame(0);
 
-    HP = getListOfParamCombinations(params, paramValues, verbose);
-    currentBestHP = HP[1,];
+  for ( sampleIdx in 1: numOfSamples) {
+    rndNum = as.scalar(samples[sampleIdx,1]);
+    HPSet = HP[rndNum,];
 
-    Rbeta = matrix(0, nrow(HP), ncol(X));
-    Rloss = matrix(0, nrow(HP), 1);
-
-    # loop
-    for (i in 1:iterations) {
-        #print("iteration" + i);
-
-
-        /*
-        oldMax = 1;
-
-        aArgs = list(X, oldMax);
-        aquisition_result = eval(acquisition, aArgs);
-
-
-        kArgs = list(X, X);
-        kernel_result = eval(kernel, kArgs);
-
-
-
-        #print(toString(kernel_result));
-        
-        */
-
-        tArgs = list(X, y)
-        for ( j in 1:numParams) {
-            tArgs = append(tArgs, as.scalar(currentBestHP[1,j]));
-        }
-
-        result = eval(objective, tArgs);
-        print(toString(result));
-
-        /*
-        pArgs = list(X, y, t(result));
-        loss = eval(predictive, pArgs);
-        print(toString(loss));
-        
-
-        */
+    # calc objective
+    tArgs = list(X, y);
+    for ( paramIdx in 1: numParams) {
+        print(sampleIdx + " " + paramIdx);
+        tArgs = append(tArgs, as.scalar(HPSet[1, paramIdx]));
     }
-    B = X;
-    opt = as.frame(y);
-    print("Works");
+    objResult = eval(objective, tArgs);
+
+    # calc predictive / score
+    pArgs = list(X, y, objResult);
+    predResult = eval(predictive, pArgs);
+    predResults[sampleIdx] = predResult;
+
+    if ( sampleIdx == 1 ) {
+        hyperParameters = as.frame(HPSet);
+    } else {
+        hyperParameters = rbind(hyperParameters, as.frame(HPSet));
+    }
+
+  }
+
+  if (verbose) {
+    print("\nInit model with randome samples:");
+    for (sampleIdx in 1: numOfSamples) { # trying to print the frame "hyperParameters" in one go results in an error.
+      print("predictive result:\n" + toString(predResults[sampleIdx]) + "hyperparameters:\n" + toString(hyperParameters[sampleIdx,]));
+    }
+  }
+
+}
+
+posterior = function(Matrix[Double] xNew, Matrix[Double] xTrain, Matrix[Double] yTrain, String kernel)
+return (Matrix[Double] mean, Matrix[Double] variance)
+{
+
+    KArgs = list(xTrain, xTrain);
+    K = eval(kernel, KArgs);
+
+    KsArgs = list(xTrain, xNew);
+    Ks = eval(kernel, KsArgs);
+
+    KssArgs = list(xNew, xNew);
+    Kss = eval(kernel, KssArgs);
+
+    K_inv = inv(K);
+
+    mean = t(Ks) %*% K_inv %*% yTrain;
+    variance = Kss - t(Ks) %*% K_inv %*% Ks;
 }

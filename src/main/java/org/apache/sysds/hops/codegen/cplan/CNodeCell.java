@@ -124,8 +124,12 @@ public class CNodeCell extends CNodeTpl
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false, api);
 		_output.resetGenerated();
-
-		tmp = tmp.replace("%TMP%", createVarname());
+		
+		if(getVarname() == null)
+			tmp = tmp.replace("%TMP%", createVarname());
+		else
+			tmp = tmp.replace("%TMP%", getVarname());
+		
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
 		//return last TMP

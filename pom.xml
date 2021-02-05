@@ -106,8 +106,10 @@
 				<directory>src/main/cuda/headers</directory>
 				<includes>
 					<include>agg_ops.cuh</include>
+					<include>operators.cuh</include>
 					<include>reduction.cuh</include>
 					<include>spoof_utils.cuh</include>
+					<include>TempStorage.cuh</include>
 					<include>utils.cuh</include>
 				</includes>
 				<targetPath>cuda/headers</targetPath>
@@ -604,6 +606,7 @@
 								<exclude>scripts/perftest/python/requirements.txt</exclude>
 								<!-- external sources -->
 								<exclude>src/main/cuda/ext/**</exclude>
+								<exclude>src/main/cuda/.idea/</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

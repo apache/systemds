@@ -204,6 +204,7 @@ public class SpoofCompiler {
 				if(SystemUtils.IS_OS_WINDOWS) {
 					os = "Windows";
 					suffix = ".dll";
+					arch = arch.toUpperCase();
 				}
 
 				String libName = "libsystemds_spoof_cuda-" + os + "-" + arch + suffix;

@@ -238,6 +238,7 @@ public class CNodeCell extends CNodeTpl
 	}
 	@Override
 	public boolean isSupported(GeneratorAPI api) {
-		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api);
+		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api) &&
+			!(getSpoofAggOp() == SpoofCellwise.AggOp.SUM_SQ);
 	}
 }

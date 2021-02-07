@@ -16,49 +16,47 @@ source("./scripts/staging/scalable_linalg/linalg_decomp.dml") as decomp
 m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String objective, String predictive, List[String] params, List[Unknown] paramValues, String acquisition, List[Unknown] fAquParam, String kernel, Integer iterations, Integer randomSamples = 0, Boolean verbose = TRUE)
   return (Matrix[Double] B, Frame[Unknown] opt)
 {
-    numOfParams = length(params);
+  numOfParams = length(params);
 
-    HP = getMatrixOfParamCombinations(params, paramValues, verbose);
-    [initState, initParams, indexesToRemove] = getModelWithRandomInit(X, y, objective, predictive, HP, numOfParams, randomSamples, verbose);
-    removeUsedParamsFromMatrix(HP, indexesToRemove, verbose);
-    currentBestHP = HP[1,];
+  HP = getMatrixOfParamCombinations(params, paramValues, verbose);
+  [initState, initParams, indexesToRemove] = getModelWithRandomInit(X, y, objective, predictive, HP, numOfParams, randomSamples, verbose);
+  removeUsedParamsFromMatrix(HP, indexesToRemove, verbose);
+  currentBestHP = HP[1,];
 
-    Rbeta = matrix(0, nrow(HP), ncol(X));
-    Rloss = matrix(0, nrow(HP), 1);
+  Rbeta = matrix(0, nrow(HP), ncol(X));
+  Rloss = matrix(0, nrow(HP), 1);
 
-    # loop
-    for (i in 1:iterations) {
-        /*
-        oldMax = 1;
+  # loop
+  for (i in 1:iterations) {
+    /*
+    oldMax = 1;
 
-        aArgs = list(X, oldMax);
-        aquisition_result = eval(acquisition, aArgs);
+    aArgs = list(X, oldMax);
+    aquisition_result = eval(acquisition, aArgs);
 
-        kArgs = list(X, X);
-        kernel_result = eval(kernel, kArgs);
-        */
-
-
-        tArgs = list(X, y)
-        for ( j in 1:numOfParams) {
-            tArgs = append(tArgs, as.scalar(currentBestHP[1,j]));
-        }
-
-        result = eval(objective, tArgs);
-        #print(toString(result));
+    kArgs = list(X, X);
+    kernel_result = eval(kernel, kArgs);
+    */
 
 
-        pArgs = list(X, y, result);
-        predResult = eval(predictive, pArgs);
-        #print(toString(loss));
-
-
+    tArgs = list(X, y)
+    for ( j in 1:numOfParams) {
+        tArgs = append(tArgs, as.scalar(currentBestHP[1,j]));
     }
 
+    result = eval(objective, tArgs);
+    #print(toString(result));
 
-    B = X;
-    opt = as.frame(y);
-    print("Works");
+
+    pArgs = list(X, y, result);
+    predResult = eval(predictive, pArgs);
+    #print(toString(loss));
+  }
+
+
+  B = X;
+  opt = as.frame(y);
+  print("Works");
 
 }
 
@@ -95,81 +93,80 @@ return (Matrix[Double] HP)
 
 getModelWithRandomInit = function(Matrix[Double] X, Matrix[Double] y, String objective, String predictive, Matrix[Double] HP, Integer numOfParams, Integer numOfSamples, Boolean verbose = TRUE)
 return(Matrix[Double] predResults, Matrix[Double] usedHPs, List[Integer] usedHPIndexes) {
-    samples = sample(nrow(HP), numOfSamples);
-    predResults = matrix(0, numOfSamples, 1);
-    usedHPs = matrix(0, numOfSamples, numOfParams);
-    usedHPIndexes = list();
+  samples = sample(nrow(HP), numOfSamples);
+  predResults = matrix(0, numOfSamples, 1);
+  usedHPs = matrix(0, numOfSamples, numOfParams);
+  usedHPIndexes = list();
 
-    # DODO YOU NEED TO REMOVE THE ELEMENTS WHICH ARE NOW USED!
+  # DODO YOU NEED TO REMOVE THE ELEMENTS WHICH ARE NOW USED!
 
-    for ( sampleIdx in 1: numOfSamples) {
-        rndNum = as.scalar(samples[sampleIdx,1]);
-        usedHPIndexes = append(usedHPIndexes, rndNum);
-        HPSet = HP[rndNum,];
+  for ( sampleIdx in 1: numOfSamples) {
+    rndNum = as.scalar(samples[sampleIdx,1]);
+    usedHPIndexes = append(usedHPIndexes, rndNum);
+    HPSet = HP[rndNum,];
 
 
 
-        # calc objective
-        tArgs = list(X, y);
-        for ( paramIdx in 1: numOfParams) {
-            print(sampleIdx + " " + paramIdx);
-            tArgs = append(tArgs, as.scalar(HPSet[1, paramIdx]));
-        }
-        usedHPs[sampleIdx,] = HPSet[1,];
-        objResult = eval(objective, tArgs);
-
-        # calc predictive / score
-        pArgs = list(X, y, objResult);
-        predResult = eval(predictive, pArgs);
-        predResults[sampleIdx] = predResult;
+    # calc objective
+    tArgs = list(X, y);
+    for ( paramIdx in 1: numOfParams) {
+        print(sampleIdx + " " + paramIdx);
+        tArgs = append(tArgs, as.scalar(HPSet[1, paramIdx]));
     }
+    usedHPs[sampleIdx,] = HPSet[1,];
+    objResult = eval(objective, tArgs);
 
-    if (verbose) {
+    # calc predictive / score
+    pArgs = list(X, y, objResult);
+    predResult = eval(predictive, pArgs);
+    predResults[sampleIdx] = predResult;
+  }
+
+  if (verbose) {
     print("\nInit model with randome samples:");
-      print("\npredictive result:\n" + toString(predResults) +
-            "\nhyperparameters:\n" + toString(usedHPs) +
-            "\nhyperparameter Indexes:\n" + toString(usedHPIndexes));
-    }
+    print("\npredictive result:\n" + toString(predResults) +
+          "\nhyperparameters:\n" + toString(usedHPs) +
+          "\nhyperparameter Indexes:\n" + toString(usedHPIndexes));
+  }
 }
 
 removeUsedParamsFromMatrix = function(Matrix[Double] HP, List[Integer] indexesToRemove, Boolean verbose = TRUE)
 return(Matrix[Double] newHP)
 {
     # DODO YOU NEED TO SELECT WHICH ROWS TO DELETE
-    mask = matrix(1, nrow(HP), 1);
-    newHP = HP;
-    numRowsBefore = nrow(newHP);
+  mask = matrix(1, nrow(HP), 1);
+  newHP = HP;
+  numRowsBefore = nrow(newHP);
 
-    for( i in 1:length(indexesToRemove)) {
-        mask[i,1] = 0;
-    }
+  for( i in 1:length(indexesToRemove)) {
+    mask[i,1] = 0;
+  }
 
-    mask = mask == 1;
-    newHP = removeEmpty(target=newHP, margin="rows", select=mask);
-    numRowsAfter = nrow(newHP);
+  mask = mask == 1;
+  newHP = removeEmpty(target=newHP, margin="rows", select=mask);
+  numRowsAfter = nrow(newHP);
 
-    if ( verbose ) {
-        print("\nRemoving indexes:\n" + toString(indexesToRemove));
-        print("\nResult after removing indexes:\n" + toString(newHP));
-        print("\n#Rows before: " + numRowsBefore + " and after: " + numRowsAfter);
-    }
+  if ( verbose ) {
+    print("\nRemoving indexes:\n" + toString(indexesToRemove));
+    print("\nResult after removing indexes:\n" + toString(newHP));
+    print("\n#Rows before: " + numRowsBefore + " and after: " + numRowsAfter);
+  }
 }
 
 posterior = function(Matrix[Double] xNew, Matrix[Double] xTrain, Matrix[Double] yTrain, String kernel)
 return (Matrix[Double] mean, Matrix[Double] variance)
 {
+  KArgs = list(xTrain, xTrain);
+  K = eval(kernel, KArgs);
 
-    KArgs = list(xTrain, xTrain);
-    K = eval(kernel, KArgs);
+  KsArgs = list(xTrain, xNew);
+  Ks = eval(kernel, KsArgs);
 
-    KsArgs = list(xTrain, xNew);
-    Ks = eval(kernel, KsArgs);
+  KssArgs = list(xNew, xNew);
+  Kss = eval(kernel, KssArgs);
 
-    KssArgs = list(xNew, xNew);
-    Kss = eval(kernel, KssArgs);
+  K_inv = inv(K);
 
-    K_inv = inv(K);
-
-    mean = t(Ks) %*% K_inv %*% yTrain;
-    variance = Kss - t(Ks) %*% K_inv %*% Ks;
+  mean = t(Ks) %*% K_inv %*% yTrain;
+  variance = Kss - t(Ks) %*% K_inv %*% Ks;
 }

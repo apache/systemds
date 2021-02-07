@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.transform.tokenize;
 
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.wink.json4j.JSONArray;
@@ -29,12 +28,7 @@ import java.util.List;
 
 public class TokenizerFactory {
 
-    public static Tokenizer createTokenizer(String spec, Types.ValueType[] schema) {
-        return createTokenizer(spec, schema, -1, -1);
-    }
-
-    public static Tokenizer createTokenizer(String spec, Types.ValueType[] schema,
-                                        int minCol, int maxCol) {
+    public static Tokenizer createTokenizer(String spec, int maxTokens) {
         Tokenizer tokenizer = null;
 
         try {
@@ -85,13 +79,13 @@ public class TokenizerFactory {
             // Transform tokens to output representation
             switch (out) {
                 case "count":
-                    tokenizerPost = new TokenizerPostCount(outParams);
+                    tokenizerPost = new TokenizerPostCount(outParams, maxTokens);
                     break;
                 case "position":
-                    tokenizerPost = new TokenizerPostPosition(outParams);
+                    tokenizerPost = new TokenizerPostPosition(outParams, maxTokens);
                     break;
                 case "hash":
-                    tokenizerPost = new TokenizerPostHash(outParams);
+                    tokenizerPost = new TokenizerPostHash(outParams, maxTokens);
                     break;
                 default:
                     throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");

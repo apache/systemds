@@ -22,7 +22,13 @@
 F1 = read($1, data_type="frame", format="csv", sep=",");
 
 # Example Preprocessing:
-# F1[,4] = map(F1[,4], "x -> x.toLowerCase()");
+F1[,4] = map(F1[,4], "x -> x.toLowerCase()");
+
+# Example to estimate max tokens based on string length
+# max_token = as.integer(max(as.matrix(map(F1[,4], "x -> x.length()"))));
+# print(max_length);
+
+max_token = 400;
 
 # Example spec:
 # jspec = "{\"algo\": \"whitespace\",\"out\": \"count\",\"id_col\": [2],\"tokenize_col\": 3}";
@@ -30,7 +36,7 @@ F1 = read($1, data_type="frame", format="csv", sep=",");
 jspec = read($2, data_type="scalar", value_type="string");
 
 # If slicing is performed, then only the remaining columns are considered for tokenizer spec:
-F2 = tokenize(target=F1[,2:4], spec=jspec);
+F2 = tokenize(target=F1[,2:4], spec=jspec, max_tokens=max_token);
 write(F2, $3, format="csv");
 
 # Get followup spec, depending on test case

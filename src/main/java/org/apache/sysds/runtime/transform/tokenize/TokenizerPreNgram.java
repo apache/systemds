@@ -31,8 +31,8 @@ public class TokenizerPreNgram implements TokenizerPre {
 
     private static final long serialVersionUID = -6297904316677723802L;
     
-    public TokenizerPreWhitespaceSplit tokenizerPreWhitespaceSplit;
-    public Params params;
+    private final TokenizerPreWhitespaceSplit tokenizerPreWhitespaceSplit;
+    private final Params params;
 
     static class Params implements Serializable {
 

@@ -34,7 +34,8 @@ import java.util.stream.Stream;
 public class TokenizerPostCount implements TokenizerPost{
 
     private static final long serialVersionUID = 6382000606237705019L;
-    public Params params;
+    private final Params params;
+    private final int maxTokens;
 
     static class Params implements Serializable {
 
@@ -49,8 +50,9 @@ public class TokenizerPostCount implements TokenizerPost{
         }
     }
 
-    public TokenizerPostCount(JSONObject params) throws JSONException {
+    public TokenizerPostCount(JSONObject params, int maxTokens) throws JSONException {
         this.params = new Params(params);
+        this.maxTokens = maxTokens;
     }
 
     @Override
@@ -68,7 +70,11 @@ public class TokenizerPostCount implements TokenizerPost{
             }
             List<String> outputTokens = distinctTokenStream.collect(Collectors.toList());
 
+            int numTokens = 0;
             for (String token: outputTokens) {
+                if (numTokens >= maxTokens) {
+                    break;
+                }
                 // Create a row per token
                 long count = tokenCounts.get(token);
                 List<Object> rowList = new ArrayList<>(keys);
@@ -77,6 +83,7 @@ public class TokenizerPostCount implements TokenizerPost{
                 Object[] row = new Object[rowList.size()];
                 rowList.toArray(row);
                 out.appendRow(row);
+                numTokens++;
             }
         }
 

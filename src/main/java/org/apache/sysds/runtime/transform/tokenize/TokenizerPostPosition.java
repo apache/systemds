@@ -30,9 +30,11 @@ import java.util.List;
 public class TokenizerPostPosition implements TokenizerPost{
 
     private static final long serialVersionUID = 3563407270742660830L;
+    private final int maxTokens;
 
-    public TokenizerPostPosition(JSONObject params) {
+    public TokenizerPostPosition(JSONObject params, int maxTokens) {
         // No configurable params yet
+        this.maxTokens = maxTokens;
     }
 
     @Override
@@ -40,7 +42,12 @@ public class TokenizerPostPosition implements TokenizerPost{
         for (Tokenizer.DocumentToTokens docToToken: tl) {
             List<Object> keys = docToToken.keys;
             List<Tokenizer.Token> tokenList = docToToken.tokens;
+
+            int numTokens = 0;
             for (Tokenizer.Token token: tokenList) {
+                if (numTokens >= maxTokens) {
+                    break;
+                }
                 // Create a row per token
                 List<Object> rowList = new ArrayList<>(keys);
                 // Convert to 1-based index for DML
@@ -49,6 +56,7 @@ public class TokenizerPostPosition implements TokenizerPost{
                 Object[] row = new Object[rowList.size()];
                 rowList.toArray(row);
                 out.appendRow(row);
+                numTokens++;
             }
         }
 

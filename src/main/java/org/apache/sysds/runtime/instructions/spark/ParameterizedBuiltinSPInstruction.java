@@ -444,15 +444,19 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			DataCharacteristics mc = sec.getDataCharacteristics(params.get("target"));
 
 			//construct tokenizer and tokenize text
-			Tokenizer tokenizer = TokenizerFactory.createTokenizer(params.get("spec"), null);
+			Tokenizer tokenizer = TokenizerFactory.createTokenizer(params.get("spec"),
+					Integer.parseInt(params.get("max_tokens")));
 			JavaPairRDD<Long,FrameBlock> out = in.mapToPair(
 					new RDDTokenizeFunction(tokenizer, mc.getBlocksize()));
 
 			//set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), params.get("target"));
-			// Counting used to get the data characteristics.
-			Integer numRows = out.mapValues((FrameBlock::getNumRows)).values().reduce(Integer::sum);
+
+			// get max tokens for row upper bound
+			int maxTokens = Integer.parseInt(params.get("max_tokens"));
+			// each row gets exploded with at most max_tokens
+			long numRows = mc.getRows() * maxTokens;
 			int numCols = tokenizer.getSchema().length;
 			sec.getDataCharacteristics(output.getName()).set(
 					numRows, numCols, mc.getBlocksize());

@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
 public class TokenizerPostHash implements TokenizerPost{
 
     private static final long serialVersionUID = 4763889041868044668L;
-    public Params params;
+    private final Params params;
+    private final int maxTokens;
 
     static class Params implements Serializable {
 
@@ -31,8 +32,9 @@ public class TokenizerPostHash implements TokenizerPost{
         }
     }
 
-    public TokenizerPostHash(JSONObject params) throws JSONException {
+    public TokenizerPostHash(JSONObject params, int maxTokens) throws JSONException {
         this.params = new Params(params);
+        this.maxTokens = maxTokens;
     }
 
     @Override
@@ -47,7 +49,11 @@ public class TokenizerPostHash implements TokenizerPost{
             // Sorted by hash
             Map<Integer, Long> sortedHashes = new TreeMap<>(hashCounts);
 
+            int numTokens = 0;
             for (Map.Entry<Integer, Long> hashCount: sortedHashes.entrySet()) {
+                if (numTokens >= maxTokens) {
+                    break;
+                }
                 // Create a row per token
                 int hash = hashCount.getKey() + 1;
                 long count = hashCount.getValue();
@@ -57,6 +63,7 @@ public class TokenizerPostHash implements TokenizerPost{
                 Object[] row = new Object[rowList.size()];
                 rowList.toArray(row);
                 out.appendRow(row);
+                numTokens++;
             }
         }
 

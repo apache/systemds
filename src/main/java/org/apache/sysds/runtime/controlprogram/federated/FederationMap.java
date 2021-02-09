@@ -143,18 +143,21 @@ public class FederationMap {
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-
+		
 		// prepare indexing ranges
 		int[][] ix = new int[_fedMap.size()][];
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-			int rl, ru, cl, cu;
-			// TODO Handle different cases than ROW aligned Matrices.
-			rl = transposed ? 0 : e.getKey().getBeginDimsInt()[0];
-			ru = transposed ? cb.getNumRows() - 1 : e.getKey().getEndDimsInt()[0] - 1;
-			cl = transposed ? e.getKey().getBeginDimsInt()[0] : 0;
-			cu = transposed ? e.getKey().getEndDimsInt()[0] - 1 : cb.getNumColumns() - 1;
-			ix[pos++] = new int[] {rl, ru, cl, cu};
+			int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
+			int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
+			int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
+			int nc = _type == FType.ROW ? cb.getNumColumns() : cb.getNumRows();
+			int rl = transposed ? 0 : beg;
+			int ru = transposed ? nr - 1 : end - 1;
+			int cl = transposed ? beg : 0;
+			int cu = transposed ? end - 1 : nc - 1;
+			ix[pos++] = _type == FType.ROW ?
+				new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 		}
 
 		// multi-threaded block slicing and federation request creation

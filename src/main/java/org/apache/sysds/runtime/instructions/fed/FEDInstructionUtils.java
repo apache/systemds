@@ -78,7 +78,7 @@ public class FEDInstructionUtils {
 			if( instruction.input1.isMatrix() && instruction.input2.isMatrix() ) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
-				if (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) {
+				if (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW) || mo1.isFederated(FType.COL)) {
 					fedinst = AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
 			}

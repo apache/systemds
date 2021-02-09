@@ -96,10 +96,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		for(int i = 0; i < requests.length; i++) {
 			FederatedRequest request = requests[i];
-			if(log.isInfoEnabled()) {
-				log.info("Executing command " + (i + 1) + "/" + requests.length + ": " + request.getType().name());
-				if(log.isDebugEnabled()) {
-					log.debug("full command: " + request.toString());
+			if(log.isDebugEnabled()) {
+				log.debug("Executing command " + (i + 1) + "/" + requests.length + ": " + request.getType().name());
+				if(log.isTraceEnabled()) {
+					log.trace("full command: " + request.toString());
 				}
 			}
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());

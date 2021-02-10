@@ -19,7 +19,15 @@
 #
 #-------------------------------------------------------------
 
-X = rbind(read($in_X1), read($in_X2));
+if($in_sfw) { # single federated worker
+  X = read($in_X1);
+}
+else if($in_rp) { # row partitioned
+  X = rbind(read($in_X1), read($in_X2));
+}
+else { # column partitioned
+  X = cbind(read($in_X1), read($in_X2));
+}
 
 y = $in_Y;
 op_type = $in_op_type;

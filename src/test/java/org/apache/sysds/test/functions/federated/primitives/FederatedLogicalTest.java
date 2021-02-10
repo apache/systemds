@@ -64,6 +64,10 @@ public class FederatedLogicalTest extends AutomatedTestBase
 	public int cols;
 	@Parameterized.Parameter(2)
 	public double sparsity;
+	@Parameterized.Parameter(3)
+	public boolean single_fed_worker;
+	@Parameterized.Parameter(4)
+	public boolean row_partitioned;
 
 	@Override
 	public void setUp() {
@@ -73,13 +77,27 @@ public class FederatedLogicalTest extends AutomatedTestBase
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		// rows must be even
+		// rows or cols must be even (depends on partition)
 		return Arrays.asList(new Object[][] {
-			// {rows, cols, sparsity}
-			{100, 75, 0.01},
-			{100, 75, 0.9},
-			{2, 75, 0.01},
-			{2, 75, 0.9}
+			// {rows, cols, sparsity, single_fed_worker, row_partitioned}
+
+			// ------working------
+			{100, 75, 0.01, false, true},
+			{100, 75, 0.9, false, true},
+			{1, 75, 0.01, true, true},
+			{1, 75, 0.9, true, true},
+			{2, 75, 0.01, false, true},
+			{2, 75, 0.9, false, true},
+			{100, 1, 0.01, false, true},
+			{100, 1, 0.9, false, true},
+
+
+			// {100, 76, 0.01, false, false},
+			// {100, 76, 0.9, false, false},
+			// {1, 76, 0.01, false, false},
+			// {1, 76, 0.9, false, false},
+			// {100, 1, 0.01, true, false},
+			// {100, 1, 0.9, true, false}
 		});
 	}
 
@@ -220,13 +238,26 @@ public class FederatedLogicalTest extends AutomatedTestBase
 		getAndLoadTestConfiguration(testname);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		int fed_rows = rows / 2;
-		int fed_cols = cols;
+		int fed_rows;
+		int fed_cols;
+		if(single_fed_worker)
+		{
+			fed_rows = rows;
+			fed_cols = cols;
+		}
+		else if(row_partitioned) {
+			fed_rows = rows / 2;
+			fed_cols = cols;
+		}
+		else {
+			fed_rows = rows;
+			fed_cols = cols / 2;
+		}
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 1, 2, 1, 13);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 1, 2, 1, 2);
+		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 13);
+		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 2);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
@@ -237,7 +268,7 @@ public class FederatedLogicalTest extends AutomatedTestBase
 		double Y_scal = 0;
 		if(is_matrix_test) {
 			Y_mat = getRandomMatrix(rows, cols, 0, 1, sparsity, 5040);
-			writeInputMatrixWithMTD("Y", Y_mat, true);
+			writeInputMatrixWithMTD("Y", Y_mat, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
 		}
 
 		// empty script name because we don't execute any script, just start the worker
@@ -251,17 +282,22 @@ public class FederatedLogicalTest extends AutomatedTestBase
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + testname + "Reference.dml";
-		programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
+		programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"),
+			"in_X2=" + input("X2"), // not needed in case of a single federated worker
 			"in_Y=" + (is_matrix_test ? input("Y") : Double.toString(Y_scal)),
+			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
+			"in_sfw=" + Boolean.toString(single_fed_worker).toUpperCase(),
 			"in_op_type=" + Integer.toString(op_type.ordinal()),
 			"out_Z=" + expected(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + testname + ".dml";
-		programArgs = new String[] {"-stats", "-nvargs",
+		programArgs = new String[] {"-explain", "-stats", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")), "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_Y=" + (is_matrix_test ? input("Y") : Double.toString(Y_scal)),
+			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
+			"in_sfw=" + Boolean.toString(single_fed_worker).toUpperCase(),
 			"in_op_type=" + Integer.toString(op_type.ordinal()),
 			"rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
@@ -298,7 +334,8 @@ public class FederatedLogicalTest extends AutomatedTestBase
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
+		if(!single_fed_worker)
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 
 		resetExecMode(platform_old);
 	}

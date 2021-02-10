@@ -19,8 +19,18 @@
 #
 #-------------------------------------------------------------
 
-X = federated(addresses=list($in_X1, $in_X2),
-  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
+if($in_sfw) { # single federated worker
+  X = federated(addresses=list($in_X1),
+    ranges=list(list(0, 0), list($rows, $cols)));
+}
+else if($in_rp) { # row partitioned
+  X = federated(addresses=list($in_X1, $in_X2),
+    ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
+}
+else { # column partitioned
+  X = federated(addresses=list($in_X1, $in_X2),
+    ranges=list(list(0, 0), list($rows, $cols), list(0, $cols), list($rows, $cols * 2)));
+}
 
 Y = read($in_Y);
 op_type = $in_op_type;

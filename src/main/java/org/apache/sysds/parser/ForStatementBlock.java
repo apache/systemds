@@ -410,6 +410,10 @@ public class ForStatementBlock extends StatementBlock
 			_requiresToRecompile = Recompiler.requiresRecompilation(getToHops());
 			_requiresIncrementRecompile = Recompiler.requiresRecompilation(getIncrementHops());
 		}
+		return requiresPredicateRecompilation();
+	}
+	
+	public boolean requiresPredicateRecompilation() {
 		return (_requiresFromRecompile || _requiresToRecompile || _requiresIncrementRecompile);
 	}
 	

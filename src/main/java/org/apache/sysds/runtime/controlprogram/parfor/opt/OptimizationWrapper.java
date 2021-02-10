@@ -185,7 +185,7 @@ public class OptimizationWrapper
 				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
 				ResetType reset = ConfigurationManager.isCodegenEnabled() ? 
 					ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
-				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0, reset);
+				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0, true, reset);
 				
 				//inter-procedural optimization (based on previous recompilation)
 				if( pb.hasFunctions() ) {
@@ -201,7 +201,7 @@ public class OptimizationWrapper
 							//reset recompilation flags according to recompileOnce because it is only safe if function is recompileOnce 
 							//because then recompiled for every execution (otherwise potential issues if func also called outside parfor)
 							ResetType reset2 = fpb.isRecompileOnce() ? reset : ResetType.NO_RESET;
-							Recompiler.recompileProgramBlockHierarchy(fpb.getChildBlocks(), new LocalVariableMap(), 0, reset2);
+							Recompiler.recompileProgramBlockHierarchy(fpb.getChildBlocks(), new LocalVariableMap(), 0, true, reset2);
 						}
 					}
 				}

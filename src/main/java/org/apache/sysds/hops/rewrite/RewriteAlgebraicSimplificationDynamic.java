@@ -2495,7 +2495,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = minus;
 				
 				LOG.debug("Applied reorderMinusMatrixMult (line "+hi.getBeginLine()+").");
-			}	
+			}
 		}
 		
 		return hi;

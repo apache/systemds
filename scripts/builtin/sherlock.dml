@@ -226,7 +226,7 @@ transform_apply_labels = function(frame[string] data, frame[string] meta_data) r
 
   #replace label with number
   transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
-  transformMeta = read("../sherlock-project/data/data/short/transform_y_labels");
+  #transformMeta = read("../sherlock-project/data/data/short/transform_y_labels");
   m_data = transformapply(target=data,
                   spec=transformSpec,
                   meta=meta_data)
@@ -269,7 +269,7 @@ train = function(matrix[double] X_train, matrix[double] y_train, matrix[double] 
   print("Starting optimization")
   batch_size = 256 #?
   epochs = 100
-  iters = floor(N / batch_size)
+  iters = ceil(N / batch_size)
   for (e in 1:epochs) {
     for(i in 1:iters) {
       # Get next batch
@@ -284,9 +284,8 @@ train = function(matrix[double] X_train, matrix[double] y_train, matrix[double] 
       ## layer 2:
       out2 = affine::forward(outd1, W2, b2)
       outr2 = relu::forward(out2)
-      [outd2, maskd2] = dropout::forward(outr2, p, -1)
       ## layer 3:
-      out3 = affine::forward(outd2, W3, b3)
+      out3 = affine::forward(outr2, W3, b3)
       probs = softmax::forward(out3)
 
       # Compute loss
@@ -298,9 +297,8 @@ train = function(matrix[double] X_train, matrix[double] y_train, matrix[double] 
       dprobs = cross_entropy_loss::backward(probs, y_batch)
       ## layer 3:
       dout3 = softmax::backward(dprobs, out3)
-      [doutd2, dW3, db3] = affine::backward(dout3, outd2, W3, b3)
+      [doutr2, dW3, db3] = affine::backward(dout3, outr2, W3, b3)
       ## layer 2:
-      doutr2 = dropout::backward(doutd2, outr2, p, maskd2)
       dout2 = relu::backward(doutr2, out2)
       [doutd1, dW2, db2] = affine::backward(dout2, outd1, W2, b2)
       ## layer 1:
@@ -322,6 +320,72 @@ train = function(matrix[double] X_train, matrix[double] y_train, matrix[double] 
     # Decay learning rate
     lr = lr * decay
   }
+}
+
+predict = function(matrix[double] test_val,
+                   matrix[double] W1, matrix[double] b1,
+                   matrix[double] W2, matrix[double] b2,
+                   matrix[double] W3, matrix[double] b3)
+    return (matrix[double] probs) {
+
+  N = nrow(test_val)
+  K = ncol(W3) # num features
+  print("W3 = " + W3) 
+
+  # Network:
+  # conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> affine3 -> relu3 -> affine4 -> softmax
+
+  # Compute predictions over mini-batches
+  
+  probs = matrix(0, rows=N, cols=K)
+
+  batch_size = 256 #?
+  iters = ceil(N / batch_size)
+  for(i in 1:iters) {
+    # Get next batch
+    #X_batch = X_train[i:i+batch_size-1,] #in train
+    beg = ((i-1) * batch_size) %% N + 1
+    end = min(N, beg + batch_size - 1)
+    X_batch = test_val[beg:end,]
+
+    # Compute forward pass
+    ## layer 1:
+    out1 = affine::forward(X_batch, W1, b1)
+    outr1 = relu::forward(out1)
+    #[outd1, maskd1] = dropout::forward(outr1, p, -1) #dropout needed for predict?
+    ## layer 2:
+    out2 = affine::forward(outr1, W2, b2)
+    outr2 = relu::forward(out2)
+    ## layer 3:
+    out3 = affine::forward(outr2, W3, b3)
+    probs_batch = softmax::forward(out3)
+
+    # Store predictions
+    probs[beg:end,] = probs_batch
+  }
+}
+
+eval = function(matrix[double] probs, matrix[double] Y)
+    return (double loss, double accuracy) {
+  /*
+   * Evaluates a convolutional net using the "LeNet" architecture.
+   *
+   * The probs matrix contains the class probability predictions
+   * of K classes over N examples.  The targets, Y, have K classes,
+   * and are one-hot encoded.
+   *
+   * Inputs:
+   *  - probs: Class probabilities, of shape (N, K).
+   *  - Y: Target matrix, of shape (N, K).
+   *
+   * Outputs:
+   *  - loss: Scalar loss, of shape (1).
+   *  - accuracy: Scalar accuracy, of shape (1).
+   */
+  # Compute loss & accuracy
+  loss = cross_entropy_loss::forward(probs, Y)
+  correct_pred = rowIndexMax(probs) == rowIndexMax(Y)
+  accuracy = mean(correct_pred)
 }
 
 m_sherlock = function (matrix[double] A) return (double m) {
@@ -352,6 +416,19 @@ m_sherlock = function (matrix[double] A) return (double m) {
   write(b2, "../sherlock-project/data/data/short/b2")
   write(W3, "../sherlock-project/data/data/short/W3")
   write(b3, "../sherlock-project/data/data/short/b3")
+
+  predict_values = predict(processed_test_values, W1, b1, W2, b2, W3, b3)
+  write(predict_values, "../sherlock-project/data/data/short/predict_values")
+
+  [loss, accuracy] = eval(predict_values, processed_val_values)
+  print("loss: " + loss)
+  print("accuracy: " + accuracy)
+
+  #TODO
+  #feature specific subnetworks
+  #include valdiation set
+  #train primary network
+  #predict data
 }
 
 

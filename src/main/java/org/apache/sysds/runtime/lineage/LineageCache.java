@@ -466,42 +466,44 @@ public class LineageCache
 		if (udf.getLineageItem(ec) == null)
 			//TODO: trace all UDFs
 			return;
-		LineageItem item = udf.getLineageItem(ec).getValue();
-		LineageCacheEntry entry = _cache.get(item);
-		Data data = ec.getVariable(String.valueOf(outIds.get(0)));
-		if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
-			// Don't cache if the udf outputs frames
-			_cache.remove(item);
-			return;
+		synchronized (_cache) {
+			LineageItem item = udf.getLineageItem(ec).getValue();
+			LineageCacheEntry entry = _cache.get(item);
+			Data data = ec.getVariable(String.valueOf(outIds.get(0)));
+			if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
+				// Don't cache if the udf outputs frames
+				_cache.remove(item);
+				return;
+			}
+			
+			MatrixBlock mb = (data instanceof MatrixObject) ? 
+					((MatrixObject)data).acquireReadAndRelease() : null;
+			long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
+
+			//remove the placeholder if the entry is bigger than the cache.
+			//FIXME: the resumed threads will enter into infinite wait as the entry
+			//is removed. Need to add support for graceful remove (placeholder) and resume.
+			if (size > LineageCacheEviction.getCacheLimit()) {
+				_cache.remove(item);
+				return;
+			}
+
+			//make space for the data
+			if (!LineageCacheEviction.isBelowThreshold(size))
+				LineageCacheEviction.makeSpace(_cache, size);
+			LineageCacheEviction.updateSize(size, true);
+
+			//place the data
+			if (data instanceof MatrixObject)
+				entry.setValue(mb, computetime);
+			else if (data instanceof ScalarObject)
+				entry.setValue((ScalarObject)data, computetime);
+
+			//TODO: maintain statistics, lineage estimate
+
+			//maintain order for eviction
+			LineageCacheEviction.addEntry(entry);
 		}
-		
-		MatrixBlock mb = (data instanceof MatrixObject) ? 
-				((MatrixObject)data).acquireReadAndRelease() : null;
-		long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
-
-		//remove the placeholder if the entry is bigger than the cache.
-		//FIXME: the resumed threads will enter into infinite wait as the entry
-		//is removed. Need to add support for graceful remove (placeholder) and resume.
-		if (size > LineageCacheEviction.getCacheLimit()) {
-			_cache.remove(item);
-			return;
-		}
-
-		//make space for the data
-		if (!LineageCacheEviction.isBelowThreshold(size))
-			LineageCacheEviction.makeSpace(_cache, size);
-		LineageCacheEviction.updateSize(size, true);
-
-		//place the data
-		if (data instanceof MatrixObject)
-			entry.setValue(mb, computetime);
-		else if (data instanceof ScalarObject)
-			entry.setValue((ScalarObject)data, computetime);
-
-		//TODO: maintain statistics, lineage estimate
-
-		//maintain order for eviction
-		LineageCacheEviction.addEntry(entry);
 	}
 	
 	public static void resetCache() {

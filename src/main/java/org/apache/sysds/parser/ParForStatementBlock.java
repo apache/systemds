@@ -152,7 +152,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( LDEBUG ) {
 			Logger.getLogger("org.apache.sysds.parser.ParForStatementBlock")
 				.setLevel(Level.TRACE);
-			System.out.println();
 		}
 	}
 	

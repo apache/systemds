@@ -141,27 +141,23 @@ public class LineageCacheEntry {
 	}
 	
 	protected synchronized void computeScore(Map<LineageItem, Integer> removeList) {
+		// Set timestamp and compute initial score
 		setTimestamp();
-		if (removeList.containsKey(_key)) {
-			//FIXME: increase computetime instead of score (that now leads to overflow).
-			// updating computingtime seamlessly takes care of spilling 
-			//_computeTime = _computeTime * (1 + removeList.get(_key));
-			score = score * (1 + removeList.get(_key));
+
+		// Update score to emulate computeTime scaling by #misses
+		if (removeList.containsKey(_key) && LineageCacheConfig.isCostNsize()) {
+			//score = score * (1 + removeList.get(_key));
+			double w1 = LineageCacheConfig.WEIGHTS[0];
+			int missCount = 1 + removeList.get(_key);
+			score = score + (w1*(((double)_computeTime)/getSize()) * missCount);
 		}
-		if (_computeTime < 0)
-			System.out.println("after recache: "+_computeTime+" miss count: "+removeList.get(_key));
 	}
 	
-	protected synchronized void updateComputeTime() {
-		if ((Long.MAX_VALUE - _computeTime) < _computeTime) {
-			System.out.println("Overflow for: "+_key.getOpcode());
-		}
-		//FIXME: increase computetime instead of score (that now leads to overflow).
-		// updating computingtime seamlessly takes care of spilling 
-		//_computeTime = _computeTime * (1 + removeList.get(_key));
-		//_computeTime += _computeTime;
-		//recomputeScore();
-		score *= 2;
+	protected synchronized void updateScore() {
+		// Update score to emulate computeTime scaling by cache hit
+		//score *= 2;
+		double w1 = LineageCacheConfig.WEIGHTS[0];
+		score = score + w1*(((double)_computeTime)/getSize());
 	}
 	
 	protected synchronized long getTimestamp() {

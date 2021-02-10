@@ -116,7 +116,9 @@ public class LibMatrixNative
 			Statistics.incrementNativeFailuresCounter();
 		}
 		//fallback to default java implementation
-		LOG.warn("matrixMult: Native mat mult failed. Falling back to java version.");
+		LOG.warn("matrixMult: Native mat mult failed. Falling back to java version ("
+			+ "loaded=" + NativeHelper.isNativeLibraryLoaded() 
+			+ ", sparse=" + (m1.isInSparseFormat() | m2.isInSparseFormat()) + ")");
 		if (k == 1)
 			LibMatrixMult.matrixMult(m1, m2, ret, !examSparsity);
 		else

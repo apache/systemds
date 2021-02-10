@@ -694,8 +694,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( v == 0 ) 
 			return;
 
-		if( !sparse ) //DENSE 
-		{
+		if( !sparse ) { //DENSE 
 			//allocate on demand (w/o overwriting nnz)
 			allocateDenseBlock(false);
 			
@@ -703,8 +702,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			denseBlock.set(r, c, v);
 			nonZeros++;
 		}
-		else //SPARSE
-		{
+		else { //SPARSE
 			//allocation on demand (w/o overwriting nnz)
 			allocateSparseRowsBlock(false);
 			sparseBlock.allocate(r, estimatedNNzsPerRow, clen);
@@ -715,6 +713,28 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
+	public void appendValuePlain(int r, int c, double v) {
+		//early abort (append guarantees no overwrite)
+		if( v == 0 ) 
+			return;
+
+		if( !sparse ) { //DENSE 
+			//allocate on demand (w/o overwriting nnz)
+			allocateDenseBlock(false);
+			
+			//set value and maintain nnz
+			denseBlock.set(r, c, v);
+		}
+		else { //SPARSE
+			//allocation on demand (w/o overwriting nnz)
+			allocateSparseRowsBlock(false);
+			sparseBlock.allocate(r, estimatedNNzsPerRow, clen);
+			
+			//set value and maintain nnz
+			sparseBlock.append(r, c, v);
+		}
+	}
+	
 	public void appendRow(int r, SparseRow row) {
 		appendRow(r, row, true);
 	}
@@ -2659,7 +2679,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret.reset(rlen, clen, sp, this.nonZeros);
 		
 		//core scalar operations
-		LibMatrixBincell.bincellOp(this, ret, op);
+		if( op.getNumThreads() > 1 )
+			LibMatrixBincell.bincellOp(this, ret, op, op.getNumThreads());
+		else
+			LibMatrixBincell.bincellOp(this, ret, op);
 		
 		return ret;
 	}
@@ -2842,7 +2865,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret.reset(rows, cols, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		
 		//core binary cell operation
-		LibMatrixBincell.bincellOp( this, that, ret, op );
+		if( op.getNumThreads() > 1 )
+			LibMatrixBincell.bincellOp( this, that, ret, op, op.getNumThreads() );
+		else
+			LibMatrixBincell.bincellOp( this, that, ret, op );
 		
 		return ret;
 	}

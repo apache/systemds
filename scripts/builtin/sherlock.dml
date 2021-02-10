@@ -205,8 +205,6 @@ transform_encode_labels = function(frame[string] data) return (matrix[double] gr
   data = data[1:rows,2:cols]
   rows = nrow(data)
   cols = ncol(data)
-  print("loaded y_test_short.csv with " + rows + " rows and " + cols + " columns")
-  print(toString(data[2]))
 
   #replace label with number
   transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
@@ -230,8 +228,6 @@ transform_apply_labels = function(frame[string] data, frame[string] meta_data) r
   data = data[1:rows,2:cols]
   rows = nrow(data)
   cols = ncol(data)
-  print("loaded y_test_short.csv with " + rows + " rows and " + cols + " columns")
-  print(toString(data[2]))
 
   #replace label with number
   transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");

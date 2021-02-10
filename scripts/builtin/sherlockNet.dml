@@ -25,14 +25,13 @@ p = 0.3  # dropout probability
 [W3, b3] = affine::init(H2, t, -1)
 
 # Initialize Adams parameter
-lr = 0.0001  # learning rate
-mu = 0.5  # momentum
+lr = 0.001  # learning rate
 decay = 0.0001  # learning rate decay constant for weight decay
 
 beta1   = 0.9;       # [0, 1)
 beta2   = 0.999;     # [0, 1)
 epsilon = 0.00000001;
-#t       = 0; # t von oben?
+adam_t       = 0; # timestamp in adam function
 
 # Adams optimizer
 [mW1, vW1] = adam::init(W1);[mb1, vb1] = adam::init(b1)
@@ -93,19 +92,20 @@ for (e in 1:epochs) {
     [dX_batch, dW1, db1] = affine::backward(dout1, X_batch, W1, b1)
 
     # Optimize with Adam
-    [W1, mW1, vW1] = adam::update(W1, dW1, lr, beta1, beta2, epsilon, t, mW1, vW1)
-    [b1, mb1, vb1] = adam::update(b1, db1, lr, beta1, beta2, epsilon, t, mb1, vb1)
-    [W2, mW2, vW2] = adam::update(W2, dW2, lr, beta1, beta2, epsilon, t, mW2, vW2)
-    [b2, mb2, vb2] = adam::update(b2, db2, lr, beta1, beta2, epsilon, t, mb2, vb2)
-    [W3, mW3, vW3] = adam::update(W3, dW3, lr, beta1, beta2, epsilon, t, mW3, vW3)
-    [b3, mb3, vb3] = adam::update(b3, db3, lr, beta1, beta2, epsilon, t, mb3, vb3)
+    [W1, mW1, vW1] = adam::update(W1, dW1, lr, beta1, beta2, epsilon, adam_t, mW1, vW1)
+    [b1, mb1, vb1] = adam::update(b1, db1, lr, beta1, beta2, epsilon, adam_t, mb1, vb1)
+    [W2, mW2, vW2] = adam::update(W2, dW2, lr, beta1, beta2, epsilon, adam_t, mW2, vW2)
+    [b2, mb2, vb2] = adam::update(b2, db2, lr, beta1, beta2, epsilon, adam_t, mb2, vb2)
+    [W3, mW3, vW3] = adam::update(W3, dW3, lr, beta1, beta2, epsilon, adam_t, mW3, vW3)
+    [b3, mb3, vb3] = adam::update(b3, db3, lr, beta1, beta2, epsilon, adam_t, mb3, vb3)
+
     }
 
-  # Anneal momentum towards 0.999
-  mu = mu + (0.999 - mu)/(1+epochs-e)
   # Decay learning rate
+  adam_t = adam_t + 1
   lr = lr * decay
   }
+  write(probs_val, "../sherlock-project/data/data/short/probs_val_after_train")
 }
 
 predict = function(matrix[double] test_val,

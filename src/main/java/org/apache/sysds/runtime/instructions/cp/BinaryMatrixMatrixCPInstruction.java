@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.compress.AbstractCompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -32,10 +33,14 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 	private static final Log LOG = LogFactory.getLog(BinaryMatrixMatrixCPInstruction.class.getName());
-
+	
 	protected BinaryMatrixMatrixCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			String opcode, String istr) {
 		super(CPType.Binary, op, in1, in2, out, opcode, istr);
+		if( op instanceof BinaryOperator ) {
+			String[] parts = InstructionUtils.getInstructionParts(istr);
+			((BinaryOperator)op).setNumThreads(Integer.parseInt(parts[parts.length-1]));
+		}
 	}
 
 	@Override

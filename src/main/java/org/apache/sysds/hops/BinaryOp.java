@@ -414,12 +414,13 @@ public class BinaryOp extends MultiThreadedHop
 				(op==OpOp2.MULT && HopRewriteUtils.isLiteralOfValue(right, 2d)) ? OpOp1.MULT2 : null;
 			Lop tmp = null;
 			if( ot != null ) {
-				tmp = new Unary(getInput().get(0).constructLops(),
-					getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
+				tmp = new Unary(getInput(0).constructLops(), getInput(1).constructLops(),
+					ot, getDataType(), getValueType(), et);
 			}
 			else { //general case
-				tmp = new Binary(getInput().get(0).constructLops(),
-					getInput().get(1).constructLops(), op, getDataType(), getValueType(), et);
+				tmp = new Binary(getInput(0).constructLops(), getInput(1).constructLops(),
+					op, getDataType(), getValueType(), et,
+					OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 			}
 			setOutputDimensions(tmp);
 			setLineNumbers(tmp);
@@ -458,9 +459,9 @@ public class BinaryOp extends MultiThreadedHop
 						getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				}
 				else
-					binary = new Binary(getInput().get(0).constructLops(),
-						getInput().get(1).constructLops(), op,
-						getDataType(), getValueType(), et);
+					binary = new Binary(getInput(0).constructLops(), getInput(1).constructLops(),
+						op, getDataType(), getValueType(), et,
+						OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				
 				setOutputDimensions(binary);
 				setLineNumbers(binary);

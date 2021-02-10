@@ -57,6 +57,7 @@ public class BinaryOperator  extends Operator implements Serializable
 
 	public final ValueFunction fn;
 	public final boolean commutative;
+	private int _k = 1; // num threads
 	
 	public BinaryOperator(ValueFunction p) {
 		//binaryop is sparse-safe iff (0 op 0) == 0
@@ -68,6 +69,14 @@ public class BinaryOperator  extends Operator implements Serializable
 		fn = p;
 		commutative = p instanceof Plus || p instanceof Multiply 
 			|| p instanceof And || p instanceof Or || p instanceof Xor;
+	}
+	
+	public void setNumThreads(int k) {
+		_k = k;
+	}
+	
+	public int getNumThreads() {
+		return _k;
 	}
 	
 	/**

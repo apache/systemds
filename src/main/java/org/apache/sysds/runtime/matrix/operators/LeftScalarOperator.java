@@ -58,7 +58,7 @@ public class LeftScalarOperator extends ScalarOperator
 
 	@Override
 	public ScalarOperator setConstant(double cst) {
-		return new LeftScalarOperator(fn, cst);
+		return new LeftScalarOperator(fn, cst, getNumThreads());
 	}
 
 	@Override

@@ -56,7 +56,7 @@ public class RightScalarOperator extends ScalarOperator
 
 	@Override
 	public ScalarOperator setConstant(double cst) {
-		return new RightScalarOperator(fn, cst);
+		return new RightScalarOperator(fn, cst, getNumThreads());
 	}
 
 	@Override

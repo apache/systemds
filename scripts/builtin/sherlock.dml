@@ -198,7 +198,7 @@ transform_values = function(frame[string] data) return (matrix[double] m_data) {
   m_data = as.matrix(data)
 }
 
-transform_encode_labels = function(frame[string] data) return (matrix[double] m_data , frame[string] meta_data) {
+transform_encode_labels = function(frame[string] data) return (matrix[double] ground_truth , frame[string] meta_data) {
   #remove index row
   rows = nrow(data)
   cols = ncol(data)
@@ -213,11 +213,17 @@ transform_encode_labels = function(frame[string] data) return (matrix[double] m_
   [m_data, meta_data] = transformencode(target=data,
   spec=transformSpec)
   print(toString(m_data[2]))
+  ground_truth = matrix(0, rows=rows, cols=78)
+
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(m_data[i,1])] = 1
+  }
+
   write(meta_data, "../sherlock-project/data/data/short/transform_y_labels")
 }
 
 
-transform_apply_labels = function(frame[string] data, frame[string] meta_data) return (matrix[double] m_data) {
+transform_apply_labels = function(frame[string] data, frame[string] meta_data) return (matrix[double] ground_truth) {
   #remove index row
   rows = nrow(data)
   cols = ncol(data)
@@ -233,10 +239,13 @@ transform_apply_labels = function(frame[string] data, frame[string] meta_data) r
   m_data = transformapply(target=data,
                   spec=transformSpec,
                   meta=meta_data)
+  ground_truth = matrix(0, rows=rows, cols=78)
+
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(m_data[i,1])] = 1
+  }
+
 }
-
-
-
 
 m_sherlock = function (matrix[double] A) return (double m) {
   m = sum(A)/nrow(A)
@@ -261,14 +270,14 @@ m_sherlock = function (matrix[double] A) return (double m) {
   write(b2, "../sherlock-project/data/data/short/b2")
   write(W3, "../sherlock-project/data/data/short/W3")
   write(b3, "../sherlock-project/data/data/short/b3")
-/*
+
   predict_values = realSherlock::predict(processed_test_values, W1, b1, W2, b2, W3, b3)
   write(predict_values, "../sherlock-project/data/data/short/predict_values")
-
+  write(processed_test_labels, "../sherlock-project/data/data/short/processed_test_labels")
   [loss, accuracy] = realSherlock::eval(predict_values, processed_test_labels)
   print("loss: " + loss)
   print("accuracy: " + accuracy)
-*/
+
   #TODO
   #feature specific subnetworks
   #include valdiation set

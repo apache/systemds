@@ -34,11 +34,14 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 
 	public static BinaryFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 3);
+		InstructionUtils.checkNumFields(parts, 3, 4);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
+		// threads to use 
+		int k = Integer.parseInt(parts[4]);
+
 
 		checkOutputDataType(in1, in2, out);
 		Operator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);

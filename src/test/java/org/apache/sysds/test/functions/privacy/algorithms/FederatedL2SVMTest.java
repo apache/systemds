@@ -390,7 +390,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-args", input("MX1"), input("MX2"), input("MY"), expected("Z")};
+			programArgs = new String[] {"-args", input("MX1"), input("MX2"), input("MY"), "FALSE", expected("Z")};
 			runTest(true, exception1, expectedException1, -1);
 
 			// Run actual dml script with federated matrix
@@ -398,7 +398,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			programArgs = new String[] {"-checkPrivacy", 
 				"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
-				"in_Y=" + input("Y"), "out=" + output("Z")};
+				"in_Y=" + input("Y"), "single=FALSE", "out=" + output("Z")};
 			
 			runTest(true, exception2, expectedException2, -1);
 

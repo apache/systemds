@@ -76,17 +76,22 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedKmeansSinglenode() {
-		federatedKmeans(Types.ExecMode.SINGLE_NODE);
+	public void federatedKmeans2Singlenode() {
+		federatedKmeans(Types.ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
+	public void federatedKmeans1Singlenode() {
+		federatedKmeans(Types.ExecMode.SINGLE_NODE, true);
+	}
+	
+	@Test
 	@Ignore
-	public void federatedKmeansHybrid() {
-		federatedKmeans(Types.ExecMode.HYBRID);
+	public void federatedKmeans2Hybrid() {
+		federatedKmeans(Types.ExecMode.HYBRID, false);
 	}
 
-	public void federatedKmeans(Types.ExecMode execMode) {
+	public void federatedKmeans(Types.ExecMode execMode, boolean singleWorker) {
 		ExecMode platformOld = setExecMode(execMode);
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -112,14 +117,15 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-args", input("X1"), input("X2"), String.valueOf(runs), expected("Z")};
+		programArgs = new String[] {"-args", input("X1"), input("X2"),
+			String.valueOf(singleWorker).toUpperCase(), String.valueOf(runs), expected("Z")};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
-			"runs=" + String.valueOf(runs), "out=" + output("Z")};
+			"single=" + String.valueOf(singleWorker).toUpperCase(), "runs=" + String.valueOf(runs), "out=" + output("Z")};
 
 		for(int i = 0; i < rep; i++) {
 			ParForProgramBlock.resetWorkerIDs();

@@ -41,6 +41,7 @@ import static org.apache.sysds.parser.Statement.PS_MODE;
 import static org.apache.sysds.parser.Statement.PS_MODEL;
 import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
 import static org.apache.sysds.parser.Statement.PS_SCHEME;
+import static org.apache.sysds.parser.Statement.PS_FED_SCHEME;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
 import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
@@ -526,11 +527,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private FederatedPSScheme getFederatedScheme() {
 		FederatedPSScheme federated_scheme = DEFAULT_FEDERATED_SCHEME;
-		if (getParameterMap().containsKey(PS_SCHEME)) {
+		if (getParameterMap().containsKey(PS_FED_SCHEME)) {
 			try {
-				federated_scheme = FederatedPSScheme.valueOf(getParam(PS_SCHEME));
+				federated_scheme = FederatedPSScheme.valueOf(getParam(PS_FED_SCHEME));
 			} catch (IllegalArgumentException e) {
-				throw new DMLRuntimeException(String.format("Paramserv function in federated mode: not support data partition scheme '%s'", getParam(PS_SCHEME)));
+				throw new DMLRuntimeException(String.format("Paramserv function in federated mode: not support data partition scheme '%s'", getParam(PS_FED_SCHEME)));
 			}
 		}
 		return federated_scheme;

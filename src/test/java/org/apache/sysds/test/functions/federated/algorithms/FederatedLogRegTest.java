@@ -120,12 +120,11 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 		TestUtils.shutdownThreads(t1, t2);
 
 		// check for federated operations
-		Assert.assertTrue("contains federated matrix mult", heavyHittersContainsString("fed_ba+*"));
-		Assert.assertTrue("contains federated row unary aggregate",
-			heavyHittersContainsString("fed_uark+", "fed_uarsqk+"));
-		Assert.assertTrue("contains federated matrix mult chain or transpose",
-			heavyHittersContainsString("fed_mmchain", "fed_r'"));
-
+		Assert.assertTrue("contains fed_ba+*", heavyHittersContainsString("fed_ba+*"));
+		Assert.assertTrue("contains fed_uar", heavyHittersContainsString("fed_uark+", "fed_uarsqk+"));
+		Assert.assertTrue("contains fed_mmchain & r'", heavyHittersContainsString("fed_mmchain", "fed_r'"));
+		Assert.assertTrue("contains fed_isnan", heavyHittersContainsString("fed_isnan"));
+		
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));

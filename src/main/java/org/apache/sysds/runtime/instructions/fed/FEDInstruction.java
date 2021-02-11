@@ -42,7 +42,8 @@ public abstract class FEDInstruction extends Instruction {
 		MatrixIndexing,
 		Quaternary,
 		QSort,
-		QPick
+		QPick,
+		Unary
 	}
 
 	protected final FEDType _fedType;

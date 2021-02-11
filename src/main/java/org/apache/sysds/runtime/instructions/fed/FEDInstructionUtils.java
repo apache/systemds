@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstructio
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOperationCode;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
@@ -109,16 +110,20 @@ public class FEDInstructionUtils {
 				&& ec.containsVariable(instruction.input1)) {
 
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
-				if(instruction.getOpcode().equalsIgnoreCase("cm") && mo1.isFederated()) {
+				if(instruction.getOpcode().equalsIgnoreCase("cm") && mo1.isFederated())
 					fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
-				} else if(inst.getOpcode().equalsIgnoreCase("qsort") && mo1.isFederated()) {
+				else if(inst.getOpcode().equalsIgnoreCase("qsort") && mo1.isFederated()) {
 					if(mo1.getFedMapping().getFederatedRanges().length == 1)
 						fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
-				} else if(inst.getOpcode().equalsIgnoreCase("rshape") && mo1.isFederated()) {
+				}
+				else if(inst.getOpcode().equalsIgnoreCase("rshape") && mo1.isFederated())
 					fedinst = ReshapeFEDInstruction.parseInstruction(inst.getInstructionString());
-				} else if(inst instanceof AggregateUnaryCPInstruction  && mo1.isFederated() &&
-					((AggregateUnaryCPInstruction) instruction).getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT) {
+				else if(inst instanceof AggregateUnaryCPInstruction  && mo1.isFederated() &&
+					((AggregateUnaryCPInstruction) instruction).getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
 					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+				else if(inst instanceof UnaryMatrixCPInstruction && mo1.isFederated()) {
+					if(UnaryMatrixFEDInstruction.isValidOpcode(inst.getOpcode()))
+						fedinst = UnaryMatrixFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
 			}
 		}

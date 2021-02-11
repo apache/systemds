@@ -36,18 +36,21 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	
-	private AggregateUnaryFEDInstruction(AggregateUnaryOperator auop, CPOperand in,
-			CPOperand out, String opcode, String istr) {
+	private AggregateUnaryFEDInstruction(AggregateUnaryOperator auop,
+		CPOperand in, CPOperand out, String opcode, String istr)
+	{
 		super(FEDType.AggregateUnary, auop, in, out, opcode, istr);
 	}
 
-	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-										   String opcode, String istr) {
+	protected AggregateUnaryFEDInstruction(Operator op,
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr)
+	{
 		super(FEDType.AggregateUnary, op, in1, in2, out, opcode, istr);
 	}
 
-	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-										   String opcode, String istr) {
+	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1,
+		CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr)
+	{
 		super(FEDType.AggregateUnary, op, in1, in2, in3, out, opcode, istr);
 	}
 

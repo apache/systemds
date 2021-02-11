@@ -3886,6 +3886,10 @@ public class LibMatrixMult
 				&& m1.getLength()+m2.getLength() < (long)m1.rlen*m2.clen
 				&& outSp < MatrixBlock.SPARSITY_TURN_POINT);
 	}
+	
+	public static boolean isOuterProductTSMM(int rlen, int clen, boolean left) {
+		return left ? rlen == 1 & clen > 1 : rlen > 1 & clen == 1;
+	}
 
 	private static MatrixBlock prepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) {
 		MatrixBlock ret = m2;

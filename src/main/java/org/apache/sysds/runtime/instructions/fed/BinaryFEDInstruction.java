@@ -40,7 +40,6 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
 
-
 		checkOutputDataType(in1, in2, out);
 		Operator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);
 

@@ -140,6 +140,9 @@ public class FederationMap {
 	 * @return array of federated requests corresponding to federated data
 	 */
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
+		if( _type == FType.FULL )
+			return new FederatedRequest[]{broadcast(data)};
+		
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();

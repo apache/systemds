@@ -19,14 +19,19 @@
 #
 #-------------------------------------------------------------
 
-if($in_sfw) { # single federated worker
+fed_type = $in_fed_type;
+
+if(fed_type == 0) { # single federated worker
   X = read($in_X1);
 }
-else if($in_rp) { # row partitioned
-  X = rbind(read($in_X1), read($in_X2));
+else if(fed_type == 1) { # row partitioned
+  X = rbind(read($in_X1), read($in_X2), read($in_X3), read($in_X4));
 }
-else { # column partitioned
-  X = cbind(read($in_X1), read($in_X2));
+else if(fed_type == 2) { # col partitioned
+  X = cbind(read($in_X1), read($in_X2), read($in_X3), read($in_X4));
+}
+else if(fed_type == 3) { # full partitioned
+  X = rbind(cbind(read($in_X1), read($in_X2)), cbind(read($in_X3), read($in_X4)));
 }
 
 y = $in_Y;

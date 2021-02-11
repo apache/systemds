@@ -36,6 +36,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 
+/*
+ * Testing following logical operations:
+ *   >, <, ==, !=, >=, <=
+ * with a row/col partitioned federated matrix X and a scalar/vector/matrix Y
+*/
+
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedLogicalTest extends AutomatedTestBase
@@ -47,15 +53,28 @@ public class FederatedLogicalTest extends AutomatedTestBase
 
 	private final static String OUTPUT_NAME = "Z";
 	private final static double TOLERANCE = 0;
-	private final static int blocksize = 1024;
+	private final static int BLOCKSIZE = 1024;
 
-	public enum Type{
+	private enum Type {
 		GREATER,
 		LESS,
 		EQUALS,
 		NOT_EQUALS,
 		GREATER_EQUALS,
 		LESS_EQUALS
+	}
+
+	private enum FederationType {
+		SINGLE_FED_WORKER,
+		ROW_PARTITIONED,
+		COL_PARTITIONED,
+		FULL_PARTITIONED
+	}
+
+	private enum YType {
+		MATRIX,
+		ROW_VEC,
+		COL_VEC
 	}
 
 	@Parameterized.Parameter()
@@ -65,9 +84,9 @@ public class FederatedLogicalTest extends AutomatedTestBase
 	@Parameterized.Parameter(2)
 	public double sparsity;
 	@Parameterized.Parameter(3)
-	public boolean single_fed_worker;
+	public FederationType fed_type;
 	@Parameterized.Parameter(4)
-	public boolean row_partitioned;
+	public YType y_type;
 
 	@Override
 	public void setUp() {
@@ -77,27 +96,73 @@ public class FederatedLogicalTest extends AutomatedTestBase
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		// rows or cols must be even (depends on partition)
+		// rows must be divisable by 4 for row partitioned data
+		// cols must be divisable by 4 for col partitioned data
+		// rows and cols must be divisable by 2 for full partitioned data
 		return Arrays.asList(new Object[][] {
-			// {rows, cols, sparsity, single_fed_worker, row_partitioned}
+			// {rows, cols, sparsity, fed_type, y_type}
 
-			// ------working------
-			{100, 75, 0.01, false, true},
-			{100, 75, 0.9, false, true},
-			{1, 75, 0.01, true, true},
-			{1, 75, 0.9, true, true},
-			{2, 75, 0.01, false, true},
-			{2, 75, 0.9, false, true},
-			{100, 1, 0.01, false, true},
-			{100, 1, 0.9, false, true},
+			// row partitioned MM
+			{100, 75, 0.01, FederationType.ROW_PARTITIONED, YType.MATRIX},
+			{100, 75, 0.9, FederationType.ROW_PARTITIONED, YType.MATRIX},
+			// {4, 75, 0.01, FederationType.ROW_PARTITIONED, YType.MATRIX},
+			// {4, 75, 0.9, FederationType.ROW_PARTITIONED, YType.MATRIX},
+			// {100, 1, 0.01, FederationType.ROW_PARTITIONED, YType.MATRIX},
+			// {100, 1, 0.9, FederationType.ROW_PARTITIONED, YType.MATRIX},
 
+			// row partitioned MV row vector
+			{100, 75, 0.01, FederationType.ROW_PARTITIONED, YType.ROW_VEC},
+			{100, 75, 0.9, FederationType.ROW_PARTITIONED, YType.ROW_VEC},
+			// {4, 75, 0.01, FederationType.ROW_PARTITIONED, YType.ROW_VEC},
+			// {4, 75, 0.9, FederationType.ROW_PARTITIONED, YType.ROW_VEC},
+			// {100, 1, 0.01, FederationType.ROW_PARTITIONED, YType.ROW_VEC},
+			// {100, 1, 0.9, FederationType.ROW_PARTITIONED, YType.ROW_VEC},
 
-			// {100, 76, 0.01, false, false},
-			// {100, 76, 0.9, false, false},
-			// {1, 76, 0.01, false, false},
-			// {1, 76, 0.9, false, false},
-			// {100, 1, 0.01, true, false},
-			// {100, 1, 0.9, true, false}
+			// row partitioned MV col vector
+			{100, 75, 0.01, FederationType.ROW_PARTITIONED, YType.COL_VEC},
+			{100, 75, 0.9, FederationType.ROW_PARTITIONED, YType.COL_VEC},
+			// {4, 75, 0.01, FederationType.ROW_PARTITIONED, YType.COL_VEC},
+			// {4, 75, 0.9, FederationType.ROW_PARTITIONED, YType.COL_VEC},
+			// {100, 1, 0.01, FederationType.ROW_PARTITIONED, YType.COL_VEC},
+			// {100, 1, 0.9, FederationType.ROW_PARTITIONED, YType.COL_VEC},
+
+			// col partitioned MM
+			{100, 76, 0.01, FederationType.COL_PARTITIONED, YType.MATRIX},
+			{100, 76, 0.9, FederationType.COL_PARTITIONED, YType.MATRIX},
+			// {1, 76, 0.01, FederationType.COL_PARTITIONED, YType.MATRIX},
+			// {1, 76, 0.9, FederationType.COL_PARTITIONED, YType.MATRIX},
+			// {100, 4, 0.01, FederationType.COL_PARTITIONED, YType.MATRIX},
+			// {100, 4, 0.9, FederationType.COL_PARTITIONED, YType.MATRIX},
+
+			// col partitioned MV row vector
+			{100, 76, 0.01, FederationType.COL_PARTITIONED, YType.ROW_VEC},
+			{100, 76, 0.9, FederationType.COL_PARTITIONED, YType.ROW_VEC},
+			// {1, 76, 0.01, FederationType.COL_PARTITIONED, YType.ROW_VEC},
+			// {1, 76, 0.9, FederationType.COL_PARTITIONED, YType.ROW_VEC},
+			// {100, 4, 0.01, FederationType.COL_PARTITIONED, YType.ROW_VEC},
+			// {100, 4, 0.9, FederationType.COL_PARTITIONED, YType.ROW_VEC},
+
+			// col partitioned MV col vector
+			{100, 76, 0.01, FederationType.COL_PARTITIONED, YType.COL_VEC},
+			{100, 76, 0.9, FederationType.COL_PARTITIONED, YType.COL_VEC},
+			// {1, 76, 0.01, FederationType.COL_PARTITIONED, YType.COL_VEC},
+			// {1, 76, 0.9, FederationType.COL_PARTITIONED, YType.COL_VEC},
+			// {100, 4, 0.01, FederationType.COL_PARTITIONED, YType.COL_VEC},
+			// {100, 4, 0.9, FederationType.COL_PARTITIONED, YType.COL_VEC},
+
+			// single federated worker MM
+			{100, 75, 0.01, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
+			{100, 75, 0.9, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
+			// {1, 75, 0.01, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
+			// {1, 75, 0.9, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
+			// {100, 1, 0.01, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
+			// {100, 1, 0.9, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
+
+			// full partitioned (not supported yet)
+			// {70, 80, 0.01, FederationType.FULL_PARTITIONED, YType.MATRIX},
+			// {70, 80, 0.9, FederationType.FULL_PARTITIONED, YType.MATRIX},
+			// {2, 2, 0.01, FederationType.FULL_PARTITIONED, YType.MATRIX},
+			// {2, 2, 0.9, FederationType.FULL_PARTITIONED, YType.MATRIX}
 		});
 	}
 
@@ -238,68 +303,94 @@ public class FederatedLogicalTest extends AutomatedTestBase
 		getAndLoadTestConfiguration(testname);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		int fed_rows;
-		int fed_cols;
-		if(single_fed_worker)
-		{
-			fed_rows = rows;
-			fed_cols = cols;
+		int fed_rows = 0;
+		int fed_cols = 0;
+		switch(fed_type) {
+			case SINGLE_FED_WORKER:
+				fed_rows = rows;
+				fed_cols = cols;
+				break;
+			case ROW_PARTITIONED:
+				fed_rows = rows / 4;
+				fed_cols = cols;
+				break;
+			case COL_PARTITIONED:
+				fed_rows = rows;
+				fed_cols = cols / 4;
+				break;
+			case FULL_PARTITIONED:
+				fed_rows = rows / 2;
+				fed_cols = cols / 2;
+				break;
 		}
-		else if(row_partitioned) {
-			fed_rows = rows / 2;
-			fed_cols = cols;
-		}
-		else {
-			fed_rows = rows;
-			fed_cols = cols / 2;
-		}
+
+		boolean single_fed_worker = (fed_type == FederationType.SINGLE_FED_WORKER);
 
 		// generate dataset
-		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 13);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 2);
+		// matrix handled by four federated workers
+		// X2, X3, X4 not used if single_fed_worker == true
+		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 13);
+		double[][] X2 = (!single_fed_worker ? getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 2) : null);
+		double[][] X3 = (!single_fed_worker ? getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 211) : null);
+		double[][] X4 = (!single_fed_worker ? getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 65) : null);
 
-		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
-		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
+		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
+		if(!single_fed_worker) {
+			writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
+			writeInputMatrixWithMTD("X3", X3, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
+			writeInputMatrixWithMTD("X4", X4, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
+		}
 
 		boolean is_matrix_test = testname.equals(MATRIX_TEST_NAME);
 
 		double[][] Y_mat = null;
 		double Y_scal = 0;
 		if(is_matrix_test) {
-			Y_mat = getRandomMatrix(rows, cols, 0, 1, sparsity, 5040);
-			writeInputMatrixWithMTD("Y", Y_mat, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+			int y_rows = (y_type == YType.ROW_VEC ? 1 : rows);
+			int y_cols = (y_type == YType.COL_VEC ? 1 : cols);
+
+			Y_mat = getRandomMatrix(y_rows, y_cols, 0, 1, sparsity, 5040);
+			writeInputMatrixWithMTD("Y", Y_mat, false, new MatrixCharacteristics(y_rows, y_cols, BLOCKSIZE, y_rows * y_cols));
 		}
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread thread1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread thread2 = startLocalFedWorkerThread(port2);
+		int port2 = (!single_fed_worker ? getRandomAvailablePort() : 0);
+		int port3 = (!single_fed_worker ? getRandomAvailablePort() : 0);
+		int port4 = (!single_fed_worker ? getRandomAvailablePort() : 0);
+		Thread thread1 = startLocalFedWorkerThread(port1, (!single_fed_worker ? FED_WORKER_WAIT_S : FED_WORKER_WAIT));
+		Thread thread2 = (!single_fed_worker ? startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S) : null);
+		Thread thread3 = (!single_fed_worker ? startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S) : null);
+		Thread thread4 = (!single_fed_worker ? startLocalFedWorkerThread(port4) : null);
 
 		getAndLoadTestConfiguration(testname);
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + testname + "Reference.dml";
-		programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"),
-			"in_X2=" + input("X2"), // not needed in case of a single federated worker
+		programArgs = new String[] {"-nvargs",
+			"in_X1=" + input("X1"),
+			"in_X2=" + (!single_fed_worker ? input("X2") : input("X1")), // not needed in case of a single federated worker
+			"in_X3=" + (!single_fed_worker ? input("X3") : input("X1")), // not needed in case of a single federated worker
+			"in_X4=" + (!single_fed_worker ? input("X4") : input("X1")), // not needed in case of a single federated worker
 			"in_Y=" + (is_matrix_test ? input("Y") : Double.toString(Y_scal)),
-			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
-			"in_sfw=" + Boolean.toString(single_fed_worker).toUpperCase(),
+			"in_fed_type=" + Integer.toString(fed_type.ordinal()),
 			"in_op_type=" + Integer.toString(op_type.ordinal()),
 			"out_Z=" + expected(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + testname + ".dml";
-		programArgs = new String[] {"-explain", "-stats", "-nvargs",
-			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")), "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+		programArgs = new String[] {"-stats", "-nvargs",
+			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			"in_X2=" + (!single_fed_worker ? TestUtils.federatedAddress(port2, input("X2")) : null),
+			"in_X3=" + (!single_fed_worker ? TestUtils.federatedAddress(port3, input("X3")) : null),
+			"in_X4=" + (!single_fed_worker ? TestUtils.federatedAddress(port4, input("X4")) : null),
 			"in_Y=" + (is_matrix_test ? input("Y") : Double.toString(Y_scal)),
-			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
-			"in_sfw=" + Boolean.toString(single_fed_worker).toUpperCase(),
+			"in_fed_type=" + Integer.toString(fed_type.ordinal()),
 			"in_op_type=" + Integer.toString(op_type.ordinal()),
-			"rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output(OUTPUT_NAME)};
+			"rows=" + Integer.toString(fed_rows), "cols=" + Integer.toString(fed_cols),
+			"out_Z=" + output(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
 
 		// compare the results via files
@@ -307,7 +398,9 @@ public class FederatedLogicalTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 		TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
 
-		TestUtils.shutdownThreads(thread1, thread2);
+		TestUtils.shutdownThreads(thread1);
+		if(!single_fed_worker)
+			TestUtils.shutdownThreads(thread2, thread3, thread4);
 
 		// check for federated operations
 		switch(op_type)
@@ -334,8 +427,11 @@ public class FederatedLogicalTest extends AutomatedTestBase
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
-		if(!single_fed_worker)
+		if(!single_fed_worker) {
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
+		}
 
 		resetExecMode(platform_old);
 	}

@@ -19,17 +19,26 @@
 #
 #-------------------------------------------------------------
 
-if($in_sfw) { # single federated worker
+fed_type = $in_fed_type;
+
+if(fed_type == 0) { # single federated worker
   X = federated(addresses=list($in_X1),
     ranges=list(list(0, 0), list($rows, $cols)));
 }
-else if($in_rp) { # row partitioned
-  X = federated(addresses=list($in_X1, $in_X2),
-    ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
+else if(fed_type == 1) { # row partitioned
+  X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+    ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols),
+      list($rows * 2, 0), list($rows * 3, $cols), list($rows * 3, 0), list($rows * 4, $cols)));
 }
-else { # column partitioned
-  X = federated(addresses=list($in_X1, $in_X2),
-    ranges=list(list(0, 0), list($rows, $cols), list(0, $cols), list($rows, $cols * 2)));
+else if(fed_type == 2) { # col partitioned
+  X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+    ranges=list(list(0, 0), list($rows, $cols), list(0, $cols), list($rows, $cols * 2),
+      list(0, $cols * 2), list($rows, $cols * 3), list(0, $cols * 3), list($rows, $cols * 4)));
+}
+else if(fed_type == 3) { # full partitioned
+  X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+    ranges=list(list(0, 0), list($rows, $cols), list(0, $cols), list($rows, $cols * 2),
+      list($rows, 0), list($rows * 2, $cols), list($rows, $cols), list($rows * 2, $cols * 2)));
 }
 
 y = $in_Y;

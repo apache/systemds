@@ -857,14 +857,26 @@ public class UtilFunctions {
 		return string_array;//.subList(0,2);
 	}
 
-	public static ArrayList<String> getSplittedStringAsList (String input) {
+	public static String getSplittedStringAsList (String input) {
 		//Frame f = new Frame();
-		String[] string_array = input.split("'[ ]*,[ ]*'");
-		ArrayList<String> al = new ArrayList<>();
-		al.addAll(Arrays.asList(string_array));
+    Arrays.stream(new Exception("I am here").getStackTrace()).forEach(LOG::debug);
+    StringBuffer sb = new StringBuffer(input);
+    StringBuilder outStringBuilder = new StringBuilder();
+    int startOfArray = sb.indexOf("[");
+    if (startOfArray >=0) {
+      sb.deleteCharAt(startOfArray);
+    }
+    int endOfArray = sb.lastIndexOf("]");
+    if (endOfArray >=0) {
+      sb.deleteCharAt(endOfArray);
+    }
+		String[] string_array = sb.toString().split("[ ]*,[ ]*");
 
-		Arrays.stream(new Exception("I am here").getStackTrace()).forEach(LOG::debug);
-
-		return al;
+		for(int i = 0; i< string_array.length; i++) {
+		  outStringBuilder.append(string_array[i]).append(",");
+    }
+		outStringBuilder.deleteCharAt(outStringBuilder.lastIndexOf(","));
+    LOG.error("output string: "+ outStringBuilder.toString());
+		return outStringBuilder.toString();
 	}
 }

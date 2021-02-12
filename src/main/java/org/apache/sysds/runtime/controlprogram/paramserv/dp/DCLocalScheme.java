@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CollectionUtils;
 
 /**
  * Disjoint_Contiguous data partitioner:
@@ -37,6 +38,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class DCLocalScheme extends DataPartitionLocalScheme {
 
 	public static List<MatrixBlock> partition(int k, MatrixBlock mb) {
+		if( k == 1 )
+			return CollectionUtils.asArrayList(mb);
 		List<MatrixBlock> list = new ArrayList<>();
 		long stepSize = (long) Math.ceil((double) mb.getNumRows() / k);
 		long begin = 1;

@@ -37,10 +37,15 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	protected static final Log LOG = LogFactory.getLog(LocalPSWorker.class.getName());
 	private static final long serialVersionUID = 5195390748495357295L;
 
+	private boolean _parUpdates = false;
+	
 	protected LocalPSWorker() {}
 
-	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
+	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq,
+		int epochs, long batchSize, ExecutionContext ec, ParamServer ps, boolean parUpdates)
+	{
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
+		_parUpdates = parUpdates;
 	}
 
 	@Override
@@ -86,7 +91,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 				boolean localUpdate = j < batchIter - 1;
 				// Accumulate the intermediate gradients
-				accGradients = ParamservUtils.accrueGradients(accGradients, gradients, !localUpdate);
+				accGradients = ParamservUtils.accrueGradients(
+					accGradients, gradients, _parUpdates, !localUpdate);
 
 				// Update the local model with gradients
 				if(localUpdate)

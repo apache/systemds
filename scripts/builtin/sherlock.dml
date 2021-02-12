@@ -55,106 +55,48 @@ source("nn/optim/adam.dml") as adam
 #  "author": "local",
 #  "created": "2020-12-07 00:00:01 UTC"
 #}
-load_raw_train_values = function() return (frame[string] data) {
-  tableSchema = "string,list(string)";
-  data = read("../sherlock-project/data/data/short/100_X_test.csv",
-              fill=TRUE,
-              header=TRUE
-              #schema=tableSchema
-              )
-  print(toString(data))
-  rows = nrow(data)
-  cols = ncol(data)
-  print("loaded train_values.csv with " + rows + " rows and " + cols + " columns")
-
-  #s = map(data, "d -> UtilFunctions.magicFrame(d)")
-  #print(toString(s))
-
-
-  s = map(data[2,2], "d -> UtilFunctions.getSplittedStringAsList(d)")
-  print(toString(s))
-  l_s = list(as.scalar(s))
-  print(toString(length(l_s)))
-/*
-
-  newFrame=matrix(0,rows=rows, cols=2)
-  newFrame=as.frame(newFrame)
-  newFrame = cbind(newFrame, data)
-  print(toString(newFrame))
-  #extra_col_frame=frame(0,rows=rows, cols=1)
-  for(i in 1:rows, check=0) {
-    newFrame[i,1] = map(data[i,2], "d -> d.split(\"\'[ ]*,[ ]*\'\").length")
-    s = (data[i,2])
-    s_l = list(map(s, "s -> s.split(\"\'[ ]*,[ ]*\'\")"))
-    print(toString(s))
-    print(toString(s_l))
-  }
-  #print(toString(data))
-  #print(toString(newFrame))
-*/
- # print("split: " + toString(list(data[1,2])))
-  S = "ich, habe, hunber"
-  #res = S/","
-  #print(res)
-  l = list("ich")
-  #splitted = strsplit(S,",")
-  #list = list(strsplit(S, ",")[[1]])
-  #append("du", l)
-  #print(toString(l))
-
-
-  #print(S.split(",")[1])
-}
 
 load_processed_test_values = function() return (frame[string] data) {
 
-  tableSchema = "string,string";
   data = read("../sherlock-project/data/data/short/100_X_test.csv",
   fill=TRUE,
   header=TRUE
-  #schema=tableSchema
   )
-  rows = nrow(data)
-  cols = ncol(data)
-  print("loaded X_test_short.csv with " + rows + " rows and " + cols + " columns")
+  #rows = nrow(data)
+  #cols = ncol(data)
+  #print("loaded X_test_short.csv with " + rows + " rows and " + cols + " columns")
 }
 
 load_processed_train_values = function() return (frame[string] data) {
 
-  tableSchema = "string,string";
   data = read("../sherlock-project/data/data/short/100_X_train.csv",
   fill=TRUE,
   header=TRUE
-  #schema=tableSchema
   )
-  rows = nrow(data)
-  cols = ncol(data)
-  print("loaded X_train.csv with " + rows + " rows and " + cols + " columns")
+  #rows = nrow(data)
+  #cols = ncol(data)
+  #print("loaded X_train.csv with " + rows + " rows and " + cols + " columns")
 }
 
 load_processed_val_values = function() return (frame[string] data) {
 
-  tableSchema = "string,string";
   data = read("../sherlock-project/data/data/short/100_X_val.csv",
   fill=TRUE,
   header=TRUE
-  #schema=tableSchema
   )
-  rows = nrow(data)
-  cols = ncol(data)
-  print("loaded X_val.csv with " + rows + " rows and " + cols + " columns")
+  #rows = nrow(data)
+  #cols = ncol(data)
+  #print("loaded X_val.csv with " + rows + " rows and " + cols + " columns")
 }
 
 load_processed_test_labels = function() return (frame[string] data) {
-  tableSchema = "string,string";
   data = read("../sherlock-project/data/data/short/100_y_test.csv",
   fill=TRUE,
   header=TRUE
-  #schema=tableSchema
   )
-  rows = nrow(data)
-  cols = ncol(data)
-  print("loaded y_test_short.csv with " + rows + " rows and " + cols + " columns")
+  #rows = nrow(data)
+  #cols = ncol(data)
+  #print("loaded y_test_short.csv with " + rows + " rows and " + cols + " columns")
 }
 
 load_processed_train_labels = function() return (frame[string] data) {
@@ -162,34 +104,30 @@ load_processed_train_labels = function() return (frame[string] data) {
   data = read("../sherlock-project/data/data/short/100_y_train.csv",
   fill=TRUE,
   header=TRUE
-  #schema=tableSchema
   )
-  rows = nrow(data)
-  cols = ncol(data)
-  print("loaded y_train.csv with " + rows + " rows and " + cols + " columns")
+  #rows = nrow(data)
+  #cols = ncol(data)
+  #print("loaded y_train.csv with " + rows + " rows and " + cols + " columns")
 }
 
 load_processed_val_labels = function() return (frame[string] data) {
-  tableSchema = "string,string";
   data = read("../sherlock-project/data/data/short/100_y_val.csv",
   fill=TRUE,
   header=TRUE
-  #schema=tableSchema
   )
-  rows = nrow(data)
-  cols = ncol(data)
-  print("loaded y_val.csv with " + rows + " rows and " + cols + " columns")
+  #rows = nrow(data)
+  #cols = ncol(data)
+  #print("loaded y_val.csv with " + rows + " rows and " + cols + " columns")
 }
 
 
 transform_values = function(frame[string] data) return (matrix[double] m_data) {
-  #remove index row
+
   rows = nrow(data)
   cols = ncol(data)
   data = data[1:rows,2:cols]
-  rows = nrow(data)
-  cols = ncol(data)
-  print("loaded *values.csv with " + rows + " rows and " + cols + " columns")
+
+  #print("loaded *values.csv with " + rows + " rows and " + cols + " columns")
 
   #replace True/Fasle with 1/0
   data = map(data, "d -> d.replace(\"True\",\"1\")")
@@ -198,20 +136,17 @@ transform_values = function(frame[string] data) return (matrix[double] m_data) {
 }
 
 transform_encode_labels = function(frame[string] data) return (matrix[double] ground_truth , frame[string] meta_data) {
-  #remove index row
-  rows = nrow(data)
-  cols = ncol(data)
-  data = data[1:rows,2:cols]
+
   rows = nrow(data)
   cols = ncol(data)
 
   #replace label with number
   transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
-  [m_data, meta_data] = transformencode(target=data,
-  spec=transformSpec)
-  print(toString(m_data[2]))
-  ground_truth = matrix(0, rows=rows, cols=78)
+  [m_data, meta_data] = transformencode(target=data[1:rows,2:cols],
+    spec=transformSpec)
 
+  #print(toString(m_data[2]))
+  ground_truth = matrix(0, rows=rows, cols=78)
   for ( i in 1:rows) {
     ground_truth[i, as.scalar(m_data[i,1])] = 1
   }
@@ -219,23 +154,19 @@ transform_encode_labels = function(frame[string] data) return (matrix[double] gr
   write(meta_data, "../sherlock-project/data/data/short/transform_y_labels")
 }
 
-
 transform_apply_labels = function(frame[string] data, frame[string] meta_data) return (matrix[double] ground_truth) {
   #remove index row
-  rows = nrow(data)
-  cols = ncol(data)
-  data = data[1:rows,2:cols]
   rows = nrow(data)
   cols = ncol(data)
 
   #replace label with number
   transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
   #transformMeta = read("../sherlock-project/data/data/short/transform_y_labels");
-  m_data = transformapply(target=data,
+  m_data = transformapply(target=data[1:rows,2:cols],
                   spec=transformSpec,
                   meta=meta_data)
-  ground_truth = matrix(0, rows=rows, cols=78)
 
+  ground_truth = matrix(0, rows=rows, cols=78)
   for ( i in 1:rows) {
     ground_truth[i, as.scalar(m_data[i,1])] = 1
   }
@@ -244,17 +175,15 @@ transform_apply_labels = function(frame[string] data, frame[string] meta_data) r
 
 m_sherlock = function (matrix[double] A) return (double m) {
   m = sum(A)/nrow(A)
-  processed_test_values = transform_values(load_processed_test_values())
   processed_train_values = transform_values(load_processed_train_values())
   processed_val_values = transform_values(load_processed_val_values())
+  processed_test_values = transform_values(load_processed_test_values())
 
-  [processed_test_labels, meta_data] = transform_encode_labels(load_processed_test_labels())
-  processed_train_labels = transform_apply_labels(load_processed_train_labels(), meta_data)
+  [processed_train_labels, meta_data] = transform_encode_labels(load_processed_train_labels())
   processed_val_labels = transform_apply_labels(load_processed_val_labels(), meta_data)
+  processed_test_labels = transform_apply_labels(load_processed_test_labels(), meta_data)
 
   #train
-
-  #character level
   hidden_layer_neurons = 500
   [W1, b1, W2, b2, W3, b3] = realSherlock::train(processed_train_values, processed_train_labels,
     processed_val_values, processed_val_labels, hidden_layer_neurons)
@@ -275,9 +204,6 @@ m_sherlock = function (matrix[double] A) return (double m) {
 
   #TODO
   #feature specific subnetworks
-  #include valdiation set
-  #train primary network
-  #predict data
 }
 
 

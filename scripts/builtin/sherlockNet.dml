@@ -1,4 +1,4 @@
-source("scripts/staging/fm-regression.dml")as fmRegression
+source("scripts/staging/fm-regression.dml") as fmRegression
 
 source("nn/layers/affine.dml") as affine
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
@@ -24,9 +24,18 @@ p = 0.3  # dropout probability
 [W2, b2] = affine::init(H1, H2, -1)
 [W3, b3] = affine::init(H2, t, -1)
 
+
+
 # Initialize Adams parameter
-lr = 0.001  # learning rate
-decay = 0.0001  # learning rate decay constant for weight decay
+/*
+tested params( lr, decay, train_acc, val_acc, test file number of lines, hidden ReLU)
+0.001, 0.001,  0.08203125, 0.05822005642472429, 3900, 300
+0.001, 0.0001, 0.06640625, 0.04026673506027186, 3900, 300
+0.001, 0.001, 0.203125, 0.1114176350908652, 29000, 300
+0.001, 0.001, 0.06640625, 0.038311665919514466 , 29000, 500, converged at 16 iterations --> not good...
+*/
+initial_lr = 0.001  # learning rate
+decay = 0.001  # learning rate decay constant for weight decay
 
 beta1   = 0.9;       # [0, 1)
 beta2   = 0.999;     # [0, 1)
@@ -43,6 +52,8 @@ print("Starting optimization")
 batch_size = 256 #?
 epochs = 100
 iters = ceil(N / batch_size)
+lr = initial_lr
+print("init lr: " + initial_lr + " decay: " + decay)
 for (e in 1:epochs) {
   for(i in 1:iters){
     # Get next batch
@@ -103,7 +114,7 @@ for (e in 1:epochs) {
 
   # Decay learning rate
   adam_t = adam_t + 1
-  lr = lr * decay
+  lr = initial_lr * (1 / (1 + decay * e))
   }
   write(probs_val, "../sherlock-project/data/data/short/probs_val_after_train")
 }

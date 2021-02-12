@@ -255,9 +255,9 @@ m_sherlock = function (matrix[double] A) return (double m) {
   #train
 
   #character level
-  hidden_layer_neurons = 300
-  [W1, b1, W2, b2, W3, b3] = realSherlock::train(
-    processed_val_values, processed_val_labels, processed_train_values, processed_train_labels, hidden_layer_neurons)
+  hidden_layer_neurons = 500
+  [W1, b1, W2, b2, W3, b3] = realSherlock::train(processed_train_values, processed_train_labels,
+    processed_val_values, processed_val_labels, hidden_layer_neurons)
 
   write(W1, "../sherlock-project/data/data/short/W1")
   write(b1, "../sherlock-project/data/data/short/b1")

@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.util;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -857,26 +859,44 @@ public class UtilFunctions {
 		return string_array;//.subList(0,2);
 	}
 
-	public static String getSplittedStringAsList (String input) {
-		//Frame f = new Frame();
-    Arrays.stream(new Exception("I am here").getStackTrace()).forEach(LOG::debug);
+	public static String columnStringToSherlockFeatures(String input) {
+
     StringBuffer sb = new StringBuffer(input);
     StringBuilder outStringBuilder = new StringBuilder();
-    int startOfArray = sb.indexOf("[");
+    String[] string_array;
+    // remove leading and trailing brackets: []
+    int startOfArray = sb.indexOf("\"[");
     if (startOfArray >=0) {
-      sb.deleteCharAt(startOfArray);
+      sb.delete(startOfArray, startOfArray + 2);
     }
-    int endOfArray = sb.lastIndexOf("]");
+    int endOfArray = sb.lastIndexOf("]\"");
     if (endOfArray >=0) {
-      sb.deleteCharAt(endOfArray);
+      sb.delete(endOfArray, endOfArray + 2);
     }
-		String[] string_array = sb.toString().split("[ ]*,[ ]*");
 
-		for(int i = 0; i< string_array.length; i++) {
-		  outStringBuilder.append(string_array[i]).append(",");
+    // split values depending on their format
+    if (sb.indexOf("'") != -1) { // string contains strings
+      // replace "None" with "'None'"
+      Pattern p = Pattern.compile(", None,");
+      Matcher m = p.matcher(sb);
+      string_array = m.replaceAll(", 'None',").split("'[ ]*,[ ]*'");
+      // remove apostrophe in first and last string element
+      string_array[0] = string_array[0].replaceFirst("'", "");
+      int lastArrayIndex = string_array.length - 1;
+      string_array[lastArrayIndex] = string_array[lastArrayIndex]
+            .substring(0, string_array[lastArrayIndex].length() - 1);
+    } else { // string contains numbers only
+      string_array = sb.toString().split(",");
     }
-		outStringBuilder.deleteCharAt(outStringBuilder.lastIndexOf(","));
-    LOG.error("output string: "+ outStringBuilder.toString());
+
+    // TODO: convert strings to n-dimensional numerical vectors
+
+    // select a suitable separator that can be used to read in the file properly
+    String separator = ",;,";
+		for(int i = 0; i< string_array.length; i++) {
+		  outStringBuilder.append(string_array[i]).append(separator);
+    }
+		outStringBuilder.delete(outStringBuilder.length() - separator.length(), outStringBuilder.length());
 		return outStringBuilder.toString();
 	}
 }

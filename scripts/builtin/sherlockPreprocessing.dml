@@ -1,26 +1,21 @@
 
-basePath = "../sherlock-project/data/data/testing/"
 testTransformation = function () {
-  basePath = "../sherlock-project/data/data/testing/"
+  basePath="../sherlock-project/data/data/testing/";
 
-  rawData = read(basePath + "raw_input_numbers",
+  rawData = read(basePath + "test_values_short.csv",
                         fill=TRUE,
                         header=TRUE
-                        #schema=tableSchema
   )
   print(toString(rawData))
 
-  data = map(rawData, "x -> UtilFunctions.getSplittedStringAsList(x)")
+  data = map(rawData[,2], "x -> UtilFunctions.columnStringToSherlockFeatures(x)")
   print(toString(data))
 
   write(data, basePath + "transformed_input", format="csv", seperator=",")
-
-  #dataMatrix = as.matrix(data)
-  #print(toString(dataMatrix))
 }
 
 readTransformedData = function () {
-  basePath = "../sherlock-project/data/data/testing/"
+  basePath = "../sherlock-project/data/data/testing/";
 
   rawData = read(basePath + "transformed_input_new",
                  fill=TRUE

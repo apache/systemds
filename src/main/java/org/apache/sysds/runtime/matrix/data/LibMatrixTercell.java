@@ -78,11 +78,13 @@ public class LibMatrixTercell
 			}
 		}
 		else {
-			unsafeTernary(m1, m2, m3, ret, op, s1, s2, s3, d1, d2, d3, 0, ret.rlen);
+			long nnz = unsafeTernary(m1, m2, m3, ret, op,
+				s1, s2, s3, d1, d2, d3, 0, ret.rlen);
+			ret.setNonZeros(nnz);
 		}
 	}
 	
-	private static void unsafeTernary(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
+	private static long unsafeTernary(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 		TernaryOperator op, boolean s1, boolean s2, boolean s3, double d1, double d2, double d3, int rl, int ru)
 	{
 		//basic ternary operations (all combinations sparse/dense)
@@ -99,7 +101,7 @@ public class LibMatrixTercell
 			}
 		
 		//set global output nnz once
-		ret.nonZeros = lnnz;
+		return lnnz;
 	}
 	
 	private static class TercellTask implements Callable<Long> {
@@ -122,11 +124,10 @@ public class LibMatrixTercell
 		
 		@Override
 		public Long call() {
-			//execute binary operation on row partition
-			unsafeTernary(_m1, _m2, _m3, _ret, _op, _s1, _s2, _s3, _d1, _d2, _d3, _rl, _ru);
-			
-			//maintain block nnz (upper bounds inclusive)
-			return _ret.recomputeNonZeros(_rl, _ru-1);
+			// execute binary operation on row partition
+			// (including nnz maintenance)
+			return unsafeTernary(_m1, _m2, _m3, _ret, _op,
+				_s1, _s2, _s3, _d1, _d2, _d3, _rl, _ru);
 		}
 	}
 }

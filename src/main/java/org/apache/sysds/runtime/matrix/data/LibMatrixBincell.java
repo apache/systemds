@@ -164,11 +164,15 @@ public class LibMatrixBincell
 	 */
 	public static void bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		BinaryAccessType atype = getBinaryAccessType(m1, m2);
-		
-		//preallocate for consistency
-		if( atype == BinaryAccessType.MATRIX_MATRIX )
+
+		// preallocate for consistency (but be careful 
+		// not to allocate if empty inputs might allow early abort)
+		if( atype == BinaryAccessType.MATRIX_MATRIX
+			&& !(m1.isEmpty() || m2.isEmpty()) )
+		{
 			ret.allocateBlock(); //chosen outside
-		
+		}
+
 		//execute binary cell operations
 		long nnz = 0;
 		if(op.sparseSafe || isSparseSafeDivide(op, m2))
@@ -755,6 +759,10 @@ public class LibMatrixBincell
 	private static long safeBinaryMMSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		BinaryOperator op, int rl, int ru)
 	{
+		//guard for postponed allocation in single-threaded exec
+		if( ret.sparse && !ret.isAllocated() )
+			ret.allocateSparseRowsBlock();
+		
 		//both sparse blocks existing
 		long lnnz = 0;
 		if(m1.sparseBlock!=null && m2.sparseBlock!=null)
@@ -828,6 +836,10 @@ public class LibMatrixBincell
 	private static long safeBinaryMMSparseDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		BinaryOperator op, int rl, int ru)
 	{
+		//guard for postponed allocation in single-threaded exec
+		if( !ret.isAllocated() )
+			ret.allocateDenseBlock();
+		
 		//specific case in order to prevent binary search on sparse inputs (see quickget and quickset)
 		final int n = ret.clen;
 		DenseBlock dc = ret.getDenseBlock();
@@ -912,6 +924,10 @@ public class LibMatrixBincell
 	private static long safeBinaryMMDenseDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		BinaryOperator op, int rl, int ru)
 	{
+		//guard for postponed allocation in single-threaded exec
+		if( !ret.isAllocated() )
+			ret.allocateDenseBlock();
+		
 		DenseBlock da = m1.getDenseBlock();
 		DenseBlock db = m2.getDenseBlock();
 		DenseBlock dc = ret.getDenseBlock();
@@ -942,6 +958,10 @@ public class LibMatrixBincell
 		
 		//prepare second input and allocate output
 		MatrixBlock b = m1.sparse ? m2 : m1;
+		
+		//guard for postponed allocation in single-threaded exec
+		if( !ret.isAllocated() )
+			ret.allocateBlock();
 		
 		long lnnz = 0;
 		for( int i=rl; i<Math.min(ru, a.numRows()); i++ ) {

@@ -57,9 +57,8 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
  *
  * CTABLE op takes 2 extra inputs with target dimensions for padding and pruning.
  */
-public class TernaryOp extends Hop 
+public class TernaryOp extends MultiThreadedHop
 {
-	
 	public static boolean ALLOW_CTABLE_SEQUENCE_REWRITES = true;
 	
 	private OpOp3 _op = null;
@@ -144,6 +143,13 @@ public class TernaryOp extends Hop
 			default:
 				throw new RuntimeException("Unsupported operator:" + _op.name());
 		}
+	}
+	
+	@Override
+	public boolean isMultiThreadedOpType() {
+		return _op == OpOp3.IFELSE
+			|| _op == OpOp3.MINUS_MULT
+			|| _op == OpOp3.PLUS_MULT;
 	}
 	
 	@Override
@@ -324,13 +330,17 @@ public class TernaryOp extends Hop
 
 	private void constructLopsTernaryDefault() {
 		ExecType et = optFindExecType();
+		int k = 1;
 		if( getInput().stream().allMatch(h -> h.getDataType().isScalar()) )
 			et = ExecType.CP; //always CP for pure scalar operations
+		else
+			k= OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+		
 		Ternary plusmult = new Ternary(_op,
 			getInput().get(0).constructLops(),
 			getInput().get(1).constructLops(),
 			getInput().get(2).constructLops(), 
-			getDataType(),getValueType(), et );
+			getDataType(),getValueType(), et, k );
 		setOutputDimensions(plusmult);
 		setLineNumbers(plusmult);
 		setLops(plusmult);

@@ -2911,7 +2911,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		
 		//prepare result
-		ret.reset(m, n, false);
+		boolean sparseOutput = (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply)?
+			evalSparseFormatInMemory(m, n, (s1?m*n*(d1!=0?1:0):getNonZeros())
+				+ Math.min(s2?m*n:m2.getNonZeros(), s3?m*n:m3.getNonZeros())) : false;
+		ret.reset(m, n, sparseOutput);
 		
 		if( op.fn instanceof IfElse && (s1 || nnz==0 || nnz==(long)m*n) ) {
 			//SPECIAL CASE for shallow-copy if-else
@@ -2933,21 +2936,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else if (s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply) ) {
 			//SPECIAL CASE for sparse-dense combinations of common +* and -*
-			BinaryOperator bop = ((ValueFunctionWithConstant)op.fn)
-				.setOp2Constant(s2 ? d2 : d3);
-			LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop);
+			BinaryOperator bop = ((ValueFunctionWithConstant)op.fn).setOp2Constant(s2 ? d2 : d3);
+			if( op.getNumThreads() > 1 )
+				LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop, op.getNumThreads());
+			else
+				LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop);
 		}
 		else {
-			ret.allocateDenseBlock();
-			
-			//basic ternary operations
-			for( int i=0; i<m; i++ )
-				for( int j=0; j<n; j++ ) {
-					double in1 = s1 ? d1 : quickGetValue(i, j);
-					double in2 = s2 ? d2 : m2.quickGetValue(i, j);
-					double in3 = s3 ? d3 : m3.quickGetValue(i, j);
-					ret.appendValue(i, j, op.fn.execute(in1, in2, in3));
-				}
+			//DEFAULT CASE
+			LibMatrixTercell.tercellOp(this, m2, m3, ret, op);
 			
 			//ensure correct output representation
 			ret.examSparsity();

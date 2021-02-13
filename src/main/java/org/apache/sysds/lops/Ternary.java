@@ -33,10 +33,12 @@ import org.apache.sysds.common.Types.ValueType;
 public class Ternary extends Lop 
 {
 	private final OpOp3 _op;
-		
-	public Ternary(OpOp3 op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) {
+	private final int _numThreads;
+	
+	public Ternary(OpOp3 op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et, int numThreads) {
 		super(Lop.Type.Ternary, dt, vt);
 		_op = op;
+		_numThreads = numThreads;
 		init(input1, input2, input3, et);
 	}
 
@@ -70,6 +72,11 @@ public class Ternary extends Lop
 		}
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output) );
+		
+		if( getExecType() == ExecType.CP && getDataType().isMatrix() ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
 		
 		return sb.toString();
 	}

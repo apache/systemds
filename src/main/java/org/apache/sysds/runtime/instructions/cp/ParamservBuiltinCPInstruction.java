@@ -320,7 +320,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
-			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq, getEpochs(), getBatchSize(), workerECs.get(i), ps))
+			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq,
+				getEpochs(), getBatchSize(), workerECs.get(i), ps, workerNum==1))
 			.collect(Collectors.toList());
 
 		// Do data partition
@@ -497,7 +498,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private void partitionLocally(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
 		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
-		DataPartitionLocalScheme.Result result = new LocalDataPartitioner(scheme).doPartitioning(workers.size(), features.acquireReadAndRelease(), labels.acquireReadAndRelease());
+		DataPartitionLocalScheme.Result result = new LocalDataPartitioner(scheme)
+			.doPartitioning(workers.size(), features.acquireReadAndRelease(), labels.acquireReadAndRelease());
 		List<MatrixObject> pfs = result.pFeatures;
 		List<MatrixObject> pls = result.pLabels;
 		if (pfs.size() < workers.size()) {

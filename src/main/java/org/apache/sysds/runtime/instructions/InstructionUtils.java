@@ -595,8 +595,12 @@ public class InstructionUtils
 	}
 	
 	public static TernaryOperator parseTernaryOperator(String opcode) {
+		return parseTernaryOperator(opcode, 1);
+	}
+	
+	public static TernaryOperator parseTernaryOperator(String opcode, int numThreads) {
 		return new TernaryOperator(opcode.equals("+*") ? PlusMultiply.getFnObject() :
-			opcode.equals("-*") ? MinusMultiply.getFnObject() : IfElse.getFnObject());
+			opcode.equals("-*") ? MinusMultiply.getFnObject() : IfElse.getFnObject(), numThreads);
 	}
 	
 	/**

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.lineage;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -38,7 +40,8 @@ import org.junit.runners.Parameterized;
 public class FedFullReuseTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/lineage/";
-	private final static String TEST_NAME = "FedFullReuse1";
+	private final static String TEST_NAME1 = "FedFullReuse1";
+	private final static String TEST_NAME2 = "FedFullReuse2";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FedFullReuseTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -50,7 +53,8 @@ public class FedFullReuseTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"Z"}));
 	}
 
 	@Parameterized.Parameters
@@ -65,12 +69,20 @@ public class FedFullReuseTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedReuseMM() {    //reuse inside federated workers
-		federatedReuse();
+	public void federatedOutputReuse() {
+		//don't cache federated outputs in the coordinator
+		//reuse inside federated workers
+		federatedReuse(TEST_NAME1);
+	}
+
+	@Test
+	public void nonfederatedOutputReuse() {
+		//cache non-federated outputs in the coordinator
+		federatedReuse(TEST_NAME2);
 	}
 	
-	public void federatedReuse() {
-		getAndLoadTestConfiguration(TEST_NAME);
+	public void federatedReuse(String test) {
+		getAndLoadTestConfiguration(test);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		// write input matrices
@@ -93,11 +105,11 @@ public class FedFullReuseTest extends AutomatedTestBase {
 		Thread t1 = startLocalFedWorkerThread(port1, otherargs, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2, otherargs);
 
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+		TestConfiguration config = availableTestConfigurations.get(test);
 		loadTestConfiguration(config);
 
 		// Run reference dml script with normal matrix. Reuse of ba+*.
-		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		fullDMLScriptName = HOME + test + "Reference.dml";
 		programArgs = new String[] {"-stats", "-lineage", "reuse_full",
 			"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
 			"Y2=" + input("Y2"), "Z=" + expected("Z")};
@@ -106,7 +118,7 @@ public class FedFullReuseTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		// The fed workers reuse ba+*
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		fullDMLScriptName = HOME + test + ".dml";
 		programArgs = new String[] {"-stats","-lineage", "reuse_full",
 			"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
@@ -114,6 +126,7 @@ public class FedFullReuseTest extends AutomatedTestBase {
 			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
 		runTest(true, false, null, -1);
 		long mmCount_fed = Statistics.getCPHeavyHitterCount("ba+*");
+		long fedMMCount = Statistics.getCPHeavyHitterCount("fed_ba+*");
 
 		// compare results 
 		compareResults(1e-9);
@@ -121,6 +134,19 @@ public class FedFullReuseTest extends AutomatedTestBase {
 		// #federated execution of ba+* = #threads times #non-federated execution of ba+* (after reuse) 
 		Assert.assertTrue("Violated reuse count: "+mmCount_fed+" == "+mmCount*2, 
 				mmCount_fed == mmCount * 2); // #threads = 2
+		switch(test) {
+			case TEST_NAME1:
+				// If the o/p is federated, fed_ba+* will be called everytime
+				// but the workers should be able to reuse ba+*
+				assertTrue(fedMMCount > mmCount_fed);
+				break;
+			case TEST_NAME2:
+				// If the o/p is non-federated, fed_ba+* will be called once
+				// and each worker will call ba+* once.
+				assertTrue(fedMMCount < mmCount_fed);
+				break;
+		}
+
 
 		TestUtils.shutdownThreads(t1, t2);
 	}

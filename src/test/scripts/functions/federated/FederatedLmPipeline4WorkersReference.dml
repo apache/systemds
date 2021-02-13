@@ -47,19 +47,7 @@ X = scale(X=X, center=TRUE, scale=TRUE);
 B = lm(X=Xtrain, y=ytrain, icpt=1, reg=1e-3, tol=1e-9, verbose=TRUE)
 
 # model evaluation on test split
-yhat = lmpredict(X=Xtest, w=B, icpt=1);
-y_residual = ytest - yhat;
-
-avg_res = sum(y_residual) / nrow(ytest);
-ss_res = sum(y_residual^2);
-ss_avg_res = ss_res - nrow(ytest) * avg_res^2;
-R2 = 1 - ss_res / (sum(y^2) - nrow(ytest) * (sum(y)/nrow(ytest))^2);
-print("\nAccuracy:" +
-      "\n--sum(ytest) = " + sum(ytest) +
-      "\n--sum(yhat) = " + sum(yhat) +
-      "\n--AVG_RES_Y: " + avg_res +
-      "\n--SS_AVG_RES_Y: " + ss_avg_res +
-      "\n--R2: " + R2 );
+yhat = lmPredict(X=Xtest, B=B, icpt=1, ytest=ytest, verbose=TRUE);
 
 # write trained model and meta data
 write(B, $7)

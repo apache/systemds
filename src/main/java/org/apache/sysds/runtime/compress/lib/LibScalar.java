@@ -44,6 +44,8 @@ import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
+import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -58,44 +60,30 @@ public class LibScalar {
 			return LibRelationalOp.overlappingRelativeRelationalOperation(sop, m1);
 		}
 
-		if(isValidForCompressedOutput(m1, sop)) {
+		if(isInvalidForCompressedOutput(m1, sop)) {
 			LOG.warn("scalar overlapping not supported for op: " + sop.fn);
 			MatrixBlock m1d = m1.decompress(sop.getNumThreads());
 			return m1d.scalarOperations(sop, result);
 		}
 
-		CompressedMatrixBlock ret = null;
-		if(result == null || !(result instanceof CompressedMatrixBlock))
-			ret = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns(), m1.isInSparseFormat());
-		else
-			ret = (CompressedMatrixBlock)result;
+		CompressedMatrixBlock ret = setupRet(m1, result);
 
 		List<ColGroup> colGroups = m1.getColGroups();
 		if(m1.isOverlapping() && !(sop.fn instanceof Multiply || sop.fn instanceof Divide)) {
-			if(sop.fn instanceof Plus || sop.fn instanceof Minus) {
-
-				// If the colGroup is overlapping we know there are no incompressable colGroups.
-				List<ColGroup> newColGroups = new ArrayList<>();
-				for(ColGroup grp : colGroups) {
-					ColGroupValue g = (ColGroupValue) grp;
-					newColGroups.add(g.copy());
-				}
-				int[] colIndexes = newColGroups.get(0).getColIndices();
-				double v = sop.executeScalar(0);
-				double[] values = new double[colIndexes.length];
-				Arrays.fill(values, v);
-				newColGroups.add(new ColGroupConst(colIndexes, ret.getNumRows(), new Dictionary(values)));
-				ret.allocateColGroupList(newColGroups);
-				ret.setOverlapping(true);
-				ret.setNonZeros(-1);
-			}
+			ColGroup constOverlap = constOverlap(m1, sop);
+			List<ColGroup> newColGroups = (sop instanceof LeftScalarOperator &&
+				sop.fn instanceof Minus) ? processOverlappingSubtractionLeft(m1,
+					sop,
+					ret) : processOverlappingAddition(m1, sop, ret);
+			newColGroups.add(constOverlap);
+			ret.allocateColGroupList(newColGroups);
+			ret.setOverlapping(true);
 		}
 		else {
 			int threadsAvailable = (sop.getNumThreads() > 1) ? sop.getNumThreads() : OptimizerUtils
 				.getConstrainedNumThreads(-1);
-			if(threadsAvailable > 1) {
+			if(threadsAvailable > 1)
 				parallelScalarOperations(sop, colGroups, ret, threadsAvailable);
-			}
 			else {
 				// Apply the operation to each of the column groups.
 				// Most implementations will only modify metadata.
@@ -105,17 +93,59 @@ public class LibScalar {
 				}
 				ret.allocateColGroupList(newColGroups);
 			}
-			ret.setNonZeros(-1);
 			ret.setOverlapping(m1.isOverlapping());
 		}
+
+		ret.setNonZeros(-1);
 
 		return ret;
 
 	}
 
-	private static boolean isValidForCompressedOutput(CompressedMatrixBlock m1, ScalarOperator sop) {
-		return m1.isOverlapping() && (!(sop.fn instanceof Multiply || sop.fn instanceof Divide ||
-			sop.fn instanceof Plus || sop.fn instanceof Minus));
+	private static CompressedMatrixBlock setupRet(CompressedMatrixBlock m1, MatrixValue result) {
+		CompressedMatrixBlock ret;
+		if(result == null || !(result instanceof CompressedMatrixBlock))
+			ret = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns());
+		else {
+			ret = (CompressedMatrixBlock) result;
+			ret.setNumColumns(m1.getNumColumns());
+			ret.setNumRows(m1.getNumRows());
+		}
+		return ret;
+	}
+
+	private static ColGroup constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
+		int[] colIndexes = new int[m1.getNumColumns()];
+		for(int i = 0; i < colIndexes.length; i++)
+			colIndexes[i] = i;
+		double v = sop.executeScalar(0);
+		double[] values = new double[colIndexes.length];
+		Arrays.fill(values, v);
+		return new ColGroupConst(colIndexes, m1.getNumRows(), new Dictionary(values));
+	}
+
+	private static List<ColGroup> processOverlappingAddition(CompressedMatrixBlock m1, ScalarOperator sop,
+		CompressedMatrixBlock ret) {
+		List<ColGroup> newColGroups = new ArrayList<>();
+		for(ColGroup grp : m1.getColGroups())
+			newColGroups.add(((ColGroupValue) grp).copy());
+		return newColGroups;
+
+	}
+
+	private static List<ColGroup> processOverlappingSubtractionLeft(CompressedMatrixBlock m1, ScalarOperator sop,
+		CompressedMatrixBlock ret) {
+		List<ColGroup> newColGroups = new ArrayList<>();
+		for(ColGroup grp : m1.getColGroups())
+			newColGroups.add(
+				((ColGroupValue) grp).scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
+		return newColGroups;
+	}
+
+	private static boolean isInvalidForCompressedOutput(CompressedMatrixBlock m1, ScalarOperator sop) {
+		return m1.isOverlapping() &&
+			(!(sop.fn instanceof Multiply || (sop.fn instanceof Divide && sop instanceof RightScalarOperator) ||
+				sop.fn instanceof Plus || sop.fn instanceof Minus));
 	}
 
 	private static void parallelScalarOperations(ScalarOperator sop, List<ColGroup> colGroups,

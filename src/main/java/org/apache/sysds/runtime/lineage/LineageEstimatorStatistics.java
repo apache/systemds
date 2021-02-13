@@ -47,7 +47,7 @@ public class LineageEstimatorStatistics {
 	}
 	
 	public static String displaySize() {
-		//size of all cached reusable intermediates/size of reused intermediates//cache size
+		//size of all cached reusable intermediates/size of reused intermediates/cache size
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("%.3f", ((double)LineageEstimator._totReusableSize)/(1024*1024))); //in MB
 		sb.append("/");

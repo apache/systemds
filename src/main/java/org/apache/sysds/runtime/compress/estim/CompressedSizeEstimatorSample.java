@@ -21,9 +21,9 @@ package org.apache.sysds.runtime.compress.estim;
 
 import java.util.HashMap;
 
-import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.sample.HassAndStokes;
+import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.ABitmap.BitmapType;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -62,7 +62,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			select.appendValue(sampleRows[i], 0, 1);
 
 		MatrixBlock sampledMatrixBlock = data.removeEmptyOperations(new MatrixBlock(), !transposed, true, select);
-		if(!transposed && sampleRows.length > FORCE_TRANSPOSE_ON_SAMPLE_THRESHOLD) {
+		if(!transposed && sampledMatrixBlock.isInSparseFormat() && sampleRows.length > FORCE_TRANSPOSE_ON_SAMPLE_THRESHOLD) {
 			_transposed = true;
 			sampledMatrixBlock = LibMatrixReorg
 				.transpose(sampledMatrixBlock, new MatrixBlock(sampleRows.length, data.getNumRows(), true), 1);

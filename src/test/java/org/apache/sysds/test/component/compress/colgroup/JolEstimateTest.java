@@ -25,7 +25,6 @@ import java.util.EnumSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
@@ -34,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -92,7 +92,8 @@ public abstract class JolEstimateTest {
 	@Test
 	public void compressedSizeInfoEstimatorExact() {
 		try {
-			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0).setValidCompressions(EnumSet.of(getCT())).create();
+			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+				.setValidCompressions(EnumSet.of(getCT())).create();
 			cs.transposed = true;
 			CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs);
 
@@ -142,25 +143,4 @@ public abstract class JolEstimateTest {
 		}
 	}
 
-	// @Test
-	// public void compressedSizeInfoEstimatorSampler() {
-	// try {
-	// CompressionSettings cs = new CompressionSettingsBuilder().copySettings(this.cs).setSamplingRatio(0.1).create();
-	// CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs);
-	// CompressedSizeInfoColGroup csi = cse.computeCompressedSizeInfos(1).compressionInfo[0];
-	// long estimateCSI = csi.getCompressionSize(getCT());
-	// long estimateObject = cg.estimateInMemorySize();
-	// String errorMessage = "CSI Sampled estimate " + estimateCSI + " should be larger than actual "
-	// + estimateObject + " but not more than " + (tolerance + kbTolerance) + " off";
-	// if(!(estimateCSI == estimateObject)) {
-	// System.out.println("NOT EXACTLY THE SAME IN SAMPLING! " + errorMessage);
-	// }
-	// boolean res = Math.abs(estimateCSI - estimateObject) <= tolerance + kbTolerance;
-	// assertTrue(errorMessage, res);
-	// }
-	// catch(Exception e) {
-	// e.printStackTrace();
-	// assertTrue("Failed Test", false);
-	// }
-	// }
 }

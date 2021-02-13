@@ -116,7 +116,7 @@ public abstract class AutomatedTestBase {
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	public static final int FED_WORKER_WAIT = 1000; // in ms
-	public static final int FED_WORKER_WAIT_S = 40; // in ms
+	public static final int FED_WORKER_WAIT_S = 50; // in ms
 	
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
@@ -142,6 +142,7 @@ public abstract class AutomatedTestBase {
 	 * Location of the SystemDS config file that we use as a template when generating the configs for each test case.
 	 */
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemDS-config.xml");
+	protected boolean disableConfigFile = false;
 
 	protected enum CodegenTestType {
 		DEFAULT, FUSE_ALL, FUSE_NO_REDUNDANCY;
@@ -1069,14 +1070,17 @@ public abstract class AutomatedTestBase {
 			String localTemp = curLocalTempDir.getPath();
 			String configContents = configTemplate
 				.replace(createXMLElement(DMLConfig.SCRATCH_SPACE, "scratch_space"),
-					createXMLElement(DMLConfig.SCRATCH_SPACE, localTemp + "/scratch_space"))
+					createXMLElement(DMLConfig.SCRATCH_SPACE, localTemp + "/target/scratch_space"))
 				.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemds"),
 					createXMLElement(DMLConfig.LOCAL_TMP_DIR, localTemp + "/localtmp"));
 
-			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
+			if(!disableConfigFile){
 
-			if(LOG.isDebugEnabled())
-				LOG.debug("This test case will use SystemDS config file %s\n" + getCurConfigFile());
+				FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
+
+				if(LOG.isDebugEnabled())
+					LOG.debug("This test case will use SystemDS config file %s\n" + getCurConfigFile());
+			}
 		}
 		catch(IOException e) {
 			throw new RuntimeException(e);
@@ -1388,7 +1392,7 @@ public abstract class AutomatedTestBase {
 			args.add(executionFile);
 		}
 
-		addProgramIndependentArguments(args);
+		addProgramIndependentArguments(args, programArgs);
 
 		// program-specific parameters
 		if(newWay) {
@@ -1460,7 +1464,7 @@ public abstract class AutomatedTestBase {
 		DMLScript.executeScript(conf, otherArgs);
 	}
 
-	private void addProgramIndependentArguments(ArrayList<String> args) {
+	private void addProgramIndependentArguments(ArrayList<String> args, String[] otherArgs) {
 
 		// program-independent parameters
 		args.add("-exec");
@@ -1472,12 +1476,23 @@ public abstract class AutomatedTestBase {
 			args.add("singlenode");
 		else if(rtplatform == ExecMode.SPARK)
 			args.add("spark");
-		else {
+		else
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
-		}
+
 		// use optional config file since default under SystemDS/DML
-		args.add("-config");
-		args.add(getCurConfigFile().getPath());
+		boolean configSpecified = false;
+		if(otherArgs != null)
+			for(String  i: otherArgs)
+				if(i.equals("-config")){
+					configSpecified = true;
+					break;
+				}
+
+
+		if(!configSpecified){
+			args.add("-config");
+			args.add(getCurConfigFile().getPath());
+		}
 
 		if(TEST_GPU)
 			args.add("-gpu");
@@ -1555,7 +1570,7 @@ public abstract class AutomatedTestBase {
 		String[] fedWorkArgs = {"-w", Integer.toString(port)};
 		ArrayList<String> args = new ArrayList<>();
 
-		addProgramIndependentArguments(args);
+		addProgramIndependentArguments(args, otherArgs);
 		
 		if (otherArgs != null)
 			args.addAll(Arrays.stream(otherArgs).collect(Collectors.toList()));

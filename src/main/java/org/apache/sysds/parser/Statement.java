@@ -66,6 +66,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_LABELS = "labels";
 	public static final String PS_VAL_FEATURES = "val_features";
 	public static final String PS_VAL_LABELS = "val_labels";
+	public static final String PS_VAL_FUN = "val";
 	public static final String PS_UPDATE_FUN = "upd";
 	public static final String PS_AGGREGATION_FUN = "agg";
 	public static final String PS_MODE = "mode";
@@ -100,6 +101,7 @@ public abstract class Statement implements ParseInfo
 	public enum PSScheme {
 		DISJOINT_CONTIGUOUS, DISJOINT_ROUND_ROBIN, DISJOINT_RANDOM, OVERLAP_RESHUFFLE
 	}
+	public static final String PS_FED_SCHEME = "fed_scheme";
 	public enum FederatedPSScheme {
 		KEEP_DATA_ON_WORKER, SHUFFLE, REPLICATE_TO_MAX, SUBSAMPLE_TO_MIN, BALANCE_TO_AVG
 	}
@@ -117,7 +119,6 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_FED_NAMESPACE = "1701-NCC-namespace";
 	public static final String PS_FED_GRADIENTS_FNAME = "1701-NCC-gradients_fname";
 	public static final String PS_FED_AGGREGATION_FNAME = "1701-NCC-aggregation_fname";
-	public static final String PS_FED_BATCHCOUNTER_VARID = "1701-NCC-batchcounter_varid";
 	public static final String PS_FED_MODEL_VARID = "1701-NCC-model_varid";
 
 

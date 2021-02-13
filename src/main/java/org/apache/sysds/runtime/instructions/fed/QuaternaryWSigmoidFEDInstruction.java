@@ -36,9 +36,9 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 
 	/**
 	 * This instruction performs:
-	 * 
+	 *
 	 * UV = U %*% t(V); Z = X * log(1 / (1 + exp(-UV)));
-	 * 
+	 *
 	 * @param operator        Weighted Sigmoid Federated Instruction.
 	 * @param in1             X
 	 * @param in2             U

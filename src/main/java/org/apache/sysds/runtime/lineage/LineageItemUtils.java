@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -46,7 +47,10 @@ import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -54,6 +58,8 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.DiagMatrix;
+import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.Rdiag;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 import java.io.IOException;
@@ -136,6 +142,33 @@ public class LineageItemUtils {
 	public static LineageItem[] getLineage(ExecutionContext ec, CPOperand... operands) {
 		return Arrays.stream(operands).filter(c -> c!=null)
 			.map(c -> ec.getLineage().getOrCreate(c)).toArray(LineageItem[]::new);
+	}
+	
+	public static void traceFedUDF(ExecutionContext ec, FederatedUDF udf) {
+		if (udf.getLineageItem(ec) == null)
+			//TODO: trace all UDFs
+			return;
+
+		if (!(udf instanceof LineageTraceable))
+			throw new DMLRuntimeException("Unknown Federated UDF (" + udf.getClass().getSimpleName() + ") traced.");
+		LineageTraceable ludf = (LineageTraceable) udf;
+		if (ludf.hasSingleLineage()) {
+			Pair<String, LineageItem> item = udf.getLineageItem(ec);
+			ec.getLineage().set(item.getKey(), item.getValue());
+		}
+		else {
+			Pair<String, LineageItem>[] items = udf.getLineageItems(ec);
+			for (Pair<String, LineageItem> item : items)
+				ec.getLineage().set(item.getKey(), item.getValue());
+		}
+	}
+	
+	public static FederatedResponse setUDFResponse(FederatedUDF udf, MatrixObject mo) {
+		if (udf instanceof DiagMatrix || udf instanceof Rdiag)
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, 
+					new int[]{(int) mo.getNumRows(), (int) mo.getNumColumns()});
+		
+		return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
 	}
 	
 	public static void constructLineageFromHops(Hop[] roots, String claName, Hop[] inputs, HashMap<Long, Hop> spoofmap) {

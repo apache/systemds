@@ -34,7 +34,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -58,17 +57,16 @@ public class LibRightMultBy {
 	public static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v, boolean allowOverlap) {
 
-		if(that instanceof CompressedMatrixBlock) {
+		if(that instanceof CompressedMatrixBlock)
 			LOG.info("Decompression Right matrix");
-		}
+		
 		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
 
-		if(allowOverlappingOutput(colGroups, allowOverlap)) {
+		if(allowOverlappingOutput(colGroups, allowOverlap)) 
 			return rightMultByMatrixOverlapping(colGroups, that, ret, k, v);
-		}
-		else {
+		else 
 			return rightMultByMatrixNonOverlapping(colGroups, that, ret, k, v);
-		}
+		
 	}
 
 	private static boolean allowOverlappingOutput(List<ColGroup> colGroups, boolean allowOverlap) {
@@ -119,7 +117,6 @@ public class LibRightMultBy {
 		ret.setNumColumns(cl);
 		ret.setNumRows(rl);
 		CompressedMatrixBlock retC = (CompressedMatrixBlock) ret;
-		retC.setOverlapping(true);
 		ret = rightMultByMatrixCompressed(colGroups, that, retC, k, v);
 		return ret;
 	}
@@ -235,28 +232,20 @@ public class LibRightMultBy {
 			ArrayList<RightMatrixMultTask> tasks = new ArrayList<>();
 
 			final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
-			int blklenRows = Math.max(blkz, (int) (Math.ceil((double) ret.getNumRows() / (2 * k))));
-			// int blklenRows = ret.getNumRows();
-			blklenRows = 4 * blkz;
+			int blklenRows = blkz * 2 / ret.getNumColumns();
+
 			try {
 				List<Future<Pair<int[], double[]>>> ag = pool.invokeAll(preAggregate(colGroups, that, that, v));
-				// DDC and RLE
+			
 				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
 					RightMatrixMultTask rmmt = new RightMatrixMultTask(colGroups, retV, ag, v, that.getNumColumns(),
-						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), false);
+						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()));
 					tasks.add(rmmt);
 				}
-				// blklenRows = // (blklenRows % blkz != 0) ? blkz - blklenRows % blkz : 0;
-				// OLE!
-				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
-					RightMatrixMultTask rmmt = new RightMatrixMultTask(colGroups, retV, ag, v, that.getNumColumns(),
-						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), true);
-					tasks.add(rmmt);
-				}
+
 				for(Future<Object> future : pool.invokeAll(tasks))
 					future.get();
-				tasks.clear();
-
+				pool.shutdown();
 			}
 			catch(InterruptedException | ExecutionException e) {
 				throw new DMLRuntimeException(e);
@@ -269,12 +258,11 @@ public class LibRightMultBy {
 	private static MatrixBlock rightMultByMatrixCompressed(List<ColGroup> colGroups, MatrixBlock that,
 		CompressedMatrixBlock ret, int k, Pair<Integer, int[]> v) {
 
-		for(ColGroup grp : colGroups) {
-			if(grp instanceof ColGroupUncompressed) {
+		for(ColGroup grp : colGroups) 
+			if(grp instanceof ColGroupUncompressed) 
 				throw new DMLCompressionException(
 					"Right Mult by dense with compressed output is not efficient to do with uncompressed Compressed ColGroups and therefore not supported.");
-			}
-		}
+			
 
 		List<ColGroup> retCg = new ArrayList<>();
 		if(k == 1) {
@@ -282,7 +270,8 @@ public class LibRightMultBy {
 				ColGroupValue g = (ColGroupValue) colGroups.get(j);
 				Pair<int[], double[]> preAggregatedB = g
 					.preaggValues(v.getRight()[j], that, g.getValues(), 0, that.getNumColumns(), that.getNumColumns());
-				retCg.add(g.copyAndSet(preAggregatedB.getLeft(), preAggregatedB.getRight()));
+				if(preAggregatedB.getLeft().length > 0)
+					retCg.add(g.copyAndSet(preAggregatedB.getLeft(), preAggregatedB.getRight()));
 			}
 		}
 		else {
@@ -293,8 +282,9 @@ public class LibRightMultBy {
 
 				for(int j = 0; j < colGroups.size(); j++) {
 					Pair<int[], double[]> preAggregates = ag.get(j).get();
-					retCg.add(((ColGroupValue) colGroups.get(j)).copyAndSet(preAggregates.getLeft(),
-						preAggregates.getRight()));
+					if(preAggregates.getLeft().length > 0)
+						retCg.add(((ColGroupValue) colGroups.get(j)).copyAndSet(preAggregates.getLeft(),
+							preAggregates.getRight()));
 				}
 			}
 			catch(InterruptedException | ExecutionException e) {
@@ -302,9 +292,9 @@ public class LibRightMultBy {
 			}
 		}
 		ret.allocateColGroupList(retCg);
-		ret.setOverlapping(true);
+		if(retCg.size() > 1)
+			ret.setOverlapping(true);
 		ret.setNonZeros(-1);
-
 		return ret;
 	}
 
@@ -360,7 +350,6 @@ public class LibRightMultBy {
 
 	private static class RightMatrixMultTask implements Callable<Object> {
 		private final List<ColGroup> _colGroups;
-		// private final double[] _thatV;
 		private final double[] _retV;
 		private final List<Future<Pair<int[], double[]>>> _aggB;
 		private final Pair<Integer, int[]> _v;
@@ -368,41 +357,26 @@ public class LibRightMultBy {
 
 		private final int _rl;
 		private final int _ru;
-		private final boolean _skipOle;
 
 		protected RightMatrixMultTask(List<ColGroup> groups, double[] retV, List<Future<Pair<int[], double[]>>> aggB,
-			Pair<Integer, int[]> v, int numColumns, int rl, int ru, boolean skipOle) {
+			Pair<Integer, int[]> v, int numColumns, int rl, int ru) {
 			_colGroups = groups;
-			// _thatV = thatV;
 			_retV = retV;
 			_aggB = aggB;
 			_v = v;
 			_numColumns = numColumns;
 			_rl = rl;
 			_ru = ru;
-			_skipOle = skipOle;
 		}
 
 		@Override
 		public Object call() {
 			try {
-				ColGroupValue.setupThreadLocalMemory((_v.getLeft()));
+				ColGroupValue.setupThreadLocalMemory((_v.getLeft() + 1));
 				for(int j = 0; j < _colGroups.size(); j++) {
 					Pair<int[], double[]> aggb = _aggB.get(j).get();
-					if(_colGroups.get(j) instanceof ColGroupOLE) {
-						if(_skipOle) {
-							_colGroups.get(j)
-								.rightMultByMatrix(aggb.getLeft(), aggb.getRight(), _retV, _numColumns, _rl, _ru);
-						}
-					}
-					else {
-						if(!_skipOle) {
-							_colGroups.get(j)
-								.rightMultByMatrix(aggb.getLeft(), aggb.getRight(), _retV, _numColumns, _rl, _ru);
-						}
-					}
+					_colGroups.get(j).rightMultByMatrix(aggb.getLeft(), aggb.getRight(), _retV, _numColumns, _rl, _ru);
 				}
-				ColGroupValue.cleanupThreadLocalMemory();
 				return null;
 			}
 			catch(Exception e) {

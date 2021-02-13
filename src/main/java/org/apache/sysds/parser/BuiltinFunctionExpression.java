@@ -19,6 +19,11 @@
 
 package org.apache.sysds.parser;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
@@ -26,15 +31,11 @@ import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DnnUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
@@ -969,13 +970,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case TABLE:
 			
 			/*
-			 * Allowed #of arguments: 2,3,4,5
+			 * Allowed #of arguments: 2,3,4,5,6
 			 * table(A,B)
 			 * table(A,B,W)
 			 * table(A,B,1)
 			 * table(A,B,dim1,dim2)
 			 * table(A,B,W,dim1,dim2)
 			 * table(A,B,1,dim1,dim2)
+			 * table(A,B,1,dim1,dim2,TRUE)
 			 */
 			
 			// Check for validity of input arguments, and setup output dimensions
@@ -984,9 +986,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFirstExpr());
 
 			if (getSecondExpr() == null)
-				raiseValidateError(
-						"Invalid number of arguments to table(). The table() function requires 2, 3, 4, or 5 arguments.",
-						conditional);
+				raiseValidateError("Invalid number of arguments to table(). "
+					+ "The table() function requires 2, 3, 4, 5, or 6 arguments.", conditional);
 
 			// Second input: can be MATRIX or SCALAR
 			// cases: table(A,B) or table(A,1)
@@ -1030,6 +1031,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				break;
 				
 			case 5:
+			case 6:
 				// case - table w/ weights and output dimensions: 
 				//        - table(A,B,W,dim1,dim2) or table(A,1,W,dim1,dim2)
 				//        - table(A,B,1,dim1,dim2) or table(A,1,1,dim1,dim2)
@@ -1053,6 +1055,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 						outputDim1 = ((ConstIdentifier) _args[3].getOutput()).getLongValue();
 					if ( _args[4].getOutput() instanceof ConstIdentifier ) 
 						outputDim2 = ((ConstIdentifier) _args[4].getOutput()).getLongValue();
+				}
+				if( _args.length == 6 ) {
+					if( !_args[5].getOutput().isScalarBoolean() )
+						raiseValidateError("The 6th ctable parameter (outputEmptyBlocks) must be a boolean literal.", conditional);
 				}
 				break;
 
@@ -1573,7 +1579,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize (id.getBlocksize());
 
 			break;
-
+		case COMPRESS:
+		case DECOMPRESS:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
+				checkNumParameters(1);
+				checkMatrixParam(getFirstExpr());
+				output.setDataType(DataType.MATRIX);
+				output.setDimensions(id.getDim2(), id.getDim1());
+				output.setBlocksize (id.getBlocksize());
+				output.setValueType(id.getValueType());
+			}
+			else
+				raiseValidateError("Compress instruction not allowed in dml script");
+			
+			break;
 		default:
 			if( isMathFunction() ) {
 				checkMathFunctionParam();

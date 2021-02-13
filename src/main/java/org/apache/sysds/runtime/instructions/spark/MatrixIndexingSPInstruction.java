@@ -508,8 +508,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			throws Exception 
 		{	
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(kv);
-			ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
-			OperationsOnMatrixValues.performSlice(in, _ixrange, _blen, outlist);
+			ArrayList<IndexedMatrixValue> outlist = OperationsOnMatrixValues.performSlice(in, _ixrange, _blen);
 			return SparkUtils.fromIndexedMatrixBlock(outlist).iterator();
 		}		
 	}
@@ -534,8 +533,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			throws Exception 
 		{	
 			IndexedMatrixValue in = new IndexedMatrixValue(kv._1(), kv._2());
-			ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
-			OperationsOnMatrixValues.performSlice(in, _ixrange, _blen, outlist);
+			ArrayList<IndexedMatrixValue> outlist = OperationsOnMatrixValues.performSlice(in, _ixrange, _blen);
 			return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));
 		}		
 	}
@@ -571,8 +569,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			{
 				IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg);
 				
-				ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
-				OperationsOnMatrixValues.performSlice(in, _ixrange, _blen, outlist);
+				ArrayList<IndexedMatrixValue> outlist = OperationsOnMatrixValues.performSlice(in, _ixrange, _blen);
 				
 				assert(outlist.size() == 1); //1-1 row/column block indexing
 				return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));

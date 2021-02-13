@@ -113,7 +113,6 @@ detectDuplicates = function(Matrix[Double] LHS_adj, Matrix[Double] RHS_adj)
   n = nrow(LHS_adj)
   adjacency = LHS_adj * RHS_adj  
   # find duplicates
-  # TODO size propagation issue of adjacency matrix inside components call
   colDuplicates = components(G=adjacency[1:n, 1:n], verbose=FALSE)
   MD = colDuplicates * (rowSums(adjacency[1:n, 1:n]) > 0)
 }

@@ -75,7 +75,7 @@ public class FederatedRequest implements Serializable {
 		_id = id;
 		_data = data;
 		setCheckPrivacy();
-		if (DMLScript.LINEAGE)
+		if (DMLScript.LINEAGE && method == RequestType.PUT_VAR)
 			setChecksum();
 	}
 	
@@ -161,7 +161,7 @@ public class FederatedRequest implements Serializable {
 			if (ob instanceof CacheBlock) {
 				try {
 					CacheBlock cb = (CacheBlock)ob;
-					long cbsize = LazyWriteBuffer.getCacheBlockSize((CacheBlock)ob);
+					long cbsize = LazyWriteBuffer.getCacheBlockSize(cb);
 					DataOutput dout = new CacheDataOutput(new byte[(int)cbsize]);
 					cb.write(dout);
 					byte bytes[] = ((CacheDataOutput) dout).getBytes();

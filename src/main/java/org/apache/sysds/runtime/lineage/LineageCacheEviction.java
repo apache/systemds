@@ -70,7 +70,8 @@ public class LineageCacheEviction
 			// Don't add the memory pinned entries in weighted queue. 
 			// The eviction queue should contain only entries that can
 			// be removed or spilled to disk.
-			//entry.setTimestamp();
+
+			// Set timestamp, score, and scale score by #misses
 			entry.computeScore(_removelist); 
 			// Adjust score according to cache miss counts.
 			weightedQueue.add(entry);
@@ -85,11 +86,11 @@ public class LineageCacheEviction
 				weightedQueue.add(entry);
 			}
 		}
-		// Increase computation time of the sought entry.
+		// Scale score of the sought entry after every cache hit
 		// FIXME: avoid when called from partial reuse methods
 		if (LineageCacheConfig.isCostNsize()) {
 			if (weightedQueue.remove(entry)) {
-				entry.updateComputeTime();
+				entry.updateScore();
 				weightedQueue.add(entry);
 			}
 		}
@@ -99,7 +100,7 @@ public class LineageCacheEviction
 		if (cache.remove(e._key) != null)
 			_cachesize -= e.getSize();
 
-		// Increase priority if same entry is removed multiple times
+		// Maintain miss count to increase the score if the item enters the cache again
 		if (_removelist.containsKey(e._key))
 			_removelist.replace(e._key, _removelist.get(e._key)+1);
 		else
@@ -224,7 +225,6 @@ public class LineageCacheEviction
 			// Estimate time to write to FS + read from FS.
 			double spilltime = getDiskSpillEstimate(e) * 1000; // in milliseconds
 			double exectime = ((double) e._computeTime) / 1000000; // in milliseconds
-			//FIXME: this comuteTime is not adjusted according to hit/miss counts
 
 			if (LineageCache.DEBUG) {
 				System.out.print("LI = " + e._key.getOpcode());

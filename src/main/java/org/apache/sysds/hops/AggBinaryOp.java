@@ -977,19 +977,19 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		//right side cached (no agg if left has just one column block)
 		if(  method == MMultMethod.MAPMM_R && getInput().get(0).getDim2() >= 0 //known num columns
-	         && getInput().get(0).getDim2() <= getInput().get(0).getBlocksize() ) 
-        {
-            ret = false;
-        }
-        
+			&& getInput().get(0).getDim2() <= getInput().get(0).getBlocksize() ) 
+		{
+			ret = false;
+		}
+
 		//left side cached (no agg if right has just one row block)
-        if(  method == MMultMethod.MAPMM_L && getInput().get(1).getDim1() >= 0 //known num rows
-             && getInput().get(1).getDim1() <= getInput().get(1).getBlocksize() ) 
-        {
-       	    ret = false;
-        }
-        
-        return ret;
+		if(  method == MMultMethod.MAPMM_L && getInput().get(1).getDim1() >= 0 //known num rows
+			&& getInput().get(1).getDim1() <= getInput().get(1).getBlocksize() ) 
+		{
+			ret = false;
+		}
+
+		return ret;
 	}
 	
 	/**
@@ -1274,6 +1274,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		if( isMatrixMultiply() ) {
 			setDim1(input1.getDim1());
 			setDim2(input2.getDim2());
+			setNnz(-1); // for reset on recompile w/ unknowns 
 			if( input1.getNnz() == 0 || input2.getNnz() == 0 )
 				setNnz(0);
 		}

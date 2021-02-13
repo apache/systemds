@@ -116,8 +116,8 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 				boolean codegen = ConfigurationManager.isCodegenEnabled();
 				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
 				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
-				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, reset);
-				
+				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+
 				if( DMLScript.STATISTICS ){
 					long t1 = System.nanoTime();
 					Statistics.incrementFunRecompileTime(t1-t0);

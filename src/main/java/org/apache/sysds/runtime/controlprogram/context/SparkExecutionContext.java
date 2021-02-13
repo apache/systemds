@@ -594,7 +594,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//create new broadcast handle (never created, evicted)
 			// account for overwritten invalid broadcast (e.g., evicted)
 			if (cd.getBroadcastHandle() != null)
-				CacheableData.addBroadcastSize(-cd.getBroadcastHandle().getNonPartitionedBroadcastSize());
+				CacheableData.addBroadcastSize(-cd.getBroadcastHandle().getSize());
 
 			// read the matrix block
 			CacheBlock cb = cd.acquireRead();
@@ -609,7 +609,7 @@ public class SparkExecutionContext extends ExecutionContext
 				}
 				cd.getBroadcastHandle().setNonPartitionedBroadcast(brBlock,
 					OptimizerUtils.estimateSize(cd.getDataCharacteristics()));
-				CacheableData.addBroadcastSize(cd.getBroadcastHandle().getNonPartitionedBroadcastSize());
+				CacheableData.addBroadcastSize(cd.getBroadcastHandle().getSize());
 
 				if (DMLScript.STATISTICS) {
 					Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
@@ -643,7 +643,7 @@ public class SparkExecutionContext extends ExecutionContext
 		if (bret == null) {
 			//account for overwritten invalid broadcast (e.g., evicted)
 			if (mo.getBroadcastHandle() != null)
-				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getPartitionedBroadcastSize());
+				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
 
 			//obtain meta data for matrix
 			int blen = (int) mo.getBlocksize();
@@ -674,7 +674,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			mo.getBroadcastHandle().setPartitionedBroadcast(bret,
 				OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getDataCharacteristics()));
-			CacheableData.addBroadcastSize(mo.getBroadcastHandle().getPartitionedBroadcastSize());
+			CacheableData.addBroadcastSize(mo.getBroadcastHandle().getSize());
 		}
 
 		if (DMLScript.STATISTICS) {
@@ -700,7 +700,7 @@ public class SparkExecutionContext extends ExecutionContext
 		if (bret == null) {
 			//account for overwritten invalid broadcast (e.g., evicted)
 			if (to.getBroadcastHandle() != null)
-				CacheableData.addBroadcastSize(-to.getBroadcastHandle().getPartitionedBroadcastSize());
+				CacheableData.addBroadcastSize(-to.getBroadcastHandle().getSize());
 
 			//obtain meta data for matrix
 			DataCharacteristics dc = to.getDataCharacteristics();
@@ -731,7 +731,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			to.getBroadcastHandle().setPartitionedBroadcast(bret,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(to.getDataCharacteristics()));
-			CacheableData.addBroadcastSize(to.getBroadcastHandle().getPartitionedBroadcastSize());
+			CacheableData.addBroadcastSize(to.getBroadcastHandle().getSize());
 		}
 
 		if (DMLScript.STATISTICS) {
@@ -767,7 +767,7 @@ public class SparkExecutionContext extends ExecutionContext
 		if (bret == null) {
 			//account for overwritten invalid broadcast (e.g., evicted)
 			if (fo.getBroadcastHandle() != null)
-				CacheableData.addBroadcastSize(-fo.getBroadcastHandle().getPartitionedBroadcastSize());
+				CacheableData.addBroadcastSize(-fo.getBroadcastHandle().getSize());
 
 			//obtain meta data for frame
 			int blen = OptimizerUtils.getDefaultFrameSize();
@@ -798,7 +798,7 @@ public class SparkExecutionContext extends ExecutionContext
 			
 			fo.getBroadcastHandle().setPartitionedBroadcast(bret,
 				OptimizerUtils.estimatePartitionedSizeExactSparsity(fo.getDataCharacteristics()));
-			CacheableData.addBroadcastSize(fo.getBroadcastHandle().getPartitionedBroadcastSize());
+			CacheableData.addBroadcastSize(fo.getBroadcastHandle().getSize());
 		}
 
 		if (DMLScript.STATISTICS) {
@@ -1417,7 +1417,7 @@ public class SparkExecutionContext extends ExecutionContext
 				if( bc != null ) //robustness evictions
 					cleanupBroadcastVariable(bc);
 			}
-			CacheableData.addBroadcastSize(-bob.getNonPartitionedBroadcastSize());
+			CacheableData.addBroadcastSize(-bob.getSize());
 		}
 
 		//recursively process lineage children
@@ -1471,6 +1471,10 @@ public class SparkExecutionContext extends ExecutionContext
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
 			getRDDHandleForMatrixObject(mo, FileFormat.BINARY);
 
+		//avoid unnecessary repartitioning/caching if data already partitioned
+		if( SparkUtils.isHashPartitioned(in) )
+			return;
+		
 		//avoid unnecessary caching of input in order to reduce memory pressure
 		if( mo.getRDDHandle().allowsShortCircuitRead()
 			&& isRDDMarkedForCaching(in.id()) && !isRDDCached(in.id()) ) {

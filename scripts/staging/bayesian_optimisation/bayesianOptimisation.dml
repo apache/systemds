@@ -1,65 +1,92 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
 # INPUT PARAMETERS:
 # -----------------------------------------------------------------------------------------------------
 # NAME           TYPE           DEFAULT  MEANING
 # -----------------------------------------------------------------------------------------------------
-# X              Matrix[Double]  ---     Model.
-# y              Matrix[Double]  ---     Targets.
-# fAqu           String          ---     Name of the aquisition function to optimize.
-# kernel         String          ---     Kernelfunction to use.
-# paramNames     Matrix[String]  ---     Name of the hyper parameters to optimize.
+# xTrain         Matrix[Double]  ---     Trainings data x used to score the hyperparameter sets.
+# y              Matrix[Double]  ---     Trainings targets used to score the hyperparameter sets.
+# params         Matrix[String]  ---     Name of the hyper parameters to optimize.
 # paramValues    Matrix[Double]  ---     Values of the hyper parameters to optimize.
+# objective      String          ---     The objective function to train a model with a set of hyperparameters.
+# predictive     String          ---     The predicitve function used to calculate the score.
+# acquisition    String          ---     Name of the acquisition function to maximize.
+# acquParams     List[Unknown]   ---     List of params to apply to the acquisition function.
+# kernel         String          ---     Kernelfunction to use.
+# kernelParams   List[Unknown]   ---     List of params to apply to the kernel.
 # iterations     Integer         ---     Number of training interations.
+# randomSamples  Integer         0       Number of randome samples used to initialize the GaussianP.
+# minimize       Boolean         TRUE    Returns HP set with min score if true.
+# verbose        Boolean         TRUE    Prints additional information if true.
 #
-source("./scripts/staging/scalable_linalg/linalg_decomp.dml") as decomp
 
-
-m_bayesianOptimisation = function(Matrix[Double] X, Matrix[Double] y, String objective, String predictive, List[String] params, List[Unknown] paramValues, String acquisition, List[Unknown] fAquParam, String kernel, Integer iterations, Integer randomSamples = 0, Boolean verbose = TRUE)
-  return (Matrix[Double] B, Frame[Unknown] opt)
+m_bayesianOptimisation = function(Matrix[Double] xTrain, Matrix[Double] yTrain, List[String] params, List[Unknown] paramValues, String objective, String predictive, String acquisition, List[Unknown] acquParams, String kernel, List[Unknown] kernelParams, Integer iterations, Integer randomSamples = 0, Boolean minimize = TRUE, Boolean verbose = TRUE)
+  return (Frame[Unknown] opt)
 {
   numOfParams = length(params);
-
   HP = getMatrixOfParamCombinations(params, paramValues, verbose);
-  [initState, initParams, indexesToRemove] = getModelWithRandomInit(X, y, objective, predictive, HP, numOfParams, randomSamples, verbose);
-  removeUsedParamsFromMatrix(HP, indexesToRemove, verbose);
-  currentBestHP = HP[1,];
+  indexes = getIndexes(nrow(HP));
 
-  Rbeta = matrix(0, nrow(HP), ncol(X));
-  Rloss = matrix(0, nrow(HP), 1);
+  [scores, usedHPIndexes] = getInitScoreAndHyperParamIndexes(
+      xTrain
+    , yTrain
+    , objective
+    , predictive
+    , HP
+    , numOfParams
+    , randomSamples
+    , verbose
+  );
 
-  # loop
-  for (i in 1:iterations) {
-    /*
-    oldMax = 1;
+  [means, variances] = updateModel(indexes, scores, kernel, kernelParams);
 
-    aArgs = list(X, oldMax);
-    aquisition_result = eval(acquisition, aArgs);
+  for (i in 1: iterations) {
 
-    kArgs = list(X, X);
-    kernel_result = eval(kernel, kArgs);
-    */
+    # use aquisition function to get index of next hyperparameter set to try.
+    aArgs = concatArgsList(list(means, variances), acquParams);
+    nextHPSetIdx = as.scalar(eval(acquisition, aArgs)); # Altough double is returned print throw error not being able to print a matrix without toString.
+    nextHPSet = HP[nextHPSetIdx];
 
-
-    tArgs = list(X, y)
-    for ( j in 1:numOfParams) {
-        tArgs = append(tArgs, as.scalar(currentBestHP[1,j]));
-    }
-
-    result = eval(objective, tArgs);
-    #print(toString(result));
+    # eval expensive objective function with hyperparametsers.
+    oArgs = concatArgsMat(list(xTrain, yTrain), nextHPSet);
+    oResult = eval(objective, oArgs);
 
 
-    pArgs = list(X, y, result);
-    predResult = eval(predictive, pArgs);
-    #print(toString(loss));
+    # score result
+    pArgs = list(xTrain, yTrain, oResult);
+    pResult = as.scalar(eval(predictive, pArgs));
+    scores[nextHPSetIdx] = pResult;
+
+    # update model
+    [means, variances] = updateModel(indexes, scores, kernel, kernelParams);
+
+    print("\nIteration: " + i + "\nNext params: " + toString(nextHPSet) + "\n Predictive: " + toString(pResult));
   }
 
-
-  B = X;
-  opt = as.frame(y);
-  print("Works");
-
+  opt = getFinalHPSet(HP, scores, minimize);
+  print("Done");
+  print("\nFinal scores:\n" + toString(scores) + "\nOptimal parameters after " + iterations + ":\n" + toString(opt));
 }
-
 
 getMatrixOfParamCombinations = function(List[String] params, list[Unknown] paramValues, Boolean verbose)
 return (Matrix[Double] HP)
@@ -82,6 +109,8 @@ return (Matrix[Double] HP)
   # Step 1) materialize hyper-parameter combinations
   # (simplify debugging and compared to compute negligible)
   HP = matrix(0, numConfigs, numParams);
+
+
   parfor( i in 1:nrow(HP) ) {
     for( j in 1:numParams )
       HP[i,j] = paramVals[j,as.scalar(((i-1)/cumLens[j,1])%%paramLens[j,1]+1)];
@@ -91,24 +120,20 @@ return (Matrix[Double] HP)
     print("BayesianOptimization: Hyper-parameter combinations: \n"+toString(HP));
 }
 
-getModelWithRandomInit = function(Matrix[Double] X, Matrix[Double] y, String objective, String predictive, Matrix[Double] HP, Integer numOfParams, Integer numOfSamples, Boolean verbose = TRUE)
-return(Matrix[Double] predResults, Matrix[Double] usedHPs, List[Integer] usedHPIndexes) {
+getInitScoreAndHyperParamIndexes = function(Matrix[Double] xTrain, Matrix[Double] yTrain, String objective, String predictive, Matrix[Double] HP, Integer numOfParams, Integer numOfSamples, Boolean verbose = TRUE)
+return(Matrix[Double] scores, List[Integer] usedHPIndexes) {
   samples = sample(nrow(HP), numOfSamples);
-  predResults = matrix(0, numOfSamples, 1);
+  scores = matrix(0, nrow(HP), 1);
   usedHPs = matrix(0, numOfSamples, numOfParams);
   usedHPIndexes = list();
-
-  # DODO YOU NEED TO REMOVE THE ELEMENTS WHICH ARE NOW USED!
 
   for ( sampleIdx in 1: numOfSamples) {
     rndNum = as.scalar(samples[sampleIdx,1]);
     usedHPIndexes = append(usedHPIndexes, rndNum);
     HPSet = HP[rndNum,];
 
-
-
     # calc objective
-    tArgs = list(X, y);
+    tArgs = list(xTrain, yTrain);
     for ( paramIdx in 1: numOfParams) {
         print(sampleIdx + " " + paramIdx);
         tArgs = append(tArgs, as.scalar(HPSet[1, paramIdx]));
@@ -117,56 +142,128 @@ return(Matrix[Double] predResults, Matrix[Double] usedHPs, List[Integer] usedHPI
     objResult = eval(objective, tArgs);
 
     # calc predictive / score
-    pArgs = list(X, y, objResult);
+    pArgs = list(xTrain, yTrain, objResult);
     predResult = eval(predictive, pArgs);
-    predResults[sampleIdx] = predResult;
+    scores[rndNum] = predResult;
   }
 
   if (verbose) {
     print("\nInit model with randome samples:");
-    print("\npredictive result:\n" + toString(predResults) +
+    print("\nscores:\n" + toString(scores) +
           "\nhyperparameters:\n" + toString(usedHPs) +
           "\nhyperparameter Indexes:\n" + toString(usedHPIndexes));
   }
 }
 
-removeUsedParamsFromMatrix = function(Matrix[Double] HP, List[Integer] indexesToRemove, Boolean verbose = TRUE)
-return(Matrix[Double] newHP)
+getIndexes = function(Integer numOfSamples)
+return (Matrix[Double] indexes)
 {
-    # DODO YOU NEED TO SELECT WHICH ROWS TO DELETE
-  mask = matrix(1, nrow(HP), 1);
-  newHP = HP;
-  numRowsBefore = nrow(newHP);
-
-  for( i in 1:length(indexesToRemove)) {
-    mask[i,1] = 0;
-  }
-
-  mask = mask == 1;
-  newHP = removeEmpty(target=newHP, margin="rows", select=mask);
-  numRowsAfter = nrow(newHP);
-
-  if ( verbose ) {
-    print("\nRemoving indexes:\n" + toString(indexesToRemove));
-    print("\nResult after removing indexes:\n" + toString(newHP));
-    print("\n#Rows before: " + numRowsBefore + " and after: " + numRowsAfter);
+  indexes = matrix(0, numOfSamples, 1);
+  for (i in 1:numOfSamples) {
+    indexes[i,1] = i;
   }
 }
 
-posterior = function(Matrix[Double] xNew, Matrix[Double] xTrain, Matrix[Double] yTrain, String kernel)
-return (Matrix[Double] mean, Matrix[Double] variance)
+updateModel = function(Matrix[Double] indexes, Matrix[Double] scores, String kernel, List[Unknown] kernelParams)
+return (Matrix[Double] means, Matrix[Double] variances)
 {
-  KArgs = list(xTrain, xTrain);
+  numOfSamples = nrow(indexes);
+  means = matrix(0, numOfSamples, 1);
+  variances = matrix(0, numOfSamples, 1);
+
+  [firstMean, firstVariance] = getMeanAndVarianceOfFirstIndex(as.scalar(scores[1,1]));
+  means[1,1] = firstMean;
+  variances[1,1] = firstVariance;
+
+  for (i in 2:numOfSamples) {
+    [mean, variance] = getMeanAndVariance(
+        indexes[1:i-1,1]
+      , as.matrix(i)
+      , scores[1:i-1,1]
+      , kernel
+      , kernelParams
+    );
+    means[i,1] = mean;
+    variances[i,1] = variance;
+  }
+
+  print("\nMeans:\n" + toString(means) + "\nVariances\n" + toString(variances));
+}
+
+getMeanAndVarianceOfFirstIndex = function(Double score)
+return (Double mean, Double variance)
+{
+  if (score == 0) { # first index not sampled
+    mean = 0;
+    variance = 1;
+  } else { # first index sampled
+    mean = score;
+    variance = 0;
+  }
+}
+
+getMeanAndVariance = function(Matrix[Double] indexes, Matrix[Double] xNew, Matrix[Double] scores, String kernel, List[Unknown] kernelParams)
+return (Double mean, Double variance)
+{
+  KArgs = concatArgsList(list(indexes, indexes), kernelParams);
   K = eval(kernel, KArgs);
 
-  KsArgs = list(xTrain, xNew);
+  KsArgs = concatArgsList(list(indexes, xNew), kernelParams);
   Ks = eval(kernel, KsArgs);
 
-  KssArgs = list(xNew, xNew);
+  KssArgs = concatArgsList(list(xNew, xNew), kernelParams);
   Kss = eval(kernel, KssArgs);
 
   K_inv = inv(K);
 
-  mean = t(Ks) %*% K_inv %*% yTrain;
-  variance = Kss - t(Ks) %*% K_inv %*% Ks;
+  #TODO: This throws an error. When scores is a vector with only zeroes [0.000, 0.000, 0.000], than the matrix multiplication seems to not correctly count the rows. nrow(scores) shows the correct result. This only happens when scores is provided as a argument to the function as a new matrix created in the function scope works without an issue.
+  #mean = as.scalar(t(Ks) %*% K_inv %*% scores);
+
+  w_scores = getWorkaroundMat(scores);
+  mean = as.scalar(t(Ks)%*%K_inv%*%w_scores);
+  variance = as.scalar(Kss - t(Ks) %*% K_inv %*% Ks);
+
+  print("\n Mean, Variance:\n" + mean + "\n" + variance);
+}
+
+# Returns a copy of the input matrix. This workaround prevents an issue where the matrix optimizer would not correctly count the dimension of the input matrix.
+getWorkaroundMat = function(Matrix[Double] scores)
+return (Matrix[Double] wScores) 
+{
+  wScores = matrix(0, nrow(scores), 1);
+  for (i in 1:nrow(scores)) {
+    wScores[i,1] = scores[i,1];
+  }
+}
+
+concatArgsList = function(List[Unknown] a, List[Unknown] b)
+return (List[Unknown] result)
+{
+  result = a;
+  if ( length(b) != 0 ) {
+    for(i in 1:length(b)) {
+      result = append(result, b[i]);
+    }
+  }
+}
+
+concatArgsMat = function(List[Unknown] a, Matrix[Double] b)
+return (List[Unknown] result)
+{
+  result = a;
+  for(i in 1:ncol(b)) {
+    result = append(result, as.scalar(b[1,i]));
+  }
+}
+
+getFinalHPSet = function(Matrix[Double] HP, Matrix[Double] scores, Boolean minimize)
+return (Frame[Unknown] opt)
+{
+  if (minimize) {
+    idx = as.scalar(rowIndexMin(t(scores)));
+  } else {
+    idx = as.scalar(rowIndexMax(t(scores)));
+  }
+  opt = as.frame(HP[idx]);
+
 }

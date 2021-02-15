@@ -18,29 +18,8 @@
 # under the License.
 #
 #-------------------------------------------------------------
+source("scripts/builtin/sherlockNet.dml") as sherlockNet
 
-source("scripts/staging/fm-regression.dml") as fmRegression
-source("scripts/builtin/sherlockNet.dml") as realSherlock
-
-source("nn/layers/affine.dml") as affine
-source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
-source("nn/layers/dropout.dml") as dropout
-source("nn/layers/relu.dml") as relu
-source("nn/layers/softmax.dml") as softmax
-source("nn/optim/adam.dml") as adam
-# function to train
-
-# function to predict
-
-# build_features(matrix A)
-
-# extract_bag_of_characters_features(raw_sample, n_values), ignore_index=True)
-
-# extract_word_embeddings_features(raw_sample), ignore_index=True)
-
-# infer_paragraph_embeddings_features(raw_sample, vec_dim), ignore_index=True)
-
-# extract_bag_of_words_features(raw_sample), ignore_index=True)
 
 # Frame[] load_file (Input: csv)
 # Rows and columns index from 1. (-.-)
@@ -56,6 +35,9 @@ source("nn/optim/adam.dml") as adam
 #  "created": "2020-12-07 00:00:01 UTC"
 #}
 
+######################################################
+# methods to load and transform the data
+######################################################
 load_processed_test_values = function() return (frame[string] data) {
 
   data = read("../sherlock-project/data/data/short/100_X_test.csv",
@@ -173,6 +155,10 @@ transform_apply_labels = function(frame[string] data, frame[string] meta_data) r
 
 }
 
+##########################################################
+# training and testing of sherlock
+##########################################################
+
 m_sherlock = function (matrix[double] A) return (double m) {
   m = sum(A)/nrow(A)
   processed_train_values = transform_values(load_processed_train_values())
@@ -185,7 +171,7 @@ m_sherlock = function (matrix[double] A) return (double m) {
 
   #train
   hidden_layer_neurons = 500
-  [W1, b1, W2, b2, W3, b3] = realSherlock::train(processed_train_values, processed_train_labels,
+  [W1, b1, W2, b2, W3, b3] = sherlockNet::train(processed_train_values, processed_train_labels,
     processed_val_values, processed_val_labels, hidden_layer_neurons)
 
   write(W1, "../sherlock-project/data/data/short/W1")
@@ -195,15 +181,12 @@ m_sherlock = function (matrix[double] A) return (double m) {
   write(W3, "../sherlock-project/data/data/short/W3")
   write(b3, "../sherlock-project/data/data/short/b3")
 
-  predict_values = realSherlock::predict(processed_test_values, W1, b1, W2, b2, W3, b3)
+  predict_values = sherlockNet::predict(processed_test_values, W1, b1, W2, b2, W3, b3)
   write(predict_values, "../sherlock-project/data/data/short/predict_values")
   write(processed_test_labels, "../sherlock-project/data/data/short/processed_test_labels")
-  [loss, accuracy] = realSherlock::eval(predict_values, processed_test_labels)
+  [loss, accuracy] = sherlockNet::eval(predict_values, processed_test_labels)
   print("test loss: " + loss)
   print("test accuracy: " + accuracy)
-
-  #TODO
-  #feature specific subnetworks
 }
 
 

@@ -840,25 +840,6 @@ public class UtilFunctions {
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
 	}
 
-	public static FrameBlock getSplittedString (String input) {
-		//Frame f = new Frame();
-		String[] string_array = input.split("'[ ]*,[ ]*'");
-		ValueType[] schema = new ValueType[string_array.length];
-		for(int i=0; i< string_array.length; i++)
-			schema[i] = ValueType.STRING;
-		FrameBlock fb = new FrameBlock(schema);
-		fb.appendRow(string_array);
-		List<String>r = Arrays.asList(string_array);
-		System.out.println("converted FrameBlock: " + fb.toString());
-		return fb;//.subList(0,2);
-	}
-
-	public static String[] getSplittedStringAsArray (String input) {
-		//Frame f = new Frame();
-		String[] string_array = input.split("'[ ]*,[ ]*'");
-		return string_array;//.subList(0,2);
-	}
-
 	public static String columnStringToSherlockFeatures(String input) {
 
     StringBuffer sb = new StringBuffer(input);

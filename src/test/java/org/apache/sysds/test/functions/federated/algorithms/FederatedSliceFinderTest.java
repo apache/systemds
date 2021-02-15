@@ -58,7 +58,7 @@ public class FederatedSliceFinderTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{160, 40, true}});
+		return Arrays.asList(new Object[][] {{12, 4, true}});
 	}
 
 
@@ -132,18 +132,26 @@ public class FederatedSliceFinderTest extends AutomatedTestBase {
 		System.arraycopy(e_resize, 0, e, 0, e_resize.length - 1);
 		writeInputMatrixWithMTD("X", X, true);
 		writeInputMatrixWithMTD("e", e, true);
+//
+//		// row fed
+//		int r = X.length / 4;
+//		int c = X[0].length;
+//		double [][] X1 = new double[r][c];
+//		double [][] X2 = new double[r][c];
+//		double [][] X3 = new double[r][c];
+//		double [][] X4 = new double[r][c];
+//		System.arraycopy(X,0, X1,0, r);
+//		System.arraycopy(X,r, X2, 0, r);
+//		System.arraycopy(X,2 * r, X3,0, r);
+//		System.arraycopy(X,3 * r, X4,0, r);
 
-		// row fed
-		int r = X.length / 4;
-		int c = X[0].length;
-		double [][] X1 = new double[r][c];
-		double [][] X2 = new double[r][c];
-		double [][] X3 = new double[r][c];
-		double [][] X4 = new double[r][c];
-		System.arraycopy(X,0, X1,0, r);
-		System.arraycopy(X,r, X2, 0, r);
-		System.arraycopy(X,2 * r, X3,0, r);
-		System.arraycopy(X,3 * r, X4,0, r);
+		int r = rows / 4;
+		int c = cols;
+
+		double[][] X1 = getRandomMatrix(r, c, 1, 3, 1, 3);
+		double[][] X2 = getRandomMatrix(r, c, 1, 3, 1, 7);
+		double[][] X3 = getRandomMatrix(r, c, 1, 3, 1, 8);
+		double[][] X4 = getRandomMatrix(r, c, 1, 3, 1, 9);
 
 		MatrixCharacteristics mc = new MatrixCharacteristics(r, c, blocksize, r * c);
 		writeInputMatrixWithMTD("X1", X1, false, mc);
@@ -181,7 +189,8 @@ public class FederatedSliceFinderTest extends AutomatedTestBase {
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
-			"rows=" + X.length, "cols=" + X[0].length,
+//			"rows=" + X.length, "cols=" + X[0].length,
+			"rows=" + rows, "cols=" + cols,
 			"in_e=" + input("e"), "in_K=" + K,
 			"in_tpEval=" + String.valueOf(!dp).toUpperCase(),
 			"verbose="+ String.valueOf(VERBOSE).toUpperCase(),

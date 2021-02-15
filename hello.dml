@@ -1,3 +1,4 @@
+source("scripts/builtin/sherlock.dml") as sherlock
 print("Hello, World!")
 
 A = matrix(0, rows=10, cols=10)

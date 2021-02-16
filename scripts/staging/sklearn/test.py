@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import numpy as np
 from sklearn.datasets import make_blobs
 

@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 import pickle
 
+# TODO: rename scirpt, move mappers into won file?, 
+# own file for each mapper?
+# managed by directories?
+# import into main script?
+
 def load(path):
     with open(path, 'rb') as f:
         return pickle.load(f)
@@ -70,6 +75,27 @@ class KmeansMapper(Mapper):
         self.mapped_output = [
             'C', # The output matrix with the centroids
             'Y'  # The mapping of records to centroids
+        ]
+
+class DBSCANMapper(Mapper):
+    def __init__(self):
+        self.name = 'dbscan'
+        self.is_intermediate = False
+    
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            params.get('eps', 0.5),
+            params.get('min_samples', 5)
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'clusterMembers'
         ]
 
 class StandardScalerMapper(Mapper):

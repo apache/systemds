@@ -157,6 +157,7 @@ class GaussianMixtureMapper(Mapper):
             'bic'
         ]
 
+# GMM Mapper
 class TweedieRegressorMapper(Mapper):
     def __init__(self):
         self.name = 'glm'
@@ -181,6 +182,31 @@ class TweedieRegressorMapper(Mapper):
             0.0, # disp
             200, # moi
             0 # mii
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'beta'
+        ]
+
+# multiLogMapper
+class LogisticRegressionMapper(Mapper):
+        def __init__(self):
+        self.name = 'multiLogReg'
+        self.is_intermediate = False
+    
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            0 if params.get('fit_intercept', 1) else 1, # sklearn does not know last case
+            params.get('C', 0.0),
+            params.get('tol', 0.000001),
+            100, # maxi
+            0, # maxii
         ]
 
     def __map_output(self):

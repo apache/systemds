@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -33,6 +35,7 @@ public class LineageItem {
 	private final String _data;
 	private LineageItem[] _inputs;
 	private int _hash = 0;
+	private LineageItem _dedupPatch;
 	private long _distLeaf2Node;
 	// init visited to true to ensure visited items are
 	// not hidden when used as inputs to new items
@@ -63,6 +66,20 @@ public class LineageItem {
 
 	public LineageItem(String data, String opcode, LineageItem[] inputs) {
 		this(_idSeq.getNextID(), data, opcode, inputs);
+	}
+
+	public LineageItem(String opcode, LineageItem dedupPatch, LineageItem[] inputs) { 
+		this(_idSeq.getNextID(), "", opcode, inputs);
+		// maintain a pointer to the dedup patch
+		_dedupPatch = dedupPatch;
+		_hash = _dedupPatch._hash;
+	}
+
+	public LineageItem(String opcode, LineageItem dedupPatch, int dpatchHash, LineageItem[] inputs) { 
+		this(_idSeq.getNextID(), "", opcode, inputs);
+		// maintain a pointer to the dedup patch
+		_dedupPatch = dedupPatch;
+		_hash = dpatchHash;
 	}
 	
 	public LineageItem(LineageItem li) {
@@ -95,7 +112,8 @@ public class LineageItem {
 	
 	public void resetInputs() {
 		_inputs = null;
-		_hash = 0;
+		//_hash = 0;
+		// Keep the hash for equality check
 	}
 	
 	public void setInput(int i, LineageItem item) {
@@ -151,12 +169,20 @@ public class LineageItem {
 		return _opcode;
 	}
 	
+	public boolean isPlaceholder() {
+		return _opcode.startsWith(LineageItemUtils.LPLACEHOLDER);
+	}
+	
 	public void setDistLeaf2Node(long d) {
 		_distLeaf2Node = d;
 	}
 	
 	public long getDistLeaf2Node() {
 		return _distLeaf2Node;
+	}
+	
+	public LineageItem getDedupPatch() {
+		return _dedupPatch;
 	}
 	
 	public LineageItemType getType() {
@@ -183,7 +209,8 @@ public class LineageItem {
 			return false;
 		
 		resetVisitStatusNR();
-		boolean ret = equalsLINR((LineageItem) o);
+		//boolean ret = equalsLINR((LineageItem) o);
+		boolean ret = equalsLINR_dedup((LineageItem) o);
 		resetVisitStatusNR();
 		return ret;
 	}
@@ -230,10 +257,152 @@ public class LineageItem {
 		
 		return ret;
 	}
+
+	// Deduplication aware equality check
+	private boolean equalsLINR_dedup(LineageItem that) {
+		Stack<LineageItem> s1 = new Stack<>();
+		Stack<LineageItem> s2 = new Stack<>();
+		s1.push(this);
+		s2.push(that);
+		//boolean ret = false;
+		boolean ret = true;
+		while (!s1.empty() && !s2.empty()) {
+			LineageItem li1 = s1.pop();
+			LineageItem li2 = s2.pop();
+
+			if (li1.isVisited() || li1 == li2)
+				// skip this sub-DAG.
+				continue;
+
+			if (!li1.isDedup() && !li2.isDedup()) {
+				// Opcodes don't match if either entry is dedup
+				ret = li1._opcode.equals(li2._opcode);
+				ret &= li1._data.equals(li2._data);
+			}
+			ret &= (li1.hashCode() == li2.hashCode());
+			if (!ret) break;
+
+			if (ret && li1._inputs != null && li1._inputs.length == li2._inputs.length || li1.isDedup() || li2.isDedup())
+				for (int i=0; i<li1._inputs.length; i++) {
+					// Find the i'th inputs. If the input is a non-leaf placeholder, read the inputs to it,
+					// else read the normal input or the leaf placeholder.
+					LineageItem in1 = li1._inputs[i].isPlaceholder() ? 
+							li1._inputs[i]._inputs != null ? li1._inputs[i]._inputs[0]:li1._inputs[i] : li1._inputs[i];
+					LineageItem in2 = li2._inputs[i].isPlaceholder() ? 
+							li2._inputs[i]._inputs != null ? li2._inputs[i]._inputs[0]:li2._inputs[i] : li2._inputs[i];
+
+					// If either input is a dedup node, match the corresponding dedup patch DAG to the 
+					// sub-dag of the non-dedup DAG. If matched, push the inputs into the stacks in a
+					// order-preserving way.
+					if (in1.isDedup() && !in2.isDedup()) {
+						Map<Integer, LineageItem> phMap = new HashMap<>();
+						in1._dedupPatch.resetVisitStatusNR();
+						ret = equalsDedupPatch(in1._dedupPatch, in2, phMap);
+						in1.setVisited();
+						if (!ret) {
+							li1.setVisited();
+							return false;
+						}
+						for (Map.Entry<Integer, LineageItem> ph : phMap.entrySet()) {
+							s1.push(in1._inputs[ph.getKey()]);
+							s2.push(ph.getValue());
+						}
+					}
+					else if (in2.isDedup() && !in1.isDedup()) {
+						Map<Integer, LineageItem> phMap = new HashMap<>();
+						ret = equalsDedupPatch(in1, in2._dedupPatch, phMap);
+						if (!ret) {
+							li1.setVisited();
+							return false;
+						}
+						for (Map.Entry<Integer, LineageItem> ph : phMap.entrySet()) {
+							s1.push(ph.getValue());
+							s1.push(in2._inputs[ph.getKey()]);
+						}
+					}
+					// If both inputs are dedup nodes, compare the corresponding patches
+					// and push all the inputs into the stacks.
+					else if (in1.isDedup() && in2.isDedup()) {
+						in1._dedupPatch.resetVisitStatusNR();
+						in2._dedupPatch.resetVisitStatusNR();
+						ret = in1._dedupPatch.equalsLINR(in2._dedupPatch);
+						in1.setVisited();
+						if (!ret) {
+							li1.setVisited();
+							return false;
+						}
+						if (in1._inputs.length == in2._inputs.length)
+							// FIXME: Two dedup nodes can have matching patches but different #inputs
+							for (int j=0; j<in1._inputs.length; j++) {
+								s1.push(in1.getInputs()[j]);
+								s2.push(in2.getInputs()[j]);
+							}
+						else {
+							li1.setVisited();
+							return false;
+						}
+					}
+					else {
+						s1.push(in1);
+						s2.push(in2);
+					}
+				}
+			li1.setVisited();
+		}
+		return ret;
+	}
+	
+	// Compare a dedup patch with a sub-DAG, and map the inputs of the sub-dag
+	// to the placeholder inputs of the dedup patch
+	private boolean equalsDedupPatch(LineageItem dli1, LineageItem dli2, Map<Integer, LineageItem> phMap) {
+		Stack<LineageItem> s1 = new Stack<>();
+		Stack<LineageItem> s2 = new Stack<>();
+		s1.push(dli1);
+		s2.push(dli2);
+		boolean ret = true;
+		while (!s1.empty() && !s2.empty()) {
+			LineageItem li1 = s1.pop();
+			LineageItem li2 = s2.pop();
+			if (li1.isVisited() || li1 == li2)
+				continue; //FIXME: fill phMap
+			ret = li1._opcode.equals(li2._opcode);
+			ret &= li1._data.equals(li2._data);
+			//ret &= (li1.hashCode() == li2.hashCode());
+			// Do not match the hash codes, as the hash of a dedup patch node doesn't represent the whole dag.
+			if (!ret) break;
+			if (ret && li1._inputs != null && li1._inputs.length == li2._inputs.length)
+				for (int i=0; i<li1._inputs.length; i++) {
+					LineageItem in1 = li1.getInputs()[i];
+					LineageItem in2 = li2.getInputs()[i];
+					in1 = in1.isPlaceholder() ? in1._inputs != null ? in1.getInputs()[0] : in1 : in1;
+					in2 = in2.isPlaceholder() ? in2._inputs != null ? in2.getInputs()[0] : in2 : in2;
+					if (in1.isPlaceholder() && in1._inputs == null && !in2.isPlaceholder()) {
+						int phId = Integer.parseInt(in1.getOpcode().substring(3));
+						phMap.put(phId, in2);
+						continue;
+					}
+					if (in2.isPlaceholder() && in2._inputs == null && !in1.isPlaceholder()) {
+						int phId = Integer.parseInt(in2.getOpcode().substring(3));
+						phMap.put(phId, in1);
+						continue;
+					}
+					if (in1.isPlaceholder() && in2.isPlaceholder())
+						continue;
+
+					s1.push(in1);
+					s2.push(in2);
+				}
+			li1.setVisited();
+		}
+		return ret;
+	}
 	
 	@Override
 	public int hashCode() {
 		if (_hash == 0) {
+			if (isPlaceholder() && _inputs != null)
+				return _inputs[0].hashCode();
+
 			//compute hash over opcode and all inputs
 			int h = UtilFunctions.intHashCode(
 				_opcode.hashCode(), _data.hashCode());

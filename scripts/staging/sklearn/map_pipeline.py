@@ -98,6 +98,31 @@ class DBSCANMapper(Mapper):
             'clusterMembers'
         ]
 
+class LinearSVMMapper(Mapper):
+    def __init__(self):
+        self.name = 'l2svm' # Handle model validation?
+        self.is_intermediate = False
+    
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            params.get('fit_intercept', False),
+            params.get('tol', 0.001),
+            params.get('C', 1.0),
+            params.get('max_iter', 100),
+            params.get('verbose', False),
+            -1 # column_id is unkown in sklearn
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'model'
+        ]
+
 class StandardScalerMapper(Mapper):
     def __init__(self):
         self.name = 'scale'

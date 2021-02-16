@@ -44,9 +44,9 @@ return (Double index)
 }
 
 params = list("icpt", "reg", "tol", "maxi", "verbose");
-paramValues = list(as.matrix(0), 10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3), as.matrix(TRUE));
+paramValues = list(as.matrix(0), 10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3), as.matrix(1));
 
-N = 200;
+N = 60;
 X = read($1);
 y = read($2);
 
@@ -64,13 +64,13 @@ opt = bayOpt::m_bayesianOptimisation(
   , objective = "lm"
   , predictive = "l2norm"
   , acquisition = "upperConfidenceBound"
-  , acquParams = list(1)
+  , acquParams = list(2) # beta
   , kernel = "gaussianKernel"
-  , kernelParams = list(1)
-  , iterations = 10
-  , randomSamples = 2
+  , kernelParams = list(1) # variance
+  , iterations = 2
+  , randomSamples = 5
   , minimize = TRUE
-  , verbose = FALSE
+  , verbose = TRUE
 );
 
 write(opt, $1);

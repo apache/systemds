@@ -93,6 +93,26 @@ class StandardScalerMapper(Mapper):
             'Y'
         ]
 
+
+class NormalizeMapper(Mapper):
+    def __init__(self):
+        self.name = 'normalize'
+        self.is_intermediate = True
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'Y'
+        ]
+
 class SklearnToDMLMapper:
     def __init__(self, pipeline):
         self.steps = pipeline.steps

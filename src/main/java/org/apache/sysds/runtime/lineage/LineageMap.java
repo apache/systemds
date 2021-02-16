@@ -72,14 +72,19 @@ public class LineageMap {
 		}
 	}
 	
-	public void processDedupItem(LineageMap lm, Long path, LineageItem[] liinputs, String name) {
+	public void processDedupItem(LineageMap lm, Long path, LineageItem[] liinputs, String name, Map<String, Integer> dpatchHashList) {
 		String delim = LineageDedupUtils.DEDUP_DELIM;
 		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
 			// Encode everything needed by the recomputation logic in the
 			// opcode to map this lineage item to the right patch.
 			String opcode = LineageItem.dedupItemOpcode + delim + entry.getKey()
 				+ delim + name + delim + path.toString();
-			LineageItem li = new LineageItem(opcode, liinputs);
+			// If reuse is enabled, set the hash of the dedup node as of the corresponding root.
+			// This way dedup nodes have the same hash as the matching non-dedup DAGs, which is 
+			// required for reuse.
+			// Note: 2 node may point to the same patch, but have different hashes
+			LineageItem li = dpatchHashList == null ? new LineageItem(opcode, entry.getValue(), liinputs)
+					: new LineageItem(opcode, entry.getValue(), dpatchHashList.get(entry.getKey()), liinputs);
 			addLineageItem(Pair.of(entry.getKey(), li));
 		}
 	}
@@ -224,7 +229,7 @@ public class LineageMap {
 			_traces.put(keyTo, input);
 	}
 	
-	private LineageItem removeLineageItem(String key) {
+	public LineageItem removeLineageItem(String key) {
 		//remove item if present
 		return _traces.remove(key);
 	}

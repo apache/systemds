@@ -123,6 +123,40 @@ class LinearSVMMapper(Mapper):
             'model'
         ]
 
+class GaussianMixtureMapper(Mapper):
+    def __init__(self):
+        self.name = 'gmm'
+        self.is_intermediate = False
+        self.model_map = {
+            'full': 'VVV',
+            'tied': 'EEE',
+            'diag': 'VVI',
+            'spherical': 'VVI'
+        }
+    
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            params.get('n_components', 3),
+            self.model_map.get(params.get('covariance_type', 'VVV')),
+            params.get('init_params', 'kmeans'),
+            params.get('max_iter', 100),
+            params.get('reg_covar', 1e-6),
+            params.get('tol', 0.000001)
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'weight',
+            'labels',
+            'df',
+            'bic'
+        ]
+
 class StandardScalerMapper(Mapper):
     def __init__(self):
         self.name = 'scale'

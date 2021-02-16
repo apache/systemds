@@ -25,7 +25,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 
 /**
  * Builder pattern for Compression Settings. See CompressionSettings for details on values.
@@ -47,7 +47,7 @@ public class CompressionSettingsBuilder {
 
 		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		this.lossy = conf.getBooleanValue(DMLConfig.COMPRESSED_LOSSY);
-		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED);
+		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED, CompressionType.CONST);
 		String[] validCompressionsString = conf.getTextValue(DMLConfig.COMPRESSED_VALID_COMPRESSIONS).split(",");
 		for(String comp : validCompressionsString) {
 			validCompressions.add(CompressionType.valueOf(comp));
@@ -183,6 +183,8 @@ public class CompressionSettingsBuilder {
 		// should always contain Uncompressed as an option.
 		if(!validCompressions.contains(CompressionType.UNCOMPRESSED))
 			validCompressions.add(CompressionType.UNCOMPRESSED);
+		if(!validCompressions.contains(CompressionType.CONST))
+			validCompressions.add(CompressionType.CONST);
 		this.validCompressions = validCompressions;
 		return this;
 	}

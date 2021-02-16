@@ -33,14 +33,14 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class LibRightMultBy {
-	private static final Log LOG = LogFactory.getLog(LibRightMultBy.class.getName());
+public class CLALibRightMultBy {
+	private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
 
 	/**
 	 * Right multiply by matrix. Meaning a left hand side compressed matrix is multiplied with a right hand side
@@ -54,7 +54,7 @@ public class LibRightMultBy {
 	 * @param allowOverlap Allow the multiplication to return an overlapped matrix.
 	 * @return The Result Matrix, modified from the ret parameter.
 	 */
-	public static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
+	public static MatrixBlock rightMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v, boolean allowOverlap) {
 
 		if(that instanceof CompressedMatrixBlock)
@@ -62,20 +62,20 @@ public class LibRightMultBy {
 		
 		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
 
-		if(allowOverlappingOutput(colGroups, allowOverlap)) 
+		if(allowOverlappingOutput(colGroups, allowOverlap))
 			return rightMultByMatrixOverlapping(colGroups, that, ret, k, v);
 		else 
 			return rightMultByMatrixNonOverlapping(colGroups, that, ret, k, v);
 		
 	}
 
-	private static boolean allowOverlappingOutput(List<ColGroup> colGroups, boolean allowOverlap) {
+	private static boolean allowOverlappingOutput(List<AColGroup> colGroups, boolean allowOverlap) {
 		if(!allowOverlap) {
 			LOG.debug("Not Overlapping because it is not allowed");
 			return false;
 		}
 		int distinctCount = 0;
-		for(ColGroup g : colGroups) {
+		for(AColGroup g : colGroups) {
 			if(g instanceof ColGroupValue) {
 				distinctCount += ((ColGroupValue) g).getNumValues();
 			}
@@ -93,7 +93,7 @@ public class LibRightMultBy {
 
 	}
 
-	private static MatrixBlock rightMultByMatrixNonOverlapping(List<ColGroup> colGroups, MatrixBlock that,
+	private static MatrixBlock rightMultByMatrixNonOverlapping(List<AColGroup> colGroups, MatrixBlock that,
 		MatrixBlock ret, int k, Pair<Integer, int[]> v) {
 
 		int rl = colGroups.get(0).getNumRows();
@@ -108,7 +108,7 @@ public class LibRightMultBy {
 		return ret;
 	}
 
-	private static MatrixBlock rightMultByMatrixOverlapping(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
+	private static MatrixBlock rightMultByMatrixOverlapping(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
 		int k, Pair<Integer, int[]> v) {
 		int rl = colGroups.get(0).getNumRows();
 		int cl = that.getNumColumns();
@@ -130,7 +130,7 @@ public class LibRightMultBy {
 	 * @param k         number of threads to use
 	 * @param v         The Precalculated counts and Maximum number of tuple entries in the column groups
 	 */
-	public static void rightMultByVector(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result, int k,
+	public static void rightMultByVector(List<AColGroup> colGroups, MatrixBlock vector, MatrixBlock result, int k,
 		Pair<Integer, int[]> v) {
 		// initialize and allocate the result
 		result.allocateDenseBlock();
@@ -182,7 +182,7 @@ public class LibRightMultBy {
 	 * @param result buffer to hold the result; must have the appropriate size already
 	 * @param v      The Precalculated counts and Maximum number of tuple entries in the column groups.
 	 */
-	private static void rightMultByVector(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
+	private static void rightMultByVector(List<AColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
 		Pair<Integer, int[]> v) {
 
 		// delegate matrix-vector operation to each column group
@@ -192,12 +192,12 @@ public class LibRightMultBy {
 		result.recomputeNonZeros();
 	}
 
-	private static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
+	private static MatrixBlock rightMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v) {
 
 		double[] retV = ret.getDenseBlockValues();
 
-		for(ColGroup grp : colGroups) {
+		for(AColGroup grp : colGroups) {
 			if(grp instanceof ColGroupUncompressed) {
 				((ColGroupUncompressed) grp).rightMultByMatrix(that, ret, 0, ret.getNumRows());
 			}
@@ -255,16 +255,16 @@ public class LibRightMultBy {
 		return ret;
 	}
 
-	private static MatrixBlock rightMultByMatrixCompressed(List<ColGroup> colGroups, MatrixBlock that,
+	private static MatrixBlock rightMultByMatrixCompressed(List<AColGroup> colGroups, MatrixBlock that,
 		CompressedMatrixBlock ret, int k, Pair<Integer, int[]> v) {
 
-		for(ColGroup grp : colGroups) 
+		for(AColGroup grp : colGroups) 
 			if(grp instanceof ColGroupUncompressed) 
 				throw new DMLCompressionException(
 					"Right Mult by dense with compressed output is not efficient to do with uncompressed Compressed ColGroups and therefore not supported.");
 			
 
-		List<ColGroup> retCg = new ArrayList<>();
+		List<AColGroup> retCg = new ArrayList<>();
 		if(k == 1) {
 			for(int j = 0; j < colGroups.size(); j++) {
 				ColGroupValue g = (ColGroupValue) colGroups.get(j);
@@ -292,13 +292,14 @@ public class LibRightMultBy {
 			}
 		}
 		ret.allocateColGroupList(retCg);
-		if(retCg.size() > 1)
+		if(retCg.size() > 1){
 			ret.setOverlapping(true);
+		}
 		ret.setNonZeros(-1);
 		return ret;
 	}
 
-	private static ArrayList<RightMatrixPreAggregateTask> preAggregate(List<ColGroup> colGroups, MatrixBlock b,
+	private static ArrayList<RightMatrixPreAggregateTask> preAggregate(List<AColGroup> colGroups, MatrixBlock b,
 		MatrixBlock that, Pair<Integer, int[]> v) {
 		ArrayList<RightMatrixPreAggregateTask> preTask = new ArrayList<>(colGroups.size());
 		preTask.clear();
@@ -310,7 +311,7 @@ public class LibRightMultBy {
 		return preTask;
 	}
 
-	private static void rightMultByVector(List<ColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru,
+	private static void rightMultByVector(List<AColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru,
 		Pair<Integer, int[]> v) {
 		// + 1 to enable containing a single 0 value in the dictionary that was not materialized.
 		// This is to handle the case of a DDC dictionary not materializing the zero values.
@@ -321,7 +322,7 @@ public class LibRightMultBy {
 
 		// process uncompressed column group (overwrites output)
 		// if(inclUC) {
-		for(ColGroup grp : groups) {
+		for(AColGroup grp : groups) {
 			if(grp instanceof ColGroupUncompressed)
 				((ColGroupUncompressed) grp).rightMultByVector(vect, ret, rl, ru);
 		}
@@ -338,7 +339,7 @@ public class LibRightMultBy {
 		// }
 		// process remaining groups (adds to output)
 		double[] values = ret.getDenseBlockValues();
-		for(ColGroup grp : groups) {
+		for(AColGroup grp : groups) {
 			if(!(grp instanceof ColGroupUncompressed)) {
 				grp.rightMultByVector(vect.getDenseBlockValues(), values, rl, ru, grp.getValues());
 			}
@@ -349,7 +350,7 @@ public class LibRightMultBy {
 	}
 
 	private static class RightMatrixMultTask implements Callable<Object> {
-		private final List<ColGroup> _colGroups;
+		private final List<AColGroup> _colGroups;
 		private final double[] _retV;
 		private final List<Future<Pair<int[], double[]>>> _aggB;
 		private final Pair<Integer, int[]> _v;
@@ -358,7 +359,7 @@ public class LibRightMultBy {
 		private final int _rl;
 		private final int _ru;
 
-		protected RightMatrixMultTask(List<ColGroup> groups, double[] retV, List<Future<Pair<int[], double[]>>> aggB,
+		protected RightMatrixMultTask(List<AColGroup> groups, double[] retV, List<Future<Pair<int[], double[]>>> aggB,
 			Pair<Integer, int[]> v, int numColumns, int rl, int ru) {
 			_colGroups = groups;
 			_retV = retV;
@@ -420,14 +421,14 @@ public class LibRightMultBy {
 	}
 
 	private static class RightMatrixVectorMultTask implements Callable<Long> {
-		private final List<ColGroup> _groups;
+		private final List<AColGroup> _groups;
 		private final MatrixBlock _vect;
 		private final MatrixBlock _ret;
 		private final int _rl;
 		private final int _ru;
 		private final Pair<Integer, int[]> _v;
 
-		protected RightMatrixVectorMultTask(List<ColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru,
+		protected RightMatrixVectorMultTask(List<AColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru,
 			Pair<Integer, int[]> v) {
 			_groups = groups;
 			_vect = vect;

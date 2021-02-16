@@ -36,7 +36,7 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
 		ABitmap entireBitMap = BitmapEncoder.extractBitmap(colIndexes, _data, _transposed);
-		return new CompressedSizeInfoColGroup(estimateCompressedColGroupSize(entireBitMap),
+		return new CompressedSizeInfoColGroup(estimateCompressedColGroupSize(entireBitMap, colIndexes),
 			_compSettings.validCompressions);
 	}
 }

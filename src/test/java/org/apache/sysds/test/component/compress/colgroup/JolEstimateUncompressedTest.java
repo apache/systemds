@@ -22,7 +22,7 @@ package org.apache.sysds.test.component.compress.colgroup;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
@@ -42,7 +42,7 @@ public class JolEstimateUncompressedTest extends JolEstimateTest {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		ArrayList<MatrixBlock> mb = new ArrayList<>();
 
-		mb.add(DataConverter.convertToMatrixBlock(new double[][] {{0}}));
+		// mb.add(DataConverter.convertToMatrixBlock(new double[][] {{0}}));
 		mb.add(DataConverter.convertToMatrixBlock(new double[][] {{1}}));
 		mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100, 0, 100, 1.0, 7)));
 		mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 1000, 0, 100, 0.2, 7)));

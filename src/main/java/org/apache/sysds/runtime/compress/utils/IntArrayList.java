@@ -86,6 +86,15 @@ public class IntArrayList {
 			return _data;
 	}
 
+	public int get(int index) {
+		if(_data != null)
+			return _data[index];
+		else if(index == 0)
+			return _val0;
+		else
+			throw new RuntimeException("invalid index to get");
+	}
+
 	public int[] extractValues(boolean trim) {
 		int[] ret = extractValues();
 		return (trim && _size < ret.length) ? Arrays.copyOfRange(ret, 0, _size) : ret;

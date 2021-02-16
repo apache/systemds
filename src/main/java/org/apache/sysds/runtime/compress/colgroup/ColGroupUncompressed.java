@@ -44,7 +44,7 @@ import org.apache.sysds.runtime.util.SortUtils;
  * column contents.
  * 
  */
-public class ColGroupUncompressed extends ColGroup {
+public class ColGroupUncompressed extends AColGroup {
 	private static final long serialVersionUID = 4870546053280378891L;
 
 	/**
@@ -116,7 +116,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 * 
 	 * @param groupsToDecompress compressed columns to subsume. Must contain at least one element.
 	 */
-	protected ColGroupUncompressed(List<ColGroup> groupsToDecompress) {
+	protected ColGroupUncompressed(List<AColGroup> groupsToDecompress) {
 		super(mergeColIndices(groupsToDecompress), groupsToDecompress.get(0)._numRows);
 
 		// Invert the list of column indices
@@ -129,7 +129,7 @@ public class ColGroupUncompressed extends ColGroup {
 		// Create the buffer that holds the uncompressed data, packed together
 		_data = new MatrixBlock(_numRows, _colIndexes.length, false);
 
-		for(ColGroup colGroup : groupsToDecompress) {
+		for(AColGroup colGroup : groupsToDecompress) {
 			colGroup.decompressToBlock(_data, colIndicesInverted);
 		}
 	}
@@ -152,7 +152,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	protected ColGroupType getColGroupType() {
+	public ColGroupType getColGroupType() {
 		return ColGroupType.UNCOMPRESSED;
 	}
 
@@ -171,17 +171,17 @@ public class ColGroupUncompressed extends ColGroup {
 	 * @param groupsToDecompress input to the constructor that decompresses into a temporary UncompressedColGroup
 	 * @return a merged set of column indices across all those groups
 	 */
-	private static int[] mergeColIndices(List<ColGroup> groupsToDecompress) {
+	private static int[] mergeColIndices(List<AColGroup> groupsToDecompress) {
 		// Pass 1: Determine number of columns
 		int sz = 0;
-		for(ColGroup colGroup : groupsToDecompress) {
+		for(AColGroup colGroup : groupsToDecompress) {
 			sz += colGroup.getNumCols();
 		}
 
 		// Pass 2: Copy column offsets out
 		int[] ret = new int[sz];
 		int pos = 0;
-		for(ColGroup colGroup : groupsToDecompress) {
+		for(AColGroup colGroup : groupsToDecompress) {
 			int[] tmp = colGroup.getColIndices();
 			System.arraycopy(tmp, 0, ret, pos, tmp.length);
 			pos += tmp.length;
@@ -211,8 +211,7 @@ public class ColGroupUncompressed extends ColGroup {
 		}
 	}
 
-	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	private void decompressToBlockUncompressed(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		// empty block, nothing to add to output
 		if(_data.isEmptyBlock(false))
 			return;
@@ -226,8 +225,13 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
-		decompressToBlock(target, rl, ru, offT, values);
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+		decompressToBlockUncompressed(target, rl, ru, offT, values);
+	}
+
+	@Override
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+		decompressToBlockUncompressed(target, rl, ru, offT, values);
 	}
 
 	@Override
@@ -387,7 +391,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public ColGroup scalarOperation(ScalarOperator op) {
+	public AColGroup scalarOperation(ScalarOperator op) {
 		// execute scalar operations
 		MatrixBlock retContent = _data.scalarOperations(op, new MatrixBlock());
 		// construct new uncompressed column group
@@ -395,7 +399,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
+	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
@@ -504,7 +508,39 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public ColGroup sliceColumns(int cl, int cu){
+	public AColGroup sliceColumns(int cl, int cu){
 		throw new NotImplementedException("Not implemented slice columns");
+	}
+
+
+	public double getMin(){
+		return _data.min();
+	}
+
+
+	public double getMax(){
+		return _data.max();
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] vector, double[] result, int offT) {
+		throw new NotImplementedException("Not implemented slice columns");
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values, int offT) {
+		throw new NotImplementedException("Not implemented slice columns");
+
+	}
+
+	@Override
+	public void leftMultBySelfDiagonalColGroup(double[] result, int numColumns) {
+		throw new NotImplementedException("Not implemented slice columns");
+
+	}
+
+	@Override
+	public AColGroup copy() {
+		throw new NotImplementedException("Not implemented copy of uncompressed colGroup yet.");
 	}
 }

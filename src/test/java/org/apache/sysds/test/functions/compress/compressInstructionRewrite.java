@@ -100,6 +100,17 @@ public class compressInstructionRewrite extends AutomatedTestBase {
         compressTest(6, 6000, 0.2, ExecType.CP, 0, 5, 0, 1, "08");
     }
 
+    @Test
+    public void testCompressInstruction_09() {
+        compressTest(1, 1000, 1.0, ExecType.CP, 1, 5, 0, 1, "09");
+    }
+
+    @Test
+    public void testCompressInstruction_10() {
+        compressTest(1, 1000, 1.0, ExecType.CP, 5, 5, 0, 0, "10");
+    }
+
+
     public void compressTest(int cols, int rows, double sparsity, LopProperties.ExecType instType, int min, int max,
         int decompressionCountExpected, int compressionCountsExpected, String name) {
 
@@ -122,7 +133,7 @@ public class compressInstructionRewrite extends AutomatedTestBase {
             decompressCount += DMLCompressionStatistics.getDecompressionSTCount();
             long compressionCount = Statistics.getCPHeavyHitterCount("compress");
 
-            Assert.assertEquals(compressionCount, compressionCountsExpected);
+            Assert.assertEquals(compressionCountsExpected, compressionCount);
             Assert.assertEquals(decompressionCountExpected, decompressCount);
             if(decompressionCountExpected > 0)
                 Assert.assertTrue(heavyHittersContainsString("decompress", decompressionCountExpected));

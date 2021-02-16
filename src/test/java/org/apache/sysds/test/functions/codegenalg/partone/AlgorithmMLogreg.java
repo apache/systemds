@@ -22,8 +22,8 @@ package org.apache.sysds.test.functions.codegenalg.partone;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -32,9 +32,11 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class AlgorithmMLogreg extends AutomatedTestBase 
-{
+public class AlgorithmMLogreg extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(AlgorithmMLogreg.class.getName());
 	private final static String TEST_NAME1 = "Algorithm_MLogreg";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmMLogreg.class.getSimpleName() + "/";
@@ -414,7 +416,7 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 			double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 0.51, classes+0.49, 1.0, 9283));
 			writeInputMatrixWithMTD("Y", y, true);
 			
-			runTest(true, false, null, -1); 
+			LOG.debug(runTest(true, false, null, -1)); 
 			runRScript(true); 
 			
 			//compare matrices 

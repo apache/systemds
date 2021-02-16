@@ -22,17 +22,23 @@ package org.apache.sysds.runtime.instructions.cp;
 import java.util.ArrayList;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.lineage.LineageCodegenItem;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.lineage.LineageCodegenItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class SpoofCPInstruction extends ComputationCPInstruction {
+
+	protected static final Log LOG = LogFactory.getLog(SpoofCPInstruction.class.getName());
+
 	private final Class<?> _class;
 	private final SpoofOperator _op;
 	private final int _numThreads;
@@ -72,9 +78,16 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		//get input matrices and scalars, incl pinning of matrices
 		ArrayList<MatrixBlock> inputs = new ArrayList<>();
 		ArrayList<ScalarObject> scalars = new ArrayList<>();
+		LOG.debug("executing spoof instruction " + _op);
 		for (CPOperand input : _in) {
-			if(input.getDataType()==DataType.MATRIX)
-				inputs.add(ec.getMatrixInput(input.getName()));
+			if(input.getDataType()==DataType.MATRIX){
+				MatrixBlock mb = ec.getMatrixInput(input.getName());
+				if(mb instanceof CompressedMatrixBlock){
+					LOG.warn("Spoof instruction decompressed matrix");
+					mb = ((CompressedMatrixBlock) mb).decompress(_numThreads);
+				}
+				inputs.add(mb);
+			}
 			else if(input.getDataType()==DataType.SCALAR) {
 				//note: even if literal, it might be compiled as scalar placeholder
 				scalars.add(ec.getScalarInput(input));

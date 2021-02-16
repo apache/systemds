@@ -33,7 +33,8 @@ public class ColGroupSizes {
 		size += 16; // Object header
 		size += 4; // int numRows,
 		size += 1; // _zeros boolean reference
-		size += 3; // padding
+		size += 1; // _lossy boolean reference
+		size += 2; // padding
 		size += MemoryEstimates.intArrayCost(nrColumns);
 		return size;
 	}
@@ -100,8 +101,27 @@ public class ColGroupSizes {
 		return size;
 	}
 
+	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff, boolean lossy){
+		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
+		size += MemoryEstimates.intArrayCost(nrRows- largestOff);
+		size += MemoryEstimates.charArrayCost(nrRows - largestOff);
+		return size;
+	}
+
+	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff, boolean lossy){
+		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
+		size += MemoryEstimates.intArrayCost(nrRows - largestOff);
+		return size;
+	}
+
 	public static long estimateInMemorySizeCONST(int nrColumns, int nrValues, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
+		return size;
+	}
+
+	public static long estimateInMemorySizeEMPTY(int nrColumns){
+		long size = estimateInMemorySizeGroup(nrColumns);
+		size += 8; // null pointer to _dict
 		return size;
 	}
 

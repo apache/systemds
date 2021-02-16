@@ -147,29 +147,6 @@ public class LinearAlgebraUtils {
 		}
 	}
 
-	public static void vectListAddDDC(int[] outputColumns, double[] values, double[] c, byte[] bix, int rl, int ru,
-		int cut, int numVals) {
-
-		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
-			int rowIdx = (bix[j] & 0xFF);
-			if(rowIdx < numVals)
-				for(int k = 0; k < outputColumns.length; k++)
-					c[off + outputColumns[k]] += values[rowIdx * outputColumns.length + k];
-
-		}
-	}
-
-	public static void vectListAddDDC(int[] outputColumns, double[] values, double[] c, char[] bix, int rl, int ru,
-		int cut, int numVals) {
-		for(int j = rl, off = rl * cut; j < ru; j++, off += cut) {
-			int rowIdx = bix[j];
-			if(rowIdx < numVals)
-				for(int k = 0; k < outputColumns.length; k++)
-					c[off + outputColumns[k]] += values[rowIdx * outputColumns.length + k];
-
-		}
-	}
-
 	/**
 	 * Adds the values list into all rows of c within row and col range.
 	 * 

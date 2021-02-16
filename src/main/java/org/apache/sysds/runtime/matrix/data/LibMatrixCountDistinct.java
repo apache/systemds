@@ -31,7 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
@@ -121,8 +121,8 @@ public class LibMatrixCountDistinct {
 				inC = null;
 			}
 			else {
-				List<ColGroup> colGroups = ((CompressedMatrixBlock) in).getColGroups();
-				for(ColGroup cg : colGroups) {
+				List<AColGroup> colGroups = ((CompressedMatrixBlock) in).getColGroups();
+				for(AColGroup cg : colGroups) {
 					countDistinctValuesNaive(cg.getValues(), distinct);
 				}
 			}
@@ -225,8 +225,8 @@ public class LibMatrixCountDistinct {
 		int m) {
 		double[] data;
 		if(in.sparseBlock == null && in.denseBlock == null) {
-			List<ColGroup> colGroups = ((CompressedMatrixBlock) in).getColGroups();
-			for(ColGroup cg : colGroups) {
+			List<AColGroup> colGroups = ((CompressedMatrixBlock) in).getColGroups();
+			for(AColGroup cg : colGroups) {
 				countDistinctValuesKVM(cg.getValues(), hashType, k, spq, m);
 			}
 		}

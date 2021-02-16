@@ -22,7 +22,7 @@ package org.apache.sysds.test.component.compress.colgroup;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;

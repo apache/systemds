@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.ColGroupType;
 
 public class CompressionStatistics {
 
@@ -35,7 +35,7 @@ public class CompressionStatistics {
 	public long estimatedSizeCols;
 	public long size;
 
-	private Map<CompressionType, int[]> colGroupCounts;
+	private Map<ColGroupType, int[]> colGroupCounts;
 
 	public CompressionStatistics() {
 	}
@@ -55,10 +55,10 @@ public class CompressionStatistics {
 	 * 
 	 * @param colGroups list of ColGroups used in compression.
 	 */
-	public void setColGroupsCounts(List<ColGroup> colGroups) {
-		HashMap<CompressionType, int[]> ret = new HashMap<>();
-		for(ColGroup c : colGroups) {
-			CompressionType ct = c.getCompType();
+	public void setColGroupsCounts(List<AColGroup> colGroups) {
+		HashMap<ColGroupType, int[]> ret = new HashMap<>();
+		for(AColGroup c : colGroups) {
+			ColGroupType ct = c.getColGroupType();
 			int colCount = c.getNumCols();
 			int[] values;
 			if(ret.containsKey(ct)) {
@@ -74,14 +74,14 @@ public class CompressionStatistics {
 		this.colGroupCounts = ret;
 	}
 
-	public Map<CompressionType, int[]> getColGroups() {
+	public Map<ColGroupType, int[]> getColGroups() {
 		return colGroupCounts;
 	}
 
 	public String getGroupsTypesString() {
 		StringBuilder sb = new StringBuilder();
 
-		for(CompressionType ctKey : colGroupCounts.keySet()) {
+		for(ColGroupType ctKey : colGroupCounts.keySet()) {
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[0] + " ");
 		}
 		return sb.toString();
@@ -89,7 +89,7 @@ public class CompressionStatistics {
 
 	public String getGroupsSizesString() {
 		StringBuilder sb = new StringBuilder();
-		for(CompressionType ctKey : colGroupCounts.keySet()) {
+		for(ColGroupType ctKey : colGroupCounts.keySet()) {
 
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[1] + " ");
 		}

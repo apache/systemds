@@ -31,7 +31,7 @@ import java.util.Random;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 
@@ -58,6 +58,8 @@ public class CompressibleInputGenerator {
 	public static double[][] getInputDoubleMatrix(int rows, int cols, CompressionType ct, int nrUnique, int max,
 		int min, double sparsity, int seed, boolean transpose) {
 		double[][] output;
+		if(nrUnique < 1)
+			nrUnique = 1;
 		switch(ct) {
 			case RLE:
 				output = rle(rows, cols, nrUnique, max, min, sparsity, seed, transpose);
@@ -71,12 +73,11 @@ public class CompressibleInputGenerator {
 		for(double[] x : output) {
 
 			DoubleSummaryStatistics stat = Arrays.stream(x).summaryStatistics();
-			double maxV = stat.getMax();
-			double minV = stat.getMin();
-			// LOG.debug("MAX: " + maxV + " - MIN:" + minV);
-			assertTrue(maxV <= max);
-			assertTrue(minV >= min);
-			
+			assertTrue("invalid values generated MAX: " + stat.getMax() + " should be: " + max,
+				stat.getMax() <= Math.max(max, 0));
+			assertTrue("invalid values generated MIN: " + stat.getMin() + " should be: " + min,
+				stat.getMin() >= Math.min(min, 0));
+
 		}
 		return output;
 	}
@@ -151,17 +152,15 @@ public class CompressibleInputGenerator {
 		// chose some random values
 		Random r = new Random(seed);
 		List<Double> values = getNRandomValues(nrUnique, r, max, min);
+
 		double[][] matrix = transpose ? new double[rows][cols] : new double[cols][rows];
 
 		// Generate the first column.
 		for(int x = 0; x < rows; x++) {
-			if(transpose) {
+			if(transpose)
 				matrix[x][0] = values.get(r.nextInt(nrUnique));
-				// LOG.debug(matrix[x][0]);
-			}
-			else {
+			else
 				matrix[0][x] = values.get(r.nextInt(nrUnique));
-			}
 		}
 
 		for(int y = 1; y < cols; y++) {
@@ -215,8 +214,8 @@ public class CompressibleInputGenerator {
 	private static List<Double> getNRandomValues(int nrUnique, Random r, int max, int min) {
 		List<Double> values = new ArrayList<>();
 		for(int i = 0; i < nrUnique; i++) {
-			values.add((r.nextDouble() * (max - min)) + min);
-			// values.add(Math.floor(v));
+			double v = (r.nextDouble() * (max - min)) + min;
+			values.add(Math.floor(v));
 		}
 		// LOG.debug(values);
 		return values;

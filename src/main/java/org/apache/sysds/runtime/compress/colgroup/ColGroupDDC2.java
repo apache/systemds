@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public class ColGroupDDC2 extends ColGroupDDC {
 	private static final long serialVersionUID = -3995768285207071013L;
 
-	private char[] _data;
+	protected char[] _data;
 
 	protected ColGroupDDC2() {
 		super();
@@ -76,7 +76,7 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	}
 
 	@Override
-	protected ColGroupType getColGroupType() {
+	public ColGroupType getColGroupType() {
 		return ColGroupType.DDC2;
 	}
 
@@ -124,10 +124,16 @@ public class ColGroupDDC2 extends ColGroupDDC {
 
 	@Override
 	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-	int ru) {
-		LinearAlgebraUtils.vectListAddDDC(outputColumns, preAggregatedB, c, _data, rl, ru, thatNrColumns, getNumValues());
-	}
+		int ru) {
 
+		for(int j = rl, off = rl * thatNrColumns; j < ru; j++, off += thatNrColumns) {
+			int rowIdx = _data[j];
+			if(rowIdx < getNumValues())
+				for(int k = 0; k < outputColumns.length; k++)
+					c[off + outputColumns[k]] += preAggregatedB[rowIdx * outputColumns.length + k];
+
+		}
+	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
@@ -163,7 +169,7 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	}
 
 	@Override
-	public ColGroup scalarOperation(ScalarOperator op) {
+	public AColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
 		if(op.sparseSafe || val0 == 0 || !_zeros) {
 			return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op), _data, _zeros, getCachedCounts());
@@ -175,10 +181,14 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	}
 
 	@Override
-	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
+	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
+
 		sparseSafe = sparseSafe || !_zeros;
-		return new ColGroupDDC2(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe), _data, !sparseSafe,
-			getCachedCounts());
+		ADictionary aDict = applyBinaryRowOp(op.fn, v, sparseSafe, left);
+		if(sparseSafe)
+			return new ColGroupDDC2(_colIndexes, _numRows, aDict, _data, _zeros, getCachedCounts());
+		else
+			return new ColGroupDDC2(_colIndexes, _numRows, aDict, _data, false, getCachedCounts());
 	}
 
 	@Override
@@ -187,11 +197,16 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		sb.append(super.toString());
 		sb.append("\nDataLength: " + this._data.length);
 		sb.append("[");
-		for(char c : this._data){
-			sb.append((int)c);
+		for(char c : this._data) {
+			sb.append((int) c);
 			sb.append(" ");
 		}
 		sb.append("]");
 		return sb.toString();
+	}
+
+	@Override
+	public boolean sameIndexStructure(ColGroupValue that){
+		return that instanceof ColGroupDDC2 && ((ColGroupDDC2) that)._data == _data;
 	}
 }

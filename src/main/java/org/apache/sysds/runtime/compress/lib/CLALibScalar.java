@@ -32,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
@@ -49,15 +49,15 @@ import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class LibScalar {
+public class CLALibScalar {
 
-	private static final Log LOG = LogFactory.getLog(LibScalar.class.getName());
+	private static final Log LOG = LogFactory.getLog(CLALibScalar.class.getName());
 	private static final int MINIMUM_PARALLEL_SIZE = 8096;
 
 	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1, MatrixValue result) {
 		// Special case handling of overlapping relational operations
-		if(LibRelationalOp.isValidForRelationalOperation(sop, m1)) {
-			return LibRelationalOp.overlappingRelativeRelationalOperation(sop, m1);
+		if(CLALibRelationalOp.isValidForRelationalOperation(sop, m1)) {
+			return CLALibRelationalOp.overlappingRelativeRelationalOperation(sop, m1);
 		}
 
 		if(isInvalidForCompressedOutput(m1, sop)) {
@@ -68,10 +68,10 @@ public class LibScalar {
 
 		CompressedMatrixBlock ret = setupRet(m1, result);
 
-		List<ColGroup> colGroups = m1.getColGroups();
+		List<AColGroup> colGroups = m1.getColGroups();
 		if(m1.isOverlapping() && !(sop.fn instanceof Multiply || sop.fn instanceof Divide)) {
-			ColGroup constOverlap = constOverlap(m1, sop);
-			List<ColGroup> newColGroups = (sop instanceof LeftScalarOperator &&
+			AColGroup constOverlap = constOverlap(m1, sop);
+			List<AColGroup> newColGroups = (sop instanceof LeftScalarOperator &&
 				sop.fn instanceof Minus) ? processOverlappingSubtractionLeft(m1,
 					sop,
 					ret) : processOverlappingAddition(m1, sop, ret);
@@ -87,8 +87,8 @@ public class LibScalar {
 			else {
 				// Apply the operation to each of the column groups.
 				// Most implementations will only modify metadata.
-				List<ColGroup> newColGroups = new ArrayList<>();
-				for(ColGroup grp : colGroups) {
+				List<AColGroup> newColGroups = new ArrayList<>();
+				for(AColGroup grp : colGroups) {
 					newColGroups.add(grp.scalarOperation(sop));
 				}
 				ret.allocateColGroupList(newColGroups);
@@ -114,7 +114,7 @@ public class LibScalar {
 		return ret;
 	}
 
-	private static ColGroup constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
+	private static AColGroup constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
 		int[] colIndexes = new int[m1.getNumColumns()];
 		for(int i = 0; i < colIndexes.length; i++)
 			colIndexes[i] = i;
@@ -124,19 +124,19 @@ public class LibScalar {
 		return new ColGroupConst(colIndexes, m1.getNumRows(), new Dictionary(values));
 	}
 
-	private static List<ColGroup> processOverlappingAddition(CompressedMatrixBlock m1, ScalarOperator sop,
+	private static List<AColGroup> processOverlappingAddition(CompressedMatrixBlock m1, ScalarOperator sop,
 		CompressedMatrixBlock ret) {
-		List<ColGroup> newColGroups = new ArrayList<>();
-		for(ColGroup grp : m1.getColGroups())
+		List<AColGroup> newColGroups = new ArrayList<>();
+		for(AColGroup grp : m1.getColGroups())
 			newColGroups.add(((ColGroupValue) grp).copy());
 		return newColGroups;
 
 	}
 
-	private static List<ColGroup> processOverlappingSubtractionLeft(CompressedMatrixBlock m1, ScalarOperator sop,
+	private static List<AColGroup> processOverlappingSubtractionLeft(CompressedMatrixBlock m1, ScalarOperator sop,
 		CompressedMatrixBlock ret) {
-		List<ColGroup> newColGroups = new ArrayList<>();
-		for(ColGroup grp : m1.getColGroups())
+		List<AColGroup> newColGroups = new ArrayList<>();
+		for(AColGroup grp : m1.getColGroups())
 			newColGroups.add(
 				((ColGroupValue) grp).scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
 		return newColGroups;
@@ -148,17 +148,17 @@ public class LibScalar {
 				sop.fn instanceof Plus || sop.fn instanceof Minus));
 	}
 
-	private static void parallelScalarOperations(ScalarOperator sop, List<ColGroup> colGroups,
+	private static void parallelScalarOperations(ScalarOperator sop, List<AColGroup> colGroups,
 		CompressedMatrixBlock ret, int k) {
 		if(colGroups == null)
 			return;
 		ExecutorService pool = CommonThreadPool.get(k);
 		List<ScalarTask> tasks = partition(sop, colGroups);
 		try {
-			List<Future<List<ColGroup>>> rtasks = pool.invokeAll(tasks);
+			List<Future<List<AColGroup>>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
-			List<ColGroup> newColGroups = new ArrayList<>();
-			for(Future<List<ColGroup>> f : rtasks) {
+			List<AColGroup> newColGroups = new ArrayList<>();
+			for(Future<List<AColGroup>> f : rtasks) {
 				newColGroups.addAll(f.get());
 			}
 			ret.allocateColGroupList(newColGroups);
@@ -168,12 +168,12 @@ public class LibScalar {
 		}
 	}
 
-	private static List<ScalarTask> partition(ScalarOperator sop, List<ColGroup> colGroups) {
+	private static List<ScalarTask> partition(ScalarOperator sop, List<AColGroup> colGroups) {
 		ArrayList<ScalarTask> tasks = new ArrayList<>();
-		ArrayList<ColGroup> small = new ArrayList<>();
-		for(ColGroup grp : colGroups) {
+		ArrayList<AColGroup> small = new ArrayList<>();
+		for(AColGroup grp : colGroups) {
 			if(grp instanceof ColGroupUncompressed) {
-				ArrayList<ColGroup> uc = new ArrayList<>();
+				ArrayList<AColGroup> uc = new ArrayList<>();
 				uc.add(grp);
 				tasks.add(new ScalarTask(uc, sop));
 			}
@@ -183,7 +183,7 @@ public class LibScalar {
 					small.add(grp);
 				}
 				else {
-					ArrayList<ColGroup> large = new ArrayList<>();
+					ArrayList<AColGroup> large = new ArrayList<>();
 					large.add(grp);
 					tasks.add(new ScalarTask(large, sop));
 				}
@@ -199,19 +199,19 @@ public class LibScalar {
 		return tasks;
 	}
 
-	private static class ScalarTask implements Callable<List<ColGroup>> {
-		private final List<ColGroup> _colGroups;
+	private static class ScalarTask implements Callable<List<AColGroup>> {
+		private final List<AColGroup> _colGroups;
 		private final ScalarOperator _sop;
 
-		protected ScalarTask(List<ColGroup> colGroups, ScalarOperator sop) {
+		protected ScalarTask(List<AColGroup> colGroups, ScalarOperator sop) {
 			_colGroups = colGroups;
 			_sop = sop;
 		}
 
 		@Override
-		public List<ColGroup> call() {
-			List<ColGroup> res = new ArrayList<>();
-			for(ColGroup x : _colGroups) {
+		public List<AColGroup> call() {
+			List<AColGroup> res = new ArrayList<>();
+			for(AColGroup x : _colGroups) {
 				res.add(x.scalarOperation(_sop));
 			}
 			return res;

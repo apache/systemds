@@ -34,7 +34,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
@@ -287,7 +287,7 @@ public class BitmapLossyEncoder {
 		Map<Byte, IntArrayList> values = new HashMap<>();
 		double[] tmp = getMemLocalDoubleArray(blkSz, true);
 		for(int i = 0; i < m.getNumRows(); i += blkSz) {
-			ColGroup.decompressColumnToBlock(tmp, columnId, i, Math.min(m.getNumRows(), (i + blkSz)), m.getColGroups());
+			AColGroup.decompressColumnToBlock(tmp, columnId, i, Math.min(m.getNumRows(), (i + blkSz)), m.getColGroups());
 
 			byte[] scaledValues = scaleValuesToByte(tmp, scale);
 			for(int j = 0, off = i; j < Math.min(m.getNumRows(), (i + blkSz)) - i; j++, off++) {

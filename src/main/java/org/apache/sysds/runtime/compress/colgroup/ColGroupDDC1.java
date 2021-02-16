@@ -38,7 +38,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public class ColGroupDDC1 extends ColGroupDDC {
 	private static final long serialVersionUID = 5204955589230760157L;
 
-	private byte[] _data;
+	protected byte[] _data;
 
 	protected ColGroupDDC1() {
 		super();
@@ -79,7 +79,7 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	}
 
 	@Override
-	protected ColGroupType getColGroupType() {
+	public ColGroupType getColGroupType() {
 		return ColGroupType.DDC1;
 	}
 
@@ -101,8 +101,14 @@ public class ColGroupDDC1 extends ColGroupDDC {
 
 	@Override
 	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-	int ru) {
-		LinearAlgebraUtils.vectListAddDDC(outputColumns, preAggregatedB, c, _data, rl, ru, thatNrColumns, getNumValues());
+		int ru) {
+		for(int j = rl, off = rl * thatNrColumns; j < ru; j++, off += thatNrColumns) {
+			int rowIdx = (_data[j] & 0xFF);
+			if(rowIdx < getNumValues())
+				for(int k = 0; k < outputColumns.length; k++)
+					c[off + outputColumns[k]] += preAggregatedB[rowIdx * outputColumns.length + k];
+
+		}
 	}
 
 	@Override
@@ -170,27 +176,43 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	}
 
 	@Override
+	public double[] preAggregate(double[] a, int row) {
+		double[] vals = allocDVector(getNumValues() + 1, true);
+		if(row > 0)
+			for(int i = 0, off = _numRows * row; i < _numRows; i++, off++)
+				vals[_data[i] & 0xFF] += a[off];
+		else
+			for(int i = 0; i < _numRows; i++)
+				vals[_data[i] & 0xFF] += a[i];
+
+		return vals;
+	}
+
+	@Override
 	public long estimateInMemorySize() {
 		return ColGroupSizes.estimateInMemorySizeDDC1(getNumCols(), getNumValues(), _data.length, isLossy());
 	}
 
 	@Override
-	public ColGroup scalarOperation(ScalarOperator op) {
+	public AColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
 		boolean isSparseSafeOp = op.sparseSafe || val0 == 0 || !_zeros;
-		if(isSparseSafeOp) 
+		if(isSparseSafeOp)
 			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op), _data, _zeros, getCachedCounts());
-		else 
+		else
 			return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false,
 				getCachedCounts());
-		
+
 	}
 
 	@Override
-	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
+	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
 		sparseSafe = sparseSafe || !_zeros;
-		return new ColGroupDDC1(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe), _data, !sparseSafe,
-			getCachedCounts());
+		ADictionary aDict = applyBinaryRowOp(op.fn, v, sparseSafe, left);
+		if(sparseSafe)
+			return new ColGroupDDC1(_colIndexes, _numRows, aDict, _data, _zeros, getCachedCounts());
+		else
+			return new ColGroupDDC1(_colIndexes, _numRows, aDict, _data, false, getCachedCounts());
 	}
 
 	@Override
@@ -200,5 +222,10 @@ public class ColGroupDDC1 extends ColGroupDDC {
 		sb.append("\nDataLength: " + this._data.length);
 		sb.append(Arrays.toString(this._data));
 		return sb.toString();
+	}
+
+	@Override
+	public boolean sameIndexStructure(ColGroupValue that){
+		return that instanceof ColGroupDDC1 && ((ColGroupDDC1) that)._data == _data;
 	}
 }

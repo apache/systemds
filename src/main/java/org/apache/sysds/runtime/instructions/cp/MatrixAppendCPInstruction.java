@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -29,37 +31,46 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public final class MatrixAppendCPInstruction extends AppendCPInstruction {
 
-	protected MatrixAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			AppendType type, String opcode, String istr) {
+	protected MatrixAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, AppendType type,
+		String opcode, String istr) {
 		super(op, in1, in2, out, type, opcode, istr);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		//get inputs
+		// get inputs
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
-		//check input dimensions
-		if( _type == AppendType.CBIND && matBlock1.getNumRows() != matBlock2.getNumRows() ) {
-			throw new DMLRuntimeException("Append-cbind is not possible for input matrices " + input1.getName() + " and " + input2.getName()
-					+ " with different number of rows: "+matBlock1.getNumRows()+" vs "+matBlock2.getNumRows());
-		}
-		else if( _type == AppendType.RBIND && matBlock1.getNumColumns() != matBlock2.getNumColumns()) {
-			throw new DMLRuntimeException("Append-rbind is not possible for input matrices " + input1.getName() + " and " + input2.getName()
-					+ " with different number of columns: "+matBlock1.getNumColumns()+" vs "+matBlock2.getNumColumns());
-		}
-		//execute append operations (append both inputs to initially empty output)
-		MatrixBlock ret = matBlock1.append(matBlock2, new MatrixBlock(), _type==AppendType.CBIND);
-		//set output and release inputs 
+
+		validateInput(matBlock1, matBlock2);
+
+		MatrixBlock ret;
+		if(matBlock1 instanceof CompressedMatrixBlock || matBlock2 instanceof CompressedMatrixBlock)
+			ret = CLALibAppend.append(matBlock1, matBlock2);
+		else
+			ret = matBlock1.append(matBlock2, new MatrixBlock(), _type == AppendType.CBIND);
+
 		ec.setMatrixOutput(output.getName(), ret);
 		ec.releaseMatrixInput(input1.getName(), input2.getName());
 	}
 
+	private void validateInput(MatrixBlock m1, MatrixBlock m2) {
+		if(_type == AppendType.CBIND && m1.getNumRows() != m2.getNumRows()) {
+			throw new DMLRuntimeException(
+				"Append-cbind is not possible for input matrices " + input1.getName() + " and " + input2.getName()
+					+ " with different number of rows: " + m1.getNumRows() + " vs " + m2.getNumRows());
+		}
+		else if(_type == AppendType.RBIND && m1.getNumColumns() != m2.getNumColumns()) {
+			throw new DMLRuntimeException(
+				"Append-rbind is not possible for input matrices " + input1.getName() + " and " + input2.getName()
+					+ " with different number of columns: " + m1.getNumColumns() + " vs " + m2.getNumColumns());
+		}
+	}
+
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-		//TODO: break append to cbind and rbind for full compilation chain
+		// TODO: break append to cbind and rbind for full compilation chain
 		String opcode = _type.toString().toLowerCase();
-		return Pair.of(output.getName(),
-			new LineageItem(opcode, LineageItemUtils.getLineage(ec, input1, input2)));
+		return Pair.of(output.getName(), new LineageItem(opcode, LineageItemUtils.getLineage(ec, input1, input2)));
 	}
 }

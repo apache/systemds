@@ -29,7 +29,7 @@ import java.util.concurrent.Future;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -51,7 +51,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class LibCompAgg {
+public class CLALibCompAgg {
 
 	// private static final Log LOG = LogFactory.getLog(LibCompAgg.class.getName());
 
@@ -139,8 +139,8 @@ public class LibCompAgg {
 
 			}
 			else {
-				List<List<ColGroup>> grpParts = createTaskPartitionNotIncludingUncompressable(m1.getColGroups(), k);
-				for(List<ColGroup> grp : grpParts)
+				List<List<AColGroup>> grpParts = createTaskPartitionNotIncludingUncompressable(m1.getColGroups(), k);
+				for(List<AColGroup> grp : grpParts)
 					tasks.add(new UnaryAggregateTask(grp, ret, 0, m1.getNumRows(), op, m1.getNumColumns(),
 						m1.isOverlapping()));
 			}
@@ -333,16 +333,16 @@ public class LibCompAgg {
 		return futures;
 	}
 
-	private static List<List<ColGroup>> createTaskPartitionNotIncludingUncompressable(List<ColGroup> colGroups, int k) {
+	private static List<List<AColGroup>> createTaskPartitionNotIncludingUncompressable(List<AColGroup> colGroups, int k) {
 		int numTasks = Math.min(k, colGroups.size());
-		List<List<ColGroup>> grpParts = new ArrayList<>();
+		List<List<AColGroup>> grpParts = new ArrayList<>();
 		for(int i = 0; i < numTasks; i++) {
 			grpParts.add(new ArrayList<>());
 		}
 		int pos = 0;
-		for(ColGroup grp : colGroups) {
+		for(AColGroup grp : colGroups) {
 			if(!(grp instanceof ColGroupUncompressed)) {
-				List<ColGroup> g = grpParts.get(pos);
+				List<AColGroup> g = grpParts.get(pos);
 				g.add(grp);
 				pos = (pos + 1) % numTasks;
 			}
@@ -351,7 +351,7 @@ public class LibCompAgg {
 		return grpParts;
 	}
 
-	private static void aggregateUnaryOperations(AggregateUnaryOperator op, List<ColGroup> groups, MatrixBlock ret,
+	private static void aggregateUnaryOperations(AggregateUnaryOperator op, List<AColGroup> groups, MatrixBlock ret,
 		int rl, int ru, int numColumns) {
 		if(op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof Builtin)
 			aggregateUnaryBuiltinRowOperation(op, groups, ret, rl, ru, numColumns);
@@ -359,19 +359,19 @@ public class LibCompAgg {
 			aggregateUnaryNormalOperation(op, groups, ret, rl, ru, numColumns);
 	}
 
-	private static void aggregateUnaryNormalOperation(AggregateUnaryOperator op, List<ColGroup> groups, MatrixBlock ret,
+	private static void aggregateUnaryNormalOperation(AggregateUnaryOperator op, List<AColGroup> groups, MatrixBlock ret,
 		int rl, int ru, int numColumns) {
-		for(ColGroup grp : groups)
+		for(AColGroup grp : groups)
 			grp.unaryAggregateOperations(op, ret, rl, ru);
 
 	}
 
-	private static void aggregateUnaryBuiltinRowOperation(AggregateUnaryOperator op, List<ColGroup> groups,
+	private static void aggregateUnaryBuiltinRowOperation(AggregateUnaryOperator op, List<AColGroup> groups,
 		MatrixBlock ret, int rl, int ru, int numColumns) {
 
 		int[] rnnz = null;
 		int numberDenseColumns = 0;
-		for(ColGroup grp : groups) {
+		for(AColGroup grp : groups) {
 			grp.unaryAggregateOperations(op, ret, rl, ru);
 			if(grp.isDense())
 				numberDenseColumns += grp.getNumCols();
@@ -408,14 +408,14 @@ public class LibCompAgg {
 	}
 
 	private static class UnaryAggregateTask implements Callable<MatrixBlock> {
-		private final List<ColGroup> _groups;
+		private final List<AColGroup> _groups;
 		private final int _rl;
 		private final int _ru;
 		private final MatrixBlock _ret;
 		private final int _numColumns;
 		private final AggregateUnaryOperator _op;
 
-		protected UnaryAggregateTask(List<ColGroup> groups, MatrixBlock ret, int rl, int ru, AggregateUnaryOperator op,
+		protected UnaryAggregateTask(List<AColGroup> groups, MatrixBlock ret, int rl, int ru, AggregateUnaryOperator op,
 			int numColumns) {
 			_groups = groups;
 			_op = op;
@@ -438,7 +438,7 @@ public class LibCompAgg {
 
 		}
 
-		protected UnaryAggregateTask(List<ColGroup> groups, MatrixBlock ret, int rl, int ru, AggregateUnaryOperator op,
+		protected UnaryAggregateTask(List<AColGroup> groups, MatrixBlock ret, int rl, int ru, AggregateUnaryOperator op,
 			int numColumns, boolean overlapping) {
 			_groups = groups;
 			_op = op;
@@ -525,8 +525,8 @@ public class LibCompAgg {
 
 		private MatrixBlock decompressToTemp() {
 			MatrixBlock tmp = getTmp();
-			for(ColGroup g : _m1.getColGroups())
-				g.decompressToBlockSafe(tmp, _rl, _ru, 0, g.getValues(), false);
+			for(AColGroup g : _m1.getColGroups())
+				g.decompressToBlockUnSafe(tmp, _rl, _ru, 0, g.getValues());
 			tmp.setNonZeros(_rl + _ru);
 			return tmp;
 		}

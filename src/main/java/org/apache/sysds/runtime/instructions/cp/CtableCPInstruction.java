@@ -178,6 +178,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			resultBlock.examSparsity();
 		}
 
+		// remove first empty rows in fed
 		if(_removeEmpty)
 			resultBlock = resultBlock.removeEmptyOperations(resultBlock, true, true);
 

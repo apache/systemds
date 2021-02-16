@@ -196,8 +196,7 @@ public class FEDInstructionUtils {
 			CtableCPInstruction cinst = (CtableCPInstruction) inst;
 			if(inst.getOpcode().equalsIgnoreCase("ctable")
 				&& ( ec.getCacheableData(cinst.input1).isFederated()
-				|| ec.getCacheableData(cinst.input2).isFederated()
-				||(cinst.input3.isMatrix() && ec.getCacheableData(cinst.input3).isFederated()))) {
+				|| ec.getCacheableData(cinst.input2).isFederated())) {
 				fedinst = CtableFEDInstruction.parseInstruction(cinst.getInstructionString());
 			}
 		}

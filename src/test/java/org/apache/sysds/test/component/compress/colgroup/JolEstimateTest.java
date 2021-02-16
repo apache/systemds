@@ -27,8 +27,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -57,8 +58,8 @@ public abstract class JolEstimateTest {
 	private final MatrixBlock mbt;
 	private final CompressionSettings cs;
 	private final CompressionSettings csl;// Compression Settings Lossy;
-	private ColGroup cg;
-	private ColGroup cgl; // ColGroup Lossy;
+	private AColGroup cg;
+	private AColGroup cgl; // ColGroup Lossy;
 
 	public abstract CompressionType getCT();
 
@@ -117,7 +118,9 @@ public abstract class JolEstimateTest {
 		}
 	}
 
+	// Currently ignore because lossy compression is disabled.
 	@Test
+	@Ignore
 	public void compressedSizeInfoEstimatorExactLossy() {
 		try {
 			// CompressionSettings cs = new CompressionSettings(1.0);

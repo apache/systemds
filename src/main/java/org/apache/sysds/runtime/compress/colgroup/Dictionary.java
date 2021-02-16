@@ -27,10 +27,7 @@ import java.util.Arrays;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -106,16 +103,16 @@ public class Dictionary extends ADictionary {
 	@Override
 	public Dictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
 		// allocate new array just once because we need to add the newVal.
-		double[] values = Arrays.copyOf(_values, _values.length + numCols);
+		double[] values = new double[_values.length + numCols];
 		for(int i = 0; i < _values.length; i++) {
-			values[i] = op.executeScalar(values[i]);
+			values[i] = op.executeScalar(_values[i]);
 		}
 		Arrays.fill(values, _values.length, _values.length + numCols, newVal);
 		return new Dictionary(values);
 	}
 
 	@Override
-	public Dictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+	public Dictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
 		final int len = size();
 		final int lenV = colIndexes.length;
 		if(sparseSafe) {
@@ -132,6 +129,29 @@ public class Dictionary extends ADictionary {
 			}
 			for(; i < len + lenV; i++) {
 				values[i] = fn.execute(0, v[colIndexes[i % lenV]]);
+			}
+			return new Dictionary(values);
+		}
+	}
+
+	@Override
+	public Dictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+		final int len = size();
+		final int lenV = colIndexes.length;
+		if(sparseSafe) {
+			for(int i = 0; i < len; i++) {
+				_values[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
+			}
+			return this;
+		}
+		else {
+			double[] values = new double[len + lenV];
+			int i = 0;
+			for(; i < len; i++) {
+				values[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
+			}
+			for(; i < len + lenV; i++) {
+				values[i] = fn.execute(v[colIndexes[i % lenV]], 0);
 			}
 			return new Dictionary(values);
 		}
@@ -176,31 +196,31 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public int getNumberOfValues(int nCol) {
-		return (_values == null || nCol == 0) ? 0 : _values.length / nCol;
+		return (_values == null) ? 0 : _values.length / nCol;
 	}
 
 	@Override
-	protected double[] sumAllRowsToDouble(KahanFunction kplus, int nrColumns) {
-		if(nrColumns == 1 && kplus instanceof KahanPlus)
+	protected double[] sumAllRowsToDouble(boolean square, int nrColumns) {
+		if(nrColumns == 1 && !square)
 			return getValues(); // shallow copy of values
 
 		// pre-aggregate value tuple
 		final int numVals = getNumberOfValues(nrColumns);
 		double[] ret = ColGroupValue.allocDVector(numVals, false);
 		for(int k = 0; k < numVals; k++) {
-			ret[k] = sumRow(k, kplus, nrColumns);
+			ret[k] = sumRow(k, square, nrColumns);
 		}
 
 		return ret;
 	}
 
 	@Override
-	protected double sumRow(int k, KahanFunction kplus, int nrColumns) {
+	protected double sumRow(int k, boolean square, int nrColumns) {
 		if(_values == null)
 			return 0;
 		int valOff = k * nrColumns;
 		double res = 0.0;
-		if(kplus instanceof KahanPlus) {
+		if(!square) {
 			for(int i = 0; i < nrColumns; i++) {
 				res += _values[valOff + i];
 			}
@@ -214,20 +234,18 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus) {
+	protected void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		if(_values == null)
 			return;
-		KahanObject kbuff = new KahanObject(0, 0);
-		int valOff = 0;
-		final int rows = c.length / 2;
+		
 		for(int k = 0; k < _values.length / colIndexes.length; k++) {
 			int cntk = counts[k];
 			for(int j = 0; j < colIndexes.length; j++) {
-				kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
-				kbuff.set(c[colIndexes[j]], 0);
-				kplus.execute3(kbuff, getValue(valOff++), cntk);
-				c[colIndexes[j]] = kbuff._sum;
-				c[colIndexes[j] + rows] = kbuff._correction;
+				double v = _values[k * colIndexes.length + j];
+				if(square)
+					c[colIndexes[j]] += v * v * cntk;
+				else
+					c[colIndexes[j]] += v * cntk;
 			}
 		}
 
@@ -299,7 +317,7 @@ public class Dictionary extends ADictionary {
 		sb.append("[");
 		for(int i = 0; i < _values.length-1; i++) {
 			sb.append(_values[i]);
-			sb.append((i) % (colIndexes) == colIndexes - 1 ? " : " : ", ");
+			sb.append((i) % (colIndexes) == colIndexes - 1 ? ", " : ": ");
 		}
 		if(_values != null && _values.length > 0){
 			sb.append(_values[_values.length-1]);
@@ -321,6 +339,18 @@ public class Dictionary extends ADictionary {
 			}
 			orgOffset += previousNumberOfColumns - idxEnd + idxStart;
 		}
+		return new Dictionary(newDictValues);
+	}
+
+
+	public ADictionary reExpandColumns(int max){
+		double[] newDictValues = new double[_values.length * max];
+
+		for(int i = 0, offset = 0; i< _values.length; i++, offset += max){
+			int val = (int)Math.floor(_values[i]) -1;
+			newDictValues[offset + val] = 1;
+		}
+
 		return new Dictionary(newDictValues);
 	}
 }

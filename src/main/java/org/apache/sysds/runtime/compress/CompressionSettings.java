@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.compress;
 import java.util.EnumSet;
 
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 
 /**
  * Compression Settings class, used as a bundle of parameters inside the Compression framework. See
@@ -30,8 +30,11 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
  */
 public class CompressionSettings {
 
-	/** Size of the blocks used in a blocked bitmap representation. Note it is one more than Character.MAX_VALUE. */
-	public static final int BITMAP_BLOCK_SZ = 65536;
+	/** Size of the blocks used in a blocked bitmap representation. 
+	 * Note it is exactly Character.MAX_VALUE. 
+	 * This is not Character max value + 1 because it breaks the offsets in cases with fully
+	 * dense values.*/
+	public static final int BITMAP_BLOCK_SZ = Character.MAX_VALUE;
 
 	/**
 	 * Sorting of values by physical length helps by 10-20%, especially for serial, while slight performance decrease

@@ -24,9 +24,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
+import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -56,7 +59,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * matrix is used in loops, and all operations are supported over compressed matrices.
  */
 public class RewriteCompressedReblock extends StatementBlockRewriteRule {
-	// private static final Log LOG = LogFactory.getLog(RewriteCompressedReblock.class.getName());
+	private static final Log LOG = LogFactory.getLog(RewriteCompressedReblock.class.getName());
 
 	private static final String TMP_PREFIX = "__cmtx";
 
@@ -207,6 +210,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		private int numberCompressedOpsExecuted = 0;
 		private int numberDecompressedOpsExecuted = 0;
 		private int inefficientSupportedOpsExecuted = 0;
+		private int superEfficientSuportedOpsExecuted = 0;
 
 		private boolean foundStart = false;
 		private boolean usedInLoop = false;
@@ -359,6 +363,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		private void handleApplicableOps(Hop current) {
 			// Valid with uncompressed outputs
 			boolean compUCOut = false;
+			LOG.error(current);
 			// // tsmm
 			// compUCOut |= (current instanceof AggBinaryOp && current.getDim2() <= current.getBlocksize() &&
 			// ((AggBinaryOp) current).checkTransposeSelf() == MMTSJType.LEFT);
@@ -396,6 +401,13 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 			compCOut |= HopRewriteUtils.isBinary(current, OpOp2.CBIND);
 
 			boolean metaOp = HopRewriteUtils.isUnary(current, OpOp1.NROW, OpOp1.NCOL);
+			boolean ctableOp = HopRewriteUtils.isTernary(current, OpOp3.CTABLE);
+
+			if(ctableOp){
+				numberCompressedOpsExecuted += 4;
+				compCOut = true;
+			}
+
 			boolean applicable = compUCOut || compCOut || metaOp;
 
 			if(applicable)
@@ -419,7 +431,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 			if(LOG.isDebugEnabled())
 				LOG.debug(this.toString());
 			return (inefficientSupportedOpsExecuted < numberCompressedOpsExecuted) &&
-				(usedInLoop || numberCompressedOpsExecuted > 3) && numberDecompressedOpsExecuted < 1;
+				(usedInLoop  || numberCompressedOpsExecuted > 3) && numberDecompressedOpsExecuted < 1;
 		}
 
 		@Override
@@ -429,8 +441,8 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 			sb.append("\n CLA Ops         : " + numberCompressedOpsExecuted);
 			sb.append("\n Decompress Ops  : " + numberDecompressedOpsExecuted);
 			sb.append("\n Inefficient Ops : " + inefficientSupportedOpsExecuted);
-			sb.append("\n foundStart " + foundStart + " inLoop " + usedInLoop + " condUpdate : " + condUpdate
-				+ " nonApplicable : " + nonApplicable);
+			sb.append("\n foundStart " + foundStart + " , inLoop :" + usedInLoop + " , condUpdate : " + condUpdate
+				+ " , nonApplicable : " + nonApplicable);
 			sb.append("\n compressed Matrix: " + compMtx);
 			sb.append("\n Prog Fn " + procFn);
 			return sb.toString();

@@ -30,7 +30,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
@@ -58,7 +59,7 @@ public class CompressedMatrixBlockFactory {
 	private CompressedMatrixBlock res = null;
 	private int phase = 0;
 
-	private List<int[]> coCodeColGroups;
+	private CompressedSizeInfo coCodeColGroups;
 
 	private CompressedMatrixBlockFactory(MatrixBlock mb, int k, CompressionSettings compSettings) {
 		this.mb = mb;
@@ -101,6 +102,14 @@ public class CompressedMatrixBlockFactory {
 		return cmbf.compressMatrix();
 	}
 
+	public static CompressedMatrixBlock createConstant(int numRows, int numCols, double value){
+		CompressedMatrixBlock block = new CompressedMatrixBlock(numRows, numCols);
+		ColGroupConst cg = ColGroupConst.genColGroupConst(numRows, numCols, value);
+		block.allocateColGroup(cg);
+		block.setNonZeros(value == 0.0 ? 0 : numRows * numCols);
+		return block;
+	}
+	
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
 		// Check for redundant compression
 		if(mb instanceof CompressedMatrixBlock) {
@@ -129,8 +138,8 @@ public class CompressedMatrixBlockFactory {
 			_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 
 		logPhase();
-
-		if(sizeInfos.isCompressible())
+		// LOG.error(sizeInfos);
+		if(sizeInfos.isCompressible(original.getInMemorySize()))
 			coCodePhase(sizeEstimator, sizeInfos, mb.getNumRows());
 	}
 
@@ -158,8 +167,8 @@ public class CompressedMatrixBlockFactory {
 				break;
 			default:
 				if(original.isInSparseFormat()) {
-					boolean isAboveRowNumbers = mb.getNumRows() > 1000000;
-					boolean isAboveThreadToColumnRatio = coCodeColGroups.size() > mb.getNumColumns() / 2;
+					boolean isAboveRowNumbers = mb.getNumRows() > 500000;
+					boolean isAboveThreadToColumnRatio = coCodeColGroups.getNumberColGroups() > mb.getNumColumns() / 2;
 					compSettings.transposed = isAboveRowNumbers || isAboveThreadToColumnRatio;
 				}
 				else
@@ -169,8 +178,8 @@ public class CompressedMatrixBlockFactory {
 
 	private void compressPhase() {
 		res = new CompressedMatrixBlock(original);
-		ColGroup[] colGroups = ColGroupFactory.compressColGroups(mb, null, coCodeColGroups, compSettings, k);
-		List<ColGroup> colGroupList = assignColumns(original.getNumColumns(), colGroups, mb, compSettings);
+		AColGroup[] colGroups = ColGroupFactory.compressColGroups(mb, coCodeColGroups, compSettings, k);
+		List<AColGroup> colGroupList = assignColumns(original.getNumColumns(), colGroups, mb, compSettings);
 		res.allocateColGroupList(colGroupList);
 		logPhase();
 	}
@@ -205,9 +214,7 @@ public class CompressedMatrixBlockFactory {
 
 	private void logPhase() {
 		_stats.setNextTimePhase(time.stop());
-		// if(DMLScript.STATISTICS) {
-			DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), phase);
-		// }
+		DMLCompressionStatistics.addCompressionTime(_stats.getLastTimePhase(), phase);
 		if(LOG.isDebugEnabled()) {
 			switch(phase) {
 				case 0:
@@ -236,13 +243,13 @@ public class CompressedMatrixBlockFactory {
 					LOG.debug("--compression ratio: " + _stats.ratio);
 					int[] lengths = new int[res.getColGroups().size()];
 					int i = 0;
-					for(ColGroup colGroup : res.getColGroups()) {
+					for(AColGroup colGroup : res.getColGroups()) {
 						if(colGroup.getValues() != null)
 							lengths[i++] = colGroup.getValues().length / colGroup.getColIndices().length;
 					}
 					LOG.debug("--compressed colGroup dictionary sizes: " + Arrays.toString(lengths));
 					if(LOG.isTraceEnabled()) {
-						for(ColGroup colGroup : res.getColGroups()) {
+						for(AColGroup colGroup : res.getColGroups()) {
 							LOG.trace("--colGroups colIndexes : " + Arrays.toString(colGroup.getColIndices()));
 							LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName());
 						}
@@ -253,11 +260,11 @@ public class CompressedMatrixBlockFactory {
 		phase++;
 	}
 
-	private List<ColGroup> assignColumns(int numCols, ColGroup[] colGroups, MatrixBlock rawBlock,
+	private List<AColGroup> assignColumns(int numCols, AColGroup[] colGroups, MatrixBlock rawBlock,
 		CompressionSettings compSettings) {
 
 		// Find the columns that are not assigned yet, and assign them to uncompressed.
-		List<ColGroup> _colGroups = new ArrayList<>();
+		List<AColGroup> _colGroups = new ArrayList<>();
 		HashSet<Integer> remainingCols = seq(0, numCols - 1, 1);
 		for(int j = 0; j < colGroups.length; j++) {
 			if(colGroups[j] != null) {
@@ -282,4 +289,6 @@ public class CompressedMatrixBlockFactory {
 			ret.add(i);
 		return ret;
 	}
+
+
 }

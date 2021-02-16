@@ -34,37 +34,38 @@ public class ColGroupConverter {
 	 * @param group column group
 	 * @return column group (deep copy of indices but shallow copy of contents)
 	 */
-	public static ColGroup copyColGroup(ColGroup group) {
-		ColGroup ret = null;
+	// public static AColGroup copyColGroup(AColGroup group) {
+	// 	AColGroup ret = null;
 
-		// deep copy col indices
-		int[] colIndices = Arrays.copyOf(group.getColIndices(), group.getNumCols());
+	// 	// deep copy col indices
+	// 	int[] colIndices = Arrays.copyOf(group.getColIndices(), group.getNumCols());
 
-		// create copy of column group
-		if(group instanceof ColGroupUncompressed) {
-			ColGroupUncompressed in = (ColGroupUncompressed) group;
-			ret = new ColGroupUncompressed(colIndices, in._numRows, in.getData());
-		}
-		else if(group instanceof ColGroupRLE) {
-			ColGroupRLE in = (ColGroupRLE) group;
-			ret = new ColGroupRLE(colIndices, in._numRows, in.hasZeros(), in._dict, in.getBitmaps(),
-				in.getBitmapOffsets(), null);
-		}
-		else if(group instanceof ColGroupOLE) {
-			ColGroupOLE in = (ColGroupOLE) group;
-			ret = new ColGroupOLE(colIndices, in._numRows, in.hasZeros(), in._dict, in.getBitmaps(),
-				in.getBitmapOffsets(), null);
-		}
-		else if(group instanceof ColGroupDDC1) {
-			ColGroupDDC1 in = (ColGroupDDC1) group;
-			ret = new ColGroupDDC1(colIndices, in._numRows, in._dict, in.getData(), in._zeros, null);
-		}
-		else {
-			throw new RuntimeException("Using '" + group.getClass() + "' instance of ColGroup not fully supported");
-		}
-
-		return ret;
-	}
+	// 	// create copy of column group
+	// 	if(group instanceof ColGroupUncompressed) {
+	// 		ColGroupUncompressed in = (ColGroupUncompressed) group;
+	// 		ret = new ColGroupUncompressed(colIndices, in._numRows, in.getData());
+	// 	}
+	// 	else if(group instanceof ColGroupRLE) {
+	// 		ColGroupRLE in = (ColGroupRLE) group;
+	// 		ret = new ColGroupRLE(colIndices, in._numRows, in.hasZeros(), in._dict, in.getBitmaps(),
+	// 			in.getBitmapOffsets(), null);
+	// 	}
+	// 	else if(group instanceof ColGroupOLE) {
+	// 		ColGroupOLE in = (ColGroupOLE) group;
+	// 		ret = new ColGroupOLE(colIndices, in._numRows, in.hasZeros(), in._dict, in.getBitmaps(),
+	// 			in.getBitmapOffsets(), null);
+	// 	}
+	// 	else if(group instanceof ColGroupDDC1) {
+	// 		ColGroupDDC1 in = (ColGroupDDC1) group;
+	// 		ret = new ColGroupDDC1(colIndices, in._numRows, in._dict, in.getData(), in._zeros, null);
+	// 	}
+	// 	else if(group instanceof ColGroupConst)
+	// 		ret = new ColGroupConst(colIndices, group.getNumRows(), ((ColGroupValue)group)._dict);
+	// 	else 
+	// 		throw new RuntimeException("Using '" + group.getClass() + "' instance of ColGroup not fully supported");
+		
+	// 	return ret;
+	// }
 
 	/**
 	 * Extract the double array primitive from a Matrix Block that is an vector.
@@ -82,7 +83,7 @@ public class ColGroupConverter {
 	 * @param group an ColGroup to decompress
 	 * @return A MatrixBlock.
 	 */
-	public static MatrixBlock getUncompressedColBlock(ColGroup group) {
+	public static MatrixBlock getUncompressedColBlock(AColGroup group) {
 		return (group instanceof ColGroupUncompressed) ? ((ColGroupUncompressed) group)
 			.getData() : new ColGroupUncompressed(Arrays.asList(group)).getData();
 	}

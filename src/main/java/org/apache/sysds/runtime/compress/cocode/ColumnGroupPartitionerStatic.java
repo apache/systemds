@@ -19,30 +19,24 @@
 
 package org.apache.sysds.runtime.compress.cocode;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.GroupableColInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 
 /**
  * Column group partitioning with static distribution heuristic.
+ * 
+ * TODO: Fix the joining!
  */
-public class ColumnGroupPartitionerStatic extends ColumnGroupPartitioner {
+public class ColumnGroupPartitionerStatic extends AColumnGroupPartitioner {
+
+	protected ColumnGroupPartitionerStatic(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
+		super(sizeEstimator, cs, numRows);
+	}
 
 	@Override
-	public List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo,
-		CompressionSettings cs) {
-		List<int[]> ret = new ArrayList<>();
-		int numParts = (int) Math.ceil((double) groupCols.size() / cs.maxStaticColGroupCoCode);
-		int partSize = (int) Math.ceil((double) groupCols.size() / numParts);
-		for(int i = 0, pos = 0; i < numParts; i++, pos += partSize) {
-			int[] tmp = new int[Math.min(partSize, groupCols.size() - pos)];
-			for(int j = 0; j < partSize && pos + j < groupCols.size(); j++)
-				tmp[j] = groupCols.get(pos + j);
-			ret.add(tmp);
-		}
-		return ret;
+	public CompressedSizeInfo partitionColumns(CompressedSizeInfo colInfos) {
+		return colInfos;
 	}
+
 }

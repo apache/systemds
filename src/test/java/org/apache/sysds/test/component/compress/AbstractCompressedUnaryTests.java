@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -39,7 +39,7 @@ import org.junit.Test;
 public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 	public AbstractCompressedUnaryTests(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettings compSettings, MatrixTypology matrixTypology, OverLapping ov, int parallelism) {
+	CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov, int parallelism) {
 		super(sparType, valType, valRange, compSettings, matrixTypology, ov, parallelism);
 	}
 
@@ -214,7 +214,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, true);
 				}
 			}
-			else if(overlappingType == OverLapping.SQUEEZE){
+			else if(overlappingType == OverLapping.SQUASH){
 				// TODO make better assumptions on range...
 				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.0, 0.90, css);
 			}

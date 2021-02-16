@@ -23,7 +23,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
@@ -54,16 +55,16 @@ public class TestBase {
 	protected MatrixBlock mb;
 
 	public TestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
-		CompressionSettings compressionSettings, MatrixTypology MatrixTypology, OverLapping ov) {
-
-		this.sparsity = TestConstants.getSparsityValue(sparType);
-		this.rows = TestConstants.getNumberOfRows(MatrixTypology);
-		this.cols = TestConstants.getNumberOfColumns(MatrixTypology);
-
-		this.max = TestConstants.getMaxRangeValue(valueRange);
-		this.min = TestConstants.getMinRangeValue(valueRange);
-		this.overlappingType = ov;
+		CompressionSettingsBuilder compressionSettings, MatrixTypology MatrixTypology, OverLapping ov) {
 		try {
+
+			this.sparsity = TestConstants.getSparsityValue(sparType);
+			this.rows = TestConstants.getNumberOfRows(MatrixTypology);
+			this.cols = TestConstants.getNumberOfColumns(MatrixTypology);
+
+			this.max = TestConstants.getMaxRangeValue(valueRange);
+			this.min = TestConstants.getMinRangeValue(valueRange);
+			this.overlappingType = ov;
 			switch(valType) {
 				case CONST:
 					this.min = this.max;
@@ -80,7 +81,7 @@ public class TestBase {
 					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows,
 						cols,
 						CompressionType.OLE,
-						(max - min) / 10,
+						(max - min),
 						max,
 						min,
 						sparsity,
@@ -91,7 +92,7 @@ public class TestBase {
 					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows,
 						cols,
 						CompressionType.RLE,
-						(max - min) / 10,
+						(max - min),
 						max,
 						min,
 						sparsity,
@@ -102,17 +103,16 @@ public class TestBase {
 					throw new NotImplementedException("Not Implemented Test Value type input generator");
 			}
 
+			this.valRange = valueRange;
+			this.valType = valType;
+			this.compressionSettings = compressionSettings.create();
+
+			mb = DataConverter.convertToMatrixBlock(this.input);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			assertTrue("Error in construction of input Test Base", false);
 		}
-
-		this.valRange = valueRange;
-		this.valType = valType;
-		this.compressionSettings = compressionSettings;
-
-		mb = DataConverter.convertToMatrixBlock(this.input);
 	}
 
 	@Override

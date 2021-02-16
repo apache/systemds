@@ -201,11 +201,15 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		sb.append(super.toString());
 		sb.append(String.format("\n%15s%5d ", "Pointers:", this._ptr.length));
 		sb.append(Arrays.toString(this._ptr));
-		sb.append(String.format("\n%15s%5d ", "Data:", this._data.length));
+		return sb.toString();
+	}
+
+	protected static String charsToString(char[] data){
+		StringBuilder sb = new StringBuilder();
 		sb.append("[");
-		for(int x = 0; x < _data.length; x++) {
-			sb.append(((int) _data[x]));
-			if(x != _data.length - 1)
+		for(int x = 0; x < data.length; x++) {
+			sb.append(((int) data[x]));
+			if(x != data.length - 1)
 				sb.append(", ");
 		}
 		sb.append("]");

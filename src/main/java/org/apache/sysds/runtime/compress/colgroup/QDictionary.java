@@ -30,13 +30,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -186,7 +182,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+	public QDictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
 
 		if(_values == null) {
 			if(sparseSafe) {
@@ -225,6 +221,12 @@ public class QDictionary extends ADictionary {
 		}
 		return new QDictionary(res, scale);
 	}
+
+	@Override
+	public QDictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+		throw new NotImplementedException("Not Implemented yet");
+	}
+	
 
 	@Override
 	public int size() {
@@ -271,26 +273,26 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected double[] sumAllRowsToDouble(KahanFunction kplus, int nrColumns) {
-		if(nrColumns == 1 && kplus instanceof KahanPlus)
+	protected double[] sumAllRowsToDouble(boolean square, int nrColumns) {
+		if(nrColumns == 1 && !square)
 			return getValues(); // shallow copy of values
 
 		final int numVals = getNumberOfValues(nrColumns);
 		double[] ret = ColGroupValue.allocDVector(numVals, false);
 		for(int k = 0; k < numVals; k++) {
-			ret[k] = sumRow(k, kplus, nrColumns);
+			ret[k] = sumRow(k, square, nrColumns);
 		}
 
 		return ret;
 	}
 
 	@Override
-	protected double sumRow(int k, KahanFunction kplus, int nrColumns) {
+	protected double sumRow(int k, boolean square, int nrColumns) {
 		if(_values == null)
 			return 0;
 		int valOff = k * nrColumns;
 
-		if(kplus instanceof KahanPlus) {
+		if(!square) {
 			int res = 0;
 			for(int i = 0; i < nrColumns; i++) {
 				res += _values[valOff + i];
@@ -307,35 +309,35 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus) {
-
-		final int rows = c.length / 2;
-		if(!(kplus instanceof KahanPlusSq)) {
-			int[] sum = new int[colIndexes.length];
-			int valOff = 0;
-			for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
-				int cntk = counts[k];
-				for(int j = 0; j < colIndexes.length; j++) {
-					sum[j] += cntk * getValueByte(valOff++);
-				}
-			}
-			for(int j = 0; j < colIndexes.length; j++) {
-				c[colIndexes[j]] = c[colIndexes[j]] + sum[j] * _scale;
-			}
-		}
-		else {
-			KahanObject kbuff = new KahanObject(0, 0);
-			int valOff = 0;
-			for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
-				int cntk = counts[k];
-				for(int j = 0; j < colIndexes.length; j++) {
-					kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
-					kplus.execute3(kbuff, getValue(valOff++), cntk);
-					c[colIndexes[j]] = kbuff._sum;
-					c[colIndexes[j] + rows] = kbuff._correction;
-				}
-			}
-		}
+	protected void colSum(double[] c, int[] counts, int[] colIndexes,  boolean square) {
+		throw new NotImplementedException("Not Implemented");
+		// final int rows = c.length / 2;
+		// if(!(kplus instanceof KahanPlusSq)) {
+		// 	int[] sum = new int[colIndexes.length];
+		// 	int valOff = 0;
+		// 	for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
+		// 		int cntk = counts[k];
+		// 		for(int j = 0; j < colIndexes.length; j++) {
+		// 			sum[j] += cntk * getValueByte(valOff++);
+		// 		}
+		// 	}
+		// 	for(int j = 0; j < colIndexes.length; j++) {
+		// 		c[colIndexes[j]] = c[colIndexes[j]] + sum[j] * _scale;
+		// 	}
+		// }
+		// else {
+		// 	KahanObject kbuff = new KahanObject(0, 0);
+		// 	int valOff = 0;
+		// 	for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
+		// 		int cntk = counts[k];
+		// 		for(int j = 0; j < colIndexes.length; j++) {
+		// 			kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
+		// 			kplus.execute3(kbuff, getValue(valOff++), cntk);
+		// 			c[colIndexes[j]] = kbuff._sum;
+		// 			c[colIndexes[j] + rows] = kbuff._correction;
+		// 		}
+		// 	}
+		// }
 	}
 
 	@Override
@@ -416,5 +418,16 @@ public class QDictionary extends ADictionary {
 			orgOffset += previousNumberOfColumns - idxEnd + idxStart;
 		}
 		return new QDictionary(newDictValues, _scale);
+	}
+
+	public ADictionary reExpandColumns(int max){
+		byte[] newDictValues = new byte[_values.length * max];
+
+		for(int i = 0, offset = 0; i< _values.length; i++, offset += max){
+			int val = _values[i]-1;
+			newDictValues[offset + val] = 1;
+		}
+
+		return new QDictionary(newDictValues, 1.0);
 	}
 }

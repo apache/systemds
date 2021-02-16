@@ -157,7 +157,7 @@ public class SparseSideInputTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats", "-args", 
+			programArgs = new String[]{"-stats","-explain", "-args", 
 				input("X"), input("Y"), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
@@ -170,7 +170,8 @@ public class SparseSideInputTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("Y", Y, true);
 			
 			//run dml and r scripts
-			runTest(true, false, null, -1);
+			LOG.debug(fullDMLScriptName);
+			LOG.debug(runTest(true, false, null, -1));
 			runRScript(true); 
 			
 			//compare matrices 
@@ -185,7 +186,6 @@ public class SparseSideInputTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
-			TEST_CONF = TEST_CONF2;
 		}
 	}
 	

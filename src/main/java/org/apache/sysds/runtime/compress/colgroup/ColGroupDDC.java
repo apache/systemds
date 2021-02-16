@@ -22,11 +22,11 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
+import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -53,32 +53,33 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
-		final int nCol = getNumCols();
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+		decompressToBlockUnSafe(target, rl, ru, offT, values);
+		target.setNonZeros(target.getNonZeros() + _numRows * _colIndexes.length);
+	}
+
+	@Override
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+		final int nCol = _colIndexes.length;
+		final int tCol = target.getNumColumns();
 		double[] c = target.getDenseBlockValues();
-		for(int i = rl; i < ru; i++, offT++) {
-			int rowIndex = getIndex(i) * nCol;
+		offT = offT * tCol;
 
-			if(rowIndex < values.length) {
-				int rc = offT * target.getNumColumns();
-				if(safe) {
-					for(int j = 0; j < nCol; j++) {
+		if(_zeros)
+			for(int i = rl; i < ru; i++, offT += tCol) {
+				int rowIndex = getIndex(i) * nCol;
+				if(rowIndex < values.length)
+					for(int j = 0; j < nCol; j++)
+						c[offT + _colIndexes[j]] += values[rowIndex + j];
 
-						double v = c[rc + _colIndexes[j]];
-						double nv = c[rc + _colIndexes[j]] + values[rowIndex + j];
-						if(v == 0.0 && nv != 0.0) {
-							target.setNonZeros(target.getNonZeros() + 1);
-						}
-						c[rc + _colIndexes[j]] = nv;
-					}
-				}
-				else {
-					for(int j = 0; j < nCol; j++) {
-						c[rc + _colIndexes[j]] += values[rowIndex + j];
-					}
-				}
 			}
-		}
+		else
+			for(int i = rl; i < ru; i++, offT += tCol) {
+				int rowIndex = getIndex(i) * nCol;
+				for(int j = 0; j < nCol; j++)
+					c[offT + _colIndexes[j]] += values[rowIndex + j];
+			}
+
 	}
 
 	@Override
@@ -106,12 +107,11 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		int nnz = 0;
 		for(int i = 0; i < _numRows; i++) {
 			int index = getIndex(i);
-			if(index < getNumValues()) 
+			if(index < getNumValues())
 				nnz += ((c[i] += values[(index) * ncol + colpos]) != 0) ? 1 : 0;
-			
-			else 
+			else
 				nnz++;
-			
+
 		}
 		target.setNonZeros(nnz);
 	}
@@ -121,13 +121,13 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		int ncol = getNumCols();
 		double[] c = target.getDenseBlockValues();
 		double[] values = getValues();
-		final int numValues =  getNumValues();
+		final int numValues = getNumValues();
 		int nnz = 0;
-		for(int i = 0, r = rl; i < ru-rl; i++, r++) {
+		for(int i = 0, r = rl; i < ru - rl; i++, r++) {
 			int index = getIndex(r);
-			if(index < numValues) 
+			if(index < numValues)
 				nnz += ((c[i] += values[(index) * ncol + colpos]) != 0) ? 1 : 0;
-			else 
+			else
 				nnz++;
 		}
 		target.setNonZeros(nnz);
@@ -137,15 +137,13 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
 		int ncol = getNumCols();
 		double[] values = getValues();
-		final int numValues =  getNumValues();
-		for(int i = 0, r = rl; i < ru-rl; i++, r++) {
+		final int numValues = getNumValues();
+		for(int i = 0, r = rl; i < ru - rl; i++, r++) {
 			int index = getIndex(r);
 			if(index < numValues)
-				c[i] += values[(index) * ncol + colpos];	
+				c[i] += values[(index) * ncol + colpos];
 		}
 	}
-
-
 
 	@Override
 	public double get(int r, int c) {
@@ -156,11 +154,11 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 		// get value
 		int index = getIndex(r);
-		if(index < getNumValues()) 
+		if(index < getNumValues())
 			return _dict.getValue(index * _colIndexes.length + ix);
-		else 
+		else
 			return 0.0;
-		
+
 	}
 
 	@Override
@@ -171,7 +169,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		for(int i = rl; i < ru; i++) {
 			int lnnz = 0;
 			int index = getIndex(i);
-			if(index < numVals * _colIndexes.length) {
+			if(index < numVals) {
 				for(int colIx = index; colIx < ncol + index; colIx++) {
 					lnnz += (values[colIx]) != 0 ? 1 : 0;
 				}
@@ -181,17 +179,16 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean) {
+	protected void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
 		final int numVals = getNumValues();
-		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
 		// pre-aggregate nnz per value tuple
-		double[] vals = _dict.sumAllRowsToDouble(kplus, _colIndexes.length);
+		double[] vals = _dict.sumAllRowsToDouble(square, _colIndexes.length);
 
 		final int mult = (2 + (mean ? 1 : 0));
 		for(int rix = rl; rix < ru; rix++) {
 			int index = getIndex(rix);
 			if(index < numVals) {
-				setandExecute(c, kplus2, vals[index], rix * mult);
+				setandExecute(c, false, vals[index], rix * mult);
 			}
 		}
 	}
@@ -214,23 +211,6 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		}
 	}
 
-	public void postScaling(double[] values, double[] vals, double[] c, int numVals) {
-		postScaling(values, vals, c, numVals, 0, 0);
-	}
-
-	public void postScaling(double[] values, double[] vals, double[] c, int numVals, int i, int totalCols) {
-		final int ncol = getNumCols();
-		int valOff = 0;
-
-		for(int k = 0; k < numVals; k++) {
-			double aval = vals[k];
-			for(int j = 0; j < ncol; j++) {
-				int colIx = _colIndexes[j] + i * totalCols;
-				c[colIx] += aval * values[valOff++];
-			}
-		}
-	}
-
 	@Override
 	public int[] getCounts(int[] counts) {
 		return getCounts(0, _numRows, counts);
@@ -248,111 +228,86 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	@Override
 	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
 		int voff) {
+
 		int numVals = getNumValues();
+		// if(8 * numVals < _numRows) {
 		for(int i = rl, j = voff; i < ru; i++, j++) {
-			int offC = i * numCols;
-			if(8 * numVals < _numRows) {
-				// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
-				// temporary array also avoids false sharing in multi-threaded environments
-				double[] vals = preAggregate(a, numVals, j);
-				postScaling(values, vals, c, numVals, i, numCols);
-			}
-			else {
-				// Because we want to reduce the number of multiplies then we multiply the number of values with the
-				// number of columns before the for loop.
-				numVals = getNumValues() * _colIndexes.length;
-				for(int k = 0, aOff = j * _numRows; k < _numRows; k++, aOff++) {
-					double aval = a[aOff];
-					if(aval != 0) {
-						int valOff = getIndex(k) * _colIndexes.length;
-						if(valOff < numVals) {
-							for(int h = 0; h < _colIndexes.length; h++) {
-								int colIx = _colIndexes[h] + offC;
-								c[colIx] += aval * values[valOff + h];
-							}
-						}
-					}
-				}
-			}
+			double[] vals = preAggregate(a, j);
+			postScaling(values, vals, c, numVals, i, numCols);
 		}
+		// }
+		// else {
+		// for(int i = rl, j = voff; i < ru; i++, j++) {
+		// int offC = i * numCols;
+		// numVals = numVals * _colIndexes.length;
+		// for(int k = 0, aOff = j * _numRows; k < _numRows; k++, aOff++) {
+		// double aval = a[aOff];
+		// if(aval != 0) {
+		// int valOff = getIndex(k) * _colIndexes.length;
+		// if(valOff < numVals) {
+		// for(int h = 0; h < _colIndexes.length; h++) {
+		// int colIx = _colIndexes[h] + offC;
+		// c[colIx] += aval * values[valOff + h];
+		// }
+		// }
+		// }
+		// }
+
+		// }
+		// }
 	}
 
 	@Override
 	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
 		double[] MaterializedRow) {
 		final int numVals = getNumValues();
-		double[] vals = preAggregateSparse(sb, row, numVals);
+		double[] vals = preAggregateSparse(sb, row);
 		postScaling(values, vals, c, numVals, row, numCols);
 	}
 
+	@Override
+	public double[] preAggregate(double[] a, int row) {
+		double[] vals = allocDVector(getNumValues() + 1, true);
+		if(row > 0)
+			for(int i = 0, off = _numRows * row; i < _numRows; i++, off++)
+				vals[getIndex(i)] += a[off];
+		else
+			for(int i = 0; i < _numRows; i++)
+				vals[getIndex(i)] += a[i];
 
-
-	public double[] preAggregate(double[] a, int numVals) {
-		return preAggregate(a, numVals, 0);
-	}
-
-	/**
-	 * Pre aggregates a specific row from the input a which can be a row or a matrix.
-	 * 
-	 * @param a       the input vector or matrix to multiply with
-	 * @param numVals the number of values contained in the dictionary
-	 * @param aRows   the row index from a
-	 * @return the pre-aggregated values.
-	 */
-	public double[] preAggregate(double[] a, int numVals, int aRows) {
-		double[] vals = allocDVector(numVals + 1, true);
-		if(aRows > 0) {
-			for(int i = 0, off = _numRows * aRows; i < _numRows; i++, off++) {
-				int index = getIndex(i);
-				vals[index] += a[off];
-			}
-		}
-		else {
-			for(int i = 0; i < _numRows; i++) {
-				int index = getIndex(i);
-				vals[index] += a[i];
-			}
-		}
-		return vals;
-	}
-
-	public double[] preAggregateSparse(SparseBlock sb, int row, int numVals) {
-		double[] vals = allocDVector(numVals + 1, true);
-		int[] indexes = sb.indexes(row);
-		double[] sparseV = sb.values(row);
-		for(int i = sb.pos(row); i < sb.size(row) + sb.pos(row); i++) {
-			int index = getIndex(indexes[i]);
-			vals[index] += sparseV[i];
-		}
 		return vals;
 	}
 
 	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
+	public double[] preAggregateSparse(SparseBlock sb, int row) {
+		double[] vals = allocDVector(getNumValues() + 1, true);
+		int[] indexes = sb.indexes(row);
+		double[] sparseV = sb.values(row);
+		for(int i = sb.pos(row); i < sb.size(row) + sb.pos(row); i++)
+			vals[getIndex(indexes[i])] += sparseV[i];
 
-		numVals = getNumValues();
-
-		if(8 * numVals < _numRows) {
-			// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
-			// temporary array also avoids false sharing in multi-threaded environments
-
-			double[] vals = preAggregate(a, numVals);
-
-			postScaling(values, vals, c, numVals);
-		}
-		else {
-			numVals = numVals * _colIndexes.length;
-			// iterate over codes, compute all, and add to the result
-			for(int i = 0; i < _numRows; i++) {
-				double aval = a[i];
-				if(aval != 0)
-					for(int j = 0, valOff = getIndex(i) * _colIndexes.length; j < _colIndexes.length; j++)
-						if(valOff < numVals) {
-							c[_colIndexes[j]] += aval * values[valOff + j];
-						}
-			}
-		}
+		return vals;
 	}
+
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
+	// // if(8 * numVals < _numRows) {
+	// double[] vals = preAggregate(a);
+	// postScaling(values, vals, c, numVals);
+	// // }
+	// // else {
+	// // numVals = numVals * _colIndexes.length;
+	// // // iterate over codes, compute all, and add to the result
+	// // for(int i = 0; i < _numRows; i++) {
+	// // double aval = a[i];
+	// // if(aval != 0)
+	// // for(int j = 0, valOff = getIndex(i) * _colIndexes.length; j < _colIndexes.length; j++)
+	// // if(valOff < numVals) {
+	// // c[_colIndexes[j]] += aval * values[valOff + j];
+	// // }
+	// // }
+	// // }
+	// }
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -405,4 +360,201 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	 */
 	protected abstract void setData(int r, int code);
 
+	@Override
+	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
+		final int nCol = lhs.getNumValues();
+		final int rhsNV = this.getNumValues();
+		final int retSize = nCol * rhsNV;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		if(!this._zeros && !lhs._zeros)
+			DDCNZDDCNZ(lhs, this, ag, nCol);
+		else if(!this._zeros)
+			for(int i = 0; i < this._numRows; i++) {
+				int col = lhs.getIndex(i);
+				if(col < nCol)
+					ag.increment(col + this.getIndex(i) * nCol);
+			}
+		else if(!lhs._zeros)
+			for(int i = 0; i < this._numRows; i++) {
+				int row = this.getIndex(i);
+				if(row < rhsNV)
+					ag.increment(lhs.getIndex(i) + row * nCol);
+			}
+		else
+			DDCZDDCZ(lhs, this, nCol, rhsNV, ag, nCol);
+
+		return ag;
+	}
+
+	private static void DDCNZDDCNZ(ColGroupDDC cgl, ColGroupDDC cgr, IPreAggregate ag, final int nCol) {
+		for(int i = 0; i < cgr._numRows; i++)
+			ag.increment(cgl.getIndex(i) + cgr.getIndex(i) * nCol);
+	}
+
+	private static void DDCZDDCZ(ColGroupDDC cgl, ColGroupDDC cgr, final int lhsNV, final int rhsNV, IPreAggregate ag,
+		final int nCol) {
+		for(int i = 0; i < cgr._numRows; i++) {
+			int row = cgr.getIndex(i);
+			if(row < rhsNV) {
+				int col = cgl.getIndex(i);
+				if(col < lhsNV)
+					ag.increment(col + row * nCol);
+			}
+		}
+	}
+
+	@Override
+	public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
+		final int nCol = lhs.getNumValues();
+		final int rhsNV = this.getNumValues();
+		final int retSize = nCol * rhsNV;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		final int[] sdcIndexes = lhs._indexes;
+		final char[] sdcData = lhs._data;
+		final int offsetToDefault = nCol - 1;
+
+		int off = 0;
+		int i = 0;
+
+		int col;
+		for(; i < this._numRows && off < sdcIndexes.length; i++) {
+			int row = this.getIndex(i);
+			if(sdcIndexes[off] == i)
+				col = sdcData[off++];
+			else
+				col = offsetToDefault;
+			if(row < this.getNumValues())
+				ag.increment(col + row * nCol);
+		}
+		col = offsetToDefault;
+		for(; i < this._numRows; i++) {
+			int row = this.getIndex(i);
+			if(row < this.getNumValues())
+				ag.increment(col + row * nCol);
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
+		final int nCol = lhs.getNumValues();
+		final int rhsNV = this.getNumValues();
+		final int retSize = nCol * rhsNV;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		final int[] sdcIndexes = lhs._indexes;
+		final int offsetToDefault = lhs.getNumValues() - 1;
+
+		int off = 0;
+		int i = 0;
+
+		int col;
+		for(; i < this._numRows && off < sdcIndexes.length; i++) {
+			int row = this.getIndex(i);
+			if(sdcIndexes[off] == i) {
+				col = offsetToDefault;
+				off++;
+			}
+			else
+				col = 0;
+			if(row < this.getNumValues())
+				ag.increment(col + row * nCol);
+		}
+		col = 0;
+		for(; i < this._numRows; i++) {
+			int row = this.getIndex(i);
+
+			if(row < this.getNumValues())
+				ag.increment(col + row * nCol);
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
+		final int nCol = lhs.getNumValues();
+		final int rhsNV = this.getNumValues();
+		final int retSize = nCol * rhsNV;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		final int[] sdcIndexes = lhs._indexes;
+		final char[] sdcData = lhs._data;
+
+		for(int i = 0; i < sdcIndexes.length; i++) {
+			int row = this.getIndex(sdcIndexes[i]);
+			int col = sdcData[i];
+			if(row < this.getNumValues())
+				ag.increment(col + row * nCol);
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
+		final int nCol = lhs.getNumValues();
+		final int rhsNV = this.getNumValues();
+		final int retSize = nCol * rhsNV;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		final int[] sdcIndexes = lhs._indexes;
+
+		for(int i = 0; i < sdcIndexes.length; i++) {
+			int row = this.getIndex(sdcIndexes[i]);
+			if(row < this.getNumValues())
+				ag.increment(row * nCol);
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
+		final int NVR = this.getNumValues();
+		final int NVL = lhs.getNumValues();
+		final int retSize = NVR * NVL;
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		for(int kl = 0; kl < NVL; kl++) {
+			final int bOffL = lhs._ptr[kl];
+			final int bLenL = lhs.len(kl);
+			for(int bixL = 0, offL = 0, sLenL = 0; bixL < bLenL; bixL += sLenL + 1, offL += blksz) {
+				sLenL = lhs._data[bOffL + bixL];
+				for(int i = 1; i <= sLenL; i++) {
+					int idx = this.getIndex(offL + lhs._data[bOffL + bixL + i]);
+					ag.increment(kl + idx * NVL);
+				}
+			}
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
+		final int NVR = this.getNumValues();
+		final int NVL = lhs.getNumValues();
+		final int retSize = NVR * NVL;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		for(int kl = 0; kl < NVL; kl++) {
+			final int boffL = lhs._ptr[kl];
+			final int blenL = lhs.len(kl);
+			for(int bixL = 0, startL = 0, lenL = 0; bixL < blenL && startL < _numRows; startL += lenL, bixL += 2) {
+				startL += lhs._data[boffL + bixL];
+				lenL = lhs._data[boffL + bixL + 1];
+				final int endL = startL + lenL;
+				for(int i = startL; i < endL; i++){
+					int kr = getIndex(i) * NVL;
+					ag.increment(kl + kr);
+				}
+			}
+		}
+		return ag;
+	}
 }

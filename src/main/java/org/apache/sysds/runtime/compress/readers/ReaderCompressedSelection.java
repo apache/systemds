@@ -20,56 +20,56 @@
 package org.apache.sysds.runtime.compress.readers;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ReaderCompressedSelection extends ReaderColumnSelection {
 
-    private static final int decompressRowCount = 500;
+	private static final int decompressRowCount = 500;
 
-    final private CompressedMatrixBlock compressedOverlap;
+	final private CompressedMatrixBlock compressedOverlap;
 
-    // Temporary block to decompress into.
-    private MatrixBlock _tmp;
+	// Temporary block to decompress into.
+	private MatrixBlock _tmp;
 
-    private int currentBlock;
+	private int currentBlock;
 
-    protected ReaderCompressedSelection(CompressedMatrixBlock compBlock, int[] colIndices) {
-        super(colIndices, compBlock.getNumRows());
-        compressedOverlap = compBlock;
-        _tmp = new MatrixBlock(decompressRowCount, compBlock.getNumColumns(), false).allocateDenseBlock();
-        currentBlock = -1;
-    }
+	protected ReaderCompressedSelection(CompressedMatrixBlock compBlock, int[] colIndices) {
+		super(colIndices, compBlock.getNumRows());
+		compressedOverlap = compBlock;
+		_tmp = new MatrixBlock(decompressRowCount, compBlock.getNumColumns(), false).allocateDenseBlock();
+		currentBlock = -1;
+	}
 
-    @Override
-    protected DblArray getNextRow() {
-        if(_lastRow == _numRows - 1)
-            return null;
-        _lastRow++;
+	@Override
+	protected DblArray getNextRow() {
+		if(_lastRow == _numRows - 1)
+			return null;
+		_lastRow++;
 
-        if(currentBlock != _lastRow / decompressRowCount) {
-            // decompress into the tmpBlock.
-            currentBlock = _lastRow / decompressRowCount;
-            for(ColGroup g : compressedOverlap.getColGroups()) {
-                g.decompressToBlockSafe(_tmp,
-                    _lastRow,
-                    Math.min(_lastRow + decompressRowCount, g.getNumRows()),
-                    0,
-                    false);
-            }
-        }
+		if(currentBlock != _lastRow / decompressRowCount) {
+			// decompress into the tmpBlock.
+			currentBlock = _lastRow / decompressRowCount;
+			for(AColGroup g : compressedOverlap.getColGroups()) {
+				g.decompressToBlockUnSafe(_tmp,
+					_lastRow,
+					Math.min(_lastRow + decompressRowCount, g.getNumRows()),
+					0,
+					g.getValues());
+			}
+		}
 
-        DenseBlock bl = _tmp.getDenseBlock();
-        int offset = _lastRow % decompressRowCount;
-        for(int i = 0; i < _colIndexes.length; i++) {
-            reusableArr[i] = bl.get(offset, _colIndexes[i]);
-            bl.set(offset, _colIndexes[i], 0);
-        }
-        // LOG.error(reusableReturn);
-        return reusableReturn;
+		DenseBlock bl = _tmp.getDenseBlock();
+		int offset = _lastRow % decompressRowCount;
+		for(int i = 0; i < _colIndexes.length; i++) {
+			reusableArr[i] = bl.get(offset, _colIndexes[i]);
+			bl.set(offset, _colIndexes[i], 0);
+		}
+		// LOG.error(reusableReturn);
+		return reusableReturn;
 
-    }
+	}
 
 }

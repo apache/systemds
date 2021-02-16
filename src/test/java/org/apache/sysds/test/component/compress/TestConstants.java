@@ -24,9 +24,9 @@ package org.apache.sysds.test.component.compress;
  */
 public class TestConstants {
 
-	private static final int rows[] = {4, 2008, 1283, 500, 1, 100, 5000, 100000, 64000 * 2};
+	private static final int rows[] = {4, 500, 1283, 500, 1, 100, 5000, 66000, 64000 * 2};
 	private static final int cols[] = {20, 20, 13, 1, 321, 1, 5, 1, 1};
-	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0, 1.0};
+	private static final double[] sparsityValues = {1.0, 0.1, 0.01, 0.0, 1.0};
 
 	private static final int[] mins = {-4, -127 * 2};
 	private static final int[] maxs = {5, 127};
@@ -56,17 +56,17 @@ public class TestConstants {
 	}
 
 	public enum ValueRange {
-		SMALL, LARGE, BYTE, BOOLEAN
+		SMALL, LARGE, BYTE, BOOLEAN, NEGATIVE
 	}
 
 	public enum OverLapping {
-		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUEEZE;
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS;
 
 		public static boolean effectOnOutput(OverLapping opcode) {
 			switch(opcode) {
 				case MATRIX_MULT_NEGATIVE:
 				case MATRIX:
-				case SQUEEZE:
+				case SQUASH:
 				case COL:
 				case MATRIX_PLUS:
 					return true;
@@ -103,6 +103,8 @@ public class TestConstants {
 				return -127;
 			case BOOLEAN:
 				return 0;
+			case NEGATIVE:
+				return -132;
 			default:
 				throw new RuntimeException("Invalid range value enum type");
 		}
@@ -118,6 +120,8 @@ public class TestConstants {
 				return 127;
 			case BOOLEAN:
 				return 1;
+			case NEGATIVE:
+				return -23;
 			default:
 				throw new RuntimeException("Invalid range value enum type");
 		}

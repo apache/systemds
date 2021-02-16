@@ -157,6 +157,37 @@ class GaussianMixtureMapper(Mapper):
             'bic'
         ]
 
+class TweedieRegressorMapper(Mapper):
+    def __init__(self):
+        self.name = 'glm'
+        self.is_intermediate = False
+    
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        # TODO: many parameters cannot be mapped directly: how to handle defaults for dml?
+        self.mapped_params = [
+            1, # sklearn impl supports power only, dfam
+            params.get('power', 0.0), # vpow
+            0, # link
+            1.0, # lpow
+            0.0, #yneg
+            0 if params.get('fit_intercept', 1) else 1, # sklearn does not know last case
+            0.0, # reg
+            params.get('tol', 0.000001),
+            0.0, # disp
+            200, # moi
+            0 # mii
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'beta'
+        ]
+
 class StandardScalerMapper(Mapper):
     def __init__(self):
         self.name = 'scale'

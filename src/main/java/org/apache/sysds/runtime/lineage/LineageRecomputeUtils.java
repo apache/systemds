@@ -82,6 +82,10 @@ public class LineageRecomputeUtils {
 	public static Map<String, DedupLoopItem> loopPatchMap = new HashMap<>();
 
 	public static Data parseNComputeLineageTrace(String mainTrace, String dedupPatches) {
+		if (DEBUG) {
+			System.out.println(mainTrace);
+			System.out.println(dedupPatches);
+		}
 		LineageItem root = LineageParser.parseLineageTrace(mainTrace);
 		if (dedupPatches != null)
 			LineageParser.parseLineageTraceDedup(dedupPatches);

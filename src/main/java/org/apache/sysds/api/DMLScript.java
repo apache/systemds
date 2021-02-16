@@ -98,6 +98,7 @@ public class DMLScript
 	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;     // whether deduplicate lineage items
 	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;   // whether lineage-based reuse
 	public static LineageCachePolicy LINEAGE_POLICY = DMLOptions.defaultOptions.linCachePolicy; // lineage cache eviction policy
+	public static boolean     LINEAGE_ESTIMATE = DMLOptions.defaultOptions.lineage_estimate; // whether estimate reuse benefits
 	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;      // Check which privacy constraints are loaded and checked during federated execution
 
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
@@ -181,7 +182,7 @@ public class DMLScript
 	 * @throws IOException If an internal IOException happens.
 	 */
 	public static boolean executeScript( Configuration conf, String[] args )
-		throws  IOException, ParseException, DMLScriptException
+		throws IOException, ParseException, DMLScriptException
 	{
 		//parse arguments and set execution properties
 		ExecMode oldrtplatform  = EXEC_MODE;  //keep old rtplatform
@@ -194,14 +195,16 @@ public class DMLScript
 		}
 		catch(AlreadySelectedException e) {
 			LOG.error("Mutually exclusive options were selected. " + e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
+			//TODO fix null default options
+			//HelpFormatter formatter = new HelpFormatter();
+			//formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
 			return false;
 		}
 		catch(org.apache.commons.cli.ParseException e) {
 			LOG.error("Parsing Exception " + e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
+			//TODO fix null default options
+			//HelpFormatter formatter = new HelpFormatter();
+			//formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
 			return false;
 		}
 
@@ -218,6 +221,7 @@ public class DMLScript
 			LINEAGE_DEDUP       = dmlOptions.lineage_dedup;
 			LINEAGE_REUSE       = dmlOptions.linReuseType;
 			LINEAGE_POLICY      = dmlOptions.linCachePolicy;
+			LINEAGE_ESTIMATE    = dmlOptions.lineage_estimate;
 			CHECK_PRIVACY       = dmlOptions.checkPrivacy;
 
 			String fnameOptConfig = dmlOptions.configFile;
@@ -250,6 +254,7 @@ public class DMLScript
 
 			LineageCacheConfig.setConfig(LINEAGE_REUSE);
 			LineageCacheConfig.setCachePolicy(LINEAGE_POLICY);
+			LineageCacheConfig.setEstimator(LINEAGE_ESTIMATE);
 
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;

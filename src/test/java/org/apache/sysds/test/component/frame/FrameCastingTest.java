@@ -29,8 +29,6 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
-import java.util.Arrays;
-
 public class FrameCastingTest extends AutomatedTestBase
 {
 	private final static int rows = 2891;

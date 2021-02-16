@@ -66,10 +66,12 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_LABELS = "labels";
 	public static final String PS_VAL_FEATURES = "val_features";
 	public static final String PS_VAL_LABELS = "val_labels";
+	public static final String PS_VAL_FUN = "val";
 	public static final String PS_UPDATE_FUN = "upd";
 	public static final String PS_AGGREGATION_FUN = "agg";
 	public static final String PS_MODE = "mode";
 	public static final String PS_GRADIENTS = "gradients";
+	public static final String PS_SEED = "seed";
 	public enum PSModeType {
 		FEDERATED, LOCAL, REMOTE_SPARK
 	}
@@ -87,6 +89,11 @@ public abstract class Statement implements ParseInfo
 	public enum PSFrequency {
 		BATCH, EPOCH
 	}
+	public static final String PS_FED_WEIGHING = "weighing";
+	public static final String PS_FED_RUNTIME_BALANCING = "runtime_balancing";
+	public enum PSRuntimeBalancing {
+		NONE, RUN_MIN, CYCLE_AVG, CYCLE_MAX, SCALE_BATCH
+	}
 	public static final String PS_EPOCHS = "epochs";
 	public static final String PS_BATCH_SIZE = "batchsize";
 	public static final String PS_PARALLELISM = "k";
@@ -94,8 +101,9 @@ public abstract class Statement implements ParseInfo
 	public enum PSScheme {
 		DISJOINT_CONTIGUOUS, DISJOINT_ROUND_ROBIN, DISJOINT_RANDOM, OVERLAP_RESHUFFLE
 	}
+	public static final String PS_FED_SCHEME = "fed_scheme";
 	public enum FederatedPSScheme {
-		KEEP_DATA_ON_WORKER, SHUFFLE
+		KEEP_DATA_ON_WORKER, SHUFFLE, REPLICATE_TO_MAX, SUBSAMPLE_TO_MIN, BALANCE_TO_AVG
 	}
 	public static final String PS_HYPER_PARAMS = "hyperparams";
 	public static final String PS_CHECKPOINTING = "checkpointing";
@@ -107,11 +115,10 @@ public abstract class Statement implements ParseInfo
 	// prefixed with code: "1701-NCC-" to not overwrite anything
 	public static final String PS_FED_BATCH_SIZE = "1701-NCC-batch_size";
 	public static final String PS_FED_DATA_SIZE = "1701-NCC-data_size";
-	public static final String PS_FED_NUM_BATCHES = "1701-NCC-num_batches";
+	public static final String PS_FED_POSS_BATCHES_LOCAL = "1701-NCC-poss_batches_local";
 	public static final String PS_FED_NAMESPACE = "1701-NCC-namespace";
 	public static final String PS_FED_GRADIENTS_FNAME = "1701-NCC-gradients_fname";
 	public static final String PS_FED_AGGREGATION_FNAME = "1701-NCC-aggregation_fname";
-	public static final String PS_FED_BATCHCOUNTER_VARID = "1701-NCC-batchcounter_varid";
 	public static final String PS_FED_MODEL_VARID = "1701-NCC-model_varid";
 
 

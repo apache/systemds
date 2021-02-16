@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
@@ -49,6 +48,11 @@ import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageCache;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
@@ -92,10 +96,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		for(int i = 0; i < requests.length; i++) {
 			FederatedRequest request = requests[i];
-			if(log.isInfoEnabled()) {
-				log.info("Executing command " + (i + 1) + "/" + requests.length + ": " + request.getType().name());
-				if(log.isDebugEnabled()) {
-					log.debug("full command: " + request.toString());
+			if(log.isDebugEnabled()) {
+				log.debug("Executing command " + (i + 1) + "/" + requests.length + ": " + request.getType().name());
+				if(log.isTraceEnabled()) {
+					log.trace("full command: " + request.toString());
 				}
 			}
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
@@ -157,9 +161,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
 			return new FederatedResponse(ResponseType.ERROR, ex);
 		}
-		catch(Exception ex) {
-			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
-				"Exception of type " + ex.getClass() + " thrown when processing request", ex));
+		catch (Exception ex) {
+			String msg = "Exception of type " + ex.getClass() + " thrown when processing request";
+			log.error(msg, ex);
+			return new FederatedResponse(ResponseType.ERROR,
+				new FederatedWorkerHandlerException(msg));
 		}
 	}
 
@@ -209,17 +215,16 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 			}
 		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
+		catch (DMLPrivacyException | FederatedWorkerHandlerException ex){
+			throw ex;
+		}
+		catch (Exception ex) {
+			String msg = "Exception in reading metadata of: " + filename;
+			log.error(msg, ex);
+			throw new DMLRuntimeException(msg);
 		}
 		finally {
-			if(fs != null)
-				try {
-					fs.close();
-				}
-				catch(IOException e) {
-					return new FederatedResponse(ResponseType.ERROR, id);
-				}
+			IOUtilFunctions.closeSilently(fs);
 		}
 
 		// put meta data object in symbol table, read on first operation
@@ -232,14 +237,18 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		cd.enableCleanup(false); // guard against deletion
 		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 
+		if (DMLScript.LINEAGE)
+			// create a literal type lineage item with the file name
+			_ecm.get(tid).getLineage().set(String.valueOf(id), new LineageItem(filename));
+
 		if(dataType == Types.DataType.FRAME) {
 			FrameObject frameObject = (FrameObject) cd;
 			frameObject.acquireRead();
 			frameObject.refreshMetaData(); // get block schema
 			frameObject.release();
-			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema()});
+			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
 		}
-		return new FederatedResponse(ResponseType.SUCCESS, id);
+		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
 	}
 
 	private FederatedResponse putVariable(FederatedRequest request) {
@@ -264,6 +273,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		// set variable and construct empty response
 		ec.setVariable(varname, data);
+		if (DMLScript.LINEAGE)
+			ec.getLineage().set(varname, new LineageItem(String.valueOf(request.getChecksum(0))));
+
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 
@@ -299,12 +311,25 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		pb.getInstructions().clear();
 		Instruction receivedInstruction = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 		pb.getInstructions().add(receivedInstruction);
+
+		if (DMLScript.LINEAGE)
+			// Compiler assisted optimizations are not applicable for Fed workers.
+			// e.g. isMarkedForCaching fails as output operands are saved in the 
+			// symbol table only after the instruction execution finishes. 
+			// NOTE: In shared JVM, this will disable compiler assistance even for the coordinator 
+			LineageCacheConfig.setCompAssRW(false);
+
 		try {
 			pb.execute(ec); // execute single instruction
 		}
+		catch(DMLPrivacyException | FederatedWorkerHandlerException ex){
+			throw ex;
+		}
 		catch(Exception ex) {
-			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
-				"Exception of type " + ex.getClass() + " thrown when processing EXEC_INST request", ex));
+			String msg = "Exception of type " + ex.getClass() + " thrown when processing EXEC_INST request";
+			log.error(msg, ex);
+			return new FederatedResponse(ResponseType.ERROR,
+				new FederatedWorkerHandlerException(msg));
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
@@ -317,24 +342,47 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedUDF udf = (FederatedUDF) request.getParam(0);
 		Data[] inputs = Arrays.stream(udf.getInputIDs()).mapToObj(id -> ec.getVariable(String.valueOf(id)))
 			.map(PrivacyMonitor::handlePrivacy).toArray(Data[]::new);
-
-		// execute user-defined function
+		
+		// trace lineage
+		if (DMLScript.LINEAGE)
+			LineageItemUtils.traceFedUDF(ec, udf);
+		
+		// reuse or execute user-defined function
 		try {
-			return udf.execute(ec, inputs);
+			// reuse UDF outputs if available in lineage cache
+			FederatedResponse reuse = LineageCache.reuse(udf, ec);
+			if (reuse.isSuccessful())
+				return reuse;
+
+			// else execute the UDF
+			long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+			FederatedResponse res = udf.execute(ec, inputs);
+			long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+			//cacheUDFOutputs(udf, inputs, t1-t0, ec);
+			LineageCache.putValue(udf, ec, t1-t0);
+			return res;
+		}
+		catch(DMLPrivacyException | FederatedWorkerHandlerException ex){
+			throw ex;
 		}
 		catch(Exception ex) {
-			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
-				"Exception of type " + ex.getClass() + " thrown when processing EXEC_UDF request", ex));
+			String msg = "Exception of type " + ex.getClass() + " thrown when processing EXEC_UDF request";
+			log.error(msg, ex);
+			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(msg));
 		}
 	}
-
+	
 	private FederatedResponse execClear() {
 		try {
 			_ecm.clear();
 		}
+		catch(DMLPrivacyException | FederatedWorkerHandlerException ex){
+			throw ex;
+		}
 		catch(Exception ex) {
-			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
-				"Exception of type " + ex.getClass() + " thrown when processing CLEAR request", ex));
+			String msg = "Exception of type " + ex.getClass() + " thrown when processing CLEAR request";
+			log.error(msg, ex);
+			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(msg));
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
@@ -342,8 +390,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private static void checkNumParams(int actual, int... expected) {
 		if(Arrays.stream(expected).anyMatch(x -> x == actual))
 			return;
-		throw new DMLRuntimeException("FederatedWorkerHandler: Received wrong amount of params:" + " expected="
-			+ Arrays.toString(expected) + ", actual=" + actual);
+		throw new DMLRuntimeException("FederatedWorkerHandler: Received wrong amount of params:" 
+			+ " expected=" + Arrays.toString(expected) + ", actual=" + actual);
 	}
 
 	@Override

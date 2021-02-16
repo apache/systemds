@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 
 import org.apache.commons.logging.Log;
@@ -89,6 +88,40 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 			resize();
 	}
 
+	public void appendValue(DblArray key, int value){
+		int hash = hash(key);
+		int ix = indexFor(hash, _data.length);
+		IntArrayList lstPtr = null; // The list to add the value to.
+		if(_data[ix] == null) {
+			lstPtr = new IntArrayList();
+			_data[ix] = new DArrayIListEntry(key, lstPtr);
+			_size++;
+		}
+		else {
+			for(DArrayIListEntry e = _data[ix]; e != null; e = e.next) {
+				if(e.key == key) {
+					lstPtr = e.value;
+					break;
+				}
+				else if(e.next == null) {
+					lstPtr = new IntArrayList();
+					// Swap to place the new value, in front.
+					DArrayIListEntry eOld = _data[ix];
+					_data[ix] = new DArrayIListEntry(key, lstPtr);
+					_data[ix].next = eOld;
+					_size++;
+					break;
+				}
+				DblArrayIntListHashMap.hashMissCount++;
+			}
+		}
+		lstPtr.appendValue(value);
+
+		// resize if necessary
+		if(_size >= LOAD_FACTOR * _data.length)
+			resize();
+	}
+
 	public ArrayList<DArrayIListEntry> extractValues() {
 		ArrayList<DArrayIListEntry> ret = new ArrayList<>();
 		for(DArrayIListEntry e : _data) {
@@ -100,7 +133,7 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 				ret.add(e);
 			}
 		}
-		Collections.sort(ret);
+		// Collections.sort(ret);
 		return ret;
 	}
 

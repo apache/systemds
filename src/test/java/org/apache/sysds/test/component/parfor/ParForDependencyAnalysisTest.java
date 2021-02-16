@@ -68,6 +68,8 @@ import org.apache.sysds.test.TestConfiguration;
  *    53a: no, 53b dep, 53c dep, 53d dep, 53e dep
  * * lists
  *    54a: no, 54b: no, 54c: dep, 54d: dep
+ * * negative loop increment
+ *    55a: no, 55b: yes
  */
 public class ParForDependencyAnalysisTest extends AutomatedTestBase
 {
@@ -325,6 +327,12 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	@Test
 	public void testDependencyAnalysis54d() { runTest("parfor54d.dml", true); }
 	
+	@Test
+	public void testDependencyAnalysis55a() { runTest("parfor55a.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis55b() { runTest("parfor55b.dml", true); }
+	
 	private void runTest( String scriptFilename, boolean expectedException ) {
 		boolean raisedException = false;
 		try
@@ -371,5 +379,4 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 		//check correctness
 		Assert.assertEquals(expectedException, raisedException);
 	}
-	
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.transform.encode;
 
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,7 +41,7 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
-public class EncoderBin extends Encoder 
+public class EncoderBin extends Encoder
 {
 	private static final long serialVersionUID = 1917445005206076078L;
 
@@ -48,23 +50,27 @@ public class EncoderBin extends Encoder
 	public static final String NBINS_PREFIX = "nbins";
 
 	protected int[] _numBins = null;
-	
+
 	//frame transform-apply attributes
-	//TODO binMins is redundant and could be removed
+	// a) column bin boundaries
+	//TODO binMins is redundant and could be removed - necessary for correct fed results
 	private double[][] _binMins = null;
 	private double[][] _binMaxs = null;
-
+	// b) column min/max (for partial build)
+	private double[] _colMins = null;
+	private double[] _colMaxs = null;
+	
 	public EncoderBin(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
-		throws JSONException, IOException 
+		throws JSONException, IOException
 	{
 		super( null, clen );
 		if ( !parsedSpec.containsKey(TfMethod.BIN.toString()) )
 			return;
-		
+
 		//parse column names or column ids
 		List<Integer> collist = TfMetaUtils.parseBinningColIDs(parsedSpec, colnames, minCol, maxCol);
 		initColList(ArrayUtils.toPrimitive(collist.toArray(new Integer[0])));
-		
+
 		//parse number of bins per column
 		boolean ids = parsedSpec.containsKey("ids") && parsedSpec.getBoolean("ids");
 		JSONArray group = (JSONArray) parsedSpec.get(TfMethod.BIN.toString());
@@ -78,17 +84,33 @@ public class EncoderBin extends Encoder
 				_numBins[pos] = colspec.containsKey("numbins") ? colspec.getInt("numbins") : 1;
 		}
 	}
-	
+
 	public EncoderBin() {
 		super(new int[0], 0);
 		_numBins = new int[0];
 	}
-	
+
 	private EncoderBin(int[] colList, int clen, int[] numBins, double[][] binMins, double[][] binMaxs) {
 		super(colList, clen);
 		_numBins = numBins;
 		_binMins = binMins;
 		_binMaxs = binMaxs;
+	}
+	
+	public double[] getColMins() {
+		return _colMins;
+	}
+	
+	public double[] getColMaxs() {
+		return _colMaxs;
+	}
+	
+	public double[] getBinMins(int j) {
+		return _binMins[j];
+	}
+	
+	public double[] getBinMaxs(int j) {
+		return _binMaxs[j];
 	}
 	
 	@Override
@@ -101,9 +123,47 @@ public class EncoderBin extends Encoder
 	public void build(FrameBlock in) {
 		if ( !isApplicable() )
 			return;
-		// initialize internal transformation metadata
-		_binMins = new double[_colList.length][];
-		_binMaxs = new double[_colList.length][];
+
+		// derive bin boundaries from min/max per column
+		for(int j=0; j <_colList.length; j++) {
+			double min = Double.POSITIVE_INFINITY;
+			double max = Double.NEGATIVE_INFINITY;
+			int colID = _colList[j];
+			for( int i=0; i<in.getNumRows(); i++ ) {
+				double inVal = UtilFunctions.objectToDouble(
+					in.getSchema()[colID-1], in.get(i, colID-1));
+				min = Math.min(min, inVal);
+				max = Math.max(max, inVal);
+			}
+			computeBins(j, min, max);
+		}
+	}
+	
+	public void computeBins(int j, double min, double max) {
+		// ensure allocated internal transformation metadata
+		if( _binMins == null || _binMaxs == null ) {
+			_binMins = new double[_colList.length][];
+			_binMaxs = new double[_colList.length][];
+		}
+		_binMins[j] = new double[_numBins[j]];
+		_binMaxs[j] = new double[_numBins[j]];
+		for(int i=0; i<_numBins[j]; i++) {
+			_binMins[j][i] = min + i*(max-min)/_numBins[j];
+			_binMaxs[j][i] = min + (i+1)*(max-min)/_numBins[j];
+		}
+	}
+	
+	public void prepareBuildPartial() {
+		//ensure allocated min/max arrays
+		if( _colMins == null ) {
+			_colMins = new double[_colList.length];
+			_colMaxs = new double[_colList.length];
+		}
+	}
+	
+	public void buildPartial(FrameBlock in) {
+		if ( !isApplicable() )
+			return;
 		
 		// derive bin boundaries from min/max per column
 		for(int j=0; j <_colList.length; j++) {
@@ -116,22 +176,18 @@ public class EncoderBin extends Encoder
 				min = Math.min(min, inVal);
 				max = Math.max(max, inVal);
 			}
-			_binMins[j] = new double[_numBins[j]];
-			_binMaxs[j] = new double[_numBins[j]];
-			for(int i=0; i<_numBins[j]; i++) {
-				_binMins[j][i] = min + i*(max-min)/_numBins[j];
-				_binMaxs[j][i] = min + (i+1)*(max-min)/_numBins[j];
-			}
+			_colMins[j] = min;
+			_colMaxs[j] = max;
 		}
 	}
-	
+
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		for(int j=0; j<_colList.length; j++) {
 			int colID = _colList[j];
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				double inVal = UtilFunctions.objectToDouble(
-						in.getSchema()[colID-1], in.get(i, colID-1));
+					in.getSchema()[colID-1], in.get(i, colID-1));
 				int ix = Arrays.binarySearch(_binMaxs[j], inVal);
 				int binID = ((ix < 0) ? Math.abs(ix+1) : ix) + 1;
 				out.quickSetValue(i, colID-1, binID);
@@ -139,7 +195,7 @@ public class EncoderBin extends Encoder
 		}
 		return out;
 	}
-	
+
 	@Override
 	public Encoder subRangeEncoder(IndexRange ixRange) {
 		List<Integer> colsList = new ArrayList<>();
@@ -167,7 +223,7 @@ public class EncoderBin extends Encoder
 			numBinsList.stream().mapToInt((i) -> i).toArray(), binMinsList.toArray(new double[0][0]),
 			binMaxsList.toArray(new double[0][0]));
 	}
-	
+
 	@Override
 	public void mergeAt(Encoder other, int row, int col) {
 		if(other instanceof EncoderBin) {
@@ -219,7 +275,7 @@ public class EncoderBin extends Encoder
 		}
 		super.mergeAt(other, row, col);
 	}
-	
+
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
 		//allocate frame if necessary
@@ -227,7 +283,7 @@ public class EncoderBin extends Encoder
 		for( int j=0; j<_colList.length; j++ )
 			maxLength = Math.max(maxLength, _binMaxs[j].length);
 		meta.ensureAllocatedColumns(maxLength);
-		
+
 		//serialize the internal state into frame meta data
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based
@@ -242,7 +298,7 @@ public class EncoderBin extends Encoder
 		}
 		return meta;
 	}
-	
+
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		if( meta == null || _binMaxs != null )
@@ -259,6 +315,43 @@ public class EncoderBin extends Encoder
 				String[] tmp = meta.get(i, colID-1).toString().split(Lop.DATATYPE_PREFIX);
 				_binMins[j][i] = Double.parseDouble(tmp[0]);
 				_binMaxs[j][i] = Double.parseDouble(tmp[1]);
+			}
+		}
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		
+		out.writeInt(_numBins.length);
+		out.writeBoolean(_binMaxs!=null);
+		for(int i = 0; i < _numBins.length; i++) {
+			out.writeInt(_numBins[i]);
+			if( _binMaxs != null )
+				for(int j = 0; j < _binMaxs[i].length; j++) {
+					out.writeDouble(_binMaxs[i][j]);
+					out.writeDouble(_binMins[i][j]);
+				}
+		}
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		int d1 = in.readInt();
+		boolean minmax = in.readBoolean();
+		_numBins = new int[d1];
+		_binMaxs = minmax ? new double[d1][] : null;
+		_binMins = minmax ? new double[d1][] : null;
+
+		for(int i = 0; i < d1; i++) {
+			_numBins[i] = in.readInt();
+			if( !minmax ) continue;
+			_binMaxs[i] = new double[_numBins[i]];
+			_binMins[i] = new double[_numBins[i]];
+			for(int j = 0; j < _binMaxs[i].length; j++) {
+				_binMaxs[i][j] = in.readDouble();
+				_binMins[i][j] = in.readDouble();
 			}
 		}
 	}

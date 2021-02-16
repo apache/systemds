@@ -217,7 +217,7 @@ public abstract class ProgramBlock implements ParseInfo
 		ScalarObject ret = ec.getScalarInput(PRED_VAR, retType, false);
 
 		//check and correct scalar ret type (incl save double to int)
-		if( ret.getValueType() != retType )
+		if( retType != null && retType != ret.getValueType() )
 			switch( retType ) {
 				case BOOLEAN: ret = new BooleanObject(ret.getBooleanValue()); break;
 				case INT64:   ret = new IntObject(ret.getLongValue()); break;
@@ -244,7 +244,7 @@ public abstract class ProgramBlock implements ParseInfo
 			
 			// try to reuse instruction result from lineage cache
 			if( !LineageCache.reuse(tmp, ec) ) {
-				long et0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+				long et0 = (!ReuseCacheType.isNone() || DMLScript.LINEAGE_ESTIMATE) ? System.nanoTime() : 0;
 				
 				// process actual instruction
 				tmp.processInstruction(ec);
@@ -376,7 +376,7 @@ public abstract class ProgramBlock implements ParseInfo
 			
 			CacheableData<?> mo = (CacheableData<?>)dat;
 			if( mo.isFederated() ) {
-				if( mo.getFedMapping().getFedMapping().isEmpty() )
+				if( mo.getFedMapping().getMap().isEmpty() )
 					throw new DMLRuntimeException("Invalid empty FederationMap for: "+mo);
 			}
 		}

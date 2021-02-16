@@ -69,17 +69,17 @@ public class FederatedPCATest extends AutomatedTestBase {
 
 	@Test
 	public void federatedPCASinglenode() {
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE);
+		federatedPCA(Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void federatedPCAHybrid() {
-		federatedL2SVM(Types.ExecMode.HYBRID);
+		federatedPCA(Types.ExecMode.HYBRID);
 	}
 
-	public void federatedL2SVM(Types.ExecMode execMode) {
+	public void federatedPCA(Types.ExecMode execMode) {
 		ExecMode platformOld = setExecMode(execMode);
-
+		setOutputBuffering(true);
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
@@ -114,7 +114,7 @@ public class FederatedPCATest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-stats", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
 			String.valueOf(scaleAndShift).toUpperCase(), expected("Z")};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -123,7 +123,7 @@ public class FederatedPCATest extends AutomatedTestBase {
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
 			"scaleAndShift=" + String.valueOf(scaleAndShift).toUpperCase(), "out=" + output("Z")};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// compare via files
 		compareResults(1e-9);
@@ -138,7 +138,6 @@ public class FederatedPCATest extends AutomatedTestBase {
 			Assert.assertTrue(heavyHittersContainsString("fed_uacmean"));
 			Assert.assertTrue(heavyHittersContainsString("fed_-"));
 			Assert.assertTrue(heavyHittersContainsString("fed_/"));
-			Assert.assertTrue(heavyHittersContainsString("fed_replace"));
 		}
 
 		// check that federated input files are still existing

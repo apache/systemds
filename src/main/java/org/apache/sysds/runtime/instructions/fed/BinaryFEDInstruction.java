@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
-	
+
 	protected BinaryFEDInstruction(FEDInstruction.FEDType type, Operator op,
 		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, in1, in2, out, opcode, istr);
@@ -34,7 +34,7 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 
 	public static BinaryFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 3);
+		InstructionUtils.checkNumFields(parts, 3, 4);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
@@ -58,7 +58,7 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		else
 			throw new DMLRuntimeException("Federated binary operations not yet supported:" + opcode);
 	}
-	
+
 	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) {
 		// check for valid data type of output
 		if( (in1.getDataType() == DataType.MATRIX || in2.getDataType() == DataType.MATRIX) && out.getDataType() != DataType.MATRIX )

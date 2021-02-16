@@ -20,6 +20,7 @@
 package org.apache.sysds.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -756,8 +757,7 @@ public class TestUtils
 	}
 
 	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, double epsilon, String message){
-		assertTrue(message+"\n The number of columns in the matrixes should be equal", expectedMatrix.length == actualMatrix.length);
-		assertTrue(message+"\n The number of rows in the matrixes should be equal", expectedMatrix[0].length == actualMatrix[0].length);
+		assertEqualColsAndRows(expectedMatrix,actualMatrix);
 		compareMatrices(expectedMatrix, actualMatrix, expectedMatrix.length, expectedMatrix[0].length, epsilon, message);
 	}
 	
@@ -795,8 +795,7 @@ public class TestUtils
 
 	public static void compareMatricesBitAvgDistance(double[][] expectedMatrix, double[][] actualMatrix,
 			long maxUnitsOfLeastPrecision, long maxAvgDistance, String message){
-		assertTrue("The number of columns in the matrixes should be equal", expectedMatrix.length == actualMatrix.length);
-		assertTrue("The number of rows in the matrixes should be equal", expectedMatrix[0].length == actualMatrix[0].length);
+		assertEqualColsAndRows(expectedMatrix,actualMatrix);
 		compareMatricesBitAvgDistance(expectedMatrix, actualMatrix, expectedMatrix.length, actualMatrix[0].length, 
 			maxUnitsOfLeastPrecision, maxAvgDistance, message);
 	}
@@ -833,8 +832,11 @@ public class TestUtils
 	 * @param y value 2
 	 * @return Percent distance
 	 */
-	private static double getPercentDistance(double x, double y, boolean ignoreZero){
-		
+	public static double getPercentDistance(double x, double y, boolean ignoreZero){
+		if (Double.isNaN(x) && Double.isNaN(y))
+			return 1.0;
+		if (Double.isInfinite(x) && Double.isInfinite(y))
+			return 1.0;
 		if((x < 0 && y > 0 )||(x>0 && y< 0)) return 0.0;
 		double min = Math.abs(Math.min(x,y));
 		double max = Math.abs(Math.max(x,y));
@@ -845,23 +847,32 @@ public class TestUtils
 			min += 0.0001;
 			max += 0.0001;
 		}
+
+		assertFalse("Failed! because nan frin division of : " + min + " / " + max,Double.isNaN( min / max));
 		return min / max;
 	}
 
-
+	private static void assertEqualColsAndRows(double[][] expectedMatrix, double[][] actualMatrix){
+		assertTrue("The number of columns in the matrixes should be equal :" 
+			+ expectedMatrix.length  + "  "
+			+ actualMatrix.length, 
+			expectedMatrix.length == actualMatrix.length);
+		assertTrue("The number of rows in the matrixes should be equal" 
+			+ expectedMatrix[0].length  + "  " 
+			+ actualMatrix[0].length, 
+			expectedMatrix[0].length == actualMatrix[0].length);
+	}
 
 	public static void compareMatricesPercentageDistance(double[][] expectedMatrix, double[][] actualMatrix,  
 			double percentDistanceAllowed, double maxAveragePercentDistance,  String message){
-		assertTrue("The number of columns in the matrixes should be equal", expectedMatrix.length == actualMatrix.length);
-		assertTrue("The number of rows in the matrixes should be equal", expectedMatrix[0].length == actualMatrix[0].length);
+		assertEqualColsAndRows(expectedMatrix,actualMatrix);
 		compareMatricesPercentageDistance(expectedMatrix, actualMatrix, expectedMatrix.length, expectedMatrix[0].length,
 			percentDistanceAllowed, maxAveragePercentDistance, message, false);
 	}
 
 	public static void compareMatricesPercentageDistance(double[][] expectedMatrix, double[][] actualMatrix,  
 			double percentDistanceAllowed, double maxAveragePercentDistance,  String message, boolean ignoreZero){
-		assertTrue("The number of columns in the matrixes should be equal", expectedMatrix.length == actualMatrix.length);
-		assertTrue("The number of rows in the matrixes should be equal", expectedMatrix[0].length == actualMatrix[0].length);
+		assertEqualColsAndRows(expectedMatrix,actualMatrix);
 		compareMatricesPercentageDistance(expectedMatrix, actualMatrix, expectedMatrix.length, expectedMatrix[0].length,
 			percentDistanceAllowed, maxAveragePercentDistance, message, ignoreZero);
 	}

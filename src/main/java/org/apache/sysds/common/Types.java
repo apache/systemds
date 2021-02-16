@@ -19,9 +19,10 @@
 
 package org.apache.sysds.common;
 
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class Types
 {
@@ -207,6 +208,8 @@ public class Types
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
 		
+		COMPRESS, DECOMPRESS, 
+
 		//low-level operators //TODO used?
 		MULT2, MINUS1_MULT, MINUS_RIGHT, 
 		POW2, SUBTRACT_NZ;
@@ -234,7 +237,6 @@ public class Types
 				case CUMPROD:         return "ucum*";
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
-				case COLNAMES:        return "colnames";
 				case DETECTSCHEMA:    return "detectSchema";
 				case MULT2:           return "*2";
 				case NOT:             return "!";
@@ -258,9 +260,11 @@ public class Types
 				case "ucum*":   return CUMPROD;
 				case "ucumk+":  return CUMSUM;
 				case "ucumk+*": return CUMSUMPROD;
+				case "detectSchema":    return DETECTSCHEMA;
 				case "*2":      return MULT2;
 				case "!":       return NOT;
 				case "^2":      return POW2;
+				case "typeOf":          return TYPEOF;
 				default:        return valueOf(opcode.toUpperCase());
 			}
 		}
@@ -448,7 +452,7 @@ public class Types
 	}
 	
 	public enum OpOpDG {
-		RAND, SEQ, SINIT, SAMPLE, TIME
+		RAND, SEQ, FRAMEINIT, SINIT, SAMPLE, TIME
 	}
 	
 	public enum OpOpData {
@@ -496,7 +500,7 @@ public class Types
 		FEDERATED, // A federated matrix
 		PROTO;  // protocol buffer representation
 		
-		public boolean isIJVFormat() {
+		public boolean isIJV() {
 			return this == TEXT || this == MM;
 		}
 		
@@ -545,7 +549,7 @@ public class Types
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException("Unknown file format: "+fmt
-					+ " (valid values: "+Arrays.toString(FileFormat.values())+")");
+					+ " (valid values: " + Arrays.toString(FileFormat.values())+")");
 			}
 		}
 	}

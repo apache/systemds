@@ -24,6 +24,7 @@
 # Micro Benchmarks:
 
 ./scripts/perftest/MatrixMult.sh
+./scripts/perftest/MatrixTranspose.sh
 
 # Algorithms Benchmarks:
 

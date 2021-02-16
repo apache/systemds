@@ -27,7 +27,6 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -58,7 +57,6 @@ public class ColGroupDDC2 extends ColGroupDDC {
 				zeroIx = numVals;
 			}
 			Arrays.fill(_data, (char) zeroIx);
-			_zeros = true;
 		}
 
 		// iterate over values and write dictionary codes
@@ -70,15 +68,16 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		}
 	}
 
-	protected ColGroupDDC2(int[] colIndices, int numRows, ADictionary dict, char[] data, boolean zeros) {
-		super(colIndices, numRows, dict);
+	protected ColGroupDDC2(int[] colIndices, int numRows, ADictionary dict, char[] data, boolean zeros,
+		int[] cachedCounts) {
+		super(colIndices, numRows, dict, cachedCounts);
 		_data = data;
 		_zeros = zeros;
 	}
 
 	@Override
 	protected ColGroupType getColGroupType() {
-		return ColGroupType.DDC1;
+		return ColGroupType.DDC2;
 	}
 
 	/**
@@ -124,18 +123,11 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	}
 
 	@Override
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl, int cu){
-		LinearAlgebraUtils.vectListAddDDC(preAggregatedB, c, _data, rl, ru, cl, cu, thatNrColumns,getNumValues());
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	int ru) {
+		LinearAlgebraUtils.vectListAddDDC(outputColumns, preAggregatedB, c, _data, rl, ru, thatNrColumns, getNumValues());
 	}
 
-	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		for(int i = 0; i < rows[0].size(); i++) {
-			double[] vals = sparsePreaggValues(numVals, rows[0].values()[i], false, dictVals);
-			LinearAlgebraUtils.vectListAdd(vals, c, _data, rl, ru, rows[0].indexes()[i] * _numRows);
-		}
-	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
@@ -174,24 +166,32 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	public ColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
 		if(op.sparseSafe || val0 == 0 || !_zeros) {
-			return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op), _data, _zeros);
+			return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op), _data, _zeros, getCachedCounts());
 		}
 		else {
-			return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false);
+			return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false,
+				getCachedCounts());
 		}
 	}
 
 	@Override
 	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
 		sparseSafe = sparseSafe || !_zeros;
-		return new ColGroupDDC2(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe), _data, !sparseSafe);
+		return new ColGroupDDC2(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe), _data, !sparseSafe,
+			getCachedCounts());
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(" DataLength: " + this._data.length);
+		sb.append("\nDataLength: " + this._data.length);
+		sb.append("[");
+		for(char c : this._data){
+			sb.append((int)c);
+			sb.append(" ");
+		}
+		sb.append("]");
 		return sb.toString();
 	}
 }

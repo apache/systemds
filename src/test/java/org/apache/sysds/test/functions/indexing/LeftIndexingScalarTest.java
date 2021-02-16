@@ -22,7 +22,6 @@ package org.apache.sysds.test.functions.indexing;
 import java.util.HashMap;
 
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -33,7 +32,6 @@ import org.apache.sysds.test.TestUtils;
 
 public class LeftIndexingScalarTest extends AutomatedTestBase
 {
-
 	private final static String TEST_DIR = "functions/indexing/";
 	private final static String TEST_NAME = "LeftIndexingScalarTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + LeftIndexingScalarTest.class.getSimpleName() + "/";
@@ -52,31 +50,18 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testLeftIndexingScalarCP() 
-	{
+	public void testLeftIndexingScalarCP() {
 		runLeftIndexingTest(ExecType.CP);
 	}
 	
 	@Test
-	public void testLeftIndexingScalarSP() 
-	{
+	public void testLeftIndexingScalarSP() {
 		runLeftIndexingTest(ExecType.SPARK);
 	}
 	
 	private void runLeftIndexingTest( ExecType instType ) 
-	{		
-		//rtplatform for MR
-		ExecMode platformOld = rtplatform;
-		if(instType == ExecType.SPARK) {
-	    	rtplatform = ExecMode.SPARK;
-	    }
-	    else {
-			rtplatform = ExecMode.HYBRID;
-	    }
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+	{
+		ExecMode platformOld = setExecMode(instType);
 	
 		try
 		{
@@ -91,10 +76,10 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
-	        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
-	        writeInputMatrix("A", A, true);
-	       
-	        runTest(true, false, null, -1);		
+			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
+			writeInputMatrix("A", A, true);
+
+			runTest(true, false, null, -1);
 			runRScript(true);
 			
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("A");
@@ -102,11 +87,8 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, "A-DML", "A-R");
 			checkDMLMetaDataFile("A", new MatrixCharacteristics(rows,cols,1,1));
 		}
-		finally
-		{
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		finally {
+			resetExecMode(platformOld);
 		}
 	}
 }
-

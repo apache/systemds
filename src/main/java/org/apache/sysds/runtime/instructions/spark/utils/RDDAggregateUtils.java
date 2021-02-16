@@ -631,6 +631,10 @@ public class RDDAggregateUtils
 				return arg0;
 			}
 			
+			//early-abort (without dense correction allocation)
+			if( _op.sparseSafe && (arg0.isEmpty() | arg1.isEmpty()) )
+				return arg1.isEmpty() ? arg0 : arg1;
+			
 			//create correction block (on demand)
 			if( _op.existsCorrection() && _corr == null ) {
 				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), false);

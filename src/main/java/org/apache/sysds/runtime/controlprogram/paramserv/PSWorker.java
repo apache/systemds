@@ -35,7 +35,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 
-// TODO use the validate features and labels to calculate the model precision when training
 public abstract class PSWorker implements Serializable 
 {
 	private static final long serialVersionUID = -3510485051178200118L;

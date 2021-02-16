@@ -114,7 +114,7 @@ public class FederationMap {
 		return _fedMap.keySet().toArray(new FederatedRange[0]);
 	}
 
-	public Map<FederatedRange, FederatedData> getFedMapping() {
+	public Map<FederatedRange, FederatedData> getMap() {
 		return _fedMap;
 	}
 
@@ -140,21 +140,27 @@ public class FederationMap {
 	 * @return array of federated requests corresponding to federated data
 	 */
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
+		if( _type == FType.FULL )
+			return new FederatedRequest[]{broadcast(data)};
+		
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-
+		
 		// prepare indexing ranges
 		int[][] ix = new int[_fedMap.size()][];
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-			int rl, ru, cl, cu;
-			// TODO Handle different cases than ROW aligned Matrices.
-			rl = transposed ? 0 : e.getKey().getBeginDimsInt()[0];
-			ru = transposed ? cb.getNumRows() - 1 : e.getKey().getEndDimsInt()[0] - 1;
-			cl = transposed ? e.getKey().getBeginDimsInt()[0] : 0;
-			cu = transposed ? e.getKey().getEndDimsInt()[0] - 1 : cb.getNumColumns() - 1;
-			ix[pos++] = new int[] {rl, ru, cl, cu};
+			int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
+			int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
+			int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
+			int nc = _type == FType.ROW ? cb.getNumColumns() : cb.getNumRows();
+			int rl = transposed ? 0 : beg;
+			int ru = transposed ? nr - 1 : end - 1;
+			int cl = transposed ? beg : 0;
+			int cu = transposed ? end - 1 : nc - 1;
+			ix[pos++] = _type == FType.ROW ?
+				new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 		}
 
 		// multi-threaded block slicing and federation request creation
@@ -242,10 +248,17 @@ public class FederationMap {
 	}
 
 	private static FederatedRequest[] addAll(FederatedRequest a, FederatedRequest[] b) {
-		FederatedRequest[] ret = new FederatedRequest[b.length + 1];
-		ret[0] = a;
-		System.arraycopy(b, 0, ret, 1, b.length);
-		return ret;
+		// empty b array
+		if( b == null || b.length==0 ) {
+			return new FederatedRequest[] {a};
+		}
+		// concat with b array
+		else {
+			FederatedRequest[] ret = new FederatedRequest[b.length + 1];
+			ret[0] = a;
+			System.arraycopy(b, 0, ret, 1, b.length);
+			return ret;
+		}
 	}
 
 	public FederationMap identCopy(long tid, long id) {
@@ -382,6 +395,23 @@ public class FederationMap {
 		for(FederatedRequest[] frset : frsets)
 			if(frset != null)
 				Arrays.stream(frset).forEach(fr -> fr.setTID(tid));
+	}
+
+	public void reverseFedMap() {
+		// TODO: add a check if the map is sorted based on indexes before reversing.
+		// TODO: add a setup such that on construction the federated map is already sorted.
+		FederatedRange[] fedRanges = this.getFederatedRanges();
+
+		for(int i = 0; i < Math.floor(fedRanges.length / 2.0); i++) {
+			FederatedData data1 = _fedMap.get(fedRanges[i]);
+			FederatedData data2 = _fedMap.get(fedRanges[fedRanges.length-1-i]);
+
+			_fedMap.remove(fedRanges[i]);
+			_fedMap.remove(fedRanges[fedRanges.length-1-i]);
+
+			_fedMap.put(fedRanges[i], data2);
+			_fedMap.put(fedRanges[fedRanges.length-1-i], data1);
+		}
 	}
 
 	private static class MappingTask implements Callable<Void> {

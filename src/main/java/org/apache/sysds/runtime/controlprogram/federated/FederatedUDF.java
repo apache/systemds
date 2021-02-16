@@ -20,11 +20,13 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
+import java.util.List;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.lineage.LineageTraceable;
 
-public abstract class FederatedUDF implements Serializable {
+public abstract class FederatedUDF implements Serializable, LineageTraceable {
 	private static final long serialVersionUID = 799416525191257308L;
 	
 	private final long[] _inputIDs;
@@ -35,6 +37,10 @@ public abstract class FederatedUDF implements Serializable {
 	
 	public final long[] getInputIDs() {
 		return _inputIDs;
+	}
+
+	public List<Long> getOutputIds() {
+		return null;
 	}
 	
 	/**

@@ -72,7 +72,7 @@ public class SpoofCUDA extends SpoofOperator {
 
 	public double execute(ArrayList<MatrixObject> inputs, ArrayList<ScalarObject> scalarObjects, MatrixObject out_obj,
 							   ExecutionContext ec) {
-		double ret = 0;
+		double ret;
 		long out_ptr = 0;
 
 		if(out_obj != null)
@@ -110,8 +110,8 @@ public class SpoofCUDA extends SpoofOperator {
 
 	@Override
 	public String getSpoofType() {
-		String tmp[] = getClass().getName().split("\\.");
-			return  tmp[tmp.length-1] + "_" + getSpoofTemplateType() + "_" + name.split("\\.")[1];
+		String[] tmp = getClass().getName().split("\\.");
+		return  tmp[tmp.length-1] + "_" + getSpoofTemplateType() + "_" + name.split("\\.")[1];
 	}
 
 	private native float execute_f(long ctx, String name, long[] in_ptr, long[] side_ptr,

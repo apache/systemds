@@ -29,6 +29,8 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
  */
 public class CompressedSizeInfo {
 
+	// protected static final Log LOG = LogFactory.getLog(CompressedSizeInfo.class.getName());
+
 	public CompressedSizeInfoColGroup[] compressionInfo;
 	public List<Integer> colsC;
 	public List<Integer> colsUC;
@@ -64,4 +66,19 @@ public class CompressedSizeInfo {
 		return est;
 	}
 
+	public boolean isCompressible() {
+
+		double sum = compRatios.values().stream().reduce(0.0, (a, b) -> a + b);
+		return colsC.size() > 0 && sum / compRatios.size() > 1.0;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("CompressedSizeInfo");
+		sb.append("\n  - CompressableColumns: " + (colsC) + " UncompressableColumns: " + (colsUC));
+		sb.append("\n  - CompressionRatio: " + compRatios);
+		sb.append("\n  - nnzUC: " + nnzUC);
+		return sb.toString();
+	}
 }

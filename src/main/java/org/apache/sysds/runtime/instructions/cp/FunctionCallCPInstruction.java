@@ -125,7 +125,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 		
 		// check if function outputs can be reused from cache
-		LineageItem[] liInputs = DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() ?
+		LineageItem[] liInputs = LineageCacheConfig.isMultiLevelReuse() || DMLScript.LINEAGE_ESTIMATE ?
 			LineageItemUtils.getLineage(ec, _boundInputs) : null;
 		if (!fpb.isNondeterministic() && reuseFunctionOutputs(liInputs, fpb, ec))
 			return; //only if all the outputs are found in cache
@@ -184,7 +184,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		fn_ec.setVariables(functionVariables);
 		fn_ec.setLineage(lineage);
 		// execute the function block
-		long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+		long t0 = !ReuseCacheType.isNone()||DMLScript.LINEAGE_ESTIMATE ? System.nanoTime() : 0;
 		try {
 			fpb._functionName = this._functionName;
 			fpb._namespace = this._namespace;
@@ -197,7 +197,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
-		long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+		long t1 = !ReuseCacheType.isNone()||DMLScript.LINEAGE_ESTIMATE ? System.nanoTime() : 0;
 		
 		// cleanup all returned variables w/o binding 
 		HashSet<String> expectRetVars = new HashSet<>();
@@ -240,7 +240,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 
 		//update lineage cache with the functions outputs
-		if (DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() && !fpb.isNondeterministic()) {
+		if ((DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() && !fpb.isNondeterministic())
+			|| (LineageCacheConfig.isEstimator() && !fpb.isNondeterministic())) {
 			LineageCache.putValue(fpb.getOutputParams(), liInputs, 
 					getCacheFunctionName(_functionName, fpb), fn_ec, t1-t0);
 			//FIXME: send _boundOutputNames instead of fpb.getOutputParams as 

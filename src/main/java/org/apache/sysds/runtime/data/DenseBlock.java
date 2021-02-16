@@ -459,10 +459,13 @@ public abstract class DenseBlock implements Serializable
 		if (db.isNumeric()) {
 			int rowOther = 0;
 			int colOther = 0;
-			for (int bi = index(rl); bi <= index(ru - 1); bi++) {
+			for (int bi = index(rl); bi <= index(ru-1); bi++) {
+				int rpos = bi*blockSize();
+				int rposl = Math.max(rl-rpos, 0);
 				if (allColumns) {
-					int offset = rl * _odims[0] + cl;
-					for (int i = 0; i < (ru - rl) * _odims[0]; i++) {
+					int offset = rposl * _odims[0] + cl;
+					int rlen = Math.min(ru-Math.max(rpos,rl), blockSize(bi)-rposl);
+					for (int i = 0; i < rlen * _odims[0]; i++) {
 						setInternal(bi, offset + i, db.get(rowOther, colOther));
 						colOther++;
 						if (colOther == db.getCumODims(0)) {

@@ -191,7 +191,7 @@ class TweedieRegressorMapper(Mapper):
 
 # multiLogMapper
 class LogisticRegressionMapper(Mapper):
-        def __init__(self):
+    def __init__(self):
         self.name = 'multiLogReg'
         self.is_intermediate = False
     

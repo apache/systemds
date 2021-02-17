@@ -98,7 +98,7 @@ public abstract class ParamServer
 		_finishedStates = new boolean[workerNum];
 		setupAggFunc(_ec, aggFunc);
 
-		if(valFunc != null && numBatchesPerEpoch > 0) {
+		if(valFunc != null && numBatchesPerEpoch > 0 && valFeatures != null && valLabels != null) {
 			setupValFunc(_ec, valFunc, valFeatures, valLabels);
 		}
 		_numBatchesPerEpoch = numBatchesPerEpoch;
@@ -327,7 +327,7 @@ public abstract class ParamServer
 	}
 
 	/**
-	 * Prints the time, the epoch took to complete
+	 * Prints the time the epoch took to complete
 	 */
 	private void time_epoch() {
 		if (DMLScript.STATISTICS) {
@@ -337,7 +337,10 @@ public abstract class ParamServer
 			double time_to_epoch = current_total_execution_time - current_total_validation_time;
 
 			if (LOG.isInfoEnabled())
-				LOG.info("[+] PARAMSERV: epoch timer without validation: " + time_to_epoch / 1000 + " secs.");
+				if(_validationPossible)
+					LOG.info("[+] PARAMSERV: epoch timer (excl. validation): " + time_to_epoch / 1000 + " secs.");
+				else
+					LOG.info("[+] PARAMSERV: epoch timer: " + time_to_epoch / 1000 + " secs.");
 		}
 	}
 

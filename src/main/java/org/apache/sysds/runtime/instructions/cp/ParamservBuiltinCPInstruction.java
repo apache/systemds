@@ -180,8 +180,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
+		MatrixObject val_features = (getParam(PS_VAL_FEATURES) != null) ? ec.getMatrixObject(getParam(PS_VAL_FEATURES)) : null;
+		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-				getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), ec.getMatrixObject(getParam(PS_VAL_FEATURES)), ec.getMatrixObject(getParam(PS_VAL_LABELS)));
+				getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels);
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
@@ -323,8 +325,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
+		MatrixObject val_features = (getParam(PS_VAL_FEATURES) != null) ? ec.getMatrixObject(getParam(PS_VAL_FEATURES)) : null;
+		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		ParamServer ps = createPS(mode, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-				num_batches_per_epoch, ec.getMatrixObject(getParam(PS_VAL_FEATURES)), ec.getMatrixObject(getParam(PS_VAL_LABELS)));
+				num_batches_per_epoch, val_features, val_labels);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)

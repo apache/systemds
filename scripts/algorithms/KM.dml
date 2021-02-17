@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 #  
-# THIS SCRIPT ANALIZES SURVIVAL DATA USING KAPLAN-MEIER ESTIMATES 
+# THIS SCRIPT ANALYZES SURVIVAL DATA USING KAPLAN-MEIER ESTIMATES
 #
 # INPUT   PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -41,7 +41,7 @@
 # etype   String   "greenwood"  Parameter to specify the error type according to "greenwood" (the default) or "peto"
 # ctype   String   "log"        Parameter to modify the confidence interval; "plain" keeps the lower and upper bound of 
 #								the confidence interval unmodified,	"log" (the default) corresponds to logistic transformation and 
-#								"log-log" corresponds to the complementary log-log transformation 
+#								"log-log" corresponds to the complementary log-log transformation
 # ttype   String   "none"   	If survival data for multiple groups is available specifies which test to perform for comparing 
 #								survival data across multiple groups: "none" (the default) "log-rank" or "wilcoxon" test   
 # fmt     String   "text"       The output format of results of the Kaplan-Meier analysis, such as "text" or "csv"
@@ -328,6 +328,7 @@ parfor (s in 1:num_strata, check = 0) {
 
 	if (num_groups > 1 & test_type != "none") {	# needed for log-rank or wilcoxon test	
 		n_risk_n_event_stratum = matrix (0, rows = n_time_all1, cols = num_groups * 2);
+	}
 	}
 
 	parfor (g in 1:num_groups, check = 0) {

@@ -19,89 +19,40 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public class BuiltinCoxTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "Cox";
+	private final static String TEST_NAME = "cox";
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinCoxTest.class.getSimpleName() + "/";
 
-	private final static int numClasses = 10;
-
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
+	}
+
+	@Test
+	void testNormal() {
+		runCoxTest(0.05, 0.1, 0.2);
 	}
 	
-	@Test
-	public void testSmallDense() {
-		testNaiveBayes(100, 50, 0.7);
-	}
-
-	@Test
-	public void testLargeDense() {
-		testNaiveBayes(10000, 750, 0.7);
-	}
-
-	@Test
-	public void testSmallSparse() {
-		testNaiveBayes(100, 50, 0.01);
-	}
-
-	@Test
-	public void testLargeSparse() {
-		testNaiveBayes(10000, 750, 0.01);
-	}
-	
-	public void testNaiveBayes(int rows, int cols, double sparsity)
+	public void runCoxTest(double alpha, int moi, int mii)
 	{
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		
-		int classes = numClasses;
-		double laplace_correction = 1;
 
-		List<String> proArgs = new ArrayList<>();
-		proArgs.add("-args");
-		proArgs.add(input("X"));
-		proArgs.add(input("Y"));
-		proArgs.add(String.valueOf(classes));
-		proArgs.add(String.valueOf(laplace_correction));
-		proArgs.add(output("prior"));
-		proArgs.add(output("conditionals"));
-		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		programArgs = new String[]{
+				"-nvargs", "X=" + input("X"), "TE=" + input("TE"), "F=" + input("F"),
+				"R=" + input("R"), "M=" + input("M"), "S=" + input("S"), "T=" + input("T"),
+				"COV=" + input("COV"), "RT=" + input("RT"), "XO=" + input("XO"),
+				"MF=" + input("MF"), "M=" + output("M"), "S=" + output("S"), "T=" + output("T"),
+				"COV=" + output("COV"), "RT=" + output("RT"), "alpha=" + alpha,
+				"moi=" + moi, "mii=" + mii};
 
-		rCmd = getRCmd(inputDir(), Integer.toString(classes), Double.toString(laplace_correction), expectedDir());
-		
-		double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
-		double[][] Y = getRandomMatrix(rows, 1, 0, 1, 1, -1);
-		for(int i=0; i<rows; i++){
-			Y[i][0] = (int)(Y[i][0]*classes) + 1;
-			Y[i][0] = (Y[i][0] > classes) ? classes : Y[i][0];
-		}
 
-		writeInputMatrixWithMTD("X", X, true);
-		writeInputMatrixWithMTD("Y", Y, true);
-
-		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-
-		runRScript(true);
-
-		HashMap<CellIndex, Double> priorR = readRMatrixFromExpectedDir("prior");
-		HashMap<CellIndex, Double> priorSYSTEMDS= readDMLMatrixFromOutputDir("prior");
-		HashMap<CellIndex, Double> conditionalsR = readRMatrixFromExpectedDir("conditionals");
-		HashMap<CellIndex, Double> conditionalsSYSTEMDS = readDMLMatrixFromOutputDir("conditionals");
-		TestUtils.compareMatrices(priorR, priorSYSTEMDS, Math.pow(10, -12), "priorR", "priorSYSTEMDS");
-		TestUtils.compareMatrices(conditionalsR, conditionalsSYSTEMDS, Math.pow(10.0, -12.0), "conditionalsR", "conditionalsSYSTEMDS");
+		runTest(true, false, null, -1);
 	}
 }

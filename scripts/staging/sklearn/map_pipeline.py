@@ -235,6 +235,140 @@ class StandardScalerMapper(Mapper):
             'Y'
         ]
 
+class SplitMapper(Mapper):
+    def __init__(self):
+        self.name = 'split'
+        self.is_intermediate = True
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            params['train_size'],
+            True,   #cant be done 100% accurate in SKlearn look up later
+            -1 if params['random_state'] == None else params['random_state']
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'Xtrain',
+            'Xtest',
+            'ytrain',
+            'ytest'
+        ]
+
+class NormalizeMapper(Mapper):
+    def __init__(self):
+        self.name = 'normalize'
+        self.is_intermediate = True
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'Y'
+        ]
+
+class PCAMapper(Mapper):
+    def __init__(self):
+        self.name = 'pca'
+        self.is_intermediate = True
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            params.get('n_components'),
+            True,   #non existant in SKlearn
+            True    #non existant in SKlearn
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'Xout',
+            'Mout'
+        ]
+
+
+class SimpleImputerMapper(Mapper):
+    def __init__(self):
+
+        self.is_intermediate = True
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params): # might update naming ?
+        if params['startegy'] == 'median':
+            self.name = 'imputeByMedian'
+        else:
+            self.name = 'imputeByMean'
+
+        self.mapped_params = [
+
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'X'
+        ]
+
+class distMapper(Mapper):
+    def __init__(self):
+        self.name = 'dist'
+        self.is_intermediate = False #Edge cases?
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'X'
+        ]
+
+class accuracyMapper(Mapper):
+    def __init__(self):
+        self.name = 'getAccuracy'
+        self.is_intermediate = False #Edge cases?
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            False
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'accuracy'
+        ]
+
+
 class SklearnToDMLMapper:
     def __init__(self, pipeline):
         self.steps = pipeline.steps

@@ -14,7 +14,7 @@ def save(path):
     with open(path, 'rb') as f:
         return pickle.dump(f)
 
-# TODO
+# TODO: path handling with Path or env variablebuiltin_path
 builtin_path = "scripts/builtin"
 
 class Mapper:
@@ -23,24 +23,18 @@ class Mapper:
         self.mapped_params = []
         self.mapped_output = []
         self.is_intermediate = None
-        raise NotImplementedError('Base class is not implemented.')
+        self.is_supervised = False # TODO: default cases. Better if set by own Mappers?
 
     def get_source(self):
-        return 'source("{}/{}") as ns'.format(builtin_path, self.name) 
+        return 'source("{}/{}") as ns_{}'.format(builtin_path, self.name, self.name) 
 
     # TODO better string building
     def get_call(self):
         # TODO: handle intermediate step results
-        if self.is_intermediate:
-            call = 'X'
-        else:
-            call = ', '.join(self.mapped_output)
-        call += ' = ns::m_{}(X'.format(self.name)
-        for p in self.mapped_params:
-            call += ', '
-            call += '{}'.format(p)
-
-        call += ')'
+        input_ = 'X, y' if self.is_supervised else 'X'
+        output_ = ', '.join(self.mapped_output) if not self.is_intermediate else 'X'
+        param_ = ', '.join(map(str, self.mapped_params))
+        call = "{} = ns_{}::m_{}({}, {})".format(output_, self.name, self.name, input_, param_)
         return call
 
     def __map_parameters(self, params):
@@ -52,8 +46,10 @@ class Mapper:
 # TODO: missing parameter mapping
 class KmeansMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'kmeans'
         self.is_intermediate = False
+        self.is_supervised = False
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
@@ -79,8 +75,10 @@ class KmeansMapper(Mapper):
 
 class DBSCANMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'dbscan'
         self.is_intermediate = False
+        self.is_supervised = False
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
@@ -100,8 +98,10 @@ class DBSCANMapper(Mapper):
 
 class LinearSVMMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'l2svm' # Handle model validation?
         self.is_intermediate = False
+        self.is_supervised = True
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
@@ -125,8 +125,10 @@ class LinearSVMMapper(Mapper):
 
 class GaussianMixtureMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'gmm'
         self.is_intermediate = False
+        self.is_supervised = False
         self.model_map = {
             'full': 'VVV',
             'tied': 'EEE',
@@ -160,8 +162,10 @@ class GaussianMixtureMapper(Mapper):
 # GMM Mapper
 class TweedieRegressorMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'glm'
         self.is_intermediate = False
+        self.is_supervised = True
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
@@ -192,8 +196,10 @@ class TweedieRegressorMapper(Mapper):
 # multiLogMapper
 class LogisticRegressionMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'multiLogReg'
         self.is_intermediate = False
+        self.is_supervised = True
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
@@ -216,6 +222,7 @@ class LogisticRegressionMapper(Mapper):
 
 class StandardScalerMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'scale'
         self.is_intermediate = True
     
@@ -235,33 +242,9 @@ class StandardScalerMapper(Mapper):
             'Y'
         ]
 
-class SplitMapper(Mapper):
-    def __init__(self):
-        self.name = 'split'
-        self.is_intermediate = True
-
-    def get_call(self, parameters):
-        self.__map_parameters(parameters)
-        self.__map_output()
-        return super().get_call()
-
-    def __map_parameters(self, params):
-        self.mapped_params = [
-            params['train_size'],
-            True,   #cant be done 100% accurate in SKlearn look up later
-            -1 if params['random_state'] == None else params['random_state']
-        ]
-
-    def __map_output(self):
-        self.mapped_output = [
-            'Xtrain',
-            'Xtest',
-            'ytrain',
-            'ytest'
-        ]
-
 class NormalizeMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'normalize'
         self.is_intermediate = True
 
@@ -272,6 +255,7 @@ class NormalizeMapper(Mapper):
 
     def __map_parameters(self, params):
         self.mapped_params = [
+        
         ]
 
     def __map_output(self):
@@ -279,33 +263,9 @@ class NormalizeMapper(Mapper):
             'Y'
         ]
 
-class PCAMapper(Mapper):
-    def __init__(self):
-        self.name = 'pca'
-        self.is_intermediate = True
-
-    def get_call(self, parameters):
-        self.__map_parameters(parameters)
-        self.__map_output()
-        return super().get_call()
-
-    def __map_parameters(self, params):
-        self.mapped_params = [
-            params.get('n_components'),
-            True,   #non existant in SKlearn
-            True    #non existant in SKlearn
-        ]
-
-    def __map_output(self):
-        self.mapped_output = [
-            'Xout',
-            'Mout'
-        ]
-
-
 class SimpleImputerMapper(Mapper):
     def __init__(self):
-
+        super().__init__()
         self.is_intermediate = True
 
     def get_call(self, parameters):
@@ -328,8 +288,63 @@ class SimpleImputerMapper(Mapper):
             'X'
         ]
 
+# Split is not actually part of a pipeline
+# TODO: Remove (out of scope?) 
+class SplitMapper(Mapper):
+    def __init__(self):
+        super().__init__()
+        self.name = 'split'
+        self.is_intermediate = True
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            params.get('train_size', 0.7),
+            True,   #cant be done 100% accurate in SKlearn look up later
+            -1 if params['random_state'] == None else params['random_state']
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'Xtrain',
+            'Xtest',
+            'ytrain',
+            'ytest'
+        ]
+
+# TODO: can be pipelined in sklearn, but how in dml?
+class PCAMapper(Mapper):
+    def __init__(self):
+        super().__init__()
+        self.name = 'pca'
+        self.is_intermediate = True
+
+    def get_call(self, parameters):
+        self.__map_parameters(parameters)
+        self.__map_output()
+        return super().get_call()
+
+    def __map_parameters(self, params):
+        self.mapped_params = [
+            params.get('n_components'),
+            True,   #non existant in SKlearn
+            True    #non existant in SKlearn
+        ]
+
+    def __map_output(self):
+        self.mapped_output = [
+            'Xout',
+            'Mout'
+        ]
+
+# TODO: can scores be added to the end of a pipeline?
 class distMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'dist'
         self.is_intermediate = False #Edge cases?
 
@@ -350,6 +365,7 @@ class distMapper(Mapper):
 
 class accuracyMapper(Mapper):
     def __init__(self):
+        super().__init__()
         self.name = 'getAccuracy'
         self.is_intermediate = False #Edge cases?
 

@@ -7,7 +7,6 @@ Classification
 Supervised
 """"""""""
 * glm.dml <-> https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.TweedieRegressor.html#sklearn.linear_model.TweedieRegressor
-* gmm.dml <-> https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html#sklearn.mixture.GaussianMixture
 * l2svm.dml <-> https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html#sklearn.svm.LinearSVC
 * lm.dml/lmCG.dml/lmDS.dml (lmpredict.dml) <-> https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html#sklearn.linear_model.LinearRegression
 * multiLogReg.dml (multiLogRegPredict.dml) <-> https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
@@ -16,6 +15,7 @@ Unsupervised
 """"""""""""
 * dbscan.dml <-> https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html#sklearn.cluster.DBSCAN
 * kmeans.dml (kmeansPredict.dml) <-> https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html#sklearn.cluster.KMeans
+* gmm.dml <-> https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html#sklearn.mixture.GaussianMixture
 
 Transformations
 ---------------

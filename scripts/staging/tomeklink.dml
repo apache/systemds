@@ -1,0 +1,136 @@
+print("WIP -----------------------------")
+
+# get some data, TODO remove
+X = rand(rows=5, cols=2)
+y = rbind(matrix(1, rows=2,cols=1), matrix(0, rows=3,cols=1))
+print(toString(X))
+print(toString(y))
+
+print(" ----------- end input -----------")
+
+
+
+# nearest nb function ---------------------------------------------
+get_nn = function(Matrix[Double] X, Matrix[Double] instance)
+return (double nn_idx)
+{
+	diff = X-instance
+	sq_diff = diff^2 # euclidian
+	dist = rowSums(sq_diff)
+	sort_dist = order(target=dist, by=1, decreasing=FALSE, index.return=TRUE)
+	nn_idx = as.scalar(sort_dist[2,1])  # not self
+}
+# ------------------------------------------------------------------
+
+# demo, TODO remove
+# instance = X[1,]
+# nn_idx = get_nn(X, instance)
+# print(toString(nn_idx))
+
+
+
+# tomek link function -----------------------------------------------
+get_links = function(Matrix[Double] X, Matrix[Double] y, double majority_label)
+return (Matrix[Double] tomek_links)
+{
+	tomek_links = matrix(0, rows=0, cols=2)
+
+	for (idx in 1:nrow(X)) {
+		label = as.scalar(y[idx,1])
+
+		if (label == majority_label) {
+			instance = X[idx,]
+			nn_idx = get_nn(X, instance)
+			nn_label = as.scalar(y[nn_idx,1])
+
+			if (nn_label != majority_label) {
+				link = matrix(0, rows=1, cols=2) # dir: majority to minority
+				link[1,1] = idx
+				link[1,2] = nn_idx
+				tomek_links = rbind(tomek_links, link)
+			}
+		}
+	}
+}
+# ------------------------------------------------------------------
+# demo TODO remove
+#links = get_links(X, y, 0)
+#print(toString(links))
+#print(toString(nrow(links)))
+
+
+tomek_link = function(Matrix[Double] X, Matrix[Double] y, double majority_label=0, String mode="auto")
+return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx) {
+	n = nrow(X)
+	m = ncol(X)
+	tomek_links = get_links(X, y, majority_label)
+
+	if (nrow(tomek_links) == 0) {
+		print("No Tomek Links in Dataset")
+		X_under = X
+		y_under = y
+		drop_idx = matrix(0, rows=0, cols=1)
+	}
+	else {
+		if (mode=="auto") {
+			drop_idx = tomek_links[,1] # mode auto: drop majority sample
+		}
+
+		else if (mode=="both") {
+			drop_idx = rbind(tomek_links[,1], tomek_links[,2]) # drop both members of link
+		}
+
+		else {
+			print("error: select an available mode: auto, both")
+			X_under = X
+			y_under = y
+			drop_idx = matrix(0, rows=0, cols=1)
+		}
+
+		# construct undersampled data
+		# expand matrix by column indicating records to be dropped
+		n_drop = nrow(drop_idx)
+		X_drop = cbind(X, matrix(0, rows=n, cols=1))
+		y_drop = cbind(y, matrix(0, rows=n, cols=1))
+		for (jdx in 1:n_drop) {
+			X_drop[as.scalar(drop_idx[jdx,]), 3] = 1
+			y_drop[as.scalar(drop_idx[jdx,]), 2] = 1
+		}
+
+		# build undersampled data
+		X_under = matrix(0, rows=0, cols=m)
+		y_under = matrix(0, rows=0, cols=1)
+		for (idx in 1:n) {
+			if (as.scalar(X_drop[idx, 3]) == 0) {
+				X_under = rbind(X_under, X[idx,])
+				y_under = rbind(y_under, y[idx,])
+			}
+		}
+	}
+}
+
+# demo, TODO remove
+print("------------- start demo -------------")
+[X_under, y_under, drop_idx] = tomek_link(X, y, 1, "auto")
+print(toString(X_under))
+print(toString(y_under))
+print(toString(drop_idx))
+print("----------------------------------")
+
+[X_under, y_under, drop_idx] = tomek_link(X, y, 0, "auto")
+print(toString(X_under))
+print(toString(y_under))
+print(toString(drop_idx))
+print("----------------------------------")
+
+[X_under, y_under, drop_idx] = tomek_link(X, y, 1, "both")
+print(toString(X_under))
+print(toString(y_under))
+print(toString(drop_idx))
+print("----------------------------------")
+
+[X_under, y_under, drop_idx] = tomek_link(X, y, 0, "both")
+print(toString(X_under))
+print(toString(y_under))
+print(toString(drop_idx))
+print("---------- end demo ----------")

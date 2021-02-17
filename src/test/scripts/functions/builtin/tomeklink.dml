@@ -1,0 +1,10 @@
+X = read($X)
+y = read($y)
+save_as = $save_as
+
+# specified like in R: unbalanced
+mode = "auto"
+majority_label = 0
+
+X_under = tomek_link(X, y, majority_label, mode)
+write(X, save_as)

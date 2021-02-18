@@ -48,7 +48,7 @@ class Mapper:
     def __map_parameters(self, params):
         raise NotImplementedError('Base class is not implemented.')
 
-    def __map_output(self):
+    def map_output(self):
         raise NotImplementedError('Base class is not implemented.')
 
 # TODO: missing parameter mapping
@@ -61,7 +61,7 @@ class KmeansMapper(Mapper):
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -75,7 +75,7 @@ class KmeansMapper(Mapper):
             -1 if params['random_state'] == None else params['random_state']  
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'C', # The output matrix with the centroids
             'Y'  # The mapping of records to centroids
@@ -90,7 +90,7 @@ class DBSCANMapper(Mapper):
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -99,7 +99,7 @@ class DBSCANMapper(Mapper):
             params.get('min_samples', 5)
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'clusterMembers'
         ]
@@ -113,7 +113,7 @@ class LinearSVMMapper(Mapper):
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -126,7 +126,7 @@ class LinearSVMMapper(Mapper):
             -1 # column_id is unkown in sklearn
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'model'
         ]
@@ -146,7 +146,7 @@ class GaussianMixtureMapper(Mapper):
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -159,7 +159,7 @@ class GaussianMixtureMapper(Mapper):
             params.get('tol', 0.000001)
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'weight',
             'labels',
@@ -177,7 +177,7 @@ class TweedieRegressorMapper(Mapper):
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -196,7 +196,7 @@ class TweedieRegressorMapper(Mapper):
             0 # mii
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'beta'
         ]
@@ -211,7 +211,7 @@ class LogisticRegressionMapper(Mapper):
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -223,7 +223,7 @@ class LogisticRegressionMapper(Mapper):
             0, # maxii
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'beta'
         ]
@@ -236,7 +236,7 @@ class StandardScalerMapper(Mapper):
     
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -245,7 +245,7 @@ class StandardScalerMapper(Mapper):
             params['with_std']
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'Y'
         ]
@@ -258,7 +258,7 @@ class NormalizeMapper(Mapper):
 
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -266,7 +266,7 @@ class NormalizeMapper(Mapper):
         
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'Y'
         ]
@@ -278,7 +278,7 @@ class SimpleImputerMapper(Mapper):
 
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params): # might update naming ?
@@ -291,7 +291,7 @@ class SimpleImputerMapper(Mapper):
 
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'X'
         ]
@@ -306,7 +306,7 @@ class SplitMapper(Mapper):
 
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -316,7 +316,7 @@ class SplitMapper(Mapper):
             -1 if params['random_state'] == None else params['random_state']
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'Xtrain',
             'Xtest',
@@ -333,7 +333,7 @@ class PCAMapper(Mapper):
 
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -343,7 +343,7 @@ class PCAMapper(Mapper):
             1    #non existant in SKlearn
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'Xout',
             'Mout'
@@ -358,7 +358,7 @@ class distMapper(Mapper):
 
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -366,7 +366,7 @@ class distMapper(Mapper):
 
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'X'
         ]
@@ -379,7 +379,7 @@ class accuracyMapper(Mapper):
 
     def get_call(self, parameters):
         self.__map_parameters(parameters)
-        self.__map_output()
+        self.map_output()
         return super().get_call()
 
     def __map_parameters(self, params):
@@ -387,14 +387,14 @@ class accuracyMapper(Mapper):
             False
         ]
 
-    def __map_output(self):
+    def map_output(self):
         self.mapped_output = [
             'accuracy'
         ]
 
 
 class SklearnToDMLMapper:
-    def __init__(self, pipeline):
+    def __init__(self, pipeline, standalone_script=True):
         self.steps = pipeline.steps
         self.functions = {
             'kmeans': KmeansMapper,
@@ -431,13 +431,21 @@ class SklearnToDMLMapper:
             f.write(self.dml_script)
 
     def get_input(self):
-        if self.steps[0].is_intermediate:
+        func = self.functions[self.steps[0][0]]()
+        if func is None:
+            raise RuntimeError(f'{self.steps[0][0]} is not supported.')
+
+        if func.is_supervised:
             return 'X = read($X)\nY = read($Y)'
         else:
             return 'X = read($X)'
 
     def get_output(self):
-        return 'print(X)'
+        func = self.functions[self.steps[-1][0]]()
+        if func is None:
+            raise RuntimeError(f'{self.steps[-1][0]} is not supported.')
+        func.map_output() # TODO: redo this
+        return f'print({", ".join(func.mapped_output)})' # TODO: does this even work?
 
 if __name__ == '__main__':
     pipeline = load('pipe.pkl')

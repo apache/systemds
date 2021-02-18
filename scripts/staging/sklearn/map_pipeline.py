@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import pickle
+import os
 
 # TODO: rename scirpt, move mappers into won file?, 
 # own file for each mapper?
@@ -14,6 +15,13 @@ def save(path):
     with open(path, 'rb') as f:
         return pickle.dump(f)
 
+def scripts_home():
+    systemds_home = os.getenv('SYSTEMDS_HOME')
+    if systemds_home is None:
+        return builtin_path
+    else:
+        return f'{systemds_home}/{builtin_path}'
+
 # TODO: path handling with Path or env variablebuiltin_path
 builtin_path = "scripts/builtin"
 
@@ -26,7 +34,7 @@ class Mapper:
         self.is_supervised = False # TODO: default cases. Better if set by own Mappers?
 
     def get_source(self):
-        return 'source("{}/{}") as ns_{}'.format(builtin_path, self.name, self.name) 
+        return 'source("{}/{}") as ns_{}'.format(scripts_home(), self.name, self.name) 
 
     # TODO better string building
     def get_call(self):
@@ -331,8 +339,8 @@ class PCAMapper(Mapper):
     def __map_parameters(self, params):
         self.mapped_params = [
             params.get('n_components'),
-            True,   #non existant in SKlearn
-            True    #non existant in SKlearn
+            1,   #non existant in SKlearn
+            1    #non existant in SKlearn
         ]
 
     def __map_output(self):
@@ -403,12 +411,14 @@ class SklearnToDMLMapper:
                 # TODO handle missing function mapping
                 continue
             mapper = self.functions[name]()
-            sources.append(mapper.get_source())
             calls.append(mapper.get_call(step.get_params()))
+            sources.append(mapper.get_source())
 
         self.dml_script = '\n'.join(sources)
         self.dml_script += '\n\n'
+        self.dml_script += self.get_input() + '\n'
         self.dml_script += '\n'.join(calls)
+        self.dml_script += '\n' + self.get_output()
 
         print('Mapped DML script:')
         print(self.dml_script)
@@ -419,6 +429,15 @@ class SklearnToDMLMapper:
 
         with open(path, 'w') as f:
             f.write(self.dml_script)
+
+    def get_input(self):
+        if self.steps[0].is_intermediate:
+            return 'X = read($X)\nY = read($Y)'
+        else:
+            return 'X = read($X)'
+
+    def get_output(self):
+        return 'print(X)'
 
 if __name__ == '__main__':
     pipeline = load('pipe.pkl')

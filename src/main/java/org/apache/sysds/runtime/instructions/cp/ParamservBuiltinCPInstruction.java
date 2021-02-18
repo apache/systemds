@@ -41,7 +41,6 @@ import static org.apache.sysds.parser.Statement.PS_MODE;
 import static org.apache.sysds.parser.Statement.PS_MODEL;
 import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
 import static org.apache.sysds.parser.Statement.PS_SCHEME;
-import static org.apache.sysds.parser.Statement.PS_FED_SCHEME;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
 import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
@@ -543,11 +542,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private FederatedPSScheme getFederatedScheme() {
 		FederatedPSScheme federated_scheme = DEFAULT_FEDERATED_SCHEME;
-		if (getParameterMap().containsKey(PS_FED_SCHEME)) {
+		if (getParameterMap().containsKey(PS_SCHEME)) {
 			try {
-				federated_scheme = FederatedPSScheme.valueOf(getParam(PS_FED_SCHEME));
+				federated_scheme = FederatedPSScheme.valueOf(getParam(PS_SCHEME));
 			} catch (IllegalArgumentException e) {
-				throw new DMLRuntimeException(String.format("Paramserv function in federated mode: not support data partition scheme '%s'", getParam(PS_FED_SCHEME)));
+				throw new DMLRuntimeException(String.format("Paramserv function in federated mode: not support data partition scheme '%s'", getParam(PS_SCHEME)));
 			}
 		}
 		return federated_scheme;
@@ -562,7 +561,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 */
 	private int getNumBatchesPerEpoch(PSRuntimeBalancing runtimeBalancing, DataPartitionFederatedScheme.BalanceMetrics balanceMetrics) {
 		int numBatchesPerEpoch;
-		if(runtimeBalancing == PSRuntimeBalancing.RUN_MIN) {
+		if(runtimeBalancing == PSRuntimeBalancing.CYCLE_MIN || runtimeBalancing == PSRuntimeBalancing.BASELINE) {
 			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._minRows / (float) getBatchSize());
 		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG
 				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH) {

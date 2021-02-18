@@ -80,7 +80,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	private int _possibleBatchesPerLocalEpoch;
 	private final boolean _weighting;
 	private double _weightingFactor = 1;
-	private final boolean _cycleStartAt0 = false;
+	private boolean _cycleStartAt0 = false;
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq,
 		PSRuntimeBalancing runtimeBalancing, boolean weighting, int epochs, long batchSize,
@@ -115,18 +115,20 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		// calculate scaled batch size if balancing via batch size.
 		// In some cases there will be some cycling
-		if(_runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH) {
+		if(_runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH)
 			_batchSize = (int) Math.ceil((double) dataSize / _numBatchesPerEpoch);
-		}
 
 		// Calculate possible batches with batch size
 		_possibleBatchesPerLocalEpoch = (int) Math.ceil((double) dataSize / _batchSize);
 
 		// If no runtime balancing is specified, just run possible number of batches
 		// WARNING: Will get stuck on miss match
-		if(_runtimeBalancing == PSRuntimeBalancing.NONE) {
+		if(_runtimeBalancing == PSRuntimeBalancing.NONE)
 			_numBatchesPerEpoch = _possibleBatchesPerLocalEpoch;
-		}
+
+		// If running in baseline mode set cycle to false
+		if(_runtimeBalancing == PSRuntimeBalancing.BASELINE)
+			_cycleStartAt0 = true;
 
 		if( LOG.isInfoEnabled() ) {
 			LOG.info("Setup config for worker " + this.getWorkerName());

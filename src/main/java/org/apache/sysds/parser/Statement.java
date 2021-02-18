@@ -89,7 +89,7 @@ public abstract class Statement implements ParseInfo
 	public enum PSFrequency {
 		BATCH, EPOCH
 	}
-	public static final String PS_FED_WEIGHING = "weighing";
+	public static final String PS_FED_WEIGHTING = "weighting";
 	public static final String PS_FED_RUNTIME_BALANCING = "runtime_balancing";
 	public enum PSRuntimeBalancing {
 		NONE, RUN_MIN, CYCLE_AVG, CYCLE_MAX, SCALE_BATCH

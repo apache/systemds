@@ -45,7 +45,7 @@ import static org.apache.sysds.parser.Statement.PS_FED_SCHEME;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
 import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
-import static org.apache.sysds.parser.Statement.PS_FED_WEIGHING;
+import static org.apache.sysds.parser.Statement.PS_FED_WEIGHTING;
 import static org.apache.sysds.parser.Statement.PS_SEED;
 import static org.apache.sysds.parser.Statement.PS_VAL_FEATURES;
 import static org.apache.sysds.parser.Statement.PS_VAL_LABELS;
@@ -141,7 +141,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		PSFrequency freq = getFrequency();
 		FederatedPSScheme federatedPSScheme = getFederatedScheme();
 		PSRuntimeBalancing runtimeBalancing = getRuntimeBalancing();
-		boolean weighing = getWeighing();
+		boolean weighting = getWeighting();
 		int seed = getSeed();
 
 		if( LOG.isInfoEnabled() ) {
@@ -149,7 +149,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			LOG.info("[+] Frequency: " + freq);
 			LOG.info("[+] Data Partitioning: " + federatedPSScheme);
 			LOG.info("[+] Runtime Balancing: " + runtimeBalancing);
-			LOG.info("[+] Weighing: " + weighing);
+			LOG.info("[+] Weighting: " + weighting);
 			LOG.info("[+] Seed: " + seed);
 		}
 		if (tSetup != null)
@@ -187,7 +187,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
-			.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighing,
+			.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighting,
 				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
 			.collect(Collectors.toList());
 		if(workerNum != threads.size()) {
@@ -197,7 +197,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		for (int i = 0; i < threads.size(); i++) {
 			threads.get(i).setFeatures(result._pFeatures.get(i));
 			threads.get(i).setLabels(result._pLabels.get(i));
-			threads.get(i).setup(result._weighingFactors.get(i));
+			threads.get(i).setup(result._weightingFactors.get(i));
 		}
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
@@ -575,8 +575,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return numBatchesPerEpoch;
 	}
 
-	private boolean getWeighing() {
-		return getParameterMap().containsKey(PS_FED_WEIGHING) && Boolean.parseBoolean(getParam(PS_FED_WEIGHING));
+	private boolean getWeighting() {
+		return getParameterMap().containsKey(PS_FED_WEIGHTING) && Boolean.parseBoolean(getParam(PS_FED_WEIGHTING));
 	}
 
 	private String getValFunction() {

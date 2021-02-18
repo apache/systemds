@@ -54,7 +54,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final String _freq;
 	private final String _scheme;
 	private final String _runtime_balancing;
-	private final String _weighing;
+	private final String _weighting;
 	private final String _data_distribution;
 	private final int _seed;
 
@@ -94,7 +94,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
-		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String weighing, String data_distribution, int seed) {
+		int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String weighting, String data_distribution, int seed) {
 
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
@@ -106,7 +106,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		_freq = freq;
 		_scheme = scheme;
 		_runtime_balancing = runtime_balancing;
-		_weighing = weighing;
+		_weighting = weighting;
 		_data_distribution = data_distribution;
 		_seed = seed;
 	}
@@ -192,7 +192,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"freq=" + _freq,
 					"scheme=" + _scheme,
 					"runtime_balancing=" + _runtime_balancing,
-					"weighing=" + _weighing,
+					"weighting=" + _weighting,
 					"network_type=" + _networkType,
 					"channels=" + C,
 					"hin=" + Hin,

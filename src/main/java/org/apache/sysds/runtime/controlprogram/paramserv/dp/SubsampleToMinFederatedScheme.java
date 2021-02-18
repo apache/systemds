@@ -52,7 +52,7 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 	public Result partition(MatrixObject features, MatrixObject labels, int seed) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
-		List<Double> weighingFactors = getWeighingFactors(pFeatures, getBalanceMetrics(pFeatures));
+		List<Double> weightingFactors = getWeightingFactors(pFeatures, getBalanceMetrics(pFeatures));
 
 		int min_rows = Integer.MAX_VALUE;
 		for (MatrixObject pFeature : pFeatures) {
@@ -82,7 +82,7 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
 
-		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), weighingFactors);
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), weightingFactors);
 	}
 
 	/**

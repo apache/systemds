@@ -41,30 +41,27 @@ source("scripts/builtin/sherlockNet.dml") as sherlockNet
 load_processed_test_values = function() return (frame[string] data) {
 
   data = read("../sherlock-project/data/data/short/100_X_test.csv",
-  fill=TRUE,
-  header=TRUE
+  fill=TRUE
   )
   #rows = nrow(data)
   #cols = ncol(data)
   #print("loaded X_test_short.csv with " + rows + " rows and " + cols + " columns")
 }
-
+/*
 load_processed_train_values = function() return (frame[string] data) {
 
   data = read("../sherlock-project/data/data/short/100_X_train.csv",
-  fill=TRUE,
-  header=TRUE
+  fill=TRUE
   )
   #rows = nrow(data)
   #cols = ncol(data)
   #print("loaded X_train.csv with " + rows + " rows and " + cols + " columns")
 }
-
+*/
 load_processed_val_values = function() return (frame[string] data) {
 
   data = read("../sherlock-project/data/data/short/100_X_val.csv",
-  fill=TRUE,
-  header=TRUE
+  fill=TRUE
   )
   #rows = nrow(data)
   #cols = ncol(data)
@@ -73,8 +70,7 @@ load_processed_val_values = function() return (frame[string] data) {
 
 load_processed_test_labels = function() return (frame[string] data) {
   data = read("../sherlock-project/data/data/short/100_y_test.csv",
-  fill=TRUE,
-  header=TRUE
+  fill=TRUE
   )
   #rows = nrow(data)
   #cols = ncol(data)
@@ -83,9 +79,8 @@ load_processed_test_labels = function() return (frame[string] data) {
 
 load_processed_train_labels = function() return (frame[string] data) {
   tableSchema = "string,string";
-  data = read("../sherlock-project/data/data/short/100_y_train.csv",
-  fill=TRUE,
-  header=TRUE
+  data = read("../sherlock-project/data/data/short/short_y_train.csv",
+  fill=TRUE
   )
   #rows = nrow(data)
   #cols = ncol(data)
@@ -94,8 +89,7 @@ load_processed_train_labels = function() return (frame[string] data) {
 
 load_processed_val_labels = function() return (frame[string] data) {
   data = read("../sherlock-project/data/data/short/100_y_val.csv",
-  fill=TRUE,
-  header=TRUE
+  fill=TRUE
   )
   #rows = nrow(data)
   #cols = ncol(data)
@@ -112,8 +106,8 @@ transform_values = function(frame[string] data) return (matrix[double] m_data) {
   #print("loaded *values.csv with " + rows + " rows and " + cols + " columns")
 
   #replace True/Fasle with 1/0
-  data = map(data, "d -> d.replace(\"True\",\"1\")")
-  data = map(data, "d -> d.replace(\"False\",\"0\")")
+  #data = map(data, "d -> d.replace(\"True\",\"1\")")
+  #data = map(data, "d -> d.replace(\"False\",\"0\")")
   m_data = as.matrix(data)
 }
 
@@ -155,38 +149,109 @@ transform_apply_labels = function(frame[string] data, frame[string] meta_data) r
 
 }
 
+transform_labels_to_ground_truth = function(matrix[double] data)
+  return(matrix[double] ground_truth) {
+
+  rows = nrow(data)
+  ground_truth = matrix(0, rows=rows, cols=78)
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(data[i,1])] = 1
+  }
+}
+
 ##########################################################
 # training and testing of sherlock
 ##########################################################
 
+/*
+  data preprocessed: global stats, char dist, word embeddings, par vec
+  ncols:             27, 960, 200 + 1, 400
+*/
 m_sherlock = function (matrix[double] A) return (double m) {
   m = sum(A)/nrow(A)
-  processed_train_values = transform_values(load_processed_train_values())
-  processed_val_values = transform_values(load_processed_val_values())
-  processed_test_values = transform_values(load_processed_test_values())
 
+  processed_train_values = read("../sherlock-project/data/data/short/short_X_train.csv")
+  #processed_train_values = transform_values(load_processed_train_values())
+ # processed_val_values = transform_values(load_processed_val_values())
+  #processed_test_values = transform_values(load_processed_test_values())
   [processed_train_labels, meta_data] = transform_encode_labels(load_processed_train_labels())
-  processed_val_labels = transform_apply_labels(load_processed_val_labels(), meta_data)
-  processed_test_labels = transform_apply_labels(load_processed_test_labels(), meta_data)
-
+  #processed_val_labels = transform_apply_labels(load_processed_val_labels(), meta_data)
+  #processed_test_labels = transform_apply_labels(load_processed_test_labels(), meta_data)
+  #write(processed_train_values, "../sherlock-project/data/data/short/X_train_transformed.csv", format="csv")
+  #write(processed_train_labels, "../sherlock-project/data/data/short/y_train_transformed.csv", format="csv")
+  /*
+  #processed_train_values = read("../sherlock-project/data/data/cleanProcessed/X_train.csv")
+  processed_val_values = read("../sherlock-project/data/data/cleanProcessed/X_val.csv")
+ # processed_train_labels = transform_labels_to_ground_truth(
+ #         read("../sherlock-project/data/data/cleanProcessed/y_train.csv")
+ #       )
+  processed_val_labels = transform_labels_to_ground_truth(
+          read("../sherlock-project/data/data/cleanProcessed/y_val.csv")
+        )
+  */
   #train
-  hidden_layer_neurons = 500
-  [W1, b1, W2, b2, W3, b3] = sherlockNet::train(processed_train_values, processed_train_labels,
-    processed_val_values, processed_val_labels, hidden_layer_neurons)
+  /*
+    data preprocessed: global stats, char dist = C, word embeddings = W, par vec = P
+                        27, 960, 200 + 1, 400
+    accuracy 10000 (cwpf):     0.09375, 0.1015625, 0.8984375, 0.140625,
 
-  write(W1, "../sherlock-project/data/data/short/W1")
-  write(b1, "../sherlock-project/data/data/short/b1")
-  write(W2, "../sherlock-project/data/data/short/W2")
-  write(b2, "../sherlock-project/data/data/short/b2")
-  write(W3, "../sherlock-project/data/data/short/W3")
-  write(b3, "../sherlock-project/data/data/short/b3")
+  */
+  train_cols = ncol(processed_train_values)
+  train_rows = nrow(processed_train_values)
+  #[cW1, cb1, cW2, cb2, cW3, cb3] = sherlockNet::train(processed_train_values[1:train_rows, 224:1183], processed_train_labels, 300)
+  #[wW1, wb1, wW2, wb2, wW3, wb3] = sherlockNet::train(cbind(processed_train_values[1:train_rows, 13:212], processed_train_values[1:train_rows, 1188]), processed_train_labels, 200)
+  #[pW1, pb1, pW2, pb2, pW3, pb3] = sherlockNet::train(processed_train_values[1:train_rows, 1189:1588], processed_train_labels, 400)
 
-  predict_values = sherlockNet::predict(processed_test_values, W1, b1, W2, b2, W3, b3)
-  write(predict_values, "../sherlock-project/data/data/short/predict_values")
-  write(processed_test_labels, "../sherlock-project/data/data/short/processed_test_labels")
-  [loss, accuracy] = sherlockNet::eval(predict_values, processed_test_labels)
-  print("test loss: " + loss)
-  print("test accuracy: " + accuracy)
+  #cprobs = sherlockNet::predict(processed_train_values[1:train_rows, 224:1183], cW1, cb1, cW2, cb2, cW3, cb3)
+  #wprobs = sherlockNet::predict(cbind(processed_train_values[1:train_rows, 13:212], processed_train_values[1:train_rows, 1188]), wW1,wb1, wW2, wb2, wW3, wb3)
+  #pprobs = sherlockNet::predict(processed_train_values[1:train_rows, 1189:1588], pW1, pb1, pW2, pb2, pW3, pb3)
+
+  cprobs = read( "../sherlock-project/data/data/short/cprobs")
+  wprobs = read( "../sherlock-project/data/data/short/wprobs")
+  pprobs =  read("../sherlock-project/data/data/short/pprobs")
+
+  first_predictions = cbind(cprobs, wprobs, pprobs)#processed_train_values[1:train_rows, 1:12], processed_train_values[1:train_rows, 213:223], processed_train_values[1:train_rows, 1184:1187])
+  #final training
+  [fW1, fb1, fW2, fb2, fW3, fb3] = sherlockNet::train(first_predictions, processed_train_labels, 500)
+  fprobs = sherlockNet::predict(first_predictions, fW1, fb1, fW2, fb2, fW3, fb3)
+/*
+  write(cW1, "../sherlock-project/data/data/short/cW1")
+  write(cb1, "../sherlock-project/data/data/short/cb1")
+  write(cW2, "../sherlock-project/data/data/short/cW2")
+  write(cb2, "../sherlock-project/data/data/short/cb2")
+  write(cW3, "../sherlock-project/data/data/short/cW3")
+  write(cb3, "../sherlock-project/data/data/short/cb3")
+  write(wW1, "../sherlock-project/data/data/short/wW1")
+  write(wb1, "../sherlock-project/data/data/short/wb1")
+  write(wW2, "../sherlock-project/data/data/short/wW2")
+  write(wb2, "../sherlock-project/data/data/short/wb2")
+  write(wW3, "../sherlock-project/data/data/short/wW3")
+  write(wb3, "../sherlock-project/data/data/short/wb3")
+  write(pW1, "../sherlock-project/data/data/short/pW1")
+  write(pb1, "../sherlock-project/data/data/short/pb1")
+  write(pW2, "../sherlock-project/data/data/short/pW2")
+  write(pb2, "../sherlock-project/data/data/short/pb2")
+  write(pW3, "../sherlock-project/data/data/short/pW3")
+  write(pb3, "../sherlock-project/data/data/short/pb3")
+*/
+  write(fW1, "../sherlock-project/data/data/short/fW1")
+  write(fb1, "../sherlock-project/data/data/short/fb1")
+  write(fW2, "../sherlock-project/data/data/short/fW2")
+  write(fb2, "../sherlock-project/data/data/short/fb2")
+  write(fW3, "../sherlock-project/data/data/short/fW3")
+  write(fb3, "../sherlock-project/data/data/short/fb3")
+
+  write(cprobs, "../sherlock-project/data/data/short/cprobs")
+  write(wprobs, "../sherlock-project/data/data/short/wprobs")
+  write(pprobs, "../sherlock-project/data/data/short/pprobs")
+  write(fprobs, "../sherlock-project/data/data/short/fprobs")
+
+  #predict_values = sherlockNet::predict(processed_test_values, W1, b1, W2, b2, W3, b3)
+  #write(predict_values, "../sherlock-project/data/data/short/predict_values")
+  #write(processed_test_labels, "../sherlock-project/data/data/short/processed_test_labels")
+  #[loss, accuracy] = sherlockNet::eval(predict_values, processed_test_labels)
+  #print("test loss: " + loss)
+  #print("test accuracy: " + accuracy)
 }
 
 

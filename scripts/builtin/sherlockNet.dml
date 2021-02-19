@@ -43,17 +43,6 @@ train = function(matrix[double] X_train, matrix[double] y_train, int hidden_laye
   [W3, b3] = affine::init(H2, t, -1)
 
   # Initialize Adams parameter
-  /*
-  tested params( lr, decay, test file number of lines, hidden ReLU, batch size, train_acc, val_acc, )
-  0.001, 0.001,   3900, 300, 256, 0.08203125, 0.05822005642472429,
-  0.001, 0.0001,  3900, 300, 256, 0.06640625, 0.04026673506027186,
-  0.001, 0.001,  29000, 300, 256, 0.203125,   0.1114176350908652,
-  0.001, 0.001,  29000, 500, 256, 0.06640625, 0.038311665919514466,   converged at 16 iterations --> not good...
-  0.001, 0.001,  29000, 300, 256, 0.15234375, 0.08234766716093658,    train and val subsets have been substituted before this line
-  0.0001, 0.0001, 29000, 500, 256, 0.1640625, 0.08427876823338736, params like in sherlock paper, slow but static increasing accuracy
-  0.0001, 0.0001, 60000, 500, 128, 0.1796875, 0.16093493110052712,
-
-*/
   initial_lr = 0.0001  # learning rate
   decay = 0.0001  # learning rate decay constant for weight decay
 
@@ -73,12 +62,14 @@ train = function(matrix[double] X_train, matrix[double] y_train, int hidden_laye
   epochs = 100
   iters = ceil(N / batch_size)
   lr = initial_lr
-  print("init lr: " + initial_lr + " decay: " + decay)
+  print("init lr: " + initial_lr + " decay: " + decay + "iters: " + iters)
   for (e in 1:epochs) {
     for(i in 1:iters){
       # Get next batch
-      X_batch = X_train[i:i+batch_size-1,]
-      y_batch = y_train[i:i+batch_size-1,]
+      beg = ((i-1) * batch_size) %% N + 1
+      end = min(N, beg + batch_size - 1)
+      X_batch = X_train[beg:end,]
+      y_batch = y_train[beg:end,]
 
       # Compute forward pass
       ## layer 1:
@@ -98,9 +89,9 @@ train = function(matrix[double] X_train, matrix[double] y_train, int hidden_laye
         accuracy = mean(rowIndexMax(probs) == rowIndexMax(y_batch))
 
         # Compute validation loss & accuracy
-        probs_val = -1 #predict(X_val, W1, b1, W2, b2, W3, b3)
-        loss_val = -1 #cross_entropy_loss::forward(probs_val, y_val)
-        accuracy_val = -1 #mean(rowIndexMax(probs_val) == rowIndexMax(y_val))
+        probs_val = predict(X_train, W1, b1, W2, b2, W3, b3)
+        loss_val = cross_entropy_loss::forward(probs_val, y_train)
+        accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(y_train))
 
         # Output results
         print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
@@ -134,7 +125,6 @@ train = function(matrix[double] X_train, matrix[double] y_train, int hidden_laye
     adam_t = adam_t + 1
     lr = initial_lr * (1 / (1 + decay * e))
   }
-  #write(probs_val, "../sherlock-project/data/data/short/probs_val_after_train")
 }
 
 predict = function(matrix[double] test_val,
@@ -158,9 +148,9 @@ predict = function(matrix[double] test_val,
   iters = ceil(N / batch_size)
   for(i in 1:iters) {
     # Get next batch
-    beg = i
-    end = i + batch_size - 1
-    #X_batch = X_train[i:i+batch_size-1,] #in train
+    beg = ((i-1) * batch_size) %% N + 1
+    end = min(N, beg + batch_size - 1)
+    end = min(end, N)
     X_batch = test_val[beg:end,]
 
     # Compute forward pass

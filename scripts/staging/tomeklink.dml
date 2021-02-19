@@ -1,7 +1,7 @@
 print("WIP -----------------------------")
 
 # get some data, TODO remove
-X = rand(rows=5, cols=2)
+X = rand(rows=5, cols=5)
 y = rbind(matrix(1, rows=2,cols=1), matrix(0, rows=3,cols=1))
 print(toString(X))
 print(toString(y))
@@ -18,7 +18,7 @@ return (double nn_idx)
 	sq_diff = diff^2 # euclidian
 	dist = rowSums(sq_diff)
 	sort_dist = order(target=dist, by=1, decreasing=FALSE, index.return=TRUE)
-	nn_idx = as.scalar(sort_dist[2,1])  # not self
+	nn_idx = as.scalar(sort_dist[2,1])  # nearest, not self
 }
 # ------------------------------------------------------------------
 
@@ -82,8 +82,6 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
 
 		else {
 			print("error: select an available mode: auto, both")
-			X_under = X
-			y_under = y
 			drop_idx = matrix(0, rows=0, cols=1)
 		}
 
@@ -93,7 +91,7 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
 		X_drop = cbind(X, matrix(0, rows=n, cols=1))
 		y_drop = cbind(y, matrix(0, rows=n, cols=1))
 		for (jdx in 1:n_drop) {
-			X_drop[as.scalar(drop_idx[jdx,]), 3] = 1
+			X_drop[as.scalar(drop_idx[jdx,]), m+1] = 1
 			y_drop[as.scalar(drop_idx[jdx,]), 2] = 1
 		}
 
@@ -101,7 +99,7 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
 		X_under = matrix(0, rows=0, cols=m)
 		y_under = matrix(0, rows=0, cols=1)
 		for (idx in 1:n) {
-			if (as.scalar(X_drop[idx, 3]) == 0) {
+			if (as.scalar(X_drop[idx, m+1]) == 0) {
 				X_under = rbind(X_under, X[idx,])
 				y_under = rbind(y_under, y[idx,])
 			}
@@ -112,25 +110,41 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
 # demo, TODO remove
 print("------------- start demo -------------")
 [X_under, y_under, drop_idx] = tomek_link(X, y, 1, "auto")
+print("1; auto")
+print("X_under:")
 print(toString(X_under))
+print("y_under:")
 print(toString(y_under))
+print("drop_idx:")
 print(toString(drop_idx))
 print("----------------------------------")
 
 [X_under, y_under, drop_idx] = tomek_link(X, y, 0, "auto")
+print("0; auto")
+print("X_under:")
 print(toString(X_under))
+print("y_under:")
 print(toString(y_under))
+print("drop_idx:")
 print(toString(drop_idx))
 print("----------------------------------")
 
 [X_under, y_under, drop_idx] = tomek_link(X, y, 1, "both")
+print("1; both")
+print("X_under:")
 print(toString(X_under))
+print("y_under:")
 print(toString(y_under))
+print("drop_idx:")
 print(toString(drop_idx))
 print("----------------------------------")
 
 [X_under, y_under, drop_idx] = tomek_link(X, y, 0, "both")
+print("0; both")
+print("X_under:")
 print(toString(X_under))
+print("y_under:")
 print(toString(y_under))
+print("drop_idx:")
 print(toString(drop_idx))
-print("---------- end demo ----------")
+print("----------------------------------")

@@ -7,4 +7,4 @@ mode = "auto"
 majority_label = 0
 
 X_under = tomek_link(X, y, majority_label, mode)
-write(X, save_as)
+write(X_under, save_as)

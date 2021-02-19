@@ -1,63 +1,65 @@
-print("WIP -----------------------------")
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# UNDERSAMPLING TECHNIQUE;
+# COMPUTES TOMEK LINKS AND DROPS THEM FROM DATA MATRIX AND LABEL VECTOR
+# DROPS EITHER BOTH ENDPOINTS OF LINK (MODE BOTH) OR ONLY THE MAJORITY LABEL (MODE AUTO)
+#
+# INPUT   				PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    				TYPE     DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X       				MATRIX   ---      Data Matrix (nxm)
+# y      					MATRIX   ---      Label Matrix (nx1)
+# majority_label	DOUBLE 	 0 				Label of largest class
+# mode						STRING   "auto" 	drop only majority samples (auto) or both ends of links (both)
+# ---------------------------------------------------------------------------------------------
+# OUTPUT:
+# X_under  - Data Matrix without Tomek links
+# y_under  - Labels corresponding to undersampled data
+# drop_idx - Indices of dropped rows/labels wrt input
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# attach following lines at the end of this script, run in terminal $ systemds tomeklink.dml
+#
+# print("----------- begin input -----------")
+# X = rand(rows=5, cols=2)
+# y = rbind(matrix(1, rows=2,cols=1), matrix(0, rows=3,cols=1))
+# print(toString(X))
+# print(toString(y))
+# print(" ----------- end input -----------")
+# print("----------- begin demo -----------")
+# [X_under, y_under, drop_idx] = tomek_link(X, y, 0, "auto")
+# print("0; auto")
+# print("X_under:")
+# print(toString(X_under))
+# print("y_under:")
+# print(toString(y_under))
+# print("drop_idx:")
+# print(toString(drop_idx))
+# print("----------- end demo -----------")
 
-# get some data, TODO remove
-X = rand(rows=5, cols=5)
-y = rbind(matrix(1, rows=2,cols=1), matrix(0, rows=3,cols=1))
-print(toString(X))
-print(toString(y))
-
-print(" ----------- end input -----------")
 
 
-
-# nearest nb function ---------------------------------------------
-get_nn = function(Matrix[Double] X, Matrix[Double] instance)
-return (double nn_idx)
-{
-	diff = X-instance
-	sq_diff = diff^2 # euclidian
-	dist = rowSums(sq_diff)
-	sort_dist = order(target=dist, by=1, decreasing=FALSE, index.return=TRUE)
-	nn_idx = as.scalar(sort_dist[2,1])  # nearest, not self
-}
-# ------------------------------------------------------------------
-
-# demo, TODO remove
-# instance = X[1,]
-# nn_idx = get_nn(X, instance)
-# print(toString(nn_idx))
-
-
-
-# tomek link function -----------------------------------------------
-get_links = function(Matrix[Double] X, Matrix[Double] y, double majority_label)
-return (Matrix[Double] tomek_links)
-{
-	tomek_links = matrix(0, rows=0, cols=2)
-
-	for (idx in 1:nrow(X)) {
-		label = as.scalar(y[idx,1])
-
-		if (label == majority_label) {
-			instance = X[idx,]
-			nn_idx = get_nn(X, instance)
-			nn_label = as.scalar(y[nn_idx,1])
-
-			if (nn_label != majority_label) {
-				link = matrix(0, rows=1, cols=2) # dir: majority to minority
-				link[1,1] = idx
-				link[1,2] = nn_idx
-				tomek_links = rbind(tomek_links, link)
-			}
-		}
-	}
-}
-# ------------------------------------------------------------------
-# demo TODO remove
-#links = get_links(X, y, 0)
-#print(toString(links))
-#print(toString(nrow(links)))
-
+###### MAIN PART ######
 
 tomek_link = function(Matrix[Double] X, Matrix[Double] y, double majority_label=0, String mode="auto")
 return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx) {
@@ -107,44 +109,43 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
 	}
 }
 
-# demo, TODO remove
-print("------------- start demo -------------")
-[X_under, y_under, drop_idx] = tomek_link(X, y, 1, "auto")
-print("1; auto")
-print("X_under:")
-print(toString(X_under))
-print("y_under:")
-print(toString(y_under))
-print("drop_idx:")
-print(toString(drop_idx))
-print("----------------------------------")
+###### END MAIN PART ######
 
-[X_under, y_under, drop_idx] = tomek_link(X, y, 0, "auto")
-print("0; auto")
-print("X_under:")
-print(toString(X_under))
-print("y_under:")
-print(toString(y_under))
-print("drop_idx:")
-print(toString(drop_idx))
-print("----------------------------------")
+###### UTILS ######
 
-[X_under, y_under, drop_idx] = tomek_link(X, y, 1, "both")
-print("1; both")
-print("X_under:")
-print(toString(X_under))
-print("y_under:")
-print(toString(y_under))
-print("drop_idx:")
-print(toString(drop_idx))
-print("----------------------------------")
+# nearest nb function ----------------------------------------------------------
+get_nn = function(Matrix[Double] X, Matrix[Double] instance)
+return (double nn_idx)
+{
+	diff = X-instance
+	sq_diff = diff^2 # euclidian
+	dist = rowSums(sq_diff)
+	sort_dist = order(target=dist, by=1, decreasing=FALSE, index.return=TRUE)
+	nn_idx = as.scalar(sort_dist[2,1])  # nearest, not self
+}
 
-[X_under, y_under, drop_idx] = tomek_link(X, y, 0, "both")
-print("0; both")
-print("X_under:")
-print(toString(X_under))
-print("y_under:")
-print(toString(y_under))
-print("drop_idx:")
-print(toString(drop_idx))
-print("----------------------------------")
+# find tomek link function  ----------------------------------------------------
+get_links = function(Matrix[Double] X, Matrix[Double] y, double majority_label)
+return (Matrix[Double] tomek_links)
+{
+	tomek_links = matrix(0, rows=0, cols=2)
+
+	for (idx in 1:nrow(X)) {
+		label = as.scalar(y[idx,1])
+
+		if (label == majority_label) {
+			instance = X[idx,]
+			nn_idx = get_nn(X, instance)
+			nn_label = as.scalar(y[nn_idx,1])
+
+			if (nn_label != majority_label) {
+				link = matrix(0, rows=1, cols=2) # dir: majority to minority
+				link[1,1] = idx
+				link[1,2] = nn_idx
+				tomek_links = rbind(tomek_links, link)
+			}
+		}
+	}
+}
+
+###### END UTILS ######

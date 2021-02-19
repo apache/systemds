@@ -41,13 +41,14 @@
 #
 
 m_bayesianOptimisation = function(Matrix[Double] xTrain, Matrix[Double] yTrain, List[String] params, List[Unknown] paramValues, String objective, String predictive, String acquisition, List[Unknown] acquParams, String kernel, List[Unknown] kernelParams, Integer iterations, Integer randomSamples = 0, Boolean minimize = TRUE, Boolean verbose = TRUE)
-  return (Frame[Unknown] opt)
+return (Frame[Unknown] opt)
 {
   numOfParams = length(params);
   HP = getMatrixOfParamCombinations(params, paramValues, verbose);
+  numOfHPCombinations = nrow(HP);
   indexes = getIndexes(nrow(HP));
 
-  [scores, usedHPIndexes] = getInitScoreAndHyperParamIndexes(
+  [usedHPIndexes, idxScoreMap] = getInitScoreAndHyperParamIndexes(
       xTrain
     , yTrain
     , objective
@@ -58,18 +59,13 @@ m_bayesianOptimisation = function(Matrix[Double] xTrain, Matrix[Double] yTrain, 
     , verbose
   );
 
-  idxScoreMap = matrix(0, randomSamples + iterations, 2);
-  for (i in 1:randomSamples) {
-    idx = as.scalar(usedHPIndexes[i,1]);
-    idxScoreMap[i,1] = idx;
-    idxScoreMap[i,2] = as.scalar(scores[idx,1]);
-  }
-
-  [means, variances] = updateModel(indexes, scores, kernel, kernelParams, verbose);
+  print("\nhi:\n" + toString(idxScoreMap[,1], rows=nrow(idxScoreMap)) + "\n" + toString(idxScoreMap[,2], rows=nrow(idxScoreMap)));
+  [means, variances] = getMeansAndVariances(idxScoreMap, kernel, kernelParams, numOfHPCombinations, verbose);
 
 
   for (i in 1:iterations) {
 
+    idxScoreEntry = matrix(0,1,2);
     # use aquisition function to get index of next hyperparameter set to try.
     aArgs = concatArgsList(list(means, variances), acquParams);
     nextHPSetIdx = as.scalar(eval(acquisition, aArgs)); # Altough double is returned print throw error not being able to print a matrix without toString.
@@ -82,14 +78,16 @@ m_bayesianOptimisation = function(Matrix[Double] xTrain, Matrix[Double] yTrain, 
     # score result
     pArgs = list(xTrain, yTrain, oResult);
     pResult = as.scalar(eval(predictive, pArgs));
-    scores[nextHPSetIdx] = pResult;
+
+    idxScoreEntry[i + randomSamples, 1] = nextHPSetIdx;
+    idxScoreEntry[i + randomSamples, 2] = pResult;
+    idxScoreMap = rbind(idxScoreMap, idxScoreEntry);
+
 
     # update model
-    [means, variances] = updateModel(indexes, scores, kernel, kernelParams, verbose);
+    [means, variances] = getMeansAndVariances(idxScoreMap, kernel, kernelParams, numOfHPCombinations, verbose);
 
-    idxScoreMap[randomSamples + i,1] = nextHPSetIdx;
-    idxScoreMap[randomSamples + i,2] = pResult;
-
+    print("\nidx:\n" + toString(idxScoreEntry[,1]) + "\n" + toString(idxScoreEntry[,2]));
     if(verbose) {
       print("\nIteration: " + i + "\nNext params: " + toString(nextHPSet) + "\nPredictive: " + toString(pResult));
     }
@@ -136,15 +134,16 @@ return (Matrix[Double] HP)
 }
 
 getInitScoreAndHyperParamIndexes = function(Matrix[Double] xTrain, Matrix[Double] yTrain, String objective, String predictive, Matrix[Double] HP, Integer numOfParams, Integer numOfSamples, Boolean verbose = TRUE)
-return(Matrix[Double] scores, Matrix[Double] usedHPIndexes) {
+return(Matrix[Double] usedHPIndexes, Matrix[Double] idxScoreMap) {
   samples = sample(nrow(HP), numOfSamples);
-  scores = matrix(0, nrow(HP), 1);
   usedHPs = matrix(0, numOfSamples, numOfParams);
   usedHPIndexes = matrix(0, numOfSamples, 1);
+  idxScoreMap = matrix(0, numOfSamples, 2);
 
-  for (sampleIdx in 1: numOfSamples) {
+  for (sampleIdx in 1:numOfSamples) {
     rndNum = as.scalar(samples[sampleIdx,1]);
     usedHPIndexes[sampleIdx] = rndNum;
+    idxScoreMap[sampleIdx,1] = rndNum;
     HPSet = HP[rndNum,];
 
     # calc objective
@@ -154,13 +153,13 @@ return(Matrix[Double] scores, Matrix[Double] usedHPIndexes) {
 
     # calc predictive / score
     pArgs = list(xTrain, yTrain, objResult);
-    predResult = eval(predictive, pArgs);
-    scores[rndNum] = predResult;
+    predResult = as.scalar(eval(predictive, pArgs);)
+    idxScoreMap[sampleIdx,2] = predResult;
   }
 
   if (verbose) {
     print("\nInit model with randome samples:");
-    print("\nscores:\n" + toString(scores, rows=nrow(scores)) +
+    print("\nscores:\n" + toString(idxScoreMap[,2], rows=nrow(idxScoreMap)) +
           "\nhyperparameters:\n" + toString(usedHPs, rows=nrow(usedHPs)) +
           "\nhyperparameter Indexes:\n" + toString(usedHPIndexes, rows=nrow(usedHPIndexes)));
   }
@@ -175,84 +174,38 @@ return (Matrix[Double] indexes)
   }
 }
 
-updateModel = function(Matrix[Double] indexes, Matrix[Double] scores, String kernel, List[Unknown] kernelParams, Boolean verbose)
+getMeansAndVariances = function(Matrix[Double] idxScoreMap, String kernel, List[Unknown] kernelParams, Double numOfHPCombinations, Boolean verbose)
 return (Matrix[Double] means, Matrix[Double] variances)
 {
-  numOfSamples = nrow(indexes);
-  means = matrix(0, numOfSamples, 1);
-  variances = matrix(0, numOfSamples, 1);
 
-  [firstMean, firstVariance] = getMeanAndVarianceOfFirstIndex(
-    as.scalar(scores[1,1]),
-    kernel,
-    kernelParams
-  );
+  sampledIndexes = idxScoreMap[,1];
+  scores = idxScoreMap[,2];
 
-  means[1,1] = firstMean;
-  variances[1,1] = firstVariance;
-
-  for (i in 2:numOfSamples) {
-    [mean, variance] = getMeanAndVariance(
-        indexes[1:i-1,1]
-      , as.matrix(i)
-      , scores[1:i-1,1]
-      , kernel
-      , kernelParams
-      , verbose
-    );
-    means[i,1] = mean;
-    variances[i,1] = variance;
-  }
-
-  if(verbose) {
-    print("\nMeans:\n" + toString(means, rows=nrow(means)) + "\nVariances\n" + toString(variances, rows=nrow(variances)));
-  }
-}
-
-getMeanAndVarianceOfFirstIndex = function(Double score, String kernel, List[Unknown] kernelParams)
-return (Double mean, Double variance)
-{
-  if (score == 0) { # first index not sampled
-    mean = 0;
-    xTrain = matrix(0,1,1);
-    kArgs = concatArgsList(list(xTrain, xTrain), kernelParams);
-    variance = as.scalar(eval(kernel, kArgs));
-  } else { # first index sampled
-    mean = score;
-    variance = 0;
-  }
-}
-
-getMeanAndVariance = function(Matrix[Double] indexes, Matrix[Double] xNew, Matrix[Double] scores, String kernel, List[Unknown] kernelParams, Boolean verbose)
-return (Double mean, Double variance)
-{
-  KArgs = concatArgsList(list(indexes, indexes), kernelParams);
+  KArgs = concatArgsList(list(sampledIndexes, sampledIndexes), kernelParams);
   K = eval(kernel, KArgs);
-
-  KsArgs = concatArgsList(list(indexes, xNew), kernelParams);
-  Ks = eval(kernel, KsArgs);
-
-  KssArgs = concatArgsList(list(xNew, xNew), kernelParams);
-  Kss = eval(kernel, KssArgs);
-
+  print("\nK:\n" + toString(K));
   K_inv = inv(K);
 
-  #TODO: This throws an error. When scores is a vector with only zeroes [0.000, 0.000, 0.000], than the matrix multiplication seems to not correctly count the rows. nrow(scores) shows the correct result. This only happens when scores is provided as a argument to the function as a new matrix created in the function scope works without an issue.
-  #mean = as.scalar(t(Ks) %*% K_inv %*% scores);
+  means = matrix(0, numOfHPCombinations, 1);
+  variances = matrix(0, numOfHPCombinations, 1);
 
-  w_scores = getWorkaroundMat(scores);
-  mean = as.scalar(t(Ks)%*%K_inv%*%w_scores);
-  variance = as.scalar(Kss - t(Ks) %*% K_inv %*% Ks);
-}
+  for (i in 1:numOfHPCombinations) {
 
-# Returns a copy of the input matrix. This workaround prevents an issue where the matrix optimizer would not correctly count the dimension of the input matrix.
-getWorkaroundMat = function(Matrix[Double] scores)
-return (Matrix[Double] wScores) 
-{
-  wScores = matrix(0, nrow(scores), 1);
-  for (i in 1:nrow(scores)) {
-    wScores[i,1] = scores[i,1];
+    xNew = as.matrix(i);
+    KsArgs = concatArgsList(list(sampledIndexes, xNew), kernelParams);
+    Ks = eval(kernel, KsArgs);
+
+    KssArgs = concatArgsList(list(xNew, xNew), kernelParams);
+    Kss = eval(kernel, KssArgs);
+
+    means[i] = as.scalar(t(Ks)%*%K_inv%*%scores);
+    variances[i] = as.scalar(Kss - t(Ks) %*% K_inv %*% Ks);
   }
+
+  if (verbose) {
+    print("\nMeans:\n" + toString(means, rows=nrow(means)) + "\nVariances:\n" + toString(variances, rows=nrow(variances)));
+  }
+
 }
 
 concatArgsList = function(List[Unknown] a, List[Unknown] b)
@@ -283,6 +236,7 @@ return (Frame[Unknown] opt, Double score)
   } else {
     mapIdx = as.scalar(rowIndexMax(t(HPIdxScoreMap[,2])));
   }
+
   idx = as.scalar(HPIdxScoreMap[mapIdx,1]);
   opt = as.frame(HP[idx]);
   score = as.scalar(HPIdxScoreMap[mapIdx,2]);

@@ -490,6 +490,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return OptimizerUtils.getSparsity(rlen, clen, nonZeros);
 	}
 	
+	@Override
 	public DataCharacteristics getDataCharacteristics() {
 		return new MatrixCharacteristics(rlen, clen, -1, nonZeros);
 	}

@@ -54,6 +54,8 @@ import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
@@ -164,6 +166,11 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		return (_schema != null) ? _schema.length : 0;
 	}
 
+	@Override
+	public DataCharacteristics getDataCharacteristics() {
+		return new MatrixCharacteristics(getNumRows(), getNumColumns(), -1);
+	}
+	
 	/**
 	 * Returns the schema of the frame block.
 	 *

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 
 /**
@@ -33,6 +34,8 @@ public interface CacheBlock extends Writable
 	public int getNumRows();
 
 	public int getNumColumns();
+	
+	public DataCharacteristics getDataCharacteristics();
 	
 	/**
 	 * Get the in-memory size in bytes of the cache block.

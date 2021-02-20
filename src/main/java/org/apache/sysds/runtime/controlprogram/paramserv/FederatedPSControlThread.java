@@ -344,7 +344,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	/**
-	 * Computes all epochs and updates after each batch
+	 * Computes all epochs and updates after each batch 
 	 */
 	protected void computeWithBatchUpdates() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {

@@ -52,7 +52,7 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
 		BalanceMetrics balanceMetricsBefore = getBalanceMetrics(pFeatures);
-		List<Double> weighingFactors = getWeighingFactors(pFeatures, balanceMetricsBefore);
+		List<Double> weightingFactors = getWeightingFactors(pFeatures, balanceMetricsBefore);
 
 		int average_num_rows = (int) balanceMetricsBefore._avgRows;
 
@@ -79,7 +79,7 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
 
-		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), weighingFactors);
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), weightingFactors);
 	}
 
 	/**

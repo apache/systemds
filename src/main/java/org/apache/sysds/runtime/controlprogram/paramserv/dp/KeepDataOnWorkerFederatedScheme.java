@@ -35,7 +35,7 @@ public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedSchem
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
 		BalanceMetrics balanceMetrics = getBalanceMetrics(pFeatures);
-		List<Double> weighingFactors = getWeighingFactors(pFeatures, balanceMetrics);
-		return new Result(pFeatures, pLabels, pFeatures.size(), balanceMetrics, weighingFactors);
+		List<Double> weightingFactors = getWeightingFactors(pFeatures, balanceMetrics);
+		return new Result(pFeatures, pLabels, pFeatures.size(), balanceMetrics, weightingFactors);
 	}
 }

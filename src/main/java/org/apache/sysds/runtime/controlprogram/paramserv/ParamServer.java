@@ -98,7 +98,7 @@ public abstract class ParamServer
 		_finishedStates = new boolean[workerNum];
 		setupAggFunc(_ec, aggFunc);
 
-		if(valFunc != null && numBatchesPerEpoch > 0) {
+		if(valFunc != null && numBatchesPerEpoch > 0 && valFeatures != null && valLabels != null) {
 			setupValFunc(_ec, valFunc, valFeatures, valLabels);
 		}
 		_numBatchesPerEpoch = numBatchesPerEpoch;
@@ -204,11 +204,14 @@ public abstract class ParamServer
 						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
 						// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
 						// BSP epoch case every time
-						if ((_freq == Statement.PSFrequency.EPOCH ||
+						if (_numBatchesPerEpoch != -1 &&
+							(_freq == Statement.PSFrequency.EPOCH ||
 							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
 
 							if(LOG.isInfoEnabled())
 								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+
+							time_epoch();
 
 							if(_validationPossible)
 								validate();
@@ -229,11 +232,14 @@ public abstract class ParamServer
 					updateGlobalModel(gradients);
 					// This if works similarly to the one for BSP, but divides the sync couter through the number of workers,
 					// creating "Pseudo Epochs"
-					if ((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
-						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0)) {
+					if (_numBatchesPerEpoch != -1 &&
+						((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
+						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0))) {
 
 						if(LOG.isInfoEnabled())
 							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
+
+						time_epoch();
 
 						if(_validationPossible)
 							validate();
@@ -321,9 +327,28 @@ public abstract class ParamServer
 	}
 
 	/**
+	 * Prints the time the epoch took to complete
+	 */
+	private void time_epoch() {
+		if (DMLScript.STATISTICS) {
+			//TODO double check correctness with multiple, potentially concurrent paramserv invocation
+			Statistics.accPSExecutionTime((long) Statistics.getPSExecutionTimer().stop());
+			double current_total_execution_time = Statistics.getPSExecutionTime();
+			double current_total_validation_time = Statistics.getPSValidationTime();
+			double time_to_epoch = current_total_execution_time - current_total_validation_time;
+
+			if (LOG.isInfoEnabled())
+				if(_validationPossible)
+					LOG.info("[+] PARAMSERV: epoch timer (excl. validation): " + time_to_epoch / 1000 + " secs.");
+				else
+					LOG.info("[+] PARAMSERV: epoch timer: " + time_to_epoch / 1000 + " secs.");
+		}
+	}
+
+	/**
 	 * Checks the current model against the validation set
 	 */
-	private synchronized void validate() {
+	private void validate() {
 		Timing tValidate = DMLScript.STATISTICS ? new Timing(true) : null;
 		_ec.setVariable(Statement.PS_MODEL, _model);
 
@@ -338,7 +363,7 @@ public abstract class ParamServer
 		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 
 		// Log validation results
-		if(LOG.isInfoEnabled())
+		if (LOG.isInfoEnabled())
 			LOG.info("[+] PARAMSERV: validation-loss: " + loss + " validation-accuracy: " + accuracy);
 
 		if(tValidate != null)

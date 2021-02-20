@@ -38,6 +38,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
@@ -117,6 +118,7 @@ public class Statistics
 	private static final LongAdder sparkBroadcastCount = new LongAdder();
 
 	// Paramserv function stats (time is in milli sec)
+	private static final Timing psExecutionTimer = new Timing(false);
 	private static final LongAdder psExecutionTime = new LongAdder();
 	private static final LongAdder psNumWorkers = new LongAdder();
 	private static final LongAdder psSetupTime = new LongAdder();
@@ -130,7 +132,7 @@ public class Statistics
 	// Federated parameter server specifics (time is in milli sec)
 	private static final LongAdder fedPSDataPartitioningTime = new LongAdder();
 	private static final LongAdder fedPSWorkerComputingTime = new LongAdder();
-	private static final LongAdder fedPSGradientWeighingTime = new LongAdder();
+	private static final LongAdder fedPSGradientWeightingTime = new LongAdder();
 	private static final LongAdder fedPSCommunicationTime = new LongAdder();
 
 	//PARFOR optimization stats (low frequency updates)
@@ -571,6 +573,14 @@ public class Statistics
 		psNumWorkers.add(n);
 	}
 
+	public static Timing getPSExecutionTimer() {
+		return psExecutionTimer;
+	}
+
+	public static double getPSExecutionTime() {
+		return psExecutionTime.doubleValue();
+	}
+
 	public static void accPSExecutionTime(long n) {
 		psExecutionTime.add(n);
 	}
@@ -603,6 +613,10 @@ public class Statistics
 		psRpcRequestTime.add(t);
 	}
 
+	public static double getPSValidationTime() {
+		return psValidationTime.doubleValue();
+	}
+
 	public static void accPSValidationTime(long t) {
 		psValidationTime.add(t);
 	}
@@ -615,8 +629,8 @@ public class Statistics
 		fedPSWorkerComputingTime.add(t);
 	}
 
-	public static void accFedPSGradientWeighingTime(long t) {
-		fedPSGradientWeighingTime.add(t);
+	public static void accFedPSGradientWeightingTime(long t) {
+		fedPSGradientWeightingTime.add(t);
 	}
 
 	public static void accFedPSCommunicationTime(long t) { fedPSCommunicationTime.add(t);}
@@ -1049,7 +1063,7 @@ public class Statistics
 					sb.append(String.format("PS fed data partitioning time:\t%.3f secs.\n", fedPSDataPartitioningTime.doubleValue() / 1000));
 					sb.append(String.format("PS fed comm time (cum):\t\t%.3f secs.\n", fedPSCommunicationTime.doubleValue() / 1000));
 					sb.append(String.format("PS fed worker comp time (cum):\t%.3f secs.\n", fedPSWorkerComputingTime.doubleValue() / 1000));
-					sb.append(String.format("PS fed grad weigh time (cum):\t%.3f secs.\n", fedPSGradientWeighingTime.doubleValue() / 1000));
+					sb.append(String.format("PS fed grad. weigh. time (cum):\t%.3f secs.\n", fedPSGradientWeightingTime.doubleValue() / 1000));
 					sb.append(String.format("PS fed global model agg time:\t%.3f secs.\n", psAggregationTime.doubleValue() / 1000));
 				}
 				else {

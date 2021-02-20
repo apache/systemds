@@ -45,15 +45,15 @@ public abstract class DataPartitionFederatedScheme {
 		public final List<MatrixObject> _pLabels;
 		public final int _workerNum;
 		public final BalanceMetrics _balanceMetrics;
-		public final List<Double> _weighingFactors;
+		public final List<Double> _weightingFactors;
 
 
-		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum, BalanceMetrics balanceMetrics, List<Double> weighingFactors) {
+		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum, BalanceMetrics balanceMetrics, List<Double> weightingFactors) {
 			_pFeatures = pFeatures;
 			_pLabels = pLabels;
 			_workerNum = workerNum;
 			_balanceMetrics = balanceMetrics;
-			_weighingFactors = weighingFactors;
+			_weightingFactors = weightingFactors;
 		}
 	}
 
@@ -125,12 +125,12 @@ public abstract class DataPartitionFederatedScheme {
 		return new BalanceMetrics(minRows, sum / slices.size(), maxRows);
 	}
 
-	static List<Double> getWeighingFactors(List<MatrixObject> pFeatures, BalanceMetrics balanceMetrics) {
-		List<Double> weighingFactors = new ArrayList<>();
+	static List<Double> getWeightingFactors(List<MatrixObject> pFeatures, BalanceMetrics balanceMetrics) {
+		List<Double> weightingFactors = new ArrayList<>();
 		pFeatures.forEach((feature) -> {
-			weighingFactors.add((double) feature.getNumRows() / balanceMetrics._avgRows);
+			weightingFactors.add((double) feature.getNumRows() / balanceMetrics._avgRows);
 		});
-		return weighingFactors;
+		return weightingFactors;
 	}
 
 	/**

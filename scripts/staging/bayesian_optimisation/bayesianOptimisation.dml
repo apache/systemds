@@ -46,9 +46,9 @@ return (Frame[Unknown] opt)
   numOfParams = length(params);
   HP = getMatrixOfParamCombinations(params, paramValues, verbose);
   numOfHPCombinations = nrow(HP);
-  indexes = getIndexes(nrow(HP));
+  indexes = getNormalizedIndexes(nrow(HP));
 
-  [usedHPIndexes, idxScoreMap] = getInitScoreAndHyperParamIndexes(
+  idxScoreMap = getInitScoreAndHyperParamIndexes(
       xTrain
     , yTrain
     , objective
@@ -64,6 +64,10 @@ return (Frame[Unknown] opt)
 
 
   for (i in 1:iterations) {
+
+    if(verbose) {
+      print("Start iteration " + i);
+    }
 
     idxScoreEntry = matrix(0,1,2);
     # use aquisition function to get index of next hyperparameter set to try.
@@ -87,17 +91,16 @@ return (Frame[Unknown] opt)
     # update model
     [means, variances] = getMeansAndVariances(idxScoreMap, kernel, kernelParams, numOfHPCombinations, verbose);
 
-    print("\nidx:\n" + toString(idxScoreEntry[,1]) + "\n" + toString(idxScoreEntry[,2]));
     if(verbose) {
-      print("\nIteration: " + i + "\nNext params: " + toString(nextHPSet) + "\nPredictive: " + toString(pResult));
+      print("\nEnd iteration: " + i + "\n sampled HP set: " + toString(nextHPSet) + "\nPredictive: " + toString(pResult));
     }
   }
 
-  [opt, finalScore] = getFinalHPSetAndScore(HP, idxScoreMap, minimize);
+  [opt, finalIndex, finalScore] = getFinalHPSetAndScore(HP, idxScoreMap, minimize);
 
   if(verbose) {
     print("Done");
-    print("\nFinal sampled HP-index/score:\n" + toString(idxScoreMap, rows=nrow(idxScoreMap)) + "\nOptimal parameters after " + iterations + ":\n" + toString(opt) + "\nScore:\n" + finalScore);
+    print("\nFinal sampled HP-index/score:\n" + toString(idxScoreMap, rows=nrow(idxScoreMap)) + "\nOptimal parameters after " + iterations + "iterations:\n" + toString(opt) + "\nIndex:\n" + finalIndex + "\nScore:\n" + finalScore);
   }
 }
 
@@ -133,16 +136,15 @@ return (Matrix[Double] HP)
   }
 }
 
-getInitScoreAndHyperParamIndexes = function(Matrix[Double] xTrain, Matrix[Double] yTrain, String objective, String predictive, Matrix[Double] HP, Integer numOfParams, Integer numOfSamples, Boolean verbose = TRUE)
-return(Matrix[Double] usedHPIndexes, Matrix[Double] idxScoreMap) {
-  samples = sample(nrow(HP), numOfSamples);
-  usedHPs = matrix(0, numOfSamples, numOfParams);
-  usedHPIndexes = matrix(0, numOfSamples, 1);
-  idxScoreMap = matrix(0, numOfSamples, 2);
+getInitScoreAndHyperParamIndexes = function(Matrix[Double] xTrain, Matrix[Double] yTrain, String objective, String predictive, Matrix[Double] HP, Integer numOfParams, Integer numOfRandomeSamples, Boolean verbose = TRUE)
+return(Matrix[Double] idxScoreMap) {
+  maxIndex = nrow(HP);
+  samples = sample(maxIndex, numOfRandomeSamples);
+  usedHPs = matrix(0, numOfRandomeSamples, numOfParams);
+  idxScoreMap = matrix(0, numOfRandomeSamples, 2);
 
-  for (sampleIdx in 1:numOfSamples) {
-    rndNum = as.scalar(samples[sampleIdx,1]);
-    usedHPIndexes[sampleIdx] = rndNum;
+  for (sampleIdx in 1:numOfRandomeSamples) {
+    rndNum = as.scalar(samples[sampleIdx,1]); 
     idxScoreMap[sampleIdx,1] = rndNum;
     HPSet = HP[rndNum,];
 
@@ -159,18 +161,18 @@ return(Matrix[Double] usedHPIndexes, Matrix[Double] idxScoreMap) {
 
   if (verbose) {
     print("\nInit model with randome samples:");
-    print("\nscores:\n" + toString(idxScoreMap[,2], rows=nrow(idxScoreMap)) +
-          "\nhyperparameters:\n" + toString(usedHPs, rows=nrow(usedHPs)) +
-          "\nhyperparameter Indexes:\n" + toString(usedHPIndexes, rows=nrow(usedHPIndexes)));
+    print("\nNormalized Indexes/Scores:\n" + toString(idxScoreMap[,2], rows=nrow(idxScoreMap)) +
+          "\nhyperparameters:\n" + toString(usedHPs, rows=nrow(usedHPs)));
   }
 }
 
-getIndexes = function(Integer numOfSamples)
+getNormalizedIndexes = function(Integer numOfSamples)
 return (Matrix[Double] indexes)
 {
+
   indexes = matrix(0, numOfSamples, 1);
   for (i in 1:numOfSamples) {
-    indexes[i,1] = i;
+    indexes[i,1] = i/numOfSamples;
   }
 }
 
@@ -189,17 +191,24 @@ return (Matrix[Double] means, Matrix[Double] variances)
   means = matrix(0, numOfHPCombinations, 1);
   variances = matrix(0, numOfHPCombinations, 1);
 
-  for (i in 1:numOfHPCombinations) {
+  parfor (i in 1:numOfHPCombinations) {
 
     xNew = as.matrix(i);
+    print("xNew: " + toString(xNew));
     KsArgs = concatArgsList(list(sampledIndexes, xNew), kernelParams);
     Ks = eval(kernel, KsArgs);
 
     KssArgs = concatArgsList(list(xNew, xNew), kernelParams);
     Kss = eval(kernel, KssArgs);
 
-    means[i] = as.scalar(t(Ks)%*%K_inv%*%scores);
-    variances[i] = as.scalar(Kss - t(Ks) %*% K_inv %*% Ks);
+    #print("mean/variance: " + i);
+    #print("Ks: " + toString(Ks) + "\nK_inv: " + toString(K_inv) + "\nKss: " + toString(Kss) + "\nscores: " + toString(idxScoreMap[,2]));
+    #print("t(Ks) %*% K_inv %*% Ks: " + toString(t(Ks) %*% K_inv %*% Ks));
+    #print("Kss: " + toString(Kss));
+    #print("(t(Ks)%*%K_inv): " + toString(t(Ks)%*%K_inv));
+
+    means[i,1] = as.scalar(t(Ks)%*%K_inv%*%scores);
+    variances[i,1] = as.scalar(Kss - t(Ks) %*% K_inv %*% Ks);
   }
 
   if (verbose) {
@@ -229,7 +238,7 @@ return (List[Unknown] result)
 }
 
 getFinalHPSetAndScore = function(Matrix[Double] HP, Matrix[Double] HPIdxScoreMap, Boolean minimize)
-return (Frame[Unknown] opt, Double score)
+return (Frame[Unknown] opt, Double index, Double score)
 {
   if (minimize) {
     mapIdx = as.scalar(rowIndexMin(t(HPIdxScoreMap[,2])));
@@ -237,7 +246,7 @@ return (Frame[Unknown] opt, Double score)
     mapIdx = as.scalar(rowIndexMax(t(HPIdxScoreMap[,2])));
   }
 
-  idx = as.scalar(HPIdxScoreMap[mapIdx,1]);
-  opt = as.frame(HP[idx]);
+  index = as.scalar(HPIdxScoreMap[mapIdx,1]);
+  opt = as.frame(HP[index]);
   score = as.scalar(HPIdxScoreMap[mapIdx,2]);
 }

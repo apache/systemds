@@ -42,7 +42,7 @@ return (Double index)
 }
 
 params = list("icpt", "reg", "tol", "maxi", "verbose");
-paramValues = list(as.matrix(0), 10^seq(0,-4), 10^seq(-6,-12), as.matrix(0), as.matrix(1));
+paramValues = list(as.matrix(0), 10^seq(0,-4), 10^seq(-6,-12), 10^seq(3,6), as.matrix(1));
 
 N = 200;
 X = read($1);
@@ -62,7 +62,7 @@ opt = bayOpt::m_bayesianOptimisation(
   , objective = "lm"
   , predictive = "l2norm"
   , acquisition = "lowerConfidenceBound"
-  , acquParams = list(40) # beta
+  , acquParams = list(80) # beta
   , kernel = "gaussianKernel"
   , kernelParams = list(1) # stddev
   , iterations = 40
@@ -71,8 +71,8 @@ opt = bayOpt::m_bayesianOptimisation(
   , verbose = TRUE);
 
 B1 = lm(
-  X=Xtest,
-  y=ytest,
+  X=xTrain,
+  y=yTrain,
   icpt = as.scalar(opt[1,1]),
   reg = as.scalar(opt[1,2]),
   tol = as.scalar(opt[1,3]),
@@ -80,7 +80,7 @@ B1 = lm(
   verbose = FALSE
 );
 
-B2 = lm(X=Xtest, y=ytest, verbose=FALSE);
+B2 = lm(X=xTrain, y=yTrain, verbose=FALSE);
 
 l1 = l2norm(Xtest, ytest, B1);
 l2 = l2norm(Xtest, ytest, B2);

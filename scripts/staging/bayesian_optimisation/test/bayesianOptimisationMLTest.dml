@@ -34,17 +34,17 @@ return (Matrix[Double] loss) { print("called train function");
   loss = as.matrix(sum((y - X%*%B)^2));
 }
 
-upperConfidenceBound = function(Matrix[Double] means, Matrix[Double] variances, Double beta)
+lowerConfidenceBound = function(Matrix[Double] means, Matrix[Double] variances, Double beta)
 return (Double index)
 {
-  alphas = means + beta * variances;
-  index = as.scalar(rowIndexMax(t(alphas)));
+  alphas = means - beta * variances;
+  index = as.scalar(rowIndexMin(t(alphas)));
 }
 
 params = list("icpt", "reg", "tol", "maxi", "verbose");
-paramValues = list(as.matrix(0), 10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3), as.matrix(1));
+paramValues = list(as.matrix(0), 10^seq(0,-4), 10^seq(-6,-12), as.matrix(0), as.matrix(1));
 
-N = 60;
+N = 200;
 X = read($1);
 y = read($2);
 
@@ -61,12 +61,12 @@ opt = bayOpt::m_bayesianOptimisation(
   , paramValues = paramValues
   , objective = "lm"
   , predictive = "l2norm"
-  , acquisition = "upperConfidenceBound"
-  , acquParams = list(2) # beta
+  , acquisition = "lowerConfidenceBound"
+  , acquParams = list(40) # beta
   , kernel = "gaussianKernel"
-  , kernelParams = list(sqrt(155)) # stddev
-  , iterations = 20
-  , randomSamples = 5
+  , kernelParams = list(1) # stddev
+  , iterations = 40
+  , randomSamples = 10
   , minimize = TRUE
   , verbose = TRUE);
 
@@ -85,7 +85,7 @@ B2 = lm(X=Xtest, y=ytest, verbose=FALSE);
 l1 = l2norm(Xtest, ytest, B1);
 l2 = l2norm(Xtest, ytest, B2);
 
-print("\nDefault Params: " + as.scalar(l1) + "\nBayes: " + as.scalar(l2));
+print("\nDefault Params: " + as.scalar(l2) + "\nBayes: " + as.scalar(l1));
 
 R = as.scalar(l1 < l2);
 write(R, $3);

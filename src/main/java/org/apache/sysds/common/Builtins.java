@@ -33,7 +33,7 @@ import org.apache.sysds.common.Types.ReturnType;
  * builtin functions.
  *
  * To add a new builtin script function, simply add the definition here
- * as well as a dml file in scripts/builtin with a matching name. On 
+ * as well as a dml file in scripts/builtin with a matching name. On
  * building SystemDS, these scripts are packaged into the jar as well.
  */
 public enum Builtins {
@@ -136,6 +136,8 @@ public enum Builtins {
 	ISINF("is.infinite", false),
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),
+	KNNBF("knnbf", true),
+	KNN("knn", true),
 	L2SVM("l2svm", true),
 	LASSO("lasso", true),
 	LENGTH("length", false),

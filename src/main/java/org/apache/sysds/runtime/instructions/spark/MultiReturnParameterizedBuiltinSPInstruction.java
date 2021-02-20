@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderBin;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
@@ -138,6 +139,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			FrameBlock meta = reader.readFrameFromHDFS(fometa.getFileName(), accMax.value(), fo.getNumColumns());
 			meta.recomputeColumnCardinality(); //recompute num distinct items per column
 			meta.setColumnNames((colnames!=null)?colnames:meta.getColumnNames());
+			meta.mapInplace(v -> TfUtils.desanitizeSpaces(v)); //due to format TEXT
 			
 			//step 2: transform apply (similar to spark transformapply)
 			//compute omit offset map for block shifts
@@ -326,8 +328,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			//handle recode maps
 			if( _encoder.isEncoder(colID, EncoderRecode.class) ) {
 				while( iter.hasNext() ) {
+					String token = TfUtils.sanitizeSpaces(iter.next().toString());
 					sb.append(rowID).append(' ').append(scolID).append(' ');
-					sb.append(EncoderRecode.constructRecodeMapEntry(iter.next().toString(), rowID));
+					sb.append(EncoderRecode.constructRecodeMapEntry(token, rowID));
 					ret.add(sb.toString());
 					sb.setLength(0); 
 					rowID++;
@@ -440,7 +443,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 						mode = e.getKey();
 						max = e.getValue();
 					}
-				ret.add("-2 " + colix + " " + mode);
+				ret.add("-2 " + colix + " " + TfUtils.sanitizeSpaces(mode));
 			}
 			//compute global mean of categorical feature
 			else if( _encoder.getMethod(colix) == MVMethod.GLOBAL_MEAN ) {
@@ -458,7 +461,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			//pass-through constant label
 			else if( _encoder.getMethod(colix) == MVMethod.CONSTANT ) {
 				if( iter.hasNext() )
-					ret.add("-2 " + colix + " " + iter.next().getMvValue());
+					ret.add("-2 " + colix + " " + TfUtils.sanitizeSpaces(iter.next().getMvValue()));
 			}
 			
 			return ret.iterator();

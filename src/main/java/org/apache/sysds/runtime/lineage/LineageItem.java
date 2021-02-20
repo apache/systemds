@@ -354,7 +354,7 @@ public class LineageItem {
 	
 	// Compare a dedup patch with a sub-DAG, and map the inputs of the sub-dag
 	// to the placeholder inputs of the dedup patch
-	private boolean equalsDedupPatch(LineageItem dli1, LineageItem dli2, Map<Integer, LineageItem> phMap) {
+	private static boolean equalsDedupPatch(LineageItem dli1, LineageItem dli2, Map<Integer, LineageItem> phMap) {
 		Stack<LineageItem> s1 = new Stack<>();
 		Stack<LineageItem> s2 = new Stack<>();
 		s1.push(dli1);

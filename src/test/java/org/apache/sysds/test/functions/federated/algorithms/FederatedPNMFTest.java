@@ -1,23 +1,23 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.	See the NOTICE file
+ * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
- * regarding copyright ownership.	The ASF licenses this file
+ * regarding copyright ownership.  The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
- * with the License.	You may obtain a copy of the License at
+ * with the License.  You may obtain a copy of the License at
  *
- *	 http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.	See the License for the
+ * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated.primitives;
+package org.apache.sysds.test.functions.federated.algorithms;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -38,15 +38,14 @@ import java.util.HashMap;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
+public class FederatedPNMFTest extends AutomatedTestBase
 {
-	private final static String STD_TEST_NAME = "FederatedWCeMMTest";
-	private final static String EPS_TEST_NAME = "FederatedWCeMMEpsTest";
-	private final static String TEST_DIR = "functions/federated/quaternary/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWeightedCrossEntropyTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "FederatedPNMFTest";
+	private final static String TEST_DIR = "functions/federated/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedPNMFTest.class.getSimpleName() + "/";
 
 	private final static String OUTPUT_NAME = "Z";
-	private final static double TOLERANCE = 1e-9;
+	private final static double TOLERANCE = 0.2;
 	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
@@ -56,25 +55,21 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 	@Parameterized.Parameter(2)
 	public int rank;
 	@Parameterized.Parameter(3)
-	public double epsilon;
+	public int max_iter;
 	@Parameterized.Parameter(4)
 	public double sparsity;
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(STD_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, STD_TEST_NAME, new String[]{OUTPUT_NAME}));
-		addTestConfiguration(EPS_TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, EPS_TEST_NAME, new String[]{OUTPUT_NAME}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{OUTPUT_NAME}));
 	}
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows must be even
 		return Arrays.asList(new Object[][] {
-			// {rows, cols, rank, epsilon, sparsity}
-			{2000, 50, 10, 0.01, 0.01},
-			{2000, 50, 10, 0.01, 0.9},
-			{2000, 50, 10, 6.45, 0.01},
-			{2000, 50, 10, 6.45, 0.9}
+			// {rows, cols, rank, max_iter, sparsity}
+			{1000, 750, 420, 10, 1}
 		});
 	}
 
@@ -84,33 +79,23 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void federatedWeightedCrossEntropySingleNode() {
-		federatedWeightedCrossEntropy(STD_TEST_NAME, ExecMode.SINGLE_NODE);
+	public void federatedPNMFSingleNode() {
+		federatedPNMF(ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void federatedWeightedCrossEntropySpark() {
-		federatedWeightedCrossEntropy(STD_TEST_NAME, ExecMode.SPARK);
-	}
-
-	@Test
-	public void federatedWeightedCrossEntropySingleNodeEpsilon() {
-		federatedWeightedCrossEntropy(EPS_TEST_NAME, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void federatedWeightedCrossEntropySparkEpsilon() {
-		federatedWeightedCrossEntropy(EPS_TEST_NAME, ExecMode.SPARK);
+	public void federatedPNMFSpark() {
+		federatedPNMF(ExecMode.SPARK);
 	}
 
 // -----------------------------------------------------------------------------
 
-	public void federatedWeightedCrossEntropy(String testname, ExecMode execMode)
+	public void federatedPNMF(ExecMode execMode)
 	{
 		// store the previous platform config to restore it after the test
 		ExecMode platform_old = setExecMode(execMode);
 
-		getAndLoadTestConfiguration(testname);
+		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		int fed_rows = rows / 2;
@@ -118,17 +103,11 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 3);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 7);
-
-		double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);
-		double[][] V = getRandomMatrix(cols, rank, 0, 1, 1, 5040);
+		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 13);
+		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 2);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
-
-		writeInputMatrixWithMTD("U", U, true);
-		writeInputMatrixWithMTD("V", V, true);
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
@@ -137,24 +116,24 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 		Thread thread1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread thread2 = startLocalFedWorkerThread(port2);
 
-		getAndLoadTestConfiguration(testname);
+		getAndLoadTestConfiguration(TEST_NAME);
 
 		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + testname + "Reference.dml";
-		programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "in_X2=" + input("X2"),
-			"in_U=" + input("U"), "in_V=" + input("V"), "in_W=" + Double.toString(epsilon),
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		programArgs = new String[] {"-stats", "-nvargs",
+			"in_X1=" + input("X1"), "in_X2=" + input("X2"), "in_rank=" + Integer.toString(rank), "in_max_iter=" + Integer.toString(max_iter),
 			"out_Z=" + expected(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
-		fullDMLScriptName = HOME + testname + ".dml";
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"in_U=" + input("U"),
-			"in_V=" + input("V"),
-			"in_W=" + Double.toString(epsilon),
-			"rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output(OUTPUT_NAME)};
+			"in_rank=" + Integer.toString(rank),
+			"in_max_iter=" + Integer.toString(max_iter),
+			"rows=" + fed_rows, "cols=" + fed_cols,
+			"out_Z=" + output(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
 
 		// compare the results via files
@@ -166,6 +145,8 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_wcemm"));
+		Assert.assertTrue(heavyHittersContainsString("fed_wdivmm"));
+		Assert.assertTrue(heavyHittersContainsString("fed_fedinit"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

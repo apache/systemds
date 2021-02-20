@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.transform;
 
 import java.io.Serializable;
-import java.util.regex.Pattern;
 
 import org.apache.sysds.lops.Lop;
 
@@ -72,19 +71,12 @@ public class TfUtils implements Serializable
 	public static final String JSON_CONSTS = "constants";
 	public static final String JSON_NBINS  = "numbins";
 
-	private String _headerLine = null;
-	private boolean _hasHeader;
-	private Pattern _delim = null;
-	private String _delimString = null;
-	private String[] _NAstrings = null;
-	private int _numInputCols = -1;
+	public static final String EXT_SPACE = Lop.DATATYPE_PREFIX 
+		+ Lop.INSTRUCTION_DELIMITOR +Lop.DATATYPE_PREFIX;
 	
-	public String getHeader() 		{ return _headerLine; }
-	public boolean hasHeader() 		{ return _hasHeader; }
-	public String getDelimString() 	{ return _delimString; }
-	public Pattern getDelim() 		{ return _delim; }
-	public String[] getNAStrings() 	{ return _NAstrings; }
-	public long getNumCols() 		{ return _numInputCols; }
+	private String[] _NAstrings = null;
+	
+	public String[] getNAStrings() { return _NAstrings; }
 	
 	/**
 	 * Function that checks if the given string is one of NA strings.
@@ -102,5 +94,18 @@ public class TfUtils implements Serializable
 				return true;
 		}
 		return false;
+	}
+	
+	public static String sanitizeSpaces(String token) {
+		//due to the use of textcell (derived from matrix market), we cannot
+		//simply quote the token as its parsed without support for quoting.
+		//Hence, we replace with a very unlikely character sequence
+		return token != null && token.contains(" ") ?
+			token.replaceAll(" ", EXT_SPACE): token;
+	}
+	
+	public static String desanitizeSpaces(String token) {
+		return token != null && token.contains(EXT_SPACE) ?
+			token.replaceAll(EXT_SPACE, " ") : token;
 	}
 }

@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -2106,6 +2107,15 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			UtilFunctions.nCopies(temp1.getNumColumns(), ValueType.STRING));
 		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
+	}
+	
+	public void mapInplace(Function<String, String> fun) {
+		for(int j=0; j<getNumColumns(); j++)
+			for(int i=0; i<getNumRows(); i++) {
+				Object tmp = get(i, j);
+				set(i, j, (tmp == null) ? tmp :
+					UtilFunctions.objectToObject(_schema[j], fun.apply(tmp.toString())));
+			}
 	}
 
 	public FrameBlock map (String lambdaExpr){

@@ -78,19 +78,19 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	private final PSRuntimeBalancing _runtimeBalancing;
 	private int _numBatchesPerEpoch;
 	private int _possibleBatchesPerLocalEpoch;
-	private final boolean _weighing;
-	private double _weighingFactor = 1;
-	private final boolean _cycleStartAt0 = false;
+	private final boolean _weighting;
+	private double _weightingFactor = 1;
+	private boolean _cycleStartAt0 = false;
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq,
-		PSRuntimeBalancing runtimeBalancing, boolean weighing, int epochs, long batchSize,
+		PSRuntimeBalancing runtimeBalancing, boolean weighting, int epochs, long batchSize,
 		int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps)
 	{
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
 
 		_numBatchesPerEpoch = numBatchesPerGlobalEpoch;
 		_runtimeBalancing = runtimeBalancing;
-		_weighing = weighing;
+		_weighting = weighting;
 		// generate the ID for the model
 		_modelVarID = FederationUtils.getNextFedDataID();
 	}
@@ -98,40 +98,42 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	/**
 	 * Sets up the federated worker and control thread
 	 *
-	 * @param weighingFactor Gradients from this worker will be multiplied by this factor if weighing is enabled
+	 * @param weightingFactor Gradients from this worker will be multiplied by this factor if weighting is enabled
 	 */
-	public void setup(double weighingFactor) {
+	public void setup(double weightingFactor) {
 		incWorkerNumber();
 
 		// prepare features and labels
 		_featuresData = (FederatedData) _features.getFedMapping().getMap().values().toArray()[0];
 		_labelsData = (FederatedData) _labels.getFedMapping().getMap().values().toArray()[0];
 
-		// weighing factor is always set, but only used when weighing is specified
-		_weighingFactor = weighingFactor;
+		// weighting factor is always set, but only used when weighting is specified
+		_weightingFactor = weightingFactor;
 
 		// different runtime balancing calculations
 		long dataSize = _features.getNumRows();
 
 		// calculate scaled batch size if balancing via batch size.
 		// In some cases there will be some cycling
-		if(_runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH) {
+		if(_runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH)
 			_batchSize = (int) Math.ceil((double) dataSize / _numBatchesPerEpoch);
-		}
 
 		// Calculate possible batches with batch size
 		_possibleBatchesPerLocalEpoch = (int) Math.ceil((double) dataSize / _batchSize);
 
 		// If no runtime balancing is specified, just run possible number of batches
 		// WARNING: Will get stuck on miss match
-		if(_runtimeBalancing == PSRuntimeBalancing.NONE) {
+		if(_runtimeBalancing == PSRuntimeBalancing.NONE)
 			_numBatchesPerEpoch = _possibleBatchesPerLocalEpoch;
-		}
+
+		// If running in baseline mode set cycle to false
+		if(_runtimeBalancing == PSRuntimeBalancing.BASELINE)
+			_cycleStartAt0 = true;
 
 		if( LOG.isInfoEnabled() ) {
 			LOG.info("Setup config for worker " + this.getWorkerName());
 			LOG.info("Batch size: " + _batchSize + " possible batches: " + _possibleBatchesPerLocalEpoch
-					+ " batches to run: " + _numBatchesPerEpoch + " weighing factor: " + _weighingFactor);
+					+ " batches to run: " + _numBatchesPerEpoch + " weighting factor: " + _weightingFactor);
 		}
 
 		// serialize program
@@ -321,16 +323,16 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	protected void weighAndPushGradients(ListObject gradients) {
 		// scale gradients - must only include MatrixObjects
-		if(_weighing && _weighingFactor != 1) {
-			Timing tWeighing = DMLScript.STATISTICS ? new Timing(true) : null;
+		if(_weighting && _weightingFactor != 1) {
+			Timing tWeighting = DMLScript.STATISTICS ? new Timing(true) : null;
 			gradients.getData().parallelStream().forEach((matrix) -> {
 				MatrixObject matrixObject = (MatrixObject) matrix;
 				MatrixBlock input = matrixObject.acquireReadAndRelease().scalarOperations(
-					new RightScalarOperator(Multiply.getMultiplyFnObject(), _weighingFactor), new MatrixBlock());
+					new RightScalarOperator(Multiply.getMultiplyFnObject(), _weightingFactor), new MatrixBlock());
 				matrixObject.acquireModify(input);
 				matrixObject.release();
 			});
-			accFedPSGradientWeighingTime(tWeighing);
+			accFedPSGradientWeightingTime(tWeighting);
 		}
 
 		// Push the gradients to ps
@@ -342,7 +344,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	/**
-	 * Computes all epochs and updates after each batch
+	 * Computes all epochs and updates after each batch 
 	 */
 	protected void computeWithBatchUpdates() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
@@ -557,9 +559,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	// Statistics methods
-	protected void accFedPSGradientWeighingTime(Timing time) {
+	protected void accFedPSGradientWeightingTime(Timing time) {
 		if (DMLScript.STATISTICS && time != null)
-			Statistics.accFedPSGradientWeighingTime((long) time.stop());
+			Statistics.accFedPSGradientWeightingTime((long) time.stop());
 	}
 
 	@Override

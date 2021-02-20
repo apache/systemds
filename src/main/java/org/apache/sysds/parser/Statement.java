@@ -89,10 +89,10 @@ public abstract class Statement implements ParseInfo
 	public enum PSFrequency {
 		BATCH, EPOCH
 	}
-	public static final String PS_FED_WEIGHING = "weighing";
+	public static final String PS_FED_WEIGHTING = "weighting";
 	public static final String PS_FED_RUNTIME_BALANCING = "runtime_balancing";
 	public enum PSRuntimeBalancing {
-		NONE, RUN_MIN, CYCLE_AVG, CYCLE_MAX, SCALE_BATCH
+		NONE, BASELINE, CYCLE_MIN, CYCLE_AVG, CYCLE_MAX, SCALE_BATCH
 	}
 	public static final String PS_EPOCHS = "epochs";
 	public static final String PS_BATCH_SIZE = "batchsize";
@@ -101,7 +101,6 @@ public abstract class Statement implements ParseInfo
 	public enum PSScheme {
 		DISJOINT_CONTIGUOUS, DISJOINT_ROUND_ROBIN, DISJOINT_RANDOM, OVERLAP_RESHUFFLE
 	}
-	public static final String PS_FED_SCHEME = "fed_scheme";
 	public enum FederatedPSScheme {
 		KEEP_DATA_ON_WORKER, SHUFFLE, REPLICATE_TO_MAX, SUBSAMPLE_TO_MIN, BALANCE_TO_AVG
 	}

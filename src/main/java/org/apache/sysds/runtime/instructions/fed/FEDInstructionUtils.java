@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOp
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryMatrixBVectorSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixScalarSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
@@ -266,6 +267,7 @@ public class FEDInstructionUtils {
 			}
 			else if (inst instanceof BinaryMatrixScalarSPInstruction
 				|| inst instanceof BinaryMatrixMatrixSPInstruction
+				|| inst instanceof BinaryMatrixBVectorSPInstruction
 				|| inst instanceof BinaryTensorTensorSPInstruction
 				|| inst instanceof BinaryTensorTensorBroadcastSPInstruction) {
 				BinarySPInstruction instruction = (BinarySPInstruction) inst;

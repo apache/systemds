@@ -50,7 +50,7 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase {
 
 	private final static double TOLERANCE = 1e-8;
 
-	private final static int blocksize = 1024;
+	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
 	public int rows;
@@ -138,11 +138,11 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X1",
 			X1,
 			false,
-			new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
+			new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2",
 			X2,
 			false,
-			new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
+			new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 
 		writeInputMatrixWithMTD("U", U, true);
 		writeInputMatrixWithMTD("V", V, true);

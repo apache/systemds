@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -59,58 +60,60 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 		MatrixObject U = ec.getMatrixObject(input2);
 		MatrixObject V = ec.getMatrixObject(input3);
 		ScalarObject eps = null;
-		
+
 		if(qop.hasFourInputs()) {
 			eps = (_input4.getDataType() == DataType.SCALAR) ?
 				ec.getScalarInput(_input4) :
 				new DoubleObject(ec.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
 		}
 
-		if(!(X.isFederated() && !U.isFederated() && !V.isFederated()))
+		if(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated()) {
+			FederationMap fedMap = X.getFedMapping();
+			FederatedRequest[] fr1 = fedMap.broadcastSliced(U, false);
+			FederatedRequest fr2 = fedMap.broadcast(V);
+			FederatedRequest fr3 = null;
+			FederatedRequest frComp = null;
+
+			// broadcast the scalar epsilon if there are four inputs
+			if(eps != null) {
+				fr3 = fedMap.broadcast(eps);
+				// change the is_literal flag from true to false because when broadcasted it is no literal anymore
+				instString = instString.replace("true", "false");
+				frComp = FederationUtils.callInstruction(instString, output,
+					new CPOperand[]{input1, input2, input3, _input4},
+					new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID(), fr3.getID()});
+			}
+			else {
+				frComp = FederationUtils.callInstruction(instString, output,
+				new CPOperand[]{input1, input2, input3},
+				new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID()});
+			}
+
+			FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
+			FederatedRequest frClean1 = fedMap.cleanup(getTID(), frComp.getID());
+			FederatedRequest frClean2 = fedMap.cleanup(getTID(), fr1[0].getID());
+			FederatedRequest frClean3 = fedMap.cleanup(getTID(), fr2.getID());
+
+			Future<FederatedResponse>[] response;
+			if(fr3 != null) {
+				FederatedRequest frClean4 = fedMap.cleanup(getTID(), fr3.getID());
+				// execute federated instructions
+				response = fedMap.execute(getTID(), true, fr1, fr2, fr3,
+					frComp, frGet, frClean1, frClean2, frClean3, frClean4);
+			}
+			else {
+				// execute federated instructions
+				response = fedMap.execute(getTID(), true, fr1, fr2,
+					frComp, frGet, frClean1, frClean2, frClean3);
+			}
+
+			//aggregate partial results from federated responses
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
+		}
+		else {
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V) = ("
-				+X.isFederated()+", "+U.isFederated()+", "+V.isFederated()+")");
-		
-		FederationMap fedMap = X.getFedMapping();
-		FederatedRequest[] fr1 = fedMap.broadcastSliced(U, false);
-		FederatedRequest fr2 = fedMap.broadcast(V);
-		FederatedRequest fr3 = null;
-		FederatedRequest frComp = null;
-
-		// broadcast the scalar epsilon if there are four inputs
-		if(eps != null) {
-			fr3 = fedMap.broadcast(eps);
-			// change the is_literal flag from true to false because when broadcasted it is no literal anymore
-			instString = instString.replace("true", "false");
-			frComp = FederationUtils.callInstruction(instString, output,
-				new CPOperand[]{input1, input2, input3, _input4},
-				new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID(), fr3.getID()});
+				+ X.isFederated() + ", " + U.isFederated() + ", " + V.isFederated() + ")");
 		}
-		else {
-			frComp = FederationUtils.callInstruction(instString, output,
-			new CPOperand[]{input1, input2, input3},
-			new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID()});
-		}
-		
-		FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
-		FederatedRequest frClean1 = fedMap.cleanup(getTID(), frComp.getID());
-		FederatedRequest frClean2 = fedMap.cleanup(getTID(), fr1[0].getID());
-		FederatedRequest frClean3 = fedMap.cleanup(getTID(), fr2.getID());
-
-		Future<FederatedResponse>[] response;
-		if(fr3 != null) {
-			FederatedRequest frClean4 = fedMap.cleanup(getTID(), fr3.getID());
-			// execute federated instructions
-			response = fedMap.execute(getTID(), true, fr1, fr2, fr3,
-				frComp, frGet, frClean1, frClean2, frClean3, frClean4);
-		}
-		else {
-			// execute federated instructions
-			response = fedMap.execute(getTID(), true, fr1, fr2,
-				frComp, frGet, frClean1, frClean2, frClean3);
-		}
-		
-		//aggregate partial results from federated responses
-		AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-		ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
 	}
 }

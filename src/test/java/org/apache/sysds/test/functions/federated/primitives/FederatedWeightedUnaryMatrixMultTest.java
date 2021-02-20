@@ -51,7 +51,7 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 
 	private final static double TOLERANCE = 0;
 
-	private final static int blocksize = 1024;
+	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
 	public int rows;
@@ -147,11 +147,11 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 		double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);
 		double[][] V = getRandomMatrix(cols, rank, 0, 1, 1, 5040);
 
-		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
-		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
+		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
+		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 
-		writeInputMatrixWithMTD("U", U, false, new MatrixCharacteristics(rows, rank, blocksize, rows * rank));
-		writeInputMatrixWithMTD("V", V, false, new MatrixCharacteristics(cols, rank, blocksize, rows * rank));
+		writeInputMatrixWithMTD("U", U, false, new MatrixCharacteristics(rows, rank, BLOCKSIZE, rows * rank));
+		writeInputMatrixWithMTD("V", V, false, new MatrixCharacteristics(cols, rank, BLOCKSIZE, rows * rank));
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
@@ -169,7 +169,7 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 				"in_U=" + input("U"), "in_V=" + input("V"),
 				"out_Z=" + expected(OUTPUT_NAME)};
 			runTest(true, false, null, -1);
-	
+
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + test_name + ".dml";
 			programArgs = new String[] {"-stats", "-nvargs",
@@ -179,22 +179,22 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 				"in_V=" + input("V"),
 				"rows=" + fed_rows, "cols=" + fed_cols, "out_Z=" + output(OUTPUT_NAME)};
 			runTest(true, false, null, -1);
-	
+
 			// compare the results via files
 			HashMap<CellIndex, Double> refResults	= readDMLMatrixFromExpectedDir(OUTPUT_NAME);
 			HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 			TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
-			
+
 			// check for federated operations
 			Assert.assertTrue(heavyHittersContainsString("fed_wumm"));
-	
+
 			// check that federated input files are still existing
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 		}
 		finally {
 			TestUtils.shutdownThreads(thread1, thread2);
-			
+
 			resetExecMode(platform_old);
 		}
 	}

@@ -46,7 +46,7 @@ public class FederatedAlsCGTest extends AutomatedTestBase
 
 	private final static String OUTPUT_NAME = "Z";
 	private final static double TOLERANCE = 0.01;
-	private final static int blocksize = 1024;
+	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
 	public int rows;
@@ -112,9 +112,9 @@ public class FederatedAlsCGTest extends AutomatedTestBase
 		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 1, 2, sparsity, 2);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(
-			fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
+			fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(
-			fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
+			fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";

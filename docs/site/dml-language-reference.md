@@ -2098,21 +2098,22 @@ Simple example
 
     X = read(“file1”, data_type=”frame”, rows=3, cols=2, format=”binary”);
     spec = "{\"algo\": \"whitespace\",\"out\": \"count\",\"id_cols\": [1],\"tokenize_col\": 2}";
-    Y = tokenize(target=X, spec=jspec);
+    Y = tokenize(target=X, spec=jspec, max_tokens=1000);
     write(Y, "file2");
     
 Example spec
 
     {
-      "algo": "whitespace",
+      "algo": "split",
       "out": "count",
-      "id_cols": \[1\],
+      "id_cols": [1],
       "tokenize_col": 2
     }
 
 The frame is tokenized along the `tokenize_col` and replicates the `id_cols`.
 
 The output frame can be converted into a matrix with the transform functions. For instance, using `transformencode` with `recode`, followed by `table`.
+Alternatively, for certain algorithms by specifying `"format_wide": true` expands the tokens in the columns instead of creating new rows.
 
 **Table F6**: Tokenizer Algorithms for `algo` field
 
@@ -2126,7 +2127,8 @@ ngram | Pretokenizes using `whitespace` then splits the tokens into ngrams | `mi
 Out Representation | Format Description | Parameters | Format Example
 -------- | ----------- | ---------- | -------
 count | Outputs the `id_cols`, the `tokens`, and the number of token `occurences` per document. | `sort_alpha` specifies whether the tokens are sorted alphanumerically per document. | `id1,id2,token1,3`
-position | Outputs the `id_cols`, the `position` within the document, and the `token`. | None | `id1,id2,0,token1`
+position | Outputs the `id_cols`, the `position` within the document, and the `token`. | None | `id1,id2,1,token1`
+hash | Outputs the `ic_cols`, the `index` of non-zero hashes, and the `hashes` | `num_features` specifies the number of output features | `id1,id2,2,64`
 
 
 * * *

@@ -59,6 +59,12 @@ public class TokenizerFactory {
                 idCols.add(idColsJsonArray.getInt(i));
             }
 
+            // get difference between long and wide format
+            boolean wideFormat = false;  // long format is default
+            if (jSpec.has("format_wide")) {
+                wideFormat = jSpec.getBoolean("format_wide");
+            }
+
             TokenizerPre tokenizerPre;
             TokenizerPost tokenizerPost;
 
@@ -79,19 +85,19 @@ public class TokenizerFactory {
             // Transform tokens to output representation
             switch (out) {
                 case "count":
-                    tokenizerPost = new TokenizerPostCount(outParams, maxTokens);
+                    tokenizerPost = new TokenizerPostCount(outParams, maxTokens, wideFormat);
                     break;
                 case "position":
-                    tokenizerPost = new TokenizerPostPosition(outParams, maxTokens);
+                    tokenizerPost = new TokenizerPostPosition(outParams, maxTokens, wideFormat);
                     break;
                 case "hash":
-                    tokenizerPost = new TokenizerPostHash(outParams, maxTokens);
+                    tokenizerPost = new TokenizerPostHash(outParams, maxTokens, wideFormat);
                     break;
                 default:
                     throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");
             }
 
-            tokenizer = new Tokenizer(idCols.size(),  tokenizerPre, tokenizerPost);
+            tokenizer = new Tokenizer(idCols.size(), wideFormat, maxTokens, tokenizerPre, tokenizerPost);
         }
         catch(Exception ex) {
             throw new DMLRuntimeException(ex);

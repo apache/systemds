@@ -36,6 +36,7 @@ public class TokenizerPostCount implements TokenizerPost{
     private static final long serialVersionUID = 6382000606237705019L;
     private final Params params;
     private final int maxTokens;
+    private final boolean wideFormat;
 
     static class Params implements Serializable {
 
@@ -50,9 +51,10 @@ public class TokenizerPostCount implements TokenizerPost{
         }
     }
 
-    public TokenizerPostCount(JSONObject params, int maxTokens) throws JSONException {
+    public TokenizerPostCount(JSONObject params, int maxTokens, boolean wideFormat) throws JSONException {
         this.params = new Params(params);
         this.maxTokens = maxTokens;
+        this.wideFormat = wideFormat;
     }
 
     @Override
@@ -91,7 +93,11 @@ public class TokenizerPostCount implements TokenizerPost{
     }
 
     @Override
-    public Types.ValueType[] getOutSchema(int numIdCols) {
+    public Types.ValueType[] getOutSchema(int numIdCols, boolean wideFormat, int maxTokens) {
+        if (wideFormat) {
+            throw new IllegalArgumentException("Wide Format is not supported for Count Representation.");
+        }
+        // Long format only depends on numIdCols
         Types.ValueType[] schema = new Types.ValueType[numIdCols + 2];
         int i = 0;
         for (; i < numIdCols; i++) {

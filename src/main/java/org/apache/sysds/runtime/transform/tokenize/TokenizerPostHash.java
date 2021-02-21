@@ -18,6 +18,7 @@ public class TokenizerPostHash implements TokenizerPost{
     private static final long serialVersionUID = 4763889041868044668L;
     private final Params params;
     private final int maxTokens;
+    private final boolean wideFormat;
 
     static class Params implements Serializable {
 
@@ -32,9 +33,10 @@ public class TokenizerPostHash implements TokenizerPost{
         }
     }
 
-    public TokenizerPostHash(JSONObject params, int maxTokens) throws JSONException {
+    public TokenizerPostHash(JSONObject params, int maxTokens, boolean wideFormat) throws JSONException {
         this.params = new Params(params);
         this.maxTokens = maxTokens;
+        this.wideFormat = wideFormat;
     }
 
     @Override
@@ -49,29 +51,70 @@ public class TokenizerPostHash implements TokenizerPost{
             // Sorted by hash
             Map<Integer, Long> sortedHashes = new TreeMap<>(hashCounts);
 
-            int numTokens = 0;
-            for (Map.Entry<Integer, Long> hashCount: sortedHashes.entrySet()) {
-                if (numTokens >= maxTokens) {
-                    break;
-                }
-                // Create a row per token
-                int hash = hashCount.getKey() + 1;
-                long count = hashCount.getValue();
-                List<Object> rowList = new ArrayList<>(keys);
-                rowList.add((long) hash);
-                rowList.add(count);
-                Object[] row = new Object[rowList.size()];
-                rowList.toArray(row);
-                out.appendRow(row);
-                numTokens++;
+            if (wideFormat) {
+                this.appendTokensWide(keys, sortedHashes, out);
+            } else {
+                this.appendTokensLong(keys, sortedHashes, out);
             }
         }
 
         return out;
     }
 
+    private void appendTokensLong(List<Object> keys, Map<Integer, Long> sortedHashes, FrameBlock out) {
+        int numTokens = 0;
+        for (Map.Entry<Integer, Long> hashCount: sortedHashes.entrySet()) {
+            if (numTokens >= maxTokens) {
+                break;
+            }
+            // Create a row per token
+            int hash = hashCount.getKey() + 1;
+            long count = hashCount.getValue();
+            List<Object> rowList = new ArrayList<>(keys);
+            rowList.add((long) hash);
+            rowList.add(count);
+            Object[] row = new Object[rowList.size()];
+            rowList.toArray(row);
+            out.appendRow(row);
+            numTokens++;
+        }
+    }
+
+    private void appendTokensWide(List<Object> keys, Map<Integer, Long> sortedHashes, FrameBlock out) {
+        // Create one row with keys as prefix
+        List<Object> rowList = new ArrayList<>(keys);
+
+        for (int tokenPos = 0; tokenPos < maxTokens; tokenPos++) {
+            long positionHash = sortedHashes.getOrDefault(tokenPos, 0L);
+            rowList.add(positionHash);
+        }
+        Object[] row = new Object[rowList.size()];
+        rowList.toArray(row);
+        out.appendRow(row);
+    }
+
     @Override
-    public Types.ValueType[] getOutSchema(int numIdCols) {
+    public Types.ValueType[] getOutSchema(int numIdCols, boolean wideFormat, int maxTokens) {
+        if (wideFormat) {
+            return getOutSchemaWide(numIdCols, maxTokens);
+        } else {
+            return getOutSchemaLong(numIdCols);
+        }
+    }
+
+    private Types.ValueType[] getOutSchemaWide(int numIdCols, int maxTokens) {
+        Types.ValueType[] schema = new Types.ValueType[numIdCols + maxTokens];
+        int i = 0;
+        for (; i < numIdCols; i++) {
+            schema[i] = Types.ValueType.STRING;
+        }
+        for (int j = 0; j < maxTokens; j++, i++) {
+            schema[i] = Types.ValueType.INT64;
+        }
+        return schema;
+    }
+
+    private Types.ValueType[] getOutSchemaLong(int numIdCols) {
         Types.ValueType[] schema = new Types.ValueType[numIdCols + 2];
         int i = 0;
         for (; i < numIdCols; i++) {

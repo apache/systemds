@@ -39,15 +39,10 @@ jspec = read($2, data_type="scalar", value_type="string");
 F2 = tokenize(target=F1[,2:4], spec=jspec, max_tokens=max_token);
 write(F2, $3, format="csv");
 
-# Get followup spec, depending on test case
-if (ncol(F2) == 3) {
-    jspec2 = "{\"ids\": true, \"recode\": [1,2]}";
-} else {
-    jspec2 = "{\"ids\": true, \"recode\": [1,2,4]}";
-}
+# Followup spec to transform tokens of ids, leave hash alone
+jspec2 = "{\"ids\": true, \"recode\": [1,2]}";
 
 # Afterward, you can transform it into a matrix:
 [X, M] = transformencode(target=F2, spec=jspec2);
-X = table(X[1,], X[2,], X[3,]);
 print(toString(X, rows=3, cols=3));
 print(toString(M, rows=3, cols=3));

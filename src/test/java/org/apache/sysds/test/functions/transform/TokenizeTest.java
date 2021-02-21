@@ -34,13 +34,12 @@ import org.apache.sysds.test.TestUtils;
  */
 public class TokenizeTest extends AutomatedTestBase
 {
-    private static final String TEST_NAME1 = "Tokenize";
     private static final String TEST_DIR = "functions/transform/";
     private static final String TEST_CLASS_DIR = TEST_DIR + TokenizeTest.class.getSimpleName() + "/";
 
-    private static final String SPEC1 = "TokenizeSpec1.json";
-    private static final String SPEC2 = "TokenizeSpec2.json";
-    private static final String SPEC3 = "TokenizeSpec3.json";
+    private static final String TEST_NAME1 = "TokenizeSpec1";
+    private static final String TEST_NAME2 = "TokenizeSpec2";
+    private static final String TEST_NAME3 = "TokenizeSpec3";
 
     //dataset and transform tasks without missing values
     private final static String DATASET 	= "20news/20news_subset_untokenized.csv";
@@ -50,101 +49,104 @@ public class TokenizeTest extends AutomatedTestBase
         TestUtils.clearAssertionInformation();
         addTestConfiguration(TEST_NAME1,
                 new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+        addTestConfiguration(TEST_NAME2,
+                new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+        addTestConfiguration(TEST_NAME3,
+                new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
     }
 
     @Test
     public void testTokenizeSingleNodeSpec1() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC1,false);
+        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NAME1,false);
     }
 
     @Test
     public void testTokenizeSparkSpec1() {
-        runTokenizeTest(ExecMode.SPARK, SPEC1, false);
+        runTokenizeTest(ExecMode.SPARK, TEST_NAME1, false);
     }
 
     @Test
     public void testTokenizeHybridSpec1() {
-        runTokenizeTest(ExecMode.HYBRID, SPEC1, false);
+        runTokenizeTest(ExecMode.HYBRID, TEST_NAME1, false);
     }
 
     @Test
     public void testTokenizeParReadSingleNodeSpec1() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC1, true);
+        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NAME1, true);
     }
 
     @Test
     public void testTokenizeParReadSparkSpec1() {
-        runTokenizeTest(ExecMode.SPARK, SPEC1, true);
+        runTokenizeTest(ExecMode.SPARK, TEST_NAME1, true);
     }
 
     @Test
     public void testTokenizeParReadHybridSpec1() {
-        runTokenizeTest(ExecMode.HYBRID, SPEC1, true);
+        runTokenizeTest(ExecMode.HYBRID, TEST_NAME1, true);
     }
 
     @Test
     public void testTokenizeSingleNodeSpec2() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC2,false);
+        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NAME2,false);
     }
 
     @Test
     public void testTokenizeSparkSpec2() {
-        runTokenizeTest(ExecMode.SPARK, SPEC2, false);
+        runTokenizeTest(ExecMode.SPARK, TEST_NAME2, false);
     }
 
     @Test
     public void testTokenizeHybridSpec2() {
-        runTokenizeTest(ExecMode.HYBRID, SPEC2, false);
+        runTokenizeTest(ExecMode.HYBRID, TEST_NAME2, false);
     }
 
     @Test
     public void testTokenizeParReadSingleNodeSpec2() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC2, true);
+        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NAME2, true);
     }
 
     @Test
     public void testTokenizeParReadSparkSpec2() {
-        runTokenizeTest(ExecMode.SPARK, SPEC2, true);
+        runTokenizeTest(ExecMode.SPARK, TEST_NAME2, true);
     }
 
     @Test
     public void testTokenizeParReadHybridSpec2() {
-        runTokenizeTest(ExecMode.HYBRID, SPEC2, true);
+        runTokenizeTest(ExecMode.HYBRID, TEST_NAME2, true);
     }
 
     @Test
     public void testTokenizeSingleNodeSpec3() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC3,false);
+        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NAME3,false);
     }
 
     @Test
     public void testTokenizeSparkSpec3() {
-        runTokenizeTest(ExecMode.SPARK, SPEC3, false);
+        runTokenizeTest(ExecMode.SPARK, TEST_NAME3, false);
     }
 
     @Test
     public void testTokenizeHybridSpec3() {
-        runTokenizeTest(ExecMode.HYBRID, SPEC3, false);
+        runTokenizeTest(ExecMode.HYBRID, TEST_NAME3, false);
     }
 
     @Test
     public void testTokenizeParReadSingleNodeSpec3() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, SPEC3, true);
+        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NAME3, true);
     }
 
     @Test
     public void testTokenizeParReadSparkSpec3() {
-        runTokenizeTest(ExecMode.SPARK, SPEC3, true);
+        runTokenizeTest(ExecMode.SPARK, TEST_NAME3, true);
     }
 
     @Test
     public void testTokenizeParReadHybridSpec3() {
-        runTokenizeTest(ExecMode.HYBRID, SPEC3, true);
+        runTokenizeTest(ExecMode.HYBRID, TEST_NAME3, true);
     }
 
-    private void runTokenizeTest(ExecMode rt, String spec, boolean parRead )
+    private void runTokenizeTest(ExecMode rt, String test_name, boolean parRead )
     {
-        String ofmt = "csv";
         //set runtime platform
         ExecMode rtold = rtplatform;
         rtplatform = rt;
@@ -153,17 +155,14 @@ public class TokenizeTest extends AutomatedTestBase
         if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
             DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-        if( !ofmt.equals("csv") )
-            throw new RuntimeException("Unsupported test output format");
-
         try
         {
-            getAndLoadTestConfiguration(TEST_NAME1);
+            getAndLoadTestConfiguration(test_name);
 
             String HOME = SCRIPT_DIR + TEST_DIR;
-            fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+            fullDMLScriptName = HOME + test_name + ".dml";
             programArgs = new String[]{"-stats","-args",
-                    HOME + "input/" + DATASET, HOME + spec, output("R") };
+                    HOME + "input/" + DATASET, HOME + test_name + ".json", output("R") };
 
             runTest(true, false, null, -1);
 

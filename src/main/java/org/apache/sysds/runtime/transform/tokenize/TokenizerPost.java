@@ -27,5 +27,5 @@ import java.util.List;
 
 public interface TokenizerPost extends Serializable {
     FrameBlock tokenizePost(List<Tokenizer.DocumentToTokens> tl, FrameBlock out);
-    Types.ValueType[] getOutSchema(int numIdCols);
+    Types.ValueType[] getOutSchema(int numIdCols, boolean wideFormat, int maxTokens);
 }

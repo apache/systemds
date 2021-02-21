@@ -31,10 +31,12 @@ public class TokenizerPostPosition implements TokenizerPost{
 
     private static final long serialVersionUID = 3563407270742660830L;
     private final int maxTokens;
+    private final boolean wideFormat;
 
-    public TokenizerPostPosition(JSONObject params, int maxTokens) {
+    public TokenizerPostPosition(JSONObject params, int maxTokens, boolean wideFormat) {
         // No configurable params yet
         this.maxTokens = maxTokens;
+        this.wideFormat = wideFormat;
     }
 
     @Override
@@ -43,28 +45,71 @@ public class TokenizerPostPosition implements TokenizerPost{
             List<Object> keys = docToToken.keys;
             List<Tokenizer.Token> tokenList = docToToken.tokens;
 
-            int numTokens = 0;
-            for (Tokenizer.Token token: tokenList) {
-                if (numTokens >= maxTokens) {
-                    break;
-                }
-                // Create a row per token
-                List<Object> rowList = new ArrayList<>(keys);
-                // Convert to 1-based index for DML
-                rowList.add(token.startIndex + 1);
-                rowList.add(token.textToken);
-                Object[] row = new Object[rowList.size()];
-                rowList.toArray(row);
-                out.appendRow(row);
-                numTokens++;
+            if (wideFormat) {
+                this.appendTokensWide(keys, tokenList, out);
+            } else {
+                this.appendTokensLong(keys, tokenList, out);
             }
         }
 
         return out;
     }
 
+    public void appendTokensLong(List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {
+        int numTokens = 0;
+        for (Tokenizer.Token token: tokenList) {
+            if (numTokens >= maxTokens) {
+                break;
+            }
+            // Create a row per token
+            List<Object> rowList = new ArrayList<>(keys);
+            // Convert to 1-based index for DML
+            rowList.add(token.startIndex + 1);
+            rowList.add(token.textToken);
+            Object[] row = new Object[rowList.size()];
+            rowList.toArray(row);
+            out.appendRow(row);
+            numTokens++;
+        }
+    }
+
+    public void appendTokensWide(List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {
+        // Create one row with keys as prefix
+        List<Object> rowList = new ArrayList<>(keys);
+
+        int numTokens = 0;
+        for (Tokenizer.Token token: tokenList) {
+            if (numTokens >= maxTokens) {
+                break;
+            }
+            rowList.add(token.textToken);
+            numTokens++;
+        }
+        // Remaining positions are left empty
+        Object[] row = new Object[rowList.size()];
+        rowList.toArray(row);
+        out.appendRow(row);
+    }
+
     @Override
-    public Types.ValueType[] getOutSchema(int numIdCols) {
+    public Types.ValueType[] getOutSchema(int numIdCols, boolean wideFormat, int maxTokens) {
+        if (wideFormat) {
+            return getOutSchemaWide(numIdCols, maxTokens);
+        } else {
+            return getOutSchemaLong(numIdCols);
+        }
+
+    }
+
+    private Types.ValueType[] getOutSchemaWide(int numIdCols, int maxTokens) {
+        Types.ValueType[] schema = new Types.ValueType[numIdCols + maxTokens];
+        for (int i = 0; i < numIdCols + maxTokens; i++) {
+            schema[i] = Types.ValueType.STRING;
+        }
+        return schema;
+    }
+
+    private Types.ValueType[] getOutSchemaLong(int numIdCols) {
         Types.ValueType[] schema = new Types.ValueType[numIdCols + 2];
         int i = 0;
         for (; i < numIdCols; i++) {

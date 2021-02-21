@@ -37,15 +37,34 @@ public class Tokenizer implements Serializable {
     private final TokenizerPre tokenizerPre;
     private final TokenizerPost tokenizerPost;
 
-    protected Tokenizer(int numIdCols, TokenizerPre tokenizerPre, TokenizerPost tokenizerPost) {
+    // Variables are saved to estimate output format
+    protected final int maxTokens;
+    protected final boolean wideFormat;
+
+    protected Tokenizer(int numIdCols, boolean wideFormat, int maxTokens,
+                        TokenizerPre tokenizerPre, TokenizerPost tokenizerPost) {
         // Output schema is derived from specified id cols
-        _schema = tokenizerPost.getOutSchema(numIdCols);
+        _schema = tokenizerPost.getOutSchema(numIdCols, wideFormat, maxTokens);
+        this.wideFormat = wideFormat;
+        this.maxTokens = maxTokens;
         this.tokenizerPre = tokenizerPre;
         this.tokenizerPost = tokenizerPost;
     }
 
     public Types.ValueType[] getSchema() {
         return _schema;
+    }
+
+    public long getNumRows(long inRows) {
+        if (wideFormat) {
+            return inRows;
+        } else {
+            return inRows * maxTokens;
+        }
+    }
+
+    public long getNumCols() {
+        return this.getSchema().length;
     }
 
     public FrameBlock tokenize(FrameBlock in, FrameBlock out) {

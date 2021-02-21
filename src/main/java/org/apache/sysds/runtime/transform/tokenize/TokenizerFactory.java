@@ -58,6 +58,8 @@ public class TokenizerFactory {
             for (int i=0; i < idColsJsonArray.length(); i++) {
                 idCols.add(idColsJsonArray.getInt(i));
             }
+            // Output schema is derived from specified id cols
+            int numIdCols = idCols.size();
 
             // get difference between long and wide format
             boolean wideFormat = false;  // long format is default
@@ -85,19 +87,19 @@ public class TokenizerFactory {
             // Transform tokens to output representation
             switch (out) {
                 case "count":
-                    tokenizerPost = new TokenizerPostCount(outParams, maxTokens, wideFormat);
+                    tokenizerPost = new TokenizerPostCount(outParams, numIdCols, maxTokens, wideFormat);
                     break;
                 case "position":
-                    tokenizerPost = new TokenizerPostPosition(outParams, maxTokens, wideFormat);
+                    tokenizerPost = new TokenizerPostPosition(outParams, numIdCols, maxTokens, wideFormat);
                     break;
                 case "hash":
-                    tokenizerPost = new TokenizerPostHash(outParams, maxTokens, wideFormat);
+                    tokenizerPost = new TokenizerPostHash(outParams, numIdCols, maxTokens, wideFormat);
                     break;
                 default:
                     throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");
             }
 
-            tokenizer = new Tokenizer(idCols.size(), wideFormat, maxTokens, tokenizerPre, tokenizerPost);
+            tokenizer = new Tokenizer(tokenizerPre, tokenizerPost);
         }
         catch(Exception ex) {
             throw new DMLRuntimeException(ex);

@@ -30,11 +30,13 @@ import java.util.List;
 public class TokenizerPostPosition implements TokenizerPost{
 
     private static final long serialVersionUID = 3563407270742660830L;
+    private final int numIdCols;
     private final int maxTokens;
     private final boolean wideFormat;
 
-    public TokenizerPostPosition(JSONObject params, int maxTokens, boolean wideFormat) {
+    public TokenizerPostPosition(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) {
         // No configurable params yet
+        this.numIdCols = numIdCols;
         this.maxTokens = maxTokens;
         this.wideFormat = wideFormat;
     }
@@ -95,7 +97,7 @@ public class TokenizerPostPosition implements TokenizerPost{
     }
 
     @Override
-    public Types.ValueType[] getOutSchema(int numIdCols, boolean wideFormat, int maxTokens) {
+    public Types.ValueType[] getOutSchema() {
         if (wideFormat) {
             return getOutSchemaWide(numIdCols, maxTokens);
         } else {
@@ -122,5 +124,17 @@ public class TokenizerPostPosition implements TokenizerPost{
         schema[i] = Types.ValueType.INT64;
         schema[i+1] = Types.ValueType.STRING;
         return schema;
+    }
+
+    public long getNumRows(long inRows) {
+        if (wideFormat) {
+            return inRows;
+        } else {
+            return inRows * maxTokens;
+        }
+    }
+
+    public long getNumCols() {
+        return this.getOutSchema().length;
     }
 }

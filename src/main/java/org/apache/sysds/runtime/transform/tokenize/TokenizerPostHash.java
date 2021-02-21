@@ -36,6 +36,7 @@ public class TokenizerPostHash implements TokenizerPost{
 
     private static final long serialVersionUID = 4763889041868044668L;
     private final Params params;
+    private final int numIdCols;
     private final int maxTokens;
     private final boolean wideFormat;
 
@@ -52,8 +53,9 @@ public class TokenizerPostHash implements TokenizerPost{
         }
     }
 
-    public TokenizerPostHash(JSONObject params, int maxTokens, boolean wideFormat) throws JSONException {
+    public TokenizerPostHash(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) throws JSONException {
         this.params = new Params(params);
+        this.numIdCols = numIdCols;
         this.maxTokens = maxTokens;
         this.wideFormat = wideFormat;
     }
@@ -113,7 +115,7 @@ public class TokenizerPostHash implements TokenizerPost{
     }
 
     @Override
-    public Types.ValueType[] getOutSchema(int numIdCols, boolean wideFormat, int maxTokens) {
+    public Types.ValueType[] getOutSchema() {
         if (wideFormat) {
             return getOutSchemaWide(numIdCols, maxTokens);
         } else {
@@ -143,5 +145,17 @@ public class TokenizerPostHash implements TokenizerPost{
         schema[i] = Types.ValueType.INT64;
         schema[i+1] = Types.ValueType.INT64;
         return schema;
+    }
+
+    public long getNumRows(long inRows) {
+        if (wideFormat) {
+            return inRows;
+        } else {
+            return inRows * maxTokens;
+        }
+    }
+
+    public long getNumCols() {
+        return this.getOutSchema().length;
     }
 }

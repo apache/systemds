@@ -32,39 +32,25 @@ public class Tokenizer implements Serializable {
     private static final long serialVersionUID = 7155673772374114577L;
     protected static final Log LOG = LogFactory.getLog(Tokenizer.class.getName());
 
-    protected final Types.ValueType[] _schema;
-
     private final TokenizerPre tokenizerPre;
     private final TokenizerPost tokenizerPost;
 
-    // Variables are saved to estimate output format
-    protected final int maxTokens;
-    protected final boolean wideFormat;
+    protected Tokenizer(TokenizerPre tokenizerPre, TokenizerPost tokenizerPost) {
 
-    protected Tokenizer(int numIdCols, boolean wideFormat, int maxTokens,
-                        TokenizerPre tokenizerPre, TokenizerPost tokenizerPost) {
-        // Output schema is derived from specified id cols
-        _schema = tokenizerPost.getOutSchema(numIdCols, wideFormat, maxTokens);
-        this.wideFormat = wideFormat;
-        this.maxTokens = maxTokens;
         this.tokenizerPre = tokenizerPre;
         this.tokenizerPost = tokenizerPost;
     }
 
     public Types.ValueType[] getSchema() {
-        return _schema;
+        return tokenizerPost.getOutSchema();
     }
 
     public long getNumRows(long inRows) {
-        if (wideFormat) {
-            return inRows;
-        } else {
-            return inRows * maxTokens;
-        }
+        return tokenizerPost.getNumRows(inRows);
     }
 
     public long getNumCols() {
-        return this.getSchema().length;
+        return tokenizerPost.getNumCols();
     }
 
     public FrameBlock tokenize(FrameBlock in, FrameBlock out) {

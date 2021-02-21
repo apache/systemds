@@ -35,6 +35,7 @@ public class TokenizerPostCount implements TokenizerPost{
 
     private static final long serialVersionUID = 6382000606237705019L;
     private final Params params;
+    private final int numIdCols;
     private final int maxTokens;
     private final boolean wideFormat;
 
@@ -51,8 +52,9 @@ public class TokenizerPostCount implements TokenizerPost{
         }
     }
 
-    public TokenizerPostCount(JSONObject params, int maxTokens, boolean wideFormat) throws JSONException {
+    public TokenizerPostCount(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) throws JSONException {
         this.params = new Params(params);
+        this.numIdCols = numIdCols;
         this.maxTokens = maxTokens;
         this.wideFormat = wideFormat;
     }
@@ -93,7 +95,7 @@ public class TokenizerPostCount implements TokenizerPost{
     }
 
     @Override
-    public Types.ValueType[] getOutSchema(int numIdCols, boolean wideFormat, int maxTokens) {
+    public Types.ValueType[] getOutSchema() {
         if (wideFormat) {
             throw new IllegalArgumentException("Wide Format is not supported for Count Representation.");
         }
@@ -107,5 +109,17 @@ public class TokenizerPostCount implements TokenizerPost{
         // Not sure why INT64 is required here, but CP Instruction fails otherwise
         schema[i+1] = Types.ValueType.INT64;
         return schema;
+    }
+
+    public long getNumRows(long inRows) {
+        if (wideFormat) {
+            return inRows;
+        } else {
+            return inRows * maxTokens;
+        }
+    }
+
+    public long getNumCols() {
+        return this.getOutSchema().length;
     }
 }

@@ -96,10 +96,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		for(int i = 0; i < requests.length; i++) {
 			FederatedRequest request = requests[i];
-			if(log.isInfoEnabled()) {
-				log.info("Executing command " + (i + 1) + "/" + requests.length + ": " + request.getType().name());
-				if(log.isDebugEnabled()) {
-					log.debug("full command: " + request.toString());
+			if(log.isDebugEnabled()) {
+				log.debug("Executing command " + (i + 1) + "/" + requests.length + ": " + request.getType().name());
+				if(log.isTraceEnabled()) {
+					log.trace("full command: " + request.toString());
 				}
 			}
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
@@ -350,9 +350,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// reuse or execute user-defined function
 		try {
 			// reuse UDF outputs if available in lineage cache
-			if (LineageCache.reuse(udf, ec))
-				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
-				//FIXME: few UDFs (e.g. Rdiag, DiagMatrix) return additional data with response
+			FederatedResponse reuse = LineageCache.reuse(udf, ec);
+			if (reuse.isSuccessful())
+				return reuse;
 
 			// else execute the UDF
 			long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;

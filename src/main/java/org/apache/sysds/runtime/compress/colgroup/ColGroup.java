@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -31,7 +30,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -79,10 +77,10 @@ public abstract class ColGroup implements Serializable {
 	 * ColGroup Implementation Contains zero row. Note this is not if it contains a zero value. If false then the stored
 	 * values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
 	 */
-	protected boolean _zeros;
+	protected boolean _zeros = false;
 
 	/** boolean specifying if the column group is encoded lossy */
-	protected boolean _lossy;
+	protected boolean _lossy = false;
 
 	/** Empty constructor, used for serializing into an empty new object of ColGroup. */
 	protected ColGroup() {
@@ -220,6 +218,14 @@ public abstract class ColGroup implements Serializable {
 		decompressToBlockSafe(target, rl, ru, rl, values, safe);
 	}
 
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, boolean safe) {
+		decompressToBlockSafe(target, rl, ru, rl, getValues(), safe);
+	}
+
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, boolean safe) {
+		decompressToBlockSafe(target, rl, ru, offT, getValues(), safe);
+	}
+
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block without managing the number of
 	 * non zeros.
@@ -256,11 +262,66 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract void decompressToBlock(MatrixBlock target, int[] colIndexTargets);
 
-	public static void decompressToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
+
+	/**
+	 * Decompress an entire column into the target matrix block. This decompression maintain the number of non zeros.
+	 * @param target Target matrix block to decompress into.
+	 * @param colIndex The column index to decompress.
+	 * @param colGroups The list of column groups to decompress.
+	 */
+	public static void decompressColumnToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
 		for(ColGroup g : colGroups) {
 			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
 			if(groupColIndex >= 0) {
-				g.decompressToBlock(target, groupColIndex);
+				g.decompressColumnToBlock(target, groupColIndex);
+			}
+		}
+	}
+
+	public static void decompressColumnToArray(double[] target, int colIndex, List<ColGroup> colGroups){
+		for(ColGroup g: colGroups){
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0){
+				g.decompressColumnToBlock(target, groupColIndex, 0, g._numRows);
+			}
+		}
+	}
+
+	/**
+	 * Decompress part of the col groups into the target matrix block, this decompression maintain the number of non zeros.
+	 * 
+	 * @param target The Target matrix block to decompress into
+	 * @param colIndex The column index to decompress.
+	 * @param rl The row to start the decompression from
+	 * @param ru The row to end the decompression at
+	 * @param colGroups The list of column groups to decompress.
+	 */
+	public static void decompressColumnToBlock(MatrixBlock target, int colIndex, int rl, int ru, List<ColGroup> colGroups) {
+		for(ColGroup g : colGroups) {
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0) {
+				g.decompressColumnToBlock(target, groupColIndex, rl, ru);
+			}
+		}
+	}
+
+	/**
+	 * Decompress part of the col groups into the target dense double array.
+	 * This assumes that the double array is a row linearized matrix double array.
+	 * 
+	 * This is much faster than decompressing into a target matrix block since nnz is not managed.
+	 * 
+	 * @param target Target double array to decompress into
+	 * @param colIndex The column index to decompress.
+	 * @param rl The row to start decompression from
+	 * @param ru The row to end the decompression at
+	 * @param colGroups The list of column groups to decompress.
+	 */
+	public static void decompressColumnToBlock(double[] target, int colIndex, int rl, int ru, List<ColGroup> colGroups) {
+		for(ColGroup g : colGroups) {
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0) {
+				g.decompressColumnToBlock(target, groupColIndex, rl, ru);
 			}
 		}
 	}
@@ -271,7 +332,27 @@ public abstract class ColGroup implements Serializable {
 	 * @param target dense output vector
 	 * @param colpos column to decompress, error if larger or equal numCols
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int colpos);
+	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos);
+
+	/**
+	 * Decompress to block.
+	 * 
+	 * @param target dense output vector
+	 * @param colpos column to decompress, error if larger or equal numCols
+	 * @param rl     the Row to start decompression from
+	 * @param ru     the Row to end decompression at
+	 */
+	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru);
+
+	/**
+	 * Decompress to dense array.
+	 * 
+	 * @param target dense output vector double array.
+	 * @param colpos column to decompress, error if larger or equal numCols
+	 * @param rl     the Row to start decompression from
+	 * @param ru     the Row to end decompression at
+	 */
+	public abstract void decompressColumnToBlock(double[] target, int colpos, int rl, int ru);
 
 	/**
 	 * Serializes column group to data output.
@@ -359,8 +440,8 @@ public abstract class ColGroup implements Serializable {
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
 	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
 	 * 
-	 * @param vector  row vector
-	 * @param result  matrix block result
+	 * @param vector row vector
+	 * @param result matrix block result
 	 */
 	public abstract void leftMultByRowVector(double[] vector, double[] result);
 
@@ -453,27 +534,6 @@ public abstract class ColGroup implements Serializable {
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c, int rl, int ru);
 
 	/**
-	 * Create a column group iterator for a row index range.
-	 * 
-	 * @param rl        row lower index, inclusive
-	 * @param ru        row upper index, exclusive
-	 * @param inclZeros include zero values into scope of iterator
-	 * @param rowMajor  use a row major iteration order
-	 * @return an iterator instance
-	 */
-	public abstract Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor);
-
-	/**
-	 * Create a dense row iterator for a row index range. This iterator implies the inclusion of zeros and row-major
-	 * iteration order.
-	 * 
-	 * @param rl row lower index, inclusive
-	 * @param ru row upper index, exclusive
-	 * @return an iterator instance
-	 */
-	public abstract ColGroupRowIterator getRowIterator(int rl, int ru);
-
-	/**
 	 * Count the number of non-zeros per row
 	 * 
 	 * @param rnnz non-zeros per row
@@ -505,5 +565,19 @@ public abstract class ColGroup implements Serializable {
 	 * 
 	 * @return returns if the colgroup is allocated in a dense fashion.
 	 */
-	public abstract boolean isDense();
+	public boolean isDense(){
+		return ! _zeros;
+	}
+
+	/**
+	 * Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns.
+	 * If the ColGroup slicing from does not contain any columns within the range null is returned.
+	 * 
+	 * @param cl The lower bound of the columns to select
+	 * @param cu the upper bound of the columns to select (not inclusive).
+	 * @return A cloned Column Group, with a copied pointer to the old column groups index structure, but reduced
+	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
+	 */
+	public abstract ColGroup sliceColumns(int cl, int cu);
+
 }

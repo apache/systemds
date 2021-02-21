@@ -239,7 +239,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		return new RdiagResult(diagFedMap, dcs);
 	}
 
-	private static class Rdiag extends FederatedUDF {
+	public static class Rdiag extends FederatedUDF {
 
 		private static final long serialVersionUID = -3466926635958851402L;
 		private final long _outputID;
@@ -293,7 +293,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		}
 	}
 
-	private static class DiagMatrix extends FederatedUDF {
+	public static class DiagMatrix extends FederatedUDF {
 
 		private static final long serialVersionUID = -3466926635958851402L;
 		private final long _outputID;

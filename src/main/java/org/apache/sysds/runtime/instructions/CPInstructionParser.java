@@ -418,8 +418,10 @@ public class CPInstructionParser extends InstructionParser
 						UtilFunctions.isIntegerNumber(parts[3])) ) {
 						// B=log(A), y=log(x)
 						return UnaryCPInstruction.parseInstruction(str);
-					} else if ( parts.length == 4 ) {
+					} else if ( parts.length == 4 || (parts.length == 5 &&
+						UtilFunctions.isIntegerNumber(parts[4])) ) {
 						// B=log(A,10), y=log(x,10)
+						// num threads non-existing for scalar-scalar
 						return BinaryCPInstruction.parseInstruction(str);
 					}
 				}

@@ -85,6 +85,12 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 			return new AggregateUnaryCPInstruction(new SimpleOperator(null),
 			in1, out, AUType.COUNT_DISTINCT_APPROX, opcode, str);
 		}
+		else if(opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin")){
+			// parse with number of outputs
+			AggregateUnaryOperator aggun = InstructionUtils
+				.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), Integer.parseInt(parts[3]));
+			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.DEFAULT, opcode, str);
+		}
 		else { //DEFAULT BEHAVIOR
 			AggregateUnaryOperator aggun = InstructionUtils
 				.parseBasicAggregateUnaryOperator(opcode, Integer.parseInt(parts[3]));

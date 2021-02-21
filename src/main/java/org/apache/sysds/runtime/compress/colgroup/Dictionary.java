@@ -234,18 +234,34 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sum(int[] counts, int ncol, KahanFunction kplus) {
+	protected double sum(int[] counts, int ncol) {
 		if(_values == null)
 			return 0;
-		KahanObject kbuff = new KahanObject(0, 0);
+		double out = 0;
 		int valOff = 0;
 		for(int k = 0; k < _values.length / ncol; k++) {
 			int countK = counts[k];
 			for(int j = 0; j < ncol; j++) {
-				kplus.execute3(kbuff, getValue(valOff++), countK);
+				out +=  getValue(valOff++) *  countK;
 			}
 		}
-		return kbuff._sum;
+		return out;
+	}
+
+	@Override
+	protected double sumsq(int[] counts, int ncol) {
+		if(_values == null)
+			return 0;
+		double out = 0;
+		int valOff = 0;
+		for(int k = 0; k < _values.length / ncol; k++) {
+			int countK = counts[k];
+			for(int j = 0; j < ncol; j++) {
+				double val = getValue(valOff++);
+				out +=  val * val  * countK;
+			}
+		}
+		return out;
 	}
 
 	@Override
@@ -255,6 +271,28 @@ public class Dictionary extends ADictionary {
 		sb.append("Dictionary: " + hashCode());
 		sb.append("\n " + Arrays.toString(_values));
 		return sb.toString();
+	}
+
+	@Override
+	protected void addMaxAndMin(double[] ret, int[] colIndexes){
+		if(_values == null || _values.length == 0)
+			return;
+		double[] mins = new double[colIndexes.length];
+		double[] maxs = new double[colIndexes.length];
+		for(int i = 0; i < colIndexes.length; i++){
+			mins[i] = _values[i];
+			maxs[i] = _values[i];
+		}
+		for(int i = colIndexes.length; i < _values.length; i++){
+			int idx = i % colIndexes.length;
+			mins[idx] = Math.min(_values[i], mins[idx]);
+			maxs[idx] = Math.max(_values[i], maxs[idx]);
+		}
+		for(int i = 0; i < colIndexes.length; i ++){
+			int idy = colIndexes[i]*2;
+			ret[idy] += mins[i];
+			ret[idy+1] += maxs[i];
+		}
 	}
 
 	public StringBuilder getString(StringBuilder sb, int colIndexes) {
@@ -268,5 +306,21 @@ public class Dictionary extends ADictionary {
 		}
 		sb.append("]");
 		return sb;
+	}
+
+
+	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns){
+		int numberTuples = getNumberOfValues(previousNumberOfColumns);
+		int tupleLengthAfter = idxEnd - idxStart;
+		double[] newDictValues = new double[tupleLengthAfter * numberTuples];
+		int orgOffset = idxStart;
+		int targetOffset = 0;
+		for(int v = 0; v < numberTuples; v++){
+			for(int c = 0; c< tupleLengthAfter; c++, orgOffset++, targetOffset++){
+				newDictValues[targetOffset] = _values[orgOffset];
+			}
+			orgOffset += previousNumberOfColumns - idxEnd + idxStart;
+		}
+		return new Dictionary(newDictValues);
 	}
 }

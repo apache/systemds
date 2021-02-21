@@ -974,16 +974,19 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 	 */
 	private boolean isRemoveEmptyBcSP() // TODO find if 2 x size needed. 
 	{
-		Hop input = getInput().get(0);
-		
 		//note: both cases (partitioned matrix, and sorted double array), require to
 		//fit the broadcast twice into the local memory budget. Also, the memory 
 		//constraint only needs to take the rhs into account because the output is 
 		//guaranteed to be an aggregate of <=16KB
 		
+		Hop input = getInput().get(0);
+		Hop margin = getParameterHop("margin");
+		boolean col = (margin instanceof LiteralOp) ?
+			((LiteralOp)margin).getStringValue().equals("cols") : false;
+		
 		double size = input.dimsKnown() ? 
-			OptimizerUtils.estimateSize(input.getDim1(), 1) : //dims known and estimate fits
-			input.getOutputMemEstimate();                     //dims unknown but worst-case estimate fits
+			OptimizerUtils.estimateSize(col?input.getDim2():input.getDim1(), 1) : 
+			input.getOutputMemEstimate();
 		
 		return OptimizerUtils.checkSparkBroadcastMemoryBudget(size);
 	}

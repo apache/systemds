@@ -31,10 +31,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection {
 
-	// reusable return
-	private DblArray reusableReturn;
-	private double[] reusableArr;
-
 	// an empty array to return if the entire row was 0.
 	private DblArray empty = new DblArray();
 
@@ -52,8 +48,6 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 	 */
 	public ReaderColumnSelectionSparseTransposed(MatrixBlock data, int[] colIndexes) {
 		super(colIndexes, data.getNumColumns());
-		reusableArr = new double[colIndexes.length];
-		reusableReturn = new DblArray(reusableArr);
 
 		sparsePos = new int[colIndexes.length];
 

@@ -19,21 +19,39 @@
 
 package org.apache.sysds.hops.recompile;
 
+import org.apache.sysds.hops.recompile.Recompiler.ResetType;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.HashMap;
 
 public class RecompileStatus 
 {
+	//immutable flags for recompilation configurations
+	private final long _tid;               // thread-id, 0 if main thread
+	private final boolean _inplace;        // in-place recompilation, false for rewrites
+	private final ResetType _reset;        // reset type for program compilation
+	private final boolean _initialCodegen; // initial codegen compilation (no recompilation)
+	
+	//track if parts of recompiled program still require recompilation
+	private boolean _requiresRecompile = false;
+	
+	//collection of extracted statistics for control flow reconciliation
 	private final HashMap<String, DataCharacteristics> _lastTWrites;
-	private final boolean _initialCodegen;
 	
 	public RecompileStatus() {
-		this(false);
+		this(0, true, ResetType.NO_RESET, false);
 	}
 	
 	public RecompileStatus(boolean initialCodegen) {
+		this(0, true, ResetType.NO_RESET, initialCodegen);
+	}
+	
+	public RecompileStatus(long tid, boolean inplace, ResetType reset, boolean initialCodegen) {
 		_lastTWrites = new HashMap<>();
+		_tid = tid;
+		_inplace = inplace;
+		_reset = reset;
 		_initialCodegen = initialCodegen;
 	}
 	
@@ -41,13 +59,42 @@ public class RecompileStatus
 		return _lastTWrites;
 	}
 	
+	public long getTID() {
+		return _tid;
+	}
+	
+	public boolean hasThreadID() {
+		return ProgramBlock.isThreadID(_tid);
+	}
+	
+	public boolean isInPlace() {
+		return _inplace;
+	}
+	
+	public boolean isReset() {
+		return _reset.isReset();
+	}
+	
+	public ResetType getReset() {
+		return _reset;
+	}
+	
 	public boolean isInitialCodegen() {
 		return _initialCodegen;
+	}
+	
+	public void trackRecompile(boolean flag) {
+		_requiresRecompile |= flag;
+	}
+	
+	public boolean requiresRecompile() {
+		return _requiresRecompile;
 	}
 
 	@Override
 	public Object clone() {
-		RecompileStatus ret = new RecompileStatus();
+		RecompileStatus ret = new RecompileStatus(
+			_tid, _inplace, _reset, _initialCodegen);
 		ret._lastTWrites.putAll(_lastTWrites);
 		return ret;
 	}

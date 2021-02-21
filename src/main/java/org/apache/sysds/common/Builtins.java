@@ -33,7 +33,7 @@ import org.apache.sysds.common.Types.ReturnType;
  * builtin functions.
  *
  * To add a new builtin script function, simply add the definition here
- * as well as a dml file in scripts/builtin with a matching name. On 
+ * as well as a dml file in scripts/builtin with a matching name. On
  * building SystemDS, these scripts are packaged into the jar as well.
  */
 public enum Builtins {
@@ -131,11 +131,13 @@ public enum Builtins {
 	INTERSECT("intersect", true),
 	INVERSE("inv", "inverse", false),
 	IQM("interQuartileMean", false),
-	ISNA("is.na", false),
-	ISNAN("is.nan", false),
+	ISNA("is.na", "isNA", false),
+	ISNAN("is.nan", "isNaN", false),
 	ISINF("is.infinite", false),
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),
+	KNNBF("knnbf", true),
+	KNN("knn", true),
 	L2SVM("l2svm", true),
 	LASSO("lasso", true),
 	LENGTH("length", false),
@@ -144,7 +146,7 @@ public enum Builtins {
 	LM("lm", true),
 	LMCG("lmCG", true),
 	LMDS("lmDS", true),
-	LMPREDICT("lmpredict", true),
+	LMPREDICT("lmPredict", true),
 	LOG("log", false),
 	LOGSUMEXP("logSumExp", true),
 	LSTM("lstm", false, ReturnType.MULTI_RETURN),
@@ -247,7 +249,8 @@ public enum Builtins {
 	QEXP("qexp", false, true),
 	REPLACE("replace", false, true),
 	RMEMPTY("removeEmpty", false, true),
-	SCALE("scale", true, false),     //TODO parameterize center & scale
+	SCALE("scale", true, false),
+	SCALEAPPLY("scaleApply", true, false),
 	TIME("time", false),
 	CVLM("cvlm", true, false),
 	TOKENIZE("tokenize", false, true),

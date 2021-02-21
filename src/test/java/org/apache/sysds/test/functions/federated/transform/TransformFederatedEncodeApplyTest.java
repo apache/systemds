@@ -214,7 +214,6 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			int port3 = getRandomAvailablePort();
 			int port4 = getRandomAvailablePort();
 			String[] otherargs = lineage ? new String[] {"-lineage", "reuse_full"} : null;
-			Lineage.resetInternalState();
 			t1 = startLocalFedWorkerThread(port1, otherargs, FED_WORKER_WAIT_S);
 			t2 = startLocalFedWorkerThread(port2, otherargs, FED_WORKER_WAIT_S);
 			t3 = startLocalFedWorkerThread(port3, otherargs, FED_WORKER_WAIT_S);
@@ -265,8 +264,10 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 				"cols=" + dataset.getNumColumns(), "TFSPEC=" + HOME + "input/" + SPEC, "TFDATA1=" + output("tfout1"),
 				"TFDATA2=" + output("tfout2"), "OFMT=csv"};
 			
-			if (lineage)
+			if (lineage) {
+				Lineage.resetInternalState();
 				programArgs = (String[]) ArrayUtils.addAll(lineageArgs, programArgs);
+			}
 
 			runTest(true, false, null, -1);
 

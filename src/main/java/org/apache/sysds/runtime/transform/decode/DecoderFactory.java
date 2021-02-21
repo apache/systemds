@@ -36,6 +36,12 @@ import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
 public class DecoderFactory 
 {
+	public enum DecoderType {
+		Dummycode, 
+		PassThrough,
+		Recode
+	};
+	
 	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
 		return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), -1, -1);
 	}
@@ -100,5 +106,29 @@ public class DecoderFactory
 		}
 		
 		return decoder;
+	}
+	
+	public static int getDecoderType(Decoder decoder) {
+		if( decoder instanceof DecoderDummycode )
+			return DecoderType.Dummycode.ordinal();
+		else if( decoder instanceof DecoderRecode )
+			return DecoderType.Recode.ordinal();
+		else if( decoder instanceof DecoderPassThrough )
+			return DecoderType.PassThrough.ordinal();
+		throw new DMLRuntimeException("Unsupported decoder type: "
+			+ decoder.getClass().getCanonicalName());
+	}
+	
+	public static Decoder createInstance(int type) {
+		DecoderType dtype = DecoderType.values()[type];
+		
+		// create instance
+		switch(dtype) {
+			case Dummycode:   return new DecoderDummycode(null, null);
+			case PassThrough: return new DecoderPassThrough(null, null, null);
+			case Recode:      return new DecoderRecode(null, false, null);
+			default:
+				throw new DMLRuntimeException("Unsupported Encoder Type used:  " + dtype);
+		}
 	}
 }

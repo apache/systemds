@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -77,7 +79,7 @@ public class LineageCacheConfig
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
-	private static boolean _allowSpill = false;
+	//private static boolean _allowSpill = false;
 	// Minimum reliable spilling estimate in milliseconds.
 	public static final double MIN_SPILL_TIME_ESTIMATE = 10;
 	// Minimum reliable data size for spilling estimate in MB.
@@ -106,8 +108,8 @@ public class LineageCacheConfig
 	//-------------EVICTION RELATED CONFIGURATIONS--------------//
 
 	private static LineageCachePolicy _cachepolicy = null;
-	// Weights for scoring components (computeTime/size, LRU timestamp)
-	protected static double[] WEIGHTS = {0, 1, 0};
+	// Weights for scoring components (computeTime/size, LRU timestamp, DAG height)
+	protected static double[] WEIGHTS = {1, 0, 0};
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
@@ -126,7 +128,6 @@ public class LineageCacheConfig
 		LRU,
 		COSTNSIZE,
 		DAGHEIGHT,
-		HYBRID;
 	}
 	
 	protected static Comparator<LineageCacheEntry> LineageCacheComparator = (e1, e2) -> {
@@ -158,9 +159,6 @@ public class LineageCacheConfig
 						e1_ts < e2_ts ? -1 : 1;
 					break;
 				}
-				case HYBRID:
-					// order entries with same score by IDs
-					ret = Long.compare(e1._key.getId(), e2._key.getId());
 			}
 		}
 		else
@@ -174,8 +172,8 @@ public class LineageCacheConfig
 	static {
 		//setup static configuration parameters
 		REUSE_OPCODES = OPCODES;
-		setSpill(true); 
-		setCachePolicy(LineageCachePolicy.HYBRID);
+		//setSpill(true); 
+		setCachePolicy(LineageCachePolicy.COSTNSIZE);
 		setCompAssRW(true);
 	}
 
@@ -202,12 +200,22 @@ public class LineageCacheConfig
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
-		ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
-		if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
-			return false;
-		long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
-		long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
-		return(c1 == 1 || c2 == 1);
+		if (inst instanceof ComputationFEDInstruction) {
+			ComputationFEDInstruction fedinst = (ComputationFEDInstruction) inst;
+			if (!fedinst.input1.isMatrix() || !fedinst.input2.isMatrix())
+				return false;
+			long c1 = ec.getMatrixObject(fedinst.input1).getNumColumns();
+			long c2 = ec.getMatrixObject(fedinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
+		else { //CPInstruction
+			ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
+			if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
+				return false;
+			long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
+			long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
 	}
 	
 	public static boolean isOutputFederated(Instruction inst, Data data) {
@@ -271,6 +279,7 @@ public class LineageCacheConfig
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {
+		// TODO: Automatic tuning of weights.
 		switch(policy) {
 			case LRU:
 				WEIGHTS[0] = 0; WEIGHTS[1] = 1; WEIGHTS[2] = 0;
@@ -280,15 +289,6 @@ public class LineageCacheConfig
 				break;
 			case DAGHEIGHT:
 				WEIGHTS[0] = 0; WEIGHTS[1] = 0; WEIGHTS[2] = 1;
-				break;
-			case HYBRID:
-				WEIGHTS[0] = 1; WEIGHTS[1] = 0.0033; WEIGHTS[2] = 0;
-				// FIXME: Relative timestamp fix reduces the absolute
-				// value of the timestamp component of the scoring function
-				// to a comparatively much smaller number. W[1] needs to be
-				// re-tuned accordingly.
-				// FIXME: Tune hybrid with a ratio of all three.
-				// TODO: Automatic tuning of weights.
 				break;
 		}
 		_cachepolicy = policy;
@@ -320,13 +320,15 @@ public class LineageCacheConfig
 		return (WEIGHTS[2] > 0);
 	}
 
-	public static void setSpill(boolean toSpill) {
+	/*public static void setSpill(boolean toSpill) {
 		_allowSpill = toSpill;
 		// NOTE: _allowSpill only enables/disables disk spilling, but has 
 		// no control over eviction order of cached items.
-	}
+	}*/
 	
 	public static boolean isSetSpill() {
-		return _allowSpill;
+		// Check if cachespill set in SystemDS-config (default true)
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
+		return conf.getBooleanValue(DMLConfig.LINEAGECACHESPILL);
 	}
 }

@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,13 +39,15 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class DecoderComposite extends Decoder
 {
 	private static final long serialVersionUID = 5790600547144743716L;
-	
+
 	private List<Decoder> _decoders = null;
 	
 	protected DecoderComposite(ValueType[] schema, List<Decoder> decoders) {
 		super(schema, null);
 		_decoders = decoders;
 	}
+
+	public DecoderComposite() { super(null, null); }
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
@@ -72,5 +77,27 @@ public class DecoderComposite extends Decoder
 	public void initMetaData(FrameBlock meta) {
 		for( Decoder decoder : _decoders )
 			decoder.initMetaData(meta);
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		out.writeInt(_decoders.size());
+		for(Decoder decoder : _decoders) {
+			out.writeByte(DecoderFactory.getDecoderType(decoder));
+			decoder.writeExternal(out);
+		}
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		int decodersSize = in.readInt();
+		_decoders = new ArrayList<>();
+		for(int i = 0; i < decodersSize; i++) {
+			Decoder decoder = DecoderFactory.createInstance(in.readByte());
+			decoder.readExternal(in);
+			_decoders.add(decoder);
+		}
 	}
 }

@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -54,6 +55,8 @@ import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
@@ -164,6 +167,11 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		return (_schema != null) ? _schema.length : 0;
 	}
 
+	@Override
+	public DataCharacteristics getDataCharacteristics() {
+		return new MatrixCharacteristics(getNumRows(), getNumColumns(), -1);
+	}
+	
 	/**
 	 * Returns the schema of the frame block.
 	 *
@@ -2099,6 +2107,15 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			UtilFunctions.nCopies(temp1.getNumColumns(), ValueType.STRING));
 		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
+	}
+	
+	public void mapInplace(Function<String, String> fun) {
+		for(int j=0; j<getNumColumns(); j++)
+			for(int i=0; i<getNumRows(); i++) {
+				Object tmp = get(i, j);
+				set(i, j, (tmp == null) ? tmp :
+					UtilFunctions.objectToObject(_schema[j], fun.apply(tmp.toString())));
+			}
 	}
 
 	public FrameBlock map (String lambdaExpr){

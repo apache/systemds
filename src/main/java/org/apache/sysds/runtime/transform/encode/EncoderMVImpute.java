@@ -178,7 +178,7 @@ public class EncoderMVImpute extends Encoder
 							_hist.get(colID) : new HashMap<>();
 					for( int i=0; i<in.getNumRows(); i++ ) {
 						String key = String.valueOf(in.get(i, colID-1));
-						if( key != null && !key.isEmpty() ) {
+						if(!key.equals("null") && !key.isEmpty() ) {
 							Long val = hist.get(key);
 							hist.put(key, (val!=null) ? val+1 : 1);
 						}

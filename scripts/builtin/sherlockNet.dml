@@ -24,7 +24,7 @@ source("nn/layers/dropout.dml") as dropout
 source("nn/layers/relu.dml") as relu
 source("nn/layers/softmax.dml")as softmax
 source("nn/optim/adam.dml") as adam
-
+source("scripts/staging/entity-resolution/primitives/evaluation.dml") as evaluation
 train = function(matrix[double] X_train, matrix[double] y_train, int hidden_layer_neurons)
   return (matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] W3, matrix[double] b3) {
 
@@ -135,7 +135,6 @@ predict = function(matrix[double] test_val,
 
   N = nrow(test_val)
   K = ncol(W3) # num features
-  print("Predicting with " + N + " rows")
 
   p = 0.3  # dropout probability
   # Network:
@@ -157,9 +156,8 @@ predict = function(matrix[double] test_val,
     ## layer 1:
     out1 = affine::forward(X_batch, W1, b1)
     outr1 = relu::forward(out1)
-    [outd1, maskd1] = dropout::forward(outr1, p, -1)
     ## layer 2:
-    out2 = affine::forward(outd1, W2, b2)
+    out2 = affine::forward(outr1, W2, b2)
     outr2 = relu::forward(out2)
     ## layer 3:
     out3 = affine::forward(outr2, W3, b3)
@@ -171,7 +169,7 @@ predict = function(matrix[double] test_val,
 }
 
 eval = function(matrix[double] probs, matrix[double] Y)
-  return (double loss, double accuracy) {
+  return (double loss, double accuracy, double f1, double precision, double recall) {
   /*
   * Evaluates the performance of the network.
   *
@@ -192,4 +190,15 @@ eval = function(matrix[double] probs, matrix[double] Y)
   loss = cross_entropy_loss::forward(probs, Y)
   correct_pred = rowIndexMax(probs) == rowIndexMax(Y)
   accuracy = mean(correct_pred)
+
+  #calc f1 score
+  rows = nrow(Y)
+  cols = ncol(Y)
+  predBooleanMatrix = matrix(0, rows=rows, cols=cols)
+  for ( i in 1:rows) {
+    predBooleanMatrix[i, as.scalar(rowIndexMax(probs[i,1:cols]))] = 1
+  }
+  [f1, precision, recall] = evaluation::f1(predBooleanMatrix, Y)
+
+
 }

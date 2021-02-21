@@ -40,7 +40,7 @@ public class TokenizeTest extends AutomatedTestBase
     private static final String TEST_SPLIT_COUNT_LONG = "TokenizeSplitCountLong";
     private static final String TEST_NGRAM_POS_LONG = "TokenizeNgramPosLong";
     private static final String TEST_NGRAM_POS_WIDE = "TokenizeNgramPosWide";
-    private static final String TEST_UNI_HASH_WIDE = "TokenizeUniHasWide";
+    private static final String TEST_UNI_HASH_WIDE = "TokenizeUniHashWide";
 
     //dataset and transform tasks without missing values
     private final static String DATASET 	= "20news/20news_subset_untokenized.csv";

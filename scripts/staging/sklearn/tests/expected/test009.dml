@@ -1,0 +1,7 @@
+source("scripts/builtin/imputeByMedian") as ns_imputeByMedian
+source("scripts/builtin/dbscan") as ns_dbscan
+
+X = read($X)
+X = ns_imputeByMedian::m_imputeByMedian(X)
+C, Y = ns_dbscan::m_dbscan(X, 0.5, 5)
+print(C, Y)

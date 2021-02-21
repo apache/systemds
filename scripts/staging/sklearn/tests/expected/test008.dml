@@ -1,0 +1,7 @@
+source("scripts/builtin/imputeByMean") as ns_imputeByMean
+source("scripts/builtin/dbscan") as ns_dbscan
+
+X = read($X)
+X = ns_imputeByMean::m_imputeByMean(X)
+C, Y = ns_dbscan::m_dbscan(X, 0.5, 5)
+print(C, Y)

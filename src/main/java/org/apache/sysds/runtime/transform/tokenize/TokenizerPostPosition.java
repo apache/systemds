@@ -85,7 +85,10 @@ public class TokenizerPostPosition implements TokenizerPost{
             rowList.add(token.textToken);
             numTokens++;
         }
-        // Remaining positions are left empty
+        // Remaining positions need to be filled with empty tokens
+        for (; numTokens < maxTokens; numTokens++) {
+            rowList.add("");
+        }
         Object[] row = new Object[rowList.size()];
         rowList.toArray(row);
         out.appendRow(row);

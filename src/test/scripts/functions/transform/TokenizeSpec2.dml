@@ -28,7 +28,7 @@ F1[,4] = map(F1[,4], "x -> x.toLowerCase()");
 # max_token = as.integer(max(as.matrix(map(F1[,4], "x -> x.length()"))));
 # print(max_length);
 
-max_token = 400;
+max_token = 2000;
 
 # Example spec:
 # jspec = "{\"algo\": \"whitespace\",\"out\": \"count\",\"id_col\": [2],\"tokenize_col\": 3}";

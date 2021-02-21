@@ -1,3 +1,5 @@
 *.pkl
 *.dml
 *.csv
+
+!/tests/expected/*.dml

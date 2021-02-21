@@ -73,6 +73,6 @@ class PCAMapper(Mapper):
     def map_params(self):
         self.mapped_params = [
             self.params.get('n_components'),
-            1,  # non existant in SKlearn
-            1  # non existant in SKlearn
+            True,  # non existant in SKlearn
+            True  # non existant in SKlearn
         ]

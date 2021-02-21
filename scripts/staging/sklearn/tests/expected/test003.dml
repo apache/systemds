@@ -1,0 +1,7 @@
+source("scripts/builtin/imputeByMean") as ns_imputeByMean
+source("scripts/builtin/kmeans") as ns_kmeans
+
+X = read($X)
+X = ns_imputeByMean::m_imputeByMean(X)
+C, Y = ns_kmeans::m_kmeans(X, 10, 10, 1000, 0.000001, FALSE, 50, -1)
+print(C, Y)

@@ -1,0 +1,7 @@
+source("scripts/builtin/pca") as ns_pca
+source("scripts/builtin/dbscan") as ns_dbscan
+
+X = read($X)
+X = ns_pca::m_pca(X, 2, True, True)
+C, Y = ns_dbscan::m_dbscan(X, 0.5, 5)
+print(C, Y)

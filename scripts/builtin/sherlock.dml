@@ -58,16 +58,20 @@ transform_values = function(frame[string] data) return (matrix[double] m_data) {
 /*
  * Function to encode the string labels from the original sherlock project (y data)
  * to a numerical representation.
+ *
+ * Transform spec file should have the following content:
+ *     { "recode":[ "label" ] }
+ * where label is the column with containing the labels of the data
  */
-transform_encode_labels = function(frame[string] data) return (matrix[double] ground_truth , frame[string] meta_data) {
+transform_encode_labels = function(frame[string] data, string transform_spec)
+    return (matrix[double] ground_truth , frame[string] meta_data) {
 
   rows = nrow(data)
   cols = ncol(data)
 
   #replace label with number
-  transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
   [m_data, meta_data] = transformencode(target=data[1:rows,2:cols],
-    spec=transformSpec)
+    spec=transform_spec)
 
   #print(toString(m_data[2]))
   ground_truth = matrix(0, rows=rows, cols=78)
@@ -79,15 +83,14 @@ transform_encode_labels = function(frame[string] data) return (matrix[double] gr
 /*
  * Use the encoding from transform_encode_labels() to transform y labels to a numerical representation.
  */
-transform_apply_labels = function(frame[string] data, frame[string] meta_data) return (matrix[double] ground_truth) {
+transform_apply_labels = function(frame[string] data, frame[string] meta_data, string transform_spec) return (matrix[double] ground_truth) {
   #remove index row
   rows = nrow(data)
   cols = ncol(data)
 
   #replace label with number
-  transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
   m_data = transformapply(target=data[1:rows,2:cols],
-                  spec=transformSpec,
+                  spec=transform_spec,
                   meta=meta_data)
 
   ground_truth = matrix(0, rows=rows, cols=78)
@@ -178,7 +181,7 @@ predict = function(matrix[double] X,
 }
 
 eval = function(matrix[double] probs, matrix[double] Y)
-  return (double loss, double accuracy) {
+  return (double loss, double accuracy, double f1, double precision, double recall) {
   /*
   * Evaluates the performance of the network.
   *
@@ -194,7 +197,7 @@ eval = function(matrix[double] probs, matrix[double] Y)
   *  - loss: Scalar loss, of shape (1).
   *  - accuracy: Scalar accuracy, of shape(1).
   */
-  [loss, accuracy] = sherlockNet::eval(probs, Y)
+  [loss, accuracy, f1, precision, recall] = sherlockNet::eval(probs, Y)
 }
 
 

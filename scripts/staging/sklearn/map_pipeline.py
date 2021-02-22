@@ -73,7 +73,7 @@ class SklearnToDMLMapper:
             raise RuntimeError(f'{self.steps[0][0]} is not supported.')
 
         if func.is_supervised:
-            return 'X = read(${input_name}_X)\nY = read(${input_name}_Y)'
+            return f'X = read(${input_name}_X)\nY = read(${input_name}_Y)'
         else:
             return f'X = read(${self.input_name})'
 
@@ -94,6 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('-i',
             metavar='input_name',
             type=str,
+            default='X',
             help='name for the input variable')
     parser.add_argument('-o',
             metavar='output',
@@ -105,6 +106,6 @@ if __name__ == '__main__':
     pipeline = load(args['path'])
 
     # TODO internal loading + saving
-    mapper = SklearnToDMLMapper(pipeline)
+    mapper = SklearnToDMLMapper(pipeline, args['input_name'])
     mapper.transform()
     mapper.save(args['output'])

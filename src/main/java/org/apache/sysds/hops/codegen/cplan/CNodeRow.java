@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
@@ -52,6 +53,7 @@ public class CNodeRow extends CNodeTpl
 	private RowType _type = null; //access pattern 
 	private long _constDim2 = -1; //constant number of output columns
 	private int _numVectors = -1; //number of intermediate vectors
+	private boolean _tb1 = false;
 	
 	public void setRowType(RowType type) {
 		_type = type;
@@ -115,8 +117,8 @@ public class CNodeRow extends CNodeTpl
 		//replace colvector information and number of vector intermediates
 		tmp = tmp.replace("%TYPE%", _type.name());
 		tmp = tmp.replace("%CONST_DIM2%", String.valueOf(_constDim2));
-		tmp = tmp.replace("%TB1%", String.valueOf(
-			TemplateUtils.containsBinary(_output, BinType.VECT_MATRIXMULT)));
+		_tb1 = TemplateUtils.containsBinary(_output, BinType.VECT_MATRIXMULT); 
+		tmp = tmp.replace("%TB1%", String.valueOf(_tb1));
 
 		if(api == GeneratorAPI.CUDA && _numVectors > 0) {
 			tmp = tmp.replace("//%HAS_TEMP_VECT%", ": public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>");
@@ -230,4 +232,15 @@ public class CNodeRow extends CNodeTpl
 	public boolean isSupported(GeneratorAPI api) {
 		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api);
 	}
+
+	public int compile(GeneratorAPI api, String src) {
+		if(api == GeneratorAPI.CUDA)
+			return compile_nvrtc(SpoofCompiler.native_contexts.get(api), _genVar, src, _type.getValue(), _constDim2, 
+				_numVectors, _tb1);
+		return -1;
+	}
+	
+	private native int compile_nvrtc(long context, String name, String src, int type, long constDim2, int numVectors, 
+			boolean TB1);
+
 }

@@ -171,15 +171,10 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCodegenCellwise4() 
-	{
-		testCodegenIntegration( TEST_NAME4, false, ExecType.CP  );
-	}
+	public void testCodegenCellwise4() { testCodegenIntegration( TEST_NAME4, false, ExecType.CP ); }
 	
 	@Test
-	public void testCodegenCellwise5() {
-		testCodegenIntegration( TEST_NAME5, false, ExecType.CP  );
-	}
+	public void testCodegenCellwise5() { testCodegenIntegration( TEST_NAME5, false, ExecType.CP  );	}
 	
 	@Test
 	public void testCodegenCellwise6() {
@@ -192,9 +187,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCodegenCellwise8() {
-		testCodegenIntegration( TEST_NAME8, false, ExecType.CP  );
-	}
+	public void testCodegenCellwise8() { testCodegenIntegration( TEST_NAME8, false, ExecType.CP  );	}
 	
 	@Test
 	public void testCodegenCellwise9() {

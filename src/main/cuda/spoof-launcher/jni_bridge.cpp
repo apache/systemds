@@ -26,10 +26,42 @@
 
 #define RELEASE_ARRAY(env, java, cpp)(env->ReleasePrimitiveArrayCritical(java, cpp, 0))
 
+// error output helper
+void printStdException(JNIEnv *env, jstring name, const std::exception& e, bool compile = false) {
+	std::string type = compile ? "compiling" : "executing";
+	if(name != nullptr) {
+		const char *cstr_name = env->GetStringUTFChars(name, nullptr);
+		std::cout << "std::exception while " << type << "  SPOOF CUDA operator " << cstr_name << ":\n" << e.what() <<
+				  std::endl;
+		env->ReleaseStringUTFChars(name, cstr_name);
+	}
+	else
+		std::cout << "std::exception while " << type << " SPOOF CUDA operator (name=nullptr):\n" << e.what() <<
+				std::endl;
+}
+
+void printException(JNIEnv* env, jstring name, bool compile = false) {
+	std::string type = compile ? "compiling" : "executing";
+	if(name != nullptr) {
+		const char *cstr_name = env->GetStringUTFChars(name, nullptr);
+		std::cout << "Unknown exception occurred while " << type << " SPOOF CUDA operator " << cstr_name << std::endl;
+		env->ReleaseStringUTFChars(name, cstr_name);
+	}
+	else
+		std::cout << "Unknown exception occurred while " << type << " SPOOF CUDA operator (name=nullptr)" << std::endl;
+}
+
+void printSource(JNIEnv* env, jstring name, jstring src) {
+	if(src != nullptr) {
+		const char *cstr_src = env->GetStringUTFChars(src, nullptr);
+		std::cout << "Source code:\n" << cstr_src << std::endl;
+		env->ReleaseStringUTFChars(name, cstr_src);
+	}
+}
+
 JNIEXPORT jlong JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_initialize_1cuda_1context(
     JNIEnv *env, jobject jobj, jint device_id, jstring resource_path) {
-
   const char *cstr_rp = env->GetStringUTFChars(resource_path, nullptr);
   size_t ctx = SpoofCUDAContext::initialize_cuda(device_id, cstr_rp);
   env->ReleaseStringUTFChars(resource_path, cstr_rp);
@@ -42,54 +74,99 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_destroy_1cuda_1context(
   SpoofCUDAContext::destroy_cuda(reinterpret_cast<SpoofCUDAContext *>(ctx), device_id);
 }
 
-JNIEXPORT jboolean JNICALL
-Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
-    JNIEnv *env, jobject jobj, jlong ctx, jstring name, jstring src) {
-  auto *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
-  const char *cstr_name = env->GetStringUTFChars(name, nullptr);
-  const char *cstr_src = env->GetStringUTFChars(src, nullptr);
-  bool result = ctx_->compile_cuda(cstr_src, cstr_name);
-  env->ReleaseStringUTFChars(src, cstr_src);
-  env->ReleaseStringUTFChars(name, cstr_name);
-  return result;
+JNIEXPORT jint JNICALL Java_org_apache_sysds_hops_codegen_cplan_CNodeCell_compile_1nvrtc
+		(JNIEnv *env, jobject jobj, jlong ctx, jstring name, jstring src, jint type, jint agg_op, jboolean sparseSafe) {
+	try {
+		auto *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
+		const char *cstr_name = env->GetStringUTFChars(name, nullptr);
+		const char *cstr_src = env->GetStringUTFChars(src, nullptr);
+		
+		int result = ctx_->compile(cstr_src, cstr_name, SpoofOperator::OpType::CW,
+				SpoofOperator::AggType(type), SpoofOperator::AggOp(agg_op), SpoofOperator::RowType::NONE, sparseSafe);
+		
+		env->ReleaseStringUTFChars(src, cstr_src);
+		env->ReleaseStringUTFChars(name, cstr_name);
+		return result;
+	}
+	catch (std::exception& e) {
+		printStdException(env, name, e, true);
+	}
+	catch (...) {
+		printException(env, name, true);
+	}
+	printSource(env, name, src);
+	return -1;
 }
+
+/*
+ * Class:     org_apache_sysds_hops_codegen_cplan_CNodeRow
+ * Method:    compile_nvrtc
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IIIZ)I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_sysds_hops_codegen_cplan_CNodeRow_compile_1nvrtc
+		(JNIEnv *env, jobject jobj, jlong ctx, jstring name, jstring src, jint type, jint const_dim2, jint num_vectors,
+		jboolean TB1) {
+	try {
+		auto *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
+		const char *cstr_name = env->GetStringUTFChars(name, nullptr);
+		const char *cstr_src = env->GetStringUTFChars(src, nullptr);
+		
+		int result = ctx_->compile(cstr_src, cstr_name, SpoofOperator::OpType::RA,
+				SpoofOperator::AggType::NONE, SpoofOperator::AggOp::NONE,
+				SpoofOperator::RowType(type), true, const_dim2, num_vectors, TB1);
+		
+		env->ReleaseStringUTFChars(src, cstr_src);
+		env->ReleaseStringUTFChars(name, cstr_name);
+		return result;
+	}
+	catch (std::exception& e) {
+		printStdException(env, name, e);
+	}
+	catch (...) {
+		printException(env, name);
+	}
+	printSource(env, name, src);
+	return -1;
+}
+
 
 JNIEXPORT jdouble JNICALL
 Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs, jint input_offset, jlongArray side_ptrs,
     		jlongArray out_ptrs, jdoubleArray scalars_, jlong grix, jobject inputs_, jobject out_obj) {
+	double result = 0.0;
+	try {
+	    auto *ctx_ = reinterpret_cast<SpoofCUDAContext*>(ctx);
+	    const char *cstr_name = env->GetStringUTFChars(name, nullptr);
+	    
+		auto* inputs = reinterpret_cast<size_t*>(GET_ARRAY(env, in_ptrs));
+		auto* sides = reinterpret_cast<size_t*>(GET_ARRAY(env, side_ptrs));
+		auto *output = reinterpret_cast<size_t*>(GET_ARRAY(env, out_ptrs));
+		auto *scalars = reinterpret_cast<double*>(GET_ARRAY(env, scalars_));
 
-	auto *ctx_ = reinterpret_cast<SpoofCUDAContext*>(ctx);
-	const char *cstr_name = env->GetStringUTFChars(name, nullptr);
-
-	auto* inputs = reinterpret_cast<size_t*>(GET_ARRAY(env, in_ptrs));
-	auto* sides = reinterpret_cast<size_t*>(GET_ARRAY(env, side_ptrs));
-	auto *output = reinterpret_cast<size_t*>(GET_ARRAY(env, out_ptrs));
-	auto *scalars = reinterpret_cast<double*>(GET_ARRAY(env, scalars_));
-
-	//ToDo: call once while init
-	jclass CacheableData = env->FindClass("org/apache/sysds/runtime/controlprogram/caching/CacheableData");
-	if(!CacheableData) {
-	  	std::cerr << " JNIEnv -> FindClass(CacheableData) failed" << std::endl;
-	  	return -1.0;
-	}
-	jclass ArrayList = env->FindClass("java/util/ArrayList");
-	if(!ArrayList) {
-		std::cerr << " JNIEnv -> FindClass(ArrayList) failed" << std::endl;
-		return -1.0;
-	}
-	jmethodID mat_obj_num_rows = env->GetMethodID(CacheableData, "getNumRows", "()J");
-	if(!mat_obj_num_rows) {
-		std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
-		return -1.0;
-	}
-	jmethodID mat_obj_num_cols = env->GetMethodID(CacheableData, "getNumColumns", "()J");
-	if(!mat_obj_num_cols) {
-		std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
-		return -1.0;
-	}
-	jmethodID ArrayList_size = env->GetMethodID(ArrayList, "size", "()I");
-	jmethodID ArrayList_get = env->GetMethodID(ArrayList, "get", "(I)Ljava/lang/Object;");
+		//ToDo: call once while init
+		jclass CacheableData = env->FindClass("org/apache/sysds/runtime/controlprogram/caching/CacheableData");
+		if (!CacheableData) {
+			std::cerr << " JNIEnv -> FindClass(CacheableData) failed" << std::endl;
+			return -1.0;
+		}
+		jclass ArrayList = env->FindClass("java/util/ArrayList");
+		if (!ArrayList) {
+			std::cerr << " JNIEnv -> FindClass(ArrayList) failed" << std::endl;
+			return -1.0;
+		}
+		jmethodID mat_obj_num_rows = env->GetMethodID(CacheableData, "getNumRows", "()J");
+		if (!mat_obj_num_rows) {
+			std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
+			return -1.0;
+		}
+		jmethodID mat_obj_num_cols = env->GetMethodID(CacheableData, "getNumColumns", "()J");
+		if (!mat_obj_num_cols) {
+			std::cerr << " JNIEnv -> GetMethodID() failed" << std::endl;
+			return -1.0;
+		}
+		jmethodID ArrayList_size = env->GetMethodID(ArrayList, "size", "()I");
+		jmethodID ArrayList_get = env->GetMethodID(ArrayList, "get", "(I)Ljava/lang/Object;");
 
 		std::vector<Matrix<double>> in;
 		jint num_inputs = env->CallIntMethod(inputs_, ArrayList_size);
@@ -97,50 +174,58 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 		std::cout << "num inputs: " << num_inputs << " offsets: " << input_offset << std::endl;
 #endif
 
-	for(auto ptr_idx = 0, input_idx = 0; input_idx < input_offset; ptr_idx+=4, input_idx++) {
-		jobject input_obj = env->CallObjectMethod(inputs_, ArrayList_get, input_idx);
-		auto m = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_rows));
-		auto n = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_cols));
+        for(auto ptr_idx = 0, input_idx = 0; input_idx < input_offset; ptr_idx+=4, input_idx++) {
+            jobject input_obj = env->CallObjectMethod(inputs_, ArrayList_get, input_idx);
+            auto m = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_rows));
+            auto n = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_cols));
 
-		in.push_back(Matrix<double>{reinterpret_cast<double *>(inputs[ptr_idx + 3]),
-						  			reinterpret_cast<uint32_t *>(inputs[ptr_idx + 1]),
-									reinterpret_cast<uint32_t *>(inputs[ptr_idx + 2]),
-									m, n, static_cast<uint32_t>(inputs[ptr_idx])});
+            in.push_back(Matrix<double>{reinterpret_cast<double *>(inputs[ptr_idx + 3]),
+                                        reinterpret_cast<uint32_t *>(inputs[ptr_idx + 1]),
+                                        reinterpret_cast<uint32_t *>(inputs[ptr_idx + 2]),
+                                        m, n, static_cast<uint32_t>(inputs[ptr_idx])});
 #ifdef _DEBUG
 			std::cout << "input #" << input_idx << " m=" << m << " n=" << n << std::endl;
 #endif
+		}
+
+        std::vector<Matrix<double>> side_inputs;
+        for(uint32_t ptr_idx = 0, input_idx = input_offset; input_idx < num_inputs; ptr_idx+=4, input_idx++) {
+            jobject side_input_obj = env->CallObjectMethod(inputs_, ArrayList_get, input_idx);
+            auto m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
+            auto n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));
+
+            side_inputs.push_back(Matrix<double>{reinterpret_cast<double *>(sides[ptr_idx + 3]),
+                                                 reinterpret_cast<uint32_t *>(sides[ptr_idx + 1]),
+                                                 reinterpret_cast<uint32_t *>(sides[ptr_idx + 2]),
+                                                 m, n, static_cast<uint32_t>(sides[ptr_idx])});
+        }
+
+        std::unique_ptr<Matrix<double>> out;
+        if(out_obj != nullptr) {
+            out = std::make_unique<Matrix<double>>(Matrix<double>{reinterpret_cast<double*>(output[3]),
+                                                    reinterpret_cast<uint32_t*>(output[1]),
+                                                    reinterpret_cast<uint32_t*>(output[2]),
+                                                    static_cast<uint32_t>(env->CallIntMethod(out_obj, mat_obj_num_rows)),
+                                                    static_cast<uint32_t>(env->CallIntMethod(out_obj, mat_obj_num_cols)),
+                                                    static_cast<uint32_t>(output[0])});
+        }
+
+		result = ctx_->execute_kernel(cstr_name, in, side_inputs, out.get(), scalars,
+											 env->GetArrayLength(scalars_), grix);
+
+		RELEASE_ARRAY(env, in_ptrs, inputs);
+		RELEASE_ARRAY(env, side_ptrs, sides);
+		RELEASE_ARRAY(env, out_ptrs, output);
+		RELEASE_ARRAY(env, scalars_, scalars);
+		
+		env->ReleaseStringUTFChars(name, cstr_name);
+		return result;
 	}
-
-	std::vector<Matrix<double>> side_inputs;
-	for(uint32_t ptr_idx = 0, input_idx = input_offset; input_idx < num_inputs; ptr_idx+=4, input_idx++) {
-		jobject side_input_obj = env->CallObjectMethod(inputs_, ArrayList_get, input_idx);
-		auto m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
-		auto n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));
-
-		side_inputs.push_back(Matrix<double>{reinterpret_cast<double *>(sides[ptr_idx + 3]),
-											 reinterpret_cast<uint32_t *>(sides[ptr_idx + 1]),
-											 reinterpret_cast<uint32_t *>(sides[ptr_idx + 2]),
-											 m, n, static_cast<uint32_t>(sides[ptr_idx])});
+	catch (std::exception& e) {
+		printStdException(env, name, e);
 	}
-
-	std::unique_ptr<Matrix<double>> out;
-	if(out_obj != nullptr) {
-		out = std::make_unique<Matrix<double>>(Matrix<double>{reinterpret_cast<double*>(output[3]),
-												reinterpret_cast<uint32_t*>(output[1]),
-												reinterpret_cast<uint32_t*>(output[2]),
-												static_cast<uint32_t>(env->CallIntMethod(out_obj, mat_obj_num_rows)),
-												static_cast<uint32_t>(env->CallIntMethod(out_obj, mat_obj_num_cols)),
-											 	static_cast<uint32_t>(output[0])});
+	catch (...) {
+		printException(env, name);
 	}
-
-	double result = ctx_->execute_kernel(cstr_name, in, side_inputs, out.get(), scalars, env->GetArrayLength(scalars_),
-											grix);
-
-	RELEASE_ARRAY(env, in_ptrs, inputs);
-	RELEASE_ARRAY(env, side_ptrs, sides);
-	RELEASE_ARRAY(env, out_ptrs, output);
-	RELEASE_ARRAY(env, scalars_, scalars);
-
-	env->ReleaseStringUTFChars(name, cstr_name);
 	return result;
 }

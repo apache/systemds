@@ -21,7 +21,9 @@
 #ifndef SPOOFCUDACONTEXT_H
 #define SPOOFCUDACONTEXT_H
 
-#define NOMINMAX
+#if defined(_WIN32) || defined(_WIN64)
+	#define NOMINMAX
+#endif
 
 #include <cmath>
 #include <cstdint>
@@ -39,6 +41,7 @@
 #endif
 
 #include <jitify.hpp>
+#include <utility>
 #include <cublas_v2.h>
 
 #include "host_utils.h"
@@ -46,46 +49,57 @@
 using jitify::reflection::type_of;
 
 struct SpoofOperator {
-	enum class AggType : int { NO_AGG, NO_AGG_CONST, ROW_AGG, COL_AGG, FULL_AGG, COL_AGG_T, NONE };
-	enum class AggOp : int {SUM, SUM_SQ, MIN, MAX, NONE };
 	enum class OpType : int { CW, RA, MA, OP, NONE };
+	enum class AggType : int { NONE, NO_AGG, FULL_AGG, ROW_AGG, COL_AGG };
+	enum class AggOp : int { NONE, SUM, SUM_SQ, MIN, MAX };
+	enum class RowType : int { NONE, FULL_AGG = 4 };
 	
 	jitify::Program program;
+	OpType op_type;
 	AggType agg_type;
 	AggOp agg_op;
-	OpType op_type;
+	RowType row_type;
     const std::string name;
-	bool TB1 = false;
 	int32_t const_dim2;
 	uint32_t num_temp_vectors;
+	bool TB1 = false;
 	bool sparse_safe = true;
 };
 
 class SpoofCUDAContext {
-
-  jitify::JitCache kernel_cache;
-  std::map<const std::string, SpoofOperator> ops;
-  CUmodule reductions;
-  std::map<const std::string, CUfunction> reduction_kernels;
-
+	jitify::JitCache kernel_cache;
+	std::map<const std::string, SpoofOperator> ops;
+	CUmodule reductions;
+	std::map<const std::string, CUfunction> reduction_kernels;
+	double handling_total, compile_total;
+	uint32_t compile_count;
+	
+	const std::string resource_path;
+	const std::vector<std::string> include_paths;
+	
 public:
-  // ToDo: make launch config more adaptive
-  // num threads
-  const int NT = 256;
+	// ToDo: make launch config more adaptive
+	// num threads
+	const int NT = 256;
 
-  // values / thread
-  const int VT = 4;
+  	// values / thread
+	const int VT = 4;
 
-  const std::string resource_path;
+	explicit SpoofCUDAContext(const char* resource_path_, std::vector<std::string>  include_paths_) : reductions(nullptr),
+			resource_path(resource_path_), include_paths(std::move(include_paths_)), handling_total(0.0), compile_total(0.0),
+			compile_count(0) {}
 
-  SpoofCUDAContext(const char* resource_path_) : reductions(nullptr), resource_path(resource_path_) {}
+	static size_t initialize_cuda(uint32_t device_id, const char* resource_path_);
 
-  static size_t initialize_cuda(uint32_t device_id, const char* resource_path_);
+	static void destroy_cuda(SpoofCUDAContext *ctx, uint32_t device_id);
 
-  static void destroy_cuda(SpoofCUDAContext *ctx, uint32_t device_id);
+	int compile(const std::string &src, const std::string &name, SpoofOperator::OpType op_type,
+			SpoofOperator::AggType agg_type = SpoofOperator::AggType::NONE,
+			SpoofOperator::AggOp agg_op = SpoofOperator::AggOp::NONE,
+			SpoofOperator::RowType row_type = SpoofOperator::RowType::NONE, bool sparse_safe = true,
+			int32_t const_dim2 = -1, uint32_t num_vectors = 0, bool TB1 = false);
 
-  bool compile_cuda(const std::string &src, const std::string &name);
-
+	
 	template <typename T>
 	T execute_kernel(const std::string &name, std::vector<Matrix<T>>& input,  std::vector<Matrix<T>>& sides, Matrix<T>* output,
 					 T *scalars_ptr, uint32_t num_scalars, uint32_t grix) {
@@ -107,8 +121,8 @@ public:
 			CHECK_CUDART(cudaMemcpy(d_in, reinterpret_cast<void*>(&input[0]), sizeof(Matrix<T>), cudaMemcpyHostToDevice));
 
 			if(output != nullptr) {
-				if (op->sparse_safe == true && input.front().row_ptr != nullptr) {
-#ifdef __DEBUG
+				if (op->sparse_safe && input.front().row_ptr != nullptr) {
+#ifdef _DEBUG
 					std::cout << "copying sparse safe row ptrs" << std::endl;
 #endif
 					CHECK_CUDART(cudaMemcpy(output->row_ptr, input.front().row_ptr, (input.front().rows+1)*sizeof(uint32_t), cudaMemcpyDeviceToDevice));
@@ -135,7 +149,7 @@ public:
 			
 			if (!sides.empty()) {
 				if(op->TB1) {
-#ifdef __DEBUG
+#ifdef _DEBUG
 					std::cout << "transposing TB1 for " << op->name << std::endl;
 #endif
 					T* b1 = sides[0].data;
@@ -175,8 +189,7 @@ public:
 								 input.front().cols, grix, input[0].row_ptr!=nullptr);
 		        break;
 		    default:
-				std::cerr << "error: unknown spoof operator" << std::endl;
-		        return result;
+				throw std::runtime_error("error: unknown spoof operator");
 		    }
 			
 			if (num_scalars > 0)
@@ -188,9 +201,7 @@ public:
 			if (op->TB1)
 				CHECK_CUDART(cudaFree(b1_transposed));
 			
-			if (op->agg_type == SpoofOperator::AggType::FULL_AGG) {
-//				std::cout << "retrieving scalar result" << std::endl;
-				
+			if (op->agg_type == SpoofOperator::AggType::FULL_AGG || op->row_type == SpoofOperator::RowType::FULL_AGG) {
 				Matrix<T> res_mat;
 				CHECK_CUDART(cudaMemcpy(&res_mat, d_out, sizeof(Matrix<T>), cudaMemcpyDeviceToHost));
 				CHECK_CUDART(cudaMemcpy(&result, res_mat.data, sizeof(T), cudaMemcpyDeviceToHost));
@@ -200,8 +211,7 @@ public:
 			}
 		} 
 		else {
-			std::cerr << "kernel " << name << " not found." << std::endl;
-			return result;
+			throw std::runtime_error("kernel " + name + " not found.");
 		}
 		return result;
 	}
@@ -222,7 +232,7 @@ public:
 		  reduction_type = "_col_";
 		  break;
 	  default:
-		  std::cerr << "unknown reduction type" << std::endl;
+		  throw std::runtime_error("unknown reduction type");
 		  return "";
 	  }
 	
@@ -240,8 +250,7 @@ public:
 		  reduction_kernel_name = "reduce" + reduction_type + "sum" + suffix;
 		  break;
 	  default:
-		  std::cerr << "unknown reduction op" << std::endl;
-		  return "";
+		  throw std::runtime_error("unknown reduction op");
 	  }
 	
 	  return reduction_kernel_name;
@@ -267,7 +276,7 @@ public:
 			dim3 block(NT, 1, 1);
 			uint32_t shared_mem_size = NT * sizeof(T);
 
-//#ifdef __DEBUG
+#ifdef _DEBUG
 				// ToDo: connect output to SystemDS logging facilities
 				std::cout << "launching spoof cellwise kernel " << op_name << " with "
 						  << NT * NB << " threads in " << NB << " blocks and "
@@ -275,7 +284,7 @@ public:
 						  << " bytes of shared memory for full aggregation of "
 						  << N << " elements"
 						  << std::endl;
-//#endif
+#endif
 			
 			CHECK_CUDA(op->program.kernel(op_name)
 							   .instantiate(type_of(value_type), std::max(1u, num_sides))
@@ -284,7 +293,6 @@ public:
 			
 			if(NB > 1) {
 				std::string reduction_kernel_name = determine_agg_kernel<T>(op);
-
 				CUfunction reduce_kernel = reduction_kernels.find(reduction_kernel_name)->second;
 				N = NB;
 				uint32_t iter = 1;
@@ -292,18 +300,18 @@ public:
 					void* args[3] = { &d_out, &d_out, &N};
 
 					NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
-//#ifdef __DEBUG
+#ifdef _DEBUG
 					std::cout << "agg iter " << iter++ << " launching spoof cellwise kernel " << op_name << " with "
                     << NT * NB << " threads in " << NB << " blocks and "
                     << shared_mem_size
                     << " bytes of shared memory for full aggregation of "
                     << N << " elements"
                     << std::endl;
-//#endif
+#endif
 					CHECK_CUDA(cuLaunchKernel(reduce_kernel,
 							NB, 1, 1,
 							NT, 1, 1,
-							shared_mem_size, 0, args, 0));
+							shared_mem_size, nullptr, args, nullptr));
 							N = NB;
 				}
 			}
@@ -315,7 +323,7 @@ public:
 			dim3 grid(NB, 1, 1);
 			dim3 block(NT, 1, 1);
 			uint32_t shared_mem_size = 0;
-#ifdef __DEBUG
+#ifdef _DEBUG
 			std::cout << " launching spoof cellwise kernel " << op_name << " with "
 					<< NT * NB << " threads in " << NB << " blocks for column aggregation of "
 					<< N << " elements" << std::endl;
@@ -333,12 +341,12 @@ public:
 			dim3 grid(NB, 1, 1);
 			dim3 block(NT, 1, 1);
 			uint32_t shared_mem_size = NT * sizeof(T);
-//#ifdef __DEBUG
+#ifdef _DEBUG
 			std::cout << " launching spoof cellwise kernel " << op_name << " with "
 					<< NT * NB << " threads in " << NB << " blocks and "
 					<< shared_mem_size << " bytes of shared memory for row aggregation of "
 					<< N << " elements" << std::endl;
-//#endif
+#endif
 			CHECK_CUDA(op->program.kernel(op_name)
 							   .instantiate(type_of(value_type), std::max(1u, num_sides))
 							   .configure(grid, block, shared_mem_size)
@@ -357,7 +365,7 @@ public:
 			dim3 block(NT, 1, 1);
 			uint32_t shared_mem_size = 0;
 
-#ifdef __DEBUG
+#ifdef _DEBUG
 			if(sparse) {
 				std::cout << "launching sparse spoof cellwise kernel " << op_name << " with " << NT * NB
 						  << " threads in " << NB << " blocks without aggregation for " << N << " elements"
@@ -369,10 +377,6 @@ public:
 						  << std::endl;
 			}
 #endif
-//			CHECK_CUDA(op->program.kernel(op_name)
-//					.instantiate(type_of(result))
-//					.configure(grid, block)
-//					.launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
 
 			CHECK_CUDA(op->program.kernel(op_name)
 							   .instantiate(type_of(value_type), std::max(1u, num_sides))
@@ -404,12 +408,12 @@ public:
 		if(sparse)
 			name = std::string(op->name + "_SPARSE");
 
-//#ifdef __DEBUG
-			// ToDo: connect output to SystemDS logging facilities
-			std::cout << "launching spoof rowwise kernel " << name << " with " << NT * in_rows << " threads in " << in_rows
-				<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by "
-				<< NT << " threads per row, adding " << temp_buf_size / 1024 << " kb of temp buffer in global memory." <<  std::endl;
-//#endif
+#ifdef _DEBUG
+		// ToDo: connect output to SystemDS logging facilities
+		std::cout << "launching spoof rowwise kernel " << name << " with " << NT * in_rows << " threads in " << in_rows
+			<< " blocks and " << shared_mem_size << " bytes of shared memory for " << in_cols << " cols processed by "
+			<< NT << " threads per row, adding " << temp_buf_size / 1024 << " kb of temp buffer in global memory." <<  std::endl;
+#endif
 		CHECK_CUDA(op->program.kernel(name)
 				.instantiate(type_of(value_type), std::max(1u, num_sides), op->num_temp_vectors, tmp_len)
 				.configure(grid, block, shared_mem_size)

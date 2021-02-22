@@ -238,8 +238,6 @@ public class SpoofCompiler {
 					isLoaded = NativeHelper.loadLibraryHelperFromResource(libName);
 
 				if(isLoaded) {
-
-
 					long ctx_ptr = initialize_cuda_context(0, local_tmp);
 					if(ctx_ptr != 0) {
 						native_contexts.put(GeneratorAPI.CUDA, ctx_ptr);
@@ -289,13 +287,7 @@ public class SpoofCompiler {
 		}
 	}
 
-	private static boolean compile_cuda(String name, String src) {
-		return compile_cuda_kernel(native_contexts.get(GeneratorAPI.CUDA), name, src);
-	}
-
 	private static native long initialize_cuda_context(int device_id, String resource_path);
-
-	private static native boolean compile_cuda_kernel(long ctx, String name, String src);
 
 	private static native void destroy_cuda_context(long ctx, int device_id);
 
@@ -514,18 +506,16 @@ public class SpoofCompiler {
 				Class<?> cla = planCache.getPlan(tmp.getValue());
 				
 				if( cla == null ) {
-					String src = "";
 					String src_cuda = "";
-					boolean native_compiled_successfully = false;
-					src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
+					String src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
 					cla = CodegenUtils.compileClass("codegen."+ tmp.getValue().getClassname(), src);
 
 					if(API == GeneratorAPI.CUDA) {
 						if(tmp.getValue().isSupported(API)) {
 							src_cuda = tmp.getValue().codegen(false, GeneratorAPI.CUDA);
-							native_compiled_successfully = compile_cuda(tmp.getValue().getVarname(), src_cuda);
-							if(native_compiled_successfully)
-								CodegenUtils.putNativeOpData(new SpoofCUDA(src_cuda, tmp.getValue(), cla));
+							int op_id = tmp.getValue().compile(API, src_cuda);
+							if(op_id >= 0)
+								CodegenUtils.putNativeOpData(new SpoofCUDA(src_cuda, tmp.getValue(), op_id));
 							else {
 								LOG.warn("CUDA compilation failed, falling back to JAVA");
 								tmp.getValue().setGeneratorAPI(GeneratorAPI.JAVA);

@@ -20,29 +20,13 @@
 package org.apache.sysds.hops.codegen.cplan.cuda;
 
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
-import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
-import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
-import org.apache.sysds.runtime.codegen.SpoofCellwise;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
-public class Binary implements CodeTemplate {
+public class Binary extends CodeTemplate {
+	
 	@Override
-	public String getTemplate() {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(SpoofCellwise.CellType ct) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
 	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector,
 							  boolean scalarInput) {
 
@@ -263,11 +247,11 @@ public class Binary implements CodeTemplate {
 
 				//scalar-scalar operations
 				case MULT:
-					return "	T %TMP% = %IN1% * %IN2%;\n";
+					return "		T %TMP% = %IN1% * %IN2%;\n";
 				case DIV:
 					return "	T %TMP% = %IN1% / %IN2%;\n";
 				case PLUS:
-					return "	T %TMP% = %IN1% + %IN2%;\n";
+					return "		T %TMP% = %IN1% + %IN2%;\n";
 				case MINUS:
 					return "	T %TMP% = %IN1% - %IN2%;\n";
 				case MODULUS:
@@ -307,16 +291,11 @@ public class Binary implements CodeTemplate {
 				case BITWAND:
 					return "	T %TMP% = bwAnd(%IN1%, %IN2%);\n";
 				case SEQ_RIX:
-					return "	T %TMP% = %IN1% + grix * %IN2%;\n"; //0-based global rix
+					return "		T %TMP% = %IN1% + grix * %IN2%;\n"; //0-based global rix
 
 				default:
 					throw new RuntimeException("Invalid binary type: " + this.toString());
 			}
 		}
-	}
-
-	@Override
-	public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
 	}
 }

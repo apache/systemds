@@ -83,7 +83,7 @@ import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
-import org.apache.sysds.runtime.codegen.SpoofCUDA;
+import org.apache.sysds.runtime.codegen.SpoofCUDAOperator;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -242,6 +242,8 @@ public class SpoofCompiler {
 					if(ctx_ptr != 0) {
 						native_contexts.put(GeneratorAPI.CUDA, ctx_ptr);
 						API = GeneratorAPI.CUDA;
+						org.apache.sysds.runtime.instructions.gpu.SpoofCUDAInstruction.resetFloatingPointPrecision();
+						
 						LOG.info("Successfully loaded spoof cuda library");
 					}
 					else {
@@ -508,14 +510,16 @@ public class SpoofCompiler {
 				if( cla == null ) {
 					String src_cuda = "";
 					String src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
-					cla = CodegenUtils.compileClass("codegen."+ tmp.getValue().getClassname(), src);
+					cla = CodegenUtils.compileClass("codegen." + tmp.getValue().getClassname(), src);
 
 					if(API == GeneratorAPI.CUDA) {
 						if(tmp.getValue().isSupported(API)) {
 							src_cuda = tmp.getValue().codegen(false, GeneratorAPI.CUDA);
 							int op_id = tmp.getValue().compile(API, src_cuda);
-							if(op_id >= 0)
-								CodegenUtils.putNativeOpData(new SpoofCUDA(src_cuda, tmp.getValue(), op_id));
+							if(op_id >= 0) {
+								CodegenUtils.putCUDAOpID("codegen." + tmp.getValue().getClassname(), op_id);
+								CodegenUtils.putCUDASource(op_id, src_cuda);
+							}
 							else {
 								LOG.warn("CUDA compilation failed, falling back to JAVA");
 								tmp.getValue().setGeneratorAPI(GeneratorAPI.JAVA);
@@ -549,23 +553,28 @@ public class SpoofCompiler {
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )
 						planCache.putPlan(tmp.getValue(), cla);
 				}
-				else if( DMLScript.STATISTICS ) {
-					Statistics.incrementCodegenOpCacheHits();
+				else {
+					if( DMLScript.STATISTICS ) 
+						Statistics.incrementCodegenOpCacheHits();
+					if(CodegenUtils.getCUDAopID(cla.getName()) != null) {
+						tmp.getValue().setGeneratorAPI(GeneratorAPI.CUDA);
+						tmp.getValue().setVarName(cla.getName().split("\\.")[1]);
+					}
 				}
 				
 				//make class available and maintain hits
 				if(cla != null) {
-					if(CodegenUtils.getNativeOpData(cla.getName()) != null) {
-						if(tmp.getValue().getVarname() == null) {
-							tmp.getValue().setVarName(cla.getName());
-							if(tmp.getValue().getGeneratorAPI() != CodegenUtils.getNativeOpData(cla.getName())
-								.getCNodeTemplate().getGeneratorAPI())
-							{
-								tmp.getValue().setGeneratorAPI(CodegenUtils.getNativeOpData(cla.getName())
-									.getCNodeTemplate().getGeneratorAPI());
-							}
-						}
-					}
+//					if(CodegenUtils.getNativeOpData(cla.getName()) != null) {
+//						if(tmp.getValue().getVarname() == null) {
+//							tmp.getValue().setVarName(cla.getName());
+//							if(tmp.getValue().getGeneratorAPI() != CodegenUtils.getNativeOpData(cla.getName())
+//								.getCNodeTemplate().getGeneratorAPI())
+//							{
+//								tmp.getValue().setGeneratorAPI(CodegenUtils.getNativeOpData(cla.getName())
+//									.getCNodeTemplate().getGeneratorAPI());
+//							}
+//						}
+//					}
 					clas.put(cplan.getKey(), new Pair<Hop[], Class<?>>(tmp.getKey(), cla));
 				}
 				if( DMLScript.STATISTICS )

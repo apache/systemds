@@ -1027,5 +1027,5 @@ public class GPUObject {
 	}
 	
 	public static long getPointerAddress(Pointer p) {
-		return getPointerAddressInternal(p);
+		return (p == null) ?  0 : getPointerAddressInternal(p);
 	}}

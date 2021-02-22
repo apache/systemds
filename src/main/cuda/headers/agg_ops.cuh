@@ -204,6 +204,14 @@ struct MaxOp<float> {
 	__device__ __forceinline__ float operator()(float a, float b) const {
 		return fmaxf(a, b);
 	}
+	
+	__device__  __forceinline__ static float exec(float const & a, float const & b) {
+		return fmaxf(a, b);
+	}
+	
+	__device__  __forceinline__ static float init() {
+		return MaxNeutralElement<float>::get();
+	}
 };
 
 /**

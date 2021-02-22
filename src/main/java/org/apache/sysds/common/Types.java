@@ -176,12 +176,12 @@ public class Types
 	
 	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum AggOp {
-		SUM(1), SUM_SQ(2), MIN(3), MAX(4),
-		PROD(5), SUM_PROD(6),
-		TRACE(7), MEAN(8), VAR(9),
-		MAXINDEX(10), MININDEX(11),
-		COUNT_DISTINCT(12),
-		COUNT_DISTINCT_APPROX(13);
+		SUM(0), SUM_SQ(1), MIN(2), MAX(3),
+		PROD(4), SUM_PROD(5),
+		TRACE(6), MEAN(7), VAR(8),
+		MAXINDEX(9), MININDEX(10),
+		COUNT_DISTINCT(11),
+		COUNT_DISTINCT_APPROX(12);
 		
 		@Override
 		public String toString() {

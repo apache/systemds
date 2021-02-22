@@ -22,17 +22,23 @@
 #define SYSTEMDS_MATRIX_H
 
 using uint32_t = unsigned int;
+using int32_t = int;
 
 template <typename T>
 struct Matrix {
-	T* data;
-	uint32_t* row_ptr;
-	uint32_t* col_idx;
-
+	int32_t nnz;
 	uint32_t rows;
 	uint32_t cols;
-	uint32_t nnz;
+	
+	uint32_t* row_ptr;
+	uint32_t* col_idx;
+	T* data;
+	
 	typedef T value_type;
+	
+	explicit Matrix(size_t* jvals) : nnz(jvals[0]), rows(jvals[1]), cols(jvals[2]),
+			row_ptr(reinterpret_cast<uint32_t*>(jvals[3])),
+			col_idx(reinterpret_cast<uint32_t*>((jvals[4]))), data(reinterpret_cast<T*>(jvals[5])) {}
 };
 
 //#ifdef __CUDACC_RTC__
@@ -42,7 +48,7 @@ template<typename T>
 uint32_t bin_search(T* values, uint32_t lower, uint32_t upper, T val) {
 	upper -= 1;
 	while(lower <= (upper-1)) {
-		uint32_t idx = lower + upper >> 1;
+		uint32_t idx = (lower + upper) >> 1;
 		uint32_t vi = values[idx];
 		if (vi < val)
 			lower = idx + 1;
@@ -139,6 +145,10 @@ public:
 	
 	__device__ uint32_t* indexes() {
 		return _mat->row_ptr;
+	}
+	
+	__device__ bool hasData() {
+		return _mat->data != nullptr;
 	}
 private:
 	__device__ uint32_t len_dense() {

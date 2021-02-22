@@ -46,7 +46,7 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
 	std::stringstream s1, s2;
 	s1 << "-I" << resource_path << "/cuda/headers";
 	s2 << "-I" << resource_path << "/cuda/spoof";
-	auto *ctx = new SpoofCUDAContext(resource_path, {s1.str(), s2.str(), cuda_include_path});
+	auto ctx = new SpoofCUDAContext(resource_path,{s1.str(), s2.str(), cuda_include_path});
 	// cuda device is handled by jCuda atm
 	//cudaSetDevice(device_id);
 	//cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
@@ -56,79 +56,78 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
 	
 	CUfunction func;
 	
-	// ToDo: implement a more scalable solution for these imports
-	
 	// SUM
+	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_f"));
+	ctx->reduction_kernels_f.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::SUM), func));
 	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_d"));
-	ctx->reduction_kernels.insert(std::make_pair("reduce_sum_d", func));
-	//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_f"));
-	//  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_f", func));
-	//
+	ctx->reduction_kernels_d.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::SUM), func));
+
 	//  // SUM_SQ
 	//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_d"));
 	//  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_d", func));
 	//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_f"));
 	//  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_f", func));
-	//
-	//  // MIN
-	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_d"));
-	ctx->reduction_kernels.insert(std::make_pair("reduce_min_d", func));
-	//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_f"));
-	//  ctx->reduction_kernels.insert(std::make_pair("reduce_min_f", func));
-	//
-	//  // MAX
-	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_d"));
-	ctx->reduction_kernels.insert(std::make_pair("reduce_max_d", func));
-	//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_f"));
-	//  ctx->reduction_kernels.insert(std::make_pair("reduce_max_f", func));
 
+	// MIN
+	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_f"));
+	ctx->reduction_kernels_f.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::MIN), func));
+	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_d"));
+	ctx->reduction_kernels_d.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::MIN), func));
+	
+	// MAX
+	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_f"));
+	ctx->reduction_kernels_f.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::MAX), func));
+	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_d"));
+	ctx->reduction_kernels_d.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::MAX), func));
+	
 	return reinterpret_cast<size_t>(ctx);
 }
 
 void SpoofCUDAContext::destroy_cuda(SpoofCUDAContext *ctx, uint32_t device_id) {
-  delete ctx;
-  ctx = nullptr;
-  // cuda device is handled by jCuda atm
-  //cudaDeviceReset();
+	delete ctx;
+	// cuda device is handled by jCuda atm
+	//cudaDeviceReset();
 }
 
-int SpoofCUDAContext::compile(const std::string &src, const std::string &name, SpoofOperator::OpType op_type,
-		SpoofOperator::AggType agg_type, SpoofOperator::AggOp agg_op, SpoofOperator::RowType row_type, bool sparse_safe,
-		int32_t const_dim2, uint32_t num_vectors, bool TB1) {
+int SpoofCUDAContext::compile(std::unique_ptr<SpoofOperator> op, const std::string &src) {
 #ifdef _DEBUG
 //	std::cout << "---=== START source listing of spoof cuda kernel [ " << name << " ]: " << std::endl;
 //    uint32_t line_num = 0;
 //	std::istringstream src_stream(src);
 //    for(std::string line; std::getline(src_stream, line); line_num++)
 //		std::cout << line_num << ": " << line << std::endl;
-//
 //	std::cout << "---=== END source listing of spoof cuda kernel [ " << name << " ]." << std::endl;
 	std::cout << "cwd: " << std::filesystem::current_path() << std::endl;
 	std::cout << "include_paths: ";
 	for_each (include_paths.begin(), include_paths.end(), [](const std::string& line){ std::cout << line << '\n';});
 	std::cout << std::endl;
 #endif
-// uncomment all related lines for temporary timing output:
-//	auto start = clk::now();
 
+// uncomment all related lines for temporary timing output:
 //	auto compile_start = clk::now();
-	jitify::Program program = kernel_cache.program(src, 0, include_paths);
+	op->program = std::make_unique<jitify::Program>(kernel_cache.program(src, 0, include_paths));
 //	auto compile_end = clk::now();
 //	auto compile_duration = std::chrono::duration_cast<sec>(compile_end - compile_start).count();
-	ops.insert(std::make_pair(name, SpoofOperator({std::move(program),  op_type, agg_type, agg_op, row_type, name,
-			const_dim2, num_vectors, TB1, sparse_safe})));
 
-//	auto end = clk::now();
-
-//	auto handling_duration = std::chrono::duration_cast<sec>(end - start).count() - compile_duration;
-
+	compiled_ops.push_back(std::move(op));
 //	compile_total += compile_duration;
-//	handling_total += handling_duration;
+//	std::cout << name << " compiled in "
+//			<< compile_duration << " seconds. Total compile time (abs/rel): "
+//			<< compile_total << "/" << compiled_ops.size() << std::endl;
+	return compiled_ops.size() - 1;
+}
 
-//	std::cout << name << " times [s] handling/compile/totals(h/c)/count: "
-//			<< handling_duration << "/"
-//			<< compile_duration << "/"
-//			<< handling_total << "/"
-//			<< compile_total << "/" << compile_count + 1 << std::endl;
-	return compile_count++;
+template<typename T>
+CUfunction SpoofCUDAContext::getReductionKernel(const std::pair<SpoofOperator::AggType, SpoofOperator::AggOp> &key) {
+	return nullptr;
+}
+template<>
+CUfunction SpoofCUDAContext::getReductionKernel<float>(const std::pair<SpoofOperator::AggType,
+		SpoofOperator::AggOp> &key) {
+	return reduction_kernels_f[key];
+}
+template<>
+CUfunction SpoofCUDAContext::getReductionKernel<double>(const std::pair<SpoofOperator::AggType,
+		SpoofOperator::AggOp> &key) {
+	return reduction_kernels_d[key];
 }

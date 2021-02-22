@@ -45,4 +45,13 @@
     }                                                                     \
   } while (0)
 
+#define CHECK_CUBLAS(call)                                                \
+  do {                                                                    \
+    cublasStatus_t status = call;                                            \
+    if (status != CUBLAS_STATUS_SUCCESS) {                                          \
+      std::cout << "(CUBLAS) returned " << status;    \
+      std::cout << " (" << __FILE__ << ":" << __LINE__ << ":" << __func__ \
+                << "())" << std::endl;                                    \
+    }                                                                     \
+  } while (0)
 #endif // HOST_UTILS_H

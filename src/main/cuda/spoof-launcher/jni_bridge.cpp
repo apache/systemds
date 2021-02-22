@@ -22,17 +22,15 @@
 #include "Matrix.h"
 
 // JNI Methods to get/release arrays
-#define GET_ARRAY(env, input)                                                  \
-  ((void *)env->GetPrimitiveArrayCritical(input, nullptr))
+#define GET_ARRAY(env, input)((void *)env->GetPrimitiveArrayCritical(input, nullptr))
 
-#define RELEASE_ARRAY(env, java, cpp)                                                  \
-  (env->ReleasePrimitiveArrayCritical(java, cpp, 0))
+#define RELEASE_ARRAY(env, java, cpp)(env->ReleasePrimitiveArrayCritical(java, cpp, 0))
 
 JNIEXPORT jlong JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_initialize_1cuda_1context(
     JNIEnv *env, jobject jobj, jint device_id, jstring resource_path) {
 
-  const char *cstr_rp = env->GetStringUTFChars(resource_path, NULL);
+  const char *cstr_rp = env->GetStringUTFChars(resource_path, nullptr);
   size_t ctx = SpoofCUDAContext::initialize_cuda(device_id, cstr_rp);
   env->ReleaseStringUTFChars(resource_path, cstr_rp);
   return ctx;
@@ -40,17 +38,16 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_initialize_1cuda_1context(
 
 JNIEXPORT void JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_destroy_1cuda_1context(
-    JNIEnv *env, jobject jobj, jlong ctx, jint device_id) {
-  SpoofCUDAContext::destroy_cuda(reinterpret_cast<SpoofCUDAContext *>(ctx),
-                                 device_id);
+		JNIEnv *env, jobject jobj, jlong ctx, jint device_id) {
+  SpoofCUDAContext::destroy_cuda(reinterpret_cast<SpoofCUDAContext *>(ctx), device_id);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jstring src) {
-  SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
-  const char *cstr_name = env->GetStringUTFChars(name, NULL);
-  const char *cstr_src = env->GetStringUTFChars(src, NULL);
+  auto *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
+  const char *cstr_name = env->GetStringUTFChars(name, nullptr);
+  const char *cstr_src = env->GetStringUTFChars(src, nullptr);
   bool result = ctx_->compile_cuda(cstr_src, cstr_name);
   env->ReleaseStringUTFChars(src, cstr_src);
   env->ReleaseStringUTFChars(name, cstr_name);
@@ -61,15 +58,15 @@ JNIEXPORT jdouble JNICALL
 Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
     JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs, jint input_offset, jlongArray side_ptrs,
     		jlongArray out_ptrs, jdoubleArray scalars_, jlong grix, jobject inputs_, jobject out_obj) {
-	
-	SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
-	const char *cstr_name = env->GetStringUTFChars(name, NULL);
-	
-	size_t* inputs = reinterpret_cast<size_t*>(GET_ARRAY(env, in_ptrs));
-	size_t* sides = reinterpret_cast<size_t*>(GET_ARRAY(env, side_ptrs));
-	size_t *output = reinterpret_cast<size_t*>(GET_ARRAY(env, out_ptrs));
-	double *scalars = reinterpret_cast<double*>(GET_ARRAY(env, scalars_));
-	
+
+	auto *ctx_ = reinterpret_cast<SpoofCUDAContext*>(ctx);
+	const char *cstr_name = env->GetStringUTFChars(name, nullptr);
+
+	auto* inputs = reinterpret_cast<size_t*>(GET_ARRAY(env, in_ptrs));
+	auto* sides = reinterpret_cast<size_t*>(GET_ARRAY(env, side_ptrs));
+	auto *output = reinterpret_cast<size_t*>(GET_ARRAY(env, out_ptrs));
+	auto *scalars = reinterpret_cast<double*>(GET_ARRAY(env, scalars_));
+
 	//ToDo: call once while init
 	jclass CacheableData = env->FindClass("org/apache/sysds/runtime/controlprogram/caching/CacheableData");
 	if(!CacheableData) {
@@ -94,109 +91,56 @@ Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
 	jmethodID ArrayList_size = env->GetMethodID(ArrayList, "size", "()I");
 	jmethodID ArrayList_get = env->GetMethodID(ArrayList, "get", "(I)Ljava/lang/Object;");
 
-	std::vector<Matrix<double>> in;
-	jint num_inputs = env->CallIntMethod(inputs_, ArrayList_size);
-#ifdef __DEBUG
-	std::cout << "num inputs: " << num_inputs << " offsets: " << input_offset << std::endl;
+		std::vector<Matrix<double>> in;
+		jint num_inputs = env->CallIntMethod(inputs_, ArrayList_size);
+#ifdef _DEBUG
+		std::cout << "num inputs: " << num_inputs << " offsets: " << input_offset << std::endl;
 #endif
 
 	for(auto ptr_idx = 0, input_idx = 0; input_idx < input_offset; ptr_idx+=4, input_idx++) {
 		jobject input_obj = env->CallObjectMethod(inputs_, ArrayList_get, input_idx);
-		uint32_t m = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_rows));
-		uint32_t n = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_cols));
+		auto m = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_rows));
+		auto n = static_cast<uint32_t>(env->CallIntMethod(input_obj, mat_obj_num_cols));
 
-		in.push_back(Matrix<double>{reinterpret_cast<double*>(inputs[ptr_idx+3]), reinterpret_cast<uint32_t*>(inputs[ptr_idx+1]),
-										   reinterpret_cast<uint32_t*>(inputs[ptr_idx+2]), m, n,
-										   static_cast<uint32_t>(inputs[ptr_idx])});
-#ifdef __DEBUG
-		std::cout << "input #" << input_idx << " m=" << m << " n=" << n << std::endl;
+		in.push_back(Matrix<double>{reinterpret_cast<double *>(inputs[ptr_idx + 3]),
+						  			reinterpret_cast<uint32_t *>(inputs[ptr_idx + 1]),
+									reinterpret_cast<uint32_t *>(inputs[ptr_idx + 2]),
+									m, n, static_cast<uint32_t>(inputs[ptr_idx])});
+#ifdef _DEBUG
+			std::cout << "input #" << input_idx << " m=" << m << " n=" << n << std::endl;
 #endif
 	}
 
 	std::vector<Matrix<double>> side_inputs;
 	for(uint32_t ptr_idx = 0, input_idx = input_offset; input_idx < num_inputs; ptr_idx+=4, input_idx++) {
 		jobject side_input_obj = env->CallObjectMethod(inputs_, ArrayList_get, input_idx);
-		uint32_t m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
-		uint32_t n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));
+		auto m = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_rows));
+		auto n = static_cast<uint32_t>(env->CallIntMethod(side_input_obj, mat_obj_num_cols));
 
-//		std::cout << "sides["<<i << "]=" <<  sides[i] << std::endl;
-//		std::cout << "sides["<<i+1 << "]=" <<  sides[i+1] << std::endl;
-//		std::cout << "sides["<<i+2 << "]=" <<  sides[i+2] << std::endl;
-//		std::cout << "sides["<<i+3 << "]=" <<  sides[i+3] << std::endl;
-
-		side_inputs.push_back(Matrix<double>{reinterpret_cast<double*>(sides[ptr_idx+3]), reinterpret_cast<uint32_t*>(sides[ptr_idx+1]),
-									reinterpret_cast<uint32_t*>(sides[ptr_idx+2]), m, n,
-									static_cast<uint32_t>(sides[ptr_idx])});
-		
-		uint32_t* row_ptr = reinterpret_cast<uint32_t*>(sides[ptr_idx+1]);
-		uint32_t* col_idxs = reinterpret_cast<uint32_t*>(sides[ptr_idx+2]);
-		double* data_ptr = reinterpret_cast<double*>(sides[ptr_idx+3]);
-#ifdef __DEBUG
-		if(row_ptr != nullptr) {
-			for (auto i = 0; i < 2/*m*/; ++i) {
-				uint32_t alen = row_ptr[i+1] - row_ptr[i];
-				std::cout << "row_start=" << row_ptr[i] << " row_end=" << row_ptr[i+1] << " alen[" << i << "]=" << alen << std::endl << " col_idxs:\n";
-				for (auto j = 0; j < alen; ++j) {
-					std::cout << " " << *col_idxs;
-				}
-				std::cout << "\ndata:" << std::endl;
-				for (auto j = 0; j < alen; ++j) {
-					std::cout << " " << *data_ptr;
-				}
-				std::cout << std::endl;
-			}
-		}
-		std::cout << "side input #" << input_idx << " m=" << m << " n=" << n << std::endl;
-#endif
+		side_inputs.push_back(Matrix<double>{reinterpret_cast<double *>(sides[ptr_idx + 3]),
+											 reinterpret_cast<uint32_t *>(sides[ptr_idx + 1]),
+											 reinterpret_cast<uint32_t *>(sides[ptr_idx + 2]),
+											 m, n, static_cast<uint32_t>(sides[ptr_idx])});
 	}
 
 	std::unique_ptr<Matrix<double>> out;
 	if(out_obj != nullptr) {
-//		std::cout << "out not null" << std::endl;
 		out = std::make_unique<Matrix<double>>(Matrix<double>{reinterpret_cast<double*>(output[3]),
-														reinterpret_cast<uint32_t*>(output[1]),
-															reinterpret_cast<uint32_t*>(output[2]),
-															  static_cast<uint32_t>(env->CallIntMethod(out_obj, mat_obj_num_rows)),
-															  static_cast<uint32_t>(env->CallIntMethod(out_obj, mat_obj_num_cols)),
-															  static_cast<uint32_t>(output[0])});
+												reinterpret_cast<uint32_t*>(output[1]),
+												reinterpret_cast<uint32_t*>(output[2]),
+												static_cast<uint32_t>(env->CallIntMethod(out_obj, mat_obj_num_rows)),
+												static_cast<uint32_t>(env->CallIntMethod(out_obj, mat_obj_num_cols)),
+											 	static_cast<uint32_t>(output[0])});
 	}
 
-	double result = ctx_->execute_kernel(cstr_name, in, side_inputs, out.get(), scalars,
-									  env->GetArrayLength(scalars_), grix);
+	double result = ctx_->execute_kernel(cstr_name, in, side_inputs, out.get(), scalars, env->GetArrayLength(scalars_),
+											grix);
 
 	RELEASE_ARRAY(env, in_ptrs, inputs);
 	RELEASE_ARRAY(env, side_ptrs, sides);
 	RELEASE_ARRAY(env, out_ptrs, output);
 	RELEASE_ARRAY(env, scalars_, scalars);
 
-	// FIXME: that release causes an error
-	//std::cout << "releasing " << name_ << std::endl;
 	env->ReleaseStringUTFChars(name, cstr_name);
 	return result;
 }
-
-//JNIEXPORT jfloat JNICALL
-//Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
-//    JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
-//    jlongArray side_ptrs, jlong out_ptr, jfloatArray scalars_, jlong m, jlong n, jlong out_len, jlong grix) {
-//
-//  SpoofCUDAContext *ctx_ = reinterpret_cast<SpoofCUDAContext *>(ctx);
-//
-//  const char *cstr_name = env->GetStringUTFChars(name, NULL);
-//
-//  float **inputs = reinterpret_cast<float**>(GET_ARRAY(env, in_ptrs));
-//  float **sides = reinterpret_cast<float **>(GET_ARRAY(env, side_ptrs));
-//  float *scalars = reinterpret_cast<float *>(GET_ARRAY(env, scalars_));
-//
-//  float result = ctx_->execute_kernel(
-//      cstr_name, inputs, env->GetArrayLength(in_ptrs), sides, env->GetArrayLength(side_ptrs),
-//      reinterpret_cast<float *>(out_ptr), scalars, env->GetArrayLength(scalars_), m, n, out_len, grix);
-//
-//  RELEASE_ARRAY(env, in_ptrs, inputs);
-//  RELEASE_ARRAY(env, side_ptrs, sides);
-//  RELEASE_ARRAY(env, scalars_, scalars);
-//
-//  // FIXME: that release causes an error
-//  env->ReleaseStringUTFChars(name, cstr_name);
-//  return result;
-//}

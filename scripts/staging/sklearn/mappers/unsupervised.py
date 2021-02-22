@@ -15,7 +15,7 @@ class KmeansMapper(Mapper):
             self.params['n_init'],
             self.params['max_iter'],
             self.params['tol'],
-            self.params.get('verbose', False),
+            'TRUE' if self.params.get('verbose', False) else 'FALSE',
             50,  # avg_sample_size_per_centroid unkown in sklearn
             -1 if self.params['random_state'] is None \
             else self.params['random_state']

@@ -1,5 +1,5 @@
-source("scripts/builtin/scale") as ns_scale
-source("scripts/builtin/dbscan") as ns_dbscan
+source("scripts/builtin/scale.dml") as ns_scale
+source("scripts/builtin/dbscan.dml") as ns_dbscan
 
 X = read($X)
 X = ns_scale::m_scale(X, True, True)

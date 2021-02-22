@@ -1,5 +1,5 @@
-source("scripts/builtin/normalize") as ns_normalize
-source("scripts/builtin/dbscan") as ns_dbscan
+source("scripts/builtin/normalize.dml") as ns_normalize
+source("scripts/builtin/dbscan.dml") as ns_dbscan
 
 X = read($X)
 X = ns_normalize::m_normalize(X)

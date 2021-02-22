@@ -29,7 +29,7 @@ class Mapper:
             self.map_params()
 
     def get_source(self):
-        return 'source("{}/{}") as ns_{}'.format(scripts_home(),
+        return 'source("{}/{}.dml") as ns_{}'.format(scripts_home(),
                                                  self.name,
                                                  self.name)
 
@@ -37,8 +37,7 @@ class Mapper:
     def get_call(self):
         # TODO: handle intermediate step results
         input_ = 'X, y' if self.is_supervised else 'X'
-        output_ = ', '.join(
-            self.mapped_output) if not self.is_intermediate else 'X'
+        output_ = f"[{', '.join(self.mapped_output)}]" if not self.is_intermediate else 'X'
         param_ = ', '.join(map(str, self.mapped_params))
         call = "{} = ns_{}::m_{}({}, {})".format(
             output_, self.name, self.name, input_, param_)

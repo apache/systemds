@@ -1,5 +1,5 @@
-source("scripts/builtin/pca") as ns_pca
-source("scripts/builtin/kmeans") as ns_kmeans
+source("scripts/builtin/pca.dml") as ns_pca
+source("scripts/builtin/kmeans.dml") as ns_kmeans
 
 X = read($X)
 X = ns_pca::m_pca(X, 2, True, True)

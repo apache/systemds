@@ -10,11 +10,11 @@ class LinearSVMMapper(Mapper):
 
     def map_params(self):
         self.mapped_params = [
-            self.params.get('fit_intercept', False),
+            'TRUE' if self.params.get('fit_intercept', False) else 'FALSE',
             self.params.get('tol', 0.001),
             self.params.get('C', 1.0),
             self.params.get('max_iter', 100),
-            self.params.get('verbose', False),
+            'TRUE' if self.params.get('verbose', False) else 'FALSE',
             -1  # column_id is unkown in sklearn
         ]
 

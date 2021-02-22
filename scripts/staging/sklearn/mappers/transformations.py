@@ -11,8 +11,8 @@ class StandardScalerMapper(Mapper):
 
     def map_params(self):
         self.mapped_params = [
-            self.params['with_mean'],
-            self.params['with_std']
+            'TRUE' if self.params.get('with_mean', True) else 'FALSE',
+            'TRUE' if self.params.get('with_std', True) else 'FALSE'
         ]
 
 
@@ -76,6 +76,6 @@ class PCAMapper(Mapper):
     def map_params(self):
         self.mapped_params = [
             self.params.get('n_components'),
-            True,  # non existant in SKlearn
-            True  # non existant in SKlearn
+            'TRUE',  # non existant in SKlearn
+            'TRUE'  # non existant in SKlearn
         ]

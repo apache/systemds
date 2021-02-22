@@ -525,7 +525,7 @@ public class SpoofCompiler {
 							src_cuda = tmp.getValue().codegen(false, GeneratorAPI.CUDA);
 							native_compiled_successfully = compile_cuda(tmp.getValue().getVarname(), src_cuda);
 							if(native_compiled_successfully)
-								CodegenUtils.putNativeOpData(new SpoofCUDA(tmp.getValue()));
+								CodegenUtils.putNativeOpData(new SpoofCUDA(src_cuda, tmp.getValue(), cla));
 							else {
 								LOG.warn("CUDA compilation failed, falling back to JAVA");
 								tmp.getValue().setGeneratorAPI(GeneratorAPI.JAVA);

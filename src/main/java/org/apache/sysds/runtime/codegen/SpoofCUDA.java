@@ -37,15 +37,15 @@ public class SpoofCUDA extends SpoofOperator {
 	private static final long serialVersionUID = -2161276866245388359L;
 	
 	private final CNodeTpl cnt;
-	private final Class<?> java_op;
 	public final String name;
 	public final String src;
+	public final int id;
 
-	public SpoofCUDA(String source, CNodeTpl cnode, Class<?> java_op) {
+	public SpoofCUDA(String source, CNodeTpl cnode, int _id) {
 		name = "codegen." + cnode.getVarname();
 		cnt = cnode;
 		src = source;
-		this.java_op = java_op;
+		id = _id;
 	}
 
 	public String getName() {

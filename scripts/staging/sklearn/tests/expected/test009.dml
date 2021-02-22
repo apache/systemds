@@ -1,5 +1,5 @@
-source("scripts/builtin/imputeByMedian") as ns_imputeByMedian
-source("scripts/builtin/dbscan") as ns_dbscan
+source("scripts/builtin/imputeByMedian.dml") as ns_imputeByMedian
+source("scripts/builtin/dbscan.dml") as ns_dbscan
 
 X = read($X)
 X = ns_imputeByMedian::m_imputeByMedian(X)

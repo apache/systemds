@@ -81,7 +81,7 @@ class SklearnToDMLMapper:
         func = self.functions[self.steps[-1][0]]()
         if func is None:
             raise RuntimeError(f'{self.steps[-1][0]} is not supported.')
-        return f'print({", ".join(func.mapped_output)})'
+        return '\n'.join([f'write({output}, "{output}.csv")' for output in func.mapped_output])
 
 
 if __name__ == '__main__':

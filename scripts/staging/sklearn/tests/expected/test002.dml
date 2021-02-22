@@ -1,5 +1,5 @@
-source("scripts/builtin/scale") as ns_normalize
-source("scripts/builtin/kmeans") as ns_kmeans
+source("scripts/builtin/scale.dml") as ns_normalize
+source("scripts/builtin/kmeans.dml") as ns_kmeans
 
 X = read($X)
 X = ns_normalize::m_normalize(X)

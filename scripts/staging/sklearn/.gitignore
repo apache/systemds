@@ -3,3 +3,5 @@
 *.csv
 
 !/tests/expected/*.dml
+!X.csv
+!X.csv.*

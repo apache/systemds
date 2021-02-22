@@ -32,7 +32,7 @@ def get_functions():
 
 
 class SklearnToDMLMapper:
-    def __init__(self, pipeline, standalone_script=True):
+    def __init__(self, pipeline, standalone_script=True): # TODO: standaline_script???
         self.steps = pipeline.steps
         self.functions = get_functions()
         self.dml_script = None
@@ -56,8 +56,7 @@ class SklearnToDMLMapper:
         self.dml_script += '\n'.join(calls)
         self.dml_script += '\n' + self.get_output()
 
-        print('Mapped DML script:')
-        print(self.dml_script)
+        return self.dml_script
 
     def save(self, path):
         if self.dml_script is None:  # TODO handle better? Warning?

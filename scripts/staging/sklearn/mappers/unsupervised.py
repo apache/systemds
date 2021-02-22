@@ -24,6 +24,7 @@ class KmeansMapper(Mapper):
 
 class DBSCANMapper(Mapper):
     name = 'dbscan'
+    sklearn_name = 'dbscan'
     mapped_output = [
         'clusterMembers'
     ]

@@ -3,5 +3,5 @@ source("scripts/builtin/kmeans") as ns_kmeans
 
 X = read($X)
 X = ns_scale::m_scale(X, True, True)
-C, Y = ns_kmeans::m_kmeans(X, 3, 10, 300, 0.0001, 0, 50, 1)
+C, Y = ns_kmeans::m_kmeans(X, 8, 10, 300, 0.0001, 0, 50, -1)
 print(C, Y)

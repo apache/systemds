@@ -3,6 +3,7 @@ import sys
 import os
 import subprocess
 import difflib
+import logging
 
 def get_systemds_root():
     try:
@@ -12,20 +13,6 @@ def get_systemds_root():
         
 def get_sklearn_root():
     return f'{get_systemds_root()}/scripts/staging/sklearn'
-
-# Taken from http://thesmithfam.org/blog/2012/10/25/temporarily-suppress-console-output-in-python/
-# Used to suppress intermediate ouput in run_tests.py (verbosity)
-from contextlib import contextmanager
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:  
-            yield
-        finally:
-            sys.stdout = old_stdout
-
 
 def invoke_systemds(path):
     root = get_systemds_root()
@@ -38,20 +25,21 @@ def invoke_systemds(path):
                              timeout=10000)
 
     except subprocess.CalledProcessError as systemds_error:
-        print("Failed to run systemds!")
-        print("Error code: " + str(systemds_error.returncode))
-        print("Stdout:")
-        print(systemds_error.output.decode("utf-8"))
-        print("Stderr:")
-        print(systemds_error.stderr.decode("utf-8"))
+        logging.error("Failed to run systemds!")
+        logging.error("Error code: " + str(systemds_error.returncode))
+        logging.error("Stdout:")
+        logging.error(systemds_error.output.decode("utf-8"))
+        logging.error("Stderr:")
+        logging.error(systemds_error.stderr.decode("utf-8"))
         return False
+    logging.info("Successfully executed script.")
     return True
 
 def test_script(path):
-    print('#' * 30)
-    print('Running generated script on systemds.')
+    logging.info('#' * 30)
+    logging.info('Running generated script on systemds.')
     result = invoke_systemds(path)
-    print('Finished test.')
+    logging.info('Finished test.')
     return result
 
 def compare_script(actual, expected):
@@ -60,22 +48,22 @@ def compare_script(actual, expected):
         f_actual = open(f'{get_sklearn_root()}/{actual}')
         diff = difflib.ndiff(f_actual.readlines(), f_expected.readlines())
         changes = [l for l in diff if not l.startswith('  ')]
-        print('#' * 30)
+        logging.info('#' * 30)
         if len(changes) == 0:
-            print('Actual script matches expected script.')
+            logging.info('Actual script matches expected script.')
             return True
         else:
-            print('Actual script does not match expected script.')
-            print('Legend:')
-            print('    "+ " ... line unique to actual script')
-            print('    "- " ... line unique to expected script')
-            print('    "? " ... linue not present in either script')
-            print('#' * 30)
-            print(*changes)
-            print('#' * 30)
+            logging.info('Actual script does not match expected script.')
+            logging.info('Legend:')
+            logging.info('    "+ " ... line unique to actual script')
+            logging.info('    "- " ... line unique to expected script')
+            logging.info('    "? " ... linue not present in either script')
+            logging.info('#' * 30)
+            logging.info(*changes)
+            logging.info('#' * 30)
             return False
 
     except Exception as e:
-        print('Failed to compare script.')
-        print(e)
+        logging.error('Failed to compare script.')
+        logging.error(e)
         return False

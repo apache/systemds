@@ -37,6 +37,7 @@ class SplitMapper(Mapper):
 
 class NormalizeMapper(Mapper):
     name = 'normalize'
+    sklearn_name = 'normalizer'
     is_intermediate = True
     mapped_output = [
         'Y'
@@ -48,13 +49,14 @@ class NormalizeMapper(Mapper):
 
 class SimpleImputerMapper(Mapper):
     name = 'impute'
+    sklearn_name = 'simpleimputer'
     is_intermediate = True
     mapped_output = [
         'X'
     ]
 
     def map_params(self):  # might update naming ?
-        if self.params['startegy'] == 'median':
+        if self.params['strategy'] == 'median':
             self.name = 'imputeByMedian'
         else:
             self.name = 'imputeByMean'
@@ -64,6 +66,7 @@ class SimpleImputerMapper(Mapper):
 
 class PCAMapper(Mapper):
     name = 'pca'
+    sklearn_name = 'pca'
     is_intermediate = True
     mapped_output = [
         'Xout',

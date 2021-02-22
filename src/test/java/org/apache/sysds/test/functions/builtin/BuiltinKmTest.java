@@ -30,6 +30,10 @@ public class BuiltinKmTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinKmTest.class.getSimpleName() + "/";
 
+	private final static double eps = 1e-3;
+	private final static int rows = 1765;
+	private final static double spDense = 0.99;
+
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
@@ -38,7 +42,7 @@ public class BuiltinKmTest extends AutomatedTestBase
 
 	@Test
 	public void testFunction() {
-		runKmTest(0.05,"aaa", "aaa", "aaa");
+		runKmTest(0.05,"greenwood", "log", "none");
 	}
 
 	private void runKmTest(Double alpha, String err_type,
@@ -46,12 +50,25 @@ public class BuiltinKmTest extends AutomatedTestBase
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		int seed = 11;
 
 		programArgs = new String[]{
 				"-nvargs", "X=" + input("X"), "TE=" + input("TE"), "GI=" + input("GI"),
 				"SI=" + input("SI"), "O=" + output("O"), "M=" + output("M"), "T=" + output("T"),
 				"alpha=" + alpha, "err_type=" + err_type, "err_type=" + err_type,
 				"conf_type=" + conf_type, "test_type" + test_type};
+
+		double[][] X = getRandomMatrix(rows, , , , spDense, seed);
+		writeInputMatrixWithMTD("X", X, false);
+
+		double[][] TE = getRandomMatrix(rows, , , , spDense, seed);
+		writeInputMatrixWithMTD("TE", TE, false);
+
+		double[][] GI = getRandomMatrix(rows, , , , spDense, seed);
+		writeInputMatrixWithMTD("GI", GI, false);
+
+		double[][] SI = getRandomMatrix(rows, , , , spDense, seed);
+		writeInputMatrixWithMTD("SI", SI, false);
 
 		runTest(true, false, null, -1);
 	}

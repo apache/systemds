@@ -88,11 +88,10 @@
 # 4- A column matrix MF that contains the column indices of X with the baseline factors removed (if available)
 # -------------------------------------------------------------------------------------------
 cox = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] F, Matrix[Double] R,
-        Matrix[Double] M, Matrix[Double] S, Matrix[Double] T, Matrix[Double] COV,
-        Matrix[Double] RT, Matrix[Double] XO, Matrix[Double] MF, Double alpha = 0.05,
-        Double tol = 0.000001, Int moi = 100, Int mii = 0)
+        Double alpha = 0.05, Double tol = 0.000001, Int moi = 100, Int mii = 0)
         return (Matrix[Double] M, Matrix[Double] S, Matrix[Double] T,
-                Matrix[Double] COV, Matrix[Double] RT) {
+                Matrix[Double] COV, Matrix[Double] RT, Matrix[Double] XO,
+                Matrix[Double] MF) {
 
 X_orig = X;
 

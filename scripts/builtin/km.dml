@@ -83,7 +83,7 @@
 # -------------------------------------------------------------------------------------------
 
 km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[Double] SI,
-    Matrix[Double] O, Matrix[Double] M, Double alpha = 0.05, String err_type = "greenwood",
+    Matrix[Double] O, Double alpha = 0.05, String err_type = "greenwood",
     String conf_type = "log", String test_type = "none")
   return (Matrix[Double] KM, Matrix[Double] M,
   Matrix[Double] T, Matrix[Double] T_GROUPS_OE) {

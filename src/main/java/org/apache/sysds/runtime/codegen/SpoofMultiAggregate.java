@@ -68,6 +68,11 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		return "MA" +  getClass().getName().split("\\.")[1];
 	}
 	
+	@Override public SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep) {
+		// ToDo: SpoofCUDAMultiAggregate
+		return null;
+	}
+	
 	@Override
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) {
 		return execute(inputs, scalarObjects, out, 1, 0);

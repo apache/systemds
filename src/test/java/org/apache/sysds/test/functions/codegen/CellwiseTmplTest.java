@@ -501,7 +501,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			if( !(rewrites && (testname.equals(TEST_NAME2)
 				|| testname.equals(TEST_NAME19))) && !testname.equals(TEST_NAME27) )
 				Assert.assertTrue(heavyHittersContainsSubString(
-						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "gpu_SpoofCUDA_CW_"));
+						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "gpu_spoofCUDACell"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
 				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused

@@ -90,16 +90,28 @@ endif()
 
 set(SPOOF_HEADERS 
 	spoof-launcher/jni_bridge.h
-	spoof-launcher/SpoofCUDAContext.h headers/Matrix.h headers/TempStorage.cuh)
+	spoof-launcher/SpoofCUDAContext.h
+	headers/Matrix.h
+	spoof-launcher/SpoofOperator.h
+	spoof-launcher/SpoofRowwise.h
+	spoof-launcher/SpoofCellwise.h)
+
 set(SPOOF_SOURCES 
 	spoof-launcher/jni_bridge.cpp
-	spoof-launcher/SpoofCUDAContext.cpp)
+	spoof-launcher/SpoofCUDAContext.cpp
+		)
+
 set(SPOOF_CUDA_HEADERS
 	headers/agg_ops.cuh
 	headers/reduction.cuh
 	headers/spoof_utils.cuh
-	headers/utils.cuh headers/operators.cuh headers/Matrix.h headers/vector_write.cuh headers/vector_add.cuh)
-		#headers/intellisense_cuda_intrinsics.h
+	headers/TempStorage.cuh
+	headers/utils.cuh
+	headers/operators.cuh
+	headers/Matrix.h
+	headers/vector_write.cuh
+	headers/vector_add.cuh)
+
 set(SPOOF_TEMPLATES
 	spoof/cellwise.cu    
 	spoof/rowwise.cu)

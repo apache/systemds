@@ -1,0 +1,309 @@
+
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+#  This function considers some constrains indicating statements that can NOT happen in our data (denial constrains).
+#
+#----------------------------------
+# *******INPUT PARAMETERS*********
+#----------------------------------
+# dataFrame: frame which columns represent the variables of the data and the rows correspond to different tuples or instances. 
+# 			 Recomended to have a column indexing the instances from 1 to N (N=number of instances).
+#
+# constrainsFrame: frame with fixed columns and each row representing one constrain.
+#
+#	COLUMNS:
+#	1. idx: index of the constrain, from 1 to M (number of constrains)
+#	2. constrain.type: The constrains can be of 3 different kinds:
+#		- variableCompare: for each instance, it will compare the values of two variables (with a relation <, > or =).
+#		- valueCompare: for each instance, it will compare a fixed value and a variable value (with a relation <, > or =).
+#		- instanceCompare: for every couple of instances, it will compare the relation between two variables, 
+#		ie  if the value of the variable 1 in instance 1 is lower/higher than the value of variable 1 in instance 2, 
+#		then the value of of variable 2 in instance 2 can't be lower/higher than the value of variable 2 in instance 2.
+#	3. group.by: boolean, if TRUE only one group of data (defind by a variable option) will be considered for the constrain.
+#	4. group.variable: (only if group.by TRUE) name of the variable (column in dataFrame) that will divide our data in groups.
+#	5. group.option: (only if group.by TRUE) option of the group.variable that defines the group to consider.
+#	6. variable1: first variable to compare (name of column in dataFrame).
+#	7. relation: can be < , > or = in the case of variableCompare and valueCompare, and < >, < < , > < or > > in the case of instanceCompare
+#	8. variable2: second variable to compare (name of column in dataFrame) or fixed value for the case of valueCompare.
+#	
+#  -----------------------
+#	EXAMPLE:
+#	dataFrame:
+#	
+#		rank		discipline	yrs.since.phd	yrs.service	sex		salary
+#	1	Prof		B			19				18			Male	139750
+#	2	Prof		B			20				16			Male	173200
+#	3	AsstProf	B			3				3			Male	79750.56
+#	4	Prof		B			45				39			Male	115000
+#	5	Prof		B			40				40			Male	141500
+#	6	AssocProf	B			6				6			Male	97000
+#	7	Prof		B			30				23			Male	175000
+#	8	Prof		B			45				45			Male	147765
+#	9	Prof		B			21				20			Male	119250
+#	10	Prof		B			18				18			Female	129000
+#	11	AssocProf	B			12				8			Male	119800
+#	12	AsstProf	B			7				2			Male	79800
+#	13	AsstProf	B			1				1			Male	77700
+#
+#   constrainsFrame:
+#   	
+#   idx	constrain.type	group.by	group.variable		group.option	variable1		relation	variable2
+#   1	variableCompare	FALSE											yrs.since.phd	<			yrs.service
+#   2	instanceCompare	TRUE			rank				Prof		yrs.service		> <			salary
+#   3	valueCompare	FALSE											salary			=			78182
+#   4	variableCompare	TRUE			discipline			B			yrs.service		>			yrs.since.phd
+#
+#
+#   Explenation of constrain 3: it can't happen that if one proffesor has more years of service than other, but lower salary.
+#
+#----------------------------------
+# *******OUTPUT PARAMETERS*********
+#----------------------------------
+# WrongInstances: matrix of 2 columns.
+#	- First column shows the indexes of dataFrame that are wrong.
+#	- Second column shows the index of the denial constrain that is fulfilled
+#
+
+denialConstrains = function(Frame[Unknown] dataFrame, Frame[Unknown] constrainsFrame)
+return(Matrix[double] WrongInstances)
+{
+
+	
+	print("DENIAL CONSTRAINS");
+	
+	
+	N = nrow(dataFrame); # rows in data frame
+	M = nrow(constrainsFrame); # number of constrains
+	
+	WrongInstances = matrix(0,rows=N*M,cols=2)
+	flag=0
+	colName = dataFrame[1,]
+	
+	for(iConstrain in 2:M){
+		var1 = as.scalar(constrainsFrame[iConstrain,6])
+		isCol1 = map(colName, "x->x.equals(\""+var1+"\")")
+		rel = as.scalar(constrainsFrame[iConstrain,7])
+		for(iLog in 1:ncol(colName)){
+			if(as.scalar(isCol1[1,iLog])=="true"){
+				colIdx1=iLog
+			}
+		}	
+		
+		# DEFINE IF THE CONSTRAIN IS RESTRICTED TO A GROUP OF DATA
+		if(as.scalar(constrainsFrame[iConstrain,3])=="TRUE") {
+			varToGroup = as.scalar(constrainsFrame[iConstrain,4])
+			isColToGroup = map(colName, "x->x.equals(\""+varToGroup+"\")")
+			for(iLog in 1:ncol(colName)){
+				if(as.scalar(isColToGroup[1,iLog])=="true"){
+				colIdxToGroup=iLog
+				}
+			} 
+			groupInstances = dataFrame[,colIdxToGroup]
+			groupCondition = as.scalar(constrainsFrame[iConstrain,5])
+			IsGroupInstance= map(groupInstances, "x->x.equals(\""+groupCondition+"\")")
+			IsGroupInstanceM = matrix(0, nrow(IsGroupInstance), 1)
+			for(h in 1:nrow(IsGroupInstance)){
+				IsGroupInstanceM[h,1] = ifelse(as.scalar(IsGroupInstance[h,1]) == "true",TRUE,FALSE)
+			}
+		} else {
+			IsGroupInstanceM = matrix(0, N, 1)
+			IsGroupInstance = matrix(1, N, 1)
+			for(h in 1:N){
+				IsGroupInstanceM[h,1] = ifelse(as.scalar(IsGroupInstance[h,1]) == 1,TRUE,FALSE)
+			}
+		}
+			
+			
+		
+		# CONSTRAIN TO COMPARE VARIABLES OF THE SAME INSTANCE
+		if(as.scalar(constrainsFrame[iConstrain,2])=="variableCompare"){
+			var2 = as.scalar(constrainsFrame[iConstrain,8])
+			isCol2 = map(colName, "x->x.equals(\""+var2+"\")")
+			for(iLog in 1:ncol(colName)){
+				if(as.scalar(isCol2[1,iLog])=="true"){
+					colIdx2=iLog
+				}
+			}
+			
+			if(rel=="<"){
+				for(iInstance in 2:N){
+					value1 = as.scalar(dataFrame[iInstance,colIdx1])
+					value2 = as.scalar(dataFrame[iInstance,colIdx2])
+					if(as.integer(value1)<as.integer(value2) & as.scalar(IsGroupInstanceM[iInstance,1])){
+						flag = flag+1
+						WrongInstances[flag,1] = iInstance-1
+						WrongInstances[flag,2] = iConstrain-1
+					}
+				}
+			} else if(rel==">"){
+				for(iInstance in 2:N){
+					value1 = as.scalar(dataFrame[iInstance,colIdx1])
+					value2 = as.scalar(dataFrame[iInstance,colIdx2])
+					if(as.integer(value1)>as.integer(value2) & as.scalar(IsGroupInstanceM[iInstance,1])){
+						flag = flag+1
+						WrongInstances[flag,1] = iInstance-1
+						WrongInstances[flag,2] = iConstrain-1
+					}
+				}
+			} else if(rel=="="){
+				for(iInstance in 2:N){
+					value1 = as.scalar(dataFrame[iInstance,colIdx1])
+					value2 = as.scalar(dataFrame[iInstance,colIdx2])
+					if(as.integer(value1)==as.integer(value2) & as.scalar(IsGroupInstanceM[iInstance,1])){
+						flag = flag+1
+						WrongInstances[flag,1] = iInstance-1
+						WrongInstances[flag,2] = iConstrain-1
+					}
+				}
+			}	 
+		
+		
+		# CONSTRAIN TO COMPARE A VALUE AND A VARIABLE FOR EACH iNSTANCE
+		} else if(as.scalar(constrainsFrame[iConstrain,2])=="valueCompare"){
+			value2 = as.scalar(constrainsFrame[iConstrain,8])
+			if(rel=="<"){
+				for(iInstance in 2:N){
+					value1 = as.scalar(dataFrame[iInstance,colIdx1])
+					if(as.integer(value1)<as.integer(value2) & as.scalar(IsGroupInstanceM[iInstance,1])){
+						flag = flag+1
+						WrongInstances[flag,1] = iInstance-1
+						WrongInstances[flag,2] = iConstrain-1
+					}
+				}
+			} else if(rel==">"){
+				for(iInstance in 2:N){
+					value1 = as.scalar(dataFrame[iInstance,colIdx1])
+					if(as.integer(value1)>as.integer(value2) & as.scalar(IsGroupInstanceM[iInstance,1])){
+						flag = flag+1
+						WrongInstances[flag,1] = iInstance-1
+						WrongInstances[flag,2] = iConstrain-1
+					}
+				}
+			} else if(rel=="="){
+				for(iInstance in 2:N){
+					value1 = as.scalar(dataFrame[iInstance,colIdx1])
+					if(as.integer(value1)==as.integer(value2) & as.scalar(IsGroupInstanceM[iInstance,1])){
+						flag = flag+1
+						WrongInstances[flag,1] = iInstance-1
+						WrongInstances[flag,2] = iConstrain-1
+					}
+				}
+			}
+
+		# CONSTRAIN TO COMPARE THE RELATION BETWEEN VARIABLES FOR DIFFERENT INSTANCES 
+		} else if(as.scalar(constrainsFrame[iConstrain,2])=="instanceCompare"){
+			
+			var2 = as.scalar(constrainsFrame[iConstrain,8])
+			isCol2 = map(colName, "x->x.equals(\""+var2+"\")")
+			rel2 = as.scalar(constrainsFrame[iConstrain,10])
+			for(iLog in 1:ncol(colName)){
+				if(as.scalar(isCol2[1,iLog])=="true"){
+					colIdx2=iLog
+				}
+			}
+			DataMatrix = matrix(0,cols=4,rows=N-1)
+			flag3=0
+			for(iInstance in 2:N){
+				if(as.scalar(IsGroupInstanceM[iInstance,1])){
+					flag3=flag3+1
+					DataMatrix[flag3,1] = as.matrix(dataFrame[iInstance,1]) # InstanceIdx
+					DataMatrix[flag3,2] = as.matrix(dataFrame[iInstance,colIdx1])
+					DataMatrix[flag3,3] = as.matrix(dataFrame[iInstance,colIdx2])	
+				}
+			}
+			DataMatrix=DataMatrix[1:flag3,]
+			if(rel=="< >" | rel=="< <"){
+				DataMatrixOrdered = order(target=DataMatrix,by=2,decreasing=FALSE,index.return=FALSE)
+			} else if(rel=="> >" | rel=="> <"){
+				DataMatrixOrdered = order(target=DataMatrix,by=2,decreasing=TRUE,index.return=FALSE)
+			}
+			idxToGroup=matrix(0,flag3,1)
+			flag2=1
+			for(iRow in 2:flag3){
+				DataMatrixOrdered[iRow,4] = as.scalar(DataMatrixOrdered[iRow,2])-as.scalar(DataMatrixOrdered[iRow-1,2])
+				if((as.scalar(DataMatrixOrdered[iRow,2])-as.scalar(DataMatrixOrdered[iRow-1,2]))!=0){
+					flag2=flag2+1
+					idxToGroup[flag2,1]=iRow
+				}
+			}
+			
+			idxToGroup=idxToGroup[1:flag2,1]
+			idxOrdered = DataMatrixOrdered[,1]
+			for (iGroup in 1:(flag2-2)){
+				idx1 = as.scalar(idxToGroup[iGroup,1])
+				idx2 = as.scalar(idxToGroup[iGroup+1,1])
+				idx3 = as.scalar(idxToGroup[iGroup+2,1])
+				
+				if(rel=="< <" | rel=="> <"){
+					G1 = DataMatrixOrdered[idx1+1:idx2,]
+					G2 = DataMatrixOrdered[idx2+1:idx3,]
+					M1 = min(G1[,3])
+					M2 = max(G2[,3])
+					if(M1<M2){
+						for(iNumber in 1:nrow(G1)){
+							if(as.integer(as.scalar(G1[iNumber,3]))<M2){
+								flag = flag+1
+								WrongInstances[flag,1] = as.scalar(G1[iNumber,1])
+								WrongInstances[flag,2] = iConstrain-1
+							}
+						}
+						for(iNumber in 1:nrow(G2)){
+							if(as.integer(as.scalar(G2[iNumber,3]))>M1){
+								flag = flag+1
+								WrongInstances[flag,1] = as.scalar(G2[iNumber,1])
+								WrongInstances[flag,2] = iConstrain-1
+							}
+						}
+					}
+					
+				} else if(rel=="< >" | rel=="> >"){
+					G1 = DataMatrixOrdered[idx1+1:idx2,]
+					G2 = DataMatrixOrdered[idx2+1:idx3,]
+					M1 = max(G1[,3])
+					M2 = min(G2[,3])
+					if(M1>M2){
+						for(iNumber in 1:nrow(G1)){
+							if(as.integer(as.scalar(G1[iNumber,3]))>as.integer(M2)){
+								flag = flag+1
+								WrongInstances[flag,1] = as.scalar(G1[iNumber,1])
+								WrongInstances[flag,2] = iConstrain-1
+							}
+						}
+						for(iNumber in 1:nrow(G2)){
+							if(as.integer(as.scalar(G2[iNumber,3]))<as.integer(M1)){
+								flag = flag+1
+								WrongInstances[flag,1] = as.scalar(G2[iNumber,1])
+								WrongInstances[flag,2] = iConstrain-1
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	WrongInstances=WrongInstances[1:flag,]
+}
+
+
+
+

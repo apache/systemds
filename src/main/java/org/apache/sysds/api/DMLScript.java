@@ -603,13 +603,11 @@ public class DMLScript
 		// load native codegen if configured
 		if(ConfigurationManager.isCodegenEnabled()) {
 			SpoofCompiler.GeneratorAPI configured_generator = SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
-			if(configured_generator != SpoofCompiler.GeneratorAPI.JAVA) {
-				try {
-					SpoofCompiler.loadNativeCodeGenerator(configured_generator);
-				}
-				catch(Exception e) {
-					LOG.error("Failed to load native cuda codegen library\n" + e);
-				}
+			try {
+				SpoofCompiler.loadNativeCodeGenerator(configured_generator);
+			}
+			catch(Exception e) {
+				LOG.error("Failed to load native cuda codegen library\n" + e);
 			}
 		}
 	}

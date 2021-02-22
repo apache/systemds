@@ -139,8 +139,9 @@ public class Unary extends CodeTemplate {
 				case ROW_MEANS:
 				case ROW_COUNTNNZS: {
 					String vectName = StringUtils.capitalize(type.name().substring(4, type.name().length()-1).toLowerCase());
-					return sparse ? "	T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
-						"	T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
+					return sparse ? "		T %TMP% = vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, %LEN%);\n":
+						"		T %TMP% = vect"+vectName+"(%IN1%, static_cast<uint32_t>(%POS1%), %LEN%);\n";
+					
 				}
 
 				case VECT_EXP:
@@ -168,8 +169,8 @@ public class Unary extends CodeTemplate {
 				case VECT_SPROP:
 				case VECT_SIGMOID: {
 					String vectName = type.getVectorPrimitiveName();
-					return sparse ? "	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
-						"	T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
+					return sparse ? "		Vector<T>& %TMP% = vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, %LEN%, this);\n" :
+						"		Vector<T>& %TMP% = vect"+vectName+"Write(%IN1%, static_cast<uint32_t>(%POS1%), %LEN%, this);\n";
 				}
 
 				case EXP:

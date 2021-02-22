@@ -31,14 +31,15 @@
 
 #include "Matrix.h"
 
-#ifdef _DEBUG
-#define __DEBUG
+#ifndef NDEBUG
+#define _DEBUG
 #endif
-// #ifdef __DEBUG
-    // #define JITIFY_PRINT_ALL 1
-// #endif
+#ifdef _DEBUG
+     #define JITIFY_PRINT_ALL 1
+#endif
 
 #include <jitify.hpp>
+#include <cublas_v2.h>
 
 #include "host_utils.h"
 

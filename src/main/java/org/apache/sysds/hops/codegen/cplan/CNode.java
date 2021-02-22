@@ -21,6 +21,7 @@ package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
@@ -84,13 +85,23 @@ public abstract class CNode
 
 	public String getVarname(GeneratorAPI api) { return getVarname(); }
 
-	public String getVectorLength() {
-		if( getVarname().startsWith("a") )
-			return "len";
-		else if( getVarname().startsWith("b") )
-			return getVarname()+".clen";
-		else if( _dataType==DataType.MATRIX )
-			return getVarname()+".length";
+	public String getVectorLength(GeneratorAPI api) {
+		if(api == GeneratorAPI.CUDA) {
+			if( getVarname().startsWith("a") )
+				return "a.cols()";
+			if(getVarname().startsWith("b"))
+				return getVarname()+".cols()";
+			else				
+				return getVarname()+".length";
+		}
+		else {
+			if( getVarname().startsWith("a") )
+				return "len";
+			if(getVarname().startsWith("b"))
+				return getVarname() + ".clen";
+			else if(_dataType == DataType.MATRIX)
+				return getVarname() + ".length";
+		}
 		return "";
 	}
 	
@@ -210,13 +221,17 @@ public abstract class CNode
 			&& _literal == cthat._literal;
 	}
 	
-	protected String replaceUnaryPlaceholders(String tmp, String varj, boolean vectIn) {
+	protected String replaceUnaryPlaceholders(String tmp, String varj, boolean vectIn, GeneratorAPI api) {
 		//replace sparse and dense inputs
 		tmp = tmp.replace("%IN1v%", varj+"vals");
 		tmp = tmp.replace("%IN1i%", varj+"ix");
 		tmp = tmp.replace("%IN1%", 
-			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? varj + ".values(rix)" :
-			(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? varj + ".values(0)" : varj));
+			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? 
+				((api == GeneratorAPI.JAVA) ? varj + ".values(rix)" : varj + ".vals(0)" ) :
+				(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? 
+					((api == GeneratorAPI.JAVA) ? varj + ".values(0)" : varj + ".val(0)") :
+						(varj.startsWith("a") || TemplateUtils.isMatrix(_inputs.get(0))) ?
+								(api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj));
 		
 		//replace start position of main input
 		String spos = (_inputs.get(0) instanceof CNodeData 
@@ -228,7 +243,7 @@ public abstract class CNode
 		
 		//replace length
 		if( _inputs.get(0).getDataType().isMatrix() )
-			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
+			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength(api));
 		
 		return tmp;
 	}
@@ -236,33 +251,45 @@ public abstract class CNode
 	protected CodeTemplate getLanguageTemplateClass(CNode caller, GeneratorAPI api) {
 		switch (api) {
 			case CUDA:
-				if(caller instanceof CNodeCell)
-					return new org.apache.sysds.hops.codegen.cplan.cuda.CellWise();
-				else if (caller instanceof CNodeUnary)
-					return new org.apache.sysds.hops.codegen.cplan.cuda.Unary();
-				else if (caller instanceof CNodeBinary)
+				if(caller instanceof CNodeBinary)
 					return new org.apache.sysds.hops.codegen.cplan.cuda.Binary();
-				else if (caller instanceof CNodeTernary)
+				else if(caller instanceof CNodeTernary)
 					return new org.apache.sysds.hops.codegen.cplan.cuda.Ternary();
-				else
-					return null;
-			case JAVA:
-				if(caller instanceof CNodeCell)
-					return new org.apache.sysds.hops.codegen.cplan.java.CellWise();
-				else if (caller instanceof CNodeUnary)
-					return new org.apache.sysds.hops.codegen.cplan.java.Unary();
-				else if (caller instanceof CNodeBinary)
+				else if(caller instanceof CNodeUnary)
+					return new org.apache.sysds.hops.codegen.cplan.cuda.Unary();
+				else return null;
+			case JAVA: 
+				if(caller instanceof CNodeBinary)
 					return new org.apache.sysds.hops.codegen.cplan.java.Binary();
-				else if (caller instanceof CNodeTernary)
+				else if(caller instanceof CNodeTernary)
 					return new org.apache.sysds.hops.codegen.cplan.java.Ternary();
-
-				else
-					return null;
+				else if(caller instanceof CNodeUnary)
+					return new org.apache.sysds.hops.codegen.cplan.java.Unary();
+				else return null;
 			default:
 				throw new RuntimeException("API not supported by code generator: " + api.toString());
 		}
 	}
-
+	
+	protected String getLanguageTemplate(CNode caller, GeneratorAPI api) {
+		switch (api) {
+			case CUDA:
+				if(caller instanceof CNodeCell)
+					return CodeTemplate.getTemplate("/cuda/spoof/cellwise.cu");
+				else if(caller instanceof CNodeRow)
+					return CodeTemplate.getTemplate("/cuda/spoof/rowwise.cu");
+				else return null;
+			case JAVA:
+				if(caller instanceof CNodeCell)
+					return CodeTemplate.getTemplate("/java/org/apache/sysds/hops/codegen/cplan/java/Cellwise.java.template");
+				else if(caller instanceof CNodeRow)
+					return CodeTemplate.getTemplate("/java/org/apache/sysds/hops/codegen/cplan/java/Rowwise.java.template");
+				else return null;
+			default:
+				throw new RuntimeException("API not supported by code generator: " + api.toString());
+		}
+	}
+	
 	public abstract boolean isSupported(GeneratorAPI api);
 	
 	public void setVarName(String name) { _genVar = name; }

@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -88,21 +89,46 @@ public class SpoofCUDAInstruction extends GPUInstruction implements LineageTrace
 
 		// set the output dimensions to the hop node matrix dimensions
 		if( _out.getDataType() == Types.DataType.MATRIX) {
-			long rows = inputs.get(0).getNumRows();
-			long cols = inputs.get(0).getNumColumns();
+			long out_rows = ec.getMatrixObject(_out.getName()).getNumRows(); 
+			long out_cols = ec.getMatrixObject(_out.getName()).getNumColumns();
+			
 			if(_op.getSpoofTemplateType().contains("CW"))
 				if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.COL_AGG)
-					rows = 1;
+					out_rows = 1;
 				else if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.ROW_AGG)
-					cols = 1;
-
-			MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), rows, cols).getKey();
-			ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
-			_op.execute(inputs, scalars, out_obj, ec);
+					out_cols = 1;
+			
+			
+			if(_op.getSpoofTemplateType().contains("RA")) {
+				// ToDo: make this workaround proper!!
+				boolean isConstDim2 = false;
+				int pos = _op.src.indexOf("// ConstDim2: ");
+				String strDim2 = _op.src.substring(pos + 14, _op.src.indexOf(System.lineSeparator(), pos));
+				int dim2 = Integer.parseInt(strDim2);
+				if(dim2 > 0)
+					isConstDim2 = true;
+				
+				long n = inputs.get(0).getNumColumns();
+				long n2 = isConstDim2 ? dim2 : inputs.get(0).getNumRows();
+				if(_op.src.contains("COL_AGG_B1_T")) {
+					out_rows = n;
+					out_cols = n2;
+				}
+				
+			}
+			ec.setMetaData(_out.getName(), out_rows, out_cols);
+			GPUObject g = inputs.get(0).getGPUObject(ec.getGPUContext(0));
+			boolean sparseOut = g.isSparse() && _op.getSpoofTemplateType().contains("CW");
+			MatrixObject out_obj = sparseOut ?
+				(ec.getSparseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols, g.getNnz(getOpcode(), false)).getKey()) :
+				(ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey());
+			
+//			ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
+			_op.execute(inputs, scalars, out_obj, ec, sparseOut);
 			ec.releaseMatrixOutputForGPUInstruction(_out.getName());
 		}
 		else if (_out.getDataType() == Types.DataType.SCALAR) {
-			ScalarObject out = new DoubleObject(_op.execute(inputs, scalars, null, ec));
+			ScalarObject out = new DoubleObject(_op.execute(inputs, scalars, null, ec, false));
 			ec.setScalarOutput(_out.getName(), out);
 		}
 

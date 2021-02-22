@@ -76,6 +76,11 @@ public class CNodeUnary extends CNode
 				POW2, MULT2, ABS, ROUND, CEIL, FLOOR, SIGN, 
 				SIN, TAN, SPROP}, this);
 		}
+		
+		public boolean isNotSupportedBySpoofCUDA() {
+			return this == VECT_CUMSUM || this == VECT_CUMMIN || this == VECT_CUMMAX|| 
+					this == VECT_SPROP || this == VECT_SIGMOID;
+		}
 	}
 	
 	private UnaryType _type;
@@ -110,12 +115,12 @@ public class CNodeUnary extends CNode
 			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
 		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparse);
-		tmp = tmp.replace("%TMP%", var);
+		tmp = tmp.replaceAll("%TMP%", var);
 		
 		//replace sparse and dense inputs
 		String varj = _inputs.get(0).getVarname();
 		boolean vectIn = varj.startsWith("b") && !_type.isScalarLookup();
-		tmp = replaceUnaryPlaceholders(tmp, varj, vectIn);
+		tmp = replaceUnaryPlaceholders(tmp, varj, vectIn, api);
 		
 		sb.append(tmp);
 		
@@ -260,9 +265,15 @@ public class CNodeUnary extends CNode
 		return super.equals(that)
 			&& _type == that._type;
 	}
+			
 	@Override
 	public boolean isSupported(GeneratorAPI api) {
 		boolean is_supported = (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA);
+		
+		// ToDo: support these
+		if(api == GeneratorAPI.CUDA)
+			is_supported = !_type.isNotSupportedBySpoofCUDA();
+		
 		int i = 0;
 		while(is_supported && i < _inputs.size()) {
 			CNode in = _inputs.get(i++);

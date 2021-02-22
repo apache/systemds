@@ -45,26 +45,26 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
   // SUM
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_d"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_sum_d", func));
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_f"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_f", func));
-
-  // SUM_SQ
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_d"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_d", func));
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_f"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_f", func));
-
-  // MIN
+//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_f"));
+//  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_f", func));
+//
+//  // SUM_SQ
+//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_d"));
+//  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_d", func));
+//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_f"));
+//  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_f", func));
+//
+//  // MIN
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_d"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_min_d", func));
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_f"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_min_f", func));
-
-  // MAX
+//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_f"));
+//  ctx->reduction_kernels.insert(std::make_pair("reduce_min_f", func));
+//
+//  // MAX
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_d"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_max_d", func));
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_f"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_max_f", func));
+//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_f"));
+//  ctx->reduction_kernels.insert(std::make_pair("reduce_max_f", func));
 
   return reinterpret_cast<size_t>(ctx);
 }
@@ -95,47 +95,80 @@ bool SpoofCUDAContext::compile_cuda(const std::string &src,
   std::cout << "cuda_path: " << cuda_include_path << std::endl;
 #endif
 
-  SpoofOperator::AggType type = SpoofOperator::AggType::NONE;
-  SpoofOperator::AggOp op = SpoofOperator::AggOp::NONE;
+	SpoofOperator::AggType agg_type= SpoofOperator::AggType::NONE;
+	SpoofOperator::AggOp agg_op = SpoofOperator::AggOp::NONE;
+	SpoofOperator::OpType op_type = SpoofOperator::OpType::NONE;
 
-  auto pos = 0;
-  if((pos = src.find("CellType")) != std::string::npos) {
-      if(src.substr(pos, pos+30).find("FULL_AGG") != std::string::npos)
-          type = SpoofOperator::AggType::FULL_AGG;
-      else if(src.substr(pos, pos+30).find("ROW_AGG") != std::string::npos)
-          type = SpoofOperator::AggType::ROW_AGG;
-      else if(src.substr(pos, pos+30).find("COL_AGG") != std::string::npos)
-          type = SpoofOperator::AggType::COL_AGG;
-      else if(src.substr(pos, pos+30).find("NO_AGG") != std::string::npos)
-          type = SpoofOperator::AggType::NO_AGG;
-      else {
-          std::cerr << "error: unknown aggregation type" << std::endl;
-          return false;
-      }
+	auto pos = 0;
+	
+	if((pos = src.find("SpoofCellwiseOp")) != std::string::npos)
+		op_type = SpoofOperator::OpType::CW;
+    else if((pos = src.find("SpoofRowwiseOp")) != std::string::npos)
+		op_type = SpoofOperator::OpType::RA;
+	else {
+        std::cerr << "error: unknown spoof operator" << std::endl;
+		return false;
+	}
 
-      if(type != SpoofOperator::AggType::NO_AGG) {
-          if((pos = src.find("AggOp")) != std::string::npos) {
-              if(src.substr(pos, pos+30).find("AggOp.SUM") != std::string::npos)
-                  op = SpoofOperator::AggOp::SUM;
-              else if(src.substr(pos, pos+30).find("AggOp.SUM_SQ") != std::string::npos)
-                  op = SpoofOperator::AggOp::SUM_SQ;
-              else if(src.substr(pos, pos+30).find("AggOp.MIN") != std::string::npos)
-                  op = SpoofOperator::AggOp::MIN;
-              else if(src.substr(pos, pos+30).find("AggOp.MAX") != std::string::npos)
-                  op = SpoofOperator::AggOp::MAX;
-              else {
-                std::cerr << "error: unknown aggregation operator" << std::endl;
-                return false;
-              }
-          }
-      }
-  }
+	bool TB1 = false;
+	if((pos = src.find("TB1")) != std::string::npos)
+		if(src.substr(pos, pos+8).find("true") != std::string::npos)
+			TB1 = true;
 
-  std::stringstream s1, s2, s3;
-  s1 << "-I" << resource_path << "/cuda/headers";
-  s2 << "-I" << resource_path << "/cuda/spoof";
+	uint32_t numTempVect = 0;
+	if((pos = src.find("// VectMem: ")) != std::string::npos)
+		numTempVect = std::stoi(std::string(src.begin() + pos + 12, std::find(src.begin()+pos, src.end(), '\n')));
 
-  jitify::Program program = kernel_cache.program(src, 0, {s1.str(), s2.str(), cuda_include_path});
-  ops.insert(std::make_pair(name, SpoofOperator({std::move(program), type, op})));
-  return true;
+	int32_t constDim2 = 0;
+	if((pos = src.find("// ConstDim2: ")) != std::string::npos)
+		constDim2 = std::stoi(std::string(src.begin() + pos + 14, std::find(src.begin()+pos, src.end(), '\n')));
+
+	bool sparse_safe = false;
+	if ((pos = src.find("// SparseSafe:")) != std::string::npos)
+		if (src.substr(pos, pos + 15).find("true") != std::string::npos)
+			sparse_safe = true;
+
+	if(((pos = src.find("CellType")) != std::string::npos) || ((pos = src.find("RowType")) != std::string::npos)){
+		if(src.substr(pos, pos+30).find("FULL_AGG") != std::string::npos)
+			agg_type= SpoofOperator::AggType::FULL_AGG;
+		else if(src.substr(pos, pos+30).find("ROW_AGG") != std::string::npos)
+			agg_type= SpoofOperator::AggType::ROW_AGG;
+		else if(src.substr(pos, pos+30).find("COL_AGG") != std::string::npos)
+			agg_type= SpoofOperator::AggType::COL_AGG;
+		else if(src.substr(pos, pos+30).find("NO_AGG") != std::string::npos)
+			agg_type= SpoofOperator::AggType::NO_AGG;
+		else if(src.substr(pos, pos+30).find("NO_AGG_CONST") != std::string::npos)
+			agg_type= SpoofOperator::AggType::NO_AGG_CONST;
+		else if(src.substr(pos, pos+30).find("COL_AGG_T") != std::string::npos)
+			agg_type= SpoofOperator::AggType::COL_AGG_T;
+		else {
+			std::cerr << "error: unknown aggregation type" << std::endl;
+			return false;
+		}
+
+		if((agg_type!= SpoofOperator::AggType::NO_AGG) && (op_type == SpoofOperator::OpType::CW)) {
+			if((pos = src.find("AggOp")) != std::string::npos) {
+				if(src.substr(pos, pos+30).find("AggOp.SUM") != std::string::npos)
+					agg_op = SpoofOperator::AggOp::SUM;
+				else if(src.substr(pos, pos+30).find("AggOp.SUM_SQ") != std::string::npos)
+					agg_op = SpoofOperator::AggOp::SUM_SQ;
+				else if(src.substr(pos, pos+30).find("AggOp.MIN") != std::string::npos)
+					agg_op = SpoofOperator::AggOp::MIN;
+				else if(src.substr(pos, pos+30).find("AggOp.MAX") != std::string::npos)
+					agg_op = SpoofOperator::AggOp::MAX;
+				else {
+			        std::cerr << "error: unknown aggregation operator" << std::endl;
+					return false;
+				}
+			}
+		}
+	}
+
+	std::stringstream s1, s2, s3;
+	s1 << "-I" << resource_path << "/cuda/headers";
+	s2 << "-I" << resource_path << "/cuda/spoof";
+
+	jitify::Program program = kernel_cache.program(src, 0, {s1.str(), s2.str(), cuda_include_path});
+	ops.insert(std::make_pair(name, SpoofOperator({std::move(program), agg_type, agg_op, op_type, name, TB1, constDim2, numTempVect, sparse_safe})));
+	return true;
 }

@@ -119,16 +119,42 @@ public class CNodeCell extends CNodeTpl
 	public String codegen(boolean sparse, GeneratorAPI _api) {
 		api = _api;
 
-		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type);
+		String tmp = getLanguageTemplate(this, api);
 
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false, api);
+		// ToDo: workaround to fix name clash of cell and row template
+		if(api == GeneratorAPI.CUDA)
+			tmpDense = tmpDense.replace("a.vals(0)", "a");
 		_output.resetGenerated();
 		
+		String varName; 
 		if(getVarname() == null)
-			tmp = tmp.replace("%TMP%", createVarname());
+//			tmp = tmp.replace("%TMP%", createVarname());
+			varName = createVarname();
 		else
-			tmp = tmp.replace("%TMP%", getVarname());
+//			tmp = tmp.replace("%TMP%", getVarname());
+			varName = getVarname();
+		
+		if(api == GeneratorAPI.JAVA)
+			tmp = tmp.replace("%TMP%", varName);
+		else
+			tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", varName);
+		
+		if(tmpDense.contains("grix"))
+			tmp = tmp.replace("//%NEED_GRIX%", "\t\tuint32_t grix=_grix + rix;");
+		else
+			tmp = tmp.replace("//%NEED_GRIX%", "");
+		
+//		if(tmpDense.contains("rix"))
+//			tmp = tmp.replace("//%NEED_RIX%", "\t\tuint32_t rix = idx / A.cols();\n");
+//		else
+			tmp = tmp.replace("//%NEED_RIX%", "");
+		
+//		if(tmpDense.contains("cix"))
+//			tmp = tmp.replace("//%NEED_CIX%", "\t\tuint32_t cix = idx % A.cols();");
+//		else
+			tmp = tmp.replace("//%NEED_CIX%", "");
 		
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
@@ -140,7 +166,10 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replace("%AGG_OP_NAME%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
 		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
-
+		
+		// maybe empty lines
+		//tmp = tmp.replaceAll("(?m)^[ \t]*\r?\n", "");
+		
 		if(api == GeneratorAPI.CUDA) {
 			// ToDo: initial_value is misused to pass VT (values per thread) to no_agg operator
 			String agg_op = "IdentityOp";

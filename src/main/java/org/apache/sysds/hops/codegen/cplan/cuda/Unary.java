@@ -20,15 +20,13 @@
 package org.apache.sysds.hops.codegen.cplan.cuda;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
-import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
-import org.apache.sysds.runtime.codegen.SpoofCellwise;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
-public class Unary implements CodeTemplate {
+public class Unary extends CodeTemplate {
+
 	@Override
 	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse) {
 		if(isSinglePrecision()) {
@@ -179,7 +177,8 @@ public class Unary implements CodeTemplate {
 				case LOOKUP_R:
 					return sparse ?
 						"	T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
-						"	T %TMP% = getValue(%IN1%, rix);\n";
+						"		T %TMP% = %IN1%.val(rix);\n";
+//						"	T %TMP% = getValue(%IN1%, rix);\n";
 				case LOOKUP_C:
 					return "	T %TMP% = getValue(%IN1%, n, 0, cix);\n";
 				case LOOKUP_RC:
@@ -211,11 +210,11 @@ public class Unary implements CodeTemplate {
 				case TANH:
 					return "	T %TMP% = tanh(%IN1%);\n";
 				case SIGN:
-					return "	T %TMP% = signbit(%IN1%) == 0 ? 1.0f : -1.0f;\n";
+					return "	T %TMP% = signbit(%IN1%) == 0 ? 1.0 : -1.0;\n";
 				case SQRT:
 					return "	T %TMP% = sqrt(%IN1%);\n";
 				case LOG:
-					return "	T %TMP% = log(%IN1%);\n";
+					return "		T %TMP% = log(%IN1%);\n";
 				case ROUND:
 					return "	T %TMP% = round(%IN1%);\n";
 				case CEIL:
@@ -234,25 +233,5 @@ public class Unary implements CodeTemplate {
 			}
 
 		}
-	}
-
-	@Override
-	public String getTemplate() {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(SpoofCellwise.CellType ct) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector, boolean scalarInput) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
 	}
 }

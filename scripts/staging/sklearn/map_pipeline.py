@@ -3,6 +3,7 @@ import pickle
 import sys
 import inspect
 import mappers
+import argparse
 
 # TODO: rename scirpt, move mappers into won file?,
 # own file for each mapper?
@@ -32,11 +33,12 @@ def get_functions():
 
 
 class SklearnToDMLMapper:
-    def __init__(self, pipeline, standalone_script=True): # TODO: standaline_script???
+    def __init__(self, pipeline, input_name='X'): # TODO: standaline_script???
         self.steps = pipeline.steps
         self.functions = get_functions()
         self.dml_script = None
         get_functions()
+        self.input_name = input_name
 
     def transform(self):
         sources = []
@@ -71,9 +73,9 @@ class SklearnToDMLMapper:
             raise RuntimeError(f'{self.steps[0][0]} is not supported.')
 
         if func.is_supervised:
-            return 'X = read($X)\nY = read($Y)'
+            return 'X = read(${input_name}_X)\nY = read(${input_name}_Y)'
         else:
-            return 'X = read($X)'
+            return f'X = read(${self.input_name})'
 
     def get_output(self):
         func = self.functions[self.steps[-1][0]]()
@@ -83,9 +85,26 @@ class SklearnToDMLMapper:
 
 
 if __name__ == '__main__':
-    pipeline = load('pipe.pkl')
+
+    parser = argparse.ArgumentParser(description='Tool that parses a sklearn pipeline and produces a dml script')
+    parser.add_argument('Path',
+            metavar='path',
+            type=str,
+            help='location of the sklearn pipline pickle file')
+    parser.add_argument('-i',
+            metavar='input_name',
+            type=str,
+            help='name for the input variable')
+    parser.add_argument('-o',
+            metavar='output',
+            type=str,
+            default='./pipeline.dml',
+            help='path for the dml output script')
+
+    args = parser.parse_args()
+    pipeline = load(args['path'])
 
     # TODO internal loading + saving
     mapper = SklearnToDMLMapper(pipeline)
     mapper.transform()
-    mapper.save('pipeline.dml')
+    mapper.save(args['output'])

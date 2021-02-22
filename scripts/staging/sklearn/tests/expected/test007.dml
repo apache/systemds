@@ -2,6 +2,6 @@ source("scripts/builtin/normalize.dml") as ns_normalize
 source("scripts/builtin/dbscan.dml") as ns_dbscan
 
 X = read($X)
-X = ns_normalize::m_normalize(X)
-C, Y = ns_dbscan::m_dbscan(X, 0.5, 5)
-print(C, Y)
+[X] = ns_normalize::m_normalize(X)
+[clusterMembers] = ns_dbscan::m_dbscan(X, 0.5, 5)
+write(clusterMembers, "clusterMembers.csv")

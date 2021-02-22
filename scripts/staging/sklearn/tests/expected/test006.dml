@@ -2,6 +2,6 @@ source("scripts/builtin/scale.dml") as ns_scale
 source("scripts/builtin/dbscan.dml") as ns_dbscan
 
 X = read($X)
-X = ns_scale::m_scale(X, True, True)
-C, Y = ns_dbscan::m_dbscan(X, 0.5, 5)
-print(C, Y)
+[X] = ns_scale::m_scale(X, TRUE, TRUE)
+[clusterMembers] = ns_dbscan::m_dbscan(X, 0.5, 5)
+write(clusterMembers, "clusterMembers.csv")

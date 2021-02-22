@@ -2,6 +2,6 @@ source("scripts/builtin/pca.dml") as ns_pca
 source("scripts/builtin/dbscan.dml") as ns_dbscan
 
 X = read($X)
-X = ns_pca::m_pca(X, 2, True, True)
-C, Y = ns_dbscan::m_dbscan(X, 0.5, 5)
-print(C, Y)
+[X] = ns_pca::m_pca(X, 2, True, True)
+[clusterMembers] = ns_dbscan::m_dbscan(X, 0.5, 5)
+write(clusterMembers, "clusterMembers.csv")

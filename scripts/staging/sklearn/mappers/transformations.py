@@ -75,7 +75,7 @@ class PCAMapper(Mapper):
 
     def map_params(self):
         self.mapped_params = [
-            self.params.get('n_components'),
+            2 if self.params['n_components'] is None else self.params['random_state'],
             'TRUE',  # non existant in SKlearn
             'TRUE'  # non existant in SKlearn
         ]

@@ -159,7 +159,7 @@ if __name__ == '__main__':
     for test in tests:
         logging.info('*' * 50)
         logging.info((18*'*' + test.__name__ + (50-20-len(test.__name__)) * '*'))
-        result = test001()
+        result = test()
         results.append(result)
     
     print('*' * 50)

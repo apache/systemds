@@ -31,8 +31,8 @@ def invoke_systemds(path):
         
         # It looks like python does not notice systemds errors
         # Is 0 returned in error cases?
-        # Check if there is any stderr and raise manually.
-        if len(result.stderr) != 0:
+        # Check if there is any error and raise manually.
+        if len(result.stderr) != 0 or 'error' in str(result.stdout).lower():
             raise subprocess.CalledProcessError(returncode=result.returncode, cmd=result.args, 
                                                 stderr=result.stderr, output=result.stdout)
         

@@ -146,13 +146,6 @@ public abstract class SpoofOperator implements Serializable
 		return scalars;
 	}
 
-	protected static float[] prepInputScalarsFloat(ArrayList<ScalarObject> scalarObjects) {
-		float[] scalars = new float[scalarObjects.size()];
-		for(int i=0; i < scalarObjects.size(); i++)
-			scalars[i] = (float)scalarObjects.get(i).getDoubleValue();
-		return scalars;
-	}
-
 	public static long getTotalInputNnz(ArrayList<MatrixBlock> inputs) {
 		return inputs.stream().mapToLong(in -> in.getNonZeros()).sum();
 	}
@@ -230,6 +223,10 @@ public abstract class SpoofOperator implements Serializable
 		System.arraycopy(data.values(rowIndex), data.pos(rowIndex), c, 0, colIndex+1);
 		return c;
 	}
+	
+
+	
+	public abstract SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep);
 	
 	public static class SideInput {
 		public final DenseBlock ddat;

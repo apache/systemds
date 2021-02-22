@@ -22,10 +22,6 @@
 #include "reduction.cuh"
 #include "Matrix.h"
 
-using uint = unsigned int;
-#include <cuda_runtime.h>
-#ifdef __CUDACC__
-
 /**
  * Do a summation over all elements of an array/matrix
  * @param g_idata   input data stored in device memory (of size n)
@@ -39,12 +35,18 @@ __device__ void reduce_sum(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32
 	FULL_AGG<T, SumOp<T>, IdentityOp<T>>(in, out, n, (T) 0.0, agg_op, spoof_op);
 }
 
+extern "C" __global__ void reduce_sum_f(Matrix<float>* in, Matrix<float>* out, uint32_t n) {
+	MatrixAccessor<float> _in(in);
+	MatrixAccessor<float> _out(out);
+	reduce_sum(&_in, &_out, n);
+}
+
 extern "C" __global__ void reduce_sum_d(Matrix<double>* in, Matrix<double>* out, uint32_t n) {
 	MatrixAccessor<double> _in(in);
 	MatrixAccessor<double> _out(out);
 	reduce_sum(&_in, &_out, n);
 }
-#endif
+
 //extern "C" __global__ void reduce_sum_f(float *g_idata, float *g_odata, uint n) {
 //	reduce_sum(g_idata, g_odata, n);
 //}
@@ -107,15 +109,17 @@ __device__ void reduce_max(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32
 	FULL_AGG<T, MaxOp<T>, IdentityOp<T>>(in, out, n, -MAX<T>(), agg_op, spoof_op);
 }
 
+extern "C" __global__ void reduce_max_f(Matrix<float>* in, Matrix<float>* out, uint32_t n) {
+	MatrixAccessor<float> _in(in);
+	MatrixAccessor<float> _out(out);
+	reduce_max(&_in, &_out, n);
+}
+
 extern "C" __global__ void reduce_max_d(Matrix<double>* in, Matrix<double>* out, uint32_t n) {
 	MatrixAccessor<double> _in(in);
 	MatrixAccessor<double> _out(out);
 	reduce_max(&_in, &_out, n);
 }
-
-//extern "C" __global__ void reduce_max_f(float *g_idata, float *g_odata, uint n) {
-//	reduce_max(g_idata, g_odata, n);
-//}
 
 /**
  * Do a max over all rows of a matrix
@@ -175,16 +179,17 @@ __device__ void reduce_min(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32
 	FULL_AGG<T, MinOp<T>, IdentityOp<T>>(in, out, n, MAX<T>(), agg_op, spoof_op);
 }
 
+extern "C" __global__ void reduce_min_f(Matrix<float>* in, Matrix<float>* out, uint32_t n) {
+	MatrixAccessor<float> _in(in);
+	MatrixAccessor<float> _out(out);
+	reduce_min(&_in, &_out, n);
+}
+
 extern "C" __global__ void reduce_min_d(Matrix<double>* in, Matrix<double>* out, uint32_t n) {
 	MatrixAccessor<double> _in(in);
 	MatrixAccessor<double> _out(out);
 	reduce_min(&_in, &_out, n);
 }
-
-//extern "C" __global__ void reduce_min_f(float *g_idata, float *g_odata, uint n) {
-//	reduce_min(g_idata, g_odata, n);
-//}
-
 
 /**
  * Do a min over all rows of a matrix

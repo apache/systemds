@@ -63,6 +63,11 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		return _outerProductType;
 	}
 	
+	@Override public SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep) {
+		// ToDo: SpoofCUDAOuterProduct
+		return null;
+	}
+	
 	@Override
 	public String getSpoofType() {
 		return "OP" +  getClass().getName().split("\\.")[1];

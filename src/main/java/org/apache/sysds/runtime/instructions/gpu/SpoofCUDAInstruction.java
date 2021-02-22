@@ -19,13 +19,16 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
+import jcuda.Sizeof;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.codegen.cplan.CNodeCell;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
-import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
-import org.apache.sysds.runtime.codegen.SpoofCUDA;
+import org.apache.sysds.runtime.codegen.SpoofCUDAOperator;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -35,23 +38,55 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
-import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 
 import java.util.ArrayList;
 
 public class SpoofCUDAInstruction extends GPUInstruction implements LineageTraceable {
-	private final SpoofCUDA _op;
+	private static final Log LOG = LogFactory.getLog(SpoofCUDAInstruction.class.getName());
+	
+	public static SpoofCUDAOperator.PrecisionProxy proxy = null;
+	
+	private final SpoofCUDAOperator _op;
 	private final CPOperand[] _in;
-
 	public final CPOperand _out;
-
-	private SpoofCUDAInstruction(SpoofOperator op, CPOperand[] in, CPOperand out, String opcode, String istr) {
+	
+	public static class SinglePrecision extends SpoofCUDAOperator.PrecisionProxy {
+		public int exec(ExecutionContext ec, SpoofCUDAOperator op, int opID, long[] in, long[] sides, long[] out,
+				ArrayList<ScalarObject> scalarObjects, long grix) {
+			op.setScalarPtr(transferScalars(ec, op, Sizeof.FLOAT, scalarObjects));
+			long[] _metadata = { opID, grix, in.length, sides.length, out.length, scalarObjects.size() };
+			return op.execute_sp(ctx, _metadata, in, sides, out, GPUObject.getPointerAddress(op.getScalarPtr()));
+		}
+	}
+	
+	public static class DoublePrecision extends SpoofCUDAOperator.PrecisionProxy {
+		public int exec(ExecutionContext ec, SpoofCUDAOperator op, int opID, long[] in, long[] sides, long[] out,
+				ArrayList<ScalarObject> scalarObjects, long grix) {
+			if(!scalarObjects.isEmpty())
+				op.setScalarPtr(transferScalars(ec, op, Sizeof.DOUBLE, scalarObjects));
+			long[] _metadata = { opID, grix, in.length, sides.length, out.length, scalarObjects.size() };
+			return op.execute_dp(ctx, _metadata, in, sides, out, GPUObject.getPointerAddress(op.getScalarPtr()));
+		}
+	}
+	
+	/**
+	 * Sets the internal state based on the DMLScript.DATA_TYPE
+	 */
+	public static void resetFloatingPointPrecision() {
+		if(DMLScript.FLOATING_POINT_PRECISION.equalsIgnoreCase("single")) {
+			SpoofCUDAInstruction.proxy = new SinglePrecision();
+		}
+		else if(DMLScript.FLOATING_POINT_PRECISION.equalsIgnoreCase("double")) {
+			SpoofCUDAInstruction.proxy = new DoublePrecision();
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported floating point precision: " + DMLScript.FLOATING_POINT_PRECISION);
+		}
+	}
+	
+	private SpoofCUDAInstruction(SpoofCUDAOperator op, CPOperand[] in, CPOperand out, String opcode, String istr) {
 		super(null, opcode, istr);
-
-		if(!(op instanceof SpoofCUDA))
-			throw new RuntimeException("SpoofGPUInstruction needs an operator of type SpoofNativeCUDA!");
-
-		_op = (SpoofCUDA) op;
+		_op = op;
 		_in = in;
 		_out = out;
 		instString = istr;
@@ -59,11 +94,18 @@ public class SpoofCUDAInstruction extends GPUInstruction implements LineageTrace
 	}
 
 	public static SpoofCUDAInstruction parseInstruction(String str) {
+		if(proxy == null)
+			throw new RuntimeException("SpoofCUDA Executor has not been initialized");
+		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 
 		ArrayList<CPOperand> inlist = new ArrayList<>();
-		SpoofCUDA op = CodegenUtils.getNativeOpData(parts[2]);
-		String opcode =  op.getSpoofType();
+//		Integer op_id =  CodegenUtils.getCUDAopID(parts[2].split("\\.")[1]);
+		Integer op_id = CodegenUtils.getCUDAopID(parts[2]);
+		Class<?> cla = CodegenUtils.getClass(parts[2]);
+		SpoofOperator fallback_java_op = CodegenUtils.createInstance(cla);
+		SpoofCUDAOperator op = fallback_java_op.createCUDAInstrcution(op_id, proxy);
+		String opcode =  parts[0] + "CUDA" + fallback_java_op.getSpoofType();
 
 		for( int i=3; i<parts.length-2; i++ )
 			inlist.add(new CPOperand(parts[i]));
@@ -87,51 +129,25 @@ public class SpoofCUDAInstruction extends GPUInstruction implements LineageTrace
 			}
 		}
 
-		// set the output dimensions to the hop node matrix dimensions
-		if( _out.getDataType() == Types.DataType.MATRIX) {
-			long out_rows = ec.getMatrixObject(_out.getName()).getNumRows(); 
-			long out_cols = ec.getMatrixObject(_out.getName()).getNumColumns();
-			
-			if(_op.getSpoofTemplateType().contains("CW"))
-				if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.COL_AGG)
-					out_rows = 1;
-				else if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.ROW_AGG)
-					out_cols = 1;
-			
-			
-			if(_op.getSpoofTemplateType().contains("RA")) {
-				// ToDo: make this workaround proper!!
-				boolean isConstDim2 = false;
-				int pos = _op.src.indexOf("// ConstDim2: ");
-				String strDim2 = _op.src.substring(pos + 14, _op.src.indexOf(System.lineSeparator(), pos));
-				int dim2 = Integer.parseInt(strDim2);
-				if(dim2 > 0)
-					isConstDim2 = true;
-				
-				long n = inputs.get(0).getNumColumns();
-				long n2 = isConstDim2 ? dim2 : inputs.get(0).getNumRows();
-				if(_op.src.contains("COL_AGG_B1_T")) {
-					out_rows = n;
-					out_cols = n2;
-				}
-				
+		try {
+			// set the output dimensions to the hop node matrix dimensions
+			if(_out.getDataType() == Types.DataType.MATRIX) {
+				_op.execute(ec, inputs, scalars, _out.getName());
+				ec.releaseMatrixOutputForGPUInstruction(_out.getName());
 			}
-			ec.setMetaData(_out.getName(), out_rows, out_cols);
-			GPUObject g = inputs.get(0).getGPUObject(ec.getGPUContext(0));
-			boolean sparseOut = g.isSparse() && _op.getSpoofTemplateType().contains("CW");
-			MatrixObject out_obj = sparseOut ?
-				(ec.getSparseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols, g.getNnz(getOpcode(), false)).getKey()) :
-				(ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), out_rows, out_cols).getKey());
+			else if(_out.getDataType() == Types.DataType.SCALAR) {
+				ScalarObject out = _op.execute(ec, inputs, scalars);
+				ec.setScalarOutput(_out.getName(), out);
+			}
 			
-//			ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
-			_op.execute(inputs, scalars, out_obj, ec, sparseOut);
-			ec.releaseMatrixOutputForGPUInstruction(_out.getName());
+			_op.releaseScalarGPUMemory(ec);
 		}
-		else if (_out.getDataType() == Types.DataType.SCALAR) {
-			ScalarObject out = new DoubleObject(_op.execute(inputs, scalars, null, ec, false));
-			ec.setScalarOutput(_out.getName(), out);
+		catch(Exception ex) {
+			LOG.error("SpoofCUDAInstruction: " + _op.getName() + " operator failed to execute. Trying Java fallback.(ToDo)\n");
+			
+			throw new DMLRuntimeException(ex);
 		}
-
+		
 		for (CPOperand input : _in)
 			if(input.getDataType()== Types.DataType.MATRIX)
 				ec.releaseMatrixInputForGPUInstruction(input.getName());
@@ -139,7 +155,6 @@ public class SpoofCUDAInstruction extends GPUInstruction implements LineageTrace
 
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-		return Pair.of(_out.getName(),
-				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, _in)));
+		return Pair.of(_out.getName(), new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, _in)));
 	}
 }

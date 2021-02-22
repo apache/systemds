@@ -116,8 +116,8 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
 		if (blockDim.x >= 64) {
 			smem[tid] = v = reduction_op(v, smem[tid + 32]);
 		}
-		if(tid<12)
-			printf("bid=%d tid=%d reduction result: %3.1f\n", blockIdx.x, tid, sdata[tid]);
+//		if(tid<12)
+//			printf("bid=%d tid=%d reduction result: %3.1f\n", blockIdx.x, tid, sdata[tid]);
 		
 		if (blockDim.x >= 32) {
 			smem[tid] = v = reduction_op(v, smem[tid + 16]);
@@ -149,7 +149,7 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
 	 // write result for this block to global mem
 	 if (tid == 0) {
 //	 	if(gridDim.x < 10)
-	 		printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
+//	 		printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 	 	out->val(0, blockIdx.x) = sdata[0];
 	 }
 }
@@ -317,7 +317,8 @@ __device__ void NO_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N
 	uint32_t last_idx = min(first_idx + static_cast<uint32_t>(VT), N);
 	#pragma unroll
 	for(auto i = first_idx; i < last_idx; i++) {
-		T result = spoof_op(in->vals(0)[i], i, i / in->cols(), i % in->cols());
+		T a = in->hasData() ? in->vals(0)[i] : 0;
+		T result = spoof_op(a, i, i / in->cols(), i % in->cols());
 		out->vals(0)[i] = result;
 		//if(i < 4)
 		//	printf("tid=%d in=%4.3f res=%4.3f out=%4.3f r=%d\n", i, in->vals(0)[i], result, out->vals(0)[i], i/in->cols());
@@ -334,28 +335,24 @@ __device__ void NO_AGG_SPARSE(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uin
 //	uint32_t cix = in->col_idxs(0)[gtid];
 	uint32_t row_start = in->pos(rix);
 	uint32_t row_len = in->row_len(rix);
-////	if(cix == 0) {
-//	//if(row_start == gtid) {
-//	//if(threadIdx.x == 0) {
-//	if(rix < in->rows()) {
-//		if(rix > 895 && rix < 905)
-//			printf("gtid=%d in->indexes()[rix=%d]=%d rowlen=%d row_start=%d cix=%d\n", gtid, rix, in->indexes()[rix], in->row_len(rix), row_start, cix);
-////		out->indexes()[gtid] = in->indexes()[gtid];
-//		out->indexes()[rix] = in->indexes()[rix];
-//	}
-
 
 	while(tid < row_len) {
-
-		uint32_t* aix = in->col_idxs(rix);
-		uint32_t cix = aix[tid];
+		if(in->hasData()) {
+			uint32_t *aix = in->col_idxs(rix);
+			uint32_t cix = aix[tid];
 //		T result = spoof_op(in->val(rix, cix), rix*in->rows()+cix, rix, cix);
-		T result = spoof_op(in->val(row_start+tid), rix*in->rows()+cix, rix, cix);
-		out->set(row_start+tid, cix, result);
+			T result = spoof_op(in->val(row_start + tid), rix * in->rows() + cix, rix, cix);
+			out->set(row_start + tid, cix, result);
 
-		//if(rix > 899 && rix < 903 && cix==0)
-		//	printf("rix=%d row_start=%d tid=%d result=%4.3f\n", rix, row_start, tid, result);
-
+//		if(rix > 899 && rix < 903 && cix==0)
+//		if(rix < 10 && cix==0)
+//			printf("rix=%d row_start=%d tid=%d result=%4.3f\n", rix, row_start, tid, result);
+		}
+		else {
+			uint32_t cix = tid;
+			T result = spoof_op(0, rix * in->rows() + cix, rix, cix);
+			out->set(row_start + tid, cix, result);
+		}
 		tid+=blockDim.x;
 
 

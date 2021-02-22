@@ -52,10 +52,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	
 	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum CellType {
-		NO_AGG(1),
-		FULL_AGG(2),
-		ROW_AGG(3),
-		COL_AGG(4);
+		NO_AGG(0),
+		FULL_AGG(1),
+		ROW_AGG(2),
+		COL_AGG(3);
 		
 		private final int value;
 		private final static HashMap<Integer, CellType> map = new HashMap<>();
@@ -87,7 +87,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		MAX,
 	}
 	
-	private final CellType _type;
+	protected final CellType _type;
 	private final AggOp _aggOp;
 	private final boolean _sparseSafe;
 	private final boolean _containsSeq;
@@ -114,6 +114,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	public boolean containsSeq() {
 		return _containsSeq;
 	}
+	
+	@Override public SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep) {
+		return new SpoofCUDACellwise(_type, _sparseSafe, _containsSeq, _aggOp, opID, ep, this);
+	} 
 	
 	@Override
 	public String getSpoofType() {

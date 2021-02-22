@@ -58,6 +58,7 @@ struct SpoofCellwiseOp {
 //%NEED_GRIX%
 
 %BODY_dense%
+//printf("tid=%d a=%4.1f\n", threadIdx.x, a);
 		return %OUT%;
 	}
 };

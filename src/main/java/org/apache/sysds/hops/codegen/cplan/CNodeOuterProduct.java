@@ -21,6 +21,7 @@ package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
@@ -197,4 +198,13 @@ public class CNodeOuterProduct extends CNodeTpl
 		}
 		return  is_supported;
 	}
+
+	public int compile(GeneratorAPI api, String src) {
+		if(api == GeneratorAPI.CUDA)
+			return compile_nvrtc(SpoofCompiler.native_contexts.get(api), _genVar, src, _type.ordinal());
+		return -1;
+	}
+	
+	private native int compile_nvrtc(long context, String name, String src, int type);
+
 }

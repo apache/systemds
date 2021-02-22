@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.codegen;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -45,18 +46,42 @@ public abstract class SpoofRowwise extends SpoofOperator
 {
 	private static final long serialVersionUID = 6242910797139642998L;
 	
+	// Enum with explicit integer values
+	// Thanks to https://codingexplained.com/coding/java/enum-to-integer-and-integer-to-enum
+	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum RowType {
-		NO_AGG,       //no aggregation
-		NO_AGG_B1,    //no aggregation w/ matrix mult B1
-		NO_AGG_CONST, //no aggregation w/ expansion/contraction
-		FULL_AGG,     //full row/col aggregation
-		ROW_AGG,      //row aggregation (e.g., rowSums() or X %*% v)
-		COL_AGG,      //col aggregation (e.g., colSums() or t(y) %*% X)
-		COL_AGG_T,    //transposed col aggregation (e.g., t(X) %*% y)
-		COL_AGG_B1,   //col aggregation w/ matrix mult B1
-		COL_AGG_B1_T, //transposed col aggregation w/ matrix mult B1
-		COL_AGG_B1R,  //col aggregation w/ matrix mult B1 to row vector
-		COL_AGG_CONST;//col aggregation w/ expansion/contraction
+		NO_AGG(1),       //no aggregation
+		NO_AGG_B1(2),    //no aggregation w/ matrix mult B1
+		NO_AGG_CONST(3), //no aggregation w/ expansion/contraction
+		FULL_AGG(4),     //full row/col aggregation
+		ROW_AGG(5),      //row aggregation (e.g., rowSums() or X %*% v)
+		COL_AGG (6),      //col aggregation (e.g., colSums() or t(y) %*% X)
+		COL_AGG_T(7),    //transposed col aggregation (e.g., t(X) %*% y)
+		COL_AGG_B1(8),   //col aggregation w/ matrix mult B1
+		COL_AGG_B1_T(9), //transposed col aggregation w/ matrix mult B1
+		COL_AGG_B1R(10),  //col aggregation w/ matrix mult B1 to row vector
+		COL_AGG_CONST (11);//col aggregation w/ expansion/contraction
+		
+		private final int value;
+		private final static HashMap<Integer, RowType> map = new HashMap<>();
+		
+		RowType(int value) {
+			this.value = value;
+		}
+		
+		static {
+			for (RowType rowType : RowType.values()) {
+				map.put(rowType.value, rowType);
+			}
+		}
+		
+		public static RowType valueOf(int rowType) {
+			return map.get(rowType);
+		}
+		
+		public int getValue() {
+			return value;
+		}
 		
 		public boolean isColumnAgg() {
 			return this == COL_AGG || this == COL_AGG_T

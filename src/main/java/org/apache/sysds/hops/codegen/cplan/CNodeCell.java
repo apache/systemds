@@ -22,6 +22,7 @@ package org.apache.sysds.hops.codegen.cplan;
 import java.util.ArrayList;
 
 import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
@@ -274,4 +275,14 @@ public class CNodeCell extends CNodeTpl
 		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api) &&
 			!(getSpoofAggOp() == SpoofCellwise.AggOp.SUM_SQ);
 	}
+	
+	public int compile(GeneratorAPI api, String src) {
+		if(api == GeneratorAPI.CUDA)
+			return compile_nvrtc(SpoofCompiler.native_contexts.get(api), _genVar, src, _type.getValue
+					(), 
+				_aggOp != null ? _aggOp.getValue() : 0, _sparseSafe);
+		return -1;
+	}
+	
+	private native int compile_nvrtc(long context, String name, String src, int type, int agg_op, boolean sparseSafe);
 }

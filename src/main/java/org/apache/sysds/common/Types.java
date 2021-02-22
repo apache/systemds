@@ -20,9 +20,9 @@
 package org.apache.sysds.common;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-
 
 public class Types
 {
@@ -174,14 +174,14 @@ public class Types
 		}
 	}
 	
+	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum AggOp {
-		SUM, SUM_SQ,
-		PROD, SUM_PROD,
-		MIN, MAX,
-		TRACE, MEAN, VAR,
-		MAXINDEX, MININDEX,
-		COUNT_DISTINCT,
-		COUNT_DISTINCT_APPROX;
+		SUM(1), SUM_SQ(2), MIN(3), MAX(4),
+		PROD(5), SUM_PROD(6),
+		TRACE(7), MEAN(8), VAR(9),
+		MAXINDEX(10), MININDEX(11),
+		COUNT_DISTINCT(12),
+		COUNT_DISTINCT_APPROX(13);
 		
 		@Override
 		public String toString() {
@@ -191,6 +191,27 @@ public class Types
 				case PROD:   return "*";
 				default:     return name().toLowerCase();
 			}
+		}
+		
+		private final int value;
+		private final static HashMap<Integer, AggOp> map = new HashMap<>();
+		
+		AggOp(int value) {
+			this.value = value;
+		}
+		
+		static {
+			for (AggOp aggOp : AggOp.values()) {
+				map.put(aggOp.value, aggOp);
+			}
+		}
+		
+		public static AggOp valueOf(int aggOp) {
+			return map.get(aggOp);
+		}
+		
+		public int getValue() {
+			return value;
 		}
 	}
 	

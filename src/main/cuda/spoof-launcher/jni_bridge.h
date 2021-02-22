@@ -48,6 +48,22 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_destroy_1cuda_1context(
     JNIEnv *, jobject, jlong, jint);
 
 /*
+ * Class:     org_apache_sysds_hops_codegen_cplan_CNodeCell
+ * Method:    compile_nvrtc
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IIZ)I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_sysds_hops_codegen_cplan_CNodeCell_compile_1nvrtc
+		(JNIEnv *, jobject, jlong, jstring, jstring, jint, jint, jboolean);
+
+/*
+ * Class:     org_apache_sysds_hops_codegen_cplan_CNodeRow
+ * Method:    compile_nvrtc
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IIIZ)I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_sysds_hops_codegen_cplan_CNodeRow_compile_1nvrtc
+		(JNIEnv *, jobject, jlong, jstring, jstring, jint, jint, jint, jboolean);
+
+/*
  * Class:     org_apache_sysds_hops_codegen_SpoofCompiler
  * Method:    compile_cuda_kernel
  * Signature: (JLjava/lang/String;Ljava/lang/String;)Z

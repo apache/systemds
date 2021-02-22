@@ -66,7 +66,8 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
 	// number of active thread blocks (via gridDim).  More blocks will result
 	// in a larger gridSize and therefore fewer elements per thread
 	while (i < N) {
-		v = reduction_op(v, spoof_op(*(in->vals(i)), i, i / N, i % N));
+//		printf("tid=%d i=%d N=%d, in->cols()=%d rix=%d\n", threadIdx.x, i, N, in->cols(), i/in->cols());
+		v = reduction_op(v, spoof_op(*(in->vals(i)), i, i / in->cols(), i % in->cols()));
 
 		if (i + blockDim.x < N)	{
 			//__syncthreads();
@@ -106,7 +107,7 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
 		}
 		__syncthreads();
 	}
-
+	
 	if (tid < 32) {
 		// now that we are using warp-synchronous programming (below)
 		// we need to declare our shared memory volatile so that the compiler
@@ -115,27 +116,40 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
 		if (blockDim.x >= 64) {
 			smem[tid] = v = reduction_op(v, smem[tid + 32]);
 		}
+		if(tid<12)
+			printf("bid=%d tid=%d reduction result: %3.1f\n", blockIdx.x, tid, sdata[tid]);
+		
 		if (blockDim.x >= 32) {
 			smem[tid] = v = reduction_op(v, smem[tid + 16]);
 		}
+//		if(tid==0)
+//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		if (blockDim.x >= 16) {
 			smem[tid] = v = reduction_op(v, smem[tid + 8]);
 		}
+//		if(tid==0)
+//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		if (blockDim.x >= 8) {
 			smem[tid] = v = reduction_op(v, smem[tid + 4]);
 		}
+//		if(tid==0)
+//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		if (blockDim.x >= 4) {
 			smem[tid] = v = reduction_op(v, smem[tid + 2]);
 		}
+//		if(tid==0)
+//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		if (blockDim.x >= 2) {
 			smem[tid] = v = reduction_op(v, smem[tid + 1]);
 		}
+//		if(tid==0)
+//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 	}
 
 	 // write result for this block to global mem
 	 if (tid == 0) {
 //	 	if(gridDim.x < 10)
-//	 		printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
+	 		printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 	 	out->val(0, blockIdx.x) = sdata[0];
 	 }
 }

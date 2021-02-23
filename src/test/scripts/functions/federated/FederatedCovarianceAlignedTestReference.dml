@@ -19,10 +19,9 @@
 #
 #-------------------------------------------------------------
 
-A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-  ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
-  list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
-B = read($Y);
+
+A = rbind(read($1), read($2), read($3), read($4));
+B = rbind(read($5), read($6), read($7), read($8));
 
 s = cov(A, B);
-write(s, $out_S);
+write(s, $9);

@@ -22,7 +22,10 @@
 A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
   ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
   list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
-B = read($Y);
+
+B = federated(addresses=list($in_Y1, $in_Y2, $in_Y3, $in_Y4),
+  ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+  list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
 
 s = cov(A, B);
 write(s, $out_S);

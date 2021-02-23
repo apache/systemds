@@ -19,10 +19,9 @@
 #
 #-------------------------------------------------------------
 
-if($6) { A = rbind(read($1), read($2), read($3), read($4));
-         B = read($5);}
-else { A = cbind(read($1), read($2), read($3), read($4));
-       B = read($5);}
+
+A = rbind(read($1), read($2), read($3), read($4));
+B = read($5);
 
 s = cov(A, B);
-write(s, $7);
+write(s, $6);

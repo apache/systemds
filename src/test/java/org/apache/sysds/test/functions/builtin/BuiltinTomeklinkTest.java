@@ -74,7 +74,7 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 
       double[][] B = getRandomMatrix(rows, 1, 0, 1, 0.3, 1);
-      B = TestUtils.round(B)
+      B = TestUtils.round(B);
       writeInputMatrixWithMTD("B", B, true);
 
 			runTest(true, false, null, -1);

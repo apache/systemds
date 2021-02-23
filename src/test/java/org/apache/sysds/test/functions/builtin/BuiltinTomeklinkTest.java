@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import java.util.HashMap;
-
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
@@ -29,6 +27,8 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
+import java.util.HashMap;
+
 public class BuiltinTomeklinkTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "tomeklink";
@@ -36,8 +36,8 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinTomeklinkTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-3;
-	private final static int rows = 1765;
-  private final static int cols = 25;
+	private final static int rows = 1243;
+  private final static int cols = 6;
 
 	@Override
 	public void setUp() {
@@ -70,12 +70,12 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			//generate actual dataset
-      double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.3, 1);
-			writeInputMatrixWithMTD("A", X, true);
+      double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.7, 1);
+			writeInputMatrixWithMTD("A", A, true);
 
-      double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.3, 1);
-      y = TestUtils.round(y)
-      writeInputMatrixWithMTD("B", y, true);
+      double[][] B = getRandomMatrix(rows, 1, 0, 1, 0.3, 1);
+      B = TestUtils.round(B)
+      writeInputMatrixWithMTD("B", B, true);
 
 			runTest(true, false, null, -1);
 			runRScript(true);

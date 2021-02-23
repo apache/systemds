@@ -22,7 +22,6 @@
 
 X = read($1)
 y = read($2)
-save_as = read($3)
 
 [X_under, y_under, drop_idx] = tomeklink(X, y)
-write(X_under, save_as)
+write(drop_idx, $3) # sorted by default

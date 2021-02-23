@@ -34,7 +34,7 @@ custom_install <- function(pkg) {
 			install.packages(pkg, lib= args[1]);
 		}
 	}
-} 
+}
 
 list_user_pkgs <- function() {
 	print("List of user installed packages:")
@@ -58,6 +58,7 @@ custom_install("mice");
 custom_install("mclust");
 custom_install("dbscan");
 custom_install("imputeTS");
+custom_install("unbalanced");
 
 print("Installation Done")
 

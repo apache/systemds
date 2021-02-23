@@ -33,7 +33,7 @@ import org.apache.sysds.common.Types.ReturnType;
  * builtin functions.
  *
  * To add a new builtin script function, simply add the definition here
- * as well as a dml file in scripts/builtin with a matching name. On 
+ * as well as a dml file in scripts/builtin with a matching name. On
  * building SystemDS, these scripts are packaged into the jar as well.
  */
 public enum Builtins {
@@ -207,6 +207,7 @@ public enum Builtins {
 	TANH("tanh", false),
 	TRACE("trace", false),
 	TO_ONE_HOT("toOneHot", true),
+	TOMEKLINK("tomeklink", true),
 	TYPEOF("typeof", false),
 	COUNT_DISTINCT("countDistinct",false),
 	COUNT_DISTINCT_APPROX("countDistinctApprox",false),

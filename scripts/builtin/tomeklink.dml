@@ -21,7 +21,7 @@
 #
 # UNDERSAMPLING TECHNIQUE;
 # COMPUTES TOMEK LINKS AND DROPS THEM FROM DATA MATRIX AND LABEL VECTOR
-# DROPS EITHER BOTH ENDPOINTS OF LINK (MODE BOTH) OR ONLY THE MAJORITY LABEL (MODE AUTO)
+# DROPS ONLY THE MAJORITY LABEL AND CORRESPONDING POINT OF TOMEK LINKS
 #
 # INPUT   				PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -29,40 +29,18 @@
 # ---------------------------------------------------------------------------------------------
 # X       				MATRIX   ---      Data Matrix (nxm)
 # y      					MATRIX   ---      Label Matrix (nx1)
-# majority_label	DOUBLE 	 0 				Label of largest class
-# mode						STRING   "auto" 	drop only majority samples (auto) or both ends of links (both)
 # ---------------------------------------------------------------------------------------------
 # OUTPUT:
 # X_under  - Data Matrix without Tomek links
 # y_under  - Labels corresponding to undersampled data
 # drop_idx - Indices of dropped rows/labels wrt input
-#
-# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# attach following lines at the end of this script, run in terminal $ systemds tomeklink.dml
-#
-# print("----------- begin input -----------")
-# X = rand(rows=5, cols=2)
-# y = rbind(matrix(1, rows=2,cols=1), matrix(0, rows=3,cols=1))
-# print(toString(X))
-# print(toString(y))
-# print(" ----------- end input -----------")
-# print("----------- begin demo -----------")
-# [X_under, y_under, drop_idx] = tomek_link(X, y, 0, "auto")
-# print("0; auto")
-# print("X_under:")
-# print(toString(X_under))
-# print("y_under:")
-# print(toString(y_under))
-# print("drop_idx:")
-# print(toString(drop_idx))
-# print("----------- end demo -----------")
-
 
 
 ###### MAIN PART ######
 
-tomek_link = function(Matrix[Double] X, Matrix[Double] y, double majority_label=0, String mode="auto")
+m_tomeklink = function(Matrix[Double] X, Matrix[Double] y)
 return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx) {
+	majority_label = 0 #TODO can extend functionality to other majority labels
 	n = nrow(X)
 	m = ncol(X)
 	tomek_links = get_links(X, y, majority_label)
@@ -74,18 +52,7 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
 		drop_idx = matrix(0, rows=0, cols=1)
 	}
 	else {
-		if (mode=="auto") {
-			drop_idx = tomek_links[,1] # mode auto: drop majority sample
-		}
-
-		else if (mode=="both") {
-			drop_idx = rbind(tomek_links[,1], tomek_links[,2]) # drop both members of link
-		}
-
-		else {
-			print("error: select an available mode: auto, both")
-			drop_idx = matrix(0, rows=0, cols=1)
-		}
+		drop_idx = tomek_links[,1]
 
 		# construct undersampled data
 		# expand matrix by column indicating records to be dropped

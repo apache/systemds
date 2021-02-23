@@ -77,6 +77,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
@@ -558,20 +559,25 @@ public class ParForProgramBlock extends ForProgramBlock
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 
 		// evaluate from, to, incr only once (assumption: known at for entry)
-		IntObject from = executePredicateInstructions( 1, _fromInstructions, ec );
-		IntObject to   = executePredicateInstructions( 2, _toInstructions, ec );
-		IntObject incr = (_incrementInstructions == null || _incrementInstructions.isEmpty()) ? 
-			new IntObject((from.getLongValue()<=to.getLongValue()) ? 1 : -1) :
-			executePredicateInstructions( 3, _incrementInstructions, ec );
+		ScalarObject from0 = executePredicateInstructions(1, _fromInstructions, ec, false);
+		ScalarObject to0   = executePredicateInstructions(2, _toInstructions, ec, false);
+		ScalarObject incr0 = (_incrementInstructions == null || _incrementInstructions.isEmpty()) ? 
+			new IntObject((from0.getLongValue()<=to0.getLongValue()) ? 1 : -1) :
+			executePredicateInstructions( 3, _incrementInstructions, ec, false);
 		
-		if ( incr.getLongValue() == 0 ) //would produce infinite loop
+		if ( incr0.getLongValue() == 0 ) //would produce infinite loop
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment "
 				+ "of variable '" + _iterPredVar + "' must evaluate to a non-zero value.");
 		
-		//early exit on num iterations = zero
-		_numIterations = computeNumIterations(from, to, incr);
+		//early exit on num iterations (e.g., for invalid loop bounds)
+		_numIterations = UtilFunctions.getSeqLength( 
+			from0.getDoubleValue(), to0.getDoubleValue(), incr0.getDoubleValue(), false);
 		if( _numIterations <= 0 )
 			return; //avoid unnecessary optimization/initialization
+		
+		IntObject from = new IntObject(from0.getLongValue());
+		IntObject to = new IntObject(to0.getLongValue());
+		IntObject incr = new IntObject(incr0.getLongValue());
 		
 		///////
 		//OPTIMIZATION of ParFOR body (incl all child parfor PBs)
@@ -580,7 +586,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			// OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
 			OptimizationWrapper.optimize(_optMode, sb, this, ec, _monitor); //core optimize
 		}
-		
+
 		///////
 		//DATA PARTITIONING of read-only parent variables of type (matrix,unpartitioned)
 		///////
@@ -1518,10 +1524,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			if( _monitor ) 
 				StatisticMonitor.putPfPwMapping(_ID, _pwIDs[i]);
 		}
-	}
-
-	private static long computeNumIterations( IntObject from, IntObject to, IntObject incr ) {
-		return (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
 	}
 	
 	/**

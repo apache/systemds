@@ -37,7 +37,15 @@ public class FederatedWorkerHandlerException extends RuntimeException {
 	public FederatedWorkerHandlerException(String msg) {
 		super(msg);
 	}
-	
+
+	/**
+	 * Create new instance of FederatedWorkerHandlerException with a message
+	 * and a throwable representing the original cause of the exception.
+	 * This constructor should not be used unless the throwable @param t
+	 * does not expose any private data in any use case.
+	 * @param msg message describing the exception
+	 * @param t throwable representing the original cause of the exception
+	 */
 	public FederatedWorkerHandlerException(String msg, Throwable t) {
 		super(msg, t);
 	}

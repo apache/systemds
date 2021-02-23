@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -28,17 +29,30 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.List;
 import java.util.concurrent.Future;
 
+/**
+ * Subsample to Min Federated scheme
+ *
+ * When the parameter server runs in federated mode it cannot pull in the data which is already on the workers.
+ * Therefore, a UDF is sent to manipulate the data locally. In this case the global minimum number of examples is taken
+ * and the worker subsamples data to match that number of examples. The subsampling is done by multiplying with a
+ * Permutation Matrix with a global seed.
+ *
+ * Then all entries in the federation map of the input matrix are separated into MatrixObjects and returned as a list.
+ * Only supports row federated matrices atm.
+ */
 public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
-	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
+	public Result partition(MatrixObject features, MatrixObject labels, int seed) {
 		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
 		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
+		List<Double> weightingFactors = getWeightingFactors(pFeatures, getBalanceMetrics(pFeatures));
 
 		int min_rows = Integer.MAX_VALUE;
 		for (MatrixObject pFeature : pFeatures) {
@@ -51,7 +65,7 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 			FederatedData labelsData = (FederatedData) pLabels.get(i).getFedMapping().getMap().values().toArray()[0];
 
 			Future<FederatedResponse> udfResponse = featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					featuresData.getVarID(), new subsampleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, min_rows)));
+					featuresData.getVarID(), new subsampleDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, seed, min_rows)));
 
 			try {
 				FederatedResponse response = udfResponse.get();
@@ -68,7 +82,7 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 			pLabels.get(i).updateDataCharacteristics(update);
 		}
 
-		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures));
+		return new Result(pFeatures, pLabels, pFeatures.size(), getBalanceMetrics(pFeatures), weightingFactors);
 	}
 
 	/**
@@ -76,10 +90,12 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 	 */
 	private static class subsampleDataOnFederatedWorker extends FederatedUDF {
 		private static final long serialVersionUID = 2213790859544004286L;
+		private final int _seed;
 		private final int _min_rows;
-		
-		protected subsampleDataOnFederatedWorker(long[] inIDs, int min_rows) {
+
+		protected subsampleDataOnFederatedWorker(long[] inIDs, int seed, int min_rows) {
 			super(inIDs);
+			_seed = seed;
 			_min_rows = min_rows;
 		}
 
@@ -91,12 +107,17 @@ public class SubsampleToMinFederatedScheme extends DataPartitionFederatedScheme 
 			// subsample down to minimum
 			if(features.getNumRows() > _min_rows) {
 				// generate subsampling matrix
-				MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(_min_rows, Math.toIntExact(features.getNumRows()), System.currentTimeMillis());
+				MatrixBlock subsampleMatrixBlock = ParamservUtils.generateSubsampleMatrix(_min_rows, Math.toIntExact(features.getNumRows()), _seed);
 				subsampleTo(features, subsampleMatrixBlock);
 				subsampleTo(labels, subsampleMatrixBlock);
 			}
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 }

@@ -44,6 +44,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "FederatedRightIndexRightTest";
 	private final static String TEST_NAME2 = "FederatedRightIndexLeftTest";
 	private final static String TEST_NAME3 = "FederatedRightIndexFullTest";
+	private final static String TEST_NAME4 = "FederatedRightIndexFrameFullTest";
 
 	private final static String TEST_DIR = "functions/federated/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRightIndexTest.class.getSimpleName() + "/";
@@ -65,11 +66,17 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{20, 10, 1, 1, true}, {20, 10, 3, 5, true}, {10, 12, 1, 10, false}});
+		return Arrays.asList(new Object[][] {
+			{20, 10, 1, 1, true}, {20, 10, 3, 5, true},
+			{10, 12, 1, 10, false}});
 	}
 
 	private enum IndexType {
 		RIGHT, LEFT, FULL
+	}
+
+	private enum DataType {
+		MATRIX, FRAME
 	}
 
 	@Override
@@ -78,24 +85,30 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S"}));
 	}
 
 	// @Test
 	// public void testRightIndexRightDenseMatrixCP() {
-	// runAggregateOperationTest(IndexType.RIGHT, ExecMode.SINGLE_NODE);
+	// runAggregateOperationTest(IndexType.RIGHT, DataType.MATRIX, ExecMode.SINGLE_NODE);
 	// }
 
 	// @Test
 	// public void testRightIndexLeftDenseMatrixCP() {
-	// runAggregateOperationTest(IndexType.LEFT, ExecMode.SINGLE_NODE);
+	// runAggregateOperationTest(IndexType.LEFT, DataType.MATRIX, ExecMode.SINGLE_NODE);
 	// }
 
 	@Test
 	public void testRightIndexFullDenseMatrixCP() {
-		runAggregateOperationTest(IndexType.FULL, ExecMode.SINGLE_NODE);
+		runAggregateOperationTest(IndexType.FULL, DataType.MATRIX, ExecMode.SINGLE_NODE);
 	}
 
-	private void runAggregateOperationTest(IndexType type, ExecMode execMode) {
+	@Test
+	public void testRightIndexFullDenseFrameCP() {
+		runAggregateOperationTest(IndexType.FULL, DataType.FRAME, ExecMode.SINGLE_NODE);
+	}
+
+	private void runAggregateOperationTest(IndexType indexType, DataType dataType, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -103,7 +116,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		String TEST_NAME = null;
-		switch(type) {
+		switch(indexType) {
 			case RIGHT:
 				from = from <= cols ? from : cols;
 				to = to <= cols ? to : cols;
@@ -115,7 +128,10 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 				TEST_NAME = TEST_NAME2;
 				break;
 			case FULL:
-				TEST_NAME = TEST_NAME3;
+				if(dataType == DataType.MATRIX)
+					TEST_NAME = TEST_NAME3;
+				else
+					TEST_NAME = TEST_NAME4;
 				from = from <= rows && from <= cols ? from : Math.min(rows, cols);
 				to = to <= rows && to <= cols ? to : Math.min(rows, cols);
 				break;

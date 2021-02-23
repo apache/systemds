@@ -116,7 +116,9 @@ public class LibMatrixNative
 			Statistics.incrementNativeFailuresCounter();
 		}
 		//fallback to default java implementation
-		LOG.warn("matrixMult: Native mat mult failed. Falling back to java version.");
+		LOG.warn("matrixMult: Native mat mult failed. Falling back to java version ("
+			+ "loaded=" + NativeHelper.isNativeLibraryLoaded() 
+			+ ", sparse=" + (m1.isInSparseFormat() | m2.isInSparseFormat()) + ")");
 		if (k == 1)
 			LibMatrixMult.matrixMult(m1, m2, ret, !examSparsity);
 		else
@@ -126,14 +128,23 @@ public class LibMatrixNative
 	public static void tsmm(MatrixBlock m1, MatrixBlock ret, boolean leftTrans, int k) {
 		if( m1.isEmptyBlock(false) )
 			return;
+		
 		if( NativeHelper.isNativeLibraryLoaded() && (ret.clen > 1 || ret.getLength()==1)
-			&& (!m1.sparse && m1.getDenseBlock().isContiguous() ) ) {
+			&& !LibMatrixMult.isOuterProductTSMM(m1.rlen, m1.clen, leftTrans)
+			&& (!m1.sparse && m1.getDenseBlock().isContiguous() ) )
+		{
 			ret.sparse = false;
 			ret.allocateDenseBlock();
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			
-			long nnz = NativeHelper.tsmm(m1.getDenseBlockValues(), ret.getDenseBlockValues(), 
-										 m1.rlen, m1.clen, leftTrans, k); 
+			long nnz = NativeHelper.tsmm(m1.getDenseBlockValues(),
+				ret.getDenseBlockValues(), m1.rlen, m1.clen, leftTrans, k);
+			
 			if(nnz > -1) {
+				if(DMLScript.STATISTICS) {
+					Statistics.nativeLibMatrixMultTime += System.nanoTime() - start;
+					Statistics.numNativeLibMatrixMultCalls.increment();
+				}
 				ret.setNonZeros(nnz);
 				ret.examSparsity();
 				return;

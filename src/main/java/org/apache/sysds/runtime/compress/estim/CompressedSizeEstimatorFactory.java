@@ -19,17 +19,38 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressedSizeEstimatorFactory {
+	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorFactory.class.getName());
+
+	private static final int minimumSampleSize = 2000;
 
 	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
-		long elements = compSettings.transposeInput ? data.getNumColumns() : data.getNumRows();
-		elements = data.getNonZeros() / (compSettings.transposeInput ? data.getNumRows() : data.getNumColumns());
 
-		return (compSettings.samplingRatio >= 1.0 || elements < 1000) ? new CompressedSizeEstimatorExact(data,
-			compSettings) : new CompressedSizeEstimatorSample(data, compSettings,
-				(int) Math.ceil(elements * compSettings.samplingRatio));
+		MatrixBlock shallowCopy = new MatrixBlock().copyShallow(data);
+		long elements = compSettings.transposed ? data.getNumColumns() : data.getNumRows();
+		elements = data.getNonZeros() / (compSettings.transposed ? data.getNumRows() : data.getNumColumns());
+		CompressedSizeEstimator est;
+
+		// Calculate the sample size.
+		// If the sample size is very small, set it to the minimum size
+		int sampleSize = Math.max((int) Math.ceil(elements * compSettings.samplingRatio), minimumSampleSize);
+		if(compSettings.samplingRatio >= 1.0 || elements < minimumSampleSize || sampleSize > elements) {
+			est = new CompressedSizeEstimatorExact(shallowCopy, compSettings, compSettings.transposed);
+		}
+		else {
+			int[] sampleRows = CompressedSizeEstimatorSample.getSortedUniformSample(
+				compSettings.transposed ? data.getNumColumns() : data.getNumRows(),
+				sampleSize,
+				compSettings.seed);
+			est = new CompressedSizeEstimatorSample(shallowCopy, compSettings, sampleRows, compSettings.transposed);
+		}
+
+		LOG.debug(est);
+		return est;
 	}
 }

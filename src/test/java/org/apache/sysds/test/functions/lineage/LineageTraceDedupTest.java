@@ -141,6 +141,7 @@ public class LineageTraceDedupTest extends LineageBase
 			proArgs = new ArrayList<>();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
+			proArgs.add("reuse_full"); //test reuse + deduplication
 			proArgs.add("dedup");
 			proArgs.add("-args");
 			proArgs.add(output("R"));

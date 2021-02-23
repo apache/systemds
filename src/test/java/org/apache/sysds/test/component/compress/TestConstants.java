@@ -24,12 +24,12 @@ package org.apache.sysds.test.component.compress;
  */
 public class TestConstants {
 
-	private static final int rows[] = {4, 2008, 1283, 500, 1, 100, 5000, 100000, 64000*2};
+	private static final int rows[] = {4, 2008, 1283, 500, 1, 100, 5000, 100000, 64000 * 2};
 	private static final int cols[] = {20, 20, 13, 1, 321, 1, 5, 1, 1};
 	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0, 1.0};
 
-	private static final int[] mins = {-10, -127 * 2};
-	private static final int[] maxs = {10, 127};
+	private static final int[] mins = {-4, -127 * 2};
+	private static final int[] maxs = {5, 127};
 
 	public enum SparsityType {
 		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL
@@ -59,8 +59,21 @@ public class TestConstants {
 		SMALL, LARGE, BYTE, BOOLEAN
 	}
 
-	public enum OverLapping{
-		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE
+	public enum OverLapping {
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUEEZE;
+
+		public static boolean effectOnOutput(OverLapping opcode) {
+			switch(opcode) {
+				case MATRIX_MULT_NEGATIVE:
+				case MATRIX:
+				case SQUEEZE:
+				case COL:
+				case MATRIX_PLUS:
+					return true;
+				default:
+					return false;
+			}
+		}
 	}
 
 	public static double getSparsityValue(SparsityType sparsityType) {

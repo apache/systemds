@@ -23,6 +23,7 @@ __all__ = ["SystemDSContext"]
 
 import copy
 import os
+import socket
 import time
 from glob import glob
 from queue import Empty, Queue
@@ -34,10 +35,10 @@ from typing import Dict, Iterable, Sequence, Tuple, Union
 import numpy as np
 from py4j.java_gateway import GatewayParameters, JavaGateway
 from py4j.protocol import Py4JNetworkError
-from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.helpers import get_module_dir
 from systemds.operator import OperationNode
 from systemds.script_building import OutputType
+from systemds.utils.consts import VALID_INPUT_TYPES
+from systemds.utils.helpers import get_module_dir
 
 
 class SystemDSContext(object):
@@ -55,67 +56,12 @@ class SystemDSContext(object):
         Standard out and standard error form the JVM is also handled in this class, filling up Queues,
         that can be read from to get the printed statements from the JVM.
         """
-
-        root = os.environ.get("SYSTEMDS_ROOT")
-        if root == None:
-            # If there is no systemds install default to use the PIP packaged java files.
-            root = os.path.join(get_module_dir(), "systemds-java")
-
-        # nt means its Windows
-        cp_separator = ";" if os.name == "nt" else ":"
-
-        if os.environ.get("SYSTEMDS_ROOT") != None:
-            lib_cp = os.path.join(root, "target", "lib", "*")
-            systemds_cp = os.path.join(root, "target", "SystemDS.jar")
-            classpath = cp_separator.join([lib_cp, systemds_cp])
-
-            command = ["java", "-cp", classpath]
-            files = glob(os.path.join(root, "conf", "log4j*.properties"))
-            if len(files) > 1:
-                print(
-                    "WARNING: Multiple logging files found selecting: " + files[0])
-            if len(files) == 0:
-                print("WARNING: No log4j file found at: "
-                      + os.path.join(root, "conf")
-                      + " therefore using default settings")
-            else:
-                command.append("-Dlog4j.configuration=file:" + files[0])
-        else:
-            lib_cp = os.path.join(root, "lib", "*")
-            command = ["java", "-cp", lib_cp]
-
-        command.append("org.apache.sysds.api.PythonDMLScript")
-
+        command = self.__build_startup_command()
         # TODO add an argument parser here
-
-        # Find a random port, and hope that no other process
-        # steals it while we wait for the JVM to startup
         port = self.__get_open_port()
         command.append(str(port))
 
-        process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
-        first_stdout = process.stdout.readline()
-
-        if(not b"GatewayServer Started" in first_stdout):
-            stderr = process.stderr.readline().decode("utf-8")
-            if(len(stderr) > 1):
-                raise Exception(
-                    "Exception in startup of GatewayServer: " + stderr)
-            outputs = []
-            outputs.append(first_stdout.decode("utf-8"))
-            max_tries = 10
-            for i in range(max_tries):
-                next_line = process.stdout.readline()
-                if(b"GatewayServer Started" in next_line):
-                    print("WARNING: Stdout corrupted by prints: " + str(outputs))
-                    print("Startup success")
-                    break
-                else:
-                    outputs.append(next_line)
-
-                if (i == max_tries-1):
-                    raise Exception("Error in startup of systemDS gateway process: \n gateway StdOut: " + str(
-                        outputs) + " \n gateway StdErr" + process.stderr.readline().decode("utf-8"))
+        process = self.__try_startup(command)
 
         # Handle Std out from the subprocess.
         self.__stdout = Queue()
@@ -166,7 +112,79 @@ class SystemDSContext(object):
         print("exception")
         print(e)
         self.close()
-        exit()
+
+
+    def __try_startup(self, command, rep = 0):
+        try:
+            process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+            self.__verify_startup(process)
+            return process
+        except Exception as e:
+            if rep > 3: 
+                raise Exception("Failed to start SystemDS context with " + rep + " repeated tries")
+            else:
+                rep += 1
+                print("Failed to startup JVM process, retrying: " + rep)
+                sleep(rep) # Sleeping increasingly long time, maybe this helps.
+                return self.__try_startup(command, rep)
+
+    def __verify_startup(self, process):
+        first_stdout = process.stdout.readline()
+        if(not b"GatewayServer Started" in first_stdout):
+            stderr = process.stderr.readline().decode("utf-8")
+            if(len(stderr) > 1):
+                raise Exception(
+                    "Exception in startup of GatewayServer: " + stderr)
+            outputs = []
+            outputs.append(first_stdout.decode("utf-8"))
+            max_tries = 10
+            for i in range(max_tries):
+                next_line = process.stdout.readline()
+                if(b"GatewayServer Started" in next_line):
+                    print("WARNING: Stdout corrupted by prints: " + str(outputs))
+                    print("Startup success")
+                    break
+                else:
+                    outputs.append(next_line)
+
+                if (i == max_tries-1):
+                    raise Exception("Error in startup of systemDS gateway process: \n gateway StdOut: " + str(
+                        outputs) + " \n gateway StdErr" + process.stderr.readline().decode("utf-8"))
+
+    def __build_startup_command(self):
+
+        command = ["java", "-cp"]
+        root = os.environ.get("SYSTEMDS_ROOT")
+        if root == None:
+            # If there is no systemds install default to use the PIP packaged java files.
+            root = os.path.join(get_module_dir(), "systemds-java")
+
+        # nt means its Windows
+        cp_separator = ";" if os.name == "nt" else ":"
+
+        if os.environ.get("SYSTEMDS_ROOT") != None:
+            lib_cp = os.path.join(root, "target", "lib", "*")
+            systemds_cp = os.path.join(root, "target", "SystemDS.jar")
+            classpath = cp_separator.join([lib_cp, systemds_cp])
+
+            command.append(classpath)
+            files = glob(os.path.join(root, "conf", "log4j*.properties"))
+            if len(files) > 1:
+                print(
+                    "WARNING: Multiple logging files found selecting: " + files[0])
+            if len(files) == 0:
+                print("WARNING: No log4j file found at: "
+                      + os.path.join(root, "conf")
+                      + " therefore using default settings")
+            else:
+                command.append("-Dlog4j.configuration=file:" + files[0])
+        else:
+            lib_cp = os.path.join(root, "lib", "*")
+            command.append(lib_cp)
+
+        command.append("org.apache.sysds.api.PythonDMLScript")
+
+        return command
 
     def __enter__(self):
         return self
@@ -191,11 +209,11 @@ class SystemDSContext(object):
             queue.put(line.decode("utf-8").strip())
 
     def __get_open_port(self):
-        """Get a random available port."""
-        # TODO Verify that it is not taking some critical ports change to select a good port range.
-        # TODO If it tries to select a port already in use, find another.
+        """Get a random available port.
+        and hope that no other process steals it while we wait for the JVM to startup
+        """
         # https://stackoverflow.com/questions/2838244/get-open-tcp-port-in-python
-        import socket
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(("", 0))
         s.listen(1)

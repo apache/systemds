@@ -84,14 +84,10 @@ import java.util.Iterator;
 
 public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
 	protected HashMap<String, String> params;
-	// removeEmpty-specific attributes
-	private boolean _bRmEmptyBC = false;
 
-	ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String opcode,
-			String istr, boolean bRmEmptyBC) {
+	ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String opcode, String istr) {
 		super(SPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
-		_bRmEmptyBC = bRmEmptyBC;
 	}
 
 	public HashMap<String,String> getParams() { return params; }
@@ -127,8 +123,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			paramsMap.put(Statement.GAGG_NUM_GROUPS, parts[4]);
 			
 			Operator op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
-			
-			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
+			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str);
 		}
 		else
 		{
@@ -150,12 +145,12 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 						throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
 				}
 				Operator op = InstructionUtils.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
-				return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
+				return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str);
 			} 
 			else if (opcode.equalsIgnoreCase("rmempty")) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str,
-						parts.length > 6 ? Boolean.parseBoolean(parts[5]) : false);
+				return new ParameterizedBuiltinSPInstruction(
+					new SimpleOperator(func), paramsMap, out, opcode, str);
 			}
 			else if (opcode.equalsIgnoreCase("rexpand")
 				|| opcode.equalsIgnoreCase("replace")
@@ -164,7 +159,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				|| opcode.equalsIgnoreCase("transformapply")
 				|| opcode.equalsIgnoreCase("transformdecode")) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
@@ -311,6 +306,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			boolean rows = sec.getScalarInput(params.get("margin"), ValueType.STRING, true).getStringValue().equals("rows");
 			boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
 			long maxDim = sec.getScalarInput(params.get("maxdim"), ValueType.FP64, false).getLongValue();
+			boolean bRmEmptyBC = Boolean.parseBoolean(params.get("bRmEmptyBC"));
 			DataCharacteristics mcIn = sec.getDataCharacteristics(rddInVar);
 			
 			if( maxDim > 0 ) //default case
@@ -325,7 +321,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				//execute remove empty rows/cols operation
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out;
 	
-				if(_bRmEmptyBC){
+				if(bRmEmptyBC){
 					broadcastOff = sec.getBroadcastForVariable( rddOffVar );
 					// Broadcast offset vector
 					out = in
@@ -343,10 +339,10 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				//store output rdd handle
 				sec.setRDDHandleForVariable(output.getName(), out);
 				sec.addLineageRDD(output.getName(), rddInVar);
-				if(!_bRmEmptyBC)
-					sec.addLineageRDD(output.getName(), rddOffVar);
-				else
+				if(bRmEmptyBC)
 					sec.addLineageBroadcast(output.getName(), rddOffVar);
+				else
+					sec.addLineageRDD(output.getName(), rddOffVar);
 				
 				//update output statistics (required for correctness)
 				DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
@@ -428,9 +424,13 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddInVar);
 			
-			//update output statistics (required for correctness)
+			//update output statistics (required for correctness, nnz unknown due to cut-off)
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			mcOut.set(dirRows?lmaxVal:mcIn.getRows(), dirRows?mcIn.getRows():lmaxVal, (int)blen, -1);
+			mcOut.setNonZerosBound(mcIn.getRows());
+			
+			//post-processing to obtain sparsity of ultra-sparse outputs
+			SparkUtils.postprocessUltraSparseOutput(sec.getMatrixObject(output), mcOut);
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply") ) 
 		{

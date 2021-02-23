@@ -23,15 +23,13 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -79,10 +77,10 @@ public abstract class ColGroup implements Serializable {
 	 * ColGroup Implementation Contains zero row. Note this is not if it contains a zero value. If false then the stored
 	 * values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
 	 */
-	protected boolean _zeros;
+	protected boolean _zeros = false;
 
 	/** boolean specifying if the column group is encoded lossy */
-	protected boolean _lossy;
+	protected boolean _lossy = false;
 
 	/** Empty constructor, used for serializing into an empty new object of ColGroup. */
 	protected ColGroup() {
@@ -190,17 +188,57 @@ public abstract class ColGroup implements Serializable {
 	 * @param rl     row lower
 	 * @param ru     row upper
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru);
+	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
+		decompressToBlockSafe(target, rl, ru, rl, getValues(), true);
+	}
 
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block.
 	 * 
 	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
+	 * @param rl     The row to start at
+	 * @param ru     The row to end at
+	 * @param offT   The rowOffset into target to decompress to.
+	 */
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlockSafe(target, rl, ru, offT, getValues(), true);
+	}
+
+	/**
+	 * Decompress the contents of this column group into the target matrixBlock, it is assumed that the target matrix
+	 * Block have the same number of columns and at least the number of rows ru.
+	 * 
+	 * @param target The target matrixBlock to decompress into
+	 * @param rl     The row to start at
+	 * @param ru     The row to end at
+	 * @param values The dictionary values materialized.
+	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
+	 */
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, double[] values, boolean safe) {
+		decompressToBlockSafe(target, rl, ru, rl, values, safe);
+	}
+
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, boolean safe) {
+		decompressToBlockSafe(target, rl, ru, rl, getValues(), safe);
+	}
+
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, boolean safe) {
+		decompressToBlockSafe(target, rl, ru, offT, getValues(), safe);
+	}
+
+	/**
+	 * Decompress the contents of this column group into the specified full matrix block without managing the number of
+	 * non zeros.
+	 * 
+	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
 	 * @param rl     row lower
 	 * @param ru     row upper
-	 * @param offT   The offset into the target matrix block to decompress to.
+	 * @param offT   Offset into target to assign from
+	 * @param values The Values materialized in the dictionary
+	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT);
+	public abstract void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values,
+		boolean safe);
 
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block.
@@ -211,7 +249,9 @@ public abstract class ColGroup implements Serializable {
 	 * @param offT   The offset into the target matrix block to decompress to.
 	 * @param values The Values materialized in the dictionary
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values);
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+		decompressToBlockSafe(target, rl, ru, offT, values, true);
+	}
 
 	/**
 	 * Decompress the contents of this column group into uncompressed packed columns
@@ -222,11 +262,66 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract void decompressToBlock(MatrixBlock target, int[] colIndexTargets);
 
-	public static void decompressToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
+
+	/**
+	 * Decompress an entire column into the target matrix block. This decompression maintain the number of non zeros.
+	 * @param target Target matrix block to decompress into.
+	 * @param colIndex The column index to decompress.
+	 * @param colGroups The list of column groups to decompress.
+	 */
+	public static void decompressColumnToBlock(MatrixBlock target, int colIndex, List<ColGroup> colGroups) {
 		for(ColGroup g : colGroups) {
 			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
 			if(groupColIndex >= 0) {
-				g.decompressToBlock(target, groupColIndex);
+				g.decompressColumnToBlock(target, groupColIndex);
+			}
+		}
+	}
+
+	public static void decompressColumnToArray(double[] target, int colIndex, List<ColGroup> colGroups){
+		for(ColGroup g: colGroups){
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0){
+				g.decompressColumnToBlock(target, groupColIndex, 0, g._numRows);
+			}
+		}
+	}
+
+	/**
+	 * Decompress part of the col groups into the target matrix block, this decompression maintain the number of non zeros.
+	 * 
+	 * @param target The Target matrix block to decompress into
+	 * @param colIndex The column index to decompress.
+	 * @param rl The row to start the decompression from
+	 * @param ru The row to end the decompression at
+	 * @param colGroups The list of column groups to decompress.
+	 */
+	public static void decompressColumnToBlock(MatrixBlock target, int colIndex, int rl, int ru, List<ColGroup> colGroups) {
+		for(ColGroup g : colGroups) {
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0) {
+				g.decompressColumnToBlock(target, groupColIndex, rl, ru);
+			}
+		}
+	}
+
+	/**
+	 * Decompress part of the col groups into the target dense double array.
+	 * This assumes that the double array is a row linearized matrix double array.
+	 * 
+	 * This is much faster than decompressing into a target matrix block since nnz is not managed.
+	 * 
+	 * @param target Target double array to decompress into
+	 * @param colIndex The column index to decompress.
+	 * @param rl The row to start decompression from
+	 * @param ru The row to end the decompression at
+	 * @param colGroups The list of column groups to decompress.
+	 */
+	public static void decompressColumnToBlock(double[] target, int colIndex, int rl, int ru, List<ColGroup> colGroups) {
+		for(ColGroup g : colGroups) {
+			int groupColIndex = Arrays.binarySearch(g._colIndexes, colIndex);
+			if(groupColIndex >= 0) {
+				g.decompressColumnToBlock(target, groupColIndex, rl, ru);
 			}
 		}
 	}
@@ -237,7 +332,27 @@ public abstract class ColGroup implements Serializable {
 	 * @param target dense output vector
 	 * @param colpos column to decompress, error if larger or equal numCols
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int colpos);
+	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos);
+
+	/**
+	 * Decompress to block.
+	 * 
+	 * @param target dense output vector
+	 * @param colpos column to decompress, error if larger or equal numCols
+	 * @param rl     the Row to start decompression from
+	 * @param ru     the Row to end decompression at
+	 */
+	public abstract void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru);
+
+	/**
+	 * Decompress to dense array.
+	 * 
+	 * @param target dense output vector double array.
+	 * @param colpos column to decompress, error if larger or equal numCols
+	 * @param rl     the Row to start decompression from
+	 * @param ru     the Row to end decompression at
+	 */
+	public abstract void decompressColumnToBlock(double[] target, int colpos, int rl, int ru);
 
 	/**
 	 * Serializes column group to data output.
@@ -311,43 +426,24 @@ public abstract class ColGroup implements Serializable {
 	 * Note that there is no b argument, but the b is aggregated into the values needed for assignment and addition into
 	 * output.
 	 * 
+	 * @param outputColumns  The Columns that are affected by the right multiplication.
 	 * @param preAggregatedB The preAggregated values that is to be put into c
 	 * @param c              The output matrix
 	 * @param thatNrColumns  The number of columns in B (before aggregation)
 	 * @param rl             The row index to start the multiplication from
 	 * @param ru             The row index to stop the multiplication at
-	 * @param cl             The column index to start from
-	 * @param cu             The row index to stop at.
 	 */
-	public abstract void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru,
-		int cl, int cu);
-
-	/**
-	 * Sparse right multiply by matrix, for which the compressed matrix is on the left and the uncompressed sparse is on
-	 * the right. This call differ from the other right multiply by not having a preAggregation phase.
-	 * 
-	 * This should only be called in very sparse situations.
-	 * 
-	 * @param rows      The sparse rows
-	 * @param c         The output matrix linearized
-	 * @param numVals   The number of values in the dictionary
-	 * @param dictVals  The materialized dictionary
-	 * @param nrColumns The number of columns in the matrix to multiply with and also in the output
-	 * @param rl        The row index to start at
-	 * @param ru        The row index to stop at.
-	 */
-	public abstract void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals,
-		int nrColumns, int rl, int ru);
+	public abstract void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns,
+		int rl, int ru);
 
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
 	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
 	 * 
-	 * @param vector  row vector
-	 * @param result  matrix block result
-	 * @param numVals The Number of values contained in the Column.
+	 * @param vector row vector
+	 * @param result matrix block result
 	 */
-	public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals);
+	public abstract void leftMultByRowVector(double[] vector, double[] result);
 
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
@@ -378,21 +474,16 @@ public abstract class ColGroup implements Serializable {
 	/**
 	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
 	 * 
-	 * @param spNrVals        the Number of sparse values (since the number of indexes does not align with number of
-	 *                        values)
-	 * @param indexes         the indexes for the sparse values in the given row.
-	 * @param sparseV         the sparse values.
-	 * @param result          the linearized output matrix
-	 * @param numVals         the number of values in the dictionary
-	 * @param values          the dictionary values materialized
-	 * @param numRows         the number of rows in the left hand side input matrix (the sparse one)
-	 * @param numCols         the number of columns in the compression.
-	 * @param row             the row index of the sparse row to multiply with.
-	 * @param MaterializedRow The sparse row materialized (should only be done if needed for the specific type of
-	 *                        ColumnGroup)
+	 * @param sb              The sparse block to multiply with
+	 * @param result          The linearized output matrix
+	 * @param values          The dictionary values materialized
+	 * @param numRows         The number of rows in the left hand side input matrix (the sparse one)
+	 * @param numCols         The number of columns in the compression.
+	 * @param row             The row index of the sparse row to multiply with.
+	 * @param MaterializedRow A Temporary dense row vector to materialize the sparse values into used for OLE
 	 */
-	public abstract void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] result,
-		int numVals, double[] values, int numRows, int numCols, int row, double[] MaterializedRow);
+	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows,
+		int numCols, int row, double[] MaterializedRow);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual
@@ -420,7 +511,7 @@ public abstract class ColGroup implements Serializable {
 	 * @param op The operator used
 	 * @param c  Rhe output matrix block.
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c);
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c);
 
 	/**
 	 * Compute the max / min value contained in the dictionary.
@@ -440,28 +531,7 @@ public abstract class ColGroup implements Serializable {
 	 * @param rl The Starting Row to do aggregation from
 	 * @param ru The last Row to do aggregation to (not included)
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru);
-
-	/**
-	 * Create a column group iterator for a row index range.
-	 * 
-	 * @param rl        row lower index, inclusive
-	 * @param ru        row upper index, exclusive
-	 * @param inclZeros include zero values into scope of iterator
-	 * @param rowMajor  use a row major iteration order
-	 * @return an iterator instance
-	 */
-	public abstract Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor);
-
-	/**
-	 * Create a dense row iterator for a row index range. This iterator implies the inclusion of zeros and row-major
-	 * iteration order.
-	 * 
-	 * @param rl row lower index, inclusive
-	 * @param ru row upper index, exclusive
-	 * @return an iterator instance
-	 */
-	public abstract ColGroupRowIterator getRowIterator(int rl, int ru);
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c, int rl, int ru);
 
 	/**
 	 * Count the number of non-zeros per row
@@ -486,5 +556,28 @@ public abstract class ColGroup implements Serializable {
 	 * @return returns if the ColGroup is compressed in a lossy manner.
 	 */
 	public abstract boolean isLossy();
+
+	/**
+	 * Is dense, signals that the entire column group is allocated an processed. This is useful in Row wise min and max
+	 * for instance, to avoid having to scan through each row to look for empty rows.
+	 * 
+	 * an example where it is true is DDC, Const and Uncompressed. examples where false is OLE and RLE.
+	 * 
+	 * @return returns if the colgroup is allocated in a dense fashion.
+	 */
+	public boolean isDense(){
+		return ! _zeros;
+	}
+
+	/**
+	 * Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns.
+	 * If the ColGroup slicing from does not contain any columns within the range null is returned.
+	 * 
+	 * @param cl The lower bound of the columns to select
+	 * @param cu the upper bound of the columns to select (not inclusive).
+	 * @return A cloned Column Group, with a copied pointer to the old column groups index structure, but reduced
+	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
+	 */
+	public abstract ColGroup sliceColumns(int cl, int cu);
 
 }

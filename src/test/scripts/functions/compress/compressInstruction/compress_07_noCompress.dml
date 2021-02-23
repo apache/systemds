@@ -1,0 +1,52 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+A = rand(rows=$rows, cols=$cols, sparsity=$sparsity, min=$min, max=$max, seed = 1412)
+X = round(A)
+
+
+num_centroids = 5
+C = rand(rows=num_centroids, cols=$cols, sparsity=1.0, min =$min, max=$max, seed = 1412)
+sumXsq = sum (X ^ 2);
+wcss = Inf
+
+for(i in 1:10)
+{
+    C_old = C;
+    D = -2 * (X %*% t(C)) + t(rowSums (C ^ 2))
+
+    minD = rowMins(D)
+    wcss_old = wcss;
+    wcss = sumXsq + sum (minD);
+    print(wcss)
+    print(sum ((C - C_old) ^ 2) / num_centroids)
+    # Find the closest centroid for each record
+    P = D <= minD;
+    # If some records belong to multiple centroids, share them equally
+    P = P / rowSums (P);
+    # Compute the column normalization factor for P
+    P_denom = colSums (P);
+    # Compute new centroids as weighted averages over the records
+    C_new = (t(P) %*% X) / t(P_denom);
+
+    C_old = C
+    C = C_new;
+}

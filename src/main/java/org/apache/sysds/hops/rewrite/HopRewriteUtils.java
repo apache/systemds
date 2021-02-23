@@ -100,8 +100,8 @@ public class HopRewriteUtils
 
 	public static boolean getBooleanValue( LiteralOp op ) {
 		switch( op.getValueType() ) {
-			case FP64:  return op.getDoubleValue() != 0; 
-			case INT64:     return op.getLongValue()   != 0;
+			case FP64:    return op.getDoubleValue() != 0; 
+			case INT64:   return op.getLongValue()   != 0;
 			case BOOLEAN: return op.getBooleanValue();
 			default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 		}
@@ -110,8 +110,8 @@ public class HopRewriteUtils
 	public static boolean getBooleanValueSafe( LiteralOp op ) {
 		try {
 			switch( op.getValueType() ) {
-				case FP64:  return op.getDoubleValue() != 0; 
-				case INT64:     return op.getLongValue()   != 0;
+				case FP64:    return op.getDoubleValue() != 0; 
+				case INT64:   return op.getLongValue()   != 0;
 				case BOOLEAN: return op.getBooleanValue();
 				default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 			}
@@ -126,8 +126,8 @@ public class HopRewriteUtils
 	public static double getDoubleValue( LiteralOp op ) {
 		switch( op.getValueType() ) {
 			case STRING:
-			case FP64:  return op.getDoubleValue(); 
-			case INT64:     return op.getLongValue();
+			case FP64:    return op.getDoubleValue(); 
+			case INT64:   return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: throw new HopsException("Invalid double value: "+op.getValueType());
 		}
@@ -802,7 +802,7 @@ public class HopRewriteUtils
 	}
 	
 	public static TernaryOp createTernary(Hop in1, Hop in2, Hop in3, Hop in4, Hop in5, OpOp3 op) {
-		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.FP64, op, in1, in2, in3, in4, in5);
+		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.FP64, op, in1, in2, in3, in4, in5, new LiteralOp(true));
 		ternOp.setBlocksize(Math.max(in1.getBlocksize(), in2.getBlocksize()));
 		copyLineNumbers(in1, ternOp);
 		ternOp.refreshSizeInformation();
@@ -1118,6 +1118,12 @@ public class HopRewriteUtils
 			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()
 			&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown() && hop.getInput().get(1).getDim2() == 1;
 	}
+
+	public static boolean isBinaryMatrixRowVectorOperation(Hop hop) {
+		return hop instanceof BinaryOp 
+			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()
+			&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown() && hop.getInput().get(1).getDim1() == 1;
+	}
 	
 	public static boolean isUnary(Hop hop, OpOp1 type) {
 		return hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==type;
@@ -1371,7 +1377,7 @@ public class HopRewriteUtils
 	public static boolean alwaysRequiresReblock(Hop hop) {
 		return (hop instanceof DataOp
 			&& ((DataOp)hop).getOp()==OpOpData.PERSISTENTREAD
-			 && ((DataOp)hop).getInputFormatType()!=FileFormat.BINARY);
+			 && ((DataOp)hop).getFileFormat()!=FileFormat.BINARY);
 	}
 	
 	public static boolean containsOp(ArrayList<Hop> candidates, Class<? extends Hop> clazz) {

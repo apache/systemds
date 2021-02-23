@@ -70,7 +70,7 @@ public class PlanningCoCoder {
 		for(int i = 0; i < numCols; i++) {
 			int colIx = cols.get(i);
 			int cardinality = colGroups[colIx].getEstCard();
-			double weight = ((double)cardinality) / numRows;
+			double weight = ((double) cardinality) / numRows;
 			groupCols.add(colIx);
 			groupColsInfo.put(colIx, new GroupableColInfo(weight, colGroups[colIx].getMinSize(), cardinality));
 		}
@@ -78,17 +78,25 @@ public class PlanningCoCoder {
 		// use column group partitioner to create partitions of columns
 		List<int[]> bins = createColumnGroupPartitioner(cs.columnPartitioner)
 			.partitionColumns(groupCols, groupColsInfo, cs);
-		
-		if (cs.columnPartitioner == PartitionerType.COST){
+
+		if(cs.columnPartitioner == PartitionerType.COST) {
 			return bins;
 		}
 
 		// brute force grouping within each partition
-		return (k > 1) ? getCocodingGroupsBruteForce(bins,
+		List<int[]> coCodeColGroups = (k > 1) ? getCocodingGroupsBruteForce(bins,
 			groupColsInfo,
 			sizeEstimator,
 			numRows,
 			k) : getCocodingGroupsBruteForce(bins, groupColsInfo, sizeEstimator, numRows);
+
+		if(LOG.isDebugEnabled()) {
+			StringBuilder sb = new StringBuilder();
+			for(int[] group : coCodeColGroups)
+				sb.append(Arrays.toString(group));
+			LOG.debug(sb.toString());
+		}
+		return coCodeColGroups;
 	}
 
 	private static List<int[]> getCocodingGroupsBruteForce(List<int[]> bins,

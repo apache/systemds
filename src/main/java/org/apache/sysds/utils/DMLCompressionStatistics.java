@@ -21,15 +21,11 @@ package org.apache.sysds.utils;
 
 public class DMLCompressionStatistics {
 
-	// Compute compressed size info
+	private static double Phase0 = 0.0;
 	private static double Phase1 = 0.0;
-	// Co-code columns
 	private static double Phase2 = 0.0;
-	// Compress the columns
 	private static double Phase3 = 0.0;
-	// Share resources
 	private static double Phase4 = 0.0;
-	// Cleanup
 	private static double Phase5 = 0.0;
 
 	private static int DecompressSTCount = 0;
@@ -37,8 +33,28 @@ public class DMLCompressionStatistics {
 	private static int DecompressMTCount = 0;
 	private static double DecompressMT = 0.0;
 
+	public static void reset() {
+		Phase0 = 0.0;
+		Phase1 = 0.0;
+		Phase2 = 0.0;
+		Phase3 = 0.0;
+		Phase4 = 0.0;
+		Phase5 = 0.0;
+		DecompressSTCount = 0;
+		DecompressST = 0.0;
+		DecompressMTCount = 0;
+		DecompressMT = 0.0;
+	}
+
+	public static boolean haveCompressed(){
+		return Phase0 > 0;
+	}
+
 	public static void addCompressionTime(double time, int phase) {
 		switch(phase) {
+			case 0:
+				Phase0 += time;
+				break;
 			case 1:
 				Phase1 += time;
 				break;
@@ -78,18 +94,20 @@ public class DMLCompressionStatistics {
 	}
 
 	public static void display(StringBuilder sb) {
-		sb.append(String.format(
-			"CLA Compression Phases (classify, group, compress, share, clean) :\t%.3f/%.3f/%.3f/%.3f/%.3f\n",
-			Phase1 / 1000,
-			Phase2 / 1000,
-			Phase3 / 1000,
-			Phase4 / 1000,
-			Phase5 / 1000));
-		sb.append(String.format("Decompression Counts (Single , Multi) thread                     :\t%d/%d\n",
-			DecompressSTCount,
-			DecompressMTCount));
-		sb.append(String.format("Dedicated Decompression Time (Single , Multi) thread             :\t%.3f/%.3f\n",
-			DecompressST / 1000,
-			DecompressMT / 1000));
+		if(haveCompressed()) { // If compression have been used
+			sb.append(String.format("CLA Compression Phases :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n",
+				Phase0 / 1000,
+				Phase1 / 1000,
+				Phase2 / 1000,
+				Phase3 / 1000,
+				Phase4 / 1000,
+				Phase5 / 1000));
+			sb.append(String.format("Decompression Counts (Single , Multi) thread                     :\t%d/%d\n",
+				DecompressSTCount,
+				DecompressMTCount));
+			sb.append(String.format("Dedicated Decompression Time (Single , Multi) thread             :\t%.3f/%.3f\n",
+				DecompressST / 1000,
+				DecompressMT / 1000));
+		}
 	}
 }

@@ -132,6 +132,21 @@ public abstract class MatrixValue implements WritableComparable
 
 	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary);
 	
+	/**
+	 * Slice out up to 4 matrixBlocks that are separated by the row and col Cuts.
+	 * 
+	 * This is used in the context of spark execution to distributed sliced out matrix blocks of correct block size.
+	 * 
+	 * @param outlist The output matrix blocks that is extracted from the matrix
+	 * @param range An index range containing overlapping information.
+	 * @param rowCut The row to cut and split the matrix.
+	 * @param colCut The column to cut ans split the matrix.
+	 * @param blen The Block size of the output matrices.
+	 * @param boundaryRlen The row length of the edge case matrix block, used for the final blocks
+	 *                     that does not have enough rows to construct a full block.
+	 * @param boundaryClen The col length of the edge case matrix block, used for the final blocks
+	 *                     that does not have enough cols to construct a full block.
+	 */
 	public abstract void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 		int blen, int boundaryRlen, int boundaryClen);
 

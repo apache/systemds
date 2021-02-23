@@ -19,12 +19,17 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -36,16 +41,15 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
-import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysds.runtime.util.IndexRange;
 
 public class ReorgFEDInstruction extends UnaryFEDInstruction {
 	
@@ -235,7 +239,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		return new RdiagResult(diagFedMap, dcs);
 	}
 
-	private static class Rdiag extends FederatedUDF {
+	public static class Rdiag extends FederatedUDF {
 
 		private static final long serialVersionUID = -3466926635958851402L;
 		private final long _outputID;
@@ -268,9 +272,28 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new int[]{res.getNumRows(), res.getNumColumns()});
 		}
+
+		@Override
+		public List<Long> getOutputIds() {
+			return new ArrayList<>(Arrays.asList(_outputID));
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			LineageItem[] liUdfInputs = Arrays.stream(getInputIDs())
+					.mapToObj(id -> ec.getLineage().get(String.valueOf(id))).toArray(LineageItem[]::new);
+			CPOperand r_op = new CPOperand(_r_op.fn.getClass().getSimpleName(), ValueType.STRING, DataType.SCALAR, true);
+			CPOperand slice = new CPOperand(Arrays.toString(_slice), ValueType.STRING, DataType.SCALAR, true);
+			CPOperand rowFed = new CPOperand(String.valueOf(_rowFed), ValueType.BOOLEAN, DataType.SCALAR, true);
+			LineageItem[] otherInputs = LineageItemUtils.getLineage(ec, r_op, slice, rowFed);
+			LineageItem[] liInputs = Stream.concat(Arrays.stream(liUdfInputs), Arrays.stream(otherInputs))
+					.toArray(LineageItem[]::new);
+			return Pair.of(String.valueOf(_outputID), 
+					new LineageItem(getClass().getSimpleName(), liInputs));
+		}
 	}
 
-	private static class DiagMatrix extends FederatedUDF {
+	public static class DiagMatrix extends FederatedUDF {
 
 		private static final long serialVersionUID = -3466926635958851402L;
 		private final long _outputID;
@@ -306,6 +329,26 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			ec.setVariable(String.valueOf(_outputID), mout);
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new int[]{res.getNumRows(), res.getNumColumns()});
+		}
+
+		@Override
+		public List<Long> getOutputIds() {
+			return new ArrayList<>(Arrays.asList(_outputID));
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			LineageItem[] liUdfInputs = Arrays.stream(getInputIDs())
+					.mapToObj(id -> ec.getLineage().get(String.valueOf(id))).toArray(LineageItem[]::new);
+			CPOperand r_op = new CPOperand(_r_op.fn.getClass().getSimpleName(), ValueType.STRING, DataType.SCALAR, true);
+			CPOperand len = new CPOperand(String.valueOf(_len), ValueType.INT32, DataType.SCALAR, true);
+			CPOperand slice = new CPOperand(Arrays.toString(_slice), ValueType.STRING, DataType.SCALAR, true);
+			CPOperand rowFed = new CPOperand(String.valueOf(_rowFed), ValueType.BOOLEAN, DataType.SCALAR, true);
+			LineageItem[] otherInputs = LineageItemUtils.getLineage(ec, r_op, len, slice, rowFed);
+			LineageItem[] liInputs = Stream.concat(Arrays.stream(liUdfInputs), Arrays.stream(otherInputs))
+					.toArray(LineageItem[]::new);
+			return Pair.of(String.valueOf(_outputID), 
+					new LineageItem(getClass().getSimpleName(), liInputs));
 		}
 	}
 }

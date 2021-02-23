@@ -45,11 +45,17 @@ public abstract class CompressedSizeEstimator {
 	/** The Matrix Block to extract the compression estimates from */
 	protected MatrixBlock _data;
 	/** The number of rows in the matrix block, extracted to a field because the matrix could be transposed */
-	protected final int _numRows;
+	protected int _numRows;
 	/** The number of columns in the matrix block, extracted to a field because the matrix could be transposed */
-	protected final int _numCols;
+	protected int _numCols;
 	/** The compression settings to use, for estimating the size, and compress the ColGroups. */
 	protected final CompressionSettings _compSettings;
+
+	/**
+	 * boolean specifying if the _data is in transposed format. This is used to select the correct readers for the
+	 * extraction of bitmaps for the columns.
+	 */
+	protected boolean _transposed = false;
 
 	/**
 	 * Main Constructor for Compression Estimator.
@@ -59,10 +65,11 @@ public abstract class CompressedSizeEstimator {
 	 * @param data         The matrix block to extract information from
 	 * @param compSettings The Compression settings used.
 	 */
-	protected CompressedSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
+	protected CompressedSizeEstimator(MatrixBlock data, CompressionSettings compSettings, boolean transposed) {
 		_data = data;
-		_numRows = compSettings.transposeInput ? _data.getNumColumns() : _data.getNumRows();
-		_numCols = compSettings.transposeInput ? _data.getNumRows() : _data.getNumColumns();
+		_transposed = transposed;
+		_numRows = _transposed ? _data.getNumColumns() : _data.getNumRows();
+		_numCols = _transposed ? _data.getNumRows() : _data.getNumColumns();
 		_compSettings = compSettings;
 	}
 
@@ -198,5 +205,9 @@ public abstract class CompressedSizeEstimator {
 			colIndexes[i] = i;
 		}
 		return colIndexes;
+	}
+
+	public MatrixBlock getSample(){
+		return _data;
 	}
 }

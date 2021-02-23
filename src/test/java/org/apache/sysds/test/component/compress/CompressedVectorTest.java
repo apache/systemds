@@ -26,6 +26,7 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -55,10 +56,10 @@ public class CompressedVectorTest extends CompressedTestBase {
 		for(SparsityType st : usedSparsityTypes)
 			for(ValueType vt : usedValueTypes)
 				for(ValueRange vr : usedValueRanges)
-					for(CompressionSettings cs : usedCompressionSettings)
+					for(CompressionSettingsBuilder cs : usedCompressionSettings)
 						for(MatrixTypology mt : usedMatrixTypologyLocal)
 							for(OverLapping ov : overLapping)
-								tests.add(new Object[] {st, vt, vr, cs, mt, ov});
+								tests.add(new Object[] {st, vt, vr, cs.create(), mt, ov});
 
 		return tests;
 	}
@@ -101,7 +102,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 	}
 
 	@Test
-	public void testQuantile() {
+	public void testQuartile() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock) || cols != 1)
 				return; // Input was not compressed then just pass test

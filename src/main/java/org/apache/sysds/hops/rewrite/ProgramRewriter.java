@@ -22,6 +22,8 @@ package org.apache.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
@@ -48,11 +50,20 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
  */
 public class ProgramRewriter
 {
+	private static final boolean LDEBUG = false; //internal local debug level
 	private static final boolean CHECK = false;
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
 
+	static {
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("org.apache.sysds.hops.rewrite")
+				.setLevel(Level.DEBUG);
+		}
+	}
+	
 	public ProgramRewriter() {
 		// by default which is used during initial compile 
 		// apply all (static and dynamic) rewrites
@@ -90,10 +101,12 @@ public class ProgramRewriter
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			
 			//add statement block rewrite rules
- 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL ) {
+			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding
-				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches
-			}
+			if( OptimizerUtils.ALLOW_FOR_LOOP_REMOVAL )
+				_sbRuleSet.add(  new RewriteRemoveForLoopEmptySequence()         ); //dependency: constant folding
+			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL || OptimizerUtils.ALLOW_FOR_LOOP_REMOVAL )
+				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches, remove for-loops
 			_sbRuleSet.add(      new RewriteCompressedReblock()                  ); // Compression Rewrite
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks

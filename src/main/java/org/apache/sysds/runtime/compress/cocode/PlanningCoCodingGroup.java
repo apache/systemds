@@ -62,7 +62,7 @@ public class PlanningCoCodingGroup {
 
 		// estimating size info
 		CompressedSizeInfoColGroup groupSizeInfo = estim.estimateCompressedColGroupSize(_colIndexes);
-		
+
 		_estSize = groupSizeInfo.getMinSize();
 		_cardRatio = groupSizeInfo.getEstCard() / numRows;
 

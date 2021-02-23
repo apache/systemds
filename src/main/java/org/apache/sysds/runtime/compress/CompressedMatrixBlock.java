@@ -26,7 +26,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -39,8 +38,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
@@ -48,47 +50,37 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConverter;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
-import org.apache.sysds.runtime.compress.colgroup.DenseRowIterator;
-import org.apache.sysds.runtime.compress.colgroup.SparseRowIterator;
 import org.apache.sysds.runtime.compress.lib.LibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.LibCompAgg;
 import org.apache.sysds.runtime.compress.lib.LibLeftMultBy;
-import org.apache.sysds.runtime.compress.lib.LibRelationalOp;
 import org.apache.sysds.runtime.compress.lib.LibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.LibScalar;
-import org.apache.sysds.runtime.compress.utils.ColumnGroupIterator;
+import org.apache.sysds.runtime.compress.lib.LibSqueeze;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysds.runtime.functionobjects.Equals;
-import org.apache.sysds.runtime.functionobjects.GreaterThan;
-import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
-import org.apache.sysds.runtime.functionobjects.LessThan;
-import org.apache.sysds.runtime.functionobjects.LessThanEquals;
 import org.apache.sysds.runtime.functionobjects.Mean;
-import org.apache.sysds.runtime.functionobjects.Minus;
-import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.NotEquals;
-import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.functionobjects.PlusMultiply;
-import org.apache.sysds.runtime.matrix.data.IJV;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
-import org.apache.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
 public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
@@ -118,28 +110,26 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	 * 
 	 * Use with caution, since it constructs an empty matrix block with nothing inside.
 	 * 
-	 * @param rl     number of rows in the block
-	 * @param cl     number of columns
-	 * @param sparse true if the UNCOMPRESSED representation of the block should be sparse
+	 * @param rl number of rows in the block
+	 * @param cl number of columns
 	 */
-	public CompressedMatrixBlock(int rl, int cl, boolean sparse) {
-		super(rl, cl, sparse);
+	public CompressedMatrixBlock(int rl, int cl) {
+		super(rl, cl, true);
+		sparseBlock = null;
+		denseBlock = null;
+		nonZeros = -1;
 	}
 
 	/**
-	 * "Copy" constructor to populate this compressed block with the uncompressed contents of a conventional block. Does
-	 * <b>not</b> compress the block. Only creates a shallow copy, and only does deep copy on compression.
+	 * "Copy" constructor to populate this compressed block with the uncompressed metadata contents of a conventional
+	 * block. Does not compress the block.
 	 * 
 	 * @param that matrix block
 	 */
 	protected CompressedMatrixBlock(MatrixBlock that) {
-		super(that.getNumRows(), that.getNumColumns(), that.isInSparseFormat());
-
-		// shallow copy (deep copy on compression, prevents unnecessary copy)
-		if(isInSparseFormat())
-			sparseBlock = that.getSparseBlock();
-		else
-			denseBlock = that.getDenseBlock();
+		super(that.getNumRows(), that.getNumColumns(), true);
+		sparseBlock = null;
+		denseBlock = null;
 		nonZeros = that.getNonZeros();
 	}
 
@@ -166,21 +156,24 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		Timing time = new Timing(true);
 
 		// preallocation sparse rows to avoid repeated reallocations
-		MatrixBlock ret = (nonZeros == -1) ? new MatrixBlock(rlen, clen, false, -1)
-			.allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
-		if(ret.isInSparseFormat()) {
-			int[] rnnz = new int[rlen];
-			for(ColGroup grp : _colGroups)
-				grp.countNonZerosPerRow(rnnz, 0, rlen);
-			ret.allocateSparseRowsBlock();
-			SparseBlock rows = ret.getSparseBlock();
-			for(int i = 0; i < rlen; i++)
-				rows.allocate(i, rnnz[i]);
-		}
+		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1);
+		ret.allocateDenseBlock();
+		// (nonZeros == -1) ?
+		// .allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
+
+		// if(ret.isInSparseFormat()) {
+		// int[] rnnz = new int[rlen];
+		// // for(ColGroup grp : _colGroups)
+		// // grp.countNonZerosPerRow(rnnz, 0, rlen);
+		// ret.allocateSparseRowsBlock();
+		// SparseBlock rows = ret.getSparseBlock();
+		// for(int i = 0; i < rlen; i++)
+		// rows.allocate(i, rnnz[i]);
+		// }
 
 		// core decompression (append if sparse)
 		for(ColGroup grp : _colGroups)
-			grp.decompressToBlock(ret, 0, rlen);
+			grp.decompressToBlockSafe(ret, 0, rlen, 0, grp.getValues(), false);
 
 		// post-processing (for append in decompress)
 		if(ret.getNonZeros() == -1 || nonZeros == -1) {
@@ -213,10 +206,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		Timing time = new Timing(true);
 
-		MatrixBlock ret = (nonZeros == -1) ? new MatrixBlock(rlen, clen, false, -1)
-			.allocateBlock() : new MatrixBlock(rlen, clen, sparse, nonZeros).allocateBlock();
-		// multi-threaded decompression
+		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1).allocateBlock();
+
 		nonZeros = 0;
+		boolean overlapping = isOverlapping();
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
@@ -225,7 +218,8 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			blklen += (blklen % blkz != 0) ? blkz - blklen % blkz : 0;
 			ArrayList<DecompressTask> tasks = new ArrayList<>();
 			for(int i = 0; i < k & i * blklen < getNumRows(); i++)
-				tasks.add(new DecompressTask(_colGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen)));
+				tasks.add(
+					new DecompressTask(_colGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen), overlapping));
 			List<Future<Long>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
 			for(Future<Long> rt : rtasks)
@@ -237,8 +231,12 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			ex.printStackTrace();
 			return decompress();
 		}
-
-		ret.setNonZeros(nonZeros);
+		if(overlapping) {
+			ret.recomputeNonZeros();
+		}
+		else {
+			ret.setNonZeros(nonZeros);
+		}
 
 		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
 			double t = time.stop();
@@ -246,6 +244,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			DMLCompressionStatistics.addDecompressTime(t, k);
 		}
 		return ret;
+	}
+
+	public CompressedMatrixBlock squeeze(int k) {
+		return LibSqueeze.squeeze(this, k);
 	}
 
 	/**
@@ -277,17 +279,20 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	public double quickGetValue(int r, int c) {
 
 		// TODO Optimize Quick Get Value, to located the correct column group without having to search for it
-		double v = 0.0;
-		for(ColGroup group : _colGroups) {
-			if(Arrays.binarySearch(group.getColIndices(), c) >= 0) {
-				v += group.get(r, c);
-				if(!isOverlapping())
-					break;
-			}
+		if(isOverlapping()) {
+			double v = 0.0;
+			for(ColGroup group : _colGroups)
+				if(Arrays.binarySearch(group.getColIndices(), c) >= 0)
+					v += group.get(r, c);
+			return v;
+		}
+		else {
+			for(ColGroup group : _colGroups)
+				if(Arrays.binarySearch(group.getColIndices(), c) >= 0)
+					return group.get(r, c);
+			return 0;
 		}
 
-		// find row value
-		return v;
 	}
 
 	//////////////////////////////////////////
@@ -348,91 +353,18 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		write(os);
 	}
 
-	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros) {
-		return getIterator(rl, ru, 0, _colGroups.size(), inclZeros);
-	}
-
-	public Iterator<IJV> getIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros) {
-		return new ColumnGroupIterator(rl, ru, cgl, cgu, inclZeros, _colGroups);
-	}
-
-	public Iterator<double[]> getDenseRowIterator(int rl, int ru) {
-		return new DenseRowIterator(rl, ru, _colGroups, clen);
-	}
-
-	public Iterator<SparseRow> getSparseRowIterator(int rl, int ru) {
-		return new SparseRowIterator(rl, ru, _colGroups, clen);
-	}
-
-	public int[] countNonZerosPerRow(int rl, int ru) {
-		int[] rnnz = new int[ru - rl];
-		for(ColGroup grp : _colGroups)
-			grp.countNonZerosPerRow(rnnz, rl, ru);
-		return rnnz;
-	}
-
 	@Override
 	public MatrixBlock scalarOperations(ScalarOperator sop, MatrixValue result) {
-		// Special case handling of overlapping relational operations
-		if(isOverlapping() &&
-			(sop.fn instanceof LessThan || sop.fn instanceof LessThanEquals || sop.fn instanceof GreaterThan ||
-				sop.fn instanceof GreaterThanEquals || sop.fn instanceof Equals || sop.fn instanceof NotEquals)) {
-			MatrixBlock ret = LibRelationalOp.relationalOperation(sop, this, isOverlapping());
-
-			result = ret;
-			return ret;
-		}
-
-		if(isOverlapping() && (!(sop.fn instanceof Multiply || sop.fn instanceof Divide 
-			|| sop.fn instanceof Plus || sop.fn instanceof Minus))) {
-			LOG.warn("scalar overlapping not supported for op: " + sop.fn);
-			MatrixBlock m1d = decompress(sop.getNumThreads());
-			return m1d.scalarOperations(sop, result);
-		}
-
-		CompressedMatrixBlock ret = null;
-		if(result == null || !(result instanceof CompressedMatrixBlock))
-			ret = new CompressedMatrixBlock(getNumRows(), getNumColumns(), sparse);
-		return LibScalar.scalarOperations(sop, this, ret, isOverlapping());
+		return LibScalar.scalarOperations(sop, this, result);
 	}
 
 	@Override
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
+		return LibBinaryCellOp.binaryOperations(op, this, thatValue, result);
+	}
 
-		MatrixBlock that = getUncompressed(thatValue);
-		if(!LibMatrixBincell.isValidDimensionsBinary(this, that)) {
-			throw new DMLRuntimeException("Block sizes are not matched for binary " + "cell operations: " + this.rlen
-				+ "x" + this.clen + " vs " + that.getNumRows() + "x" + that.getNumColumns());
-		}
-
-		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(this, that);
-
-		if(atype == BinaryAccessType.MATRIX_COL_VECTOR || atype == BinaryAccessType.MATRIX_MATRIX ) {
-			MatrixBlock ret = LibBinaryCellOp.binaryMVPlusCol(this, that, op);
-			result = ret;
-			return ret;
-		}
-		else if(!(op.fn instanceof Multiply || op.fn instanceof Divide || op.fn instanceof Plus || op.fn instanceof Minus ||
-			op.fn instanceof MinusMultiply || op.fn instanceof PlusMultiply)) {
-			LOG.warn("Decompressing since Binary Ops" + op.fn + " is not supported compressed");
-			MatrixBlock m2 = getUncompressed(this);
-			MatrixBlock ret = m2.binaryOperations(op, thatValue, result);
-			result = ret;
-			return ret;
-		}
-		else {
-			CompressedMatrixBlock ret = null;
-			if(result == null || !(result instanceof CompressedMatrixBlock))
-				ret = new CompressedMatrixBlock(getNumRows(), getNumColumns(), sparse);
-			else {
-				ret = (CompressedMatrixBlock) result;
-				ret.reset(rlen, clen);
-			}
-			result = LibBinaryCellOp.bincellOp(this, that, ret, op);
-			result = ret;
-			return ret;
-		}
-
+	public MatrixBlock binaryOperationsLeft(BinaryOperator op, MatrixValue thatValue, MatrixValue result){
+		return LibBinaryCellOp.binaryOperationsLeft(op, this, thatValue, result);
 	}
 
 	@Override
@@ -445,7 +377,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		// init result matrix
 		CompressedMatrixBlock ret2 = null;
 		if(ret == null || !(ret instanceof CompressedMatrixBlock)) {
-			ret2 = new CompressedMatrixBlock(m, n, isInSparseFormat());
+			ret2 = new CompressedMatrixBlock(m, n);
 		}
 		else {
 			ret2 = (CompressedMatrixBlock) ret;
@@ -524,9 +456,47 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	@Override
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op) {
+		return aggregateBinaryOperations(m1, m2, ret, op, false, false);
+	}
+
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
+		AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
+		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
+			return doubleCompressedAggregateBinaryOperations((CompressedMatrixBlock) m1,
+				(CompressedMatrixBlock) m2,
+				ret,
+				op,
+				transposeLeft,
+				transposeRight);
+		}
+		boolean transposeOutput = false;
+		if(transposeLeft || transposeRight) {
+			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
+
+			if((m1 instanceof CompressedMatrixBlock && transposeLeft) ||
+				(m2 instanceof CompressedMatrixBlock && transposeRight)) {
+				// change operation from m1 %*% m2 -> t( t(m2) %*% t(m1) )
+				transposeOutput = true;
+				MatrixBlock tmp = m1;
+				m1 = m2;
+				m2 = tmp;
+				boolean tmpLeft = transposeLeft;
+				transposeLeft = !transposeRight;
+				transposeRight = !tmpLeft;
+
+			}
+
+			if(!(m1 instanceof CompressedMatrixBlock) && transposeLeft) {
+				m1 = new MatrixBlock().copyShallow(m1).reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+				transposeLeft = false;
+			}
+			else if(!(m2 instanceof CompressedMatrixBlock) && transposeRight) {
+				m2 = new MatrixBlock().copyShallow(m2).reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+				transposeRight = false;
+			}
+		}
 
 		// setup meta data (dimensions, sparsity)
-
 		boolean right = (m1 == this);
 		MatrixBlock that = right ? m2 : m1;
 		if(!right && m2 != this) {
@@ -534,26 +504,54 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 				"Invalid inputs for aggregate Binary Operation which expect either m1 or m2 to be equal to the object calling");
 		}
 
-		int rl = m1.getNumRows();
-		int cl = m2.getNumColumns();
-
 		// create output matrix block
 		if(right) {
-			return LibRightMultBy.rightMultByMatrix(_colGroups, that, ret, op.getNumThreads(), getMaxNumValues(), true);
+			boolean allowOverlap = ConfigurationManager.getDMLConfig()
+				.getBooleanValue(DMLConfig.COMPRESSED_OVERLAPPING);
+			ret = LibRightMultBy
+				.rightMultByMatrix(_colGroups, that, ret, op.getNumThreads(), getMaxNumValues(), allowOverlap);
 		}
 		else {
-			return LibLeftMultBy.leftMultByMatrix(_colGroups,
-				that,
-				ret,
-				false,
-				true,
-				rl,
-				cl,
-				isOverlapping(),
-				op.getNumThreads(),
-				getMaxNumValues());
+			ret = LibLeftMultBy.leftMultByMatrix(this, that, ret, op.getNumThreads());
 		}
 
+		if(transposeOutput) {
+			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
+			return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+		}
+		else
+			return ret;
+
+	}
+
+	private MatrixBlock doubleCompressedAggregateBinaryOperations(CompressedMatrixBlock m1, CompressedMatrixBlock m2,
+		MatrixBlock ret, AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
+
+		if(!transposeLeft && !transposeRight) {
+			// If both are not transposed, decompress the right hand side. to enable compressed overlapping output.
+			LOG.warn("Matrix decompression from multiplying two compressed matrices.");
+			return aggregateBinaryOperations(m1, getUncompressed(m2), ret, op, transposeLeft, transposeRight);
+		}
+		else if(transposeLeft && !transposeRight) {
+			// Select witch compressed matrix to decompress.
+			if(m1.getNumColumns() > m2.getNumColumns()) {
+				ret = LibLeftMultBy.leftMultByMatrixTransposed(m1, m2, ret, op.getNumThreads());
+				ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
+				return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+			}
+			else
+				return LibLeftMultBy.leftMultByMatrixTransposed(m2, m1, ret, op.getNumThreads());
+
+		}
+		else if(!transposeLeft && transposeRight) {
+			throw new DMLCompressionException("Not Implemented compressed Matrix Mult, to produce larger matrix");
+			// worst situation since it blows up the result matrix in number of rows in either compressed matrix.
+		}
+		else {
+			ret = aggregateBinaryOperations(m2, m1, ret, op);
+			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
+			return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
+		}
 	}
 
 	@Override
@@ -606,13 +604,6 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		MatrixBlock ret = (MatrixBlock) result;
 		ret.allocateDenseBlock();
 
-		if(overlappingColGroups &&
-			(op.aggOp.increOp.fn instanceof KahanPlusSq || (op.aggOp.increOp.fn instanceof Builtin &&
-				(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
-					((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)))) {
-			return LibCompAgg.aggregateUnaryOverlapping(this, ret, op, blen, indexesIn, inCP);
-		}
-
 		return LibCompAgg.aggregateUnary(this, ret, op, blen, indexesIn, inCP);
 	}
 
@@ -636,29 +627,34 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		if(!isEmptyBlock(false)) {
 			// compute matrix mult
-			LibLeftMultBy.leftMultByTransposeSelf(_colGroups,
-				out,
-				0,
-				_colGroups.size(),
-				k,
-				getNumColumns(),
-				getMaxNumValues(),
-				isOverlapping());
+			LibLeftMultBy
+				.leftMultByTransposeSelf(_colGroups, out, k, getNumColumns(), getMaxNumValues(), isOverlapping());
 			// post-processing
 			out.setNonZeros(LinearAlgebraUtils.copyUpperToLowerTriangle(out));
 		}
 		return out;
 	}
 
-	public boolean hasUncompressedColGroup() {
-		return getUncompressedColGroup() != null;
+	@Override
+	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
+		printDecompressWarning("replaceOperations " + pattern + "  -> " + replacement);
+		LOG.error("Overlapping? : " + isOverlapping() + " If not then wite a proper replace command");
+		MatrixBlock tmp = getUncompressed(this);
+		return tmp.replaceOperations(result, pattern, replacement);
+	}
+
+	@Override
+	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
+		printDecompressWarning(op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName());
+		// TODO make transposed decompress.
+		MatrixBlock tmp = decompress(op.getNumThreads());
+		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}
 
 	public ColGroupUncompressed getUncompressedColGroup() {
 		for(ColGroup grp : _colGroups)
 			if(grp instanceof ColGroupUncompressed)
 				return (ColGroupUncompressed) grp;
-
 		return null;
 	}
 
@@ -690,19 +686,21 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		private final MatrixBlock _ret;
 		private final int _rl;
 		private final int _ru;
+		private final boolean _overlapping;
 
-		protected DecompressTask(List<ColGroup> colGroups, MatrixBlock ret, int rl, int ru) {
+		protected DecompressTask(List<ColGroup> colGroups, MatrixBlock ret, int rl, int ru, boolean overlapping) {
 			_colGroups = colGroups;
 			_ret = ret;
 			_rl = rl;
 			_ru = ru;
+			_overlapping = overlapping;
 		}
 
 		@Override
 		public Long call() {
 
 			// preallocate sparse rows to avoid repeated alloc
-			if(_ret.isInSparseFormat()) {
+			if(!_overlapping && _ret.isInSparseFormat()) {
 				int[] rnnz = new int[_ru - _rl];
 				for(ColGroup grp : _colGroups)
 					grp.countNonZerosPerRow(rnnz, _rl, _ru);
@@ -713,13 +711,13 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 			// decompress row partition
 			for(ColGroup grp : _colGroups)
-				grp.decompressToBlock(_ret, _rl, _ru);
+				grp.decompressToBlockSafe(_ret, _rl, _ru, grp.getValues(), false);
 
 			// post processing (sort due to append)
 			if(_ret.isInSparseFormat())
 				_ret.sortSparseRows(_rl, _ru);
 
-			return _ret.recomputeNonZeros(_rl, _ru - 1);
+			return _overlapping ? 0 : _ret.recomputeNonZeros(_rl, _ru - 1);
 		}
 	}
 
@@ -728,9 +726,12 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\nCompressed Matrix:");
 		sb.append("\nCols:" + getNumColumns() + " Rows:" + getNumRows());
-		for(ColGroup cg : _colGroups) {
-			sb.append("\n" + cg);
-		}
+		if(_colGroups != null)
+			for(ColGroup cg : _colGroups) {
+				sb.append("\n" + cg);
+			}
+		else
+			sb.append("EmptyColGroups");
 		return sb.toString();
 	}
 
@@ -740,5 +741,140 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	public void setOverlapping(boolean overlapping) {
 		overlappingColGroups = overlapping;
+	}
+
+	@Override
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
+		validateSliceArgument(rl, ru, cl, cu);
+		MatrixBlock tmp;
+		if(rl == ru && cl == cu) {
+			// get a single index, and return in a matrixBlock
+			tmp = new MatrixBlock(1, 1, 0);
+			tmp.appendValue(0, 0, getValue(rl, cl));
+			return tmp;
+		}
+		else if(cl == 0 && cu == getNumColumns() - 1) {
+			// Row Slice. Potential optimization if the slice contains enough rows.
+			// +1 since the implementation arguments for slice is inclusive values for ru and cu.
+			// and it is not inclusive in decompression, and construction of MatrixBlock.
+			tmp = new MatrixBlock(ru + 1 - rl, getNumColumns(), false).allocateDenseBlock();
+			for(ColGroup g : getColGroups())
+				g.decompressToBlock(tmp, rl, ru + 1, 0);
+			return tmp;
+		}
+		else if(rl == 0 && ru == getNumRows() - 1) {
+			tmp = sliceColumns(cl, cu);
+		}
+		else {
+			// In the case where an internal matrix is sliced out, then first slice out the columns
+			// to an compressed intermediate.
+			tmp = sliceColumns(cl, cu);
+			// Then call slice recursively, to do the row slice.
+			// Since we do not copy the index structure but simply maintain a pointer to the original
+			// this is fine.
+			tmp = tmp.slice(rl, ru, 0, tmp.getNumColumns() - 1, ret);
+		}
+		ret = tmp;
+		return tmp;
+	}
+
+	private CompressedMatrixBlock sliceColumns(int cl, int cu) {
+		CompressedMatrixBlock ret = new CompressedMatrixBlock(this.getNumRows(), cu + 1 - cl);
+
+		List<ColGroup> newColGroups = new ArrayList<>();
+		for(ColGroup grp : getColGroups()) {
+			ColGroup slice = grp.sliceColumns(cl, cu + 1);
+			if(slice != null)
+				newColGroups.add(slice);
+		}
+		ret.allocateColGroupList(newColGroups);
+
+		return ret;
+	}
+
+	@Override
+	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, int blen,
+		int boundaryRlen, int boundaryClen) {
+		printDecompressWarning(
+			"slice for distribution to spark. (Could be implemented such that it does not decompress)");
+		MatrixBlock tmp = decompress();
+		tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
+	}
+
+	@Override
+	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
+		printDecompressWarning("unaryOperations");
+		MatrixBlock tmp = decompress();
+		return tmp.unaryOperations(op, result);
+	}
+
+	// @Override
+	// public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
+	// MatrixBlock ret = checkType(result);
+
+	// // estimate the sparsity structure of result matrix
+	// // by default, we guess result.sparsity=input.sparsity, unless not sparse safe
+	// boolean sp = this.sparse && op.sparseSafe;
+
+	// //allocate output
+	// int n = Builtin.isBuiltinCode(op.fn, BuiltinCode.CUMSUMPROD) ? 1 : clen;
+	// if( ret == null )
+	// ret = new MatrixBlock(rlen, n, sp, sp ? nonZeros : rlen*n);
+	// else
+	// ret.reset(rlen, n, sp);
+
+	// //core execute
+	// if( LibMatrixAgg.isSupportedUnaryOperator(op) ) {
+	// //e.g., cumsum/cumprod/cummin/cumax/cumsumprod
+	// if( op.getNumThreads() > 1 )
+	// ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op, op.getNumThreads());
+	// else
+	// ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
+	// }
+	// else if(!sparse && !isEmptyBlock(false)
+	// && OptimizerUtils.isMaxLocalParallelism(op.getNumThreads())) {
+	// //note: we apply multi-threading in a best-effort manner here
+	// //only for expensive operators such as exp, log, sigmoid, because
+	// //otherwise allocation, read and write anyway dominates
+	// ret.allocateDenseBlock(false);
+	// DenseBlock a = getDenseBlock();
+	// DenseBlock c = ret.getDenseBlock();
+	// for(int bi=0; bi<a.numBlocks(); bi++) {
+	// double[] avals = a.valuesAt(bi), cvals = c.valuesAt(bi);
+	// Arrays.parallelSetAll(cvals, i -> op.fn.execute(avals[i]));
+	// }
+	// ret.recomputeNonZeros();
+	// }
+	// else {
+	// //default execute unary operations
+	// if(op.sparseSafe)
+	// sparseUnaryOperations(op, ret);
+	// else
+	// denseUnaryOperations(op, ret);
+	// }
+
+	// //ensure empty results sparse representation
+	// //(no additional memory requirements)
+	// if( ret.isEmptyBlock(false) )
+	// ret.examSparsity();
+
+	// return ret;
+	// }
+	@Override
+	public double max() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", -1);
+		return aggregateUnaryOperations(op, null, 1000, null).getValue(0, 0);
+	}
+
+	@Override
+	public double sum() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", -1);
+		return aggregateUnaryOperations(op, null, 1000, null).getValue(0, 0);
+	}
+
+	@Override
+	public double sumSq() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+", -1);
+		return aggregateUnaryOperations(op, null, 1000, null).getValue(0, 0);
 	}
 }

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.transform;
 
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -431,6 +432,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 							1:0, R1[i][10+j], 1e-8);
 					}
 				}
+			} else if (type == TransformType.IMPUTE){
+				// Column 8 had GLOBAL_MEAN applied
+				Assert.assertFalse(TestUtils.containsNan(R1, 8));
+				Assert.assertFalse(TestUtils.containsNan(R2, 8));
 			}
 		}
 		catch(Exception ex) {

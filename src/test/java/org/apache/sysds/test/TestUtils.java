@@ -3056,4 +3056,13 @@ public class TestUtils
 
 		return y;
 	}
+
+	public static boolean containsNan(double[][] data, int col) {
+		for (double[] datum : data)
+			if (Double.isNaN(datum[col]))
+				return true;
+		return false;
+	}
+
+
 }

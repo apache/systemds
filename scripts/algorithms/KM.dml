@@ -329,7 +329,6 @@ parfor (s in 1:num_strata, check = 0) {
 	if (num_groups > 1 & test_type != "none") {	# needed for log-rank or wilcoxon test	
 		n_risk_n_event_stratum = matrix (0, rows = n_time_all1, cols = num_groups * 2);
 	}
-	}
 
 	parfor (g in 1:num_groups, check = 0) {
 	
@@ -420,7 +419,7 @@ parfor (s in 1:num_strata, check = 0) {
 				KM[1:n_time,KM_offset + 7] = CI_r;				
 			}			
 						
-			######## ESTIMATE MEDIAN OF SERVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
+			######## ESTIMATE MEDIAN OF SURVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
 		
 			p_5 = (surv <= 0.5); 
 			pn_5 = sum (p_5);
@@ -480,8 +479,7 @@ parfor (s in 1:num_strata, check = 0) {
 			M_cols[M_offset,1] = 0;
 		}		
 	}
-	
-			
+
 	######## COMPARISON BETWEEN DIFFERENT GROUPS USING LOG-RANK OR WILCOXON TEST
 		
 	if (num_groups > 1 & test_type != "none") {
@@ -505,7 +503,7 @@ parfor (s in 1:num_strata, check = 0) {
 			EXP[g + 1, s] = sum(E);
 		}
 		
-		# parfor (i1 in 0:(num_groups - 2), check = 0) {
+
 		for (i1 in 0:(num_groups - 2), check = 0) {
 		
 			n_risk = n_risk_n_event_stratum[,1 + i1 * 2]; 

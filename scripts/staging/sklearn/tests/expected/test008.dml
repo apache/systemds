@@ -1,7 +1,0 @@
-source("scripts/builtin/imputeByMean.dml") as ns_imputeByMean
-source("scripts/builtin/dbscan.dml") as ns_dbscan
-
-X = read($X)
-[X] = ns_imputeByMean::m_imputeByMean(X)
-[clusterMembers] = ns_dbscan::m_dbscan(X, 0.5, 5)
-write(clusterMembers, "clusterMembers.csv")

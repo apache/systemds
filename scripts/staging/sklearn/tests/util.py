@@ -54,8 +54,7 @@ def test_script(path):
     logging.info('Finished test.')
     return result
 
-# TODO: since systemds parses a script befor execution this might not be 
-# necessary. I will leave it here for now, if that changes.
+# Compares two script using diff
 def compare_script(actual, expected):
     return True
     try:

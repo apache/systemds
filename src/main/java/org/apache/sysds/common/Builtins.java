@@ -33,11 +33,14 @@ import org.apache.sysds.common.Types.ReturnType;
  * builtin functions.
  *
  * To add a new builtin script function, simply add the definition here
- * as well as a dml file in scripts/builtin with a matching name. On
+ * as well as a dml file in scripts/builtin with a matching name. On 
  * building SystemDS, these scripts are packaged into the jar as well.
  */
 public enum Builtins {
 	//builtin functions
+	CSPLINE("cspline", true),
+	CSPLINE_CG("csplineCG", true),
+	CSPLINE_DS("csplineDS", true),
 	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),
@@ -46,8 +49,6 @@ public enum Builtins {
 	ALS("als", true),
 	ALS_CG("alsCG", true),
 	ALS_DS("alsDS", true),
-	ALS_PREDICT("alsPredict", true),
-	ALS_TOPK_PREDICT("alsTopkPredict", true),
 	ASIN("asin", false),
 	ATAN("atan", false),
 	AUTOENCODER2LAYER("autoencoder_2layer", true),
@@ -81,8 +82,6 @@ public enum Builtins {
 	COLSUM("colSums", false),
 	COLVAR("colVars", false),
 	COMPONENTS("components", true),
-	COMPRESS("compress", false),
-	DECOMPRESS("decompress", false),
 	CONV2D("conv2d", false),
 	CONV2D_BACKWARD_FILTER("conv2d_backward_filter", false),
 	CONV2D_BACKWARD_DATA("conv2d_backward_data", false),
@@ -116,7 +115,6 @@ public enum Builtins {
 	GET_PERMUTATIONS("getPermutations", true),
 	GLM("glm", true),
 	GMM("gmm", true),
-	GMM_PREDICT("gmmPredict", true),
 	GNMF("gnmf", true),
 	GRID_SEARCH("gridSearch", true),
 	HYPERBAND("hyperband", true),
@@ -131,13 +129,11 @@ public enum Builtins {
 	INTERSECT("intersect", true),
 	INVERSE("inv", "inverse", false),
 	IQM("interQuartileMean", false),
-	ISNA("is.na", "isNA", false),
-	ISNAN("is.nan", "isNaN", false),
+	ISNA("is.na", false),
+	ISNAN("is.nan", false),
 	ISINF("is.infinite", false),
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),
-	KNNBF("knnbf", true),
-	KNN("knn", true),
 	L2SVM("l2svm", true),
 	LASSO("lasso", true),
 	LENGTH("length", false),
@@ -146,7 +142,7 @@ public enum Builtins {
 	LM("lm", true),
 	LMCG("lmCG", true),
 	LMDS("lmDS", true),
-	LMPREDICT("lmPredict", true),
+	LMPREDICT("lmpredict", true),
 	LOG("log", false),
 	LOGSUMEXP("logSumExp", true),
 	LSTM("lstm", false, ReturnType.MULTI_RETURN),
@@ -210,7 +206,6 @@ public enum Builtins {
 	SMOTE("smote", true),
 	SOLVE("solve", false),
 	SPLIT("split", true),
-	STATSNA("statsNA", true),
 	SQRT("sqrt", false),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),
@@ -249,8 +244,7 @@ public enum Builtins {
 	QEXP("qexp", false, true),
 	REPLACE("replace", false, true),
 	RMEMPTY("removeEmpty", false, true),
-	SCALE("scale", true, false),
-	SCALEAPPLY("scaleApply", true, false),
+	SCALE("scale", true, false),     //TODO parameterize center & scale
 	TIME("time", false),
 	CVLM("cvlm", true, false),
 	TOSTRING("toString", false, true),

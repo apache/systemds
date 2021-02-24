@@ -6,7 +6,19 @@ import mappers
 import argparse
 
 class SklearnToDMLMapper:
+    """ SklearnToDMLMapper is a simple tool for transforming scikit-learn pipelines into DML scripts.
+        This tool may be used over a simple command line interface, where a scikit-learn pipeline provided over 
+        a pickle file. Alternatively, SklearnToDMLMapper can be used in a script as a Python module.
+
+        Args:
+            pipeline (sklearn.pipeline.Pipeline): sklearn pipeline
+            input_name (str, optional): Name for the input variable (prefix). Defaults to 'input'. 
+                                        Depending on the pipeline two files are necessary.
+                                        Example: input_name="input". Maps to files input_X.csv and input_Y.csv 
+                                        for a pipeline ending in a supervised algorithm.
+    """
     def __init__(self, pipeline, input_name='input'):
+        """Create an SklearnToDMLMapper."""
         self.steps = pipeline.steps
         self.functions = self.__get_functions()
         self.dml_script = None
@@ -40,6 +52,11 @@ class SklearnToDMLMapper:
         return '\n'.join([f'write({output}, "{output}.csv")' for output in func.mapped_output])
 
     def transform(self):
+        """Transforms a sklearn pipeline in a .dml script. 
+
+        Returns:
+            str: The transformed .dml script.
+        """
         sources = []
         calls = []
 
@@ -58,6 +75,14 @@ class SklearnToDMLMapper:
         return self.dml_script
 
     def save(self, path):
+        """Saves the transformed .dml script.
+
+        Args:
+            path (str): Location where the DML script is to be saved.
+
+        Raises:
+            RuntimeError: Save can only be called if a transformation was executed beforehand.
+        """
         if self.dml_script is None:
             raise RuntimeError('Transformation was not applied yet.')
 
@@ -69,17 +94,17 @@ if __name__ == '__main__':
     parser.add_argument('Path',
             metavar='path',
             type=str,
-            help='location of the sklearn pipline pickle file')
+            help='Location of the sklearn pipeline saved as pickle file')
     parser.add_argument('-i',
             metavar='input_name',
             type=str,
             default='X',
-            help='name for the input variable')
+            help='Name for the input variable (prefix). Depending on the pipeline two files are necessary. Example: input_name="input". Maps to files input_X.csv and input_Y.csv for a pipeline ending in a supervised algorithm.')
     parser.add_argument('-o',
             metavar='output',
             type=str,
             default='./pipeline.dml',
-            help='path for the dml output script')
+            help='Path for the dml output script')
 
     args = parser.parse_args()
 

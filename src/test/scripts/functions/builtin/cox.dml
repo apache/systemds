@@ -18,3 +18,18 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+X = read($X);
+TE = read($TE);
+F = read($F);
+R = read($R);
+
+[M, S, T, COV, RT, XO, MF] = cox(X, TE, F, R, $alpha, $tol, $moi, $mii);
+
+write(M, $M);
+write(S, $S);
+write(T, $T);
+write(COV, $COV);
+write(RT, $RT);
+write(XO, $XO);
+write(MF, $MF);

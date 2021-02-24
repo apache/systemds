@@ -34,7 +34,7 @@ public class BuiltinKmTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinKmTest.class.getSimpleName() + "/";
 
-	private final static double spDense = 0.99;
+	private final static double spDense = 0.1;
 
 	@Override
 	public void setUp() {
@@ -51,20 +51,26 @@ public class BuiltinKmTest extends AutomatedTestBase
 	private void runKmTest(int numRecords, double scaleWeibull, double shapeWeibull, double prob,
 						   int numCatFeaturesGroup, int numCatFeaturesStrat, int maxNumLevels, double alpha, String err_type,
 						   String conf_type, String test_type) {
-		Types.ExecMode platformOld = setExecMode(LopProperties.ExecType.SPARK);
+		Types.ExecMode platformOld = setExecMode(LopProperties.ExecType.CP);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		int seed = 11;
 
 		programArgs = new String[]{
-				"-nvargs", "X=" + input("X"), "TE=" + input("TE"), "O=" + output("O"), "M=" + output("M"), "T=" + output("T"),
-				"alpha=" + alpha, "err_type=" + err_type, "err_type=" + err_type,
+				"-nvargs", "X=" + input("X"), "TE=" + input("TE"), "GI=" + input("GI"), "SI=" + input("SI"),
+				"O=" + output("O"), "KM=" + output("KM"), "M=" + output("M"), "T=" + output("T"),
+				"T_GROUPS_OE=" + output("T_GROUPS_OE"), "alpha=" + alpha, "err_type=" + err_type,
 				"conf_type=" + conf_type, "test_type=" + test_type};
 
 		double[][] X = ceil(getRandomMatrix(numRecords, numCatFeaturesGroup + numCatFeaturesStrat,
 				0.000000001, maxNumLevels - 0.000000001, spDense, seed));
 		writeInputMatrixWithMTD("X", X, false);
+
+		double[][] GI = new double[1][1];
+		writeInputMatrixWithMTD("GI", GI, false);
+		double[][] SI = new double[1][1];
+		writeInputMatrixWithMTD("SI", SI, false);
 
 		double[][] U = getRandomMatrix(numRecords, 1, 0.000000001, 1, spDense, seed);
 

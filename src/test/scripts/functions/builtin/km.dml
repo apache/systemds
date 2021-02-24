@@ -18,3 +18,16 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+X = read($X);
+TE = read($TE);
+GI = read($GI);
+SI = read($SI);
+
+[O, KM, M, T, T_GROUPS_OE] = km(X, TE, GI, SI, $alpha, $err_type, $conf_type, $test_type);
+
+write(O, $O);
+write(KM, $KM);
+write(M, $M);
+write(T, $T);
+write(T_GROUPS_OE, $T_GROUPS_OE);

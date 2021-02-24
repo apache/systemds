@@ -41,11 +41,11 @@ public class BuiltinCoxTest extends AutomatedTestBase
 
 	@Test
 	public void testFunction() {
-		runCoxTest(1000, 2.0, 1.5, 0.8, 100, 0.05, 100, 0);
+		runCoxTest(1000, 2.0, 1.5, 0.8, 100, 0.05, 0.000001, 100, 0);
 	}
 	
 	public void runCoxTest(int numRecords, double scaleWeibull, double shapeWeibull, double prob,
-						   int numFeatures, double alpha, int moi, int mii) {
+						   int numFeatures, double alpha, double tol, int moi, int mii) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SPARK);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -53,13 +53,16 @@ public class BuiltinCoxTest extends AutomatedTestBase
 		int seed = 11;
 
 		programArgs = new String[]{
-				"-nvargs", "X=" + input("X"), "TE=" + input("TE"), "F=" + input("F"),
-				"M=" + output("M"), "S=" + output("S"), "T=" + output("T"),
-				"COV=" + output("COV"), "RT=" + output("RT"), "XO=" + output("XO"), "MF=" + output("MF"),
-				"alpha=" + alpha, "moi=" + moi, "mii=" + mii};
+				"-nvargs", "X=" + input("X"), "TE=" + input("TE"), "F=" + input("F"), "R=" + input("R"),
+				"M=" + output("M"), "S=" + output("S"), "T=" + output("T"), "COV=" + output("COV"),
+				"RT=" + output("RT"), "XO=" + output("XO"), "MF=" + output("MF"),
+				"alpha=" + alpha, "tol=" + tol, "moi=" + moi, "mii=" + mii};
 
 		double[][] X = getRandomMatrix(numRecords, numFeatures, 1, 5, spDense, seed);
 		writeInputMatrixWithMTD("X", X, false);
+
+		double[][] R = new double[1][1];
+		writeInputMatrixWithMTD("R", R, false);
 
 		double[][] B = getRandomMatrix (numFeatures, 1, -1.0, 1.0, spDense, seed);
 		double[][] U = getRandomMatrix(numRecords, 1, 0.000000001, 1, spDense, seed);

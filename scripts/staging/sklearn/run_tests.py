@@ -10,119 +10,19 @@ from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.pipeline import make_pipeline
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import TweedieRegressor, LogisticRegression
+from sklearn.mixture import GaussianMixture
 
 from map_pipeline import SklearnToDMLMapper
 from tests.util import test_script, compare_script, get_systemds_root
 
-def test001():
-    pipeline = make_pipeline(StandardScaler(), KMeans())
+def test_valid(name, pipeline):
     mapper = SklearnToDMLMapper(pipeline)
     mapper.transform()
-    path = 'test001_gen.dml'
+    path = f'{name}_gen.dml'
     mapper.save(path)
-    result = compare_script(path, 'test001.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test002():
-    pipeline = make_pipeline(Normalizer(), KMeans())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test002_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test002.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test003():
-    pipeline = make_pipeline(SimpleImputer(strategy='mean'), KMeans())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test003_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test003.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test004():
-    pipeline = make_pipeline(SimpleImputer(strategy='median'), KMeans())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test004_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test004.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test005():
-    pipeline = make_pipeline(PCA(), KMeans())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test005_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test005.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test006():
-    pipeline = make_pipeline(StandardScaler(), DBSCAN())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test006_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test006.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test007():
-    pipeline = make_pipeline(Normalizer(), DBSCAN())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test007_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test007.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test008():
-    pipeline = make_pipeline(SimpleImputer(strategy='mean'), DBSCAN())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test008_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test008.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test009():
-    pipeline = make_pipeline(SimpleImputer(strategy='median'), DBSCAN())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test009_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test009.dml')
-    if result == True:
-        return test_script(path)
-    return False
-
-def test010():
-    pipeline = make_pipeline(PCA(), DBSCAN())
-    mapper = SklearnToDMLMapper(pipeline)
-    mapper.transform()
-    path = 'test010_gen.dml'
-    mapper.save(path)
-    result = compare_script(path, 'test010.dml')
-    if result == True:
-        return test_script(path)
-    return False
+    return test_script(path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -135,34 +35,45 @@ if __name__ == '__main__':
         raise ValueError(f'Invalid log level: {options.log}')
     logging.basicConfig(level=numeric_level)
 
-    tests = [
-        test001,
-        test002,
-        test003,
-        test004,
-        test005,
-        test006,
-        test007,
-        test008,
-        test009,
-        test010
-    ]
-
-    results = []
-
     try:
         get_systemds_root()
     except Exception as e:
         logging.error(e)
         exit(-1)
 
-    for test in tests:
+    
+    valid_pipelines = [
+        make_pipeline(StandardScaler(), KMeans()),
+        make_pipeline(Normalizer(), KMeans()),
+        make_pipeline(SimpleImputer(strategy='mean'), KMeans()),
+        make_pipeline(SimpleImputer(strategy='median'), KMeans()),
+        make_pipeline(Normalizer(), LinearSVC()),
+        make_pipeline(Normalizer(), TweedieRegressor()),
+        make_pipeline(StandardScaler(), LogisticRegression()),
+        make_pipeline(Normalizer(), LogisticRegression()),
+        #TODO: Tests which use PCA or DBSCAN, trigger a NullPointerException during parsing for some reason
+        make_pipeline(StandardScaler(), DBSCAN()),
+        make_pipeline(Normalizer(), DBSCAN()),
+        make_pipeline(SimpleImputer(strategy='mean'), DBSCAN()),
+        make_pipeline(SimpleImputer(strategy='median'), DBSCAN()),
+        make_pipeline(PCA(), KMeans()),
+        make_pipeline(PCA(), DBSCAN()),
+        # TODO: GaussianMixtureModel results in LanguageException -- ERROR: [line 0:0] -- Function get_sample_maps() is undefined.
+        make_pipeline(StandardScaler(), GaussianMixture()),
+        make_pipeline(Normalizer(), GaussianMixture())
+    ]
+
+    valid_results = []
+    valid_tests_names = []
+    for i, pipeline in enumerate(valid_pipelines):
+        name = f'test_{i}_' + '_'.join([s[0] for s in pipeline.steps])
         logging.info('*' * 50)
-        logging.info((18*'*' + test.__name__ + (50-20-len(test.__name__)) * '*'))
-        result = test()
-        results.append(result)
+        logging.info((18*'*' + name + (50-20-len(name)) * '*'))
+        result = test_valid(name, pipeline)
+        valid_results.append(result)
+        valid_tests_names.append(name)
     
     print('*' * 50)
     print('Finished all tests.')
-    for (t, r) in zip(tests, results):
-        print('{}: {}'.format(t.__name__, 'Failed' if not r else 'Success'))
+    for (name, r) in zip(valid_tests_names, valid_results):
+        print('{}: {}'.format(name, 'Failed' if not r else 'Success'))

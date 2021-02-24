@@ -168,8 +168,10 @@ public class EncoderMVImpute extends Encoder
 					long off = _countList[j];
 					for( int i=0; i<in.getNumRows(); i++ ){
 						Object key = in.get(i, colID-1);
-						if(key == null)
+						if(key == null){
+							off--;
 							continue;
+						}
 						_meanFn.execute2(_meanList[j], UtilFunctions.objectToDouble(
 								in.getSchema()[colID-1], key), off+i+1);
 					}

@@ -3,5 +3,5 @@
 *.csv
 
 !/tests/expected/*.dml
-!X.csv
-!X.csv.*
+!/tests/input_X.*
+!/tests/input_Y.*

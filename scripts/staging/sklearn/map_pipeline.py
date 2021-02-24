@@ -33,7 +33,7 @@ def get_functions():
 
 
 class SklearnToDMLMapper:
-    def __init__(self, pipeline, input_name='X'): # TODO: standaline_script???
+    def __init__(self, pipeline, input_name='input'):
         self.steps = pipeline.steps
         self.functions = get_functions()
         self.dml_script = None
@@ -68,14 +68,15 @@ class SklearnToDMLMapper:
             f.write(self.dml_script)
 
     def get_input(self):
-        func = self.functions[self.steps[0][0]]()
+        # Get last function (an algorithm)
+        func = self.functions[self.steps[-1][0]]()
         if func is None:
-            raise RuntimeError(f'{self.steps[0][0]} is not supported.')
+            raise RuntimeError(f'{self.steps[-1][0]} is not supported.')
 
         if func.is_supervised:
-            return f'X = read(${input_name}_X)\nY = read(${input_name}_Y)'
+            return f'X = read(${self.input_name}_X)\nY = read(${self.input_name}_Y)'
         else:
-            return f'X = read(${self.input_name})'
+            return f'X = read(${self.input_name}_X)'
 
     def get_output(self):
         func = self.functions[self.steps[-1][0]]()

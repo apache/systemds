@@ -19,7 +19,7 @@ def invoke_systemds(path):
 
     try:
         script_path = os.path.relpath(path, os.getcwd())
-        result = subprocess.run([root + "/bin/systemds", script_path, '-nvargs input_X=input_X.csv input_Y=input_Y.csv'],
+        result = subprocess.run([root + "/bin/systemds", script_path, '-nvargs input_X=tests/input_X.csv input_Y=tests/input_Y.csv'],
                              check=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                              timeout=10000)

@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.transform;
 
-import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;

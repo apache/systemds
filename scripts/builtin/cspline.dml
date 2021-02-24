@@ -1,0 +1,58 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# THIS SCRIPT SOLVES CUBIC SPLINE INTERPOLATION
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME  TYPE           DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X      Matrix[Double]  ---       1-column matrix of x values knots. It is assumed that x values are
+#                                  monotonically increasing and there is no duplicates points in X
+# Y      Matrix[Double]  ---       1-column matrix of corresponding y values knots
+# inp_x  Double          ---       the given input x, for which the cspline will find predicted y
+# mode   String          "DS"      Specifies the method for cspline (DS - Direct Solve, CG - Conjugate Gradient)
+# tol    Double          -1.0      Tolerance (epsilon); conjugate graduent procedure terminates early if
+#                                  L2 norm of the beta-residual is less than tolerance * its initial norm
+# maxi   Integer         -1        Maximum number of conjugate gradient iterations, 0 = no maximum
+# --------------------------------------------------------------------------------------------
+# OUTPUT: 
+# pred_Y Matrix[Double] ---      Predicted value
+# K      Matrix[Double] ---      Matrix of k parameters
+#
+
+#Algorithms: It implement the https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
+#it usages natural spline with q1''(x0) == qn''(xn) == 0.0
+
+
+m_cspline = function(Matrix[Double] X, Matrix[Double] Y, Double inp_x, 
+String mode = "DS", Double tol = -1.0, Integer maxi = -1)
+  return (Matrix[Double] pred_Y, Matrix[Double] K)
+{
+  if( mode == "CG" & maxi != -1 & tol != -1.0)
+  {
+    [pred_Y, K] = csplineCG(X=X, Y=Y, inp_x=inp_x, tol=tol, maxi=maxi);
+  }
+  else 
+  {    
+    [pred_Y, K] = csplineDS(X=X, Y=Y, inp_x=inp_x);
+  }
+}

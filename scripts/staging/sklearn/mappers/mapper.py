@@ -36,7 +36,7 @@ class Mapper:
     # TODO better string building
     def get_call(self):
         # TODO: handle intermediate step results
-        input_ = ['X', 'y'] if self.is_supervised else ['X']
+        input_ = ['X', 'Y'] if self.is_supervised else ['X']
         input_ += self.mapped_params
         output_ = ', '.join(self.mapped_output) if not self.is_intermediate else 'X'
         param_ = ', '.join(map(str, input_))

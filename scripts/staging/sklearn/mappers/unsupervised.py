@@ -38,6 +38,7 @@ class DBSCANMapper(Mapper):
 
 class GaussianMixtureMapper(Mapper):
     name = 'gmm'
+    sklearn_name = 'gaussianmixture'
     model_map = {
         'full': 'VVV',
         'tied': 'EEE',
@@ -54,8 +55,8 @@ class GaussianMixtureMapper(Mapper):
     def map_params(self):
         self.mapped_params = [
             self.params.get('n_components', 3),
-            self.model_map.get(self.params.get('covariance_type', 'VVV')),
-            self.params.get('init_params', 'kmeans'),
+            f'"{self.model_map.get(self.params.get("covariance_type", "VVV"))}"',
+            self.params.get('init_params', '"kmeans"'),
             self.params.get('max_iter', 100),
             self.params.get('reg_covar', 1e-6),
             self.params.get('tol', 0.000001)

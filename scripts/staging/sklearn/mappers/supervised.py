@@ -2,7 +2,8 @@ from .mapper import Mapper
 
 
 class LinearSVMMapper(Mapper):
-    name = 'lv2svm'
+    name = 'l2svm'
+    sklearn_name = 'linearsvc'
     is_supervised = True
     mapped_output = [
         'model'
@@ -14,6 +15,7 @@ class LinearSVMMapper(Mapper):
             self.params.get('tol', 0.001),
             self.params.get('C', 1.0),
             self.params.get('max_iter', 100),
+            20, # maxii parameter is unkown in sklearn and not documented in dml
             'TRUE' if self.params.get('verbose', False) else 'FALSE',
             -1  # column_id is unkown in sklearn
         ]
@@ -21,6 +23,7 @@ class LinearSVMMapper(Mapper):
 
 class TweedieRegressorMapper(Mapper):
     name = 'glm'
+    sklearn_name = 'tweedieregressor'
     is_supervised = True
     mapped_output = [
         'beta'
@@ -36,17 +39,19 @@ class TweedieRegressorMapper(Mapper):
             1.0,  # lpow
             0.0,  # yneg
             # sklearn does not know last case
-            0 if self.params.get('fit_intercept', 1) else 1,
-            0.0,  # reg
-            self.params.get('tol', 0.000001),
+            0 if self.params.get('fit_intercept', 1) else 1, # icpt
             0.0,  # disp
+            0.0,  # reg
+            self.params.get('tol', 0.000001), # tol
             200,  # moi
-            0  # mii
+            0,  # mii,
+            'TRUE' if self.params.get('verbose', False) else 'FALSE'
         ]
 
 
 class LogisticRegressionMapper(Mapper):
     name = 'multiLogReg'
+    sklearn_name = 'logisticregression'
     is_supervised = True
     mapped_output = [
         'beta'
@@ -56,8 +61,9 @@ class LogisticRegressionMapper(Mapper):
         self.mapped_params = [
             # sklearn does not know last case
             0 if self.params.get('fit_intercept', 1) else 1,
-            self.params.get('C', 0.0),
-            self.params.get('tol', 0.000001),
+            self.params.get('tol', 0.000001), # tol
+            self.params.get('C', 0.0), # reg
             100,  # maxi
             0,  # maxii
+            'TRUE' if self.params.get('verbose', False) else 'FALSE'
         ]

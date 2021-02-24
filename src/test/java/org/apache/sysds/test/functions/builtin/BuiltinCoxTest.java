@@ -41,11 +41,11 @@ public class BuiltinCoxTest extends AutomatedTestBase
 
 	@Test
 	public void testFunction() {
-		runCoxTest(1000, 2.0, 1.5, 0.8, 100, 0.05, 0.000001, 100, 0);
+		runCoxTest(50, 2.0, 1.5, 0.8, 100, 0.05, 1.0,0.000001, 100, 0);
 	}
 	
 	public void runCoxTest(int numRecords, double scaleWeibull, double shapeWeibull, double prob,
-						   int numFeatures, double alpha, double tol, int moi, int mii) {
+						   int numFeatures, double sparsity, double alpha, double tol, int moi, int mii) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SPARK);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -53,70 +53,10 @@ public class BuiltinCoxTest extends AutomatedTestBase
 		int seed = 11;
 
 		programArgs = new String[]{
-				"-nvargs", "X=" + input("X"), "TE=" + input("TE"), "F=" + input("F"), "R=" + input("R"),
-				"M=" + output("M"), "S=" + output("S"), "T=" + output("T"), "COV=" + output("COV"),
-				"RT=" + output("RT"), "XO=" + output("XO"), "MF=" + output("MF"),
+				"-nvargs", "M=" + output("M"), "S=" + output("S"), "T=" + output("T"), "COV=" + output("COV"),
+				"RT=" + output("RT"), "XO=" + output("XO"), "MF=" + output("MF"), "n=" + numRecords, "l=" + scaleWeibull,
+				"v=" + shapeWeibull, "p=" + prob, "m=" + numFeatures, "sp=" + sparsity,
 				"alpha=" + alpha, "tol=" + tol, "moi=" + moi, "mii=" + mii};
-
-		double[][] X = getRandomMatrix(numRecords, numFeatures, 1, 5, spDense, seed);
-		writeInputMatrixWithMTD("X", X, false);
-
-		double[][] R = new double[1][1];
-		writeInputMatrixWithMTD("R", R, false);
-
-		double[][] B = getRandomMatrix (numFeatures, 1, -1.0, 1.0, spDense, seed);
-		double[][] U = getRandomMatrix(numRecords, 1, 0.000000001, 1, spDense, seed);
-		double[][] TE = new double[numRecords][2];
-
-		double probCensor = 1 - prob;
-		double[][] event = floor(getRandomMatrix(numRecords, 1, 1 - probCensor, 1 + prob, spDense, seed));
-		double nTime = sum(event, numRecords, 1);
-
-		for(int i = 0; i < numRecords; i++) {
-			TE[i][1] = event[i][0];
-		}
-
-		double[][] T = new double[numRecords][1];
-		double max_T = 0;
-		double min_T = 0;
-
-		double[][] multipliedMatrices = performMatrixMultiplication(X, B);
-		for(int i = 0; i < numRecords; i++) {
-			max_T = Double.MIN_VALUE;
-			min_T = Double.MAX_VALUE;
-
-			T[i][0] = Math.pow(- Math.log(U[i][0])/ (scaleWeibull * Math.exp(multipliedMatrices[i][0])), (1/shapeWeibull));
-
-			if (T[i][0] > max_T) {
-				max_T = T[i][0];
-			}
-			if (T[i][0] < min_T) {
-				min_T = T[i][0];
-			}
-		}
-
-		double len = max_T - min_T;
-		double numBins = len / nTime;
-		for (int i = 0; i < numRecords; i++) {
-			T[i][0] = T[i][0] / numBins;
-		}
-		ceil(T);
-
-		for(int i = 0; i < numRecords; i++) {
-			TE[i][0] = T[i][0];
-		}
-
-		writeInputMatrixWithMTD("TE", TE, false);
-
-		if (numFeatures > 0) {
-			double[][] F = new double[numFeatures][1];
-
-			for (int i = 0; i < numFeatures; i++) {
-				F[i][0] = i+1;
-			}
-
-			writeInputMatrixWithMTD("F", F, false);
-		}
 
 		runTest(true, false, null, -1);
 

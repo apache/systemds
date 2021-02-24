@@ -166,9 +166,13 @@ public class EncoderMVImpute extends Encoder
 				if( _mvMethodList[j] == MVMethod.GLOBAL_MEAN ) {
 					//compute global column mean (scale)
 					long off = _countList[j];
-					for( int i=0; i<in.getNumRows(); i++ )
+					for( int i=0; i<in.getNumRows(); i++ ){
+						Object key = in.get(i, colID-1);
+						if(key == null)
+							continue;
 						_meanFn.execute2(_meanList[j], UtilFunctions.objectToDouble(
-							in.getSchema()[colID-1], in.get(i, colID-1)), off+i+1);
+								in.getSchema()[colID-1], key), off+i+1);
+					}
 					_replacementList[j] = String.valueOf(_meanList[j]._sum);
 					_countList[j] += in.getNumRows();
 				}

@@ -1,6 +1,5 @@
 from .mapper import Mapper
 
-
 class StandardScalerMapper(Mapper):
     name = 'scale'
     sklearn_name = 'standardscaler'
@@ -14,26 +13,6 @@ class StandardScalerMapper(Mapper):
             'TRUE' if self.params.get('with_mean', True) else 'FALSE',
             'TRUE' if self.params.get('with_std', True) else 'FALSE'
         ]
-
-
-class SplitMapper(Mapper):
-    name = 'split'
-    is_intermediate = True
-    mapped_output = [
-        'Xtrain',
-        'Xtest',
-        'ytrain',
-        'ytest'
-    ]
-
-    def map_params(self):
-        self.mapped_params = [
-            self.params.get('train_size', 0.7),
-            1,  # cant be done 100% accurate in SKlearn look up later
-            -1 if self.params['random_state'] is None \
-            else self.params['random_state']
-        ]
-
 
 class NormalizeMapper(Mapper):
     name = 'normalize'

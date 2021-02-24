@@ -1,5 +1,6 @@
 import os
 
+builtin_path = "scripts/builtin"
 
 def scripts_home():
     systemds_home = os.getenv('SYSTEMDS_HOME')
@@ -7,11 +8,6 @@ def scripts_home():
         return builtin_path
     else:
         return f'{systemds_home}/{builtin_path}'
-
-
-# TODO: path handling with Path or env variablebuiltin_path
-builtin_path = "scripts/builtin"
-
 
 class Mapper:
     name = None
@@ -33,9 +29,7 @@ class Mapper:
                                                  self.name,
                                                  self.name)
 
-    # TODO better string building
     def get_call(self):
-        # TODO: handle intermediate step results
         input_ = ['X', 'Y'] if self.is_supervised else ['X']
         input_ += self.mapped_params
         output_ = ', '.join(self.mapped_output) if not self.is_intermediate else 'X'

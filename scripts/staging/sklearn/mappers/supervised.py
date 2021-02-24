@@ -1,6 +1,5 @@
 from .mapper import Mapper
 
-
 class LinearSVMMapper(Mapper):
     name = 'l2svm'
     sklearn_name = 'linearsvc'
@@ -19,7 +18,6 @@ class LinearSVMMapper(Mapper):
             'TRUE' if self.params.get('verbose', False) else 'FALSE',
             -1  # column_id is unkown in sklearn
         ]
-
 
 class TweedieRegressorMapper(Mapper):
     name = 'glm'

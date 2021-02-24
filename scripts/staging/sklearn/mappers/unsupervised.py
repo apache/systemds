@@ -1,6 +1,5 @@
 from .mapper import Mapper
 
-
 class KmeansMapper(Mapper):
     name = 'kmeans'
     sklearn_name = 'kmeans'

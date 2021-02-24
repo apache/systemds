@@ -3,6 +3,5 @@
 *.csv
 *.csv.mtd
 
-!/tests/expected/*.dml
 !/tests/input_X.*
 !/tests/input_Y.*

@@ -9,7 +9,7 @@ def get_systemds_root():
     try:
         return os.environ['SYSTEMDS_ROOT']
     except KeyError as error:
-        raise KeyError("SYSTEMDS_ROOT is not set.")
+        raise KeyError(f"SYSTEMDS_ROOT is not set.\nError\n{error}")
         
 def get_sklearn_root():
     return f'{get_systemds_root()}/scripts/staging/sklearn'
@@ -56,7 +56,6 @@ def test_script(path):
 
 # Compares two script using diff
 def compare_script(actual, expected):
-    return True
     try:
         f_expected = open(f'{get_sklearn_root()}/tests/expected/{expected}')
         f_actual = open(f'{get_sklearn_root()}/{actual}')
@@ -76,7 +75,6 @@ def compare_script(actual, expected):
             logging.info('\n' + '\n'.join(changes))
             logging.info('#' * 30)
             return False
-
     except Exception as e:
         logging.error('Failed to compare script.')
         logging.error(e)

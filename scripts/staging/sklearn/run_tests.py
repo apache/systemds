@@ -14,7 +14,7 @@ from sklearn.svm import LinearSVC
 from sklearn.linear_model import TweedieRegressor, LogisticRegression
 from sklearn.mixture import GaussianMixture
 
-from map_pipeline import SklearnToDMLMapper
+from SklearnToDMLMapper import SklearnToDMLMapper
 from tests.util import test_script, compare_script, get_systemds_root
 
 def test_valid(name, pipeline):

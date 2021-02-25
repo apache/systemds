@@ -64,7 +64,6 @@ public class SpoofCUDACellwise extends SpoofCellwise implements SpoofCUDAOperato
 			LOG.error("SpoofCUDA " + getSpoofType() + " operator failed to execute. Trying Java fallback.\n");
 			// ToDo: java fallback
 		}
-		
 		LibMatrixCUDA.cudaSupportFunctions.deviceToHost(ec.getGPUContext(0), ptr, result, getName(), false);
 		
 		return new DoubleObject(result[0]);
@@ -110,7 +109,7 @@ public class SpoofCUDACellwise extends SpoofCellwise implements SpoofCUDAOperato
 		
 //		ec.setMetaData(outputName, out_rows, out_cols);
 		GPUObject g = a.getGPUObject(gctx);
-		boolean sparseOut = _type == CellType.NO_AGG && sparseSafe && g.isSparse();;
+		boolean sparseOut = _type == CellType.NO_AGG && sparseSafe && g.isSparse();
 		
 		long nnz = g.getNnz("spoofCUDA" + getSpoofType(), false);
 		if(sparseOut)
@@ -119,9 +118,9 @@ public class SpoofCUDACellwise extends SpoofCellwise implements SpoofCUDAOperato
 				(ec.getSparseMatrixOutputForGPUInstruction(outputName, out_rows, out_cols, (isSparseSafe() && nnz > 0) ?
 						nnz : out_rows * out_cols).getKey()) :
 				(ec.getDenseMatrixOutputForGPUInstruction(outputName, out_rows, out_cols).getKey());
-
+		
 		int offset = 1;
-		if(!(inputIsEmpty(a.getGPUObject(gctx)) && sparseSafe )) {
+		if(!inputIsEmpty(a.getGPUObject(gctx)) || !sparseSafe) {
 			if(call.exec(ec, this, ID, prepareInputPointers(ec, inputs, offset), prepareSideInputPointers(ec, inputs, offset, false),
 				prepareOutputPointers(ec, out_obj, sparseOut), scalarObjects, 0) != 0) {
 				LOG.error("SpoofCUDA " + getSpoofType() + " operator failed to execute. Trying Java fallback.(ToDo)\n");
@@ -132,9 +131,7 @@ public class SpoofCUDACellwise extends SpoofCellwise implements SpoofCUDAOperato
 	}
 	
 	private boolean inputIsEmpty(GPUObject g) {
-		if(g.getDensePointer() != null || g.getSparseMatrixCudaPointer() != null)
-			return true;
-		return false;
+		return g.getDensePointer() == null && g.getSparseMatrixCudaPointer() == null;
 	}
 	
 	// used to determine sparse safety

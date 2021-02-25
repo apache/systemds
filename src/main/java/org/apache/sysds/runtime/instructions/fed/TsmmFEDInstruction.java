@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -62,7 +63,7 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		
-		if(mo1.isFederated() && _type.isLeft()) { // left tsmm
+		if((_type.isLeft() && mo1.isFederated(FederationMap.FType.ROW)) || (mo1.isFederated(FederationMap.FType.COL) && _type.isRight())) {
 			//construct commands: fed tsmm, retrieve results
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1}, new long[]{mo1.getFedMapping().getID()});

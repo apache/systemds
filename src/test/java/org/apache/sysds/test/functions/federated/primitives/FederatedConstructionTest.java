@@ -19,6 +19,13 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
@@ -26,16 +33,10 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -56,7 +57,10 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// cols have to be dividable by 4 for Frame tests
-		return Arrays.asList(new Object[][] {{1, 1024}, {8, 256}, {256, 8}, {1024, 4}, {16, 2048}, {2048, 32}});
+		return Arrays.asList(new Object[][] {
+			// {1, 1024}, {8, 256}, {256, 8}, {1024, 4}, {16, 2048},
+			 {2048, 32}
+		});
 	}
 
 	@Override
@@ -71,6 +75,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void federatedMatrixConstructionSP() {
 		federatedMatrixConstruction(Types.ExecMode.SPARK);
 	}

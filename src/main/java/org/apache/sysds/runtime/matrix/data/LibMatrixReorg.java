@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
@@ -204,7 +205,7 @@ public class LibMatrixReorg
 			boolean row = (in.sparse || in.rlen >= in.clen) && !out.sparse;
 			int len = row ? in.rlen : in.clen;
 			int blklen = (int)(Math.ceil((double)len/k));
-			blklen += (blklen%8 != 0)?8-blklen%8:0;
+			blklen += (!out.sparse && (blklen%8)!=0) ? 8-blklen%8 : 0;
 			for( int i=0; i<k & i*blklen<len; i++ )
 				tasks.add(new TransposeTask(in, out, row, i*blklen, Math.min((i+1)*blklen, len), cnt));
 			List<Future<Object>> taskret = pool.invokeAll(tasks);
@@ -819,8 +820,8 @@ public class LibMatrixReorg
 		
 		if( out.rlen == 1 ) //VECTOR-VECTOR
 		{
-			c.allocate(0, (int)in.nonZeros); 
-			c.setIndexRange(0, 0, m, a.valuesAt(0), 0, m);
+			//allocate row once by nnz, copy non-zeros
+			c.set(0, new SparseRowVector((int)in.nonZeros, a.valuesAt(0), m), false);
 		}
 		else //general case: MATRIX-MATRIX
 		{
@@ -860,50 +861,69 @@ public class LibMatrixReorg
 		SparseBlock a = in.getSparseBlock();
 		SparseBlock c = out.getSparseBlock();
 
-		//allocate output sparse rows
-		if( cnt != null ) {
-			for( int i=cl; i<cu; i++ )
-				if( cnt[i] > 0 )
-					c.allocate(i, cnt[i]);
+		if( cu-cl == 1 ) { // SINGLE TARGET ROW
+			//number of columns <= num cores, use sequential scan over input
+			//and avoid cache blocking and temporary position maintenance
+			if( cnt[cl] > 0 )
+				c.allocate(cl, cnt[cl]);
+			
+			for( int i=0; i<ru; i++ ) {
+				if( a.isEmpty(i) ) continue;
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				for( int j=apos; j<apos+alen && aix[j]<=cl; j++ )
+					if( aix[j] == cl )
+						c.append(cl, i, avals[j]);
+			}
 		}
-		
-		//blocking according to typical L2 cache sizes w/ awareness of sparsity
-		final long xsp = (long)in.rlen*in.clen/in.nonZeros;
-		final int blocksizeI = Math.max(128, (int) (8*xsp));
-		final int blocksizeJ = Math.max(128, (int) (8*xsp));
-	
-		//temporary array for block boundaries (for preventing binary search) 
-		int[] ix = new int[Math.min(blocksizeI, ru-rl)];
-		
-		//blocked execution
-		for( int bi=rl; bi<ru; bi+=blocksizeI )
-		{
-			Arrays.fill(ix, 0);
-			//find column starting positions
-			int bimin = Math.min(bi+blocksizeI, ru);
-			if( cl > 0 ) {
-				for( int i=bi; i<bimin; i++ ) {
-					if( a.isEmpty(i) ) continue;
-					int j = a.posFIndexGTE(i, cl);
-					ix[i-bi] = (j>=0) ? j : a.size(i);
-				}
+		else { //GENERAL CASE
+			//allocate output sparse rows
+			if( cnt != null ) {
+				for( int i=cl; i<cu; i++ )
+					if( cnt[i] > 0 )
+						c.allocate(i, cnt[i]);
 			}
 			
-			for( int bj=cl; bj<cu; bj+=blocksizeJ ) {
-				int bjmin = Math.min(bj+blocksizeJ, cu);
-				//core block transpose operation
-				for( int i=bi; i<bimin; i++ ) {
-					if( a.isEmpty(i) ) continue;
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);
-					int j = ix[i-bi] + apos; //last block boundary
-					for( ; j<apos+alen && aix[j]<bjmin; j++ ) {
-						c.allocate(aix[j], ennz2, n2);
-						c.append(aix[j], i, avals[j]);
+			//blocking according to typical L2 cache sizes w/ awareness of sparsity
+			final long xsp = (long)in.rlen*in.clen/in.nonZeros;
+			final int blocksizeI = Math.max(128, (int) (8*xsp));
+			final int blocksizeJ = Math.max(128, (int) (8*xsp));
+		
+			//temporary array for block boundaries (for preventing binary search) 
+			int[] ix = new int[Math.min(blocksizeI, ru-rl)];
+			
+			//blocked execution
+			for( int bi=rl; bi<ru; bi+=blocksizeI )
+			{
+				Arrays.fill(ix, 0);
+				//find column starting positions
+				int bimin = Math.min(bi+blocksizeI, ru);
+				if( cl > 0 ) {
+					for( int i=bi; i<bimin; i++ ) {
+						if( a.isEmpty(i) ) continue;
+						int j = a.posFIndexGTE(i, cl);
+						ix[i-bi] = (j>=0) ? j : a.size(i);
 					}
-					ix[i-bi] = j - apos; //keep block boundary
+				}
+				
+				for( int bj=cl; bj<cu; bj+=blocksizeJ ) {
+					int bjmin = Math.min(bj+blocksizeJ, cu);
+					//core block transpose operation
+					for( int i=bi; i<bimin; i++ ) {
+						if( a.isEmpty(i) ) continue;
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						int j = ix[i-bi] + apos; //last block boundary
+						for( ; j<apos+alen && aix[j]<bjmin; j++ ) {
+							c.allocate(aix[j], ennz2, n2);
+							c.append(aix[j], i, avals[j]);
+						}
+						ix[i-bi] = j - apos; //keep block boundary
+					}
 				}
 			}
 		}

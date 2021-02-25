@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.Map;
+
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -136,6 +138,26 @@ public class LineageCacheEntry {
 		if (_timestamp < 0)
 			throw new DMLRuntimeException ("Execution timestamp shouldn't be -ve. Key: "+_key);
 		recomputeScore();
+	}
+	
+	protected synchronized void computeScore(Map<LineageItem, Integer> removeList) {
+		// Set timestamp and compute initial score
+		setTimestamp();
+
+		// Update score to emulate computeTime scaling by #misses
+		if (removeList.containsKey(_key) && LineageCacheConfig.isCostNsize()) {
+			//score = score * (1 + removeList.get(_key));
+			double w1 = LineageCacheConfig.WEIGHTS[0];
+			int missCount = 1 + removeList.get(_key);
+			score = score + (w1*(((double)_computeTime)/getSize()) * missCount);
+		}
+	}
+	
+	protected synchronized void updateScore() {
+		// Update score to emulate computeTime scaling by cache hit
+		//score *= 2;
+		double w1 = LineageCacheConfig.WEIGHTS[0];
+		score = score + w1*(((double)_computeTime)/getSize());
 	}
 	
 	protected synchronized long getTimestamp() {

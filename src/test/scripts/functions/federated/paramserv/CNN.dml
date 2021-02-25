@@ -65,11 +65,10 @@ source("scripts/nn/optim/sgd_nesterov.dml") as sgd_nesterov
  *       - W4: 4th layer weights (parameters) matrix, of shape (N3, K)
  *       - b4: 4th layer biases vector, of shape (1, K)
  */
-train = function(matrix[double] X, matrix[double] y,
-                 matrix[double] X_val, matrix[double] y_val,
-                 int C, int Hin, int Win, int epochs, int batch_size, double learning_rate)
-    return (list[unknown] model_trained) {
-
+train = function(matrix[double] X, matrix[double] y, matrix[double] X_val,
+  matrix[double] y_val, int epochs, int batch_size, double eta, int C, int Hin,
+	int Win, int seed = -1) return (list[unknown] model)
+{
   N = nrow(X)
   K = ncol(y)
 
@@ -84,74 +83,45 @@ train = function(matrix[double] X, matrix[double] y,
   N3 = 512  # num nodes in affine3
   # Note: affine4 has K nodes, which is equal to the number of target dimensions (num classes)
 
-  [W1, b1] = conv2d::init(F1, C, Hf, Wf, -1)  # inputs: (N, C*Hin*Win)
-  [W2, b2] = conv2d::init(F2, F1, Hf, Wf, -1)  # inputs: (N, F1*(Hin/2)*(Win/2))
-  [W3, b3] = affine::init(F2*(Hin/2/2)*(Win/2/2), N3, -1)  # inputs: (N, F2*(Hin/2/2)*(Win/2/2))
-  [W4, b4] = affine::init(N3, K, -1)  # inputs: (N, N3)
+  [W1, b1] = conv2d::init(F1, C, Hf, Wf, seed = seed)  # inputs: (N, C*Hin*Win)
+  lseed = ifelse(seed==-1, -1, seed + 1);
+  [W2, b2] = conv2d::init(F2, F1, Hf, Wf, seed = lseed)  # inputs: (N, F1*(Hin/2)*(Win/2))
+  lseed = ifelse(seed==-1, -1, seed + 2);
+  [W3, b3] = affine::init(F2*(Hin/2/2)*(Win/2/2), N3, seed = lseed)  # inputs: (N, F2*(Hin/2/2)*(Win/2/2))
+  lseed = ifelse(seed==-1, -1, seed + 3);
+  [W4, b4] = affine::init(N3, K, seed = lseed)  # inputs: (N, N3)
   W4 = W4 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
 
   # Initialize SGD w/ Nesterov momentum optimizer
-  learning_rate = learning_rate  # learning rate
   mu = 0.9  # momentum
   decay = 0.95  # learning rate decay constant
   vW1 = sgd_nesterov::init(W1); vb1 = sgd_nesterov::init(b1)
   vW2 = sgd_nesterov::init(W2); vb2 = sgd_nesterov::init(b2)
   vW3 = sgd_nesterov::init(W3); vb3 = sgd_nesterov::init(b3)
   vW4 = sgd_nesterov::init(W4); vb4 = sgd_nesterov::init(b4)
+
+  model = list(W1, W2, W3, W4, b1, b2, b3, b4, vW1, vW2, vW3, vW4, vb1, vb2, vb3, vb4)
+
   # Regularization
   lambda = 5e-04
 
   # Create the hyper parameter list
-  hyperparams = list(learning_rate=learning_rate, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3)
+  hyperparams = list(learning_rate=eta, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3)
   # Calculate iterations
   iters = ceil(N / batch_size)
-  print_interval = floor(iters / 25)
-
-  print("[+] Starting optimization")
-  print("[+]  Learning rate: " + learning_rate)
-  print("[+]  Batch size: " + batch_size)
-  print("[+]  Iterations per epoch: " + iters + "\n")
 
   for (e in 1:epochs) {
-    print("[+] Starting epoch: " + e)
-    print("|")
     for(i in 1:iters) {
-      # Create the model list
-      model_list = list(W1, W2, W3, W4, b1, b2, b3, b4, vW1, vW2, vW3, vW4, vb1, vb2, vb3, vb4)
-
       # Get next batch
       beg = ((i-1) * batch_size) %% N + 1
       end = min(N, beg + batch_size - 1)
       X_batch = X[beg:end,]
       y_batch = y[beg:end,]
 
-      gradients_list = gradients(model_list, hyperparams, X_batch, y_batch)
-      model_updated = aggregation(model_list, hyperparams, gradients_list)
-
-      W1 = as.matrix(model_updated[1])
-      W2 = as.matrix(model_updated[2])
-      W3 = as.matrix(model_updated[3])
-      W4 = as.matrix(model_updated[4])
-      b1 = as.matrix(model_updated[5])
-      b2 = as.matrix(model_updated[6])
-      b3 = as.matrix(model_updated[7])
-      b4 = as.matrix(model_updated[8])
-      vW1 = as.matrix(model_updated[9])
-      vW2 = as.matrix(model_updated[10])
-      vW3 = as.matrix(model_updated[11])
-      vW4 = as.matrix(model_updated[12])
-      vb1 = as.matrix(model_updated[13])
-      vb2 = as.matrix(model_updated[14])
-      vb3 = as.matrix(model_updated[15])
-      vb4 = as.matrix(model_updated[16])
-      if((i %% print_interval) == 0) {
-        print("█")
-      }
+      gradients_list = gradients(model, hyperparams, X_batch, y_batch)
+      model = aggregation(model, hyperparams, gradients_list)
     }
-    print("|")
   }
-
-  model_trained = list(W1, W2, W3, W4, b1, b2, b3, b4, vW1, vW2, vW3, vW4, vb1, vb2, vb3, vb4)
 }
 
 /*
@@ -189,11 +159,11 @@ train = function(matrix[double] X, matrix[double] y,
  *       - b4: 4th layer biases vector, of shape (1, K)
  */
 train_paramserv = function(matrix[double] X, matrix[double] y,
-                 matrix[double] X_val, matrix[double] y_val,
-                 int C, int Hin, int Win, int epochs, int workers,
-                 string utype, string freq, int batch_size, string scheme, string mode, double learning_rate)
-    return (list[unknown] model_trained) {
-
+  matrix[double] X_val, matrix[double] y_val, int num_workers, int epochs,
+  string utype, string freq, int batch_size, string scheme, string runtime_balancing,
+  string weighting, double eta, int C, int Hin, int Win, int seed = -1)
+  return (list[unknown] model)
+{
   N = nrow(X)
   K = ncol(y)
 
@@ -208,14 +178,17 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   N3 = 512  # num nodes in affine3
   # Note: affine4 has K nodes, which is equal to the number of target dimensions (num classes)
 
-  [W1, b1] = conv2d::init(F1, C, Hf, Wf, -1)  # inputs: (N, C*Hin*Win)
-  [W2, b2] = conv2d::init(F2, F1, Hf, Wf, -1)  # inputs: (N, F1*(Hin/2)*(Win/2))
-  [W3, b3] = affine::init(F2*(Hin/2/2)*(Win/2/2), N3, -1)  # inputs: (N, F2*(Hin/2/2)*(Win/2/2))
-  [W4, b4] = affine::init(N3, K, -1)  # inputs: (N, N3)
+  [W1, b1] = conv2d::init(F1, C, Hf, Wf, seed = seed)  # inputs: (N, C*Hin*Win)
+  lseed = ifelse(seed==-1, -1, seed + 1);
+  [W2, b2] = conv2d::init(F2, F1, Hf, Wf, seed = lseed)  # inputs: (N, F1*(Hin/2)*(Win/2))
+  lseed = ifelse(seed==-1, -1, seed + 2);
+  [W3, b3] = affine::init(F2*(Hin/2/2)*(Win/2/2), N3, seed = lseed)  # inputs: (N, F2*(Hin/2/2)*(Win/2/2))
+  lseed = ifelse(seed==-1, -1, seed + 3);
+  [W4, b4] = affine::init(N3, K, seed = lseed)  # inputs: (N, N3)
   W4 = W4 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
 
   # Initialize SGD w/ Nesterov momentum optimizer
-  learning_rate = learning_rate  # learning rate
+  learning_rate = eta  # learning rate
   mu = 0.9  # momentum
   decay = 0.95  # learning rate decay constant
   vW1 = sgd_nesterov::init(W1); vb1 = sgd_nesterov::init(b1)
@@ -225,12 +198,17 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   # Regularization
   lambda = 5e-04
   # Create the model list
-  model_list = list(W1, W2, W3, W4, b1, b2, b3, b4, vW1, vW2, vW3, vW4, vb1, vb2, vb3, vb4)
+  model = list(W1, W2, W3, W4, b1, b2, b3, b4, vW1, vW2, vW3, vW4, vb1, vb2, vb3, vb4)
   # Create the hyper parameter list
-  params = list(learning_rate=learning_rate, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3)
+  hyperparams = list(learning_rate=eta, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3)
 
   # Use paramserv function
-  model_trained = paramserv(model=model_list, features=X, labels=y, val_features=X_val, val_labels=y_val, upd="./src/test/scripts/functions/federated/paramserv/CNN.dml::gradients", agg="./src/test/scripts/functions/federated/paramserv/CNN.dml::aggregation", mode=mode, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size, k=workers, scheme=scheme, hyperparams=params, checkpointing="NONE")
+  model = paramserv(model=model, features=X, labels=y, val_features=X_val, val_labels=y_val,
+    upd="./src/test/scripts/functions/federated/paramserv/CNN.dml::gradients",
+    agg="./src/test/scripts/functions/federated/paramserv/CNN.dml::aggregation",
+    val="./src/test/scripts/functions/federated/paramserv/CNN.dml::validate",
+    k=num_workers, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size,
+    scheme=scheme, runtime_balancing=runtime_balancing, weighting=weighting, hyperparams=hyperparams, seed=seed)
 }
 
 /*
@@ -286,7 +264,7 @@ predict = function(matrix[double] X, int C, int Hin, int Win, int batch_size, li
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
   iters = ceil(N / batch_size)
-  parfor(i in 1:iters, check=0) {
+  for(i in 1:iters, check=0) {
     # Get next batch
     beg = ((i-1) * batch_size) %% N + 1
     end = min(N, beg + batch_size - 1)
@@ -337,6 +315,25 @@ eval = function(matrix[double] probs, matrix[double] y)
   loss = cross_entropy_loss::forward(probs, y)
   correct_pred = rowIndexMax(probs) == rowIndexMax(y)
   accuracy = mean(correct_pred)
+}
+
+/*
+ * Gives the accuracy and loss for a model and given feature and label matrices
+ *
+ * This function is a combination of the predict and eval function used for validation.
+ * For inputs see eval and predict.
+ *
+ * Outputs:
+ *  - loss: Scalar loss, of shape (1).
+ *  - accuracy: Scalar accuracy, of shape (1).
+ */
+validate = function(matrix[double] val_features, matrix[double] val_labels, 
+  list[unknown] model, list[unknown] hyperparams) 
+	return (double loss, double accuracy)
+{
+  [loss, accuracy] = eval(predict(val_features, as.integer(as.scalar(hyperparams["C"])),
+    as.integer(as.scalar(hyperparams["Hin"])), as.integer(as.scalar(hyperparams["Win"])), 
+    32, model), val_labels)
 }
 
 # Should always use 'features' (batch features), 'labels' (batch labels),
@@ -390,7 +387,7 @@ gradients = function(list[unknown] model,
   # Compute loss & accuracy for training data
   loss = cross_entropy_loss::forward(probs, labels)
   accuracy = mean(rowIndexMax(probs) == rowIndexMax(labels))
-  print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
+  # print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
 
   # Compute data backward pass
   ## loss

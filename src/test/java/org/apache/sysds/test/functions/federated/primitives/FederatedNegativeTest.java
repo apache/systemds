@@ -19,27 +19,38 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
-import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.controlprogram.federated.*;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 @net.jcip.annotations.NotThreadSafe
 public class FederatedNegativeTest {
 	@Test
 	public void NegativeTest1() {
 		int port = AutomatedTestBase.getRandomAvailablePort();
-		String[] args = {"-w", Integer.toString(port)};
-		Thread t = AutomatedTestBase.startLocalFedWorkerWithArgs(args);
+		Thread t = null;
+		try{
+			String[] args = {"-w", Integer.toString(port)};
+			t = AutomatedTestBase.startLocalFedWorkerWithArgs(args);
+			Thread.sleep(2000);
+		} catch(Exception e){
+			NegativeTest1();
+		}
 		FederationUtils.resetFedDataID(); //ensure expected ID when tests run in single JVM
 		Map<FederatedRange, FederatedData> fedMap = new HashMap<>();
 		FederatedRange r = new FederatedRange(new long[]{0,0}, new long[]{1,1});

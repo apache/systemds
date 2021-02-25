@@ -72,6 +72,7 @@ public class LineageRewriteReuse
 	private static BasicProgramBlock _lrPB = null;
 	private static ExecutionContext _lrEC = null;
 	private static boolean _disableReuse = true;
+	private static long _computeTime = 0;
 	private static final Log LOG = LogFactory.getLog(LineageRewriteReuse.class.getName());
 	
 	public static boolean executeRewrites (Instruction curr, ExecutionContext ec)
@@ -120,7 +121,9 @@ public class LineageRewriteReuse
 		ec.setVariable(((ComputationCPInstruction)curr).output.getName(), lrwec.getVariable(LR_VAR));
 
 		//put the result into the cache
-		LineageCache.putMatrix(curr, ec, t1-t0);
+		//Projected CT(Rewritten entry) = CT(last entry) + CT(rewrite), where CT = ComputeTime
+		long totCT = _computeTime + (t1-t0);
+		LineageCache.putMatrix(curr, ec, totCT);
 		DMLScript.EXPLAIN = et; //TODO can't change this here
 		
 		//cleanup execution context
@@ -826,8 +829,10 @@ public class LineageRewriteReuse
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
-				if (LineageCache.probe(tmp)) 
+				if (LineageCache.probe(tmp)) { 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime = LineageCache.getEntry(tmp)._computeTime;
+				}
 				// look for the old matrix in cache
 				if( LineageCache.probe(input1) )
 					inCache.put("X", LineageCache.getMatrix(input1));
@@ -863,8 +868,10 @@ public class LineageRewriteReuse
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
 				if( LineageCache.probe(input1) )
 					inCache.put("X", LineageCache.getMatrix(input1));
-				if (LineageCache.probe(tmp)) 
+				if (LineageCache.probe(tmp)) { 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime += LineageCache.getEntry(tmp)._computeTime;
+				}
 			}
 		}
 		// return true only if the last tsmm result is found
@@ -884,8 +891,10 @@ public class LineageRewriteReuse
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
-				if (LineageCache.probe(tmp)) 
+				if (LineageCache.probe(tmp)) { 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime = LineageCache.getEntry(tmp)._computeTime;
+				}
 				// look for the appended column in cache
 				if (source.getInputs().length>1 && LineageCache.probe(source.getInputs()[1])) 
 					inCache.put("deltaX", LineageCache.getMatrix(source.getInputs()[1]));
@@ -912,8 +921,10 @@ public class LineageRewriteReuse
 					LineageItem L2appin1 = input.getInputs()[0]; 
 					LineageItem tmp = new LineageItem("cbind", new LineageItem[] {L2appin1, source.getInputs()[1]});
 					LineageItem toProbe = new LineageItem(curr.getOpcode(), new LineageItem[] {tmp});
-					if (LineageCache.probe(toProbe)) 
+					if (LineageCache.probe(toProbe)) { 
 						inCache.put("lastMatrix", LineageCache.getMatrix(toProbe));
+						_computeTime = LineageCache.getEntry(toProbe)._computeTime;
+					}
 					// look for the appended column in cache
 					if (LineageCache.probe(input.getInputs()[1])) 
 						inCache.put("deltaX", LineageCache.getMatrix(input.getInputs()[1]));
@@ -951,8 +962,10 @@ public class LineageRewriteReuse
 					LineageItem old_cbind = new LineageItem("cbind", new LineageItem[] {L2appin1, old_RI});
 					LineageItem tmp = new LineageItem("cbind", new LineageItem[] {old_cbind, source.getInputs()[1]});
 					LineageItem toProbe = new LineageItem(curr.getOpcode(), new LineageItem[] {tmp});
-					if (LineageCache.probe(toProbe)) 
+					if (LineageCache.probe(toProbe)) { 
 						inCache.put("lastMatrix", LineageCache.getMatrix(toProbe));
+						_computeTime = LineageCache.getEntry(toProbe)._computeTime;
+					}
 				}
 			}
 		}
@@ -974,8 +987,10 @@ public class LineageRewriteReuse
 				LineageItem leftSource = left.getInputs()[0]; //left inpur of rbind = X
 				// create ba+* lineage on top of the input of last append
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {leftSource, right});
-				if (LineageCache.probe(tmp))
+				if (LineageCache.probe(tmp)) {
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime = LineageCache.getEntry(tmp)._computeTime;
+				}
 				// look for the appended column in cache
 				if (LineageCache.probe(left.getInputs()[1])) 
 					inCache.put("deltaX", LineageCache.getMatrix(left.getInputs()[1]));
@@ -999,8 +1014,10 @@ public class LineageRewriteReuse
 				LineageItem rightSource = right.getInputs()[0]; //left inpur of rbind = X
 				// create ba+* lineage on top of the input of last append
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {left, rightSource});
-				if (LineageCache.probe(tmp))
+				if (LineageCache.probe(tmp)) {
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime = LineageCache.getEntry(tmp)._computeTime;
+				}
 				// look for the appended column in cache
 				if (LineageCache.probe(right.getInputs()[1])) 
 					inCache.put("deltaY", LineageCache.getMatrix(right.getInputs()[1]));
@@ -1030,8 +1047,10 @@ public class LineageRewriteReuse
 					return false;
 				// create ba+* lineage on top of the input of last append
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {left, rightSource1});
-				if (LineageCache.probe(tmp))
+				if (LineageCache.probe(tmp)) {
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime = LineageCache.getEntry(tmp)._computeTime;
+				}
 			}
 		}
 		return inCache.containsKey("lastMatrix") ? true : false;
@@ -1052,8 +1071,10 @@ public class LineageRewriteReuse
 				LineageItem rightSource = right.getInputs()[0]; //right inpur of rbind = Y 
 				// create * lineage on top of the input of last append
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {leftSource, rightSource});
-				if (LineageCache.probe(tmp))
+				if (LineageCache.probe(tmp)) {
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime = LineageCache.getEntry(tmp)._computeTime;
+				}
 				// look for the appended rows in cache
 				if (LineageCache.probe(left.getInputs()[1]))
 					inCache.put("deltaX", LineageCache.getMatrix(left.getInputs()[1]));
@@ -1079,8 +1100,10 @@ public class LineageRewriteReuse
 				LineageItem rightSource = right.getInputs()[0]; //right inpur of cbind = Y 
 				// create * lineage on top of the input of last append
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {leftSource, rightSource});
-				if (LineageCache.probe(tmp))
+				if (LineageCache.probe(tmp)) {
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime = LineageCache.getEntry(tmp)._computeTime;
+				}
 				// look for the appended columns in cache
 				if (LineageCache.probe(left.getInputs()[1]))
 					inCache.put("deltaX", LineageCache.getMatrix(left.getInputs()[1]));
@@ -1110,8 +1133,10 @@ public class LineageRewriteReuse
 				LineageItem input1 = target.getInputs()[0];
 				LineageItem tmp = new LineageItem(curr.getOpcode(), 
 						new LineageItem[] {input1, groups, weights, fn, ngroups});
-				if (LineageCache.probe(tmp)) 
+				if (LineageCache.probe(tmp)) {
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+					_computeTime = LineageCache.getEntry(tmp)._computeTime;
+				}
 				// look for the appended column in cache
 				if (LineageCache.probe(target.getInputs()[1])) 
 					inCache.put("deltaX", LineageCache.getMatrix(target.getInputs()[1]));
@@ -1137,8 +1162,10 @@ public class LineageRewriteReuse
 			LineageItem right = item.getInputs()[1];
 			if (right.getOpcode().equalsIgnoreCase("rightIndex")) {
 				LineageItem indexSource = right.getInputs()[0];
-				if (LineageCache.probe(indexSource) && indexSource.getOpcode().equalsIgnoreCase("ba+*"))
+				if (LineageCache.probe(indexSource) && indexSource.getOpcode().equalsIgnoreCase("ba+*")) {
 					inCache.put("indexSource", LineageCache.getMatrix(indexSource));
+					_computeTime = LineageCache.getEntry(indexSource)._computeTime;
+				}
 				LineageItem tmp = new LineageItem(item.getOpcode(), new LineageItem[] {left, indexSource});
 				if (LineageCache.probe(tmp))
 					inCache.put("BigMatMult", LineageCache.getMatrix(tmp));
@@ -1160,8 +1187,10 @@ public class LineageRewriteReuse
 				LineageItem src21 = src1.getInputs()[0];
 				LineageItem src22 = src1.getInputs()[1]; //ones
 				if (src21.getOpcode().equalsIgnoreCase("ba+*")) {
-					if (LineageCache.probe(src21))
+					if (LineageCache.probe(src21)) {
 						inCache.put("projected", LineageCache.getMatrix(src21));
+						_computeTime = LineageCache.getEntry(src21)._computeTime;
+					}
 				
 					LineageItem src31 = src21.getInputs()[1];
 					LineageItem src32 = src21.getInputs()[0];
@@ -1174,8 +1203,10 @@ public class LineageRewriteReuse
 						LineageItem old_ba = new LineageItem("ba+*", new LineageItem[] {src32, old_RI});
 						LineageItem old_cbind = new LineageItem("cbind", new LineageItem[] {old_ba, src22});
 						LineageItem old_tsmm = new LineageItem("tsmm", new LineageItem[] {old_cbind});
-						if (LineageCache.probe(old_tsmm))
+						if (LineageCache.probe(old_tsmm)) {
 							inCache.put("lastMatrix", LineageCache.getMatrix(old_tsmm));
+							_computeTime += LineageCache.getEntry(old_tsmm)._computeTime;
+						}
 					}
 				}
 			}

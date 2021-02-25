@@ -31,7 +31,7 @@ option(USE_OPEN_BLAS "Whether to use OpenBLAS (Defaults to compiling with Intel 
 option(USE_INTEL_MKL "Whether to use Intel MKL (Defaults to compiling with Intel MKL)" OFF)
 
 # Build a shared libraray
-set(HEADER_FILES libmatrixdnn.h libmatrixmult.h systemds.h)
+set(HEADER_FILES libmatrixdnn.h libmatrixmult.h systemds.h common.h)
 set(SOURCE_FILES libmatrixdnn.cpp libmatrixmult.cpp systemds.cpp)
 
 # Build a shared libraray
@@ -53,6 +53,14 @@ install(TARGETS systemds RUNTIME DESTINATION lib)
 if (WIN32)
     set(CMAKE_IMPORT_LIBRARY_PREFIX lib CACHE INTERNAL "")
     set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
+endif()
+
+#ToDo: this won't be necessary once we properly redo mkl versions of conv2d* functions
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+      set(CMAKE_CXX_FLAGS "-Wno-narrowing")
+endif()
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4838")
 endif()
 
 set(CMAKE_BUILD_TYPE Release)

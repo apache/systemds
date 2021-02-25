@@ -58,9 +58,13 @@ public class FederatedData {
 	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
 	private static final Set<InetSocketAddress> _allFedSites = new HashSet<>();
 
+	/** A Singleton constructed SSL context, that only is assigned if ssl is enabled. */
+	private static SslContextMan instance = null;
+
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
 	private final String _filepath;
+
 	/**
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
 	 */
@@ -156,8 +160,7 @@ public class FederatedData {
 		// Careful with the number of threads. Each thread opens connections to multiple files making resulting in
 		// java.io.IOException: Too many open files
 		EventLoopGroup workerGroup = new NioEventLoopGroup(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
-		final SslContext sslCtx = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE)
-			.build();
+
 		try {
 			Bootstrap b = new Bootstrap();
 			final DataRequestHandler handler = new DataRequestHandler(workerGroup);
@@ -167,8 +170,8 @@ public class FederatedData {
 				protected void initChannel(SocketChannel ch) throws Exception {
 					ChannelPipeline cp = ch.pipeline();
 					if(ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION)) {
-						cp.addLast(
-							sslCtx.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort()));
+						cp.addLast(SslConstructor().context
+							.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort()));
 					}
 
 					cp.addLast("ObjectDecoder",
@@ -182,6 +185,7 @@ public class FederatedData {
 
 			ChannelFuture f = b.connect(address).sync();
 			Promise<FederatedResponse> promise = f.channel().eventLoop().newPromise();
+
 			handler.setPromise(promise);
 			f.channel().writeAndFlush(request);
 			return promise;
@@ -239,6 +243,28 @@ public class FederatedData {
 			_prom.setSuccess((FederatedResponse) msg);
 			ctx.close();
 			_workerGroup.shutdownGracefully();
+		}
+	}
+
+	private static class SslContextMan {
+		protected final SslContext context;
+
+		private SslContextMan() {
+			try {
+				context = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+			}
+			catch(SSLException e) {
+				throw new DMLRuntimeException("Static SSL setup failed for client side", e);
+			}
+		}
+	}
+
+	private static SslContextMan SslConstructor() {
+		if(instance == null) {
+			return new SslContextMan();
+		}
+		else {
+			return instance;
 		}
 	}
 

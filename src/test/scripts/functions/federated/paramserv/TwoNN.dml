@@ -57,8 +57,9 @@ source("nn/optim/sgd.dml") as sgd
  */
 train = function(matrix[double] X, matrix[double] y,
                  matrix[double] X_val, matrix[double] y_val,
-                 int epochs, int batch_size, double learning_rate)
-    return (list[unknown] model_trained) {
+                 int epochs, int batch_size, double eta,
+                 int seed = -1)
+    return (list[unknown] model) {
 
   N = nrow(X)  # num examples
   D = ncol(X)  # num features
@@ -66,53 +67,31 @@ train = function(matrix[double] X, matrix[double] y,
 
   # Create the network:
   ## input -> affine1 -> relu1 -> affine2 -> relu2 -> affine3 -> softmax
-  [W1, b1] = affine::init(D, 200, -1)
-  [W2, b2] = affine::init(200, 200, -1)
-  [W3, b3] = affine::init(200, K, -1)
+  [W1, b1] = affine::init(D, 200, seed = seed)
+  lseed = ifelse(seed==-1, -1, seed + 1);
+  [W2, b2] = affine::init(200, 200,  seed = lseed)
+  lseed = ifelse(seed==-1, -1, seed + 2);
+  [W3, b3] = affine::init(200, K, seed = lseed)
   W3 = W3 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
+  model = list(W1, W2, W3, b1, b2, b3)
 
   # Create the hyper parameter list
-  hyperparams = list(learning_rate=learning_rate)
+  hyperparams = list(learning_rate=eta)
   # Calculate iterations
   iters = ceil(N / batch_size)
-  print_interval = floor(iters / 25)
-
-  print("[+] Starting optimization")
-  print("[+]  Learning rate: " + learning_rate)
-  print("[+]  Batch size: " + batch_size)
-  print("[+]  Iterations per epoch: " + iters + "\n")
 
   for (e in 1:epochs) {
-    print("[+] Starting epoch: " + e)
-    print("|")
     for(i in 1:iters) {
-      # Create the model list
-      model_list = list(W1, W2, W3, b1, b2, b3)
-
       # Get next batch
       beg = ((i-1) * batch_size) %% N + 1
       end = min(N, beg + batch_size - 1)
       X_batch = X[beg:end,]
       y_batch = y[beg:end,]
 
-      gradients_list = gradients(model_list, hyperparams, X_batch, y_batch)
-      model_updated = aggregation(model_list, hyperparams, gradients_list)
-
-      W1 = as.matrix(model_updated[1])
-      W2 = as.matrix(model_updated[2])
-      W3 = as.matrix(model_updated[3])
-      b1 = as.matrix(model_updated[4])
-      b2 = as.matrix(model_updated[5])
-      b3 = as.matrix(model_updated[6])
-
-      if((i %% print_interval) == 0) {
-        print("█")
-      }
+      gradients_list = gradients(model, hyperparams, X_batch, y_batch)
+      model = aggregation(model, hyperparams, gradients_list)
     }
-    print("|")
   }
-
-  model_trained = list(W1, W2, W3, b1, b2, b3)
 }
 
 /*
@@ -146,9 +125,9 @@ train = function(matrix[double] X, matrix[double] y,
  */
 train_paramserv = function(matrix[double] X, matrix[double] y,
                  matrix[double] X_val, matrix[double] y_val,
-                 int epochs, int workers,
-                 string utype, string freq, int batch_size, string scheme, string mode, double learning_rate)
-    return (list[unknown] model_trained) {
+                 int num_workers, int epochs, string utype, string freq, int batch_size, string scheme, string runtime_balancing, string weighting,
+                 double eta, int seed = -1)
+    return (list[unknown] model) {
 
   N = nrow(X)  # num examples
   D = ncol(X)  # num features
@@ -156,16 +135,28 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
 
   # Create the network:
   ## input -> affine1 -> relu1 -> affine2 -> relu2 -> affine3 -> softmax
-  [W1, b1] = affine::init(D, 200, -1)
-  [W2, b2] = affine::init(200, 200, -1)
-  [W3, b3] = affine::init(200, K, -1)
+  [W1, b1] = affine::init(D, 200, seed = seed)
+  lseed = ifelse(seed==-1, -1, seed + 1);
+  [W2, b2] = affine::init(200, 200,  seed = lseed)
+  lseed = ifelse(seed==-1, -1, seed + 2);
+  [W3, b3] = affine::init(200, K, seed = lseed)
+  # W3 = W3 / sqrt(2) # different initialization, since being fed into softmax, instead of relu
+
+  # [W1, b1] = affine::init(D, 200)
+  # [W2, b2] = affine::init(200, 200)
+  # [W3, b3] = affine::init(200, K)
 
   # Create the model list
-  model_list = list(W1, W2, W3, b1, b2, b3)
+  model = list(W1, W2, W3, b1, b2, b3)
   # Create the hyper parameter list
-  params = list(learning_rate=learning_rate)
+  hyperparams = list(learning_rate=eta)
   # Use paramserv function
-  model_trained = paramserv(model=model_list, features=X, labels=y, val_features=X_val, val_labels=y_val, upd="./src/test/scripts/functions/federated/paramserv/TwoNN.dml::gradients", agg="./src/test/scripts/functions/federated/paramserv/TwoNN.dml::aggregation", mode=mode, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size, k=workers, scheme=scheme, hyperparams=params, checkpointing="NONE")
+  model = paramserv(model=model, features=X, labels=y, val_features=X_val, val_labels=y_val,
+    upd="./src/test/scripts/functions/federated/paramserv/TwoNN.dml::gradients",
+    agg="./src/test/scripts/functions/federated/paramserv/TwoNN.dml::aggregation",
+    val="./src/test/scripts/functions/federated/paramserv/TwoNN.dml::validate",
+    k=num_workers, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size,
+    scheme=scheme, runtime_balancing=runtime_balancing, weighting=weighting, hyperparams=hyperparams, seed=seed)
 }
 
 /*
@@ -224,6 +215,21 @@ eval = function(matrix[double] probs, matrix[double] y)
   accuracy = mean(correct_pred)
 }
 
+/*
+ * Gives the accuracy and loss for a model and given feature and label matrices
+ *
+ * This function is a combination of the predict and eval function used for validation.
+ * For inputs see eval and predict.
+ *
+ * Outputs:
+ *  - loss: Scalar loss, of shape (1).
+ *  - accuracy: Scalar accuracy, of shape (1).
+ */
+validate = function(matrix[double] val_features, matrix[double] val_labels, list[unknown] model, list[unknown] hyperparams)
+    return (double loss, double accuracy) {
+  [loss, accuracy] = eval(predict(val_features, model), val_labels)
+}
+
 # Should always use 'features' (batch features), 'labels' (batch labels),
 # 'hyperparams', 'model' as the arguments
 # and return the gradients of type list
@@ -252,7 +258,7 @@ gradients = function(list[unknown] model,
   # Compute loss & accuracy for training data
   loss = cross_entropy_loss::forward(probs, labels)
   accuracy = mean(rowIndexMax(probs) == rowIndexMax(labels))
-  print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
+  # print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
 
   # Compute data backward pass
   dprobs = cross_entropy_loss::backward(probs, labels)

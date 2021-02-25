@@ -285,6 +285,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( DataGen.SINIT_OPCODE  , CPType.StringInit);
 		String2CPInstructionType.put( DataGen.SAMPLE_OPCODE , CPType.Rand);
 		String2CPInstructionType.put( DataGen.TIME_OPCODE   , CPType.Rand);
+		String2CPInstructionType.put( DataGen.FRAME_OPCODE   , CPType.Rand);
 
 		String2CPInstructionType.put( "ctable",       CPType.Ctable);
 		String2CPInstructionType.put( "ctableexpand", CPType.Ctable);
@@ -416,8 +417,10 @@ public class CPInstructionParser extends InstructionParser
 						UtilFunctions.isIntegerNumber(parts[3])) ) {
 						// B=log(A), y=log(x)
 						return UnaryCPInstruction.parseInstruction(str);
-					} else if ( parts.length == 4 ) {
+					} else if ( parts.length == 4 || (parts.length == 5 &&
+						UtilFunctions.isIntegerNumber(parts[4])) ) {
 						// B=log(A,10), y=log(x,10)
+						// num threads non-existing for scalar-scalar
 						return BinaryCPInstruction.parseInstruction(str);
 					}
 				}

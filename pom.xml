@@ -106,11 +106,24 @@
 				<directory>src/main/cuda/headers</directory>
 				<includes>
 					<include>agg_ops.cuh</include>
+					<include>operators.cuh</include>
 					<include>reduction.cuh</include>
 					<include>spoof_utils.cuh</include>
+					<include>TempStorage.cuh</include>
 					<include>utils.cuh</include>
+					<include>vector_write.cuh</include>
+					<include>vector_add.cuh</include>
+					<include>Matrix.h</include>
 				</includes>
 				<targetPath>cuda/headers</targetPath>
+			</resource>
+			<resource>
+				<directory>src/main/java/org/apache/sysds/hops/codegen/cplan/java</directory>
+				<includes>
+					<include>Cellwise.java.template</include>
+					<include>Rowwise.java.template</include>
+				</includes>
+				<targetPath>java/spoof</targetPath>
 			</resource>
 		</resources>
 
@@ -543,6 +556,7 @@
 						</executions>
 						<configuration>
 							<excludes>
+								<exclude>scripts/perftest/results/**</exclude>
 								<exclude>.gitignore</exclude>
 								<exclude>.gitmodules</exclude>
 								<exclude>.repository/</exclude>
@@ -603,6 +617,7 @@
 								<exclude>scripts/perftest/python/requirements.txt</exclude>
 								<!-- external sources -->
 								<exclude>src/main/cuda/ext/**</exclude>
+								<exclude>src/main/cuda/.idea/</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

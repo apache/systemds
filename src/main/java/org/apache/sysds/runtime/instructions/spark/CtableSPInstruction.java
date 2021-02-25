@@ -51,11 +51,12 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 	private boolean _dim1Literal;
 	private boolean _dim2Literal;
 	private boolean _isExpand;
-	private boolean _ignoreZeros;
+	private final boolean _ignoreZeros;
+	private final boolean _outputEmptyBlocks;
 
 	private CtableSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
-			boolean ignoreZeros, String opcode, String istr) {
+			boolean ignoreZeros, boolean outputEmptyBlocks, String opcode, String istr) {
 		super(SPType.Ctable, null, in1, in2, in3, out, opcode, istr);
 		_outDim1 = outputDim1;
 		_dim1Literal = dim1Literal;
@@ -63,11 +64,12 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		_dim2Literal = dim2Literal;
 		_isExpand = isExpand;
 		_ignoreZeros = ignoreZeros;
+		_outputEmptyBlocks = outputEmptyBlocks;
 	}
 
 	public static CtableSPInstruction parseInstruction(String inst) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
-		InstructionUtils.checkNumFields ( parts, 7 );
+		InstructionUtils.checkNumFields ( parts, 8 );
 		
 		String opcode = parts[0];
 		
@@ -88,9 +90,11 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 
 		CPOperand out = new CPOperand(parts[6]);
 		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
+		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[8]);
 		
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new CtableSPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
+		return new CtableSPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]),
+			dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, outputEmptyBlocks, opcode, inst);
 	}
 
 
@@ -125,13 +129,16 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 			dim2 = ctableOp.hasSecondInput() ? (long) RDDAggregateUtils.max(in2) :
 				sec.getScalarInput(input3).getLongValue();
 		}
-		mcOut.set(dim1, dim2, mc1.getBlocksize(), mc1.getBlocksize());
-		mcOut.setNonZerosBound(mc1.getRows());
+		mcOut.set(dim1, dim2, mc1.getBlocksize());
+		mcOut.setNonZerosBound(mc1.getLength()); //vector or matrix
+		mcOut.setNoEmptyBlocks(!_outputEmptyBlocks);
+		if( !mcOut.dimsKnown() )
+			throw new DMLRuntimeException("Unknown ctable output dimensions: "+mcOut);
 		
 		//compute preferred degree of parallelism
 		int numParts = Math.max(4 * (mc1.dimsKnown() ?
 			SparkUtils.getNumPreferredPartitions(mc1) : in1.getNumPartitions()),
-			SparkUtils.getNumPreferredPartitions(mcOut));
+			SparkUtils.getNumPreferredPartitions(mcOut, _outputEmptyBlocks));
 		
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
 		switch(ctableOp) {
@@ -172,7 +179,8 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		}
 		
 		//perform fused aggregation and reblock
-		out = out.union(SparkUtils.getEmptyBlockRDD(sec.getSparkContext(), mcOut));
+		out = !_outputEmptyBlocks ? out :
+			out.union(SparkUtils.getEmptyBlockRDD(sec.getSparkContext(), mcOut));
 		out = RDDAggregateUtils.sumByKeyStable(out, numParts, false);
 		
 		//store output rdd handle
@@ -182,6 +190,9 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 			sec.addLineageRDD(output.getName(), input2.getName());
 		if( ctableOp.hasThirdInput() )
 			sec.addLineageRDD(output.getName(), input3.getName());
+		
+		//post-processing to obtain sparsity of ultra-sparse outputs
+		SparkUtils.postprocessUltraSparseOutput(sec.getMatrixObject(output), mcOut);
 	}
 
 	private static class CTableFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock[]>>, MatrixIndexes, MatrixBlock> 

@@ -56,8 +56,10 @@ public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-            {2, 1000}, 
-            {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}
+            // {2, 1000}, 
+			{10, 100}, 
+			// {100, 10}, {1000, 1}, 
+			// {10, 2000}, {2000, 10}
         });
 	}
 
@@ -65,12 +67,6 @@ public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 	public void federatedMultiplyCP() {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE);
 	}
-
-	/*
-	 * FIXME spark execution mode support
-	 * 
-	 * @Test public void federatedMultiplySP() { federatedMultiply(Types.ExecMode.SPARK); }
-	 */
 
 	public void federatedMultiply(Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -99,7 +95,7 @@ public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
@@ -109,7 +105,7 @@ public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
 			"Y2=" + input("Y2"), "Z=" + expected("Z")};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -117,7 +113,7 @@ public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// compare via files
 		compareResults(1e-9);

@@ -59,7 +59,7 @@ public class FederatedWriterTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// number of rows or cols has to be >= number of federated locations.
-		return Arrays.asList(new Object[][] {{10, 13, true, 2},});
+		return Arrays.asList(new Object[][] {{10, 13, true, 2}});
 	}
 
 	@Test
@@ -83,7 +83,7 @@ public class FederatedWriterTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
 		try {

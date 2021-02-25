@@ -1,6 +1,6 @@
 ---
 layout: site
-title: Buildin Reference
+title: Built-in Reference
 ---
 <!--
 {% comment %}
@@ -32,6 +32,7 @@ limitations under the License.
     * [`DBSCAN`-Function](#DBSCAN-function)
     * [`discoverFD`-Function](#discoverFD-function)
     * [`dist`-Function](#dist-function)
+    * [`dmv`-Function](#dmv-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -44,7 +45,7 @@ limitations under the License.
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
-    * [`lmpredict`-Function](#lmpredict-function)
+    * [`lmPredict`-Function](#lmPredict-function)
     * [`mice`-Function](#mice-function)
     * [`multiLogReg`-Function](#multiLogReg-function)
     * [`pnmf`-Function](#pnmf-function)
@@ -55,6 +56,7 @@ limitations under the License.
     * [`slicefinder`-Function](#slicefinder-function)
     * [`normalize`-Function](#normalize-function)
     * [`gnmf`-Function](#gnmf-function)
+    * [`mdedup`-Function](#mdedup-function)
     * [`msvm`-Function](#msvm-function)
     * [`naivebayes`-Function](#naivebayes-function)
     * [`outlier`-Function](#outlier-function)
@@ -68,7 +70,7 @@ limitations under the License.
 The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level functions
 to support all kinds of use cases.
 
-A builtin ir either implemented on a compiler level or as DML scripts that are loaded at compile time.
+A builtin is either implemented on a compiler level or as DML scripts that are loaded at compile time.
 
 # Built-In Construction Functions
 
@@ -181,7 +183,7 @@ y = toOneHot(X, numClasses)
 ## `cvlm`-Function
 
 The `cvlm`-function is used for cross-validation of the provided data model. This function follows a non-exhaustive
-cross validation method. It uses [`lm`](#lm-function) and [`lmpredict`](#lmpredict-function) functions to solve the linear
+cross validation method. It uses [`lm`](#lm-function) and [`lmPredict`](#lmPredict-function) functions to solve the linear
 regression and to predict the class of a feature vector with no intercept, shifting, and rescaling.
 
 ### Usage
@@ -299,6 +301,43 @@ X = rand (rows = 5, cols = 5)
 Y = dist(X)
 ```
 
+
+
+## `dmv`-Function
+
+The `dmv`-function is used to find disguised missing values utilising syntactical pattern recognition.
+
+### Usage
+
+```r
+dmv(X, threshold, replace)
+```
+
+### Arguments
+
+| Name      | Type          | Default  | Description                                                  |
+| :-------- | :------------ | :------- | :----------------------------------------------------------- |
+| X         | Frame[String] | required | Input Frame                                                  |
+| threshold | Double        | 0.8      | threshold value in interval [0, 1] for dominant pattern per column (e.g., 0.8 means that 80% of the entries per column must adhere this pattern to be dominant) |
+| replace   | String        | "NA"     | The string disguised missing values are replaced with        |
+
+### Returns
+
+| Type          | Description                                            |
+| :------------ | :----------------------------------------------------- |
+| Frame[String] | Frame `X`  including detected disguised missing values |
+
+### Example
+
+```r
+A = read("fileA", data_type="frame", rows=10, cols=8);
+Z = dmv(X=A)
+Z = dmv(X=A, threshold=0.9)
+Z = dmv(X=A, threshold=0.9, replace="NaN")
+```
+
+
+
 ## `glm`-Function
 
 The `glm`-function  is a flexible generalization of ordinary linear regression that allows for response variables that have
@@ -386,7 +425,7 @@ Through multiple parallel brackets and consecutive trials it will return the hyp
 on a validation dataset. A set of hyper parameter combinations is drawn from uniform distributions with given ranges; Those
 make up the candidates for `hyperband`.
 Notes: 
-* `hyperband` is hard-coded for `lmCG`, and uses `lmpredict` for validation
+* `hyperband` is hard-coded for `lmCG`, and uses `lmPredict` for validation
 * `hyperband` is hard-coded to use the number of iterations as a resource 
 * `hyperband` can only optimize continuous hyperparameters
 
@@ -739,14 +778,14 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 lmCG(X = X, y = y, maxi = 10)
 ```
 
-## `lmpredict`-Function
+## `lmPredict`-Function
 
-The `lmpredict`-function predicts the class of a feature vector.
+The `lmPredict`-function predicts the class of a feature vector.
 
 ### Usage
 
 ```r
-lmpredict(X, w)
+lmPredict(X=X, B=w)
 ```
 
 ### Arguments
@@ -754,8 +793,11 @@ lmpredict(X, w)
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vector(s). |
-| w       | Matrix[Double] | required | 1-column matrix of weights. |
-| icpt    | Matrix[Double] | `0`      | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
+| B       | Matrix[Double] | required | 1-column matrix of weights. |
+| ytest   | Matrix[Double] | optional | Optional test labels, used only for verbose output. |
+| icpt    | Integer        | 0        | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
+| verbose | Boolean        | FALSE    | Print various statistics for evaluating accuracy. |
+
 
 ### Returns
 
@@ -769,7 +811,7 @@ lmpredict(X, w)
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
-yp = lmpredict(X, w)
+yp = lmPredict(X = X, B = w)
 ```
 
 ## `mice`-Function
@@ -1235,6 +1277,48 @@ toOneHot(X, numClasses)
 numClasses = 5
 X = round(rand(rows = 10, cols = 10, min = 1, max = numClasses))
 y = toOneHot(X,numClasses)
+```
+
+## `mdedup`-Function
+
+The `mdedup`-function implements builtin for deduplication using matching dependencies 
+(e.g. Street 0.95, City 0.90 -> ZIP 1.0) by Jaccard distance.
+
+### Usage
+
+```r
+mdedup(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
+```
+
+
+### Arguments
+
+| Name          | Type             | Default    | Description |
+| :------       | :-------------   | --------   | :---------- |
+| X             | Frame            | ---        | Input Frame X |
+| LHSfeatures   | Matrix[Integer]  | ---        | A matrix 1xd with numbers of columns for MDs |
+| LHSthreshold  | Matrix[Double]   | ---        | A matrix 1xd with threshold values in interval [0, 1] for MDs |
+| RHSfeatures   | Matrix[Integer]  | ---        | A matrix 1xd with numbers of columns for MDs |
+| RHSthreshold  | Matrix[Double]   | ---        | A matrix 1xd with threshold values in interval [0, 1] for MDs |
+| verbose       | Boolean          | False      | Set to true to print duplicates.|
+
+
+### Returns
+
+| Type            | Default  | Description |
+| :-------------- | -------- | :---------- |
+| Matrix[Integer] | ---      | Matrix of duplicates (rows). |
+
+
+### Example
+
+```r
+X = as.frame(rand(rows = 50, cols = 10))
+LHSfeatures = matrix("1 3 19", 1, 2)
+LHSthreshold = matrix("0.85 0.85", 1, 2)
+RHSfeatures = matrix("30", 1, 1)
+RHSthreshold = matrix("1.0", 1, 1)
+duplicates = mdedup(X, LHSfeatures, LHSthreshold, RHSfeatures, RHSthreshold, verbose = FALSE)
 ```
 
 ## `msvm`-Function

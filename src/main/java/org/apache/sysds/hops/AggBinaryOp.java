@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
@@ -598,7 +599,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	private void constructCPLopsMM(ExecType et) 
 	{
 		Lop matmultCP = null;
-		
+		String cla = ConfigurationManager.getDMLConfig().getTextValue("sysds.compressed.linalg");
 		if (et == ExecType.GPU) {
 			Hop h1 = getInput().get(0);
 			Hop h2 = getInput().get(1);
@@ -614,6 +615,18 @@ public class AggBinaryOp extends MultiThreadedHop
 				h2.getInput().get(0).constructLops();
 			matmultCP = new MatMultCP(left, right, getDataType(), getValueType(), et, leftTrans, rightTrans);
 			setOutputDimensions(matmultCP);
+		}
+		else if (cla.equals("true") || cla.equals("cost")){
+			Hop h1 = getInput().get(0);
+			Hop h2 = getInput().get(1);
+			int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+			boolean leftTrans = HopRewriteUtils.isTransposeOperation(h1);
+			boolean rightTrans =  HopRewriteUtils.isTransposeOperation(h2);
+			Lop left = !leftTrans ? h1.constructLops() :
+				h1.getInput().get(0).constructLops();
+			Lop right = !rightTrans ? h2.constructLops() :
+				h2.getInput().get(0).constructLops();
+			matmultCP = new MatMultCP(left, right, getDataType(), getValueType(), et, k, leftTrans, rightTrans);
 		}
 		else {
 			if( isLeftTransposeRewriteApplicable(true) ) {
@@ -964,19 +977,19 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		//right side cached (no agg if left has just one column block)
 		if(  method == MMultMethod.MAPMM_R && getInput().get(0).getDim2() >= 0 //known num columns
-	         && getInput().get(0).getDim2() <= getInput().get(0).getBlocksize() ) 
-        {
-            ret = false;
-        }
-        
+			&& getInput().get(0).getDim2() <= getInput().get(0).getBlocksize() ) 
+		{
+			ret = false;
+		}
+
 		//left side cached (no agg if right has just one row block)
-        if(  method == MMultMethod.MAPMM_L && getInput().get(1).getDim1() >= 0 //known num rows
-             && getInput().get(1).getDim1() <= getInput().get(1).getBlocksize() ) 
-        {
-       	    ret = false;
-        }
-        
-        return ret;
+		if(  method == MMultMethod.MAPMM_L && getInput().get(1).getDim1() >= 0 //known num rows
+			&& getInput().get(1).getDim1() <= getInput().get(1).getBlocksize() ) 
+		{
+			ret = false;
+		}
+
+		return ret;
 	}
 	
 	/**
@@ -1261,6 +1274,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		if( isMatrixMultiply() ) {
 			setDim1(input1.getDim1());
 			setDim2(input2.getDim2());
+			setNnz(-1); // for reset on recompile w/ unknowns 
 			if( input1.getNnz() == 0 || input2.getNnz() == 0 )
 				setNnz(0);
 		}

@@ -55,9 +55,8 @@ public class FederatedUnivarTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-				{10000, 16},
-				{2000, 32}, {1000, 64}, {10000, 128}
-		});
+			// {10000, 16},{2000, 32}, {1000, 64},
+			{10000, 128}});
 	}
 
 	@Test
@@ -85,10 +84,10 @@ public class FederatedUnivarTest extends AutomatedTestBase {
 		double[][] X4 = getRandomMatrix(rows, quarterCols, 1, 5, 1, 9);
 
 		// write types matrix shape of (1, D)
-		double [][] Y = getRandomMatrix(1, cols, 0, 3, 1, 9);
+		double[][] Y = getRandomMatrix(1, cols, 0, 3, 1, 9);
 		Arrays.stream(Y[0]).forEach(Math::ceil);
 
-		MatrixCharacteristics mc= new MatrixCharacteristics(rows, quarterCols, blocksize, rows * quarterCols);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, quarterCols, blocksize, rows * quarterCols);
 		writeInputMatrixWithMTD("X1", X1, false, mc);
 		writeInputMatrixWithMTD("X2", X2, false, mc);
 		writeInputMatrixWithMTD("X3", X3, false, mc);
@@ -101,30 +100,28 @@ public class FederatedUnivarTest extends AutomatedTestBase {
 		int port2 = getRandomAvailablePort();
 		int port3 = getRandomAvailablePort();
 		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
-		Thread t3 = startLocalFedWorkerThread(port3);
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
+		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
+		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
 		Thread t4 = startLocalFedWorkerThread(port4);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"), input("Y"), expected("B")};
+		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+			input("Y"), expected("B")};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats",  "100", "-nvargs",
+		programArgs = new String[] {"-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
-			"in_Y=" + input("Y"), // types
-			"rows=" + rows, "cols=" + cols,
-			"out=" + output("B")};
+			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "in_Y=" + input("Y"), // types
+			"rows=" + rows, "cols=" + cols, "out=" + output("B")};
 		runTest(true, false, null, -1);
 
 		// compare via files
@@ -134,7 +131,7 @@ public class FederatedUnivarTest extends AutomatedTestBase {
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_uacmax"));
 
-		//check that federated input files are still existing
+		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));

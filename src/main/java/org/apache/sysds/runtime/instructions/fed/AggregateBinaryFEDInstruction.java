@@ -19,22 +19,23 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-import java.util.concurrent.Future;
-
 public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
+	// private static final Log LOG = LogFactory.getLog(AggregateBinaryFEDInstruction.class.getName());
 	
 	public AggregateBinaryFEDInstruction(Operator op, CPOperand in1,
 		CPOperand in2, CPOperand out, String opcode, String istr) {
@@ -60,7 +61,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
-		
+
 		//#1 federated matrix-vector multiplication
 		if(mo1.isFederated(FType.COL) && mo2.isFederated(FType.ROW)
 			&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), true) ) {
@@ -94,7 +95,6 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				MatrixObject out = ec.getMatrixObject(output);
 				out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
 				out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID(), mo2.getNumColumns()));
-				out.getFedMapping().setType(FType.ROW);
 			}
 		}
 		//#2 vector - federated matrix multiplication
@@ -107,6 +107,19 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID());
 			//execute federated operations and aggregate
 			Future<FederatedResponse>[] tmp = mo2.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+			MatrixBlock ret = FederationUtils.aggAdd(tmp);
+			ec.setMatrixOutput(output.getName(), ret);
+		}
+		//#3 col-federated matrix vector multiplication
+		else if (mo1.isFederated(FType.COL)) {// VM + MM
+			//construct commands: broadcast rhs, fed mv, retrieve results
+			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, true);
+			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), fr1[0].getID()});
+			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
+			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID());
+			//execute federated operations and aggregate
+			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
 			MatrixBlock ret = FederationUtils.aggAdd(tmp);
 			ec.setMatrixOutput(output.getName(), ret);
 		}

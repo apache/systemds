@@ -20,6 +20,8 @@
 package org.apache.sysds.test.functions.federated.transform;
 
 import java.io.IOException;
+
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -29,6 +31,8 @@ import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.io.MatrixReaderFactory;
+import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -85,95 +89,105 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 
 	@Test
 	public void testHomesRecodeIDsCSV() {
-		runTransformTest(TransformType.RECODE, false);
+		runTransformTest(TransformType.RECODE, false, false);
 	}
 
 	@Test
 	public void testHomesDummycodeIDsCSV() {
-		runTransformTest(TransformType.DUMMY, false);
+		runTransformTest(TransformType.DUMMY, false, false);
 	}
 
 	@Test
 	public void testHomesRecodeDummycodeIDsCSV() {
-		runTransformTest(TransformType.RECODE_DUMMY, false);
+		runTransformTest(TransformType.RECODE_DUMMY, false, false);
 	}
 
 	@Test
 	public void testHomesBinningIDsCSV() {
-		runTransformTest(TransformType.BIN, false);
+		runTransformTest(TransformType.BIN, false, false);
 	}
 
 	@Test
 	public void testHomesBinningDummyIDsCSV() {
-		runTransformTest(TransformType.BIN_DUMMY, false);
+		runTransformTest(TransformType.BIN_DUMMY, false, false);
 	}
 
 	@Test
 	public void testHomesOmitIDsCSV() {
-		runTransformTest(TransformType.OMIT, false);
+		runTransformTest(TransformType.OMIT, false, false);
 	}
 
 	@Test
 	public void testHomesImputeIDsCSV() {
-		runTransformTest(TransformType.IMPUTE, false);
+		runTransformTest(TransformType.IMPUTE, false, false);
 	}
 
 	@Test
 	public void testHomesRecodeColnamesCSV() {
-		runTransformTest(TransformType.RECODE, true);
+		runTransformTest(TransformType.RECODE, true, false);
 	}
 
 	@Test
 	public void testHomesDummycodeColnamesCSV() {
-		runTransformTest(TransformType.DUMMY, true);
+		runTransformTest(TransformType.DUMMY, true, false);
 	}
 
 	@Test
 	public void testHomesRecodeDummycodeColnamesCSV() {
-		runTransformTest(TransformType.RECODE_DUMMY, true);
+		runTransformTest(TransformType.RECODE_DUMMY, true, false);
 	}
 
 	@Test
 	public void testHomesBinningColnamesCSV() {
-		runTransformTest(TransformType.BIN, true);
+		runTransformTest(TransformType.BIN, true, false);
 	}
 
 	@Test
 	public void testHomesBinningDummyColnamesCSV() {
-		runTransformTest(TransformType.BIN_DUMMY, true);
+		runTransformTest(TransformType.BIN_DUMMY, true, false);
 	}
 
 	@Test
 	public void testHomesOmitColnamesCSV() {
-		runTransformTest(TransformType.OMIT, true);
+		runTransformTest(TransformType.OMIT, true, false);
 	}
 
 	@Test
 	public void testHomesImputeColnamesCSV() {
-		runTransformTest(TransformType.IMPUTE, true);
+		runTransformTest(TransformType.IMPUTE, true, false);
 	}
 
 	@Test
 	public void testHomesHashColnamesCSV() {
-		runTransformTest(TransformType.HASH, true);
+		runTransformTest(TransformType.HASH, true, false);
 	}
 
 	@Test
 	public void testHomesHashIDsCSV() {
-		runTransformTest(TransformType.HASH, false);
+		runTransformTest(TransformType.HASH, false, false);
 	}
 
 	@Test
 	public void testHomesHashRecodeColnamesCSV() {
-		runTransformTest(TransformType.HASH_RECODE, true);
+		runTransformTest(TransformType.HASH_RECODE, true, false);
 	}
 
 	@Test
 	public void testHomesHashRecodeIDsCSV() {
-		runTransformTest(TransformType.HASH_RECODE, false);
+		runTransformTest(TransformType.HASH_RECODE, false, false);
 	}
 
-	private void runTransformTest(TransformType type, boolean colnames) {
+	@Test
+	public void testHomesDummycodeIDsCSVLineage() {
+		runTransformTest(TransformType.DUMMY, false, true);
+	}
+
+	@Test
+	public void testHomesRecodeDummycodeIDsCSVLineage() {
+		runTransformTest(TransformType.RECODE_DUMMY, false, true);
+	}
+
+	private void runTransformTest(TransformType type, boolean colnames, boolean lineage) {
 		ExecMode rtold = setExecMode(ExecMode.SINGLE_NODE);
 		
 		// set transform specification
@@ -196,13 +210,14 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			getAndLoadTestConfiguration(TEST_NAME1);
 
 			int port1 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1);
 			int port2 = getRandomAvailablePort();
-			t2 = startLocalFedWorkerThread(port2);
 			int port3 = getRandomAvailablePort();
-			t3 = startLocalFedWorkerThread(port3);
 			int port4 = getRandomAvailablePort();
-			t4 = startLocalFedWorkerThread(port4);
+			String[] otherargs = lineage ? new String[] {"-lineage", "reuse_full"} : null;
+			t1 = startLocalFedWorkerThread(port1, otherargs, FED_WORKER_WAIT_S);
+			t2 = startLocalFedWorkerThread(port2, otherargs, FED_WORKER_WAIT_S);
+			t3 = startLocalFedWorkerThread(port3, otherargs, FED_WORKER_WAIT_S);
+			t4 = startLocalFedWorkerThread(port4, otherargs);
 
 			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, DataExpression.DEFAULT_DELIM_DELIMITER,
 				DataExpression.DEFAULT_DELIM_FILL, DataExpression.DEFAULT_DELIM_FILL_VALUE, DATASET.equals(DATASET1) ?
@@ -241,12 +256,18 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 				dataset.getNumColumns() - 1);
 
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+			String[] lineageArgs = new String[] {"-lineage", "reuse_full", "-stats"};
 			programArgs = new String[] {"-nvargs", "in_AH=" + TestUtils.federatedAddress(port1, input("AH")),
 				"in_AL=" + TestUtils.federatedAddress(port2, input("AL")),
 				"in_BH=" + TestUtils.federatedAddress(port3, input("BH")),
 				"in_BL=" + TestUtils.federatedAddress(port4, input("BL")), "rows=" + dataset.getNumRows(),
 				"cols=" + dataset.getNumColumns(), "TFSPEC=" + HOME + "input/" + SPEC, "TFDATA1=" + output("tfout1"),
 				"TFDATA2=" + output("tfout2"), "OFMT=csv"};
+			
+			if (lineage) {
+				Lineage.resetInternalState();
+				programArgs = (String[]) ArrayUtils.addAll(lineageArgs, programArgs);
+			}
 
 			runTest(true, false, null, -1);
 
@@ -275,6 +296,9 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 					}
 				}
 			}
+			// assert reuse count
+			if (lineage)
+				Assert.assertTrue(LineageCacheStatistics.getInstHits() > 0);
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

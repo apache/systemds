@@ -19,14 +19,14 @@
 #
 #-------------------------------------------------------------
 
-
 X = read($1, data_type = "frame", format = "csv")
-X = as.matrix(X[, 2:5])
-[prob, labels, df, bic] = gmm(X=X, n_components = $2,  model = $3,  init_params = $4, iter = $5, reg_covar = $6, tol = $7, verbose=TRUE)
+X = as.matrix(X[, 2:ncol(X)-1])
+
+[labels, prob, df, bic, mu, prec_chol, w] = gmm(X=X, n_components = $2,
+  model = $3,  init_params = $4, iter = $5, 
+  reg_covar = $6, tol = $7, seed=$8, verbose=TRUE)
+
 out = (rowMaxs(prob) < 0.7)
-cluster = colSums(prob == rowMaxs(prob))
-# print("clusters "+toString(cluster))
-# print("bic "+bic)
-# print("df "+df)
-write(prob, $8)
-write(out, $9)
+
+write(prob, $9)
+write(out, $10)

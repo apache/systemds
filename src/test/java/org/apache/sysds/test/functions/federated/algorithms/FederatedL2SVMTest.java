@@ -55,12 +55,19 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		return Arrays.asList(new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}});
+		return Arrays.asList(new Object[][] {
+			// {2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000},
+			{2000, 10}});
 	}
 
 	@Test
-	public void federatedL2SVMCP() {
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE);
+	public void federatedL2SVM2CP() {
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, false);
+	}
+	
+	@Test
+	public void federatedL2SVM1CP() {
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, true);
 	}
 
 	/*
@@ -69,7 +76,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 	 * @Test public void federatedL2SVMSP() { federatedL2SVM(Types.ExecMode.SPARK); }
 	 */
 
-	public void federatedL2SVM(Types.ExecMode execMode) {
+	public void federatedL2SVM(Types.ExecMode execMode, boolean singleWorker) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -97,23 +104,23 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		
-		
+
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-args", input("X1"), input("X2"), input("Y"), expected("Z")};
+		programArgs = new String[] {"-args", input("X1"), input("X2"), input("Y"),
+			String.valueOf(singleWorker).toUpperCase(), expected("Z")};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
-			"in_Y=" + input("Y"), "out=" + output("Z")};
+			"in_Y=" + input("Y"), "single=" + String.valueOf(singleWorker).toUpperCase(), "out=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files

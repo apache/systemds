@@ -23,35 +23,19 @@ source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
 source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
 
 # create federated input matrices
-features = federated(addresses=list($X0, $X1),
-    ranges=list(list(0, 0), list($examples_per_worker, $num_features),
-                list($examples_per_worker, 0), list($examples_per_worker * 2, $num_features)))
+features = read($features)
+labels = read($labels)
 
-labels = federated(addresses=list($y0, $y1),
-    ranges=list(list(0, 0), list($examples_per_worker, $num_labels),
-                list($examples_per_worker, 0), list($examples_per_worker * 2, $num_labels)))
-
-epochs = $epochs
-batch_size = $batch_size
-learning_rate = $eta
-utype = $utype
-freq = $freq
-network_type = $network_type
-
-# currently ignored parameters
-workers = 1
-scheme = "DISJOINT_CONTIGUOUS"
-paramserv_mode = "LOCAL"
-
-# config for the cnn
-channels = $channels
-hin = $hin
-win = $win
-
-if(network_type == "TwoNN") {
-  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+if($network_type == "TwoNN") {
+  model = TwoNN::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighting, $eta, $seed)
+  print("Test results:")
+  [loss_test, accuracy_test] = TwoNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, list())
+  print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
 }
 else {
-  model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), channels, hin, win, epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+  model = CNN::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighting, $eta, $channels, $hin, $win, $seed)
+  print("Test results:")
+  hyperparams = list(learning_rate=$eta, C=$channels, Hin=$hin, Win=$win)
+  [loss_test, accuracy_test] = CNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, hyperparams)
+  print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
 }
-print(toString(model))

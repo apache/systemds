@@ -19,6 +19,11 @@
 
 package org.apache.sysds.parser;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
@@ -26,15 +31,11 @@ import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DnnUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
@@ -727,11 +728,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		case CAST_AS_FRAME:
 			checkNumParameters(1);
-			checkMatrixScalarParam(getFirstExpr());
+			checkDataTypeParam(getFirstExpr(),
+			DataType.SCALAR, DataType.MATRIX, DataType.LIST);
 			output.setDataType(DataType.FRAME);
 			output.setDimensions(id.getDim1(), id.getDim2());
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
 				output.setDimensions(1, 1); //correction scalars
+			if( getFirstExpr().getOutput().getDataType()==DataType.LIST )
+				output.setDimensions(-1, -1); //correction list: arbitrary object
 			output.setBlocksize(id.getBlocksize());
 			output.setValueType(id.getValueType());
 			break;
@@ -797,6 +801,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			output.setDataType(id.getDataType());
 			output.setValueType(id.getValueType());
+			
+			//special handling of concatenating all list elements
 			if( id.getDataType() == DataType.LIST && getAllExpr().length == 1) {
 				output.setDataType(DataType.MATRIX);
 				output.setValueType(ValueType.FP64);
@@ -807,33 +813,35 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			long m1clen = getFirstExpr().getOutput().getDim2();
 			long appendDim1 = m1rlen, appendDim2 = m1clen;
 			
-			for(int i=1; i<getAllExpr().length; i++) {
-				long m2rlen = getExpr(i).getOutput().getDim1();
-				long m2clen = getExpr(i).getOutput().getDim2();
-				
-				if( getOpCode() == Builtins.CBIND ) {
-					if (m1rlen >= 0 && m2rlen >= 0 && m1rlen!=m2rlen) {
-						raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
-							m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-					}
-					appendDim1 = (m2rlen>=0) ? m2rlen : appendDim1;
-					appendDim2 = (appendDim2>=0 && m2clen>=0) ? appendDim2 + m2clen : -1;
-				}
-				else if( getOpCode() == Builtins.RBIND ) {
-					if (m1clen >= 0 && m2clen >= 0 && m1clen!=m2clen) {
-						raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
-							m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-					}
-					appendDim1 = (appendDim1>=0 && m2rlen>=0)? appendDim1 + m2rlen : -1;
-					appendDim2 = (m2clen>=0) ? m2clen : appendDim2;
-				}
-			}
-			
+			// best-effort dimension propagation and validation
 			if( id.getDataType() == DataType.LIST ) {
 				appendDim1 = -1;
 				appendDim2 = -1;
 			}
-
+			else {
+				for(int i=1; i<getAllExpr().length; i++) {
+					long m2rlen = getExpr(i).getOutput().getDim1();
+					long m2clen = getExpr(i).getOutput().getDim2();
+					
+					if( getOpCode() == Builtins.CBIND ) {
+						if (m1rlen >= 0 && m2rlen >= 0 && m1rlen!=m2rlen) {
+							raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
+								m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+						}
+						appendDim1 = (m2rlen>=0) ? m2rlen : appendDim1;
+						appendDim2 = (appendDim2>=0 && m2clen>=0) ? appendDim2 + m2clen : -1;
+					}
+					else if( getOpCode() == Builtins.RBIND ) {
+						if (m1clen >= 0 && m2clen >= 0 && m1clen!=m2clen) {
+							raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
+								m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+						}
+						appendDim1 = (appendDim1>=0 && m2rlen>=0)? appendDim1 + m2rlen : -1;
+						appendDim2 = (m2clen>=0) ? m2clen : appendDim2;
+					}
+				}
+			}
+			
 			output.setDimensions(appendDim1, appendDim2);
 			output.setBlocksize (id.getBlocksize());
 			
@@ -962,13 +970,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case TABLE:
 			
 			/*
-			 * Allowed #of arguments: 2,3,4,5
+			 * Allowed #of arguments: 2,3,4,5,6
 			 * table(A,B)
 			 * table(A,B,W)
 			 * table(A,B,1)
 			 * table(A,B,dim1,dim2)
 			 * table(A,B,W,dim1,dim2)
 			 * table(A,B,1,dim1,dim2)
+			 * table(A,B,1,dim1,dim2,TRUE)
 			 */
 			
 			// Check for validity of input arguments, and setup output dimensions
@@ -977,9 +986,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFirstExpr());
 
 			if (getSecondExpr() == null)
-				raiseValidateError(
-						"Invalid number of arguments to table(). The table() function requires 2, 3, 4, or 5 arguments.",
-						conditional);
+				raiseValidateError("Invalid number of arguments to table(). "
+					+ "The table() function requires 2, 3, 4, 5, or 6 arguments.", conditional);
 
 			// Second input: can be MATRIX or SCALAR
 			// cases: table(A,B) or table(A,1)
@@ -1023,6 +1031,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				break;
 				
 			case 5:
+			case 6:
 				// case - table w/ weights and output dimensions: 
 				//        - table(A,B,W,dim1,dim2) or table(A,1,W,dim1,dim2)
 				//        - table(A,B,1,dim1,dim2) or table(A,1,1,dim1,dim2)
@@ -1046,6 +1055,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 						outputDim1 = ((ConstIdentifier) _args[3].getOutput()).getLongValue();
 					if ( _args[4].getOutput() instanceof ConstIdentifier ) 
 						outputDim2 = ((ConstIdentifier) _args[4].getOutput()).getLongValue();
+				}
+				if( _args.length == 6 ) {
+					if( !_args[5].getOutput().isScalarBoolean() )
+						raiseValidateError("The 6th ctable parameter (outputEmptyBlocks) must be a boolean literal.", conditional);
 				}
 				break;
 
@@ -1555,11 +1568,31 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixFrameParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
 			output.setDataType(DataType.FRAME);
-			output.setDimensions(id.getDim1(), 1);
+			if(_args[1].getText().contains("jaccardSim")) {
+				output.setDimensions(id.getDim1(), id.getDim1());
+				output.setValueType(ValueType.FP64);
+			}
+			else {
+				output.setDimensions(id.getDim1(), 1);
+				output.setValueType(ValueType.STRING);
+			}
 			output.setBlocksize (id.getBlocksize());
-			output.setValueType(ValueType.STRING);
-			break;
 
+			break;
+		case COMPRESS:
+		case DECOMPRESS:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
+				checkNumParameters(1);
+				checkMatrixParam(getFirstExpr());
+				output.setDataType(DataType.MATRIX);
+				output.setDimensions(id.getDim2(), id.getDim1());
+				output.setBlocksize (id.getBlocksize());
+				output.setValueType(id.getValueType());
+			}
+			else
+				raiseValidateError("Compress instruction not allowed in dml script");
+			
+			break;
 		default:
 			if( isMathFunction() ) {
 				checkMathFunctionParam();

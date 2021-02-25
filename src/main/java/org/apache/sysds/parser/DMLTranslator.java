@@ -1036,13 +1036,13 @@ public class DMLTranslator
 				
 				DataOp ae = (DataOp)processExpression(source, target, ids);
 				String formatName = os.getExprParam(DataExpression.FORMAT_TYPE).toString();
-				ae.setInputFormatType(Expression.convertFormatType(formatName));
+				ae.setFileFormat(Expression.convertFormatType(formatName));
 
 				if (ae.getDataType() == DataType.SCALAR ) {
 					ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 				}
 				else {
-					switch(ae.getInputFormatType()) {
+					switch(ae.getFileFormat()) {
 					case TEXT:
 					case MM:
 					case CSV:
@@ -1059,7 +1059,7 @@ public class DMLTranslator
 						ae.setOutputParams(ae.getDim1(), ae.getDim2(), -1, ae.getUpdateType(), -1);
 						break;
 						default:
-							throw new LanguageException("Unrecognized file format: " + ae.getInputFormatType());
+							throw new LanguageException("Unrecognized file format: " + ae.getFileFormat());
 					}
 				}
 				
@@ -1137,11 +1137,8 @@ public class DMLTranslator
 					if (!(target instanceof IndexedIdentifier)) {
 						//process right hand side and accumulation
 						Hop ae = processExpression(source, target, ids);
-						if( ((AssignmentStatement)current).isAccumulator() ) {
-							DataIdentifier accum = liveIn.getVariable(target.getName());
-							if( accum == null )
-								throw new LanguageException("Invalid accumulator assignment "
-									+ "to non-existing variable "+target.getName()+".");
+						if( as.isAccumulator() ) {
+							DataIdentifier accum = getAccumulatorData(liveIn, target.getName());
 							ae = HopRewriteUtils.createBinary(ids.get(target.getName()), ae, OpOp2.PLUS);
 							target.setProperties(accum.getOutput());
 						}
@@ -1169,6 +1166,15 @@ public class DMLTranslator
 					// CASE: target is indexed identifier (left-hand side indexed expression)
 					else {
 						Hop ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, ids);
+						
+						if( as.isAccumulator() ) {
+							DataIdentifier accum = getAccumulatorData(liveIn, target.getName());
+							Hop rix = processIndexingExpression((IndexedIdentifier)target, null, ids);
+							Hop rhs = processExpression(source, null, ids);
+							Hop binary = HopRewriteUtils.createBinary(rix, rhs, OpOp2.PLUS);
+							HopRewriteUtils.replaceChildReference(ae, ae.getInput(1), binary);
+							target.setProperties(accum.getOutput());
+						}
 						
 						ids.put(target.getName(), ae);
 						
@@ -1298,7 +1304,14 @@ public class DMLTranslator
 		}
 		sb.updateLiveVariablesOut(updatedLiveOut);
 		sb.setHops(output);
-
+	}
+	
+	private static DataIdentifier getAccumulatorData(VariableSet liveIn, String varname) {
+		DataIdentifier accum = liveIn.getVariable(varname);
+		if( accum == null )
+			throw new LanguageException("Invalid accumulator assignment "
+				+ "to non-existing variable "+varname+".");
+		return accum;
 	}
 	
 	private void appendDefaultArguments(FunctionStatement fstmt, List<String> inputNames, List<Hop> inputs, HashMap<String, Hop> ids) {
@@ -1540,7 +1553,7 @@ public class DMLTranslator
 				if (ae instanceof DataOp && ((DataOp) ae).getOp() != OpOpData.SQLREAD &&
 						((DataOp) ae).getOp() != OpOpData.FEDERATED) {
 					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
-					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
+					((DataOp)ae).setFileFormat(Expression.convertFormatType(formatName));
 				}
 				return ae;
 			}
@@ -1630,41 +1643,9 @@ public class DMLTranslator
 		return processExpression(source, tmpOut, hops );
 	}
 	
-	private Hop processLeftIndexedExpression(Expression source, IndexedIdentifier target, HashMap<String, Hop> hops)  
-	{
+	private Hop processLeftIndexedExpression(Expression source, IndexedIdentifier target, HashMap<String, Hop> hops) {
 		// process target indexed expressions
-		Hop rowLowerHops = null, rowUpperHops = null, colLowerHops = null, colUpperHops = null;
-		
-		if (target.getRowLowerBound() != null)
-			rowLowerHops = processExpression(target.getRowLowerBound(),null,hops);
-		else
-			rowLowerHops = new LiteralOp(1);
-		
-		if (target.getRowUpperBound() != null)
-			rowUpperHops = processExpression(target.getRowUpperBound(),null,hops);
-		else
-		{
-			if ( target.getDim1() != -1 ) 
-				rowUpperHops = new LiteralOp(target.getOrigDim1());
-			else {
-				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hops.get(target.getName()));
-				rowUpperHops.setParseInfo(target);
-			}
-		}
-		if (target.getColLowerBound() != null)
-			colLowerHops = processExpression(target.getColLowerBound(),null,hops);
-		else
-			colLowerHops = new LiteralOp(1);
-		
-		if (target.getColUpperBound() != null)
-			colUpperHops = processExpression(target.getColUpperBound(),null,hops);
-		else
-		{
-			if ( target.getDim2() != -1 ) 
-				colUpperHops = new LiteralOp(target.getOrigDim2());
-			else
-				colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hops.get(target.getName()));
-		}
+		Hop[] ixRange = getIndexingBounds(target, hops, true);
 		
 		// process the source expression to get source Hops
 		Hop sourceOp = processExpression(source, target, hops);
@@ -1678,12 +1659,11 @@ public class DMLTranslator
 		if( sourceOp.getDataType().isMatrix() && source.getOutput().getDataType().isScalar() )
 			sourceOp.setDataType(DataType.SCALAR);
 		
-		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), ValueType.FP64, 
-				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops, 
-				target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
+		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(),
+			ValueType.FP64, targetOp, sourceOp, ixRange[0], ixRange[1], ixRange[2], ixRange[3],
+			target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
 		
 		setIdentifierParams(leftIndexOp, target);
-	
 		leftIndexOp.setParseInfo(target);
 		leftIndexOp.setDim1(target.getOrigDim1());
 		leftIndexOp.setDim2(target.getOrigDim2());
@@ -1694,38 +1674,7 @@ public class DMLTranslator
 	
 	private Hop processIndexingExpression(IndexedIdentifier source, DataIdentifier target, HashMap<String, Hop> hops) {
 		// process Hops for indexes (for source)
-		Hop rowLowerHops = null, rowUpperHops = null, colLowerHops = null, colUpperHops = null;
-		
-		if (source.getRowLowerBound() != null)
-			rowLowerHops = processExpression(source.getRowLowerBound(),null,hops);
-		else
-			rowLowerHops = new LiteralOp(1);
-		
-		if (source.getRowUpperBound() != null)
-			rowUpperHops = processExpression(source.getRowUpperBound(),null,hops);
-		else
-		{
-			if ( source.getOrigDim1() != -1 ) 
-				rowUpperHops = new LiteralOp(source.getOrigDim1());
-			else {
-				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hops.get(source.getName()));
-				rowUpperHops.setParseInfo(source);
-			}
-		}
-		if (source.getColLowerBound() != null)
-			colLowerHops = processExpression(source.getColLowerBound(),null,hops);
-		else
-			colLowerHops = new LiteralOp(1);
-		
-		if (source.getColUpperBound() != null)
-			colUpperHops = processExpression(source.getColUpperBound(),null,hops);
-		else
-		{
-			if ( source.getOrigDim2() != -1 ) 
-				colUpperHops = new LiteralOp(source.getOrigDim2());
-			else
-				colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hops.get(source.getName()));
-		}
+		Hop[] ixRange = getIndexingBounds(source, hops, false);
 		
 		if (target == null) {
 			target = createTarget(source);
@@ -1735,13 +1684,41 @@ public class DMLTranslator
 		target.setNnz(-1); 
 		
 		Hop indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
-				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops,
-				source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
+			hops.get(source.getName()), ixRange[0], ixRange[1], ixRange[2], ixRange[3],
+			source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 	
 		indexOp.setParseInfo(target);
 		setIdentifierParams(indexOp, target);
 		
 		return indexOp;
+	}
+	
+	private Hop[] getIndexingBounds(IndexedIdentifier ix, HashMap<String, Hop> hops, boolean lix) {
+		Hop rowLowerHops = (ix.getRowLowerBound() != null) ?
+			processExpression(ix.getRowLowerBound(),null, hops) : new LiteralOp(1);
+		Hop colLowerHops = (ix.getColLowerBound() != null) ?
+			processExpression(ix.getColLowerBound(),null, hops) : new LiteralOp(1);
+		
+		Hop rowUpperHops = null, colUpperHops = null;
+		if (ix.getRowUpperBound() != null)
+			rowUpperHops = processExpression(ix.getRowUpperBound(),null,hops);
+		else {
+			rowUpperHops = ((lix ? ix.getDim1() : ix.getOrigDim1()) != -1) ?
+				new LiteralOp(ix.getOrigDim1()) :
+				new UnaryOp(ix.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hops.get(ix.getName()));
+			rowUpperHops.setParseInfo(ix);
+		}
+		
+		if (ix.getColUpperBound() != null)
+			colUpperHops = processExpression(ix.getColUpperBound(),null,hops);
+		else {
+			colUpperHops = ((lix ? ix.getDim2() : ix.getOrigDim2()) != -1) ?
+				new LiteralOp(ix.getOrigDim2()) :
+				new UnaryOp(ix.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hops.get(ix.getName()));
+			colUpperHops.setParseInfo(ix);
+		}
+		
+		return new Hop[] {rowLowerHops, rowUpperHops, colLowerHops, colUpperHops};
 	}
 	
 	
@@ -2116,6 +2093,12 @@ public class DMLTranslator
 			currBuiltinOp = new DataGenOp(method, target, paramHops);
 			break;
 
+		case FRAME:
+			// We limit RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, and RAND_PDF to be constants
+			method = OpOpDG.FRAMEINIT;
+			currBuiltinOp = new DataGenOp(method, target, paramHops);
+			break;
+
 		case TENSOR:
 		case MATRIX:
 			ArrayList<Hop> tmpMatrix = new ArrayList<>();
@@ -2456,19 +2439,24 @@ public class DMLTranslator
 				else {
 					Hop outDim1 = processExpression(source._args[2], null, hops);
 					Hop outDim2 = processExpression(source._args[3], null, hops);
-					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop, outDim1, outDim2);
+					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(),
+						OpOp3.CTABLE, expr, expr2, weightHop, outDim1, outDim2, new LiteralOp(true));
 				}
 				break;
 				
 			case 3:
 			case 5:
+			case 6:
 				// example DML statement: F = ctable(A,B,W) or F = ctable(A,B,W,10,15) 
 				if (numTableArgs == 3) 
 					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3);
 				else {
 					Hop outDim1 = processExpression(source._args[3], null, hops);
 					Hop outDim2 = processExpression(source._args[4], null, hops);
-					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3, outDim1, outDim2);
+					Hop outputEmptyBlocks = numTableArgs == 6 ?
+						processExpression(source._args[5], null, hops) : new LiteralOp(true);
+					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(),
+						OpOp3.CTABLE, expr, expr2, expr3, outDim1, outDim2, outputEmptyBlocks);
 				}
 				break;
 				
@@ -2497,6 +2485,12 @@ public class DMLTranslator
 			break;
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, OpOp1.CAST_AS_BOOLEAN, expr);
+			break;
+		case COMPRESS:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.COMPRESS, expr);
+			break;
+		case DECOMPRESS:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.DECOMPRESS, expr);
 			break;
 
 		// Boolean binary
@@ -2708,7 +2702,6 @@ public class DMLTranslator
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
-		
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}

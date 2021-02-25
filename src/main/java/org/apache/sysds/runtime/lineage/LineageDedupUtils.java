@@ -20,7 +20,11 @@
 package org.apache.sysds.runtime.lineage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
@@ -91,11 +95,11 @@ public class LineageDedupUtils {
 	}
 	
 	public static void setNewDedupPatch(LineageDedupBlock ldb, ProgramBlock fpb, ExecutionContext ec) {
-		// no need to trace anymore if all the paths are taken, 
+		// No need to trace anymore if all the paths are taken, 
 		// instead reuse the stored maps for this and future interations
-		// NOTE: this optimization saves redundant tracing, but that
-		//       kills reuse opportunities
-		if (ldb.isAllPathsTaken())
+		// But, tracing is required if reuse is enabled, even though the traced 
+		// lineage map is discarded after each iteration (if all paths are taken)
+		if (ldb.isAllPathsTaken() && LineageCacheConfig.ReuseCacheType.isNone())
 			return;
 
 		// copy the input LineageItems of the loop-body
@@ -106,9 +110,6 @@ public class LineageDedupUtils {
 		String ph = LineageItemUtils.LPLACEHOLDER;
 		for (int i=0; i<liinputs.length; i++) {
 			// Wrap the inputs with order-preserving placeholders.
-			// An alternative way would be to replace the non-literal leaves with 
-			// placeholders after each iteration, but that requires a full DAG
-			// traversal after each iteration.
 			LineageItem phInput = new LineageItem(ph+String.valueOf(i), new LineageItem[] {liinputs[i]});
 			_tmpLineage.set(inputnames.get(i), phInput);
 		}
@@ -123,13 +124,29 @@ public class LineageDedupUtils {
 		ec.setLineage(_mainLineage);
 	}
 	
-	public static void setDedupMap(LineageDedupBlock ldb, long takenPath) {
+	public static Map<String, Integer> setDedupMap(LineageDedupBlock ldb, long takenPath) {
 		// if this iteration took a new path, store the corresponding map
-		if (ldb.getMap(takenPath) == null)
-			ldb.setMap(takenPath, _tmpLineage.getLineageMap());
+		if (ldb.getMap(takenPath) == null) {
+			LineageMap patchMap = _tmpLineage.getLineageMap();
+			// Clean unused variables, and cut the DAGs at placeholders
+			cleanDedupMap(patchMap);
+			ldb.setMap(takenPath, patchMap);
+		}
+		// Copy and return the hash values of all the roots
+		if (!LineageCacheConfig.ReuseCacheType.isNone()) {
+			Map<String, Integer> dedupPatchHashList = new HashMap<>();
+			LineageMap patchMap = _tmpLineage.getLineageMap();
+			for (Map.Entry<String, LineageItem> litem : patchMap.getTraces().entrySet()) {
+				if (!litem.getValue().isPlaceholder())
+					dedupPatchHashList.put(litem.getKey(), litem.getValue().hashCode());
+			}
+			return dedupPatchHashList;
+		}
+		return null;
 	}
 	
 	private static void initLocalLineage(ExecutionContext ec) {
+		_mainLineage = ec.getLineage();
 		_tmpLineage = _tmpLineage == null ? new Lineage() : _tmpLineage;
 		_tmpLineage.clearLineageMap();
 		_tmpLineage.clearDedupBlock();
@@ -163,6 +180,46 @@ public class LineageDedupUtils {
 			}
 		}
 		return sb.toString();
+	}
+	
+	private static void cleanDedupMap(LineageMap lmap) {
+		// Gather all the DAG roots and cut each at placeholder
+		Set<String> emptyRoots = new HashSet<>();
+		for (Map.Entry<String, LineageItem> litem : lmap.getTraces().entrySet()) {
+			LineageItem root = litem.getValue();
+			// Clean empty DAG roots such as iterator i
+			if (root.isPlaceholder()) {
+				emptyRoots.add(litem.getKey());
+				continue;
+			}
+			root.resetVisitStatusNR();
+			cutAtPlaceholder(root);
+		}
+		lmap.getTraces().keySet().removeAll(emptyRoots);
+	}
+	
+	private static void cutAtPlaceholder(LineageItem root) {
+		Stack<LineageItem> q = new Stack<>();
+		q.push(root);
+		while (!q.empty()) {
+			LineageItem tmp = q.pop();
+			if (tmp.isVisited())
+				continue;
+
+			if (tmp.isPlaceholder()) {
+				// set inputs to null
+				tmp.resetInputs();
+				tmp.setVisited();
+				continue;
+			}
+
+			if (tmp.getInputs() != null)
+				for (int i=0; i<tmp.getInputs().length; i++) {
+					LineageItem li = tmp.getInputs()[i];
+					q.push(li);
+				}
+			tmp.setVisited();
+		}
 	}
 	
 	//------------------------------------------------------------------------------

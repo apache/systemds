@@ -32,18 +32,22 @@ on:
 jobs:
   applicationsTests:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         tests: [
           "**.functions.aggregate.**,**.functions.append.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
           "**.functions.blocks.**,**.functions.compress.**,**.functions.countDistinct.**,**.functions.data.misc.**,**.functions.data.rand.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
-          "**.functions.federated.**,**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
+          "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
+          "**.functions.federated.algorithms.**",
+          "**.functions.federated.io.**,**.functions.federated.paramserv.**,**.functions.federated.primitives.**,**.functions.federated.transform.**",
           "**.functions.codegenalg.partone.**",
           "**.functions.builtin.**",
           "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.jmlc.**,**.functions.lineage.**",
           "**.functions.dnn.**,**.functions.misc.**,**.functions.mlcontext.**,**.functions.paramserv.**",
-          "**.functions.nary.**,**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**,**.functions.quaternary.**,**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
+          "**.functions.nary.**,**.functions.quaternary.**",
+          "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**,**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**"
           ]

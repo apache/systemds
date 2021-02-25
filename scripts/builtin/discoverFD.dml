@@ -56,12 +56,12 @@ m_discoverFD = function(Matrix[Double] X, Matrix[Double] Mask, Double threshold)
   # allocate output and working sets
   n = nrow(X)
   d = ncol(X)
-  FD = matrix(0, d, d)
+  FD = diag(matrix(1, d, 1))
   cm = matrix(0, 1, d)
 
   # num distinct per column
   parfor(i in 1:d)
-    cm[1,i] = colDistinct(X[,i]) 
+    cm[1,i] = colDistinct(X[,i])
 
   # add know functional dependencies
   FD = FD + (cm == 1)    # constant columns determined by all columns

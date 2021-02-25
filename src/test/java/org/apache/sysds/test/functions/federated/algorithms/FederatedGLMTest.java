@@ -57,7 +57,9 @@ public class FederatedGLMTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		return Arrays.asList(new Object[][] {{10000, 10}, {1000, 100}, {2000, 43}});
+		return Arrays.asList(new Object[][] {
+			// {10000, 10}, {1000, 100},
+			{2000, 43}});
 	}
 
 	@Test
@@ -70,7 +72,6 @@ public class FederatedGLMTest extends AutomatedTestBase {
 		federatedGLM(Types.ExecMode.HYBRID);
 	}
 
-	
 	public void federatedGLM(Types.ExecMode execMode) {
 		ExecMode platformOld = setExecMode(execMode);
 
@@ -94,13 +95,13 @@ public class FederatedGLMTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		// 
-		
+		//
+
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-args", input("X1"), input("X2"), input("Y"), expected("Z")};
@@ -108,8 +109,7 @@ public class FederatedGLMTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats",
-			"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+		programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y=" + input("Y"), "out=" + output("Z")};
 		runTest(true, false, null, -1);
@@ -121,15 +121,15 @@ public class FederatedGLMTest extends AutomatedTestBase {
 
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uark+","fed_uarsqk+"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uark+", "fed_uarsqk+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
-		//Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
+		// Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_mmchain"));
-		
-		//check that federated input files are still existing
+
+		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
-		
+
 		resetExecMode(platformOld);
 	}
 }

@@ -19,6 +19,17 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
 import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
 import static org.apache.sysds.parser.Statement.PS_EPOCHS;
@@ -32,17 +43,12 @@ import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
 import static org.apache.sysds.parser.Statement.PS_SCHEME;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
 import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
+import static org.apache.sysds.parser.Statement.PS_FED_WEIGHTING;
+import static org.apache.sysds.parser.Statement.PS_SEED;
+import static org.apache.sysds.parser.Statement.PS_VAL_FEATURES;
+import static org.apache.sysds.parser.Statement.PS_VAL_LABELS;
+import static org.apache.sysds.parser.Statement.PS_VAL_FUN;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
@@ -52,11 +58,12 @@ import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
 import org.apache.sysds.parser.Statement.PSModeType;
 import org.apache.sysds.parser.Statement.PSScheme;
+import org.apache.sysds.parser.Statement.FederatedPSScheme;
 import org.apache.sysds.parser.Statement.PSUpdateType;
+import org.apache.sysds.parser.Statement.PSRuntimeBalancing;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -86,6 +93,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
+	private static final PSRuntimeBalancing DEFAULT_RUNTIME_BALANCING = PSRuntimeBalancing.NONE;
+	private static final FederatedPSScheme DEFAULT_FEDERATED_SCHEME = FederatedPSScheme.KEEP_DATA_ON_WORKER;
 	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
 	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
 
@@ -96,7 +105,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// check if the input is federated
-		
 		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
 				ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
 			runFederated(ec);
@@ -118,31 +126,52 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runFederated(ExecutionContext ec) {
-		System.out.println("PARAMETER SERVER");
-		System.out.println("[+] Running in federated mode");
+		if(DMLScript.STATISTICS)
+			Statistics.getPSExecutionTimer().start();
+
+		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+		LOG.info("PARAMETER SERVER");
+		LOG.info("[+] Running in federated mode");
 
 		// get inputs
-		PSFrequency freq = getFrequency();
-		PSUpdateType updateType = getUpdateType();
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
+		PSUpdateType updateType = getUpdateType();
+		PSFrequency freq = getFrequency();
+		FederatedPSScheme federatedPSScheme = getFederatedScheme();
+		PSRuntimeBalancing runtimeBalancing = getRuntimeBalancing();
+		boolean weighting = getWeighting();
+		int seed = getSeed();
+
+		if( LOG.isInfoEnabled() ) {
+			LOG.info("[+] Update Type: " + updateType);
+			LOG.info("[+] Frequency: " + freq);
+			LOG.info("[+] Data Partitioning: " + federatedPSScheme);
+			LOG.info("[+] Runtime Balancing: " + runtimeBalancing);
+			LOG.info("[+] Weighting: " + weighting);
+			LOG.info("[+] Seed: " + seed);
+		}
+		if (tSetup != null)
+			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		// partition federated data
-		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(Statement.FederatedPSScheme.KEEP_DATA_ON_WORKER)
-				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
-		List<MatrixObject> pFeatures = result.pFeatures;
-		List<MatrixObject> pLabels = result.pLabels;
-		int workerNum = result.workerNum;
+		Timing tDataPartitioning = DMLScript.STATISTICS ? new Timing(true) : null;
+		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme, seed)
+			.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
+		int workerNum = result._workerNum;
+		if (DMLScript.STATISTICS)
+			Statistics.accFedPSDataPartitioningTime((long) tDataPartitioning.stop());
 
+
+		if (DMLScript.STATISTICS)
+			tSetup.start();
 		// setup threading
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
-				.namingPattern("workers-pool-thread-%d").build();
+			.namingPattern("workers-pool-thread-%d").build();
 		ExecutorService es = Executors.newFixedThreadPool(workerNum, factory);
-
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
-		// Level of par is 1 because one worker will be launched per task
-		// TODO: Fix recompilation
+		// Level of par is -1 so each federated worker can scale to its cpu cores
 		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, -1, true);
 		// Create workers' execution context
 		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
@@ -150,22 +179,27 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
+		MatrixObject val_features = (getParam(PS_VAL_FEATURES) != null) ? ec.getMatrixObject(getParam(PS_VAL_FEATURES)) : null;
+		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
+		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
+				getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels);
 		// Create the local workers
+		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
-				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
-				.collect(Collectors.toList());
-
+			.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighting,
+				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
+			.collect(Collectors.toList());
 		if(workerNum != threads.size()) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
 		}
-
 		// Set features and lables for the control threads and write the program and instructions and hyperparams to the federated workers
 		for (int i = 0; i < threads.size(); i++) {
-			threads.get(i).setFeatures(pFeatures.get(i));
-			threads.get(i).setLabels(pLabels.get(i));
-			threads.get(i).setup();
+			threads.get(i).setFeatures(result._pFeatures.get(i));
+			threads.get(i).setLabels(result._pLabels.get(i));
+			threads.get(i).setup(result._weightingFactors.get(i));
 		}
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		try {
 			// Launch the worker threads and wait for completion
@@ -173,6 +207,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				ret.get(); //error handling
 			// Fetch the final model from ps
 			ec.setVariable(output.getName(), ps.getResult());
+			if (DMLScript.STATISTICS)
+				Statistics.accPSExecutionTime((long) Statistics.getPSExecutionTimer().stop());
 		} catch (InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: unknown error: ", e);
 		} finally {
@@ -198,7 +234,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = sec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), workerNum, model, aggServiceEC);
+		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), getFrequency(), workerNum, model, aggServiceEC);
 
 		// Get driver host
 		String host = sec.getSparkContext().getConf().get("spark.driver.host");
@@ -259,6 +295,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {
+		if(DMLScript.STATISTICS)
+			Statistics.getPSExecutionTimer().start();
+
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		int workerNum = getWorkerNum(mode);
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
@@ -280,13 +319,20 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
 
+		double rows_per_worker = Math.ceil((float) ec.getMatrixObject(getParam(PS_FEATURES)).getNumRows() / workerNum);
+		int num_batches_per_epoch = (int) Math.ceil(rows_per_worker / getBatchSize());
+
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, updateType, workerNum, model, aggServiceEC);
+		MatrixObject val_features = (getParam(PS_VAL_FEATURES) != null) ? ec.getMatrixObject(getParam(PS_VAL_FEATURES)) : null;
+		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
+		ParamServer ps = createPS(mode, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
+				num_batches_per_epoch, val_features, val_labels);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
-			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq, getEpochs(), getBatchSize(), workerECs.get(i), ps))
+			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq,
+				getEpochs(), getBatchSize(), workerECs.get(i), ps, workerNum==1))
 			.collect(Collectors.toList());
 
 		// Do data partition
@@ -309,6 +355,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				ret.get(); //error handling
 			// Fetch the final model from ps
 			ec.setVariable(output.getName(), ps.getResult());
+			if (DMLScript.STATISTICS)
+				Statistics.accPSExecutionTime((long) Statistics.getPSExecutionTimer().stop());
 		} catch (InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: some error occurred: ", e);
 		} finally {
@@ -379,6 +427,18 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 	}
 
+	private PSRuntimeBalancing getRuntimeBalancing() {
+		if (!getParameterMap().containsKey(PS_FED_RUNTIME_BALANCING)) {
+			return DEFAULT_RUNTIME_BALANCING;
+		}
+		try {
+			return PSRuntimeBalancing.valueOf(getParam(PS_FED_RUNTIME_BALANCING));
+		} catch (IllegalArgumentException e) {
+			throw new DMLRuntimeException(String.format("Paramserv function: "
+				+ "not support '%s' runtime balancing.", getParam(PS_FED_RUNTIME_BALANCING)));
+		}
+	}
+
 	private static int getRemainingCores() {
 		return InfrastructureAnalyzer.getLocalParallelism();
 	}
@@ -407,14 +467,24 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 *
 	 * @return parameter server
 	 */
-	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
+	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
+		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec)
+	{
+		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null);
+	}
+
+	// When this creation is used the parameter server is able to validate after each epoch
+	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
+		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, String valFunc,
+		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels)
+	{
 		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
-				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum);
+				return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels);
 			default:
-				throw new DMLRuntimeException("Unsupported parameter server: "+mode.name());
+				throw new DMLRuntimeException("Unsupported parameter server: " + mode.name());
 		}
 	}
 
@@ -441,7 +511,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private void partitionLocally(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
 		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
-		DataPartitionLocalScheme.Result result = new LocalDataPartitioner(scheme).doPartitioning(workers.size(), features.acquireReadAndRelease(), labels.acquireReadAndRelease());
+		DataPartitionLocalScheme.Result result = new LocalDataPartitioner(scheme)
+			.doPartitioning(workers.size(), features.acquireReadAndRelease(), labels.acquireReadAndRelease());
 		List<MatrixObject> pfs = result.pFeatures;
 		List<MatrixObject> pls = result.pLabels;
 		if (pfs.size() < workers.size()) {
@@ -469,4 +540,52 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return scheme;
 	}
 
+	private FederatedPSScheme getFederatedScheme() {
+		FederatedPSScheme federated_scheme = DEFAULT_FEDERATED_SCHEME;
+		if (getParameterMap().containsKey(PS_SCHEME)) {
+			try {
+				federated_scheme = FederatedPSScheme.valueOf(getParam(PS_SCHEME));
+			} catch (IllegalArgumentException e) {
+				throw new DMLRuntimeException(String.format("Paramserv function in federated mode: not support data partition scheme '%s'", getParam(PS_SCHEME)));
+			}
+		}
+		return federated_scheme;
+	}
+
+	/**
+	 * Calculates the number of batches per epoch depending on the balance metrics and the runtime balancing
+	 *
+	 * @param runtimeBalancing the runtime balancing
+	 * @param balanceMetrics the balance metrics calculated during data partitioning
+	 * @return numBatchesPerEpoch
+	 */
+	private int getNumBatchesPerEpoch(PSRuntimeBalancing runtimeBalancing, DataPartitionFederatedScheme.BalanceMetrics balanceMetrics) {
+		int numBatchesPerEpoch;
+		if(runtimeBalancing == PSRuntimeBalancing.CYCLE_MIN || runtimeBalancing == PSRuntimeBalancing.BASELINE) {
+			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._minRows / (float) getBatchSize());
+		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_AVG
+				|| runtimeBalancing == PSRuntimeBalancing.SCALE_BATCH) {
+			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._avgRows / (float) getBatchSize());
+		} else if (runtimeBalancing == PSRuntimeBalancing.CYCLE_MAX) {
+			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._maxRows / (float) getBatchSize());
+		} else {
+			numBatchesPerEpoch = (int) Math.ceil(balanceMetrics._avgRows / (float) getBatchSize());
+		}
+		return numBatchesPerEpoch;
+	}
+
+	private boolean getWeighting() {
+		return getParameterMap().containsKey(PS_FED_WEIGHTING) && Boolean.parseBoolean(getParam(PS_FED_WEIGHTING));
+	}
+
+	private String getValFunction() {
+		if (getParameterMap().containsKey(PS_VAL_FUN)) {
+			return getParam(PS_VAL_FUN);
+		}
+		return null;
+	}
+
+	private int getSeed() {
+		return (getParameterMap().containsKey(PS_SEED)) ? Integer.parseInt(getParam(PS_SEED)) : (int) System.currentTimeMillis();
+	}
 }

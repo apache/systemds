@@ -23,6 +23,7 @@ import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -49,11 +50,33 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 {
 	private static final long serialVersionUID = 3442528770573293590L;
 	
+	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum CellType {
-		NO_AGG,
-		FULL_AGG,
-		ROW_AGG,
-		COL_AGG,
+		NO_AGG(0),
+		FULL_AGG(1),
+		ROW_AGG(2),
+		COL_AGG(3);
+		
+		private final int value;
+		private final static HashMap<Integer, CellType> map = new HashMap<>();
+		
+		CellType(int value) {
+			this.value = value;
+		}
+		
+		static {
+			for (CellType cellType : CellType.values()) {
+				map.put(cellType.value, cellType);
+			}
+		}
+		
+		public static CellType valueOf(int cellType) {
+			return map.get(cellType);
+		}
+		
+		public int getValue() {
+			return value;
+		}			
 	}
 	
 	//redefinition of Hop.AggOp for cleaner imports in generate class
@@ -64,7 +87,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		MAX,
 	}
 	
-	private final CellType _type;
+	protected final CellType _type;
 	private final AggOp _aggOp;
 	private final boolean _sparseSafe;
 	private final boolean _containsSeq;
@@ -91,6 +114,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	public boolean containsSeq() {
 		return _containsSeq;
 	}
+	
+	@Override public SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep) {
+		return new SpoofCUDACellwise(_type, _sparseSafe, _containsSeq, _aggOp, opID, ep, this);
+	} 
 	
 	@Override
 	public String getSpoofType() {

@@ -21,9 +21,17 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Future;
+import java.util.stream.Stream;
+import java.util.zip.Adler32;
+import java.util.zip.Checksum;
 
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -38,6 +46,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -128,10 +138,18 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				System.arraycopy(subRangeColNames, 0, colNames, (int) range.getBeginDims()[1], subRangeColNames.length);
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getMessage());
+				throw new DMLRuntimeException("Federated encoder creation failed: ", e);
 			}
 			return null;
 		});
+		
+		//sort for consistent encoding in local and federated
+		if( EncoderRecode.SORT_RECODE_MAP ) {
+			for(Encoder encoder : globalEncoder.getEncoders())
+				if( encoder instanceof EncoderRecode )
+					((EncoderRecode)encoder).sortCPRecodeMaps();
+		}
+		
 		FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
 		meta.setColumnNames(colNames);
 		globalEncoder.getMetaData(meta);
@@ -204,6 +222,11 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// create federated response
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {encoder, fb.getColumnNames()});
 		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
+		}
 	}
 
 	public static class ExecuteFrameEncoder extends FederatedUDF {
@@ -233,6 +256,28 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		
 			// return id handle
 			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+		}
+
+		@Override
+		public List<Long> getOutputIds() {
+			return new ArrayList<>(Arrays.asList(_outputID));
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			LineageItem[] liUdfInputs = Arrays.stream(getInputIDs())
+					.mapToObj(id -> ec.getLineage().get(String.valueOf(id))).toArray(LineageItem[]::new);
+			// calculate checksum for the encoder
+			Checksum checksum = new Adler32();
+			byte bytes[] = SerializationUtils.serialize(_encoder);
+			checksum.update(bytes, 0, bytes.length);
+			CPOperand encoder = new CPOperand(String.valueOf(checksum.getValue()), 
+					ValueType.INT64, DataType.SCALAR, true);
+			LineageItem[] otherInputs = LineageItemUtils.getLineage(ec, encoder);
+			LineageItem[] liInputs = Stream.concat(Arrays.stream(liUdfInputs), Arrays.stream(otherInputs))
+					.toArray(LineageItem[]::new);
+			return Pair.of(String.valueOf(_outputID), 
+					new LineageItem(getClass().getSimpleName(), liInputs));
 		}
 	}
 }

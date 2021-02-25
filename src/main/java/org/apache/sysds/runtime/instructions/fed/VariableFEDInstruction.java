@@ -61,18 +61,15 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 	public void processInstruction(ExecutionContext ec) {
 		VariableOperationCode opcode = _in.getVariableOpcode();
 		switch(opcode) {
-
 			case Write:
 				processWriteInstruction(ec);
 				break;
-
 			case CastAsMatrixVariable:
 				processCastAsMatrixVariableInstruction(ec);
 				break;
 			case CastAsFrameVariable:
 				processCastAsFrameVariableInstruction(ec);
 				break;
-
 			default:
 				throw new DMLRuntimeException("Unsupported Opcode for federated Variable Instruction : " + opcode);
 		}
@@ -107,7 +104,7 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 		MatrixObject out = ec.getMatrixObject(_in.getOutput());
 		FederationMap outMap = mo1.getFedMapping().copyWithNewID(fr1.getID());
 		Map<FederatedRange, FederatedData> newMap = new HashMap<>();
-		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getFedMapping().entrySet()) {
+		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getMap().entrySet()) {
 			FederatedData om = pair.getValue();
 			FederatedData nf = new FederatedData(Types.DataType.MATRIX, om.getAddress(), om.getFilepath(),
 				om.getVarID());
@@ -126,17 +123,15 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 
 		// execute function at federated site.
 		FederatedRequest fr1 = FederationUtils.callInstruction(_in.getInstructionString(),
-			_in.getOutput(),
-			new CPOperand[] {_in.getInput1()},
-			new long[] {mo1.getFedMapping().getID()});
+			_in.getOutput(), new CPOperand[] {_in.getInput1()}, new long[] {mo1.getFedMapping().getID()});
 		mo1.getFedMapping().execute(getTID(), true, fr1);
 
 		// Construct output local.
 		FrameObject out = ec.getFrameObject(_in.getOutput());
-		out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
+		out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
 		FederationMap outMap = mo1.getFedMapping().copyWithNewID(fr1.getID());
 		Map<FederatedRange, FederatedData> newMap = new HashMap<>();
-		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getFedMapping().entrySet()) {
+		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getMap().entrySet()) {
 			FederatedData om = pair.getValue();
 			FederatedData nf = new FederatedData(Types.DataType.FRAME, om.getAddress(), om.getFilepath(),
 				om.getVarID());
@@ -152,5 +147,4 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		return _in.getLineageItem(ec);
 	}
-
 }

@@ -45,7 +45,7 @@ public class FederatedSSLTest extends AutomatedTestBase {
 	// This test use the same scripts as the Federated Reader tests, just with SSL enabled.
 	private final static String TEST_DIR = "functions/federated/io/";
 	private final static String TEST_NAME = "FederatedReaderTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedReaderTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedSSLTest.class.getSimpleName() + "/";
 	private final static int blocksize = 1024;
 	private final static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR + "SSLConfig.xml");
 
@@ -93,19 +93,19 @@ public class FederatedSSLTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
 		String host = "localhost";
 
-		MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
-			rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
-			new String[] {input("X1"), input("X2")}, input("X.json"));
-		writeInputFederatedWithMTD("X.json", fed, null);
-
+		
 		try {
+			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
+				rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
+				new String[] {input("X1"), input("X2")}, input("X.json"));
+			writeInputFederatedWithMTD("X.json", fed, null);
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + (rowPartitioned ? "Row" : "Col")
-				+ "Reference.dml";
+				+ "2Reference.dml";
 			programArgs = new String[] {"-stats", "-args", input("X1"), input("X2")};
 			String refOut = runTest(null).toString();
 			

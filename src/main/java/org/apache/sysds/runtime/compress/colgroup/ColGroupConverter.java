@@ -48,16 +48,16 @@ public class ColGroupConverter {
 		else if(group instanceof ColGroupRLE) {
 			ColGroupRLE in = (ColGroupRLE) group;
 			ret = new ColGroupRLE(colIndices, in._numRows, in.hasZeros(), in._dict, in.getBitmaps(),
-				in.getBitmapOffsets());
+				in.getBitmapOffsets(), null);
 		}
 		else if(group instanceof ColGroupOLE) {
 			ColGroupOLE in = (ColGroupOLE) group;
 			ret = new ColGroupOLE(colIndices, in._numRows, in.hasZeros(), in._dict, in.getBitmaps(),
-				in.getBitmapOffsets());
+				in.getBitmapOffsets(), null);
 		}
 		else if(group instanceof ColGroupDDC1) {
 			ColGroupDDC1 in = (ColGroupDDC1) group;
-			ret = new ColGroupDDC1(colIndices, in._numRows, in._dict, in.getData(), in._zeros);
+			ret = new ColGroupDDC1(colIndices, in._numRows, in._dict, in.getData(), in._zeros, null);
 		}
 		else {
 			throw new RuntimeException("Using '" + group.getClass() + "' instance of ColGroup not fully supported");

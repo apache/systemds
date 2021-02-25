@@ -22,6 +22,8 @@ package org.apache.sysds.test.functions.federated.primitives;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -37,11 +39,12 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedRightIndexTest extends AutomatedTestBase {
-	// private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
+	private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
 
 	private final static String TEST_NAME1 = "FederatedRightIndexRightTest";
 	private final static String TEST_NAME2 = "FederatedRightIndexLeftTest";
 	private final static String TEST_NAME3 = "FederatedRightIndexFullTest";
+	private final static String TEST_NAME4 = "FederatedRightIndexFrameFullTest";
 
 	private final static String TEST_DIR = "functions/federated/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRightIndexTest.class.getSimpleName() + "/";
@@ -64,16 +67,16 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{20, 10, 6, 8, true},
-			{20, 10, 1, 1, true},
-			{20, 10, 2, 10, true},
-			// {20, 10, 2, 10, true},
-			// {20, 12, 2, 10, false}, {20, 12, 1, 4, false}
-		});
+			{20, 10, 1, 1, true}, {20, 10, 3, 5, true},
+			{10, 12, 1, 10, false}});
 	}
 
 	private enum IndexType {
 		RIGHT, LEFT, FULL
+	}
+
+	private enum DataType {
+		MATRIX, FRAME
 	}
 
 	@Override
@@ -82,24 +85,30 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S"}));
 	}
 
-	@Test
-	public void testRightIndexRightDenseMatrixCP() {
-		runAggregateOperationTest(IndexType.RIGHT, ExecMode.SINGLE_NODE);
-	}
+	// @Test
+	// public void testRightIndexRightDenseMatrixCP() {
+	// runAggregateOperationTest(IndexType.RIGHT, DataType.MATRIX, ExecMode.SINGLE_NODE);
+	// }
 
-	@Test
-	public void testRightIndexLeftDenseMatrixCP() {
-		runAggregateOperationTest(IndexType.LEFT, ExecMode.SINGLE_NODE);
-	}
+	// @Test
+	// public void testRightIndexLeftDenseMatrixCP() {
+	// runAggregateOperationTest(IndexType.LEFT, DataType.MATRIX, ExecMode.SINGLE_NODE);
+	// }
 
 	@Test
 	public void testRightIndexFullDenseMatrixCP() {
-		runAggregateOperationTest(IndexType.FULL, ExecMode.SINGLE_NODE);
+		runAggregateOperationTest(IndexType.FULL, DataType.MATRIX, ExecMode.SINGLE_NODE);
 	}
 
-	private void runAggregateOperationTest(IndexType type, ExecMode execMode) {
+	@Test
+	public void testRightIndexFullDenseFrameCP() {
+		runAggregateOperationTest(IndexType.FULL, DataType.FRAME, ExecMode.SINGLE_NODE);
+	}
+
+	private void runAggregateOperationTest(IndexType indexType, DataType dataType, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -107,15 +116,24 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		String TEST_NAME = null;
-		switch(type) {
+		switch(indexType) {
 			case RIGHT:
+				from = from <= cols ? from : cols;
+				to = to <= cols ? to : cols;
 				TEST_NAME = TEST_NAME1;
 				break;
 			case LEFT:
+				from = from <= rows ? from : rows;
+				to = to <= rows ? to : rows;
 				TEST_NAME = TEST_NAME2;
 				break;
 			case FULL:
-				TEST_NAME = TEST_NAME3;
+				if(dataType == DataType.MATRIX)
+					TEST_NAME = TEST_NAME3;
+				else
+					TEST_NAME = TEST_NAME4;
+				from = from <= rows && from <= cols ? from : Math.min(rows, cols);
+				to = to <= rows && to <= cols ? to : Math.min(rows, cols);
 				break;
 		}
 
@@ -147,9 +165,9 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		int port2 = getRandomAvailablePort();
 		int port3 = getRandomAvailablePort();
 		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
-		Thread t3 = startLocalFedWorkerThread(port3);
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
+		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
+		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
 		Thread t4 = startLocalFedWorkerThread(port4);
 
 		rtplatform = execMode;
@@ -160,12 +178,15 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 
+		if(from > to) {
+			from = to;
+		}
+
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"), String.valueOf(from),
 			String.valueOf(to), Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
-		// LOG.error(runTest(null));
-		runTest(null);
+		LOG.debug(runTest(null));
 		// Run actual dml script with federated matrix
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -176,8 +197,8 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols, "from=" + from,
 			"to=" + to, "rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
-		// LOG.error(runTest(null));
-		runTest(null);
+		LOG.debug(runTest(null));
+
 		// compare via files
 		compareResults(1e-9);
 

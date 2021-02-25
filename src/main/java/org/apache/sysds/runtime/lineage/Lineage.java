@@ -53,7 +53,7 @@ public class Lineage {
 	}
 	
 	public void trace(Instruction inst, ExecutionContext ec) {
-		if (_activeDedupBlock == null || !_activeDedupBlock.isAllPathsTaken())
+		if (_activeDedupBlock == null || !_activeDedupBlock.isAllPathsTaken() || !LineageCacheConfig.ReuseCacheType.isNone())
 			_map.trace(inst, ec);
 	}
 	
@@ -62,10 +62,10 @@ public class Lineage {
 			ArrayList<String> inputnames = pb.getStatementBlock().getInputstoSB();
 			LineageItem[] liinputs = LineageItemUtils.getLineageItemInputstoSB(inputnames, ec);
 			long lpath = _activeDedupBlock.getPath();
-			LineageDedupUtils.setDedupMap(_activeDedupBlock, lpath);
+			Map<String, Integer> dedupPatchHashList = LineageDedupUtils.setDedupMap(_activeDedupBlock, lpath);
 			LineageMap lm = _activeDedupBlock.getMap(lpath);
 			if (lm != null)
-				_map.processDedupItem(lm, lpath, liinputs, pb.getStatementBlock().getName());
+				_map.processDedupItem(lm, lpath, liinputs, pb.getStatementBlock().getName(), dedupPatchHashList);
 		}
 	}
 	
@@ -170,6 +170,7 @@ public class Lineage {
 		LineageItem.resetIDSequence();
 		LineageCache.resetCache();
 		LineageCacheStatistics.reset();
+		LineageEstimator.resetEstimatorCache();
 	}
 	
 	public static void setLinReusePartial() {

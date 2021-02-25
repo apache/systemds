@@ -62,8 +62,9 @@ public class EstimationFactors {
 
 	protected static EstimationFactors computeSizeEstimationFactors(ABitmap ubm, boolean inclRLE, int numRows,
 		int numCols) {
-		int numVals = ubm.getNumValues();
-		boolean containsZero = ubm.containsZero();
+		
+		int numVals = (ubm != null) ? ubm.getNumValues(): 0;
+		boolean containsZero = (ubm != null) ? ubm.containsZero() : true;
 
 		int numRuns = 0;
 		int numOffs = 0;

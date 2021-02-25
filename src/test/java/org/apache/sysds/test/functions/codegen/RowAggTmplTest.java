@@ -818,7 +818,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
-				|| heavyHittersContainsSubString("sp_spoofRA"));
+				|| heavyHittersContainsSubString("sp_spoofRA") 
+				|| heavyHittersContainsSubString("gpu_spoofCUDARA"));
 			
 			//ensure full aggregates for certain patterns
 			if( testname.equals(TEST_NAME15) )

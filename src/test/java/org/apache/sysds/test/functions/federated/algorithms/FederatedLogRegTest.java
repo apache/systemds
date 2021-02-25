@@ -57,7 +57,9 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		return Arrays.asList(new Object[][] {{10000, 10}, {1000, 100}, {2000, 43}});
+		return Arrays.asList(new Object[][] {
+			// {10000, 10}, {1000, 100},
+			{2000, 43}});
 	}
 
 	@Test
@@ -93,12 +95,11 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
@@ -119,12 +120,11 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 		TestUtils.shutdownThreads(t1, t2);
 
 		// check for federated operations
-		Assert.assertTrue("contains federated matrix mult", heavyHittersContainsString("fed_ba+*"));
-		Assert.assertTrue("contains federated row unary aggregate",
-			heavyHittersContainsString("fed_uark+", "fed_uarsqk+"));
-		Assert.assertTrue("contains federated matrix mult chain or transpose",
-			heavyHittersContainsString("fed_mmchain", "fed_r'"));
-
+		Assert.assertTrue("contains fed_ba+*", heavyHittersContainsString("fed_ba+*"));
+		Assert.assertTrue("contains fed_uar", heavyHittersContainsString("fed_uark+", "fed_uarsqk+"));
+		Assert.assertTrue("contains fed_mmchain & r'", heavyHittersContainsString("fed_mmchain", "fed_r'"));
+		Assert.assertTrue("contains fed_isnan", heavyHittersContainsString("fed_isnan"));
+		
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));

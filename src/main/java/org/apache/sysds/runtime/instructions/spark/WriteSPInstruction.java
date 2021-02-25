@@ -145,10 +145,12 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			FileFormat fmt = FileFormat.safeValueOf(input3.getName());
 			
 			//core matrix/frame write
-			if( input1.getDataType()==DataType.MATRIX )
-				processMatrixWriteInstruction(sec, fname, fmt);
-			else
-				processFrameWriteInstruction(sec, fname, fmt, schema);
+			switch( input1.getDataType() ) {
+				case MATRIX: processMatrixWriteInstruction(sec, fname, fmt); break;
+				case FRAME:  processFrameWriteInstruction(sec, fname, fmt, schema); break;
+				default: throw new DMLRuntimeException(
+					"Unsupported data type "+input1.getDataType()+" in WriteSPInstruction.");
+			}
 		}
 		catch(IOException ex)
 		{

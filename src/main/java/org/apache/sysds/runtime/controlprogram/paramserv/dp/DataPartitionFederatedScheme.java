@@ -26,6 +26,10 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
@@ -37,18 +41,35 @@ import java.util.List;
 public abstract class DataPartitionFederatedScheme {
 
 	public static final class Result {
-		public final List<MatrixObject> pFeatures;
-		public final List<MatrixObject> pLabels;
-		public final int workerNum;
+		public final List<MatrixObject> _pFeatures;
+		public final List<MatrixObject> _pLabels;
+		public final int _workerNum;
+		public final BalanceMetrics _balanceMetrics;
+		public final List<Double> _weightingFactors;
 
-		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum) {
-			this.pFeatures = pFeatures;
-			this.pLabels = pLabels;
-			this.workerNum = workerNum;
+
+		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum, BalanceMetrics balanceMetrics, List<Double> weightingFactors) {
+			_pFeatures = pFeatures;
+			_pLabels = pLabels;
+			_workerNum = workerNum;
+			_balanceMetrics = balanceMetrics;
+			_weightingFactors = weightingFactors;
 		}
 	}
 
-	public abstract Result doPartitioning(MatrixObject features, MatrixObject labels);
+	public static final class BalanceMetrics {
+		public final long _minRows;
+		public final long _avgRows;
+		public final long _maxRows;
+
+		public BalanceMetrics(long minRows, long avgRows, long maxRows) {
+			_minRows = minRows;
+			_avgRows = avgRows;
+			_maxRows = maxRows;
+		}
+	}
+
+	public abstract Result partition(MatrixObject features, MatrixObject labels, int seed);
 
 	/**
 	 * Takes a row federated Matrix and slices it into a matrix for each worker
@@ -57,12 +78,10 @@ public abstract class DataPartitionFederatedScheme {
 	 */
 	static List<MatrixObject> sliceFederatedMatrix(MatrixObject fedMatrix) {
 		if (fedMatrix.isFederated(FederationMap.FType.ROW)) {
-
 			List<MatrixObject> slices = Collections.synchronizedList(new ArrayList<>());
 			fedMatrix.getFedMapping().forEachParallel((range, data) -> {
 				// Create sliced matrix object
 				MatrixObject slice = new MatrixObject(fedMatrix.getValueType(), Dag.getNextUniqueVarname(Types.DataType.MATRIX));
-				// Warning needs MetaDataFormat instead of MetaData
 				slice.setMetaData(new MetaDataFormat(
 						new MatrixCharacteristics(range.getSize(0), range.getSize(1)),
 						Types.FileFormat.BINARY)
@@ -84,5 +103,75 @@ public abstract class DataPartitionFederatedScheme {
 			throw new DMLRuntimeException("Federated data partitioner: " +
 					"currently only supports row federated data");
 		}
+	}
+
+	static BalanceMetrics getBalanceMetrics(List<MatrixObject> slices) {
+		if (slices == null || slices.size() == 0)
+			return new BalanceMetrics(0, 0, 0);
+
+		long minRows = slices.get(0).getNumRows();
+		long maxRows = minRows;
+		long sum = 0;
+
+		for (MatrixObject slice : slices) {
+			if (slice.getNumRows() < minRows)
+				minRows = slice.getNumRows();
+			else if (slice.getNumRows() > maxRows)
+				maxRows = slice.getNumRows();
+
+			sum += slice.getNumRows();
+		}
+
+		return new BalanceMetrics(minRows, sum / slices.size(), maxRows);
+	}
+
+	static List<Double> getWeightingFactors(List<MatrixObject> pFeatures, BalanceMetrics balanceMetrics) {
+		List<Double> weightingFactors = new ArrayList<>();
+		pFeatures.forEach((feature) -> {
+			weightingFactors.add((double) feature.getNumRows() / balanceMetrics._avgRows);
+		});
+		return weightingFactors;
+	}
+
+	/**
+	 * Just a mat multiply used to shuffle with a provided shuffle matrixBlock
+	 *
+	 * @param m the input matrix object
+	 * @param P the permutation matrix for shuffling
+	 */
+	static void shuffle(MatrixObject m, MatrixBlock P) {
+		int k = InfrastructureAnalyzer.getLocalParallelism();
+		AggregateBinaryOperator mm = InstructionUtils.getMatMultOperator(k);
+		MatrixBlock out = P.aggregateBinaryOperations(P, m.acquireReadAndRelease(), new MatrixBlock(), mm);
+		m.acquireModify(out);
+		m.release();
+	}
+
+	/**
+	 * Takes a MatrixObjects and extends it to the chosen number of rows by random replication
+	 *
+	 * @param m the input matrix object
+	 * @param R the permutation matrix for replication
+	 */
+	static void replicateTo(MatrixObject m, MatrixBlock R) {
+		int k = InfrastructureAnalyzer.getLocalParallelism();
+		AggregateBinaryOperator mm = InstructionUtils.getMatMultOperator(k);
+		MatrixBlock out = R.aggregateBinaryOperations(R, m.acquireReadAndRelease(), new MatrixBlock(), mm);
+		m.acquireModify(m.acquireReadAndRelease().append(out, new MatrixBlock(), false));
+		m.release();
+	}
+
+	/**
+	 * Just a mat multiply used to subsample with a provided subsample matrixBlock
+	 *
+	 * @param m the input matrix object
+	 * @param R the permutation matrix for subsampling
+	 */
+	static void subsampleTo(MatrixObject m, MatrixBlock S) {
+		int k = InfrastructureAnalyzer.getLocalParallelism();
+		AggregateBinaryOperator mm = InstructionUtils.getMatMultOperator(k);
+		MatrixBlock out = S.aggregateBinaryOperations(S, m.acquireReadAndRelease(), new MatrixBlock(), mm);
+		m.acquireModify(out);
+		m.release();
 	}
 }

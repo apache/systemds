@@ -40,7 +40,6 @@ public final class BitmapLossy extends ABitmap {
 		_scale = scale;
 	}
 
-
 	/**
 	 * Get all values without unnecessary allocations and copies.
 	 * 
@@ -71,7 +70,7 @@ public final class BitmapLossy extends ABitmap {
 	 *         bitmap per value
 	 */
 	public int getNumValues() {
-		return _values.length / _numCols;
+		return (_values == null) ? 0 : _values.length / _numCols;
 	}
 
 	public IntArrayList getOffsetsList(int ix) {

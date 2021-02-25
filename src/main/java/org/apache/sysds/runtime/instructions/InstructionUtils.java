@@ -25,7 +25,9 @@ import java.util.StringTokenizer;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.WeightedCrossEntropy;
 import org.apache.sysds.lops.WeightedCrossEntropyR;
@@ -374,7 +376,7 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
-		} 
+		}
 		else if (opcode.equalsIgnoreCase("uarimax") ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
@@ -382,7 +384,7 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("uarmin") ) {
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
-		} 
+		}
 		else if (opcode.equalsIgnoreCase("uarimin") ) {
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
@@ -396,6 +398,21 @@ public class InstructionUtils
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
 		
+		return aggun;
+	}
+
+	public static AggregateUnaryOperator parseAggregateUnaryRowIndexOperator(String opcode, int numOutputs, int numThreads) {
+		AggregateUnaryOperator aggun = null;
+		AggregateOperator agg = null;
+		if (opcode.equalsIgnoreCase("uarimax") )
+			agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"),
+				numOutputs == 1 ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.NONE);
+
+		else if (opcode.equalsIgnoreCase("uarimin") )
+			agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"),
+				numOutputs == 1 ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.NONE);
+
+		aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		return aggun;
 	}
 
@@ -578,8 +595,12 @@ public class InstructionUtils
 	}
 	
 	public static TernaryOperator parseTernaryOperator(String opcode) {
+		return parseTernaryOperator(opcode, 1);
+	}
+	
+	public static TernaryOperator parseTernaryOperator(String opcode, int numThreads) {
 		return new TernaryOperator(opcode.equals("+*") ? PlusMultiply.getFnObject() :
-			opcode.equals("-*") ? MinusMultiply.getFnObject() : IfElse.getFnObject());
+			opcode.equals("-*") ? MinusMultiply.getFnObject() : IfElse.getFnObject(), numThreads);
 	}
 	
 	/**
@@ -607,6 +628,8 @@ public class InstructionUtils
 	 */
 	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar, double constant)
 	{
+		// TODO add Multithreaded threads to Scalar operations.
+
 		//commutative operators
 		if ( opcode.equalsIgnoreCase("+") ){ 
 			return new RightScalarOperator(Plus.getPlusFnObject(), constant); 
@@ -972,6 +995,10 @@ public class InstructionUtils
 		default:
 			throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
 		}
+	}
+	
+	public static String createLiteralOperand(String val, ValueType vt) {
+		return InstructionUtils.concatOperandParts(val, DataType.SCALAR.name(), vt.name(), "true");
 	}
 	
 	public static String replaceOperand(String instStr, int operand, String newValue) {

@@ -18,8 +18,6 @@
  */
 package org.apache.sysds.runtime.io;
 
-import static org.junit.Assert.fail;
-
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -109,7 +107,7 @@ public class ReaderWriterFederated {
 			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			DataOutputStream out = fs.create(path, true);
 			ObjectMapper mapper = new ObjectMapper();
-			FederatedDataAddress[] outObjects = parseMap(fedMap.getFedMapping());
+			FederatedDataAddress[] outObjects = parseMap(fedMap.getMap());
 			try(BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
 				mapper.writeValue(pw, outObjects);
 			}
@@ -117,7 +115,7 @@ public class ReaderWriterFederated {
 			IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 		}
 		catch(IOException e) {
-			fail("Unable to write test federated matrix to (" + file + "): " + e.getMessage());
+			throw new DMLRuntimeException("Unable to write test federated matrix to (" + file + "): " + e.getMessage());
 		}
 	}
 

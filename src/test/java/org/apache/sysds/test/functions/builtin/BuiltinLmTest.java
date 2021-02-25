@@ -47,7 +47,7 @@ public class BuiltinLmTest extends AutomatedTestBase
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
 	}
 
 	@Test
@@ -130,7 +130,7 @@ public class BuiltinLmTest extends AutomatedTestBase
 
 
 			fullDMLScriptName = HOME + dml_test_name + ".dml";
-			programArgs = new String[]{"-args", input("A"), input("B"), output("C") };
+			programArgs = new String[]{"-explain", "-args", input("A"), input("B"), output("C") };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "  + expectedDir();
 

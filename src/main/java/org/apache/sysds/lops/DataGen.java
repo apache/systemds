@@ -42,7 +42,8 @@ public class DataGen extends Lop
 	public static final String SINIT_OPCODE  = "sinit"; //string initialize
 	public static final String SAMPLE_OPCODE = "sample"; //sample.int
 	public static final String TIME_OPCODE = "time"; //time
-	
+	public static final String FRAME_OPCODE = "frame"; //time
+
 	private int _numThreads = 1;
 	
 	/** base dir for rand input */
@@ -111,6 +112,8 @@ public class DataGen extends Lop
 				return getSampleInstructionCPSpark(output);
 			case TIME:
 				return getTimeInstructionCP(output);
+			case FRAMEINIT:
+				return getFrameInstructionCPSpark(output);
 			default:
 				throw new LopsException("Unknown data generation method: " + _op);
 		}
@@ -206,6 +209,76 @@ public class DataGen extends Lop
 		return sb.toString(); 
 	}
 
+	private String getFrameInstructionCPSpark(String output)
+	{
+		//sanity checks
+		if ( _op != OpOpDG.FRAMEINIT )
+			throw new LopsException("Invalid instruction generation for data generation method " + _op);
+		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.size() - 5  ) { // frame
+			throw new LopsException(printErrorLocation() + "Invalid number of operands ("
+				+ getInputs().size() + ") for a frame operation");
+		}
+
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+
+		sb.append(FRAME_OPCODE);
+		sb.append(OPERAND_DELIMITOR);
+
+		Lop iLop = _inputParams.get(DataExpression.RAND_DATA);
+		if ( iLop != null ) {
+			if(iLop instanceof Nary) {
+				for(Lop lop : iLop.getInputs()) {
+					sb.append(((Data)lop).getStringValue());
+					sb.append(DataExpression.DELIM_NA_STRING_SEP);
+				}
+			}
+			else if(iLop instanceof Data) {
+				sb.append(((Data)iLop).getStringValue());
+			}
+		}
+
+		sb.append(OPERAND_DELIMITOR);
+
+		iLop = _inputParams.get(DataExpression.RAND_DIMS);
+		if (iLop != null) {
+			sb.append(iLop.prepScalarInputOperand(getExecType()));
+			sb.append(OPERAND_DELIMITOR);
+		}
+		else {
+			iLop = _inputParams.get(DataExpression.RAND_ROWS);
+			sb.append(iLop.prepScalarInputOperand(getExecType()));
+			sb.append(OPERAND_DELIMITOR);
+
+			iLop = _inputParams.get(DataExpression.RAND_COLS);
+			sb.append(iLop.prepScalarInputOperand(getExecType()));
+			sb.append(OPERAND_DELIMITOR);
+		}
+		iLop = _inputParams.get(DataExpression.SCHEMAPARAM);
+		if ( iLop != null ) {
+			if(iLop instanceof Nary) {
+				for(Lop lop : iLop.getInputs()) {
+					sb.append(((Data)lop).getStringValue());
+					sb.append(DataExpression.DELIM_NA_STRING_SEP);
+				}
+			}
+			else if(iLop instanceof Data) {
+				sb.append(((Data)iLop).getStringValue());
+			}
+		}
+
+		sb.append(OPERAND_DELIMITOR);
+
+		if( getExecType() == ExecType.SPARK ) {
+			sb.append(baseDir);
+			sb.append(OPERAND_DELIMITOR);
+		}
+
+		sb.append( prepOutputOperand(output));
+		return sb.toString();
+	}
+	
 	private String getSInitInstructionCPSpark(String output) 
 	{
 		if ( _op != OpOpDG.SINIT )

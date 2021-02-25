@@ -25,6 +25,7 @@ import java.util.Arrays;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
@@ -216,4 +217,13 @@ public class CNodeMultiAgg extends CNodeTpl
 		}
 		return  is_supported;
 	}
+	
+	public int compile(GeneratorAPI api, String src) {
+		if(api == GeneratorAPI.CUDA)
+			return compile_nvrtc(SpoofCompiler.native_contexts.get(api), _genVar, src, _sparseSafe); // ToDo: compile MA
+		return -1;
+	}
+	
+	private native int compile_nvrtc(long context, String name, String src, boolean sparseSafe);
+	
 }

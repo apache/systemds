@@ -21,15 +21,13 @@
 
 source("./scripts/staging/bayesian_optimisation/bayesianOptimisation.dml") as bayOpt;
 
-gaussianKernel = function(Matrix[Double] X1, Matrix[Double] X2, Double width = 1)
-return (Matrix[Double] result)
+gaussianKernel = function(Double x1, Double x2, Double width = 1)
+return (Double result)
 {
-  square_distance = (X1 - t(X2))^2;
-  result = exp((-1)*square_distance/(2 * width^2));
+  result = exp((-1)*((x1-x2)^2)/(2 * width^2));
 }
 
-
-l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
+l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B)
 return (Matrix[Double] loss) { print("called train function");
   loss = as.matrix(sum((y - X%*%B)^2));
 }
@@ -42,7 +40,7 @@ return (Double index)
 }
 
 params = list("icpt", "reg", "tol", "maxi", "verbose");
-paramValues = list(as.matrix(0), 10^seq(0,-4), 10^seq(-6,-12), 10^seq(3,6), as.matrix(1));
+paramValues = list(as.matrix(0), 10^seq(0,-3), 10^seq(-6,-10), 10^seq(3,6), as.matrix(1));
 
 N = 200;
 X = read($1);
@@ -62,10 +60,10 @@ opt = bayOpt::m_bayesianOptimisation(
   , objective = "lm"
   , predictive = "l2norm"
   , acquisition = "lowerConfidenceBound"
-  , acquParams = list(80) # beta
+  , acquParams = list(60) # beta
   , kernel = "gaussianKernel"
-  , kernelParams = list(1) # stddev
-  , iterations = 40
+  , kernelParams = list(5) # stddev
+  , iterations = 20
   , randomSamples = 10
   , minimize = TRUE
   , verbose = TRUE);

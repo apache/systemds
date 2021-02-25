@@ -41,14 +41,13 @@ public class BuiltinBayesianOptimisationTest extends AutomatedTestBase {
 	@Override
 	public void setUp()
 	{
-		//addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "R" })   );
         addTestConfiguration(TEST_DIR, TEST_NAME);
 	}
 
     @Test
-    public void testDodo(){
+    public void bayesianOptimisationMLMinimisationTest() {
 
-		ExecMode modeOld = setExecMode(ExecType.SPARK);
+		ExecMode modeOld = setExecMode(ExecType.CP); // ExecType.Spark gets a StackOverflow
 
 		try
 		{
@@ -56,10 +55,35 @@ public class BuiltinBayesianOptimisationTest extends AutomatedTestBase {
 			loadTestConfiguration(config);
             String HOME = SCRIPT_DIR + TEST_DIR;
 		//fullDMLScriptName = TEST_DIR + TEST_NAME;
-			fullDMLScriptName = "./scripts/staging/bayesian_optimisation/test/bayesianOptimisationMLTest.dml"; //HOME + TEST_NAME + ".dml";
+			fullDMLScriptName = "./scripts/staging/bayesian_optimisation/test/bayesianOptimisationMLMinimisationTest.dml";
 			programArgs = new String[] {"-args", input("X"), input("y"), output("R")};
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
 			double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.8, -1);
+			writeInputMatrixWithMTD("X", X, true);
+			writeInputMatrixWithMTD("y", y, true);
+
+			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			Assert.assertTrue(TestUtils.readDMLBoolean(output("R")));
+		}
+		finally {
+			resetExecMode(modeOld);
+		}
+    }
+
+    @Test
+    public void bayesianOptimisationMLMaximisationTest() {
+
+		ExecMode modeOld = setExecMode(ExecType.CP); // ExecType.Spark gets a StackOverflow
+
+		try
+		{
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
+            String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = "./scripts/staging/bayesian_optimisation/test/bayesianOptimisationMLMaximisationTest.dml";
+			programArgs = new String[] {"-args", input("X"), input("y"), output("R")};
+			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, 1);
+			double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.8, 2);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("y", y, true);
 

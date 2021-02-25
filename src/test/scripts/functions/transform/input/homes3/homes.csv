@@ -68,13 +68,13 @@ zipcode,district,sqft,numbedrooms,numbathrooms,floors,view,saleprice,askingprice
 95141,east,3903,1,2.5,2,FALSE,976,981
 91312,south,1076,2,2.5,1,FALSE,597,600
 96334,west,1719,1,1.5,3,FALSE,738,742
-94555,north,1439,4,1.5,1,FALSE,589,592
+94555,north east,1439,4,1.5,1,FALSE,589,592
 91312,east,1961,2,3,1,TRUE,775,778
 94555,north,2471,1,1.5,1,TRUE,753,756
 91312,west,3930,4,2.5,2,FALSE,1004,1009
 95141,south,2833,1,1,1,FALSE,718,721
 96334,south,2580,4,1,2,TRUE,816,820
-94555,south,2169,3,2.5,3,TRUE,904,908
+94555,south east ,2169,3,2.5,3,TRUE,904,908
 95141,east,3329,4,3,3,TRUE,1064,1069
 96334,south,3392,4,2,3,TRUE,1026,1031
 96334,east,3688,6,2.5,3,FALSE,1032,1037
@@ -85,7 +85,7 @@ zipcode,district,sqft,numbedrooms,numbathrooms,floors,view,saleprice,askingprice
 96334,east,1732,3,2,1,TRUE,700,703
 96334,south,2188,4,2,1,TRUE,767,771
 96334,south,3750,6,2,2,FALSE,963,967
-98755,north,2331,1,1.5,1,TRUE,740,743
+98755,north east ,2331,1,1.5,1,TRUE,740,743
 94555,north,1512,4,3,3,TRUE,854,858
 98755,north,3352,3,3,3,FALSE,1014,1018
 94555,south,3426,3,2.5,2,FALSE,937,941

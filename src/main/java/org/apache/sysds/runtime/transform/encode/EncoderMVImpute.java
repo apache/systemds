@@ -19,8 +19,12 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,9 +33,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -43,6 +44,9 @@ import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class EncoderMVImpute extends Encoder
 {
@@ -60,7 +64,7 @@ public class EncoderMVImpute extends Encoder
 	private String[] _replacementList = null; // replacements: for global_mean, mean; and for global_mode, recode id of mode category
 	private List<Integer> _rcList = null;
 	private HashMap<Integer,HashMap<String,Long>> _hist = null;
-	
+
 	public String[] getReplacements() { return _replacementList; }
 	public KahanObject[] getMeans()   { return _meanList; }
 	
@@ -174,7 +178,7 @@ public class EncoderMVImpute extends Encoder
 							_hist.get(colID) : new HashMap<>();
 					for( int i=0; i<in.getNumRows(); i++ ) {
 						String key = String.valueOf(in.get(i, colID-1));
-						if( key != null && !key.isEmpty() ) {
+						if(!key.equals("null") && !key.isEmpty() ) {
 							Long val = hist.get(key);
 							hist.put(key, (val!=null) ? val+1 : 1);
 						}
@@ -332,6 +336,82 @@ public class EncoderMVImpute extends Encoder
 	 */
 	public HashMap<String,Long> getHistogram( int colID ) {
 		return _hist.get(colID);
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		for(int i = 0; i < _colList.length; i++) {
+			out.writeByte(_mvMethodList[i].ordinal());
+			out.writeLong(_countList[i]);
+		}
+
+		List<String> notNullReplacements = new ArrayList<>(Arrays.asList(_replacementList));
+		notNullReplacements.removeAll(Collections.singleton(null));
+		out.writeInt(notNullReplacements.size());
+		for(int i = 0; i < _replacementList.length; i++)
+			if(_replacementList[i] != null) {
+				out.writeInt(i);
+				out.writeUTF(_replacementList[i]);
+			}
+
+		out.writeInt(_rcList.size());
+		for(int rc: _rcList)
+			out.writeInt(rc);
+
+		int histSize = _hist == null ? 0 : _hist.size();
+		out.writeInt(histSize);
+		if (histSize > 0)
+			for(Entry<Integer,HashMap<String,Long>> e1 : _hist.entrySet()) {
+				out.writeInt(e1.getKey());
+				out.writeInt(e1.getValue().size());
+				for(Entry<String, Long> e2 : e1.getValue().entrySet()) {
+					out.writeUTF(e2.getKey());
+					out.writeLong(e2.getValue());
+				}
+			}
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+
+		_mvMethodList = new MVMethod[_colList.length];
+		_countList = new long[_colList.length];
+		_meanList = new KahanObject[_colList.length];
+		_replacementList = new String[_colList.length];
+
+		for(int i = 0; i < _colList.length; i++) {
+			_mvMethodList[i] = MVMethod.values()[in.readByte()];
+			_countList[i] = in.readLong();
+			_meanList[i] = new KahanObject(0, 0);
+		}
+
+		int size4 =  in.readInt();
+		for(int i = 0; i < size4; i++) {
+			int index = in.readInt();
+			_replacementList[index] = in.readUTF();
+		}
+
+		int size3 = in.readInt();
+		_rcList = new ArrayList<>();
+		for(int j = 0; j < size3; j++)
+			_rcList.add(in.readInt());
+
+		_hist = new HashMap<>();
+		int size1 = in.readInt();
+		for(int i = 0; i < size1; i++) {
+			Integer key1 = in.readInt();
+			int size2 = in.readInt();
+
+			HashMap<String, Long> maps = new HashMap<>();
+			for(int j = 0; j < size2; j++){
+				String key2 = in.readUTF();
+				Long value = in.readLong();
+				maps.put(key2, value);
+			}
+			_hist.put(key1, maps);
+		}
 	}
 	
 	private static class ColInfo {

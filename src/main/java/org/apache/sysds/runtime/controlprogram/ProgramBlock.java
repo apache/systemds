@@ -217,7 +217,7 @@ public abstract class ProgramBlock implements ParseInfo
 		ScalarObject ret = ec.getScalarInput(PRED_VAR, retType, false);
 
 		//check and correct scalar ret type (incl save double to int)
-		if( ret.getValueType() != retType )
+		if( retType != null && retType != ret.getValueType() )
 			switch( retType ) {
 				case BOOLEAN: ret = new BooleanObject(ret.getBooleanValue()); break;
 				case INT64:   ret = new IntObject(ret.getLongValue()); break;

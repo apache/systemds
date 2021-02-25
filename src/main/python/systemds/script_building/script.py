@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 
-from typing import Any, Collection, KeysView, Tuple, Union, Optional, Dict, TYPE_CHECKING
+from typing import Any, Collection, KeysView, Tuple, Union, Optional, Dict, TYPE_CHECKING, List
 
 from py4j.java_collections import JavaArray
 from py4j.java_gateway import JavaObject, JavaGateway
@@ -44,7 +44,7 @@ class DMLScript:
     dml_script: str
     inputs: Dict[str, DAGNode]
     prepared_script: Optional[Any]
-    out_var_name: str
+    out_var_name: List[str]
     _variable_counter: int
 
     def __init__(self, context: 'SystemDSContext') -> None:
@@ -70,7 +70,7 @@ class DMLScript:
         """
         self.inputs[var_name] = input_var
 
-    def execute(self, lineage: bool = False) -> Union[JavaObject, Tuple[JavaObject, str]]:
+    def execute(self) -> JavaObject:
         """If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
         script, then execute our script and return the resultVariables
 
@@ -78,6 +78,42 @@ class DMLScript:
         """
         # we could use the gateway directly, non defined functions will be automatically
         # sent to the entry_point, but this is safer
+
+        try:
+            self.__prepare_script()
+            ret = self.prepared_script.executeScript()
+            return ret
+        except Exception as e:
+            self.sds_context.exception_and_close(e)
+            return None
+
+    def execute_with_lineage(self) -> Tuple[JavaObject, str]:
+        """If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
+        script, then execute our script and return the resultVariables
+
+        :return: resultVariables of our execution and the string lineage trace
+        """
+        # we could use the gateway directly, non defined functions will be automatically
+        # sent to the entry_point, but this is safer
+        try:
+            connection = self.__prepare_script()
+            connection.setLineage(True)
+            ret = self.prepared_script.executeScript()
+
+
+            if len(self.out_var_name) == 1:
+                return ret, self.prepared_script.getLineageTrace(self.out_var_name[0])
+            else:
+                traces = []
+                for output in self.out_var_name:
+                    traces.append(self.prepared_script.getLineageTrace(output))
+                return ret, traces
+          
+        except Exception as e:
+            self.sds_context.exception_and_close(e)
+            return None, None
+
+    def __prepare_script(self):
         gateway = self.sds_context.java_gateway
         entry_point = gateway.entry_point
         if self.prepared_script is None:
@@ -90,24 +126,8 @@ class DMLScript:
             for (name, input_node) in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(
                     self.sds_context, name, self.prepared_script)
+            return connection
 
-            if lineage:
-                connection.setLineage(True)
-        try:
-            ret = self.prepared_script.executeScript()
-        except Exception as e:
-            self.sds_context.exception_and_close(e)
-
-        if lineage:
-            if len(self.out_var_name) == 1:
-                return ret, self.prepared_script.getLineageTrace(self.out_var_name[0])
-            else:
-                traces = []
-                for output in self.out_var_name:
-                    traces.append(self.prepared_script.getLineageTrace(output))
-                return ret, traces
-
-        return ret
 
     def get_lineage(self) -> str:
         gateway = self.sds_context.java_gateway

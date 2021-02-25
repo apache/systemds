@@ -31,7 +31,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
-import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -51,7 +50,6 @@ import org.apache.sysds.runtime.matrix.operators.COVOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
-import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.SortUtils;
 
@@ -149,13 +147,6 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	// Graceful fallback to uncompressed linear algebra
 
 	@Override
-	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
-		printDecompressWarning("unaryOperations");
-		MatrixBlock tmp = decompress();
-		return tmp.unaryOperations(op, result);
-	}
-
-	@Override
 	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		printDecompressWarning("binaryOperationsInPlace", (MatrixBlock) thatValue);
 		MatrixBlock left = decompress();
@@ -221,26 +212,6 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		printDecompressWarning("leftIndexingOperations");
 		MatrixBlock tmp = decompress();
 		return tmp.leftIndexingOperations(scalar, rl, cl, ret, update);
-	}
-
-	@Override
-	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
-		printDecompressWarning("slice");
-		MatrixBlock tmp = decompress();
-		return tmp.slice(rl, ru, cl, cu, ret);
-	}
-
-	@Override
-	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, int blen,
-		int boundaryRlen, int boundaryClen) {
-		printDecompressWarning("slice");
-		try {
-			MatrixBlock tmp = decompress();
-			tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
-		}
-		catch(DMLRuntimeException ex) {
-			throw new RuntimeException(ex);
-		}
 	}
 
 	@Override
@@ -500,7 +471,6 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 
 	protected void printDecompressWarning(String operation) {
 		LOG.warn("Operation '" + operation + "' not supported yet - decompressing for ULA operations.");
-
 	}
 
 	protected void printDecompressWarning(String operation, MatrixBlock m2) {

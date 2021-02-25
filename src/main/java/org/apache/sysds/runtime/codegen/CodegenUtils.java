@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.tools.Diagnostic;
@@ -42,6 +43,7 @@ import javax.tools.ToolProvider;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.codehaus.janino.SimpleCompiler;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
@@ -64,7 +66,8 @@ public class CodegenUtils
 	//janino-specific map of source code transfer/recompile on-demand
 	private static ConcurrentHashMap<String, String> _src = new ConcurrentHashMap<>();
 
-	private static ConcurrentHashMap<String, SpoofCUDA> _native_op_data = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<String, Integer> _CUDA_op_IDs = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<Integer, String> _CUDA_op_src = new ConcurrentHashMap<>();
 
 	//javac-specific working directory for src/class files
 	private static String _workingDir = null;
@@ -159,14 +162,18 @@ public class CodegenUtils
 		return ret;
 	}
 
-	public static SpoofCUDA getNativeOpData(String name) {
-		return _native_op_data.get(name);
+	public static Integer getCUDAopID(String name) {
+		return _CUDA_op_IDs.get(name);
 	}
 
-	public static void putNativeOpData(SpoofCUDA op) {
-		_native_op_data.put(op.getName(), op);
+	public static void putCUDAOpID(String name, int id) {
+		_CUDA_op_IDs.put(name, id);
 	}
-
+	
+	public static void putCUDASource(int id, String src) {
+		_CUDA_op_src.put(id, src);
+	}
+	
 	public static SideInput createSideInput(MatrixBlock in) {
 		SideInput ret = (in.isInSparseFormat() || !in.isAllocated()) ?
 			new SideInput(null, in, in.getNumColumns()) :
@@ -314,5 +321,42 @@ public class CodegenUtils
 		String tmp = LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_CODEGEN);
 		LocalFileUtils.createLocalFileIfNotExist(tmp);
 		_workingDir = tmp;
+	}
+
+	/**
+	 * <p>Extension of org.apache.commons.lang.StringUtils
+	 * to account for negatives and decimals.</p>
+	 *
+	 * @param str  the String to check, may be null
+	 * @return <code>true</code> if only contains digits,-,., and is non-null
+	 */
+	public static boolean isNumeric(String str) {
+		if (str == null) {
+			return false;
+		}
+		int sz = str.length();
+		for (int i = 0; i < sz; i++) {
+			if (!Character.isDigit(str.charAt(i))) {
+				if((str.charAt(i) == '-') && (i == 0))
+					continue;
+//				if((str.charAt(i) == '.') && (sz > 1))
+//					continue;
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public static String printWithLineNumber(String src) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("\n");
+		Scanner scanner = new Scanner(src);
+		int line_count  = 0;
+		while (scanner.hasNextLine()) {
+			String line = scanner.nextLine();
+			sb.append(line_count++ + ": " + line + System.lineSeparator());
+		}
+		scanner.close();
+		return sb.toString();
 	}
 }

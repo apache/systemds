@@ -182,7 +182,7 @@ public class DMLScript
 	 * @throws IOException If an internal IOException happens.
 	 */
 	public static boolean executeScript( Configuration conf, String[] args )
-		throws  IOException, ParseException, DMLScriptException
+		throws IOException, ParseException, DMLScriptException
 	{
 		//parse arguments and set execution properties
 		ExecMode oldrtplatform  = EXEC_MODE;  //keep old rtplatform
@@ -195,14 +195,16 @@ public class DMLScript
 		}
 		catch(AlreadySelectedException e) {
 			LOG.error("Mutually exclusive options were selected. " + e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
+			//TODO fix null default options
+			//HelpFormatter formatter = new HelpFormatter();
+			//formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
 			return false;
 		}
 		catch(org.apache.commons.cli.ParseException e) {
 			LOG.error("Parsing Exception " + e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
+			//TODO fix null default options
+			//HelpFormatter formatter = new HelpFormatter();
+			//formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
 			return false;
 		}
 
@@ -601,13 +603,11 @@ public class DMLScript
 		// load native codegen if configured
 		if(ConfigurationManager.isCodegenEnabled()) {
 			SpoofCompiler.GeneratorAPI configured_generator = SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
-			if(configured_generator != SpoofCompiler.GeneratorAPI.JAVA) {
-				try {
-					SpoofCompiler.loadNativeCodeGenerator(configured_generator);
-				}
-				catch(Exception e) {
-					LOG.error("Failed to load native cuda codegen library\n" + e);
-				}
+			try {
+				SpoofCompiler.loadNativeCodeGenerator(configured_generator);
+			}
+			catch(Exception e) {
+				LOG.error("Failed to load native cuda codegen library\n" + e);
 			}
 		}
 	}

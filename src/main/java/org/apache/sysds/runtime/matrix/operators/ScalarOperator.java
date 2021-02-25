@@ -44,7 +44,7 @@ public abstract class ScalarOperator extends Operator
 
 	public final ValueFunction fn;
 	protected final double _constant;
-	private final int k; //num threads
+	private int _k; //num threads
 	
 	public ScalarOperator(ValueFunction p, double cst) {
 		this(p, cst, false);
@@ -63,11 +63,19 @@ public abstract class ScalarOperator extends Operator
 				|| (p instanceof Builtin && ((Builtin)p).getBuiltinCode()==BuiltinCode.MIN && cst>=0));
 		fn = p;
 		_constant = cst;
-		k = numThreads;
+		_k = numThreads;
 	}
 	
 	public double getConstant() {
 		return _constant;
+	}
+	
+	public void setNumThreads(int k) {
+		_k = k;
+	}
+	
+	public int getNumThreads() {
+		return _k;
 	}
 	
 	public abstract ScalarOperator setConstant(double cst);
@@ -93,9 +101,5 @@ public abstract class ScalarOperator extends Operator
 			|| fn instanceof Power2 || fn instanceof And || fn instanceof MinusNz
 			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ)
 			|| fn instanceof BitwShiftL || fn instanceof BitwShiftR;
-	}
-
-	public int getNumThreads() {
-		return k;
 	}
 }

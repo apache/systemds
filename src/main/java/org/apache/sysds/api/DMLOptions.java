@@ -44,6 +44,8 @@ import org.apache.sysds.utils.Explain.ExplainType;
  * to keep it consistent with {@link DMLOptions} and {@link DMLOptions}
  */
 public class DMLOptions {
+	// private static final Log LOG = LogFactory.getLog(DMLOptions.class.getName());
+
 	public final Options        options;
 	public Map<String, String>  argVals       = new HashMap<>();  // Arguments map containing either named arguments or arguments by position for a DML program
 	public String               configFile    = null;             // Path to config file if default config and default config is to be overridden
@@ -62,7 +64,7 @@ public class DMLOptions {
 	public boolean              lineage       = false;            // whether compute lineage trace
 	public boolean              lineage_dedup = false;            // whether deduplicate lineage items
 	public ReuseCacheType       linReuseType  = ReuseCacheType.NONE; // reuse type (full, partial, hybrid)
-	public LineageCachePolicy   linCachePolicy= LineageCachePolicy.HYBRID; // lineage cache eviction policy
+	public LineageCachePolicy   linCachePolicy= LineageCachePolicy.COSTNSIZE; // lineage cache eviction policy
 	public boolean              lineage_estimate = false;         // whether estimate reuse benefits
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
@@ -136,8 +138,6 @@ public class DMLOptions {
 							dmlOptions.linCachePolicy = LineageCachePolicy.COSTNSIZE;
 						else if (lineageType.equalsIgnoreCase("policy_dagheight"))
 							dmlOptions.linCachePolicy = LineageCachePolicy.DAGHEIGHT;
-						else if (lineageType.equalsIgnoreCase("policy_hybrid"))
-							dmlOptions.linCachePolicy = LineageCachePolicy.HYBRID;
 						else if (lineageType.equalsIgnoreCase("estimate"))
 							dmlOptions.lineage_estimate = lineageType.equalsIgnoreCase("estimate");
 						else

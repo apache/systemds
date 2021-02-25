@@ -19,13 +19,13 @@
 
 package org.apache.sysds.runtime.util;
 
-import org.apache.commons.collections.map.HashedMap;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class DMVUtils {
 	public static final char DIGIT = 'd';
@@ -37,20 +37,17 @@ public class DMVUtils {
 	public static final char OTHER = 'y';
 	public static final char ARBITRARY_LEN = '+';
 	public static final char MINUS = '-';
-	public static String DISGUISED_VAL = "";
 
 	public enum LEVEL_ENUM { LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6}
 
 	public static FrameBlock syntacticalPatternDiscovery(FrameBlock frame, double threshold, String disguised_value) {
-
 		// Preparation
-		DISGUISED_VAL = disguised_value;
+		String disguisedVal = disguised_value;
 		int numCols = frame.getNumColumns();
 		int numRows = frame.getNumRows();
-		ArrayList<Map<String, Integer>> table_Hist = new ArrayList(numCols); // list of every column with values and their frequency
+		ArrayList<Map<String, Integer>> table_Hist = new ArrayList<>(numCols); // list of every column with values and their frequency
 
-		int idx;
-		for (idx = 0; idx < numCols; idx++) {
+		for (int idx = 0; idx < numCols; idx++) {
 			Object c = frame.getColumnData(idx);
 			String[] column = (String[]) c;
 			String key = "";
@@ -61,10 +58,10 @@ public class DMVUtils {
 		}
 
 		// Syntactic Pattern Discovery
-		idx = -1;
+		int idx = -1;
 		for (Map<String, Integer> col_Hist : table_Hist) {
 			idx++;
-			Map<String, Double> dominant_patterns_ratio = new HashedMap();
+			Map<String, Double> dominant_patterns_ratio = new HashMap<>();
 			Map<String, Integer> prev_pattern_hist = col_Hist;
 			for(LEVEL_ENUM level : LEVEL_ENUM.values()) {
 				dominant_patterns_ratio.clear();
@@ -72,7 +69,7 @@ public class DMVUtils {
 				dominant_patterns_ratio = calculatePatternsRatio(current_pattern_hist, numRows);
 				String dominant_pattern = findDominantPattern(dominant_patterns_ratio, threshold);
 				if(dominant_pattern != null) { //found pattern
-					detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, level);
+					detectDisguisedValues(dominant_pattern, frame.getColumnData(idx), idx, frame, level, disguisedVal);
 					break;
 				}
 				prev_pattern_hist = current_pattern_hist;
@@ -83,13 +80,10 @@ public class DMVUtils {
 
 
 	public static Map<String, Double> calculatePatternsRatio(Map<String, Integer> patterns_hist, int nr_entries) {
-		Map<String, Double> patterns_ratio_map = new HashedMap();
-		Iterator it = patterns_hist.entrySet().iterator();
-		while(it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			String pattern = (String) pair.getKey();
-			Double nr_occurences = new Double((Integer)pair.getValue());
-
+		Map<String, Double> patterns_ratio_map = new HashMap<>();
+		for(Entry<String, Integer> e : patterns_hist.entrySet()) {
+			String pattern = e.getKey();
+			double nr_occurences = e.getValue();
 			double current_ratio = nr_occurences / nr_entries; // percentage of current pattern in column
 			patterns_ratio_map.put(pattern, current_ratio);
 		}
@@ -97,16 +91,11 @@ public class DMVUtils {
 	}
 
 	public static String findDominantPattern(Map<String, Double> dominant_patterns, double threshold) {
-
-		Iterator it = dominant_patterns.entrySet().iterator();
-		while(it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			String pattern = (String) pair.getKey();
-			Double pattern_ratio = (Double)pair.getValue();
-
+		for(Entry<String, Double> e : dominant_patterns.entrySet()) {
+			String pattern = e.getKey();
+			Double pattern_ratio = e.getValue();
 			if(pattern_ratio > threshold)
 				return pattern;
-
 		}
 		return null;
 	}
@@ -119,28 +108,24 @@ public class DMVUtils {
 			return;
 		}
 
-		if (!(maps.get(idx).containsKey(key))) {
+		if (!(maps.get(idx).containsKey(key)))
 			maps.get(idx).put(key, 1);
-		} else {
+		else
 			maps.get(idx).compute(key, (k, v) -> v + 1);
-		}
 	}
 
 	private static void addDistinctValueOrIncrementCounter(Map<String, Integer> map, String encoded_value, Integer nr_occurrences) {
-		if (!(map.containsKey(encoded_value))) {
+		if (!(map.containsKey(encoded_value)))
 			map.put(encoded_value, nr_occurrences);
-		} else {
+		else
 			map.compute(encoded_value, (k, v) -> v + nr_occurrences);
-		}
 	}
 
 	public static Map<String, Integer> LevelsExecutor(Map<String, Integer> old_pattern_hist, LEVEL_ENUM level) {
-		Map<String, Integer> new_pattern_hist = new HashedMap();
-		Iterator it = old_pattern_hist.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			String pattern = (String) pair.getKey();
-			Integer nr_of_occurrences = (Integer)pair.getValue();
+		Map<String, Integer> new_pattern_hist = new HashMap<>();
+		for(Entry<String, Integer> e : old_pattern_hist.entrySet()) {
+			String pattern = e.getKey();
+			Integer nr_of_occurrences = e.getValue();
 
 			String new_pattern;
 			switch(level) {
@@ -219,7 +204,6 @@ public class DMVUtils {
 		return tmp.toString();
 	}
 
-
 	public static String removeUpperLowerCase(String pattern) {
 		char[] chars = pattern.toCharArray();
 		StringBuilder tmp = new StringBuilder();
@@ -290,7 +274,7 @@ public class DMVUtils {
 	}
 
 	private static void detectDisguisedValues(String dom_pattern, Object col, int col_idx,
-		FrameBlock frameBlock, LEVEL_ENUM level)
+		FrameBlock frameBlock, LEVEL_ENUM level, String disguisedVal)
 	{
 		int row_idx = -1;
 		String pattern = "";
@@ -329,13 +313,14 @@ public class DMVUtils {
 					pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
 					pattern = removeInnerCharacterInPattern(pattern, ALPHA, SPACE);
 					pattern = acceptNegativeNumbersAsDigits(pattern);
+					break;
 				default:
-					//System.out.println("Could not find suitable level");
+					throw new DMLRuntimeException("Could not find suitable level");
 			}
 			row_idx++;
-			if(pattern.equals(dom_pattern)) continue;
-//			System.out.println("[" + level +"] Disguised value: " + frameBlock.get(row_idx, col_idx) + " (c=" + col_idx + ",r=" + row_idx + ")");
-			frameBlock.set(row_idx, col_idx, DISGUISED_VAL);
+			if(pattern.equals(dom_pattern))
+				continue;
+			frameBlock.set(row_idx, col_idx, disguisedVal);
 		}
 	}
 }

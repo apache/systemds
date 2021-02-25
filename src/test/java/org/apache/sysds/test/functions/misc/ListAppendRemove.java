@@ -29,9 +29,10 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 
-public class ListAppendRemove extends AutomatedTestBase 
+public class ListAppendRemove extends AutomatedTestBase
 {
 	private static final String TEST_NAME1 = "ListAppendRemove";
+	private static final String TEST_NAME2 = "ListAppend2788";
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ListAppendRemove.class.getSimpleName() + "/";
@@ -40,6 +41,7 @@ public class ListAppendRemove extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
 	
 	@Test
@@ -82,6 +84,15 @@ public class ListAppendRemove extends AutomatedTestBase
 		runListAppendRemove(TEST_NAME1, ExecType.SPARK, false, true);
 	}
 	
+	@Test
+	public void testStaticListAppendCP() {
+		runListAppendRemove(TEST_NAME2, ExecType.CP, true, false);
+	}
+	
+	@Test
+	public void testStaticListAppendSpark() {
+		runListAppendRemove(TEST_NAME2, ExecType.SPARK, true, false);
+	}
 	
 	private void runListAppendRemove(String testname, ExecType type, boolean rewrites, boolean conditional)
 	{
@@ -114,8 +125,7 @@ public class ListAppendRemove extends AutomatedTestBase
 			//check for properly compiled CP operations for list 
 			//(but spark instructions for sum, indexing, write)
 			int numExpected = (type == ExecType.CP) ? 0 :
-				conditional ? 5 : 4;
-			Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==numExpected);
+				testname.equals(TEST_NAME1) ? (conditional ? 5 : 4) : 1;
 			Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==numExpected);
 		}
 		finally {

@@ -36,18 +36,21 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	
-	private AggregateUnaryFEDInstruction(AggregateUnaryOperator auop, CPOperand in,
-			CPOperand out, String opcode, String istr) {
+	private AggregateUnaryFEDInstruction(AggregateUnaryOperator auop,
+		CPOperand in, CPOperand out, String opcode, String istr)
+	{
 		super(FEDType.AggregateUnary, auop, in, out, opcode, istr);
 	}
 
-	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-										   String opcode, String istr) {
+	protected AggregateUnaryFEDInstruction(Operator op,
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr)
+	{
 		super(FEDType.AggregateUnary, op, in1, in2, out, opcode, istr);
 	}
 
-	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-										   String opcode, String istr) {
+	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1,
+		CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr)
+	{
 		super(FEDType.AggregateUnary, op, in1, in2, in3, out, opcode, istr);
 	}
 
@@ -56,7 +59,13 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
+
+		AggregateUnaryOperator aggun = null;
+		if(opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin"))
+			aggun = InstructionUtils.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), 1);
+		else
+			aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
+
 		if(InstructionUtils.getExecType(str) == ExecType.SPARK)
 			str = InstructionUtils.replaceOperand(str, 4, "-1");
 		return new AggregateUnaryFEDInstruction(aggun, in1, out, opcode, str);
@@ -76,7 +85,10 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();
-		
+
+		if((instOpcode.equalsIgnoreCase("uarimax") || instOpcode.equalsIgnoreCase("uarimin")) && in.isFederated(FederationMap.FType.COL))
+			instString = InstructionUtils.replaceOperand(instString, 5, "2");
+
 		//create federated commands for aggregation
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});

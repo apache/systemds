@@ -24,6 +24,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.AbstractCompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -31,10 +33,14 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 	private static final Log LOG = LogFactory.getLog(BinaryMatrixMatrixCPInstruction.class.getName());
-
+	
 	protected BinaryMatrixMatrixCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			String opcode, String istr) {
 		super(CPType.Binary, op, in1, in2, out, opcode, istr);
+		if( op instanceof BinaryOperator ) {
+			String[] parts = InstructionUtils.getInstructionParts(istr);
+			((BinaryOperator)op).setNumThreads(Integer.parseInt(parts[parts.length-1]));
+		}
 	}
 
 	@Override
@@ -60,10 +66,14 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 		if(inBlock1 instanceof CompressedMatrixBlock && inBlock2 instanceof CompressedMatrixBlock){
 			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
 		} else if(inBlock2 instanceof CompressedMatrixBlock){
-			LOG.error("Binary CP instruction decompressing " + bop);
-			LOG.error("inBlock2 stats: " + inBlock2.getNumRows() + "  " +inBlock2.getNumColumns());
-			inBlock2 = AbstractCompressedMatrixBlock.getUncompressed(inBlock2);
-			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+			if((bop.fn instanceof Multiply)){
+				retBlock = ((CompressedMatrixBlock)inBlock2).binaryOperationsLeft(bop, inBlock1, new MatrixBlock());
+			}else{
+				LOG.error("Binary CP instruction decompressing " + bop);
+				LOG.error("inBlock2 stats: " + inBlock2.getNumRows() + "  " +inBlock2.getNumColumns());
+				inBlock2 = AbstractCompressedMatrixBlock.getUncompressed(inBlock2);
+				retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+			}
 		} else {
 			retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
 		}

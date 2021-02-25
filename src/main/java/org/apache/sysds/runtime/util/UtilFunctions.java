@@ -19,10 +19,6 @@
 
 package org.apache.sysds.runtime.util;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
@@ -34,6 +30,10 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class UtilFunctions {
 	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
@@ -405,9 +405,12 @@ public class UtilFunctions {
 		//a very small increment. Hence, we use a different formulation 
 		//that exhibits better numerical stability by avoiding the subtraction
 		//of numbers of different magnitude.
-		if( check && (Double.isNaN(from) || Double.isNaN(to) || Double.isNaN(incr) 
+		if( (isSpecial(from) || isSpecial(to) || isSpecial(incr) 
 			|| (from > to && incr > 0) || (from < to && incr < 0)) ) {
-			throw new RuntimeException("Invalid seq parameters: ("+from+", "+to+", "+incr+")");
+			if( check )
+				throw new RuntimeException("Invalid seq parameters: ("+from+", "+to+", "+incr+")");
+			else
+				return 0; // invalid loop configuration
 		}
 		return 1L + (long) Math.floor(to/incr - from/incr);
 	}
@@ -588,6 +591,10 @@ public class UtilFunctions {
 			if( c[i] < 48 || c[i] > 57 )
 				return false;
 		return true;
+	}
+	
+	public static boolean isSpecial(double value) {
+		return Double.isNaN(value) || Double.isInfinite(value);
 	}
 	
 	public static int[] getSortedSampleIndexes(int range, int sampleSize) {
@@ -833,6 +840,17 @@ public class UtilFunctions {
 	private static String getDateFormat (String dateString) {
 		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
+	}
+
+	 public static double jaccardSim(String x, String y) {
+		Set<String> charsX = new LinkedHashSet<>(Arrays.asList(x.split("(?!^)")));
+		Set<String> charsY = new LinkedHashSet<>(Arrays.asList(y.split("(?!^)")));
+
+		final int sa = charsX.size();
+		final int sb = charsY.size();
+		charsX.retainAll(charsY);
+		final int intersection = charsX.size();
+		return 1d / (sa + sb - charsX.size()) * intersection;
 	}
 
 	/**

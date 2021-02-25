@@ -102,7 +102,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 	}
 
 	@Test
-	public void testQuantile() {
+	public void testQuartile() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock) || cols != 1)
 				return; // Input was not compressed then just pass test

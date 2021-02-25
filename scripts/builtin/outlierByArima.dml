@@ -1,0 +1,105 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# Built-in function for detecting and repairing outliers in time series,
+# by training an ARIMA model and classifying values that are more than 
+# k standard-deviations away from the predicated values as outliers.
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Double    ---      Matrix X
+# k               Double    3        threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
+# repairMethod    Integer   1        values: 0 = delete rows having outliers, 1 = replace outliers as zeros
+#                                            2 = replace outliers as missing values 
+# p               Int       0        non-seasonal AR order
+# d               Int       0        non-seasonal differencing order
+# q               Int       0        non-seasonal MA order
+# P               Int       0        seasonal AR order
+# D               Int       0        seasonal differencing order
+# Q               Int       0        seasonal MA order
+# s               Int       1        period in terms of number of time-steps
+# include_mean    Bool      FALSE
+# solver          String    "jacobi" solver, is either "cg" or "jacobi"
+# ---------------------------------------------------------------------------------------------
+ 
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X_corrected     Double   ---     Matrix X with no outliers
+
+m_outlierByArima = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 1, Integer p=0, Integer d=0,
+  Integer q=0, Integer P=0, Integer D=0, Integer Q=0, Integer s=1, Boolean include_mean=FALSE, String solver="jacobi")
+  return(Matrix[Double] X_corrected)
+{
+  outlierFilter = as.matrix(0)
+
+  if( k < 1 | k > 7)
+    stop("outlierBySd: invalid argument - k should be in range 1-7 found "+k)
+
+  features = transform_matrix(X,p)
+  X_adapted = X[p+1:nrow(X),]
+
+  # TODO replace by ARIMA once fully supported, LM only emulated the AR part
+  model = lm(X=features, y=X_adapted)
+  y_hat = lmPredict(X=features, B=model)
+
+  upperBound = sd(X) + k * y_hat
+  lowerBound = sd(X) - k * y_hat
+  outlierFilter = (X_adapted < lowerBound) | (X_adapted > upperBound)
+  outlierFilter = rbind(matrix(0.0, rows=p,cols=1), outlierFilter)
+  X_corrected = fix_outliers(X, outlierFilter, repairMethod)
+}
+
+transform_matrix = function(Matrix[Double] X, Integer p) return (Matrix[Double] features){
+  nrows = nrow(X)
+  features = matrix(0, rows=nrows-p, cols=1)
+
+  for (i in 1:p){
+    features = cbind(features, X[p+1-i:nrows-i,])
+  }
+  features = features[,2:p+1]
+}
+
+fix_outliers = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod)
+  return (Matrix[Double] X_filtered)
+{
+  rows = nrow(X)
+  cols = ncol(X)
+  if(repairMethod == 0) {
+    sel = (outlierFilter == 0)
+    X = removeEmpty(target = X, margin = "rows", select = sel)
+  }
+  else if(repairMethod == 1)
+    X = (outlierFilter == 0) * X
+  else if (repairMethod == 2) {
+    outlierFilter = replace(target = (outlierFilter == 0), pattern = 0, replacement = NaN)
+    X = outlierFilter * X
+  }
+  else{
+    stop("outlierBySd: invalid argument - repair required 0-1 found: "+repairMethod)
+  }
+  X_filtered = X
+}

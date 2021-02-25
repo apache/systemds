@@ -1,0 +1,45 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+r = 100000
+c = 100
+
+X = rand(rows=r, cols=c, seed=42);
+y = rand(rows=r, cols=1, seed=43);
+
+j = 5 
+R = matrix(0, c, j+1);
+
+A = t(X) %*% X + diag(matrix(1, rows=ncol(X), cols=1));
+b = t(X) %*% y;
+beta = solve(A, b);
+R[,j+1] = beta;
+  
+# reuse from the outside of the loop
+for(i in 1:j) {
+  lambda = i;
+  A = t(X) %*% X + diag(matrix(lambda, rows=ncol(X), cols=1));
+  b = t(X) %*% y;
+  beta = solve(A, b);
+  R[,i] = beta;
+}
+
+write(R, $1, format="text");

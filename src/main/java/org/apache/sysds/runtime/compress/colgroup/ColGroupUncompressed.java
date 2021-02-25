@@ -23,17 +23,14 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlock.Type;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
-import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -70,10 +67,10 @@ public class ColGroupUncompressed extends ColGroup {
 	 * @param colIndicesList Indices (relative to the current block) of the columns that this column group represents.
 	 * @param rawBlock       The uncompressed block; uncompressed data must be present at the time that the constructor
 	 *                       is called
-	 * @param compSettings   The Settings for how to compress this block, Here using information about the raw block if
-	 *                       it is transposed.
+	 * @param transposed     Says if the input matrix raw block have been transposed. This should not ever be true since
+	 *                       we still have the original matrixBlock in case of aborting the compression.
 	 */
-	protected ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
+	public ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
 		super(colIndicesList, transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows());
 
 		// prepare meta data
@@ -201,11 +198,6 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		decompressToBlock(target, rl, ru, rl);
-	}
-
-	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
 		// empty block, nothing to add to output
 		if(_data.isEmptyBlock(false))
@@ -256,7 +248,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int colpos) {
+	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
 		// empty block, nothing to add to output
 		if(_data.isEmptyBlock(false)) {
 			return;
@@ -268,6 +260,36 @@ public class ColGroupUncompressed extends ColGroup {
 			target.quickSetValue(0, row, cellVal);
 		}
 	}
+
+	@Override
+	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
+		// empty block, nothing to add to output
+		if(_data.isEmptyBlock(false)) {
+			return;
+		}
+		// Run through the rows, putting values into the appropriate locations
+		for(int row = rl; row < ru; row++) {
+			double cellVal = _data.quickGetValue(row, colpos);
+			// Apparently rows are cols here.
+			target.quickSetValue(0, row, cellVal);
+		}
+	}
+
+
+	@Override
+	public void decompressColumnToBlock(double[] target, int colpos, int rl, int ru) {
+		// empty block, nothing to add to output
+		if(_data.isEmptyBlock(false)) {
+			return;
+		}
+		// Run through the rows, putting values into the appropriate locations
+		for(int row = rl; row < ru; row++) {
+			double cellVal = _data.quickGetValue(row, colpos);
+			// Apparently rows are cols here.
+			target[row] +=  cellVal;
+		}
+	}
+
 
 	@Override
 	public double get(int r, int c) {
@@ -320,19 +342,13 @@ public class ColGroupUncompressed extends ColGroup {
 		LibMatrixMult.matrixMult(_data, subMatrix, result);
 	}
 
-	public void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru, int cl,
-		int cu) {
+	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+		int ru) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
 	@Override
-	public void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals, int nrColumns,
-		int rl, int ru) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] vector, double[] c, int numVals) {
+	public void leftMultByRowVector(double[] vector, double[] c) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
@@ -450,91 +466,6 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
-		// UC iterator is always row major, so no need for custom handling
-		return new UCIterator(rl, ru, inclZeros);
-	}
-
-	@Override
-	public ColGroupRowIterator getRowIterator(int rl, int ru) {
-		return new UCRowIterator(rl, ru);
-	}
-
-	private class UCIterator implements Iterator<IJV> {
-		// iterator configuration
-		private final int _ru;
-		private final boolean _inclZeros;
-
-		// iterator state
-		private final IJV _buff = new IJV();
-		private int _rpos = -1;
-		private int _cpos = -1;
-		private double _value = 0;
-
-		public UCIterator(int rl, int ru, boolean inclZeros) {
-			_ru = ru;
-			_inclZeros = inclZeros;
-			_rpos = rl;
-			_cpos = -1;
-			getNextValue();
-		}
-
-		@Override
-		public boolean hasNext() {
-			return(_rpos < _ru);
-		}
-
-		@Override
-		public IJV next() {
-			_buff.set(_rpos, _colIndexes[_cpos], _value);
-			getNextValue();
-			return _buff;
-		}
-
-		private void getNextValue() {
-			do {
-				boolean nextRow = (_cpos + 1 >= getNumCols());
-				_rpos += nextRow ? 1 : 0;
-				_cpos = nextRow ? 0 : _cpos + 1;
-				if(_rpos >= _ru)
-					return; // reached end
-				_value = _data.quickGetValue(_rpos, _cpos);
-			}
-			while(!_inclZeros && _value == 0);
-		}
-	}
-
-	private class UCRowIterator extends ColGroupRowIterator {
-		public UCRowIterator(int rl, int ru) {
-			// do nothing
-		}
-
-		@Override
-		public void next(double[] buff, int rowIx, int segIx, boolean last) {
-			// copy entire dense/sparse row
-			if(_data.isAllocated()) {
-				if(_data.isInSparseFormat()) {
-					if(!_data.getSparseBlock().isEmpty(rowIx)) {
-						SparseBlock sblock = _data.getSparseBlock();
-						int apos = sblock.pos(rowIx);
-						int alen = sblock.size(rowIx);
-						int[] aix = sblock.indexes(rowIx);
-						double[] avals = sblock.values(rowIx);
-						for(int k = apos; k < apos + alen; k++)
-							buff[_colIndexes[aix[k]]] = avals[k];
-					}
-				}
-				else {
-					final int clen = getNumCols();
-					double[] a = _data.getDenseBlockValues();
-					for(int j = 0, aix = rowIx * clen; j < clen; j++)
-						buff[_colIndexes[j]] = a[aix + j];
-				}
-			}
-		}
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -573,9 +504,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public boolean isDense() {
-		// Even if the uncompressed column groups can be sparse allocated,
-		// they are dense in the sense of compression.
-		return true;
+	public ColGroup sliceColumns(int cl, int cu){
+		throw new NotImplementedException("Not implemented slice columns");
 	}
 }

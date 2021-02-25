@@ -19,9 +19,10 @@
 
 package org.apache.sysds.common;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
+import java.util.Arrays;
+import java.util.HashMap;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class Types
 {
@@ -173,14 +174,14 @@ public class Types
 		}
 	}
 	
+	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum AggOp {
-		SUM, SUM_SQ,
-		PROD, SUM_PROD,
-		MIN, MAX,
-		TRACE, MEAN, VAR,
-		MAXINDEX, MININDEX,
-		COUNT_DISTINCT,
-		COUNT_DISTINCT_APPROX;
+		SUM(0), SUM_SQ(1), MIN(2), MAX(3),
+		PROD(4), SUM_PROD(5),
+		TRACE(6), MEAN(7), VAR(8),
+		MAXINDEX(9), MININDEX(10),
+		COUNT_DISTINCT(11),
+		COUNT_DISTINCT_APPROX(12);
 		
 		@Override
 		public String toString() {
@@ -190,6 +191,27 @@ public class Types
 				case PROD:   return "*";
 				default:     return name().toLowerCase();
 			}
+		}
+		
+		private final int value;
+		private final static HashMap<Integer, AggOp> map = new HashMap<>();
+		
+		AggOp(int value) {
+			this.value = value;
+		}
+		
+		static {
+			for (AggOp aggOp : AggOp.values()) {
+				map.put(aggOp.value, aggOp);
+			}
+		}
+		
+		public static AggOp valueOf(int aggOp) {
+			return map.get(aggOp);
+		}
+		
+		public int getValue() {
+			return value;
 		}
 	}
 	
@@ -207,6 +229,8 @@ public class Types
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
 		
+		COMPRESS, DECOMPRESS, 
+
 		//low-level operators //TODO used?
 		MULT2, MINUS1_MULT, MINUS_RIGHT, 
 		POW2, SUBTRACT_NZ;
@@ -234,7 +258,6 @@ public class Types
 				case CUMPROD:         return "ucum*";
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
-				case COLNAMES:        return "colnames";
 				case DETECTSCHEMA:    return "detectSchema";
 				case MULT2:           return "*2";
 				case NOT:             return "!";
@@ -258,9 +281,11 @@ public class Types
 				case "ucum*":   return CUMPROD;
 				case "ucumk+":  return CUMSUM;
 				case "ucumk+*": return CUMSUMPROD;
+				case "detectSchema":    return DETECTSCHEMA;
 				case "*2":      return MULT2;
 				case "!":       return NOT;
 				case "^2":      return POW2;
+				case "typeOf":          return TYPEOF;
 				default:        return valueOf(opcode.toUpperCase());
 			}
 		}
@@ -496,7 +521,7 @@ public class Types
 		FEDERATED, // A federated matrix
 		PROTO;  // protocol buffer representation
 		
-		public boolean isIJVFormat() {
+		public boolean isIJV() {
 			return this == TEXT || this == MM;
 		}
 		
@@ -545,7 +570,7 @@ public class Types
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException("Unknown file format: "+fmt
-					+ " (valid values: "+Arrays.toString(FileFormat.values())+")");
+					+ " (valid values: " + Arrays.toString(FileFormat.values())+")");
 			}
 		}
 	}

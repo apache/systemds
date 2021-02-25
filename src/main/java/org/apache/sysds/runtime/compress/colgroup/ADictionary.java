@@ -196,7 +196,29 @@ public abstract class ADictionary {
 
 	protected abstract void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus);
 
-	protected abstract double sum(int[] counts, int ncol, KahanFunction kplus);
+	protected abstract double sum(int[] counts, int ncol);
+
+	protected abstract double sumsq(int[] counts, int ncol);
 
 	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
+
+	/**
+	 * This method adds the max and min values contained in the dictionary to corresponding cells in the ret variable.
+	 * 
+	 * One use case for this method is the squash operation, to go from an overlapping state to normal compression.
+	 * 
+	 * @param ret The double array that contains all columns min and max.
+	 * @param colIndexes The column indexes contained in this dictionary.
+	 */
+	protected abstract void addMaxAndMin(double[] ret, int[] colIndexes);
+
+	/**
+	 * Modify the dictionary by removing columns not within the index range.
+	 * 
+	 * @param idxStart                The column index to start at.
+	 * @param idxEnd                  The column index to end at (not inclusive)
+	 * @param previousNumberOfColumns The number of columns contained in the dictionary.
+	 * @return A dictionary containing the sliced out columns values only.
+	 */
+	public abstract ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns);
 }

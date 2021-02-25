@@ -104,7 +104,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), false, ignoreZeros, opcode, inst);
 	}
 
-	//TODO check in parser for slicefinder
+	//TODO check on parser level for slicefinder
 	private boolean checkFedOutput(ExecutionContext ec) {
 		String prog = ec.getProgram().getProgramBlocks().get(0).getStatementBlock().getStatements().stream().map(
 			Statement::getText).collect(Collectors.joining("\n"));
@@ -119,32 +119,41 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
 
+		boolean reversed = false;
 		if(!mo1.isFederated() && mo2.isFederated()) {
 			mo1 = ec.getMatrixObject(input2);
 			mo2 = ec.getMatrixObject(input1);
+			reversed = true;
 		}
-		if (checkFedOutput(ec))
-			processFedOutputInstruction(ec, mo1, mo2);
-		else
-			processFedInstruction(ec, mo1, mo2);
-	}
 
-	private void processFedOutputInstruction(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2) {
-		if(mo1.getNumColumns() != mo2.getNumColumns() && mo1.getNumColumns() != 1)
+		if(mo2.getNumColumns() != 1 && mo1.getNumColumns() != 1)
 			throw new DMLRuntimeException("Federated ctable: Input vectors should be nx1.");
 
-		FederationMap fedMap = mo1.getFedMapping();
-		String newInstString = String.join(Lop.OPERAND_DELIMITOR, new String[] {instString, "true"});
-		FederatedRequest[] fr1 = fedMap.broadcastSliced(mo2, false);
-		FederatedRequest fr2 = FederationUtils.callInstruction(newInstString, output, new CPOperand[]{input1, input2},
-			new long[]{fr1[0].getID(), fedMap.getID()});
-		FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
-		//execute federated instruction and cleanup intermediates
-		Future<FederatedResponse> [] ffr = fedMap.execute(getTID(), true, fr1, fr2, fr3);
+		if (checkFedOutput(ec))
+			processFedOutputInstruction(ec, mo1, mo2, reversed);
+		else
+			processFedInstruction(ec, mo1, mo2, reversed);
+	}
 
-		// get new dims
-		long[] dims1 = getDimension(ec, input1, _outDim1, mo1.getFedMapping().getFederatedRanges());
-		long[] dims2 = getDimension(ec, input2, _outDim2, mo1.getFedMapping().getFederatedRanges());
+	private void processFedOutputInstruction(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, boolean reversed) {
+		// modify instruction string by adding param to remove empty rows in fed parts
+		// that are empty rows from other workers
+		String newInstString = String.join(Lop.OPERAND_DELIMITOR, new String[] {instString, "true"});
+
+		FederationMap fedMap = mo1.getFedMapping();
+		FederatedRequest[] fr1 = fedMap.broadcastSliced(mo2, false);
+		FederatedRequest fr2;
+		if(reversed)
+			fr2 = FederationUtils.callInstruction(newInstString, output, new CPOperand[]{input1, input2},
+				new long[]{fr1[0].getID(), fedMap.getID()});
+		else fr2 = FederationUtils.callInstruction(newInstString, output, new CPOperand[]{input1, input2},
+			new long[]{fedMap.getID(), fr1[0].getID()});
+		FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
+		fedMap.execute(getTID(), true, fr1, fr2, fr3);
+
+		// get new output dims
+		long[] dims1 = getOutputDimension(ec, input1, _outDim1, mo1.getFedMapping().getFederatedRanges());
+		long[] dims2 = getOutputDimension(ec, input2, _outDim2, mo1.getFedMapping().getFederatedRanges());
 
 		// modify fed ranges
 		for(int i = 0; i < fedMap.getFederatedRanges().length; i++) {
@@ -155,72 +164,87 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			fedMap.getFederatedRanges()[i].setEndDim(1, dims2[i]);
 		}
 
+		// set output
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics().set(Arrays.stream(dims1).max().getAsLong(), Arrays.stream(dims2).max().getAsLong(),
 			(int) mo1.getBlocksize(), mo1.getNnz());
 		out.setFedMapping(fedMap.copyWithNewID(fr1[0].getID()));
 	}
 
-	public void processFedInstruction(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2) {
+	public void processFedInstruction(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, boolean reversed) {
+		MatrixObject mo3 = input3 != null && input3.isMatrix() ? ec.getMatrixObject(input3) : null;
+		Future<FederatedResponse>[] ffr;
 
-		long outputDim1 = ec.getScalarInput(_outDim1).getLongValue();
-		long outputDim2 = ec.getScalarInput(_outDim2).getLongValue();
+		boolean reversedWeights = mo3 != null && mo3.isFederated() && !(mo1.isFederated() || mo2.isFederated());
 
-		boolean outputDimsKnown = (outputDim1 != -1 && outputDim2 != -1);
-
-		//construct commands: broadcast , fed ctable, clean broadcast
-		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
-		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2},
-			new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});
-		FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-		mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
-
-		long[] dims1 = getDimension(ec, input1, _outDim1, mo1.getFedMapping().getFederatedRanges());
-		long[] dims2 = getDimension(ec, input2, _outDim2, mo1.getFedMapping().getFederatedRanges());
-
-		outputDim1 = outputDimsKnown ? outputDim1 : Arrays.stream(dims1).max().getAsLong();
-		outputDim2 = outputDimsKnown ? outputDim2 : Arrays.stream(dims2).max().getAsLong();
-
-		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(outputDim1, outputDim2, (int) mo1.getBlocksize());
-		out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1[0].getID()));
-
-		List<MatrixBlock> resMatrices = new ArrayList();
-		FederationMap fedMap = out.getFedMapping();
-		long varID = FederationUtils.getNextFedDataID();
-		long finalOutputDim = outputDim1;
-		long finalOutputDim1 = outputDim2;
-
-		fedMap.mapParallel(varID, (range, data) -> {
-			FederatedResponse response;
-			try {
-				response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					-1, new CtableFEDInstruction.MergeOutput(data.getVarID(), varID,
-					new int[] {(int) finalOutputDim, (int) finalOutputDim1}))).get();
-				if(!response.isSuccessful())
-					response.throwExceptionFromResponse();
-
-				resMatrices.add((MatrixBlock) response.getData()[0]);
-			}
-			catch(Exception e) {
-				throw new DMLRuntimeException(e);
-			}
-			return null;
-		});
-
-		// merge results
-		MatrixBlock resultBlock = new MatrixBlock((int) outputDim1, (int) outputDim2, false);
-		for(MatrixBlock mb : resMatrices) {
-			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
-			resultBlock = resultBlock.binaryOperationsInPlace(plus, mb);
+		if(reversedWeights) {
+			mo3 = mo1;
+			mo1 = ec.getMatrixObject(input3);
 		}
 
-		ec.setMatrixOutput(output.getName(), resultBlock);
+		if(mo3 == null) {
+			//construct commands: broadcast , fed ctable, clean broadcast
+			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
+			FederatedRequest fr2;
+			if(!reversed)
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});
+			else
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2}, new long[] {fr1[0].getID(), mo1.getFedMapping().getID()});
+
+			FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
+			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
+		} else {
+			//construct commands: broadcast , fed ctable, clean broadcast
+			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
+			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo3, false);
+			FederatedRequest fr3;
+			if(reversed && !reversedWeights)
+				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr2[0].getID()});
+			else if(!reversed && !reversedWeights)
+				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), fr2[0].getID()});
+			else
+				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {fr1[0].getID(), fr2[0].getID(), mo1.getFedMapping().getID()});
+
+			FederatedRequest fr4 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr3.getID());
+			FederatedRequest fr5 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2[0].getID());
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4, fr5);
+		}
+
+		ec.setMatrixOutput(output.getName(), aggResult(ffr));
 	}
 
-	private long[] getDimension(ExecutionContext ec, CPOperand inOp, CPOperand outOp, FederatedRange[] federatedRanges) {
+	private MatrixBlock aggResult(Future<FederatedResponse>[] ffr) {
+		MatrixBlock resultBlock = new MatrixBlock(1, 1, 0);
+		int dim1 = 0, dim2 = 0;
+		for(int i = 0; i < ffr.length; i++) {
+			try {
+				MatrixBlock mb = ((MatrixBlock) ffr[i].get().getData()[0]);
+				dim1 = mb.getNumRows()  > dim1 ? mb.getNumRows() : dim1;
+				dim2 = mb.getNumColumns()  > dim2 ? mb.getNumColumns() : dim2;
+
+				// set next and prev to same output dimensions
+				MatrixBlock prev = new MatrixBlock(dim1, dim2, 0.0);
+				prev.copy(0, resultBlock.getNumRows()-1, 0, resultBlock.getNumColumns()-1, resultBlock, true);
+
+				MatrixBlock next = new MatrixBlock(dim1, dim2, 0.0);
+				next.copy(0, mb.getNumRows()-1, 0, mb.getNumColumns()-1, mb, true);
+
+				// add worker results
+				BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
+				resultBlock = prev.binaryOperationsInPlace(plus, next);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return resultBlock;
+	}
+
+	private long[] getOutputDimension(ExecutionContext ec, CPOperand inOp, CPOperand outOp, FederatedRange[] federatedRanges) {
 		MatrixObject in = ec.getMatrixObject(inOp);
 		long[] fedDims = new long[federatedRanges.length];
+
 		if(!in.isFederated()) {
 			//slice
 			MatrixBlock mb = ec.getMatrixInput(inOp.getName());
@@ -248,6 +272,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		FederatedRequest fr3 = map.cleanup(getTID(), fr1.getID());
 		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
 
+		// get result
 		for(int i = 0; i < tmp.length; i ++) {
 			try {
 				fedDims[i] = ((ScalarObject) tmp[i].get().getData()[0]).getLongValue();
@@ -257,28 +282,5 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			}
 		}
 		return fedDims;
-	}
-
-	public static class MergeOutput extends FederatedUDF {
-		private static final long serialVersionUID = 1319031225775373602L;
-		private final long _outputID;
-		private final int[] _dims;
-
-		public MergeOutput(long input, long outputID, int[] dims) {
-			super(new long[] {input});
-			_outputID = outputID;
-			_dims = dims;
-		}
-
-		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			MatrixObject mo = (MatrixObject) data[0];
-			MatrixBlock mb = mo.acquireReadAndRelease();
-
-			MatrixBlock res = res = new MatrixBlock(_dims[0], _dims[1], false);
-			res.copy(0, mb.getNumRows()-1, 0, mb.getNumColumns()-1, mb, false);
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {res});
-		}
-
-		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) { return null; }
 	}
 }

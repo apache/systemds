@@ -40,39 +40,23 @@
 
 m_tomeklink = function(Matrix[Double] X, Matrix[Double] y)
 return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx) {
-	majority_label = 0 #TODO can extend functionality to other majority labels
+	majority_label = 0
 	n = nrow(X)
 	m = ncol(X)
+
 	tomek_links = get_links(X, y, majority_label)
 
-	if (nrow(tomek_links) == 0) {
-		print("No Tomek Links in Dataset")
-		X_under = X
-		y_under = y
-		drop_idx = matrix(0, rows=0, cols=1)
-	}
-	else {
-		drop_idx = tomek_links[,1]
+	X_under = matrix(0, rows=0, cols=m)
+	y_under = matrix(0, rows=0, cols=1)
+	drop_idx = matrix(0, rows=0, cols=1)
 
-		# construct undersampled data
-		# expand matrix by column indicating records to be dropped
-		n_drop = nrow(drop_idx)
-		X_drop = cbind(X, matrix(0, rows=n, cols=1))
-		y_drop = cbind(y, matrix(0, rows=n, cols=1))
-		for (jdx in 1:n_drop) {
-			X_drop[as.scalar(drop_idx[jdx,]), m+1] = 1
-			y_drop[as.scalar(drop_idx[jdx,]), 2] = 1
-		}
-
-		# build undersampled data
-		X_under = matrix(0, rows=0, cols=m)
-		y_under = matrix(0, rows=0, cols=1)
-		for (idx in 1:n) {
-			if (as.scalar(X_drop[idx, m+1]) == 0) {
-				X_under = rbind(X_under, X[idx,])
-				y_under = rbind(y_under, y[idx,])
-			}
-		}
+	for (i in 1:nrow(X)) {
+	    is_link = as.scalar(tomek_links[i,1])
+	    if (is_link == 1) {
+	        X_under = rbind(X_under, X[i,])
+	        y_under = rbind(y_under, y[i,])
+	        drop_idx = rbind(drop_idx, matrix(i,rows=1,cols=1))
+	    }
 	}
 }
 
@@ -81,38 +65,39 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
 ###### UTILS ######
 
 # nearest nb function ----------------------------------------------------------
-get_nn = function(Matrix[Double] X, Matrix[Double] instance)
-return (double nn_idx)
+get_nn = function(Matrix[Double] X)
+return (Matrix[Double] nn)
 {
-	diff = X-instance
-	sq_diff = diff^2 # euclidian
-	dist = rowSums(sq_diff)
-	sort_dist = order(target=dist, by=1, decreasing=FALSE, index.return=TRUE)
-	nn_idx = as.scalar(sort_dist[2,1])  # nearest, not self
+    nn = matrix(0, rows=nrow(X), cols=1)
+    for (i in 1:nrow(X)) {
+        dists = rowSums((X-X[i,])^2)
+        sort_dists = order(target=dists, by=1, decreasing=FALSE, index.return=TRUE)
+        nn[i,1] = as.scalar(sort_dists[2,1])  # nearest, not self
+    }
 }
 
 # find tomek link function  ----------------------------------------------------
 get_links = function(Matrix[Double] X, Matrix[Double] y, double majority_label)
 return (Matrix[Double] tomek_links)
 {
-	tomek_links = matrix(0, rows=0, cols=2)
+	tomek_links = matrix(0, rows=nrow(X), cols=1)
+    nn = get_nn(X)
 
-	for (idx in 1:nrow(X)) {
-		label = as.scalar(y[idx,1])
+	for (index in 1:nrow(X)) {
+        # this is a tomek link according to R: ubTomek https://rdrr.io/cran/unbalanced/src/R/ubTomek.R
+        # other sources define it as a pair of mutual nearest neighbor
+        # where exactly one endpoint has the majority label
 
-		if (label == majority_label) {
-			instance = X[idx,]
-			nn_idx = get_nn(X, instance)
-			nn_label = as.scalar(y[nn_idx,1])
+        nn_index = as.scalar(nn[index,1])
+        label = as.scalar(y[index,1])
+        nn_label = as.scalar(y[nn_index,1])
 
-			if (nn_label != majority_label) {
-				link = matrix(0, rows=1, cols=2) # dir: majority to minority
-				link[1,1] = idx
-				link[1,2] = nn_idx
-				tomek_links = rbind(tomek_links, link)
-			}
-		}
-	}
+	    if (label != majority_label) {
+	        if (nn_label == majority_label) {
+	            tomek_links[nn_index,1] = 1
+	        }
+	    }
+    }
 }
 
 ###### END UTILS ######

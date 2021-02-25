@@ -28,5 +28,5 @@ library("Matrix")
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 y = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
 
-C = sort(ubTomek(X, y)$id.rm)
+C = sort(ubTomek(X, y, verbose=FALSE)$id.rm)
 writeMM(as(C, "CsparseMatrix"), paste(args[2], "C", sep=""))

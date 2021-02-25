@@ -36,7 +36,7 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinTomeklinkTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-3;
-	private final static int rows = 1243;
+	private final static int rows = 53;
   private final static int cols = 6;
 
 	@Override
@@ -64,7 +64,7 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = programArgs = new String[] {"-args", input("A"), input("B"), output("C")};
+			programArgs = new String[] {"-args", input("A"), input("B"), output("C")};
 
       fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
@@ -73,7 +73,7 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
       double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.7, 1);
 			writeInputMatrixWithMTD("A", A, true);
 
-      double[][] B = getRandomMatrix(rows, 1, 0, 1, 0.3, 1);
+      double[][] B = getRandomMatrix(rows, 1, 0, 1, 0.5, 1);
       B = TestUtils.round(B);
       writeInputMatrixWithMTD("B", B, true);
 

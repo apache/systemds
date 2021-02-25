@@ -141,8 +141,7 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 
 		// compare via files
 		compareResults(1e-9);
-//		Assert.assertTrue(heavyHittersContainsString("fed_ifelse"));
-//		Assert.assertTrue(heavyHittersContainsString("k+"));
+		Assert.assertTrue(heavyHittersContainsString("fed_ifelse"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

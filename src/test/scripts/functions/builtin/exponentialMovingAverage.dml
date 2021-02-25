@@ -18,7 +18,8 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
 X = read($F, data_type="frame", format="csv", header=FALSE)
-Z = ema(X=X, threshold=$threshold, replace=$replacement)
+Z = ema(X=X, search_iterations=$search_iterations, mode=$mode, freq=$freq)
 
 write(Z, $O, format = "csv")

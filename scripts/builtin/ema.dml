@@ -19,11 +19,7 @@
 #
 #------------------------------------------------------------
 
-s_ema = function(Frame[String] X, Double threshold=0.8, String replace="NA") return (Frame[String] Y) {
-
-  if( threshold < 0 | threshold > 1 )
-    stop("Stopping due to invalid input, threshold required in interval [0, 1] found " + threshold)
-
-  Y = map(X, "UtilFunctions.syntacticalPatternDiscovery(" + threshold + ";" + replace + ")")
+s_ema = function(Frame[String] X, Integer search_iterations, String mode, Integer freq) return (Frame[String] Y) {
+  Y = map(X, "UtilFunctions.exponentialMovingAverageImputation(" + search_iterations + ";" + mode + ";" + freq  + ")")
 }
 

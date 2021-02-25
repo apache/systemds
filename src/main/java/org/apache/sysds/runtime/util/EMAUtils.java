@@ -29,7 +29,7 @@ import java.util.Map.Entry;
 
 public class EMAUtils {
 
-	public static FrameBlock exponentialMovingAverageImputation(FrameBlock frame, double threshold, String disguised_value) {
+	public static FrameBlock exponentialMovingAverageImputation(FrameBlock data, int search_iterations, String mode, int freq) {
 		return null;
 	}
 }

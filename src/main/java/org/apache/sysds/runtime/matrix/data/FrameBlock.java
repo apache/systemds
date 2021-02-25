@@ -2127,7 +2127,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 				return DMVUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
 			} else if (args.contains(";")) {
 				String[] arguments = args.split(";");
-				return EMAUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
+				return EMAUtils.exponentialMovingAverageImputation(this, Integer.parseInt(arguments[0]),arguments[1], Integer.parseInt(arguments[2]));
 			}
 		}
 		if(lambdaExpr.contains("jaccardSim"))

@@ -28,6 +28,10 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class BuiltinEMATest extends AutomatedTestBase {
@@ -55,5 +59,60 @@ public class BuiltinEMATest extends AutomatedTestBase {
 		if (TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
 		}
+	}
+
+	@Test
+	public void CompareToAirGap() {
+		Double[] disguised_values = new Double[]{.0, .1, .2, .3};
+		Double[][] values = new Double[][]{disguised_values};
+		FrameBlock f = generateRandomFrameBlock(4, 1, values);
+		runMissingValueTest(f, ExecType.CP,  1, "triple", 0);
+	}
+
+	private void runMissingValueTest(FrameBlock test_frame, ExecType et, Integer search_iterations, String mode, Integer freq)
+	{
+		Types.ExecMode platformOld = setExecMode(et);
+
+		try {
+			getAndLoadTestConfiguration(TEST_NAME);
+
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[] {"-nvargs", "F=" + input("F"), "O=" + output("O"), "search_iterations=" + search_iterations, "mode=" + mode, "freq=" + freq};
+
+			FrameWriterFactory.createFrameWriter(Types.FileFormat.CSV).
+					writeFrameToHDFS(test_frame, input("F"), test_frame.getNumRows(), test_frame.getNumColumns());
+
+			runTest(true, false, null, -1);
+
+			FrameBlock outputFrame = readDMLFrameFromHDFS("O", Types.FileFormat.CSV);
+		}
+		catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
+		finally {
+			resetExecMode(platformOld);
+		}
+	}
+
+	private static FrameBlock generateRandomFrameBlock(int rows, int cols, Double[][] values)
+	{
+		Types.ValueType[] schema = new Types.ValueType[cols];
+		for(int i = 0; i < cols; i++) {
+			schema[i] = Types.ValueType.FP64;
+		}
+
+		if(values != null) {
+			String[] names = new String[cols];
+			for(int i = 0; i < cols; i++)
+				names[i] = schema[i].toString();
+			FrameBlock frameBlock = new FrameBlock(schema, names);
+			frameBlock.ensureAllocatedColumns(rows);
+			for(int row = 0; row < rows; row++)
+				for(int col = 0; col < cols; col++)
+					frameBlock.set(row, col, values[col][row]);
+			return frameBlock;
+		}
+		return TestUtils.generateRandomFrameBlock(rows, cols, schema ,TestUtils.getPositiveRandomInt());
 	}
 }

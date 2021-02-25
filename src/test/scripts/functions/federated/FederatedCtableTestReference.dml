@@ -21,6 +21,5 @@
 
 X = rbind(read($1), read($2), read($3), read($4));
 Y = read($5);
-m = rand(rows=nrow(Y),cols=1);
-F = table(X,Y, m);
-write(F, $6)
+F = table(X,Y);
+write(F, $6);

@@ -56,7 +56,8 @@ public class FederatedCtableTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{8, 4, 7}
+			{8, 4, 7},
+//			{100, 4, 7}, {1000, 4, 7}
 		});
 	}
 
@@ -90,10 +91,8 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X3", X3, false, mc);
 		writeInputMatrixWithMTD("X4", X4, false, mc);
 
-
 		double[][] Y = TestUtils.floor(getRandomMatrix(rows, 1, 1, maxVal2, 1, 9));
 		writeInputMatrixWithMTD("Y", Y, false, new MatrixCharacteristics(rows, 1, blocksize, r));
-		//TODO add fed aligned test?
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";

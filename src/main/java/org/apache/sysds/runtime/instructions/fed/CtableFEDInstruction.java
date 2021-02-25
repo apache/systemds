@@ -182,9 +182,8 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			mo1 = ec.getMatrixObject(input3);
 		}
 
+		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 		if(mo3 == null) {
-			//construct commands: broadcast , fed ctable, clean broadcast
-			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 			FederatedRequest fr2;
 			if(!reversed)
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});
@@ -195,13 +194,11 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
 			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
 		} else {
-			//construct commands: broadcast , fed ctable, clean broadcast
-			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo3, false);
 			FederatedRequest fr3;
-			if(reversed && !reversedWeights)
+			if(!reversed && !reversedWeights)
 				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr2[0].getID()});
-			else if(!reversed && !reversedWeights)
+			else if(reversed && !reversedWeights)
 				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), fr2[0].getID()});
 			else
 				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {fr1[0].getID(), fr2[0].getID(), mo1.getFedMapping().getID()});

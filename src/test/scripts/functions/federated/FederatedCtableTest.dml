@@ -24,6 +24,5 @@ X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
     		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
 
 Y = read($in_Y);
-m = rand(rows=nrow(Y),cols=1);
-F = table(X,Y, m);
-write(F, $out)
+F = table(X,Y);
+write(F, $out);

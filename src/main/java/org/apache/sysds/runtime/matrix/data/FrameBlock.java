@@ -62,6 +62,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.util.EMAUtils;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
 public class FrameBlock implements CacheBlock, Externalizable  {
@@ -2124,6 +2125,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			if(args.contains(",")) {
 				String[] arguments = args.split(",");
 				return DMVUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
+			} else if (args.contains(";")) {
+				String[] arguments = args.split(";");
+				return EMAUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
 			}
 		}
 		if(lambdaExpr.contains("jaccardSim"))

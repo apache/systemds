@@ -144,7 +144,7 @@ public class FEDInstructionUtils {
 				CacheableData<?> fo1 = ec.getCacheableData(tinst.input1);
 				CacheableData<?> fo2 = ec.getCacheableData(tinst.input2);
 				CacheableData<?> fo3 = ec.getCacheableData(tinst.input3);
-				if(fo1.isFederated() || fo2.isFederated() && fo3.isFederated()) {
+				if(fo1.isFederated() || fo2.isFederated() || fo3.isFederated()) {
 					fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
 				}
 			}

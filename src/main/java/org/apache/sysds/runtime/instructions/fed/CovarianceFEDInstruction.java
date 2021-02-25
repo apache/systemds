@@ -30,7 +30,6 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
@@ -136,12 +135,11 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 	private void processFedCovWeights(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
 
 		FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo3, false);
-			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
+		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
+			new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
 		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
-		FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-		FederatedRequest fr5 = mo1.getFedMapping().cleanup(getTID(), fr2[0].getID());
-		Future<FederatedResponse>[] covTmp = mo1.getFedMapping().execute(getTID(), fr1, fr2[0], fr3, fr4, fr5);
+		FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID(), fr2[0].getID());
+		Future<FederatedResponse>[] covTmp = mo1.getFedMapping().execute(getTID(), fr1, fr2[0], fr3, fr4);
 
 		//means
 		Future<FederatedResponse>[] meanTmp1 = processMean(mo1, 0);

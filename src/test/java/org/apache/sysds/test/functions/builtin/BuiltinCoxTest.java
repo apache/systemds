@@ -24,15 +24,11 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
-import static org.apache.sysds.test.TestUtils.*;
-
 public class BuiltinCoxTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "cox";
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinCoxTest.class.getSimpleName() + "/";
-
-	private final static double spDense = 0.99;
 
 	@Override
 	public void setUp() {
@@ -46,19 +42,17 @@ public class BuiltinCoxTest extends AutomatedTestBase
 	
 	public void runCoxTest(int numRecords, double scaleWeibull, double shapeWeibull, double prob,
 						   int numFeatures, double sparsity, double alpha, double tol, int moi, int mii) {
-		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SPARK);
+		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		int seed = 11;
 
 		programArgs = new String[]{
 				"-nvargs", "M=" + output("M"), "S=" + output("S"), "T=" + output("T"), "COV=" + output("COV"),
-				"RT=" + output("RT"), "XO=" + output("XO"), "MF=" + output("MF"), "n=" + numRecords, "l=" + scaleWeibull,
+				"RT=" + output("RT"), "XO=" + output("XO"), "n=" + numRecords, "l=" + scaleWeibull,
 				"v=" + shapeWeibull, "p=" + prob, "m=" + numFeatures, "sp=" + sparsity,
 				"alpha=" + alpha, "tol=" + tol, "moi=" + moi, "mii=" + mii};
 
 		runTest(true, false, null, -1);
-
 	}
 }

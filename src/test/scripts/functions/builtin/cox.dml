@@ -59,7 +59,7 @@ TE = matrix ("1 2", rows = 2, cols = 1);
 F = seq (1, num_features);
 R = matrix (0, rows = 1, cols = 1);
 
-[M, S, T, COV, RT, XO, MF] = cox(X, TE, F, R, $alpha, $tol, $moi, $mii);
+[M, S, T, COV, RT, XO] = cox(X, TE, F, R, $alpha, $tol, $moi, $mii);
 
 write(M, $M);
 write(S, $S);
@@ -67,4 +67,3 @@ write(T, $T);
 write(COV, $COV);
 write(RT, $RT);
 write(XO, $XO);
-write(MF, $MF);

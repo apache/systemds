@@ -117,7 +117,48 @@ public class EMAUtils {
 	}
 
 	public static Container double_exponential_smoothing(Double[] data, Double alpha, Double beta) {
-		return null;
+
+		int n = data.length;
+
+		ArrayList<Double> pred = new ArrayList<>(n-1);
+		Double[] s = new Double[n-1];
+		Double[] b = new Double[n-1];
+
+		s[0] = data[1];
+		b[0] = data[1] - data[0];
+		pred.set(0, s[0] + b[0]);
+
+		double val = 0;
+
+		ArrayList<Double> not_missing = new ArrayList<>();
+		ArrayList<Double> not_missing_sq = new ArrayList<>();
+		int n_size = 0;
+
+		for (int i = 1; i < n-1; i++) {
+			if (data[i] == null) {
+				val = pred.get(i - 1);
+			} else {
+				val = data[i+1];
+				not_missing.add(val);
+				not_missing_sq.add(Math.pow(val, 2));
+				n_size++;
+
+				s[i] = alpha * val + (1 - alpha) * (s[i-1] + b[i-1]);
+				b[i] = beta * (s[i] - s[i-1]) + (1 - beta) * b[i-1];
+			}
+
+			pred.set(i, alpha * val + (1 - alpha) * pred.get(i - 1));
+		}
+
+		double sum = .0;
+		for (int i = 0; i < not_missing.size(); i++) {
+			sum += not_missing.get(i) - not_missing_sq.get(i);
+		}
+
+		pred.add(0, data[0]);
+		double rmse = Math.sqrt(sum / n_size);
+
+		return new Container((Double[]) pred.toArray(), rmse);
 	}
 
 	public static Container triple_exponential_smoothing(Double[] data, Double alpha, Double beta, Double gamma, Integer freq) {

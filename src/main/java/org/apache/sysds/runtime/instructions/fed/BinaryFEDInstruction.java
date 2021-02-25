@@ -72,6 +72,28 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 			throw new DMLRuntimeException("Federated binary operations not yet supported:" + opcode);
 	}
 
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		InstructionUtils.checkNumFields ( parts, 3, 4 );
+		String opcode = parts[0];
+		in1.split(parts[1]);
+		in2.split(parts[2]);
+		out.split(parts[3]);
+		return opcode;
+	}
+
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		InstructionUtils.checkNumFields ( parts, 4 );
+
+		String opcode = parts[0];
+		in1.split(parts[1]);
+		in2.split(parts[2]);
+		in3.split(parts[3]);
+		out.split(parts[4]);
+
+		return opcode;
+	}
 
 	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) {
 		// check for valid data type of output

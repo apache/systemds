@@ -567,6 +567,7 @@
 								<exclude>.project</exclude>
 								<exclude>src/main/python/docs/build/**/*</exclude>
 								<exclude>src/main/python/docs/source/_build/**</exclude>
+								<exclude>src/main/python/generator/resources/**</exclude>
 								<exclude>docs/api/**/*</exclude>
 								<exclude>docs/_site/**/*</exclude>
 								<exclude>docs/site/run_issues.md</exclude>

@@ -20,94 +20,45 @@
 #-------------------------------------------------------------
 source("scripts/builtin/sherlockNet.dml") as sherlockNet
 
-# Frame[] load_file (Input: csv)
-# Rows and columns index from 1. (-.-)
-# no variables are possible to define the filepath of the read() function
-# every *.csv file needs a *.csv.mtd file with following content:
-#{
-#  "data_type": "frame",
-#  "value_type": "string",
-#  "format": "csv",
-#  "header": true,
-#  "sep": ",",
-#  "author": "local",
-#  "created": "2020-12-07 00:00:01 UTC"
-#}
+# Implements Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+#
+# [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection." 
+# Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. 
+# 2019.]
 
-######################################################
-# methods to load and transform the data
-######################################################
-
-/*
- * Function to transform processed X values from the original sherlock project to
- * valid input for sherlock X input matrices.
- */
-transform_values = function(frame[string] data) return (matrix[double] m_data) {
-
-  rows = nrow(data)
-  cols = ncol(data)
-  data = data[1:rows,2:cols]
-
-  #replace True/Fasle with 1/0
-  data = map(data, "d -> d.replace(\"True\",\"1\")")
-  data = map(data, "d -> d.replace(\"False\",\"0\")")
-  m_data = as.matrix(data)
-}
-
-/*
- * Function to encode the string labels from the original sherlock project (y data)
- * to a numerical representation.
- */
-transform_encode_labels = function(frame[string] data) return (matrix[double] ground_truth , frame[string] meta_data) {
-
-  rows = nrow(data)
-  cols = ncol(data)
-
-  #replace label with number
-  transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
-  [m_data, meta_data] = transformencode(target=data[1:rows,2:cols],
-    spec=transformSpec)
-
-  #print(toString(m_data[2]))
-  ground_truth = matrix(0, rows=rows, cols=78)
-  for ( i in 1:rows) {
-    ground_truth[i, as.scalar(m_data[i,1])] = 1
-  }
-}
-
-/*
- * Use the encoding from transform_encode_labels() to transform y labels to a numerical representation.
- */
-transform_apply_labels = function(frame[string] data, frame[string] meta_data) return (matrix[double] ground_truth) {
-  #remove index row
-  rows = nrow(data)
-  cols = ncol(data)
-
-  #replace label with number
-  transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
-  m_data = transformapply(target=data[1:rows,2:cols],
-                  spec=transformSpec,
-                  meta=meta_data)
-
-  ground_truth = matrix(0, rows=rows, cols=78)
-  for ( i in 1:rows) {
-    ground_truth[i, as.scalar(m_data[i,1])] = 1
-  }
-}
-
-transform_labels_to_ground_truth = function(matrix[double] data)
-  return(matrix[double] ground_truth) {
-
-  rows = nrow(data)
-  ground_truth = matrix(0, rows=rows, cols=78)
-  for ( i in 1:rows) {
-    ground_truth[i, as.scalar(data[i,1])] = 1
-  }
-}
-
-##########################################################
-# training and testing of sherlock
-##########################################################
+# Split feature matrix into four different feature categories and train neural networks on the
+# respective single features. Then combine all trained features to train final neural network.
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X_train      Matrix    ---      maxtrix of feature vections
+# y_train      Matrix    ---      matrix Y of class labels of semantic data type
+# ---------------------------------------------------------------------------------------------
+# cW1          Matrix    ---      1st layer weights (parameters) matrix for character distribtions
+# cb1          Matrix    ---      1st layer biases vector for character distribtions
+# cW2          Matrix    ---      2st layer weights (parameters) matrix for character distribtions
+# cb2          Matrix    ---      2st layer biases vector for character distribtions
+# cW3          Matrix    ---      3st layer weights (parameters) matrix for character distribtions
+# cb3          Matrix    ---      3st layer biases vector for character distribtions
+# wW1          Matrix    ---      1st layer weights (parameters) matrix for word embeddings
+# wb1          Matrix    ---      1st layer biases vector for word embeddings
+# wW2          Matrix    ---      2st layer weights (parameters) matrix for word embeddings
+# wb2          Matrix    ---      2st layer biases vector for word embeddings
+# wW3          Matrix    ---      3st layer weights (parameters) matrix for word embeddings
+# wb3          Matrix    ---      3st layer biases vector for word embeddings
+# pW1          Matrix    ---      1st layer weights (parameters) matrix for paragraph vectors
+# pb1          Matrix    ---      1st layer biases vector for paragraph vectors
+# pW2          Matrix    ---      2st layer weights (parameters) matrix for paragraph vectors
+# pb2          Matrix    ---      2st layer biases vector for paragraph vectors
+# pW3          Matrix    ---      3st layer weights (parameters) matrix for paragraph vectors
+# pb3          Matrix    ---      3st layer biases vector for paragraph vectors
+# fW1          Matrix    ---      1st layer weights (parameters) matrix combining all trained features (final)
+# fb1          Matrix    ---      1st layer biases vector combining all trained features (final)
+# fW2          Matrix    ---      2st layer weights (parameters) matrix combining all trained features (final)
+# fb2          Matrix    ---      2st layer biases vector combining all trained features (final)
+# fW3          Matrix    ---      3st layer weights (parameters) matrix combining all trained features (final)
+# fb3          Matrix    ---      3st layer biases vector combining all trained features (final)
+# ---------------------------------------------------------------------------------------------
 
 m_sherlock = function(matrix[double] X_train, matrix[double] y_train)
       return (matrix[double] cW1, matrix[double] cb1,
@@ -139,4 +90,107 @@ m_sherlock = function(matrix[double] X_train, matrix[double] y_train)
   #use trained features to train final net
   first_predictions = cbind(cprobs, wprobs, pprobs)
   [fW1, fb1, fW2, fb2, fW3, fb3] = sherlockNet::train(first_predictions, y_train, 500)
+}
+
+# ---------------------------------------------------------------------------------------------
+# methods to load and transform the data in order to pass valid input to sherlock function
+# ---------------------------------------------------------------------------------------------
+# Function to transform processed X values from the original sherlock project to
+# valid input for sherlock X input matrices.
+
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# data         String    ---      String with processed X values from original sherlock project
+# ---------------------------------------------------------------------------------------------
+# m_data       Matrix    ---      transformed matrix containing X values
+
+transform_values = function(frame[string] data) return (matrix[double] m_data) {
+
+  rows = nrow(data)
+  cols = ncol(data)
+  data = data[1:rows,2:cols]
+
+  #replace True/Fasle with 1/0
+  data = map(data, "d -> d.replace(\"True\",\"1\")")
+  data = map(data, "d -> d.replace(\"False\",\"0\")")
+  m_data = as.matrix(data)
+}
+
+# ---------------------------------------------------------------------------------------------
+# Function to encode the string labels from the original sherlock project (y data)
+# to a numerical representation.
+# ---------------------------------------------------------------------------------------------
+
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# data         String    ---      String labels from original sherlock project
+# ---------------------------------------------------------------------------------------------
+# ground_truth Matrix    ---      matrix containing ground truth in numerical representation
+# meta_data    String    ---      String contaning meta data of transformation encoding
+
+transform_encode_labels = function(frame[string] data) return (matrix[double] ground_truth , frame[string] meta_data) {
+
+  rows = nrow(data)
+  cols = ncol(data)
+
+  #replace label with number
+  transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
+  [m_data, meta_data] = transformencode(target=data[1:rows,2:cols],
+    spec=transformSpec)
+
+  #print(toString(m_data[2]))
+  ground_truth = matrix(0, rows=rows, cols=78)
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(m_data[i,1])] = 1
+  }
+}
+
+# ---------------------------------------------------------------------------------------------
+# Use the encoding from transform_encode_labels() to transform y labels to a 
+# numerical representation.
+# ---------------------------------------------------------------------------------------------
+
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# data         String    ---      String labels from original sherlock project
+# meta_data    String    ---      String contaning meta data of transformation encoding
+# ---------------------------------------------------------------------------------------------
+# ground_truth Matrix    ---      matrix containing ground truth in numerical representation
+
+transform_apply_labels = function(frame[string] data, frame[string] meta_data) return (matrix[double] ground_truth) {
+  #remove index row
+  rows = nrow(data)
+  cols = ncol(data)
+
+  #replace label with number
+  transformSpec = read("../sherlock-project/data/data/short/transform_y_labels.json", data_type="scalar", value_type="string");
+  m_data = transformapply(target=data[1:rows,2:cols],
+                  spec=transformSpec,
+                  meta=meta_data)
+
+  ground_truth = matrix(0, rows=rows, cols=78)
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(m_data[i,1])] = 1
+  }
+}
+
+# ---------------------------------------------------------------------------------------------
+# Transform y labels to ground truth 
+# ---------------------------------------------------------------------------------------------
+
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# data         Matrix    ---      matrix with labels from original sherlock project
+# ---------------------------------------------------------------------------------------------
+# ground_truth Matrix    ---      matrix containing ground truth in numerical representation
+
+transform_labels_to_ground_truth = function(matrix[double] data)
+  return(matrix[double] ground_truth) {
+
+  rows = nrow(data)
+  ground_truth = matrix(0, rows=rows, cols=78)
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(data[i,1])] = 1
+  }
 }

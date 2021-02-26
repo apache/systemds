@@ -30,17 +30,46 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 
 public class BuiltinSherlockTest extends AutomatedTestBase {
-	private final static String TEST_NAME = "scale";
+	private final static String TEST_NAME = "sherlock";
 	private final static String TEST_DIR = "functions/builtin/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinScaleTest.class.getSimpleName() + "/";
 
 	@Override public void setUp() {
-
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
 	}
 
 	@Test
-	public void minimalTest() {
+	public void preProcessing() {
+		runSherlockTest();
+	}
 
+	private void runSherlockTest() {
+		ExecMode platformOld = setExecMode(ExecType.SPARK);
+
+		try{
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+
+			programArgs = new String[]{"-args", input("A"), output("B") };
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+
+			runTest(true, false, null, -1); //test
+			runRScript(true); 
+		
+			//compare matrices 
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+	}
+		finally {
+			rtplatform = platformOld;
+		}
+	
+		
 	}
 }

@@ -68,7 +68,7 @@ class LinearRegression {
 
 public class EMAUtils {
 
-	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode, int freq) {
+	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode, int freq, Double alpha, Double beta, Double gamma) {
 		int cols = block.getNumColumns();
 		int rows = block.getNumRows();
 
@@ -84,9 +84,9 @@ public class EMAUtils {
 			Container lst = null;
 
 			for (int i = 0; i < search_iterations; i++) {
-				Double alpha = rand.nextDouble();
-				Double beta = rand.nextDouble();
-				Double gamma = rand.nextDouble();
+//				alpha = rand.nextDouble();
+//				beta = rand.nextDouble();
+//				gamma = rand.nextDouble();
 
 				if (mode.equals("single")) {
 					lst = single_exponential_smoothing(data, alpha);

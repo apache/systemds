@@ -68,7 +68,7 @@ public class BuiltinEMATest extends AutomatedTestBase {
 		Double[] na_ma_ref = new Double[]{112.,118.,132.,129.,133.1596639,135.,148.,148.,129.8606557,119.,104.,118.,115.,126.,141.,135.,125.,149.,170.,170.,151.7909091,133.,144.8090909,140.,145.,150.,178.,163.,172.,178.,199.,199.,184.,162.,146.,166.,171.,180.,193.,181.,183.,218.,230.,242.,209.,191.,172.,194.,196.,196.,236.,235.,229.,243.,264.,272.,237.,211.,180.,201.,204.,188.,235.,227.,234.,256.6349206,302.,293.,259.,229.,203.,229.,242.,233.,267.,269.,270.,315.,364.,347.,312.,274.,237.,278.,284.,277.,298.0641026,330.4516129,362.3589744,374.,413.,405.,355.,306.,271.,306.,315.,301.,356.,348.,355.,396.9677419,465.,467.,404.,347.,360.95,336.,340.,318.,354.1311475,348.,363.,435.,491.,505.,404.,359.,310.,337.,360.,342.,406.,396.,420.,472.,548.,559.,463.,407.,362.,410.766129,417.,391.,419.,461.,499.016129,535.,622.,606.,508.,461.,390.,432.};
 		Double[][] values = new Double[][]{data};
 		FrameBlock f = generateBlock(data.length, 1, values);
-		runMissingValueTest(f, ExecType.CP,  100, "triple", 4, na_ma_ref, 100);
+		runMissingValueTest(f, ExecType.CP,  100, "triple", 4, 0.5, 0.5, 0.5, na_ma_ref, 55);
 	}
 
 	@Test
@@ -77,7 +77,7 @@ public class BuiltinEMATest extends AutomatedTestBase {
 		Double[] na_ma_ref = new Double[]{41.7275, 32.88465, 32.606375, 34.9675375, 40.590368749999996, 34.968334375, 35.7256171875, 39.35165859375, 44.126579296875, 37.653389648437496, 37.68564482421875, 39.052922412109375, 45.129911206054686, 38.50855560302735, 39.743427801513675, 41.757963900756835, 48.65828195037842, 41.25459097518921, 41.665495487594605, 43.6538977437973, 51.71034887189865, 43.451124435949325, 43.88541221797466, 45.899556108987326};
 		Double[][] values = new Double[][]{data};
 		FrameBlock f = generateBlock(data.length, 1, values);
-		runMissingValueTest(f, ExecType.CP,  100, "single", 4, na_ma_ref, 10);
+		runMissingValueTest(f, ExecType.CP,  100, "single", 4, 0.5, Double.NaN, Double.NaN, na_ma_ref, 0);
 	}
 
 	@Test
@@ -86,7 +86,7 @@ public class BuiltinEMATest extends AutomatedTestBase {
 		Double[] na_ma_ref = new Double[]{41.7275, 6.356099999999998, 8.149399999999998, 18.841175, 35.47231874999999, 33.82293593749999, 37.231535546874994, 43.619776464843746, 51.09622780761718, 40.99479652709961, 38.39370675506592, 38.95093518028259, 47.68689059782028, 38.44509565713406, 39.003049272507425, 41.87148876206725, 52.620536316330345, 42.448801014379306, 41.38258310980896, 43.697353380071554, 55.93435017018497, 44.57978602269542, 43.40138244327679, 45.73726004274828};
 		Double[][] values = new Double[][]{data};
 		FrameBlock f = generateBlock(data.length, 1, values);
-		runMissingValueTest(f, ExecType.CP,  100, "double", 4, na_ma_ref, 10);
+		runMissingValueTest(f, ExecType.CP,  100, "double", 4, 0.5, 0.5, Double.NaN, na_ma_ref, 0);
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class BuiltinEMATest extends AutomatedTestBase {
 		Double[] na_ma_ref = new Double[]{41.7275, 24.0418, 32.3281, 37.3287, 43.73937749999999, 28.710109375, 37.62691046875001, 42.5309708984375, 52.88580151367188, 33.15671534912109, 38.65758862487794, 42.44805077255249, 48.22574473186493, 31.990608629751197, 38.66479375649214, 44.60066332877576, 53.321224908427446, 36.84788508769925, 42.86094393343228, 45.86929170959124, 55.2140372941347, 38.72586172952057, 45.025358876239984, 48.23407483458373};
 		Double[][] values = new Double[][]{data};
 		FrameBlock f = generateBlock(data.length, 1, values);
-		runMissingValueTest(f, ExecType.CP,  100, "triple", 4, na_ma_ref, 10);
+		runMissingValueTest(f, ExecType.CP,  100, "triple", 4, 0.5, 0.5, 0.5, na_ma_ref, 0);
 	}
 
 	private double calcRMSE(Double[] list1, Double[] list2) {
@@ -109,7 +109,7 @@ public class BuiltinEMATest extends AutomatedTestBase {
 		return Math.sqrt(sum / list1.length);
 	}
 
-	private void runMissingValueTest(FrameBlock test_frame, ExecType et, Integer search_iterations, String mode, Integer freq, Double[] reference, int max_error)
+	private void runMissingValueTest(FrameBlock test_frame, ExecType et, Integer search_iterations, String mode, Integer freq, Double alpha, Double beta, Double gamma, Double[] reference, int max_error)
 	{
 		Types.ExecMode platformOld = setExecMode(et);
 
@@ -118,7 +118,7 @@ public class BuiltinEMATest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "F=" + input("F"), "O=" + output("O"), "search_iterations=" + search_iterations, "mode=" + mode, "freq=" + freq};
+			programArgs = new String[] {"-nvargs", "F=" + input("F"), "O=" + output("O"), "search_iterations=" + search_iterations, "mode=" + mode, "freq=" + freq, "alpha=" + alpha, "beta=" + beta, "gamma=" + gamma};
 
 			FrameWriterFactory.createFrameWriter(Types.FileFormat.CSV).
 					writeFrameToHDFS(test_frame, input("F"), test_frame.getNumRows(), test_frame.getNumColumns());
@@ -135,7 +135,7 @@ public class BuiltinEMATest extends AutomatedTestBase {
 			}
 
 
-			assertTrue(calcRMSE(data, reference) < max_error);
+			assertTrue(calcRMSE(data, reference) <= max_error);
 		}
 		catch (Exception ex) {
 			throw new RuntimeException(ex);

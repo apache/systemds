@@ -19,7 +19,7 @@
 #
 #------------------------------------------------------------
 
-s_ema = function(Frame[Double] X, Integer search_iterations, String mode, Integer freq) return (Frame[String] Y) {
-  Y = map(X, "UtilFunctions.exponentialMovingAverageImputation(" + search_iterations + ";" + mode + ";" + freq  + ")")
+s_ema = function(Frame[Double] X, Integer search_iterations, String mode, Integer freq, Double alpha, Double beta, Double gamma) return (Frame[String] Y) {
+  Y = map(X, "UtilFunctions.exponentialMovingAverageImputation(" + search_iterations + ";" + mode + ";" + freq + ";" + alpha + ";" + beta + ";" + gamma + ")")
 }
 

@@ -24,63 +24,49 @@ import com.google.common.collect.ArrayTable;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.lang.Math;
 
-class LinearRegressionClassifier {
 
-	private ArrayList<Float> Xdata;
-	private ArrayList<Float> YData;
-	private Float result1;
-	private Float result2;
+class LinearRegression {
+	private final double intercept;
+	private final double slope;
 
-	public LinearRegressionClassifier (ArrayList xdata, ArrayList YData) {
-		Xdata = xdata;
-		this.YData = YData;
-	}
+	public LinearRegression(double[] x, double[] y) {
+		int n = x.length;
 
-	public Float predictValue ( Float inputValue ) {
-		Float X1 = Xdata.get( 0 ) ;
-		Float Y1 = YData.get( 0 ) ;
-		Float Xmean = getXMean( Xdata ) ;
-		Float Ymean = getYMean( YData ) ;
-		Float lineSlope = getLineSlope( Xmean , Ymean , X1 , Y1 ) ;
-		Float YIntercept = getYIntercept( Xmean , Ymean , lineSlope ) ;
-		Float prediction = ( lineSlope * inputValue ) + YIntercept ;
-		return prediction ;
-	}
+		double sumx = 0.0;
+		double sumy = 0.0;
 
-	public Float getLineSlope (Float Xmean, Float Ymean, Float X1, Float Y1) {
-		float num1 = X1 - Xmean;
-		float num2 = Y1 - Ymean;
-		float denom = (X1 - Xmean) * (X1 - Xmean);
-		return (num1 * num2) / denom;
-	}
-
-	public float getYIntercept (Float Xmean, Float Ymean, Float lineSlope) {
-		return Ymean - (lineSlope * Xmean);
-	}
-
-	public Float getXMean (ArrayList<Float> Xdata) {
-		result1 = 0.0f ;
-		for (Integer i = 0; i < Xdata.size(); i++) {
-			result1 = result1 + Xdata.get(i);
+		for (int i = 0; i < n; i++) {
+			sumx  += x[i];
+			sumy  += y[i];
 		}
-		return result1;
+		double xbar = sumx / n;
+		double ybar = sumy / n;
+
+		double xxbar = 0.0;
+		double xybar = 0.0;
+
+		for (int i = 0; i < n; i++) {
+			xxbar += (x[i] - xbar) * (x[i] - xbar);
+			xybar += (x[i] - xbar) * (y[i] - ybar);
+		}
+		slope  = xybar / xxbar;
+		intercept = ybar - slope * xbar;
 	}
 
-	public Float getYMean (ArrayList<Float> Ydata) {
-		result2 = 0.0f ;
-		for (Integer i = 0; i < Ydata.size(); i++) {
-			result2 = result2 + Ydata.get(i);
-		}
-		return result2;
+	public double intercept() {
+		return intercept;
 	}
+
+	public double slope() {
+		return slope;
+	}
+
 }
+
 
 public class EMAUtils {
 
@@ -295,6 +281,53 @@ public class EMAUtils {
 
 		for (int i = 0; i < season.length; i++) {
 			season[i] = season[i] - mean;
+		}
+
+		double[] x = new double[trend.size()];
+		double[] y = new double[trend.size()];
+
+		for (int i = 0; i < trend.size(); i++) {
+			x[i] = i + 1;
+			y[i] = trend.get(i);
+		}
+
+		LinearRegression linreg = new LinearRegression(x, y);
+
+		int n = data.length;
+
+		double[] s = new double[n - freq];
+		s[0] = linreg.intercept();
+
+		double[] b = new double[n - freq];
+		b[0] = linreg.slope();
+
+		double[] c = new double[n];
+
+		for (int i = 0; i < freq; i++) {
+			c[i] =  season[i];
+		}
+
+		ArrayList<Double> pred = new ArrayList<>();
+		pred.add(s[0] + b[0] + c[0]);
+
+		double val = 0;
+
+		for (int i = 1; i < n - freq; i++) {
+			if (data[i + freq - 1] == null) {
+				val = pred.get(i - 1);
+			} else {
+				val = data[i + freq - 1];
+			}
+
+			s[i] = alpha * (val - c[i-1]) + (1 - alpha) * (s[i-1] + b[i-1]);
+			b[i] = beta * (s[i] - s[i-1]) + (1 - beta) * b[i-1];
+			c[i+freq-1] = gamma * (val - s[i]) + (1 - gamma) * c[i-1];
+
+			pred.add(s[i] + b[i] + c[i]);
+		}
+
+		for (int i = 0; i < freq; i++) {
+			pred.add(i, data[i]);
 		}
 
 		return null;

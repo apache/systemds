@@ -60,12 +60,6 @@ class TestLm(unittest.TestCase):
             np.allclose(sds_model_weights, model, eps),
             "All elements are not close")
 
-    def test_lm_invalid_shape(self):
-        X = Matrix(self.sds, np.random.rand(30, 0))
-        Y = Matrix(self.sds, np.random.rand(0, 1))
-
-        with self.assertRaises(ValueError) as context:
-            sds_model_weights = lm(X, Y).compute()
 
 
 if __name__ == "__main__":

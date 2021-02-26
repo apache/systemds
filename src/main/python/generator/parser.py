@@ -26,9 +26,9 @@ import json
 
 
 class FunctionParser(object):
-    header_input_pattern = r"^[ \t]*[#]+[ \t]*input[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
+    header_input_pattern = r"^[ \t\n]*[#]+[ \t\n]*input[ \t\n\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\n\-]*[\s#\-]*$"
     header_output_pattern = r"[\s#\-]*[#]+[ \t]*(return|output)[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
-    function_pattern = r"^m_[\w]+[ \t]+=[ \t]+function[^#{]*"
+    function_pattern = r"^m_[\w]+[ \t\n]+=[ \t\n]+function[^#{]*"
     parameter_pattern = r"^m_[\w]+[\s]+=[\s]+function\(([\w\[\]\s,\d=.\-]*)\)[\s]*return[\s]*\(([\w\[\]\s,\d=.\-]*)\)"
     header_parameter_pattern = r"[\s#\-]*[#]+[ \t]*([\w|-]+)[\s]+([\w]+)[\s]+([\w,\d.\"\-]+)[\s]+([\w|\W]+)"
     divider_pattern = r"[\s#\-]*"

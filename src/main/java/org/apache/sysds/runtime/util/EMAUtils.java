@@ -20,6 +20,7 @@
 
 package org.apache.sysds.runtime.util;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.util.*;
@@ -69,6 +70,10 @@ public class EMAUtils {
 
 	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode, int freq) {
 		int cols = block.getNumColumns();
+		int rows = block.getNumRows();
+
+		ArrayList<Double[]> data_list = new ArrayList<>();
+
 		for (int j = 0; j < cols; j++) {
 			String[] values = (String[]) block.getColumnData(j);
 			Double[] data = new Double[values.length];
@@ -93,12 +98,33 @@ public class EMAUtils {
 
 				if (i == 0 || lst.rsme < best_cont.rsme) {
 					best_cont = lst;
+					data_list.add(best_cont.values);
 				}
 
 			}
 		}
 
-		return null;
+		Double[][] values = new Double[][]{};
+		FrameBlock new_block = generateBlock(rows, cols, data_list.toArray(values));
+		return new_block;
+	}
+
+	private static FrameBlock generateBlock(int rows, int cols, Double[][] values)
+	{
+		Types.ValueType[] schema = new Types.ValueType[cols];
+		for(int i = 0; i < cols; i++) {
+			schema[i] = Types.ValueType.FP64;
+		}
+
+		String[] names = new String[cols];
+		for(int i = 0; i < cols; i++)
+			names[i] = schema[i].toString();
+		FrameBlock frameBlock = new FrameBlock(schema, names);
+		frameBlock.ensureAllocatedColumns(rows);
+		for(int row = 0; row < rows; row++)
+			for(int col = 0; col < cols; col++)
+				frameBlock.set(row, col, values[col][row]);
+		return frameBlock;
 	}
 
 	static class Container {

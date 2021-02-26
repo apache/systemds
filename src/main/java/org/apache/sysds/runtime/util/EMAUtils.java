@@ -84,9 +84,12 @@ public class EMAUtils {
 			Container lst = null;
 
 			for (int i = 0; i < search_iterations; i++) {
-//				alpha = rand.nextDouble();
-//				beta = rand.nextDouble();
-//				gamma = rand.nextDouble();
+				if (Double.isNaN(alpha))
+					alpha = rand.nextDouble();
+				if (Double.isNaN(beta))
+					beta = rand.nextDouble();
+				if (Double.isNaN(gamma))
+					gamma = rand.nextDouble();
 
 				if (mode.equals("single")) {
 					lst = single_exponential_smoothing(data, alpha);
@@ -243,12 +246,12 @@ public class EMAUtils {
 		}
 
 		for (int i = 0; i < len; i++) {
-			filt.add(0.25);
+			filt.add(1./freq);
 		}
 
 		if (freq % 2 == 0) {
-			filt.add(0, 0.125);
-			filt.add(0.125);
+			filt.add(0, 0.5/freq);
+			filt.add(0.5/freq);
 		}
 
 		double trend_len = l - filt.size() + 1;

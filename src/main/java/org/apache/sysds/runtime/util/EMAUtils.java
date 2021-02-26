@@ -87,7 +87,7 @@ public class EMAUtils {
 			Double beta = rand.nextDouble();
 			Double gamma = rand.nextDouble();
 
-			mode = "triple";
+			mode = "single";
 
 			if (mode.equals("single")) {
 				lst = single_exponential_smoothing(data, alpha);
@@ -127,7 +127,7 @@ public class EMAUtils {
 		double val = 0;
 
 		ArrayList<Double> not_missing = new ArrayList<>();
-		ArrayList<Double> not_missing_sq = new ArrayList<>();
+		ArrayList<Double> not_missing_pred = new ArrayList<>();
 		int n_size = 0;
 
 		for (int i = 1; i < n; i++) {
@@ -135,17 +135,22 @@ public class EMAUtils {
 				val = pred[i - 1];
 			} else {
 				val = data[i];
-				not_missing.add(val);
-				not_missing_sq.add(Math.pow(val, 2));
-				n_size++;
 			}
 
 			pred[i] = alpha * val + (1 - alpha) * pred[i - 1];
 		}
 
+		for (int i = 0; i < data.length; i++) {
+			if (data[i] != null) {
+				not_missing.add(data[i]);
+				not_missing_pred.add(pred[i]);
+				n_size++;
+			}
+		}
+
 		double sum = .0;
 		for (int i = 0; i < not_missing.size(); i++) {
-			sum += not_missing.get(i) - not_missing_sq.get(i);
+			sum += Math.pow(not_missing.get(i) - not_missing_pred.get(i), 2);
 		}
 
 		double rmse = Math.sqrt(sum / n_size);
@@ -154,7 +159,6 @@ public class EMAUtils {
 	}
 
 	public static Container double_exponential_smoothing(Double[] data, Double alpha, Double beta) {
-
 		int n = data.length;
 
 		ArrayList<Double> pred = new ArrayList<>(n-1);
@@ -168,7 +172,7 @@ public class EMAUtils {
 		double val = 0;
 
 		ArrayList<Double> not_missing = new ArrayList<>();
-		ArrayList<Double> not_missing_sq = new ArrayList<>();
+		ArrayList<Double> not_missing_pred = new ArrayList<>();
 		int n_size = 0;
 
 		for (int i = 1; i < n-1; i++) {
@@ -176,9 +180,6 @@ public class EMAUtils {
 				val = pred.get(i - 1);
 			} else {
 				val = data[i+1];
-				not_missing.add(val);
-				not_missing_sq.add(Math.pow(val, 2));
-				n_size++;
 			}
 
 			s[i] = alpha * val + (1 - alpha) * (s[i-1] + b[i-1]);
@@ -186,32 +187,27 @@ public class EMAUtils {
 			pred.add(s[i] + b[i]);
 		}
 
-		double sum = .0;
-		for (int i = 0; i < not_missing.size(); i++) {
-			sum += not_missing.get(i) - not_missing_sq.get(i);
+		pred.add(0, data[0]);
+
+		for (int i = 0; i < data.length; i++) {
+			if (data[i] != null) {
+				not_missing.add(data[i]);
+				not_missing_pred.add(pred.get(i));
+				n_size++;
+			}
 		}
 
-		pred.add(0, data[0]);
+		double sum = .0;
+		for (int i = 0; i < not_missing.size(); i++) {
+			sum += Math.pow(not_missing.get(i) - not_missing_pred.get(i), 2);
+		}
+
 		double rmse = Math.sqrt(sum / n_size);
 		Double[] content = new Double[pred.size()];
 		return new Container(pred.toArray(content), rmse);
 	}
 
-	public static ArrayList<Double> multiply(ArrayList<Double> array_1, ArrayList<Double> array_2) {
-		ArrayList<Double> new_list = new ArrayList<>();
-		for (int i = 0; i < array_1.size(); i++) {
-			new_list.add(array_1.get(i) * array_2.get(i));
-		}
-
-		return new_list;
-	}
-
 	public static Container triple_exponential_smoothing(Double[] data, Double alpha, Double beta, Double gamma, Integer freq) {
-		alpha = 0.5;
-		beta = 0.5;
-		gamma = 0.5;
-		freq = 4;
-
 		double l = freq * 2;
 		ArrayList<Double> start_data = new ArrayList<>();
 

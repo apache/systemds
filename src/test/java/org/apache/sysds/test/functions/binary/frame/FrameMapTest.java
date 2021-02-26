@@ -178,8 +178,9 @@ public class FrameMapTest extends AutomatedTestBase {
 						TestUtils.compareScalars(String.valueOf(UtilFunctions.toMillis(input[i])), output[i]);
 					break;
 				case SHERLOCK_PREP:
-					for(int i =0; i<input.length; i++)
-						TestUtils.compareScalars(String.valueOf(UtilFunctions.columnStringToSherlockFeatures(input[i])), output[i]);
+					for(int i =0; i<input.length; i++) {
+            TestUtils.compareScalars(String.valueOf(UtilFunctions.columnStringToSherlockFeatures(input[i])), output[i]);
+          }
 					break;
 			}
 		}

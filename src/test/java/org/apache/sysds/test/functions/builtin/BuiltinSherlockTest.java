@@ -19,8 +19,11 @@
 
 package org.apache.sysds.test.functions.builtin;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,39 +40,82 @@ public class BuiltinSherlockTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinScaleTest.class.getSimpleName() + "/";
 
-	@Override public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
-	}
+@Override
+public void setUp() {
+  addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
 
-	@Test
-	public void preProcessing() {
-		runSherlockTest();
-	}
+}
 
-	private void runSherlockTest() {
-		ExecMode platformOld = setExecMode(ExecType.SPARK);
+@Test
+public void testSherlock() {
+  runtestSherlock();
+}
 
-		try{
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+private void runtestSherlock() {
+  loadTestConfiguration(getTestConfiguration(TEST_NAME));
+  String HOME = SCRIPT_DIR + TEST_DIR;
+  fullDMLScriptName = HOME + TEST_NAME + ".dml";
+  List<String> proArgs = new ArrayList<>();
+  /*proArgs.add("-args");
+  proArgs.add(input("X"));
+  proArgs.add(input("Y"));
+  proArgs.add(output("cW1"));
+  proArgs.add(output("cb1"));
+  proArgs.add(output("cW2"));
+  proArgs.add(output("cb2"));
+  proArgs.add(output("cW3"));
+  proArgs.add(output("cb3"));
+  proArgs.add(output("wW1"));
+  proArgs.add(output("wb1"));
+  proArgs.add(output("wW2"));
+  proArgs.add(output("wb2"));
+  proArgs.add(output("wW3"));
+  proArgs.add(output("wb3"));
+  proArgs.add(output("pW1"));
+  proArgs.add(output("pb1"));
+  proArgs.add(output("pW2"));
+  proArgs.add(output("pb2"));
+  proArgs.add(output("pW3"));
+  proArgs.add(output("pb3"));
+  */
+  programArgs = proArgs.toArray(new String[proArgs.size()]);
 
-			programArgs = new String[]{"-args", input("A"), output("B") };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+  double[][] X = getRandomMatrix(1000, 1588, 0, 3, 0.9, 7);
+  double[][] Y = getRandomMatrix(1000, 78, 0, 1, 0.9, 7);
 
-			runTest(true, false, null, -1); //test
-			runRScript(true); 
-		
-			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-	}
-		finally {
-			rtplatform = platformOld;
-		}
-	
-		
-	}
+  writeInputMatrixWithMTD("X", X, true);
+  writeInputMatrixWithMTD("Y", Y, true);
+
+  runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+
+  //compare expected results
+  HashMap<MatrixValue.CellIndex, Double> cW1 = readDMLMatrixFromOutputDir("cW1");
+  HashMap<MatrixValue.CellIndex, Double> cb1 = readDMLMatrixFromOutputDir("cb1");
+  HashMap<MatrixValue.CellIndex, Double> cW2 = readDMLMatrixFromOutputDir("cW2");
+  HashMap<MatrixValue.CellIndex, Double> cb2 = readDMLMatrixFromOutputDir("cb2");
+  HashMap<MatrixValue.CellIndex, Double> cW3 = readDMLMatrixFromOutputDir("cW3");
+  HashMap<MatrixValue.CellIndex, Double> cb3 = readDMLMatrixFromOutputDir("cb3");
+  HashMap<MatrixValue.CellIndex, Double> wW1 = readDMLMatrixFromOutputDir("wW1");
+  HashMap<MatrixValue.CellIndex, Double> wb1 = readDMLMatrixFromOutputDir("wb1");
+  HashMap<MatrixValue.CellIndex, Double> wW2 = readDMLMatrixFromOutputDir("wW2");
+  HashMap<MatrixValue.CellIndex, Double> wb2 = readDMLMatrixFromOutputDir("wb2");
+  HashMap<MatrixValue.CellIndex, Double> wW3 = readDMLMatrixFromOutputDir("wW3");
+  HashMap<MatrixValue.CellIndex, Double> wb3 = readDMLMatrixFromOutputDir("wb3");
+  HashMap<MatrixValue.CellIndex, Double> pW1 = readDMLMatrixFromOutputDir("pW1");
+  HashMap<MatrixValue.CellIndex, Double> pb1 = readDMLMatrixFromOutputDir("pb1");
+  HashMap<MatrixValue.CellIndex, Double> pW2 = readDMLMatrixFromOutputDir("pW2");
+  HashMap<MatrixValue.CellIndex, Double> pb2 = readDMLMatrixFromOutputDir("pb2");
+  HashMap<MatrixValue.CellIndex, Double> pW3 = readDMLMatrixFromOutputDir("pW3");
+  HashMap<MatrixValue.CellIndex, Double> pb3 = readDMLMatrixFromOutputDir("pb3");
+  HashMap<MatrixValue.CellIndex, Double> fW1 = readDMLMatrixFromOutputDir("fW1");
+  HashMap<MatrixValue.CellIndex, Double> fb1 = readDMLMatrixFromOutputDir("fb1");
+  HashMap<MatrixValue.CellIndex, Double> fW2 = readDMLMatrixFromOutputDir("fW2");
+  HashMap<MatrixValue.CellIndex, Double> fb2 = readDMLMatrixFromOutputDir("fb2");
+  HashMap<MatrixValue.CellIndex, Double> fW3 = readDMLMatrixFromOutputDir("fW3");
+  HashMap<MatrixValue.CellIndex, Double> fb3 = readDMLMatrixFromOutputDir("fb3");
+
+  TestUtils.compareScalars(1, 1, 0);
+}
+
+
 }

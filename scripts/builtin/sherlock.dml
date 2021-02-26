@@ -110,16 +110,7 @@ transform_labels_to_ground_truth = function(matrix[double] data)
 # training and testing of sherlock
 ##########################################################
 
-/*
-  data preprocessed: global stats, char dist, word embeddings, par vec
-  ncols:             27, 960, 200 + 1, 400
-*/
-m_sherlock = function (matrix[double] A) return (double m) {
-  #TODO: not sure if it is possible to write a builtin function
-  m = sum(A)/nrow(A)
-}
-
-train = function(matrix[double] X_train, matrix[double] y_train)
+m_sherlock = function(matrix[double] X_train, matrix[double] y_train)
       return (matrix[double] cW1, matrix[double] cb1,
             matrix[double] cW2, matrix[double] cb2,
             matrix[double] cW3, matrix[double] cb3,

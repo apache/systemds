@@ -20,49 +20,46 @@
 
 package org.apache.sysds.runtime.util;
 
-import com.google.common.collect.ArrayTable;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.util.*;
-import java.util.Map.Entry;
 import java.lang.Math;
 
 
 class LinearRegression {
 	private final double intercept;
-	private final double slope;
+	private final double coef;
 
 	public LinearRegression(double[] x, double[] y) {
 		int n = x.length;
 
-		double sumx = 0.0;
-		double sumy = 0.0;
+		double sum_x = 0.0;
+		double sum_y = 0.0;
 
 		for (int i = 0; i < n; i++) {
-			sumx  += x[i];
-			sumy  += y[i];
+			sum_x  += x[i];
+			sum_y  += y[i];
 		}
-		double xbar = sumx / n;
-		double ybar = sumy / n;
+		double x_tmp = sum_x / n;
+		double y_tmp = sum_y / n;
 
-		double xxbar = 0.0;
-		double xybar = 0.0;
+		double xx = 0.0;
+		double yy = 0.0;
 
 		for (int i = 0; i < n; i++) {
-			xxbar += (x[i] - xbar) * (x[i] - xbar);
-			xybar += (x[i] - xbar) * (y[i] - ybar);
+			xx += (x[i] - x_tmp) * (x[i] - x_tmp);
+			yy += (x[i] - x_tmp) * (y[i] - y_tmp);
 		}
-		slope  = xybar / xxbar;
-		intercept = ybar - slope * xbar;
+		coef = yy / xx;
+		intercept = y_tmp - coef * x_tmp;
 	}
 
 	public double intercept() {
 		return intercept;
 	}
 
-	public double slope() {
-		return slope;
+	public double coef() {
+		return coef;
 	}
 
 }
@@ -299,7 +296,7 @@ public class EMAUtils {
 		s[0] = linreg.intercept();
 
 		double[] b = new double[n - freq];
-		b[0] = linreg.slope();
+		b[0] = linreg.coef();
 
 		double[] c = new double[n];
 
@@ -311,6 +308,11 @@ public class EMAUtils {
 		pred.add(s[0] + b[0] + c[0]);
 
 		double val = 0;
+
+		ArrayList<Double> not_missing = new ArrayList<>();
+		ArrayList<Double> not_missing_pred = new ArrayList<>();
+
+		int n_size = 0;
 
 		for (int i = 1; i < n - freq; i++) {
 			if (data[i + freq - 1] == null) {
@@ -330,6 +332,21 @@ public class EMAUtils {
 			pred.add(i, data[i]);
 		}
 
-		return null;
+		for (int i = 0; i < data.length; i++) {
+			if (data[i] != null) {
+				not_missing.add(data[i]);
+				not_missing_pred.add(pred.get(i));
+				n_size++;
+			}
+		}
+
+		sum = .0;
+		for (int i = 0; i < not_missing.size(); i++) {
+			sum += Math.pow(not_missing.get(i) - not_missing_pred.get(i), 2);
+		}
+
+		double rmse = Math.sqrt(sum / n_size);
+		Double[] content = new Double[pred.size()];
+		return new Container(pred.toArray(content), rmse);
 	}
 }

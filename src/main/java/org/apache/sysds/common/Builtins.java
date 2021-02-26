@@ -200,6 +200,7 @@ public enum Builtins {
 	SD("sd", false),
 	SEQ("seq", false),
 	SHERLOCK("sherlock", true),
+  SHERLOCKPREDICT("sherlockPredict", true),
 	SIGMOID("sigmoid", true),   // 1 / (1 + exp(-X))
 	SIGN("sign", false),
 	SIN("sin", false),

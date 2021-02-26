@@ -631,6 +631,16 @@ public class UtilFunctions {
 		return "\"" + s + "\"";
 	}
 
+	public static int getAsciiAtIdx(String s, int idx) {
+		int strlen = s.length();
+		int c = 0;
+		int javaIdx = idx - 1;
+		if (javaIdx >= 0 && javaIdx < strlen) {
+			c = (int)s.charAt(javaIdx);
+		}
+		return c;
+	}
+
 	/**
 	 * Parses a memory size with optional g/m/k quantifiers into its
 	 * number representation.

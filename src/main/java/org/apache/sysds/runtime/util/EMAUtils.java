@@ -67,30 +67,35 @@ class LinearRegression {
 
 public class EMAUtils {
 
-	public static FrameBlock exponentialMovingAverageImputation(FrameBlock data2, int search_iterations, String mode, int freq) {
-		Double[] data= new Double[]{.112,.118,.132,.129, .131,.135,.148,.148,.149,.119,.104,.118,.115,.126,.141,.135,.125,.149,.170,.170,Double.NaN,.133,Double.NaN,.140,.145,.150,.178,.163,.172,.178,.199,.199,.184,.162,.146,.166,.171,.180,.193,.181,.183,.218,.230,.242,.209,.191,.172,.194,.196,.196,.236,.235,.229,.243,.264,.272,.237,.211,.180,.201,.204,.188,.235,.227,.234,Double.NaN,.302,.293,.259,.229,.203,.229,.242,.233,.267,.269,.270,.315,.364,.347,.312,.274,.237,.278,.284,.277,Double.NaN,Double.NaN,Double.NaN,.374,.413,.405,.355,.306,.271,.306,.315,.301,.356,.348,.355,Double.NaN,.465,.467,.404,.347,Double.NaN,.336,.340,.318,Double.NaN,.348,.363,.435,.491,.505,.404,.359,.310,.337,.360,.342,.406,.396,.420,.472,.548,.559,.463,.407,.362,Double.NaN,.417,.391,.419,.461,Double.NaN,.535,.622,.606,.508,.461,.390,.432};
-		Container best_cont = new Container(new Double[]{.0}, 1000);
+	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode, int freq) {
+		int cols = block.getNumColumns();
+		for (int j = 0; j < cols; j++) {
+			String[] values = (String[]) block.getColumnData(j);
+			Double[] data = new Double[values.length];
+			for (int i = 0; i< values.length; i++) data[i] = Double.valueOf(values[i]);
+			Container best_cont = new Container(new Double[]{.0}, 1000);
 
-		Random rand = new Random();
-		Container lst = null;
+			Random rand = new Random();
+			Container lst = null;
 
-		for (int i = 0; i < search_iterations; i++) {
-			Double alpha = rand.nextDouble();
-			Double beta = rand.nextDouble();
-			Double gamma = rand.nextDouble();
+			for (int i = 0; i < search_iterations; i++) {
+				Double alpha = rand.nextDouble();
+				Double beta = rand.nextDouble();
+				Double gamma = rand.nextDouble();
 
-			if (mode.equals("single")) {
-				lst = single_exponential_smoothing(data, alpha);
-			} else if (mode.equals("double")) {
-				lst = double_exponential_smoothing(data, alpha, beta);
-			} else if (mode.equals("triple")) {
-				lst = triple_exponential_smoothing(data, alpha, beta, gamma, freq);
+				if (mode.equals("single")) {
+					lst = single_exponential_smoothing(data, alpha);
+				} else if (mode.equals("double")) {
+					lst = double_exponential_smoothing(data, alpha, beta);
+				} else if (mode.equals("triple")) {
+					lst = triple_exponential_smoothing(data, alpha, beta, gamma, freq);
+				}
+
+				if (i == 0 || lst.rsme < best_cont.rsme) {
+					best_cont = lst;
+				}
+
 			}
-
-			if (i == 0 || lst.rsme < best_cont.rsme) {
-				best_cont = lst;
-			}
-
 		}
 
 		return null;

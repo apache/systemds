@@ -58,7 +58,7 @@ train = function(matrix[double] X_train, matrix[double] y_train, int hidden_laye
 
   # Optimize
   print("Starting optimization")
-  batch_size = 128 #?
+  batch_size = 256 #?
   epochs = 100
   iters = ceil(N / batch_size)
   lr = initial_lr

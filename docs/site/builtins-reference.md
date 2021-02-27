@@ -33,6 +33,7 @@ limitations under the License.
     * [`discoverFD`-Function](#discoverFD-function)
     * [`dist`-Function](#dist-function)
     * [`dmv`-Function](#dmv-function)
+    * [`ema`-Function](#ema-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -618,7 +619,7 @@ ema(X, search_iterations, mode, freq, alpha, beta, gamma)
 | X         | Frame[Double]  | --       | Frame that contains timeseries data that need to be imputed |
 | search_iterations    | Integer | --       | Budget iterations for parameter optimisation, used if parameters weren't set |
 | mode    | String | --       | Type of EMA method. Either "single", "double" or "triple" |
-| freq | Double  | --       | --- |
+| freq | Double  | --       | Seasonality when using triple EMA. |
 | alpha | Double  | --       | alpha- value for EMA |
 | beta | Double  | --       | beta- value for EMA |
 | gamma | Double  | --       | gamma- value for EMA |
@@ -627,7 +628,7 @@ ema(X, search_iterations, mode, freq, alpha, beta, gamma)
 
 | Type   | Description |
 | :----- | :---------- |
-| Frame[Double] | Frame with EMA results |
+| Frame[String] | Frame with EMA results |
 
 ### Example
 

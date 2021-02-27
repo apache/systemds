@@ -132,9 +132,9 @@ train = function(matrix[double] X_train, matrix[double] y_train)
             matrix[double] pW1, matrix[double] pb1,
             matrix[double] pW2, matrix[double] pb2,
             matrix[double] pW3, matrix[double] pb3,
-            matrix[double] rW1, matrix[double] rb1,
-            matrix[double] rW2, matrix[double] rb2,
-            matrix[double] rW3, matrix[double] rb3,
+            matrix[double] sW1, matrix[double] sb1,
+            matrix[double] sW2, matrix[double] sb2,
+            matrix[double] sW3, matrix[double] sb3,
             matrix[double] fW1, matrix[double] fb1,
             matrix[double] fW2, matrix[double] fb2,
             matrix[double] fW3, matrix[double] fb3) {
@@ -143,17 +143,16 @@ train = function(matrix[double] X_train, matrix[double] y_train)
   [cW1, cb1, cW2, cb2, cW3, cb3] = sherlockNet::train(X_train[1:train_rows, 224:1183], y_train, 300)
   [wW1, wb1, wW2, wb2, wW3, wb3] = sherlockNet::train(cbind(X_train[1:train_rows, 13:212], X_train[1:train_rows, 1188]), y_train, 200)
   [pW1, pb1, pW2, pb2, pW3, pb3] = sherlockNet::train(X_train[1:train_rows, 1189:1588], y_train, 400)
-  # better without Rest probs - validation 10000 lines: 0.4287 vs 0.4382
-  [rW1, rb1, rW2, rb2, rW3, rb3] = sherlockNet::train(cbind(X_train[1:train_rows, 1:12], X_train[1:train_rows, 213:223], X_train[1:train_rows, 1184:1187]), y_train, 80)
+  [sW1, sb1, sW2, sb2, sW3, sb3] = sherlockNet::train(cbind(X_train[1:train_rows, 1:12], X_train[1:train_rows, 213:223], X_train[1:train_rows, 1184:1187]), y_train, 80)
 
   # train features seperate
   cprobs = sherlockNet::predict(X_train[1:train_rows, 224:1183], cW1, cb1, cW2, cb2, cW3, cb3)
   wprobs = sherlockNet::predict(cbind(X_train[1:train_rows, 13:212], X_train[1:train_rows, 1188]), wW1,wb1, wW2, wb2, wW3, wb3)
   pprobs = sherlockNet::predict(X_train[1:train_rows, 1189:1588], pW1, pb1, pW2, pb2, pW3, pb3)
-  rprobs = sherlockNet::predict(cbind(X_train[1:train_rows, 1:12], X_train[1:train_rows, 213:223], X_train[1:train_rows, 1184:1187]), rW1, rb1, rW2, rb2, rW3, rb3)
+  sprobs = sherlockNet::predict(cbind(X_train[1:train_rows, 1:12], X_train[1:train_rows, 213:223], X_train[1:train_rows, 1184:1187]), sW1, sb1, sW2, sb2, sW3, sb3)
 
   #use trained features to train final net
-  first_predictions = cbind(cprobs, wprobs, pprobs, rprobs)
+  first_predictions = cbind(cprobs, wprobs, pprobs, sprobs)
   [fW1, fb1, fW2, fb2, fW3, fb3] = sherlockNet::train(first_predictions, y_train, 500)
 }
 
@@ -167,9 +166,9 @@ predict = function(matrix[double] X,
             matrix[double] pW1, matrix[double] pb1,
             matrix[double] pW2, matrix[double] pb2,
             matrix[double] pW3, matrix[double] pb3,
-            matrix[double] rW1, matrix[double] rb1,
-            matrix[double] rW2, matrix[double] rb2,
-            matrix[double] rW3, matrix[double] rb3,
+            matrix[double] sW1, matrix[double] sb1,
+            matrix[double] sW2, matrix[double] sb2,
+            matrix[double] sW3, matrix[double] sb3,
             matrix[double] fW1, matrix[double] fb1,
             matrix[double] fW2, matrix[double] fb2,
             matrix[double] fW3, matrix[double] fb3)
@@ -180,9 +179,9 @@ predict = function(matrix[double] X,
   cprobs = sherlockNet::predict(X[1:rows, 224:1183], cW1, cb1, cW2, cb2, cW3, cb3)
   wprobs = sherlockNet::predict(cbind(X[1:rows, 13:212], X[1:rows, 1188]), wW1,wb1, wW2, wb2, wW3, wb3)
   pprobs = sherlockNet::predict(X[1:rows, 1189:1588], pW1, pb1, pW2, pb2, pW3, pb3)
-  rprobs = sherlockNet::predict(cbind(X[1:rows, 1:12], X[1:rows, 213:223], X[1:rows, 1184:1187]), rW1, rb1, rW2, rb2, rW3, rb3)
+  sprobs = sherlockNet::predict(cbind(X[1:rows, 1:12], X[1:rows, 213:223], X[1:rows, 1184:1187]), sW1, sb1, sW2, sb2, sW3, sb3)
 
-  first_predictions = cbind(cprobs, wprobs, pprobs, rprobs)
+  first_predictions = cbind(cprobs, wprobs, pprobs, sprobs)
   #final training
   probs = sherlockNet::predict(first_predictions, fW1, fb1, fW2, fb2, fW3, fb3)
 }
@@ -206,9 +205,3 @@ eval = function(matrix[double] probs, matrix[double] Y)
   */
   [loss, accuracy, f1, precision, recall] = sherlockNet::eval(probs, Y)
 }
-
-
-
-
-
-

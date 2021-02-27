@@ -25,6 +25,7 @@ source("nn/layers/relu.dml") as relu
 source("nn/layers/softmax.dml")as softmax
 source("nn/optim/adam.dml") as adam
 source("scripts/staging/entity-resolution/primitives/evaluation.dml") as evaluation
+
 train = function(matrix[double] X_train, matrix[double] y_train, int hidden_layer_neurons)
   return (matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] W3, matrix[double] b3) {
 
@@ -186,7 +187,6 @@ eval = function(matrix[double] probs, matrix[double] Y)
   *  - accuracy: Scalar accuracy, of shape(1).
   */
   # Compute loss & accuracy
-  #print("Predicted probs: " +toString(probs))
   loss = cross_entropy_loss::forward(probs, Y)
   correct_pred = rowIndexMax(probs) == rowIndexMax(Y)
   accuracy = mean(correct_pred)
@@ -199,6 +199,4 @@ eval = function(matrix[double] probs, matrix[double] Y)
     predBooleanMatrix[i, as.scalar(rowIndexMax(probs[i,1:cols]))] = 1
   }
   [f1, precision, recall] = evaluation::f1(predBooleanMatrix, Y)
-
-
 }

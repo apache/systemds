@@ -31,7 +31,7 @@ source("scripts/builtin/sherlockNet.dml") as sherlockNet
 # ---------------------------------------------------------------------------------------------
 # NAME         TYPE      DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
-# X_train      Matrix    ---      maxtrix of feature vections
+# X_train      Matrix    ---      maxtrix of feature vectors
 # y_train      Matrix    ---      matrix Y of class labels of semantic data type
 # ---------------------------------------------------------------------------------------------
 # cW           Matrix    ---      weights (parameters) matrices for character distribtions

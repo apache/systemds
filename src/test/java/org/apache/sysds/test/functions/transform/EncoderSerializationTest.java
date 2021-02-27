@@ -27,12 +27,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.transform.decode.Decoder;
-import org.apache.sysds.runtime.transform.decode.DecoderComposite;
-import org.apache.sysds.runtime.transform.decode.DecoderFactory;
 import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
@@ -116,8 +112,8 @@ public class EncoderSerializationTest extends AutomatedTestBase
 		List<Encoder> eListIn = ((EncoderComposite) encoderIn).getEncoders();
 		List<Encoder> eListOut = encoderOut.getEncoders();
 		for(int i = 0; i < eListIn.size();  i++) {
-			Assert.assertThat(eListIn.get(i).getColList(), is(eListOut.get(i).getColList()));
-			Assert.assertThat(eListIn.get(i).getNumCols(), is(eListOut.get(i).getNumCols()));
+			Assert.assertArrayEquals(eListIn.get(i).getColList(), eListOut.get(i).getColList());
+			Assert.assertEquals(eListIn.get(i).getNumCols(), eListOut.get(i).getNumCols());
 		}
 	}
 

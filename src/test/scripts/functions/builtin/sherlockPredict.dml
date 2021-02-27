@@ -39,6 +39,12 @@ pW2 = read($pW2)
 pb2 = read($pb2)
 pW3 = read($pW3)
 pb3 = read($pb3)
+sW1 = read($sW1)
+sb1 = read($sb1)
+sW2 = read($sW2)
+sb2 = read($sb2)
+sW3 = read($sW3)
+sb3 = read($sb3)
 fW1 = read($fW1)
 fb1 = read($fb1)
 fW2 = read($fW2)
@@ -56,6 +62,9 @@ wW3,  wb3,
 pW1,  pb1,
 pW2,  pb2,
 pW3,  pb3,
+sW1,  sb1,
+sW2,  sb2,
+sW3,  sb3,
 fW1,  fb1,
 fW2,  fb2,
 fW3,  fb3)

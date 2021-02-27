@@ -31,6 +31,9 @@ wW3,  wb3,
 pW1,  pb1,
 pW2,  pb2,
 pW3,  pb3,
+sW1,  sb1,
+sW2,  sb2,
+sW3,  sb3,
 fW1,  fb1,
 fW2,  fb2,
 fW3,  fb3] = sherlock(X, Y)
@@ -53,6 +56,12 @@ write(pW2, $pW2)
 write(pb2, $pb2)
 write(pW3, $pW3)
 write(pb3, $pb3)
+write(sW1, $sW1)
+write(sb1, $sb1)
+write(sW2, $sW2)
+write(sb2, $sb2)
+write(sW3, $sW3)
+write(sb3, $sb3)
 write(fW1, $fW1)
 write(fb1, $fb1)
 write(fW2, $fW2)

@@ -73,6 +73,12 @@ public class BuiltinSherlockTest extends AutomatedTestBase {
     proArgs.add("pb2=" + output("pb2"));
     proArgs.add("pW3=" + output("pW3"));
     proArgs.add("pb3=" + output("pb3"));
+    proArgs.add("sW1=" + output("sW1"));
+    proArgs.add("sb1=" + output("sb1"));
+    proArgs.add("sW2=" + output("sW2"));
+    proArgs.add("sb2=" + output("sb2"));
+    proArgs.add("sW3=" + output("sW3"));
+    proArgs.add("sb3=" + output("sb3"));
     proArgs.add("fW1=" + output("fW1"));
     proArgs.add("fb1=" + output("fb1"));
     proArgs.add("fW2=" + output("fW2"));
@@ -107,6 +113,12 @@ public class BuiltinSherlockTest extends AutomatedTestBase {
     HashMap<MatrixValue.CellIndex, Double> pb2 = readDMLMatrixFromOutputDir("pb2");
     HashMap<MatrixValue.CellIndex, Double> pW3 = readDMLMatrixFromOutputDir("pW3");
     HashMap<MatrixValue.CellIndex, Double> pb3 = readDMLMatrixFromOutputDir("pb3");
+    HashMap<MatrixValue.CellIndex, Double> sW1 = readDMLMatrixFromOutputDir("sW1");
+    HashMap<MatrixValue.CellIndex, Double> sb1 = readDMLMatrixFromOutputDir("sb1");
+    HashMap<MatrixValue.CellIndex, Double> sW2 = readDMLMatrixFromOutputDir("sW2");
+    HashMap<MatrixValue.CellIndex, Double> sb2 = readDMLMatrixFromOutputDir("sb2");
+    HashMap<MatrixValue.CellIndex, Double> sW3 = readDMLMatrixFromOutputDir("sW3");
+    HashMap<MatrixValue.CellIndex, Double> sb3 = readDMLMatrixFromOutputDir("sb3");
     HashMap<MatrixValue.CellIndex, Double> fW1 = readDMLMatrixFromOutputDir("fW1");
     HashMap<MatrixValue.CellIndex, Double> fb1 = readDMLMatrixFromOutputDir("fb1");
     HashMap<MatrixValue.CellIndex, Double> fW2 = readDMLMatrixFromOutputDir("fW2");

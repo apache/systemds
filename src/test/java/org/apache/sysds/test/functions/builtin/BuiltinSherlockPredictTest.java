@@ -70,6 +70,12 @@ public class BuiltinSherlockPredictTest extends AutomatedTestBase {
     proArgs.add("pb2=" + WEIGHTS_DIR + "pb2");
     proArgs.add("pW3=" + WEIGHTS_DIR + "pW3");
     proArgs.add("pb3=" + WEIGHTS_DIR + "pb3");
+    proArgs.add("sW1=" + WEIGHTS_DIR + "sW1");
+    proArgs.add("sb1=" + WEIGHTS_DIR + "sb1");
+    proArgs.add("sW2=" + WEIGHTS_DIR + "sW2");
+    proArgs.add("sb2=" + WEIGHTS_DIR + "sb2");
+    proArgs.add("sW3=" + WEIGHTS_DIR + "sW3");
+    proArgs.add("sb3=" + WEIGHTS_DIR + "sb3");
     proArgs.add("fW1=" + WEIGHTS_DIR + "fW1");
     proArgs.add("fb1=" + WEIGHTS_DIR + "fb1");
     proArgs.add("fW2=" + WEIGHTS_DIR + "fW2");

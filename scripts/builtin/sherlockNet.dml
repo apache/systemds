@@ -204,6 +204,9 @@ predict = function(matrix[double] test_val,
 # ---------------------------------------------------------------------------------------------
 # loss         double             scalar loss, of shape (1)
 # accuracy     double             scalar accuracy, of shape (1)
+# f1 score     double             scalar f1 score, of shape (1)
+# precision    double             scalar precission, of shape (1)
+# recall       double             scalar recall, of shape (1)
 
 eval = function(matrix[double] probs, matrix[double] Y)
   return (double loss, double accuracy, double f1, double precision, double recall) {

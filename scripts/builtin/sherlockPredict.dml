@@ -39,6 +39,8 @@ source("scripts/builtin/sherlockNet.dml") as sherlockNet
 # wb           Matrix    ---      biases vectors for word embeddings
 # pW           Matrix    ---      weights (parameters) matrices for paragraph vectors
 # pb           Matrix    ---      biases vectors for paragraph vectors
+# sW           Matrix    ---      weights (parameters) matrices for global statistics
+# sb           Matrix    ---      biases vectors for global statistics
 # fW           Matrix    ---      weights (parameters) matrices for  combining all trained features (final)
 # fb           Matrix    ---      biases vectors for combining all trained features (final)
 # ---------------------------------------------------------------------------------------------
@@ -54,6 +56,9 @@ m_sherlockPredict = function(matrix[double] X,
             matrix[double] pW1, matrix[double] pb1,
             matrix[double] pW2, matrix[double] pb2,
             matrix[double] pW3, matrix[double] pb3,
+            matrix[double] sW1, matrix[double] sb1,
+            matrix[double] sW2, matrix[double] sb2,
+            matrix[double] sW3, matrix[double] sb3,
             matrix[double] fW1, matrix[double] fb1,
             matrix[double] fW2, matrix[double] fb2,
             matrix[double] fW3, matrix[double] fb3)
@@ -64,8 +69,9 @@ m_sherlockPredict = function(matrix[double] X,
   cprobs = sherlockNet::predict(X[1:rows, 224:1183], cW1, cb1, cW2, cb2, cW3, cb3)
   wprobs = sherlockNet::predict(cbind(X[1:rows, 13:212], X[1:rows, 1188]), wW1,wb1, wW2, wb2, wW3, wb3)
   pprobs = sherlockNet::predict(X[1:rows, 1189:1588], pW1, pb1, pW2, pb2, pW3, pb3)
+  sprobs = sherlockNet::predict(cbind(X[1:rows, 1:12], X[1:rows, 213:223], X[1:rows, 1184:1187]), sW1, sb1, sW2, sb2, sW3, sb3)
 
-  first_predictions = cbind(cprobs, wprobs, pprobs)
+  first_predictions = cbind(cprobs, wprobs, pprobs, sprobs)
   #final training
   probs = sherlockNet::predict(first_predictions, fW1, fb1, fW2, fb2, fW3, fb3)
 }
@@ -79,9 +85,12 @@ m_sherlockPredict = function(matrix[double] X,
 # ---------------------------------------------------------------------------------------------
 # loss         double             scalar loss, of shape (1)
 # accuracy     double             scalar accuracy, of shape (1)
+# f1 score     double             scalar f1 score, of shape (1)
+# precision    double             scalar precission, of shape (1)
+# recall       double             scalar recall, of shape (1)
 
 eval = function(matrix[double] probs, matrix[double] Y)
-  return (double loss, double accuracy) {
+  return (double loss, double accuracy, double f1, double precision, double recall) {
 
-  [loss, accuracy] = sherlockNet::eval(probs, Y)
+  [loss, accuracy, f1, precision, recall] = sherlockNet::eval(probs, Y)
 }

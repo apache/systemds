@@ -984,6 +984,7 @@ sherlock(X_train, y_train)
 | Matrix[Double] | weights (parameters) matrices for character distribtions |
 | Matrix[Double] | weights (parameters) matrices for word  embeddings |
 | Matrix[Double] | weights (parameters) matrices for paragraph vectors |
+| Matrix[Double] | weights (parameters) matrices for global statistics |
 | Matrix[Double] | weights (parameters) matrices for combining all featurs (final)|
 
 ### Example
@@ -992,7 +993,8 @@ sherlock(X_train, y_train)
 # preprocessed training data taken from sherlock corpus
 processed_train_values = read("processed/X_train.csv")
 processed_train_labels = read("processed/y_train.csv")
-[processed_train_labels, label_encoding] = sherlock::transform_encode_labels(processed_train_labels)
+transform_spec = read("processed/transform_spec.json")
+[processed_train_labels, label_encoding] = sherlock::transform_encode_labels(processed_train_labels, transform_spec)
 write(label_encoding, "weights/label_encoding")
 
 [cW1,  cb1,
@@ -1004,12 +1006,15 @@ write(label_encoding, "weights/label_encoding")
  pW1,  pb1,
  pW2,  pb2,
  pW3,  pb3,
+ sW1,  sb1,
+ sW2,  sb2,
+ sW3,  sb3,
  fW1,  fb1,
  fW2,  fb2,
  fW3,  fb3] = sherlock(processed_train_values, processed_train_labels)
 ```
 
-## `sherlock`-Function
+## `sherlockPredict`-Function
 
 Implements prediction and evaluation phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
 
@@ -1019,7 +1024,8 @@ Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discove
 
 ```r
 sherlockPredict(X, cW1, cb1, cW2, cb2, cW3, cb3, wW1, wb1, wW2, wb2, wW3, wb3,
-                   pW1, pb1, pW2, pb2, pW3, pb3, fW1, fb1, fW2, fb2, fW3, fb3)
+                   pW1, pb1, pW2, pb2, pW3, pb3, sW1, sb1, sW2, sb2, sW3, sb3,
+                   fW1, fb1, fW2, fb2, fW3, fb3)
 ```
 ### Arguments
 
@@ -1032,6 +1038,8 @@ sherlockPredict(X, cW1, cb1, cW2, cb2, cW3, cb3, wW1, wb1, wW2, wb2, wW3, wb3,
 | wb      | Matrix[Double] | required | Biases vectors for word embeddings. |
 | pW      | Matrix[Double] | required | Weights (parameters) matrices for paragraph vectors. |
 | pb      | Matrix[Double] | required | Biases vectors for paragraph vectors. |
+| sW      | Matrix[Double] | required | Weights (parameters) matrices for global statistics. |
+| sb      | Matrix[Double] | required | Biases vectors for global statistics. |
 | fW      | Matrix[Double] | required | Weights (parameters) matrices combining all features (final). |
 | fb      | Matrix[Double] | required | Biases vectors combining all features (final). |
 
@@ -1046,8 +1054,9 @@ sherlockPredict(X, cW1, cb1, cW2, cb2, cW3, cb3, wW1, wb1, wW2, wb2, wW3, wb3,
 # preprocessed validation data taken from sherlock corpus
 processed_val_values = read("processed/X_val.csv")
 processed_val_labels = read("processed/y_val.csv")
+transform_spec = read("processed/transform_spec.json")
 label_encoding = read("weights/label_encoding")
-processed_val_labels = sherlock::transform_apply_labels(processed_val_labels, label_encoding)
+processed_val_labels = sherlock::transform_apply_labels(processed_val_labels, label_encoding, transform_spec)
 
 probs = sherlockPredict(processed_val_values, cW1,  cb1,
 cW2,  cb2,
@@ -1057,7 +1066,10 @@ wW2,  wb2,
 wW3,  wb3,
 pW1,  pb1,
 pW2,  pb2,
-pW3,  pb3,
+pW3,  pb3, 
+sW1,  sb1,
+sW2,  sb2,
+sW3,  sb3,
 fW1,  fb1,
 fW2,  fb2,
 fW3,  fb3)

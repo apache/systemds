@@ -38,9 +38,6 @@ import org.apache.sysds.common.Types.ReturnType;
  */
 public enum Builtins {
 	//builtin functions
-    CSPLINE("cspline", true),
-	CSPLINE_CG("csplineCG", true),
-	CSPLINE_DS("csplineDS", true),
 	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),
@@ -85,6 +82,9 @@ public enum Builtins {
 	COLVAR("colVars", false),
 	COMPONENTS("components", true),
 	COMPRESS("compress", false),
+	CSPLINE("cspline", true),
+	CSPLINE_CG("csplineCG", true),
+	CSPLINE_DS("csplineDS", true),
 	DECOMPRESS("decompress", false),
 	CONV2D("conv2d", false),
 	CONV2D_BACKWARD_FILTER("conv2d_backward_filter", false),

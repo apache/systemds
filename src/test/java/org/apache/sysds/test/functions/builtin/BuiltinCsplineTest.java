@@ -61,9 +61,6 @@ public class BuiltinCsplineTest extends AutomatedTestBase {
 
 	@Test
 	public void testCsplineDS() {	
-		System.out.println(
-			"------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numDim + "} ------------");
-
 		int rows = numRecords;
 		int cols = numDim;
 
@@ -101,24 +98,15 @@ public class BuiltinCsplineTest extends AutomatedTestBase {
 
 		HashMap<MatrixValue.CellIndex, Double> priorR = readRMatrixFromExpectedDir("pred_y");
 		HashMap<MatrixValue.CellIndex, Double> priorSYSTEMDS= readDMLMatrixFromOutputDir("pred_y");
-		
-		System.out.println("--->"+priorR);
-		System.out.println("--->"+priorSYSTEMDS);
 
 		double[][] from_R = TestUtils.convertHashMapToDoubleArray(priorR);
 		double[][] from_DML = TestUtils.convertHashMapToDoubleArray(priorSYSTEMDS);
-
-		System.out.println("..."+from_R[0][0]);
-		System.out.println("..."+from_DML[0][0]);
 
 		TestUtils.compareMatrices(from_R, from_DML, Math.pow(10, -12));
 	}
 
 	@Test
 	public void testCsplineCG() {
-		System.out.println(
-			"------------ BEGIN CG" + TEST_NAME + " TEST WITH {" + numRecords + ", " + numDim + "} ------------");
-
 		int rows = numRecords;
 		int cols = numDim;
 		int numIter = rows;
@@ -160,14 +148,8 @@ public class BuiltinCsplineTest extends AutomatedTestBase {
 		HashMap<MatrixValue.CellIndex, Double> priorR = readRMatrixFromExpectedDir("pred_y");
 		HashMap<MatrixValue.CellIndex, Double> priorSYSTEMDS= readDMLMatrixFromOutputDir("pred_y");
 		
-		System.out.println("--->"+priorR);
-		System.out.println("--->"+priorSYSTEMDS);
-
 		double[][] from_R = TestUtils.convertHashMapToDoubleArray(priorR);
 		double[][] from_DML = TestUtils.convertHashMapToDoubleArray(priorSYSTEMDS);
-
-		System.out.println("..."+from_R[0][0]);
-		System.out.println("..."+from_DML[0][0]);
 
 		TestUtils.compareMatrices(from_R, from_DML, Math.pow(10, -5));
 	}

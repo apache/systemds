@@ -628,7 +628,7 @@ ema(X, search_iterations, mode, freq, alpha, beta, gamma)
 
 | Type   | Description |
 | :----- | :---------- |
-| Frame[String] | Frame with EMA results |
+| Frame[Double] | Frame with EMA results |
 
 ### Example
 

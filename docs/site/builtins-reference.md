@@ -616,7 +616,7 @@ ema(X, search_iterations, mode, freq, alpha, beta, gamma)
 
 | Name      | Type    | Default  | Description |
 | :-------- | :------ | -------- | :---------- |
-| X         | Frame[Double]  | --       | Frame that contains timeseries data that need to be imputed |
+| X         | Frame[Double]  | --       | Frame that contains timeseries data that needs to be imputed |
 | search_iterations    | Integer | --       | Budget iterations for parameter optimisation, used if parameters weren't set |
 | mode    | String | --       | Type of EMA method. Either "single", "double" or "triple" |
 | freq | Double  | --       | Seasonality when using triple EMA. |

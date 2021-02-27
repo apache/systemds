@@ -37,20 +37,22 @@ class LinearRegression {
 		double sum_x = 0.0;
 		double sum_y = 0.0;
 
+		double xx = 0.0;
+		double yy = 0.0;
+
 		for (int i = 0; i < n; i++) {
 			sum_x  += x[i];
 			sum_y  += y[i];
 		}
+
 		double x_tmp = sum_x / n;
 		double y_tmp = sum_y / n;
-
-		double xx = 0.0;
-		double yy = 0.0;
 
 		for (int i = 0; i < n; i++) {
 			xx += (x[i] - x_tmp) * (x[i] - x_tmp);
 			yy += (x[i] - x_tmp) * (y[i] - y_tmp);
 		}
+
 		coef = yy / xx;
 		intercept = y_tmp - coef * x_tmp;
 	}

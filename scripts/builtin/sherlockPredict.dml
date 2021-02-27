@@ -20,6 +20,30 @@
 #-------------------------------------------------------------
 source("scripts/builtin/sherlockNet.dml") as sherlockNet
 
+# Implements prediction and evaluation phase of Sherlock: 
+# A Deep Learning Approach to Semantic Data Type Detection
+#
+# [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection." 
+# Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. 
+# 2019.]
+
+# Split feature matrix into four different feature categories and predicting the class probability
+# on the respective features. Then combine all predictions for final predicted probabilities.
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X            Matrix    ---      matrix of values which are to be classified
+# cW           Matrix    ---      weights (parameters) matrices for character distribtions
+# cb           Matrix    ---      biases vectors for character distribtions
+# wW           Matrix    ---      weights (parameters) matrices for word embeddings
+# wb           Matrix    ---      biases vectors for word embeddings
+# pW           Matrix    ---      weights (parameters) matrices for paragraph vectors
+# pb           Matrix    ---      biases vectors for paragraph vectors
+# fW           Matrix    ---      weights (parameters) matrices for  combining all trained features (final)
+# fb           Matrix    ---      biases vectors for combining all trained features (final)
+# ---------------------------------------------------------------------------------------------
+# probs        Matrix             class probabilities of shape (N, K)
+
 m_sherlockPredict = function(matrix[double] X,
             matrix[double] cW1, matrix[double] cb1,
             matrix[double] cW2, matrix[double] cb2,
@@ -46,22 +70,18 @@ m_sherlockPredict = function(matrix[double] X,
   probs = sherlockNet::predict(first_predictions, fW1, fb1, fW2, fb2, fW3, fb3)
 }
 
+# Evaluates the performance of the network.
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# probs        Matrix             class probabilities of shape (N, K) (one-hot encoded)
+# Y            Matrix             target matrix of shape (N, K)
+# ---------------------------------------------------------------------------------------------
+# loss         double             scalar loss, of shape (1)
+# accuracy     double             scalar accuracy, of shape (1)
+
 eval = function(matrix[double] probs, matrix[double] Y)
   return (double loss, double accuracy) {
-  /*
-  * Evaluates the performance of the network.
-  *
-  * The probs matrix contains the class probability predictions
-  * of K classes over N examples. The targets, Y, have K classes,
-  * and are one-hot encoded.
-  *
-  * Inputs:
-  *  -probs: Class probabilities, of shape(N, K).
-  *  - Y: Target matrix, of shape (N, K).
-  *
-  * Outputs:
-  *  - loss: Scalar loss, of shape (1).
-  *  - accuracy: Scalar accuracy, of shape(1).
-  */
+
   [loss, accuracy] = sherlockNet::eval(probs, Y)
 }

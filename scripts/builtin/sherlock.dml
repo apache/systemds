@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 source("scripts/builtin/sherlockNet.dml") as sherlockNet
 
-# Implements Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+# Implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
 #
 # [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection." 
 # Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. 
@@ -34,30 +34,14 @@ source("scripts/builtin/sherlockNet.dml") as sherlockNet
 # X_train      Matrix    ---      maxtrix of feature vections
 # y_train      Matrix    ---      matrix Y of class labels of semantic data type
 # ---------------------------------------------------------------------------------------------
-# cW1          Matrix    ---      1st layer weights (parameters) matrix for character distribtions
-# cb1          Matrix    ---      1st layer biases vector for character distribtions
-# cW2          Matrix    ---      2st layer weights (parameters) matrix for character distribtions
-# cb2          Matrix    ---      2st layer biases vector for character distribtions
-# cW3          Matrix    ---      3st layer weights (parameters) matrix for character distribtions
-# cb3          Matrix    ---      3st layer biases vector for character distribtions
-# wW1          Matrix    ---      1st layer weights (parameters) matrix for word embeddings
-# wb1          Matrix    ---      1st layer biases vector for word embeddings
-# wW2          Matrix    ---      2st layer weights (parameters) matrix for word embeddings
-# wb2          Matrix    ---      2st layer biases vector for word embeddings
-# wW3          Matrix    ---      3st layer weights (parameters) matrix for word embeddings
-# wb3          Matrix    ---      3st layer biases vector for word embeddings
-# pW1          Matrix    ---      1st layer weights (parameters) matrix for paragraph vectors
-# pb1          Matrix    ---      1st layer biases vector for paragraph vectors
-# pW2          Matrix    ---      2st layer weights (parameters) matrix for paragraph vectors
-# pb2          Matrix    ---      2st layer biases vector for paragraph vectors
-# pW3          Matrix    ---      3st layer weights (parameters) matrix for paragraph vectors
-# pb3          Matrix    ---      3st layer biases vector for paragraph vectors
-# fW1          Matrix    ---      1st layer weights (parameters) matrix combining all trained features (final)
-# fb1          Matrix    ---      1st layer biases vector combining all trained features (final)
-# fW2          Matrix    ---      2st layer weights (parameters) matrix combining all trained features (final)
-# fb2          Matrix    ---      2st layer biases vector combining all trained features (final)
-# fW3          Matrix    ---      3st layer weights (parameters) matrix combining all trained features (final)
-# fb3          Matrix    ---      3st layer biases vector combining all trained features (final)
+# cW           Matrix    ---      weights (parameters) matrices for character distribtions
+# cb           Matrix    ---      biases vectors for character distribtions
+# wW           Matrix    ---      weights (parameters) matrices for word embeddings
+# wb           Matrix    ---      biases vectors for word embeddings
+# pW           Matrix    ---      weights (parameters) matrices for paragraph vectors
+# pb           Matrix    ---      biases vectors for paragraph vectors
+# fW           Matrix    ---      weights (parameters) matrices for  combining all trained features (final)
+# fb           Matrix    ---      biases vectors for combining all trained features (final)
 # ---------------------------------------------------------------------------------------------
 
 m_sherlock = function(matrix[double] X_train, matrix[double] y_train)

@@ -329,6 +329,28 @@ public class LineageCache
 		return p;
 	}
 	
+	//This method is for hard removal of an entry, w/o maintaining eviction data structures
+	public static void removeEntry(LineageItem key) {
+		boolean p = _cache.containsKey(key);
+		if (!p) return;
+		synchronized(_cache) {
+			LineageCacheEntry e = getEntry(key);
+			long size = e.getSize();
+			if (e._origItem == null)
+				_cache.remove(e._key);
+
+			else {
+				LineageCacheEntry h = _cache.get(e._origItem); //head
+				while (h != null) {
+					LineageCacheEntry tmp = h;
+					h = h._nextEntry;
+					_cache.remove(tmp._key);
+				}
+			}
+			LineageCacheEviction.updateSize(size, false);
+		}
+	}
+	
 	public static MatrixBlock getMatrix(LineageItem key) {
 		LineageCacheEntry e = null;
 		synchronized( _cache ) {

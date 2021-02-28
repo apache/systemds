@@ -108,10 +108,15 @@ public class LineageDedupUtils {
 		LineageItem[] liinputs = LineageItemUtils.getLineageItemInputstoSB(inputnames, ec);
 		// TODO: find the inputs from the ProgramBlock instead of StatementBlock
 		String ph = LineageItemUtils.LPLACEHOLDER;
-		for (int i=0; i<liinputs.length; i++) {
+		int i = 0;
+		for (String input : inputnames) {
+			// Skip empty variables to correctly map lineage items to live variables
+			if (ec.getVariable(input) == null)
+				continue;
 			// Wrap the inputs with order-preserving placeholders.
 			LineageItem phInput = new LineageItem(ph+String.valueOf(i), new LineageItem[] {liinputs[i]});
-			_tmpLineage.set(inputnames.get(i), phInput);
+			_tmpLineage.set(input, phInput);
+			i++;
 		}
 		// also copy the dedupblock to trace the taken path (bitset)
 		_tmpLineage.setDedupBlock(ldb);
@@ -194,6 +199,11 @@ public class LineageDedupUtils {
 			}
 			root.resetVisitStatusNR();
 			cutAtPlaceholder(root);
+			if (!LineageCacheConfig.ReuseCacheType.isNone())
+				// These chopped DAGs can lead to incorrect reuse.
+				// FIXME: This logic removes only the live variables from lineage cache. 
+				//        Need a way to remove all entries that are cached in this iteration.
+				LineageCache.removeEntry(root);
 		}
 		lmap.getTraces().keySet().removeAll(emptyRoots);
 	}

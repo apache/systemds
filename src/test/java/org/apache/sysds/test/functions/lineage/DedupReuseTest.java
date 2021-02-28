@@ -44,6 +44,7 @@ public class DedupReuseTest extends AutomatedTestBase
 	protected static final String TEST_NAME3 = "DedupReuse3"; 
 	protected static final String TEST_NAME4 = "DedupReuse4"; 
 	protected static final String TEST_NAME5 = "DedupReuse5"; 
+	protected static final String TEST_NAME6 = "DedupReuse6"; 
 
 	protected String TEST_CLASS_DIR = TEST_DIR + DedupReuseTest.class.getSimpleName() + "/";
 	
@@ -54,7 +55,7 @@ public class DedupReuseTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=5; i++)
+		for(int i=1; i<=6; i++)
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
 	
@@ -86,6 +87,12 @@ public class DedupReuseTest extends AutomatedTestBase
 	public void testLineageTrace4() {
 		// Reuse an operation for each iteration of a dedup loop
 		testLineageTrace(TEST_NAME4);
+	}
+
+	@Test
+	public void testLineageTrace6() {
+		// Reuse minibatch-wise preprocessing in a mini-batch like scenario
+		testLineageTrace(TEST_NAME6);
 	}
 	
 	public void testLineageTrace(String testname) {

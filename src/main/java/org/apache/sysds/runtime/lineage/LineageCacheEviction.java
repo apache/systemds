@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.util.LocalFileUtils;
 
 public class LineageCacheEviction
 {
-	private static long _cachesize = 0;
+	protected static long _cachesize = 0;
 	private static long CACHE_LIMIT; //limit in bytes
 	private static long _startTimestamp = 0;
 	protected static final Map<LineageItem, Integer> _removelist = new HashMap<>();

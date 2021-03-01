@@ -259,16 +259,13 @@ class PythonAPIFunctionGenerator(object):
         result = ""
         for param in parameters:
             if "matrix" not in param[1].lower():
-                # This check is only needed for Matrix types
                 continue
             matrix_check = self.__class__.matrix_check_template.format(
                 param=param[0])
-            # shape_check = self.__class__.shape_check_template.format(param=param[0])
             result = "{result}{matrix_check}".format(
                 result=result,
                 matrix_check=matrix_check,
             )
-            # shape_check=shape_check
         return result
 
 

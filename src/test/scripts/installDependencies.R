@@ -60,6 +60,7 @@ custom_install("dbscan");
 custom_install("imputeTS");
 custom_install("FNN");
 custom_install("class");
+custom_install("unbalanced");
 
 print("Installation Done")
 

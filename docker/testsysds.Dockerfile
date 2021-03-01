@@ -29,17 +29,22 @@ WORKDIR /usr/src/
 
 ENV MAVEN_VERSION 3.6.3
 ENV MAVEN_HOME /usr/lib/mvn
-ENV PATH $MAVEN_HOME/bin:$PATH
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+ENV PATH $JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 
-RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-	tar -zxvf apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-	rm apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-	mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
+RUN mkdir /usr/lib/jvm
+RUN wget -qO- \
+https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u282-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u282b08.tar.gz \
+| tar xzf -
+RUN mv jdk8u282-b08 /usr/lib/jvm/java-8-openjdk-amd64
+
+RUN wget -qO- \
+http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf -
+RUN mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 # Install Extras
 RUN apt-get update -qq && \
 	apt-get upgrade -y && \
-	apt-get install openjdk-8-jdk-headless -y && \
 	apt-get install libcurl4-openssl-dev -y && \
 	apt-get install libxml2-dev -y && \
 	apt-get install r-cran-xml -y 

@@ -25,7 +25,7 @@
 # Distributed nonnegative matrix factorization for web-scale dyadic 
 # data analysis on mapreduce. WWW 2010: 681-690]
 
-m_pnmf = function(Matrix[Double] X, Integer rnk, Double eps = 10^-8, Integer maxi = 10, Boolean verbose=TRUE) 
+m_pnmf = function(Matrix[Double] X, Integer rnk, Double eps = 1e-8, Integer maxi = 10, Boolean verbose=TRUE) 
   return (Matrix[Double] W, Matrix[Double] H) 
 {
   #initialize W and H

@@ -30,8 +30,8 @@
 # minPts    Int              5          Number of points in a neighborhood for a point to be considered as a core point (includes the point itself).
 #
 
-m_dbscan = function (Matrix[double] X, Double eps = 0.5, Integer minPts = 5)
-    return (Matrix[double] clusterMembers)
+m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
+    return (Matrix[Double] clusterMembers)
 {
     #check input parameter assertions
     if(minPts < 0) { stop("DBSCAN: Stopping due to invalid inputs: minPts should be greater than 0"); }

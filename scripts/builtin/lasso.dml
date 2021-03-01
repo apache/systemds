@@ -37,7 +37,7 @@
 # w               Double   ---        model matrix
 
 
-m_lasso = function(Matrix[Double] X, Matrix[Double] y, Double tol = 10^(-15), 
+m_lasso = function(Matrix[Double] X, Matrix[Double] y, Double tol = 1e-15, 
   Integer M = 5, Double tau = 1, Integer maxi = 100, Boolean verbose = TRUE)
   return(Matrix[Double] w)
 {

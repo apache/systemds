@@ -63,7 +63,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   D = ncol (X);
 
   # Robustness for datasets with missing values (causing NaN gradients)
-  if( isNaN(sum(X)) > 0 ) {
+  if( isNaN(sum(X)) ) {
     print("multiLogReg: matrix X contains missing values, replacing with 0.")
     X = replace(target=X, pattern=NaN, replacement=0);
   }
@@ -104,25 +104,12 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   # ssX_A [D, ] = ssX_A [D, ] + t(shift_X) %*% A;
   # tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
   # tssX_A = diag (scale_X) %*% A + shift_X %*% A [D, ];
-
-  # Convert "Y" into one hot encoded indicator matrix (if not already done):
-  if (ncol(Y) == 1) {
-    # If there is one column we try to encode the values.
-    if (min(Y) <= 0) {
-      stop("All labels in Y should be natural numbers above 0")
-    }
-    # One hot encode Y.
-    Y_indicator = table(seq(1, N, 1), Y, N,  max(Y));
-  } else {
-    # If there are multiple columns in Y then it is assumed to alreaddy be one hot encoded.
-    Y_indicator = Y
-  }
-
-  if (max(Y_indicator) != 1 || min(Y_indicator) != 0)
-    stop("All labels in Y should be catagoricals aka 1 or 0")
+  
+  max_y = max(Y)
+  Y = ifelse(Y <= 0, max_y + 1, Y)
 
   # The number of non-baseline categories
-  K = ncol (Y_indicator) - 1;  
+  K = ncol (Y) - 1;  
 
   lambda = (scale_lambda %*% matrix (1, 1, K)) * reg;
   delta = 0.5 * sqrt (D) / max (sqrt (rowSums_X_sq));
@@ -134,7 +121,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   P = P / (K + 1);        ### P =  exp_LT / (rowSums (exp_LT) %*% matrix (1, rows = 1, cols = K+1));
   obj = N * log (K + 1);  ### obj = - sum (Y * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
 
-  Grad = t(X) %*% (P [, 1:K] - Y_indicator [, 1:K]);
+  Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
   if (icpt == 2)
     Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
   
@@ -221,11 +208,10 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
       ssX_B_new = B_new;
 
     LT = cbind ((X %*% ssX_B_new), matrix (0, N, 1));
-    LT = decompress(LT)
     LT = LT - rowMaxs (LT) %*% matrix (1, 1, K+1);
     exp_LT = exp (LT);
     P_new  = exp_LT / (rowSums (exp_LT) %*% matrix (1, 1, K+1));
-    obj_new = - sum (Y_indicator * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
+    obj_new = - sum (Y * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
 
     # Consider updating LT in the inner loop
     # Consider the big "obj" and "obj_new" rounding-off their small difference below:

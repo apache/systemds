@@ -31,16 +31,16 @@ To Build the docker image simply run the build script.
 ./docker/build.sh
 ```
 
-Afterwards you should have a local image with the id `sebaba/sysds:0.2`.
+Afterwards you should have a local image with the id `systemds/sysds:latest`.
 To execute any given DML script follow the step Run.
 
 ## Run
 
 Running SystemDS in a docker container is as simple as constructing any DML script
-Then Download the docker image `sebaba/sysds:0.2` or build your own.
+Then Download the docker image `systemds/sysds:latest` or build your own.
 
 ```bash
-docker pull sebaba/sysds:0.2
+docker pull systemds/sysds:latest
 ```
 
 Verify that the docker image correctly works simply by running it, make sure that your terminal is pointing at the root of you systemds git clone.
@@ -56,7 +56,7 @@ You can mount any such folder and execute systemds on by changing the first part
 ```bash
 docker run \
   -v $(pwd)/docker/mountFolder:/input \
-  --rm sebaba/sysds:0.2
+  --rm systemds/sysds:latest
 ```
 
 ## Testing
@@ -72,7 +72,7 @@ To build this image simply run the same command as above.
 Because the github action pulls the image from docker hub the image has to be pushed to docker hub to produce any change in the behavior of the testing.
 
 ```bash
-docker push sebaba/testingsysds:0.2
+docker push systemds/testingsysds:latest
 ```
 
 For each of the tests that require R, this image is simply used, because it skips the installation of the R packages, since they are installed in this image.
@@ -82,6 +82,6 @@ Test your testing image locally by running the following command:
 ```bash
 docker run \
   -v $(pwd):/github/workspace \
-  sebaba/testingsysds:0.2 \
+  systemds/testingsysds:latest \
   org.apache.sysds.test.component.*.**
 ```

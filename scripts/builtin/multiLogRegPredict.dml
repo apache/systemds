@@ -27,43 +27,59 @@
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE        DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
-# X             Matrix      ---     Data Matrix X
-# B             Matrix      ---     Regression parameters betas
-# Y             Matrix      ---     Response vector Y
-# verbose       Boolean     FALSE   /
+# X             Matrix      ---     Feature matrix with each row corresponding to an entry.
+# B             Matrix      ---     The regression parameters betas, that enable predictions of X to Y.
+# Y             Matrix      EMPTY   The labels for the feature matrix, this is optional
+# verbose       Boolean     FALSE   If the prediction should be verbose.
 #
 # RETURN VALUES
 # ---------------------------------------------------------------------------------------------
 # NAME               TYPE   DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
 # M                  Double  ---     Matrix M of predicted means/probabilities
-# predicted_Y        Double  ---     Predicted response vector
+# predicted_Y        Double  ---     Predicted labels for X
 # accuracy           Double  ---     scalar value of accuracy
 # ---------------------------------------------------------------------------------------------
 
-m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Double] Y, Boolean verbose = FALSE)
+m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Double] Y = matrix(0, rows= 0, cols=0), Boolean verbose = FALSE)
   return(Matrix[Double] M, Matrix[Double] predicted_Y, Double accuracy)
 {
-  if(min(Y) <= 0) {
-    print("multiLogRegPredict: class labels should be greater than "
-        + "zero - converting all labels <= 0 to max(Y)+1");
-    Y = ifelse(Y <= 0, max(Y) + 1, Y);
-  }
-  if(ncol(X) < nrow(B)-1)
-    stop("multiLogRegPredict: mismatching ncol(X) and nrow(B): "+ncol(X)+" "+nrow(B));
+  if (ncol(X) < nrow(B) - 1)
+    stop("multiLogRegPredict: mismatching ncol(X) and nrow(B): " + ncol(X) + " " + nrow(B));
 
   beta = B[1:ncol(X), ];
-  intercept = ifelse(ncol(X)==nrow(B), matrix(0,1,ncol(B)), B[nrow(B),]);
-  linear_terms = X %*% beta + matrix(1,nrow(X),1) %*% intercept;
+  intercept = ifelse( ncol(X) == nrow(B) , matrix(0, 1, ncol(B)), B[nrow(B), ]);
+  linear_terms = X %*% beta + matrix(1, nrow(X), 1) %*% intercept;
 
   M = probabilities(linear_terms); # compute the probablitites on unknown data
   predicted_Y = rowIndexMax(M); # extract the class labels
 
-  if(nrow(Y) != 0)
-    accuracy = sum((predicted_Y - Y) == 0) / nrow(Y) * 100;
+  if(nrow(Y) != 0){
+      # Convert "Y" into one hot encoded indicator matrix (if not already done):
+      if (ncol(Y) == 1) {
+        # If there is one column we try to encode the values.
+        if (min(Y) <= 0) {
+          stop("All labels in Y should be natural numbers above 0")
+        }
+        # One hot encode Y.
+        Y_indicator = table(seq(1, N, 1), Y, N,  max(Y));
+      } else {
+        # If there are multiple columns in Y then it is assumed to alreaddy be one hot encoded.
+        Y_indicator = Y
+      }
+
+      if (max(Y_indicator) != 1 || min(Y_indicator) != 0)
+        stop("All labels in Y should be catagoricals aka 1 or 0")
+      
+    accuracy = sum((predicted_Y - Y_indicator) == 0) / nrow(Y_indicator) * 100;
+
+    if(verbose)
+      print("Accuracy (%): " + accuracy);
+  }
+  else {
+    accuracy = 0
+  }
   
-  if(verbose)
-    print("Accuracy (%): " + accuracy);
 }
 
 probabilities = function (Matrix[double] linear_terms)

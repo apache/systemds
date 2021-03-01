@@ -28,8 +28,9 @@
 # --------------------------------------------------------------------------------------------
 # NAME      TYPE        DEFAULT   MEANING
 # --------------------------------------------------------------------------------------------
-# X         Matrix      ---       Location to read the matrix of feature vectors
-# Y         Matrix      ---       Location to read the matrix with category labels
+# X         Matrix      ---       The feature vectors, of witch each row vector corresponds to an entry.
+# Y         Matrix      ---       The categorical labels for the X features, these labels can either be
+#                                 one column with natural numbers for labels, or one hot encoded columns with.
 # icpt      Integer     0         Intercept presence, shifting and rescaling X columns: 0 = no intercept, no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
 # tol       Double      0.000001  tolerance ("epsilon")
 # reg       Double      0.0       regularization parameter (lambda = 1/C); intercept is not regularized
@@ -62,9 +63,8 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   D = ncol (X);
 
   # Robustness for datasets with missing values (causing NaN gradients)
-  numNaNs = sum(isNaN(X))
-  if( numNaNs > 0 ) {
-    print("multiLogReg: matrix X contains "+numNaNs+" missing values, replacing with 0.")
+  if( isNaN(sum(X)) > 0 ) {
+    print("multiLogReg: matrix X contains missing values, replacing with 0.")
     X = replace(target=X, pattern=NaN, replacement=0);
   }
 
@@ -105,15 +105,24 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   # tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
   # tssX_A = diag (scale_X) %*% A + shift_X %*% A [D, ];
 
-  # Convert "Y" into indicator matrix:
-  max_y = max (Y);
-  if (min (Y) <= 0) {
-    # Category labels "0", "-1" etc. are converted into the largest label
-    Y = ifelse(Y <= 0, max_y + 1, Y);
-    max_y = max_y + 1;
+  # Convert "Y" into one hot encoded indicator matrix (if not already done):
+  if (ncol(Y) == 1) {
+    # If there is one column we try to encode the values.
+    if (min(Y) <= 0) {
+      stop("All labels in Y should be natural numbers above 0")
+    }
+    # One hot encode Y.
+    Y_indicator = table(seq(1, N, 1), Y, N,  max(Y));
+  } else {
+    # If there are multiple columns in Y then it is assumed to alreaddy be one hot encoded.
+    Y_indicator = Y
   }
-  Y = table (seq (1, N, 1), Y, N, max_y);
-  K = ncol (Y) - 1;   # The number of  non-baseline categories
+
+  if (max(Y_indicator) != 1 || min(Y_indicator) != 0)
+    stop("All labels in Y should be catagoricals aka 1 or 0")
+
+  # The number of non-baseline categories
+  K = ncol (Y_indicator) - 1;  
 
   lambda = (scale_lambda %*% matrix (1, 1, K)) * reg;
   delta = 0.5 * sqrt (D) / max (sqrt (rowSums_X_sq));
@@ -125,7 +134,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   P = P / (K + 1);        ### P =  exp_LT / (rowSums (exp_LT) %*% matrix (1, rows = 1, cols = K+1));
   obj = N * log (K + 1);  ### obj = - sum (Y * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
 
-  Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
+  Grad = t(X) %*% (P [, 1:K] - Y_indicator [, 1:K]);
   if (icpt == 2)
     Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
   
@@ -212,10 +221,11 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
       ssX_B_new = B_new;
 
     LT = cbind ((X %*% ssX_B_new), matrix (0, N, 1));
+    LT = decompress(LT)
     LT = LT - rowMaxs (LT) %*% matrix (1, 1, K+1);
     exp_LT = exp (LT);
     P_new  = exp_LT / (rowSums (exp_LT) %*% matrix (1, 1, K+1));
-    obj_new = - sum (Y * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
+    obj_new = - sum (Y_indicator * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
 
     # Consider updating LT in the inner loop
     # Consider the big "obj" and "obj_new" rounding-off their small difference below:
@@ -253,7 +263,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
     if (is_rho_accepted) {
       B = B_new;
       P = P_new;
-      Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
+      Grad = t(X) %*% (P [, 1:K] - Y_indicator [, 1:K]);
       if (icpt == 2)
         Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
 

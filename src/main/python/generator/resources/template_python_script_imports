@@ -1,5 +1,5 @@
 
-from typing import Dict
+from typing import Dict, Iterable
 
 from systemds.operator import OperationNode
 from systemds.script_building.dag import OutputType

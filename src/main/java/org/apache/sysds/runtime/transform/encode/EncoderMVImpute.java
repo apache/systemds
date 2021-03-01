@@ -48,8 +48,7 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
-public class EncoderMVImpute extends Encoder
-{
+public class EncoderMVImpute extends Encoder {
 	private static final long serialVersionUID = 9057868620144662194L;
 
 	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT }
@@ -69,8 +68,7 @@ public class EncoderMVImpute extends Encoder
 	public KahanObject[] getMeans()   { return _meanList; }
 	
 	public EncoderMVImpute(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
-		throws JSONException
-	{
+			throws JSONException {
 		super(null, clen);
 		
 		//handle column list
@@ -166,9 +164,15 @@ public class EncoderMVImpute extends Encoder
 				if( _mvMethodList[j] == MVMethod.GLOBAL_MEAN ) {
 					//compute global column mean (scale)
 					long off = _countList[j];
-					for( int i=0; i<in.getNumRows(); i++ )
+					for( int i=0; i<in.getNumRows(); i++ ){
+						Object key = in.get(i, colID-1);
+						if(key == null){
+							off--;
+							continue;
+						}
 						_meanFn.execute2(_meanList[j], UtilFunctions.objectToDouble(
-							in.getSchema()[colID-1], in.get(i, colID-1)), off+i+1);
+								in.getSchema()[colID-1], key), off+i+1);
+					}
 					_replacementList[j] = String.valueOf(_meanList[j]._sum);
 					_countList[j] += in.getNumRows();
 				}
@@ -241,8 +245,8 @@ public class EncoderMVImpute extends Encoder
 	}
 
 	private static void fillListsFromMap(Map<Integer, ColInfo> map, int[] colList, MVMethod[] mvMethodList,
-		String[] replacementList, KahanObject[] meanList, long[] countList,
-		HashMap<Integer, HashMap<String, Long>> hist) {
+			String[] replacementList, KahanObject[] meanList, long[] countList,
+			HashMap<Integer, HashMap<String, Long>> hist) {
 		int i = 0;
 		for(Entry<Integer, ColInfo> entry : map.entrySet()) {
 			colList[i] = entry.getKey();
@@ -267,7 +271,7 @@ public class EncoderMVImpute extends Encoder
 			for(int i = 0; i < other._colList.length; i++) {
 				int column = other._colList[i] + (col - 1);
 				ColInfo otherColInfo = new ColInfo(otherImpute._mvMethodList[i], otherImpute._replacementList[i],
-					otherImpute._meanList[i], otherImpute._countList[i], otherImpute._hist.get(i + 1));
+						otherImpute._meanList[i], otherImpute._countList[i], otherImpute._hist.get(i + 1));
 				ColInfo colInfo = map.get(column);
 				if(colInfo == null)
 					map.put(column, otherColInfo);
@@ -432,7 +436,7 @@ public class EncoderMVImpute extends Encoder
 		public void merge(ColInfo otherColInfo) {
 			if(_method != otherColInfo._method)
 				throw new DMLRuntimeException("Tried to merge two different impute methods: " + _method.name() + " vs. "
-					+ otherColInfo._method.name());
+						+ otherColInfo._method.name());
 			switch(_method) {
 				case CONSTANT:
 					assert _replacement.equals(otherColInfo._replacement);

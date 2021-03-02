@@ -61,6 +61,10 @@ public class LopProperties
 	public ExecType getExecType() {
 		return execType;
 	}
+
+	public void setExecType(ExecType newExecType){
+		execType = newExecType;
+	}
 	
 	public boolean getProducesIntermediateOutput() {
 		return producesIntermediateOutput;

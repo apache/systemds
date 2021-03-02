@@ -53,6 +53,10 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 public class ReorgFEDInstruction extends UnaryFEDInstruction {
 	
+	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr, boolean federatedOutput) {
+		super(FEDType.Reorg, op, in1, out, opcode, istr, federatedOutput);
+	}
+
 	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr) {
 		super(FEDType.Reorg, op, in1, out, opcode, istr);
 	}
@@ -64,11 +68,12 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		if ( opcode.equalsIgnoreCase("r'") ) {
-			InstructionUtils.checkNumFields(str, 2, 3);
+			InstructionUtils.checkNumFields(str, 2, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[2]);
 			int k = Integer.parseInt(parts[3]);
-			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str);
+			boolean federatedOutput = parts.length > 4 && Boolean.parseBoolean(parts[4]);
+			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str, federatedOutput);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
@@ -97,7 +102,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
 				output,
 				new CPOperand[] {input1},
-				new long[] {mo1.getFedMapping().getID()});
+				new long[] {mo1.getFedMapping().getID()}, _federatedOutput);
 			mo1.getFedMapping().execute(getTID(), true, fr1);
 
 			//drive output federated mapping

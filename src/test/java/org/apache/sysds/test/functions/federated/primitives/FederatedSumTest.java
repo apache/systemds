@@ -24,6 +24,7 @@ import java.util.Collection;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -69,12 +70,21 @@ public class FederatedSumTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void federatedSumCPToFED() {
+		federatedSum(Types.ExecMode.SINGLE_NODE, true);
+	}
+
+	@Test
 	@Ignore
 	public void federatedSumSP() {
 		federatedSum(Types.ExecMode.SPARK);
 	}
 
-	public void federatedSum(Types.ExecMode execMode) {
+	public void federatedSum(Types.ExecMode execMode){
+		federatedSum(execMode, false);
+	}
+
+	public void federatedSum(Types.ExecMode execMode, boolean federatedCompilation) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
@@ -108,6 +118,7 @@ public class FederatedSumTest extends AutomatedTestBase {
 		}
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
+		OptimizerUtils.FEDERATED_COMPILATION = federatedCompilation;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
 			"cols=" + cols, "out_S=" + output("S"), "out_R=" + output("R"), "out_C=" + output("C")};
@@ -119,6 +130,7 @@ public class FederatedSumTest extends AutomatedTestBase {
 
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;
+		OptimizerUtils.FEDERATED_COMPILATION = false;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
 }

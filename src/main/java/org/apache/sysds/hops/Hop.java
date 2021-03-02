@@ -81,6 +81,13 @@ public abstract class Hop implements ParseInfo {
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
+
+	/**
+	 * Boolean defining if the output of the operation should be federated.
+	 * If it is true, the output should be kept at federated sites.
+	 * If it is false, the output should be retrieved by the coordinator.
+	 */
+	protected boolean _federatedOutput = false;
 	
 	// Estimated size for the output produced from this Hop
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -734,6 +741,40 @@ public abstract class Hop implements ParseInfo {
 		return et;
 	}
 
+	/**
+	 * Update the execution type if input is federated and federated compilation is activated.
+	 * Federated compilation is activated in OptimizerUtils.
+	 */
+	protected void updateETFed(){
+		if ( inputIsFED() )
+			_etype = ExecType.FED;
+	}
+
+	/**
+	 * Returns true if any input has federated ExecType and configures such input to keep the output federated.
+	 * This method can only return true if FedDecision is activated.
+	 * @return true if any input has federated ExecType
+	 */
+	protected boolean inputIsFED(){
+		if ( !OptimizerUtils.FEDERATED_COMPILATION ) return false;
+		boolean fedFound = false;
+		for ( Hop input : _input ){
+			if ( input.isFederated() ){
+				input._federatedOutput = true;
+				fedFound = true;
+			}
+		}
+		return fedFound;
+	}
+
+	/**
+	 * Returns true if the execution is federated and/or if the output is federated.
+	 * @return true if federated
+	 */
+	public boolean isFederated(){
+		return getExecType() == ExecType.FED || hasFederatedOutput();
+	}
+
 	public ArrayList<Hop> getParent() {
 		return _parent;
 	}
@@ -778,6 +819,10 @@ public abstract class Hop implements ParseInfo {
 
 	public PrivacyConstraint getPrivacy(){
 		return _privacyConstraint;
+	}
+
+	public boolean hasFederatedOutput(){
+		return _federatedOutput;
 	}
 
 	public void setUpdateType(UpdateType update){
@@ -1411,6 +1456,10 @@ public abstract class Hop implements ParseInfo {
 	
 	protected void setPrivacy(Lop lop) {
 		lop.setPrivacyConstraint(getPrivacy());
+	}
+
+	protected void setFederatedOutput(Lop lop){
+		lop.setFederatedOutput(_federatedOutput);
 	}
 
 	/**

@@ -17,9 +17,10 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated.primitives;
+package org.apache.sysds.test.functions.privacy.fedplanning;
 
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -35,12 +36,10 @@ import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedBinaryVectorTest extends AutomatedTestBase {
-
-	private final static String TEST_DIR = "functions/federated/";
-	// Using same test base as binary matrix test
-	private final static String TEST_NAME = "FederatedBinaryMatrixTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedBinaryVectorTest.class.getSimpleName() + "/";
+public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
+	private final static String TEST_DIR = "functions/privacy/";
+	private final static String TEST_NAME = "FederatedMultiplyPlanningTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -58,24 +57,25 @@ public class FederatedBinaryVectorTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-			// {2, 1000}, 
-			// {10, 100}, 
-			{100, 10}, 
-			// {1000, 1}, {10, 2000}, {2000, 10}
+			{100, 10}
 		});
 	}
 
 	@Test
 	public void federatedMultiplyCP() {
-		federatedMultiply(Types.ExecMode.SINGLE_NODE, false);
+		OptimizerUtils.FEDERATED_COMPILATION = true;
+		federatedMultiply(Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void federatedMultiplyCPCompileToFED() {
-		federatedMultiply(Types.ExecMode.SINGLE_NODE, true);
+	private void writeStandardMatrix(String matrixName, long seed){
+		int halfRows = rows/2;
+		double[][] matrix = getRandomMatrix(halfRows, cols, 0, 1, 1, seed);
+		writeInputMatrixWithMTD(matrixName, matrix, false,
+			new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols),
+			new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.PrivateAggregation));
 	}
 
-	public void federatedMultiply(Types.ExecMode execMode, boolean federatedCompilation) {
+	public void federatedMultiply(Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -86,19 +86,11 @@ public class FederatedBinaryVectorTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		// write input matrices
-		int halfRows = rows / 2;
-		// We have two matrices handled by a single federated worker
-		double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 42);
-		double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 1340);
-		// And another two matrices handled by a single federated worker
-		double[][] Y1 = getRandomMatrix(halfRows, 1, 0, 1, 1, 44);
-		double[][] Y2 = getRandomMatrix(halfRows, 1, 0, 1, 1, 21);
-
-		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
-		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
-		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(halfRows, 1, blocksize, halfRows));
-		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(halfRows, 1, blocksize, halfRows));
+		// Write input matrices
+		writeStandardMatrix("X1", 42);
+		writeStandardMatrix("X2", 1340);
+		writeStandardMatrix("Y1", 44);
+		writeStandardMatrix("Y2", 21);
 
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
@@ -108,28 +100,30 @@ public class FederatedBinaryVectorTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 
+		// Run actual dml script with federated matrix
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
+		runTest(true, false, null, -1);
+
+		OptimizerUtils.FEDERATED_COMPILATION = false;
+
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
 			"Y2=" + input("Y2"), "Z=" + expected("Z")};
 		runTest(true, false, null, -1);
 
-		// Run actual dml script with federated matrix
-		OptimizerUtils.FEDERATED_COMPILATION = federatedCompilation;
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
-			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
-		runTest(true, false, null, -1);
-
 		// compare via files
 		compareResults(1e-9);
+		heavyHittersContainsString("fed_*", "fed_ba+*");
 
 		TestUtils.shutdownThreads(t1, t2);
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-		OptimizerUtils.FEDERATED_COMPILATION = false;
 	}
 }
+

@@ -39,10 +39,14 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	@SuppressWarnings("unused")
 	private final int _numThreads;
 	
-	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr) {
-		super(FEDType.Tsmm, null, in, null, out, opcode, istr);
+	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr, boolean federatedOutput) {
+		super(FEDType.Tsmm, null, in, null, out, opcode, istr, federatedOutput);
 		_type = type;
 		_numThreads = k;
+	}
+
+	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr) {
+		this(in, out, type, k, opcode, istr, false);
 	}
 	
 	public static TsmmFEDInstruction parseInstruction(String str) {
@@ -51,11 +55,11 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		if(!opcode.equalsIgnoreCase("tsmm"))
 			throw new DMLRuntimeException("TsmmFedInstruction.parseInstruction():: Unknown opcode " + opcode);
 		
-		InstructionUtils.checkNumFields(parts, 4);
+		InstructionUtils.checkNumFields(parts, 3, 4);
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		MMTSJType type = MMTSJType.valueOf(parts[3]);
-		int k = Integer.parseInt(parts[4]);
+		int k = (parts.length > 4) ? Integer.parseInt(parts[4]) : -1;
 		return new TsmmFEDInstruction(in, out, type, k, opcode, str);
 	}
 	

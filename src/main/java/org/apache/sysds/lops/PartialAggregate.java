@@ -233,7 +233,7 @@ public class PartialAggregate extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		if( getExecType() == ExecType.SPARK )
 			sb.append( _aggtype );
-		else if( getExecType() == ExecType.CP ) {
+		else if( getExecType() == ExecType.CP || getExecType() == ExecType.FED ) {
 			sb.append(_numThreads);
 
 			//number of outputs, valid for fed instruction

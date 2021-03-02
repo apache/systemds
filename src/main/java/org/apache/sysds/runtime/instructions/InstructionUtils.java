@@ -146,7 +146,10 @@ public class InstructionUtils
 	public static int checkNumFields( String[] parts, int... expected ) {
 		int numParts = parts.length;
 		int numFields = numParts - 1; //account for opcode
-		
+		return checkMatchingNumField(numFields, expected);
+	}
+
+	private static int checkMatchingNumField(int numFields, int... expected){
 		if (Arrays.stream(expected).noneMatch((i) -> numFields == i)) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("checkNumFields() -- expected number (");
@@ -158,8 +161,13 @@ public class InstructionUtils
 			sb.append(") != is not equal to actual number (").append(numFields).append(").");
 			throw new DMLRuntimeException(sb.toString());
 		}
-		
 		return numFields;
+	}
+
+	public static int checkNumFields( String str, int... expected ) {
+		int numParts = str.split(Instruction.OPERAND_DELIM).length;
+		int numFields = numParts - 2; // -2 accounts for execType and opcode
+		return checkMatchingNumField(numFields, expected);
 	}
 
 	public static int checkNumFields( String str, int expected1, int expected2 ) {
@@ -1061,5 +1069,56 @@ public class InstructionUtils
 		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		parts[1] = opcode;
 		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(op2), createOperand(out));
+	}
+
+	/**
+	 * Prepare instruction string for sending in a FederatedRequest as a CP instruction.
+	 * This involves replacing the coordinator operand names with the worker operand names,
+	 * changing the execution type, and removing the federated output flag if necessary.
+	 * @param inst instruction string to prepare for federated request
+	 * @param varOldOut current output operand (to be replaced)
+	 * @param id new output operand (always a number)
+	 * @param varOldIn current input operand (to be replaced)
+	 * @param varNewIn new input operand names (always numbers)
+	 * @param federatedOutput federated output flag
+	 * @return instruction string prepared for federated request
+	 */
+	public static String instructionStringFEDPrepare(String inst, CPOperand varOldOut, long id, CPOperand[] varOldIn, long[] varNewIn, boolean federatedOutput){
+		String linst = replaceExecTypeWithCP(inst);
+		linst = replaceOutputOperand(linst, varOldOut, id);
+		linst = replaceInputOperand(linst, varOldIn, varNewIn);
+		linst = removeFEDOutputFlag(linst, federatedOutput);
+		return linst;
+	}
+
+	private static String replaceExecTypeWithCP(String inst){
+		return inst.replace(Types.ExecType.SPARK.name(), Types.ExecType.CP.name())
+			.replace(Types.ExecType.FED.name(), Types.ExecType.CP.name());
+	}
+
+	private static String replaceOutputOperand(String linst, CPOperand varOldOut, long id){
+		return replaceOperand(linst, varOldOut, Long.toString(id));
+	}
+
+	private static String replaceInputOperand(String linst, CPOperand[] varOldIn, long[] varNewIn){
+		for(int i=0; i<varOldIn.length; i++)
+			if( varOldIn[i] != null ) {
+				linst = replaceOperand(linst, varOldIn[i], Long.toString(varNewIn[i]));
+				linst = linst.replace("="+varOldIn[i].getName(), "="+varNewIn[i]); //parameterized
+			}
+		return linst;
+	}
+
+	private static String removeFEDOutputFlag(String linst, boolean federatedOutput){
+		if ( federatedOutput ){
+			linst = linst.substring(0, linst.lastIndexOf(Lop.OPERAND_DELIMITOR));
+		}
+		return linst;
+	}
+
+	private static String replaceOperand(String linst, CPOperand oldOperand, String newOperandName){
+		return linst.replace(
+			Lop.OPERAND_DELIMITOR+oldOperand.getName()+Lop.DATATYPE_PREFIX,
+			Lop.OPERAND_DELIMITOR+newOperandName+Lop.DATATYPE_PREFIX);
 	}
 }

@@ -102,6 +102,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		outerOp = outOp;
 		getInput().add(0, in1);
 		getInput().add(1, in2);
+		updateETFed();
 		in1.getParent().add(this);
 		in2.getParent().add(this);
 		
@@ -177,8 +178,8 @@ public class AggBinaryOp extends MultiThreadedHop
 			//matrix mult operation selection part 2 (specific pattern)
 			MMTSJType mmtsj = checkTransposeSelf(); //determine tsmm pattern
 			ChainType chain = checkMapMultChain(); //determine mmchain pattern
-			
-			if( et == ExecType.CP || et == ExecType.GPU ) 
+
+			if( et == ExecType.CP || et == ExecType.GPU || et == ExecType.FED )
 			{
 				//matrix mult operation selection part 3 (CP type)
 				_method = optFindMMultMethodCP ( input1.getDim1(), input1.getDim2(),   
@@ -251,7 +252,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 
@@ -425,7 +426,9 @@ public class AggBinaryOp extends MultiThreadedHop
 			//pull binary aggregate into spark 
 			_etype = ExecType.SPARK;
 		}
-		
+
+		updateETFed();
+
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

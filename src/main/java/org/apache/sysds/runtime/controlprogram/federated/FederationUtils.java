@@ -65,8 +65,14 @@ public class FederationUtils {
 		return _idSeq.getNextID();
 	}
 
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn, boolean federatedOutput){
+		long id = getNextFedDataID();
+		String linst = InstructionUtils.instructionStringFEDPrepare(inst, varOldOut, id, varOldIn, varNewIn, federatedOutput);
+		return new FederatedRequest(RequestType.EXEC_INST, id, linst);
+	}
+
 	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {
-		return callInstruction(inst, varOldOut, getNextFedDataID(), varOldIn, varNewIn);
+		return callInstruction(inst,varOldOut, varOldIn, varNewIn, false);
 	}
 
 	public static FederatedRequest[] callInstruction(String[] inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {

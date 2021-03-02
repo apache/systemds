@@ -194,6 +194,11 @@ public class OptimizerUtils
 	 * out of while, for, and parfor loops.
 	 */
 	public static boolean ALLOW_CODE_MOTION = false;
+
+	/**
+	 * Compile federated instructions based on input federation state and privacy constraints.
+	 */
+	public static boolean FEDERATED_COMPILATION = false;
 	
 	
 	/**

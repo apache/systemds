@@ -113,6 +113,13 @@ public abstract class Lop
 	 * Privacy Constraint
 	 */
 	protected PrivacyConstraint privacyConstraint;
+
+	/**
+	 * Boolean defining if the output of the operation should be federated.
+	 * If it is true, the output should be kept at federated sites.
+	 * If it is false, the output should be retrieved by the coordinator.
+	 */
+	protected boolean federatedOutput = false;
 	
 	/**
 	 * refers to #lops whose input is equal to the output produced by this lop.
@@ -286,6 +293,10 @@ public abstract class Lop
 	public PrivacyConstraint getPrivacyConstraint(){
 		return privacyConstraint;
 	}
+
+	public void setFederatedOutput(boolean federatedOutput){
+		this.federatedOutput = federatedOutput;
+	}
 	
 	public void setConsumerCount(int cc) {
 		consumerCount = cc;
@@ -342,12 +353,20 @@ public abstract class Lop
 	}
 
 	/**
-	 * Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, INVALID) of LOP
+	 * Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, FED, INVALID) of LOP
 	 * 
 	 * @return execution type
 	 */
  	public ExecType getExecType() {
 		return lps.getExecType();
+	}
+
+	/**
+	 * Set the execution type of LOP.
+	 * @param newExecType new execution type
+	 */
+	public void setExecType(ExecType newExecType){
+ 		lps.setExecType(newExecType);
 	}
 	
 	public boolean getProducesIntermediateOutput() {

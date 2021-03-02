@@ -300,7 +300,7 @@ public class FunctionOp extends Hop
 		setLops(fcall);
 		
 		//note: no reblock lop because outputs directly bound
-		
+
 		return getLops();
 	}
 

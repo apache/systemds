@@ -19,17 +19,20 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import org.junit.Test;
+import java.util.HashMap;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
-import java.util.HashMap;
+import org.junit.Test;
 
 public class BuiltinMultiLogRegPredictTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(BuiltinMultiLogRegPredictTest.class.getName());
 	private final static String TEST_NAME = "multiLogRegPredict";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinMultiLogRegPredictTest.class.getSimpleName() + "/";
@@ -92,7 +95,7 @@ public class BuiltinMultiLogRegPredictTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("D", D, true);
 
 
-			runTest(true, false, null, -1);
+			LOG.debug(runTest(true, false, null, -1));
 			runRScript(true);
 
 			//compare matrices

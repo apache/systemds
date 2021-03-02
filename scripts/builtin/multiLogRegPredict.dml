@@ -55,14 +55,9 @@ m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Doubl
   predicted_Y = rowIndexMax(M); # extract the class labels
 
   if(nrow(Y) != 0){
-    max_y = max(Y)
-    Y = ifelse(Y <= 0, max_y + 1, Y)
-
-    if (max(Y_indicator) != 1 || min(Y_indicator) != 0)
-      stop("All labels in Y should be catagoricals aka 1 or 0")
-  
-    accuracy = sum((predicted_Y - Y_indicator) == 0) / nrow(Y_indicator) * 100;
-
+    while(min(Y) <= 0)
+      Y = replace(target = Y, pattern = min(Y), replacement = max(Y) + 1)
+    accuracy = sum((predicted_Y - Y) == 0) / nrow(Y) * 100;
     if(verbose)
       print("Accuracy (%): " + accuracy);
   }

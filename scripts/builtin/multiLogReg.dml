@@ -105,8 +105,10 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   # tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
   # tssX_A = diag (scale_X) %*% A + shift_X %*% A [D, ];
   
-  max_y = max(Y)
-  Y = ifelse(Y <= 0, max_y + 1, Y)
+  while(min(Y) <= 0)
+    Y = replace(target = Y, pattern = min(Y), replacement = max(Y) + 1)
+  
+  Y = table(seq(1, N, 1), Y, N, max(Y));
 
   # The number of non-baseline categories
   K = ncol (Y) - 1;  
@@ -249,7 +251,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
     if (is_rho_accepted) {
       B = B_new;
       P = P_new;
-      Grad = t(X) %*% (P [, 1:K] - Y_indicator [, 1:K]);
+      Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
       if (icpt == 2)
         Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
 

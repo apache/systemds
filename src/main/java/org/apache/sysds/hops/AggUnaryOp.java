@@ -216,6 +216,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
+		updateETBasedOnPrivacy(getLops());
 		
 		//return created lops
 		return getLops();

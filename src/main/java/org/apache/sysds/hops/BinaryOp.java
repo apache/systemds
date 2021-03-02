@@ -225,6 +225,7 @@ public class BinaryOp extends MultiThreadedHop
 
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
+		updateETBasedOnPrivacy(getLops());
 		
 		return getLops();
 	}

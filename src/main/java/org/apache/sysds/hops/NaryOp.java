@@ -111,6 +111,7 @@ public class NaryOp extends Hop {
 
 		// add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
+		updateETBasedOnPrivacy(getLops());
 
 		return getLops();
 	}

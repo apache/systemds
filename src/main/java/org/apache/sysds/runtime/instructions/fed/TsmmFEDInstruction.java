@@ -51,11 +51,11 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		if(!opcode.equalsIgnoreCase("tsmm"))
 			throw new DMLRuntimeException("TsmmFedInstruction.parseInstruction():: Unknown opcode " + opcode);
 		
-		InstructionUtils.checkNumFields(parts, 4);
+		InstructionUtils.checkNumFields(parts, 3, 4);
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		MMTSJType type = MMTSJType.valueOf(parts[3]);
-		int k = Integer.parseInt(parts[4]);
+		int k = (parts.length > 4) ? Integer.parseInt(parts[4]) : -1;
 		return new TsmmFEDInstruction(in, out, type, k, opcode, str);
 	}
 	

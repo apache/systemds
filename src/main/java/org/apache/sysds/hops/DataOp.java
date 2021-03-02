@@ -322,6 +322,7 @@ public class DataOp extends Hop {
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
+		updateETBasedOnPrivacy(getLops());
 	
 		return getLops();
 

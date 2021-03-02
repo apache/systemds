@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.TsmmFEDInstruction;
 
 import java.util.HashMap;
 
@@ -34,6 +35,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType = new HashMap<>();
 		String2FEDInstructionType.put("fedinit", FEDType.Init);
 		String2FEDInstructionType.put("ba+*",    FEDType.AggregateBinary);
+		String2FEDInstructionType.put("tsmm", FEDType.Tsmm);
 	}
 
 	public static FEDInstruction parseSingleInstruction (String str ) {
@@ -56,6 +58,8 @@ public class FEDInstructionParser extends InstructionParser
 				return InitFEDInstruction.parseInstruction(str);
 			case AggregateBinary:
 				return AggregateBinaryFEDInstruction.parseInstruction(str);
+			case Tsmm:
+				return TsmmFEDInstruction.parseInstruction(str);
 			default:
 				throw new DMLRuntimeException("Invalid FEDERATED Instruction Type: " + fedtype );
 		}

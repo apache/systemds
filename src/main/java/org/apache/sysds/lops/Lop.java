@@ -342,12 +342,20 @@ public abstract class Lop
 	}
 
 	/**
-	 * Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, INVALID) of LOP
+	 * Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, FED, INVALID) of LOP
 	 * 
 	 * @return execution type
 	 */
  	public ExecType getExecType() {
 		return lps.getExecType();
+	}
+
+	/**
+	 * Set the execution type of LOP.
+	 * @param newExecType new execution type
+	 */
+	public void setExecType(ExecType newExecType){
+ 		lps.setExecType(newExecType);
 	}
 	
 	public boolean getProducesIntermediateOutput() {

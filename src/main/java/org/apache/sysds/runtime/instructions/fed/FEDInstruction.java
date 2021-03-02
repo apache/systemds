@@ -20,8 +20,11 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.privacy.FedDecision;
 import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
 public abstract class FEDInstruction extends Instruction {
@@ -79,8 +82,21 @@ public abstract class FEDInstruction extends Instruction {
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
+		if ( FedDecision.convertToCP(this) )
+			return convertToCP(ec);
 		Instruction tmp = super.preprocessInstruction(ec);
 		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
 		return tmp;
+	}
+
+	/**
+	 * Create CP instruction based on this federated instruction.
+	 * @param ec execution context
+	 * @return CP instruction
+	 */
+	private Instruction convertToCP(ExecutionContext ec){
+		System.out.println(this.getInstructionString());
+		CPInstruction convertedInst = CPInstructionParser.parseSingleInstruction(this.getInstructionString());
+		return convertedInst.preprocessInstruction(ec);
 	}
 }

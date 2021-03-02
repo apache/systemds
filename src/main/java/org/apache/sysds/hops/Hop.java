@@ -51,6 +51,7 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.privacy.FedDecision;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -209,6 +210,10 @@ public abstract class Hop implements ParseInfo {
 		}
 		else if ( DMLScript.getGlobalExecMode() == ExecMode.SPARK )
 			_etypeForced = ExecType.SPARK; // enabled with -exec spark option
+
+		ExecType privacyBasedExecType = FedDecision.hopExecType(this);
+		if ( privacyBasedExecType != null )
+			_etypeForced = privacyBasedExecType;
 	}
 	
 	public void checkAndSetInvalidCPDimsAndSize()
@@ -732,6 +737,18 @@ public abstract class Hop implements ParseInfo {
 		}
 		
 		return et;
+	}
+
+	/**
+	 * Updates the execution type based on privacy constraints.
+	 * If no privacy constraints are involved, the execution type
+	 * will not be changed.
+	 * @param lop lop for which execution type may be updated
+	 */
+	protected void updateETBasedOnPrivacy(Lop lop){
+		ExecType privacyBasedExecType = FedDecision.lopExectype(lop);
+		if (privacyBasedExecType != null)
+			lop.setExecType(privacyBasedExecType);
 	}
 
 	public ArrayList<Hop> getParent() {

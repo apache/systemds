@@ -40,22 +40,22 @@ public class BuiltinKmTest extends AutomatedTestBase
 
 	@Test
 	public void testKmDefaultConfiguration() {
-		runKmTest(50, 2.0, 1.5, 0.8, 2,
+		runKmTest(10, 2.0, 1.5, 0.8, 2,
 				1, 10, 0.05,"greenwood", "log", "none");
 	}
 	@Test
 	public void testKmErrTypePeto() {
-		runKmTest(50, 2.0, 1.5, 0.8, 2,
+		runKmTest(10, 2.0, 1.5, 0.8, 2,
 				1, 10, 0.05,"peto", "log", "none");
 	}
 	@Test
 	public void testKmConfTypePlain() {
-		runKmTest(50, 2.0, 1.5, 0.8, 2,
+		runKmTest(10, 2.0, 1.5, 0.8, 2,
 				1, 10, 0.05,"greenwood", "plain", "none");
 	}
 	@Test
 	public void testKmConfTypeLogLog() {
-		runKmTest(50, 2.0, 1.5, 0.8, 2,
+		runKmTest(10, 2.0, 1.5, 0.8, 2,
 				1, 10, 0.05,"greenwood", "log-log", "none");
 	}
 
@@ -72,7 +72,7 @@ public class BuiltinKmTest extends AutomatedTestBase
 				"T_GROUPS_OE=" + output("T_GROUPS_OE"), "n=" + numRecords, "l=" + scaleWeibull,
 				"v=" + shapeWeibull, "p=" + prob, "g=" + numCatFeaturesGroup, "s=" + numCatFeaturesStrat,
 				"f=" + maxNumLevels, "alpha=" + alpha, "err_type=" + err_type,
-				"conf_type=" + conf_type, "test_type=" + test_type};
+				"conf_type=" + conf_type, "test_type=" + test_type, "sd=" + 1};
 
 		runTest(true, false, null, -1);
 	}

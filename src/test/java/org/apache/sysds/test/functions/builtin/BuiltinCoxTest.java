@@ -51,7 +51,7 @@ public class BuiltinCoxTest extends AutomatedTestBase
 				"-nvargs", "M=" + output("M"), "S=" + output("S"), "T=" + output("T"), "COV=" + output("COV"),
 				"RT=" + output("RT"), "XO=" + output("XO"), "n=" + numRecords, "l=" + scaleWeibull,
 				"v=" + shapeWeibull, "p=" + prob, "m=" + numFeatures, "sp=" + sparsity,
-				"alpha=" + alpha, "tol=" + tol, "moi=" + moi, "mii=" + mii};
+				"alpha=" + alpha, "tol=" + tol, "moi=" + moi, "mii=" + mii, "sd=" + 1};
 
 		runTest(true, false, null, -1);
 	}

@@ -74,7 +74,7 @@ struct DevMatPtrs {
 	T* scalars{};
 
 	~DevMatPtrs() {
-#ifdef _DEBUG
+#ifndef NDEBUG
 		std::cout << "~DevMatPtrs() before cudaFree:\n";
 		int i = 0;
 		for (auto& p : ptrs) {
@@ -89,7 +89,7 @@ struct DevMatPtrs {
 				p = nullptr;
 			}
 		}
-#ifdef _DEBUG
+#ifndef NDEBUG
 		std::cout << "~DevMatPtrs() after cudaFree:\n";
 		i = 0;
 		for (auto& p : ptrs) {

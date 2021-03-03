@@ -29,7 +29,7 @@ using sec = std::chrono::duration<double, std::ratio<1>>;
 
 size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resource_path) {
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 	std::cout << "initializing cuda device " << device_id << std::endl;
 #endif
 	std::string cuda_include_path;
@@ -90,7 +90,7 @@ void SpoofCUDAContext::destroy_cuda(SpoofCUDAContext *ctx, uint32_t device_id) {
 }
 
 int SpoofCUDAContext::compile(std::unique_ptr<SpoofOperator> op, const std::string &src) {
-#ifdef _DEBUG
+#ifndef NDEBUG
 //	std::cout << "---=== START source listing of spoof cuda kernel [ " << name << " ]: " << std::endl;
 //    uint32_t line_num = 0;
 //	std::istringstream src_stream(src);

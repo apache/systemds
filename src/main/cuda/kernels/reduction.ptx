@@ -19,43 +19,44 @@
 .extern .shared .align 1 .b8 memory[];
 .global .align 1 .b8 $str[78] = {69, 82, 82, 79, 82, 58, 32, 110, 111, 32, 99, 111, 108, 117, 109, 110, 32, 105, 110, 100, 105, 99, 101, 115, 32, 97, 114, 114, 97, 121, 32, 105, 110, 32, 97, 32, 100, 101, 110, 115, 101, 32, 109, 97, 116, 114, 105, 120, 33, 32, 84, 104, 105, 115, 32, 119, 105, 108, 108, 32, 108, 105, 107, 101, 108, 121, 32, 99, 114, 97, 115, 104, 32, 58, 45, 47, 10, 0};
 
-.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIdE9len_denseEv(
-	.param .b64 _ZN14MatrixAccessorIdE9len_denseEv_param_0
-)
-{
-	.reg .b32 	%r<6>;
-	.reg .b64 	%rd<3>;
-
-
-	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE9len_denseEv_param_0];
-	ld.u64 	%rd2, [%rd1];
-	ld.v2.u32 	{%r1, %r2}, [%rd2+24];
-	mul.lo.s32 	%r5, %r2, %r1;
-	st.param.b32	[func_retval0+0], %r5;
-	ret;
-}
-
-.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIdE9pos_denseEj(
-	.param .b64 _ZN14MatrixAccessorIdE9pos_denseEj_param_0,
-	.param .b32 _ZN14MatrixAccessorIdE9pos_denseEj_param_1
+.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIfE9len_denseEv(
+	.param .b64 _ZN14MatrixAccessorIfE9len_denseEv_param_0
 )
 {
 	.reg .b32 	%r<4>;
 	.reg .b64 	%rd<3>;
 
 
-	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE9pos_denseEj_param_0];
-	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE9pos_denseEj_param_1];
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE9len_denseEv_param_0];
 	ld.u64 	%rd2, [%rd1];
-	ld.u32 	%r2, [%rd2+28];
+	ld.u32 	%r1, [%rd2+4];
+	ld.u32 	%r2, [%rd2+8];
 	mul.lo.s32 	%r3, %r2, %r1;
 	st.param.b32	[func_retval0+0], %r3;
 	ret;
 }
 
-.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIdE10cols_denseEj(
-	.param .b64 _ZN14MatrixAccessorIdE10cols_denseEj_param_0,
-	.param .b32 _ZN14MatrixAccessorIdE10cols_denseEj_param_1
+.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIfE9pos_denseEj(
+	.param .b64 _ZN14MatrixAccessorIfE9pos_denseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE9pos_denseEj_param_1
+)
+{
+	.reg .b32 	%r<4>;
+	.reg .b64 	%rd<3>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE9pos_denseEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE9pos_denseEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u32 	%r2, [%rd2+8];
+	mul.lo.s32 	%r3, %r2, %r1;
+	st.param.b32	[func_retval0+0], %r3;
+	ret;
+}
+
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIfE10cols_denseEj(
+	.param .b64 _ZN14MatrixAccessorIfE10cols_denseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE10cols_denseEj_param_1
 )
 {
 	.reg .b32 	%r<2>;
@@ -88,6 +89,322 @@
 	ret;
 }
 
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIfE12val_dense_rcEjj(
+	.param .b64 _ZN14MatrixAccessorIfE12val_dense_rcEjj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE12val_dense_rcEjj_param_1,
+	.param .b32 _ZN14MatrixAccessorIfE12val_dense_rcEjj_param_2
+)
+{
+	.reg .b32 	%r<5>;
+	.reg .b64 	%rd<6>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE12val_dense_rcEjj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE12val_dense_rcEjj_param_1];
+	ld.param.u32 	%r2, [_ZN14MatrixAccessorIfE12val_dense_rcEjj_param_2];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+32];
+	ld.u32 	%r3, [%rd2+8];
+	mad.lo.s32 	%r4, %r3, %r1, %r2;
+	mul.wide.u32 	%rd4, %r4, 4;
+	add.s64 	%rd5, %rd3, %rd4;
+	st.param.b64	[func_retval0+0], %rd5;
+	ret;
+}
+
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIfE10vals_denseEj(
+	.param .b64 _ZN14MatrixAccessorIfE10vals_denseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE10vals_denseEj_param_1
+)
+{
+	.reg .b32 	%r<2>;
+	.reg .b64 	%rd<6>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE10vals_denseEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE10vals_denseEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+32];
+	mul.wide.u32 	%rd4, %r1, 4;
+	add.s64 	%rd5, %rd3, %rd4;
+	st.param.b64	[func_retval0+0], %rd5;
+	ret;
+}
+
+.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIfE13row_len_denseEj(
+	.param .b64 _ZN14MatrixAccessorIfE13row_len_denseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE13row_len_denseEj_param_1
+)
+{
+	.reg .b32 	%r<2>;
+	.reg .b64 	%rd<3>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE13row_len_denseEj_param_0];
+	ld.u64 	%rd2, [%rd1];
+	ld.u32 	%r1, [%rd2+4];
+	st.param.b32	[func_retval0+0], %r1;
+	ret;
+}
+
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIfE11val_dense_iEj(
+	.param .b64 _ZN14MatrixAccessorIfE11val_dense_iEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE11val_dense_iEj_param_1
+)
+{
+	.reg .b32 	%r<2>;
+	.reg .b64 	%rd<6>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE11val_dense_iEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE11val_dense_iEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+32];
+	mul.wide.u32 	%rd4, %r1, 4;
+	add.s64 	%rd5, %rd3, %rd4;
+	st.param.b64	[func_retval0+0], %rd5;
+	ret;
+}
+
+.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIfE10len_sparseEv(
+	.param .b64 _ZN14MatrixAccessorIfE10len_sparseEv_param_0
+)
+{
+	.reg .b32 	%r<2>;
+	.reg .b64 	%rd<3>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE10len_sparseEv_param_0];
+	ld.u64 	%rd2, [%rd1];
+	ld.u32 	%r1, [%rd2];
+	st.param.b32	[func_retval0+0], %r1;
+	ret;
+}
+
+.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIfE10pos_sparseEj(
+	.param .b64 _ZN14MatrixAccessorIfE10pos_sparseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE10pos_sparseEj_param_1
+)
+{
+	.reg .b32 	%r<3>;
+	.reg .b64 	%rd<6>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE10pos_sparseEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE10pos_sparseEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+16];
+	mul.wide.u32 	%rd4, %r1, 4;
+	add.s64 	%rd5, %rd3, %rd4;
+	ld.u32 	%r2, [%rd5];
+	st.param.b32	[func_retval0+0], %r2;
+	ret;
+}
+
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIfE11cols_sparseEj(
+	.param .b64 _ZN14MatrixAccessorIfE11cols_sparseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE11cols_sparseEj_param_1
+)
+{
+	.reg .b32 	%r<3>;
+	.reg .b64 	%rd<9>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE11cols_sparseEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE11cols_sparseEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+24];
+	ld.u64 	%rd4, [%rd2+16];
+	mul.wide.u32 	%rd5, %r1, 4;
+	add.s64 	%rd6, %rd4, %rd5;
+	ld.u32 	%r2, [%rd6];
+	mul.wide.u32 	%rd7, %r2, 4;
+	add.s64 	%rd8, %rd3, %rd7;
+	st.param.b64	[func_retval0+0], %rd8;
+	ret;
+}
+
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIfE13val_sparse_rcEjj(
+	.param .b64 _ZN14MatrixAccessorIfE13val_sparse_rcEjj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE13val_sparse_rcEjj_param_1,
+	.param .b32 _ZN14MatrixAccessorIfE13val_sparse_rcEjj_param_2
+)
+{
+	.reg .b64 	%rd<4>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE13val_sparse_rcEjj_param_0];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+32];
+	st.param.b64	[func_retval0+0], %rd3;
+	ret;
+}
+
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIfE11vals_sparseEj(
+	.param .b64 _ZN14MatrixAccessorIfE11vals_sparseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE11vals_sparseEj_param_1
+)
+{
+	.reg .b32 	%r<3>;
+	.reg .b64 	%rd<9>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE11vals_sparseEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE11vals_sparseEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+32];
+	ld.u64 	%rd4, [%rd2+16];
+	mul.wide.u32 	%rd5, %r1, 4;
+	add.s64 	%rd6, %rd4, %rd5;
+	ld.u32 	%r2, [%rd6];
+	mul.wide.u32 	%rd7, %r2, 4;
+	add.s64 	%rd8, %rd3, %rd7;
+	st.param.b64	[func_retval0+0], %rd8;
+	ret;
+}
+
+.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIfE14row_len_sparseEj(
+	.param .b64 _ZN14MatrixAccessorIfE14row_len_sparseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE14row_len_sparseEj_param_1
+)
+{
+	.reg .b32 	%r<6>;
+	.reg .b64 	%rd<8>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE14row_len_sparseEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE14row_len_sparseEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+16];
+	add.s32 	%r2, %r1, 1;
+	mul.wide.u32 	%rd4, %r2, 4;
+	add.s64 	%rd5, %rd3, %rd4;
+	ld.u32 	%r3, [%rd5];
+	mul.wide.u32 	%rd6, %r1, 4;
+	add.s64 	%rd7, %rd3, %rd6;
+	ld.u32 	%r4, [%rd7];
+	sub.s32 	%r5, %r3, %r4;
+	st.param.b32	[func_retval0+0], %r5;
+	ret;
+}
+
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIfE12val_sparse_iEj(
+	.param .b64 _ZN14MatrixAccessorIfE12val_sparse_iEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE12val_sparse_iEj_param_1
+)
+{
+	.reg .b32 	%r<2>;
+	.reg .b64 	%rd<6>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE12val_sparse_iEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE12val_sparse_iEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+32];
+	mul.wide.u32 	%rd4, %r1, 4;
+	add.s64 	%rd5, %rd3, %rd4;
+	st.param.b64	[func_retval0+0], %rd5;
+	ret;
+}
+
+.func _ZN14MatrixAccessorIfE10set_sparseEjjf(
+	.param .b64 _ZN14MatrixAccessorIfE10set_sparseEjjf_param_0,
+	.param .b32 _ZN14MatrixAccessorIfE10set_sparseEjjf_param_1,
+	.param .b32 _ZN14MatrixAccessorIfE10set_sparseEjjf_param_2,
+	.param .b32 _ZN14MatrixAccessorIfE10set_sparseEjjf_param_3
+)
+{
+	.reg .f32 	%f<2>;
+	.reg .b32 	%r<3>;
+	.reg .b64 	%rd<9>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIfE10set_sparseEjjf_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIfE10set_sparseEjjf_param_1];
+	ld.param.u32 	%r2, [_ZN14MatrixAccessorIfE10set_sparseEjjf_param_2];
+	ld.param.f32 	%f1, [_ZN14MatrixAccessorIfE10set_sparseEjjf_param_3];
+	ld.u64 	%rd2, [%rd1];
+	ld.u64 	%rd3, [%rd2+32];
+	mul.wide.u32 	%rd4, %r1, 4;
+	add.s64 	%rd5, %rd3, %rd4;
+	st.f32 	[%rd5], %f1;
+	ld.u64 	%rd6, [%rd1];
+	ld.u64 	%rd7, [%rd6+24];
+	add.s64 	%rd8, %rd7, %rd4;
+	st.u32 	[%rd8], %r2;
+	ret;
+}
+
+.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIdE9len_denseEv(
+	.param .b64 _ZN14MatrixAccessorIdE9len_denseEv_param_0
+)
+{
+	.reg .b32 	%r<4>;
+	.reg .b64 	%rd<3>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE9len_denseEv_param_0];
+	ld.u64 	%rd2, [%rd1];
+	ld.u32 	%r1, [%rd2+4];
+	ld.u32 	%r2, [%rd2+8];
+	mul.lo.s32 	%r3, %r2, %r1;
+	st.param.b32	[func_retval0+0], %r3;
+	ret;
+}
+
+.func  (.param .b32 func_retval0) _ZN14MatrixAccessorIdE9pos_denseEj(
+	.param .b64 _ZN14MatrixAccessorIdE9pos_denseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIdE9pos_denseEj_param_1
+)
+{
+	.reg .b32 	%r<4>;
+	.reg .b64 	%rd<3>;
+
+
+	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE9pos_denseEj_param_0];
+	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE9pos_denseEj_param_1];
+	ld.u64 	%rd2, [%rd1];
+	ld.u32 	%r2, [%rd2+8];
+	mul.lo.s32 	%r3, %r2, %r1;
+	st.param.b32	[func_retval0+0], %r3;
+	ret;
+}
+
+.func  (.param .b64 func_retval0) _ZN14MatrixAccessorIdE10cols_denseEj(
+	.param .b64 _ZN14MatrixAccessorIdE10cols_denseEj_param_0,
+	.param .b32 _ZN14MatrixAccessorIdE10cols_denseEj_param_1
+)
+{
+	.reg .b32 	%r<2>;
+	.reg .b64 	%rd<4>;
+
+
+	mov.u64 	%rd1, $str;
+	cvta.global.u64 	%rd2, %rd1;
+	mov.u64 	%rd3, 0;
+	// Callseq Start 1
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd2;
+	.param .b64 param1;
+	st.param.b64	[param1+0], %rd3;
+	.param .b32 retval0;
+	call.uni (retval0), 
+	vprintf, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.b32	%r1, [retval0+0];
+	
+	//{
+	}// Callseq End 1
+	st.param.b64	[func_retval0+0], %rd3;
+	ret;
+}
+
 .func  (.param .b64 func_retval0) _ZN14MatrixAccessorIdE12val_dense_rcEjj(
 	.param .b64 _ZN14MatrixAccessorIdE12val_dense_rcEjj_param_0,
 	.param .b32 _ZN14MatrixAccessorIdE12val_dense_rcEjj_param_1,
@@ -102,8 +419,8 @@
 	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE12val_dense_rcEjj_param_1];
 	ld.param.u32 	%r2, [_ZN14MatrixAccessorIdE12val_dense_rcEjj_param_2];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2];
-	ld.u32 	%r3, [%rd2+28];
+	ld.u64 	%rd3, [%rd2+32];
+	ld.u32 	%r3, [%rd2+8];
 	mad.lo.s32 	%r4, %r3, %r1, %r2;
 	mul.wide.u32 	%rd4, %r4, 8;
 	add.s64 	%rd5, %rd3, %rd4;
@@ -123,7 +440,7 @@
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE10vals_denseEj_param_0];
 	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE10vals_denseEj_param_1];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2];
+	ld.u64 	%rd3, [%rd2+32];
 	mul.wide.u32 	%rd4, %r1, 8;
 	add.s64 	%rd5, %rd3, %rd4;
 	st.param.b64	[func_retval0+0], %rd5;
@@ -141,7 +458,7 @@
 
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE13row_len_denseEj_param_0];
 	ld.u64 	%rd2, [%rd1];
-	ld.u32 	%r1, [%rd2+24];
+	ld.u32 	%r1, [%rd2+4];
 	st.param.b32	[func_retval0+0], %r1;
 	ret;
 }
@@ -158,7 +475,7 @@
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE11val_dense_iEj_param_0];
 	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE11val_dense_iEj_param_1];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2];
+	ld.u64 	%rd3, [%rd2+32];
 	mul.wide.u32 	%rd4, %r1, 8;
 	add.s64 	%rd5, %rd3, %rd4;
 	st.param.b64	[func_retval0+0], %rd5;
@@ -175,7 +492,7 @@
 
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE10len_sparseEv_param_0];
 	ld.u64 	%rd2, [%rd1];
-	ld.u32 	%r1, [%rd2+32];
+	ld.u32 	%r1, [%rd2];
 	st.param.b32	[func_retval0+0], %r1;
 	ret;
 }
@@ -192,7 +509,7 @@
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE10pos_sparseEj_param_0];
 	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE10pos_sparseEj_param_1];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2+8];
+	ld.u64 	%rd3, [%rd2+16];
 	mul.wide.u32 	%rd4, %r1, 4;
 	add.s64 	%rd5, %rd3, %rd4;
 	ld.u32 	%r2, [%rd5];
@@ -212,8 +529,8 @@
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE11cols_sparseEj_param_0];
 	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE11cols_sparseEj_param_1];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2+16];
-	ld.u64 	%rd4, [%rd2+8];
+	ld.u64 	%rd3, [%rd2+24];
+	ld.u64 	%rd4, [%rd2+16];
 	mul.wide.u32 	%rd5, %r1, 4;
 	add.s64 	%rd6, %rd4, %rd5;
 	ld.u32 	%r2, [%rd6];
@@ -234,7 +551,7 @@
 
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE13val_sparse_rcEjj_param_0];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2];
+	ld.u64 	%rd3, [%rd2+32];
 	st.param.b64	[func_retval0+0], %rd3;
 	ret;
 }
@@ -251,8 +568,8 @@
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE11vals_sparseEj_param_0];
 	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE11vals_sparseEj_param_1];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2];
-	ld.u64 	%rd4, [%rd2+8];
+	ld.u64 	%rd3, [%rd2+32];
+	ld.u64 	%rd4, [%rd2+16];
 	mul.wide.u32 	%rd5, %r1, 4;
 	add.s64 	%rd6, %rd4, %rd5;
 	ld.u32 	%r2, [%rd6];
@@ -274,7 +591,7 @@
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE14row_len_sparseEj_param_0];
 	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE14row_len_sparseEj_param_1];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2+8];
+	ld.u64 	%rd3, [%rd2+16];
 	add.s32 	%r2, %r1, 1;
 	mul.wide.u32 	%rd4, %r2, 4;
 	add.s64 	%rd5, %rd3, %rd4;
@@ -299,7 +616,7 @@
 	ld.param.u64 	%rd1, [_ZN14MatrixAccessorIdE12val_sparse_iEj_param_0];
 	ld.param.u32 	%r1, [_ZN14MatrixAccessorIdE12val_sparse_iEj_param_1];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2];
+	ld.u64 	%rd3, [%rd2+32];
 	mul.wide.u32 	%rd4, %r1, 8;
 	add.s64 	%rd5, %rd3, %rd4;
 	st.param.b64	[func_retval0+0], %rd5;
@@ -323,12 +640,12 @@
 	ld.param.u32 	%r2, [_ZN14MatrixAccessorIdE10set_sparseEjjd_param_2];
 	ld.param.f64 	%fd1, [_ZN14MatrixAccessorIdE10set_sparseEjjd_param_3];
 	ld.u64 	%rd2, [%rd1];
-	ld.u64 	%rd3, [%rd2];
+	ld.u64 	%rd3, [%rd2+32];
 	mul.wide.u32 	%rd4, %r1, 8;
 	add.s64 	%rd5, %rd3, %rd4;
 	st.f64 	[%rd5], %fd1;
 	ld.u64 	%rd6, [%rd1];
-	ld.u64 	%rd7, [%rd6+16];
+	ld.u64 	%rd7, [%rd6+24];
 	mul.wide.u32 	%rd8, %r1, 4;
 	add.s64 	%rd9, %rd7, %rd8;
 	st.u32 	[%rd9], %r2;
@@ -357,7 +674,7 @@
 	mov.u32 	%r5, %tid.x;
 	mad.lo.s32 	%r1, %r4, %r3, %r5;
 	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB15_2;
+	@%p1 bra 	BB30_2;
 
 	cvta.to.global.u64 	%rd3, %rd1;
 	mul.wide.s32 	%rd4, %r1, 8;
@@ -369,7 +686,7 @@
 	add.s64 	%rd8, %rd6, %rd7;
 	st.global.f32 	[%rd8], %f1;
 
-BB15_2:
+BB30_2:
 	ret;
 }
 
@@ -395,7 +712,7 @@ BB15_2:
 	mov.u32 	%r5, %tid.x;
 	mad.lo.s32 	%r1, %r4, %r3, %r5;
 	setp.ge.s32	%p1, %r1, %r2;
-	@%p1 bra 	BB16_2;
+	@%p1 bra 	BB31_2;
 
 	cvta.to.global.u64 	%rd3, %rd1;
 	mul.wide.s32 	%rd4, %r1, 4;
@@ -407,7 +724,411 @@ BB15_2:
 	add.s64 	%rd8, %rd6, %rd7;
 	st.global.f64 	[%rd8], %fd1;
 
-BB16_2:
+BB31_2:
+	ret;
+}
+
+	// .globl	reduce_sum_f
+.visible .entry reduce_sum_f(
+	.param .u64 reduce_sum_f_param_0,
+	.param .u64 reduce_sum_f_param_1,
+	.param .u32 reduce_sum_f_param_2
+)
+{
+	.local .align 8 .b8 	__local_depot32[272];
+	.reg .b64 	%SP;
+	.reg .b64 	%SPL;
+	.reg .pred 	%p<25>;
+	.reg .f32 	%f<60>;
+	.reg .b32 	%r<44>;
+	.reg .b64 	%rd<123>;
+
+
+	mov.u64 	%SPL, __local_depot32;
+	cvta.local.u64 	%SP, %SPL;
+	ld.param.u64 	%rd17, [reduce_sum_f_param_0];
+	ld.param.u64 	%rd16, [reduce_sum_f_param_1];
+	ld.param.u32 	%r5, [reduce_sum_f_param_2];
+	add.u64 	%rd18, %SP, 0;
+	add.u64 	%rd1, %SPL, 0;
+	st.local.u64 	[%rd1], %rd17;
+	cvta.to.global.u64 	%rd19, %rd17;
+	ld.global.u64 	%rd20, [%rd19+16];
+	setp.eq.s64	%p1, %rd20, 0;
+	@%p1 bra 	BB32_2;
+
+	mov.u64 	%rd21, _ZN14MatrixAccessorIfE10len_sparseEv;
+	st.local.u64 	[%rd1+8], %rd21;
+	mov.u64 	%rd23, 0;
+	st.local.u64 	[%rd1+16], %rd23;
+	mov.u64 	%rd24, _ZN14MatrixAccessorIfE10pos_sparseEj;
+	st.local.u64 	[%rd1+40], %rd24;
+	st.local.u64 	[%rd1+48], %rd23;
+	mov.u64 	%rd26, _ZN14MatrixAccessorIfE11cols_sparseEj;
+	st.local.u64 	[%rd1+56], %rd26;
+	st.local.u64 	[%rd1+64], %rd23;
+	mov.u64 	%rd28, _ZN14MatrixAccessorIfE13val_sparse_rcEjj;
+	st.local.u64 	[%rd1+88], %rd28;
+	st.local.u64 	[%rd1+96], %rd23;
+	mov.u64 	%rd30, _ZN14MatrixAccessorIfE11vals_sparseEj;
+	st.local.u64 	[%rd1+104], %rd30;
+	st.local.u64 	[%rd1+112], %rd23;
+	mov.u64 	%rd32, _ZN14MatrixAccessorIfE14row_len_sparseEj;
+	st.local.u64 	[%rd1+24], %rd32;
+	st.local.u64 	[%rd1+32], %rd23;
+	mov.u64 	%rd34, _ZN14MatrixAccessorIfE12val_sparse_iEj;
+	st.local.u64 	[%rd1+72], %rd34;
+	st.local.u64 	[%rd1+80], %rd23;
+	mov.u64 	%rd36, _ZN14MatrixAccessorIfE10set_sparseEjjf;
+	st.local.u64 	[%rd1+120], %rd36;
+	st.local.u64 	[%rd1+128], %rd23;
+	bra.uni 	BB32_3;
+
+BB32_2:
+	mov.u64 	%rd38, _ZN14MatrixAccessorIfE9len_denseEv;
+	st.local.u64 	[%rd1+8], %rd38;
+	mov.u64 	%rd40, 0;
+	st.local.u64 	[%rd1+16], %rd40;
+	mov.u64 	%rd41, _ZN14MatrixAccessorIfE9pos_denseEj;
+	st.local.u64 	[%rd1+40], %rd41;
+	st.local.u64 	[%rd1+48], %rd40;
+	mov.u64 	%rd43, _ZN14MatrixAccessorIfE10cols_denseEj;
+	st.local.u64 	[%rd1+56], %rd43;
+	st.local.u64 	[%rd1+64], %rd40;
+	mov.u64 	%rd45, _ZN14MatrixAccessorIfE12val_dense_rcEjj;
+	st.local.u64 	[%rd1+88], %rd45;
+	st.local.u64 	[%rd1+96], %rd40;
+	mov.u64 	%rd47, _ZN14MatrixAccessorIfE10vals_denseEj;
+	st.local.u64 	[%rd1+104], %rd47;
+	st.local.u64 	[%rd1+112], %rd40;
+	mov.u64 	%rd49, _ZN14MatrixAccessorIfE13row_len_denseEj;
+	st.local.u64 	[%rd1+24], %rd49;
+	st.local.u64 	[%rd1+32], %rd40;
+	mov.u64 	%rd51, _ZN14MatrixAccessorIfE11val_dense_iEj;
+	st.local.u64 	[%rd1+72], %rd51;
+	st.local.u64 	[%rd1+80], %rd40;
+
+BB32_3:
+	add.u64 	%rd53, %SP, 136;
+	add.u64 	%rd2, %SPL, 136;
+	st.local.u64 	[%rd2], %rd16;
+	cvta.to.global.u64 	%rd54, %rd16;
+	ld.global.u64 	%rd55, [%rd54+16];
+	setp.eq.s64	%p2, %rd55, 0;
+	@%p2 bra 	BB32_5;
+
+	mov.u64 	%rd56, _ZN14MatrixAccessorIfE10len_sparseEv;
+	st.local.u64 	[%rd2+8], %rd56;
+	mov.u64 	%rd58, 0;
+	st.local.u64 	[%rd2+16], %rd58;
+	mov.u64 	%rd59, _ZN14MatrixAccessorIfE10pos_sparseEj;
+	st.local.u64 	[%rd2+40], %rd59;
+	st.local.u64 	[%rd2+48], %rd58;
+	mov.u64 	%rd61, _ZN14MatrixAccessorIfE11cols_sparseEj;
+	st.local.u64 	[%rd2+56], %rd61;
+	st.local.u64 	[%rd2+64], %rd58;
+	mov.u64 	%rd63, _ZN14MatrixAccessorIfE13val_sparse_rcEjj;
+	st.local.u64 	[%rd2+88], %rd63;
+	st.local.u64 	[%rd2+96], %rd58;
+	mov.u64 	%rd65, _ZN14MatrixAccessorIfE11vals_sparseEj;
+	st.local.u64 	[%rd2+104], %rd65;
+	st.local.u64 	[%rd2+112], %rd58;
+	mov.u64 	%rd67, _ZN14MatrixAccessorIfE14row_len_sparseEj;
+	st.local.u64 	[%rd2+24], %rd67;
+	st.local.u64 	[%rd2+32], %rd58;
+	mov.u64 	%rd69, _ZN14MatrixAccessorIfE12val_sparse_iEj;
+	st.local.u64 	[%rd2+72], %rd69;
+	st.local.u64 	[%rd2+80], %rd58;
+	mov.u64 	%rd71, _ZN14MatrixAccessorIfE10set_sparseEjjf;
+	st.local.u64 	[%rd2+120], %rd71;
+	st.local.u64 	[%rd2+128], %rd58;
+	bra.uni 	BB32_6;
+
+BB32_5:
+	mov.u64 	%rd73, _ZN14MatrixAccessorIfE9len_denseEv;
+	st.local.u64 	[%rd2+8], %rd73;
+	mov.u64 	%rd75, 0;
+	st.local.u64 	[%rd2+16], %rd75;
+	mov.u64 	%rd76, _ZN14MatrixAccessorIfE9pos_denseEj;
+	st.local.u64 	[%rd2+40], %rd76;
+	st.local.u64 	[%rd2+48], %rd75;
+	mov.u64 	%rd78, _ZN14MatrixAccessorIfE10cols_denseEj;
+	st.local.u64 	[%rd2+56], %rd78;
+	st.local.u64 	[%rd2+64], %rd75;
+	mov.u64 	%rd80, _ZN14MatrixAccessorIfE12val_dense_rcEjj;
+	st.local.u64 	[%rd2+88], %rd80;
+	st.local.u64 	[%rd2+96], %rd75;
+	mov.u64 	%rd82, _ZN14MatrixAccessorIfE10vals_denseEj;
+	st.local.u64 	[%rd2+104], %rd82;
+	st.local.u64 	[%rd2+112], %rd75;
+	mov.u64 	%rd84, _ZN14MatrixAccessorIfE13row_len_denseEj;
+	st.local.u64 	[%rd2+24], %rd84;
+	st.local.u64 	[%rd2+32], %rd75;
+	mov.u64 	%rd86, _ZN14MatrixAccessorIfE11val_dense_iEj;
+	st.local.u64 	[%rd2+72], %rd86;
+	st.local.u64 	[%rd2+80], %rd75;
+
+BB32_6:
+	mov.u32 	%r6, %tid.x;
+	mov.u32 	%r7, %ctaid.x;
+	shl.b32 	%r8, %r7, 1;
+	mov.u32 	%r9, %ntid.x;
+	mad.lo.s32 	%r43, %r8, %r9, %r6;
+	mov.f32 	%f44, 0f00000000;
+	setp.ge.u32	%p3, %r43, %r5;
+	@%p3 bra 	BB32_15;
+
+	mov.f32 	%f44, 0f00000000;
+
+BB32_8:
+	ld.local.u64 	%rd3, [%rd1+112];
+	ld.local.u64 	%rd120, [%rd1+104];
+	and.b64  	%rd90, %rd120, 1;
+	setp.eq.b64	%p4, %rd90, 1;
+	@!%p4 bra 	BB32_10;
+	bra.uni 	BB32_9;
+
+BB32_9:
+	add.s64 	%rd93, %rd1, %rd3;
+	ld.local.u64 	%rd94, [%rd93];
+	add.s64 	%rd95, %rd120, %rd94;
+	ld.u64 	%rd120, [%rd95+-1];
+
+BB32_10:
+	add.s64 	%rd97, %rd18, %rd3;
+	// Callseq Start 2
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd97;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r43;
+	.param .b64 retval0;
+	prototype_2 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	call (retval0), 
+	%rd120, 
+	(
+	param0, 
+	param1
+	)
+	, prototype_2;
+	ld.param.b64	%rd99, [retval0+0];
+	
+	//{
+	}// Callseq End 2
+	ld.f32 	%f31, [%rd99];
+	add.f32 	%f44, %f44, %f31;
+	add.s32 	%r16, %r43, %r9;
+	setp.ge.u32	%p5, %r16, %r5;
+	@%p5 bra 	BB32_14;
+
+	ld.local.u64 	%rd121, [%rd1+104];
+	and.b64  	%rd102, %rd121, 1;
+	setp.eq.b64	%p6, %rd102, 1;
+	ld.local.u64 	%rd8, [%rd1+112];
+	@!%p6 bra 	BB32_13;
+	bra.uni 	BB32_12;
+
+BB32_12:
+	add.s64 	%rd105, %rd1, %rd8;
+	ld.local.u64 	%rd106, [%rd105];
+	add.s64 	%rd107, %rd121, %rd106;
+	ld.u64 	%rd121, [%rd107+-1];
+
+BB32_13:
+	add.s64 	%rd109, %rd18, %rd8;
+	// Callseq Start 3
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd109;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r16;
+	.param .b64 retval0;
+	prototype_3 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	call (retval0), 
+	%rd121, 
+	(
+	param0, 
+	param1
+	)
+	, prototype_3;
+	ld.param.b64	%rd111, [retval0+0];
+	
+	//{
+	}// Callseq End 3
+	ld.f32 	%f32, [%rd111];
+	add.f32 	%f44, %f44, %f32;
+
+BB32_14:
+	shl.b32 	%r20, %r9, 1;
+	mov.u32 	%r21, %nctaid.x;
+	mad.lo.s32 	%r43, %r20, %r21, %r43;
+	setp.lt.u32	%p7, %r43, %r5;
+	@%p7 bra 	BB32_8;
+
+BB32_15:
+	shl.b32 	%r23, %r6, 2;
+	mov.u32 	%r24, memory;
+	add.s32 	%r4, %r24, %r23;
+	st.shared.f32 	[%r4], %f44;
+	bar.sync 	0;
+	setp.lt.u32	%p8, %r9, 1024;
+	@%p8 bra 	BB32_19;
+
+	setp.gt.u32	%p9, %r6, 511;
+	@%p9 bra 	BB32_18;
+
+	ld.shared.f32 	%f33, [%r4+2048];
+	add.f32 	%f44, %f44, %f33;
+	st.shared.f32 	[%r4], %f44;
+
+BB32_18:
+	bar.sync 	0;
+
+BB32_19:
+	setp.lt.u32	%p10, %r9, 512;
+	@%p10 bra 	BB32_23;
+
+	setp.gt.u32	%p11, %r6, 255;
+	@%p11 bra 	BB32_22;
+
+	ld.shared.f32 	%f34, [%r4+1024];
+	add.f32 	%f44, %f44, %f34;
+	st.shared.f32 	[%r4], %f44;
+
+BB32_22:
+	bar.sync 	0;
+
+BB32_23:
+	setp.lt.u32	%p12, %r9, 256;
+	@%p12 bra 	BB32_27;
+
+	setp.gt.u32	%p13, %r6, 127;
+	@%p13 bra 	BB32_26;
+
+	ld.shared.f32 	%f35, [%r4+512];
+	add.f32 	%f44, %f44, %f35;
+	st.shared.f32 	[%r4], %f44;
+
+BB32_26:
+	bar.sync 	0;
+
+BB32_27:
+	setp.lt.u32	%p14, %r9, 128;
+	@%p14 bra 	BB32_31;
+
+	setp.gt.u32	%p15, %r6, 63;
+	@%p15 bra 	BB32_30;
+
+	ld.shared.f32 	%f36, [%r4+256];
+	add.f32 	%f44, %f44, %f36;
+	st.shared.f32 	[%r4], %f44;
+
+BB32_30:
+	bar.sync 	0;
+
+BB32_31:
+	setp.gt.u32	%p16, %r6, 31;
+	@%p16 bra 	BB32_44;
+
+	setp.lt.u32	%p17, %r9, 64;
+	@%p17 bra 	BB32_34;
+
+	ld.volatile.shared.f32 	%f37, [%r4+128];
+	add.f32 	%f44, %f44, %f37;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB32_34:
+	setp.lt.u32	%p18, %r9, 32;
+	@%p18 bra 	BB32_36;
+
+	ld.volatile.shared.f32 	%f38, [%r4+64];
+	add.f32 	%f44, %f44, %f38;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB32_36:
+	setp.lt.u32	%p19, %r9, 16;
+	@%p19 bra 	BB32_38;
+
+	ld.volatile.shared.f32 	%f39, [%r4+32];
+	add.f32 	%f44, %f44, %f39;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB32_38:
+	setp.lt.u32	%p20, %r9, 8;
+	@%p20 bra 	BB32_40;
+
+	ld.volatile.shared.f32 	%f40, [%r4+16];
+	add.f32 	%f44, %f44, %f40;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB32_40:
+	setp.lt.u32	%p21, %r9, 4;
+	@%p21 bra 	BB32_42;
+
+	ld.volatile.shared.f32 	%f41, [%r4+8];
+	add.f32 	%f44, %f44, %f41;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB32_42:
+	setp.lt.u32	%p22, %r9, 2;
+	@%p22 bra 	BB32_44;
+
+	ld.volatile.shared.f32 	%f42, [%r4+4];
+	add.f32 	%f43, %f44, %f42;
+	st.volatile.shared.f32 	[%r4], %f43;
+
+BB32_44:
+	setp.ne.s32	%p23, %r6, 0;
+	@%p23 bra 	BB32_48;
+
+	ld.shared.f32 	%f28, [memory];
+	ld.local.u64 	%rd114, [%rd2+96];
+	add.s64 	%rd11, %rd2, %rd114;
+	add.s64 	%rd12, %rd53, %rd114;
+	ld.local.u64 	%rd122, [%rd2+88];
+	and.b64  	%rd115, %rd122, 1;
+	setp.eq.b64	%p24, %rd115, 1;
+	@!%p24 bra 	BB32_47;
+	bra.uni 	BB32_46;
+
+BB32_46:
+	ld.local.u64 	%rd116, [%rd11];
+	add.s64 	%rd117, %rd122, %rd116;
+	ld.u64 	%rd122, [%rd117+-1];
+
+BB32_47:
+	mov.u32 	%r42, 0;
+	// Callseq Start 4
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd12;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r42;
+	.param .b32 param2;
+	st.param.b32	[param2+0], %r7;
+	.param .b64 retval0;
+	prototype_4 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
+	call (retval0), 
+	%rd122, 
+	(
+	param0, 
+	param1, 
+	param2
+	)
+	, prototype_4;
+	ld.param.b64	%rd119, [retval0+0];
+	
+	//{
+	}// Callseq End 4
+	st.f32 	[%rd119], %f28;
+
+BB32_48:
 	ret;
 }
 
@@ -418,7 +1139,7 @@ BB16_2:
 	.param .u32 reduce_sum_d_param_2
 )
 {
-	.local .align 8 .b8 	__local_depot17[272];
+	.local .align 8 .b8 	__local_depot33[272];
 	.reg .b64 	%SP;
 	.reg .b64 	%SPL;
 	.reg .pred 	%p<25>;
@@ -427,7 +1148,7 @@ BB16_2:
 	.reg .b64 	%rd<123>;
 
 
-	mov.u64 	%SPL, __local_depot17;
+	mov.u64 	%SPL, __local_depot33;
 	cvta.local.u64 	%SP, %SPL;
 	ld.param.u64 	%rd17, [reduce_sum_d_param_0];
 	ld.param.u64 	%rd16, [reduce_sum_d_param_1];
@@ -436,9 +1157,9 @@ BB16_2:
 	add.u64 	%rd1, %SPL, 0;
 	st.local.u64 	[%rd1], %rd17;
 	cvta.to.global.u64 	%rd19, %rd17;
-	ld.global.u64 	%rd20, [%rd19+8];
+	ld.global.u64 	%rd20, [%rd19+16];
 	setp.eq.s64	%p1, %rd20, 0;
-	@%p1 bra 	BB17_2;
+	@%p1 bra 	BB33_2;
 
 	mov.u64 	%rd21, _ZN14MatrixAccessorIdE10len_sparseEv;
 	st.local.u64 	[%rd1+8], %rd21;
@@ -465,9 +1186,9 @@ BB16_2:
 	mov.u64 	%rd36, _ZN14MatrixAccessorIdE10set_sparseEjjd;
 	st.local.u64 	[%rd1+120], %rd36;
 	st.local.u64 	[%rd1+128], %rd23;
-	bra.uni 	BB17_3;
+	bra.uni 	BB33_3;
 
-BB17_2:
+BB33_2:
 	mov.u64 	%rd38, _ZN14MatrixAccessorIdE9len_denseEv;
 	st.local.u64 	[%rd1+8], %rd38;
 	mov.u64 	%rd40, 0;
@@ -491,14 +1212,14 @@ BB17_2:
 	st.local.u64 	[%rd1+72], %rd51;
 	st.local.u64 	[%rd1+80], %rd40;
 
-BB17_3:
+BB33_3:
 	add.u64 	%rd53, %SP, 136;
 	add.u64 	%rd2, %SPL, 136;
 	st.local.u64 	[%rd2], %rd16;
 	cvta.to.global.u64 	%rd54, %rd16;
-	ld.global.u64 	%rd55, [%rd54+8];
+	ld.global.u64 	%rd55, [%rd54+16];
 	setp.eq.s64	%p2, %rd55, 0;
-	@%p2 bra 	BB17_5;
+	@%p2 bra 	BB33_5;
 
 	mov.u64 	%rd56, _ZN14MatrixAccessorIdE10len_sparseEv;
 	st.local.u64 	[%rd2+8], %rd56;
@@ -525,9 +1246,9 @@ BB17_3:
 	mov.u64 	%rd71, _ZN14MatrixAccessorIdE10set_sparseEjjd;
 	st.local.u64 	[%rd2+120], %rd71;
 	st.local.u64 	[%rd2+128], %rd58;
-	bra.uni 	BB17_6;
+	bra.uni 	BB33_6;
 
-BB17_5:
+BB33_5:
 	mov.u64 	%rd73, _ZN14MatrixAccessorIdE9len_denseEv;
 	st.local.u64 	[%rd2+8], %rd73;
 	mov.u64 	%rd75, 0;
@@ -551,7 +1272,7 @@ BB17_5:
 	st.local.u64 	[%rd2+72], %rd86;
 	st.local.u64 	[%rd2+80], %rd75;
 
-BB17_6:
+BB33_6:
 	mov.u32 	%r6, %tid.x;
 	mov.u32 	%r7, %ctaid.x;
 	shl.b32 	%r8, %r7, 1;
@@ -559,27 +1280,27 @@ BB17_6:
 	mad.lo.s32 	%r43, %r8, %r9, %r6;
 	mov.f64 	%fd44, 0d0000000000000000;
 	setp.ge.u32	%p3, %r43, %r5;
-	@%p3 bra 	BB17_15;
+	@%p3 bra 	BB33_15;
 
 	mov.f64 	%fd44, 0d0000000000000000;
 
-BB17_8:
+BB33_8:
 	ld.local.u64 	%rd3, [%rd1+112];
 	ld.local.u64 	%rd120, [%rd1+104];
 	and.b64  	%rd90, %rd120, 1;
 	setp.eq.b64	%p4, %rd90, 1;
-	@!%p4 bra 	BB17_10;
-	bra.uni 	BB17_9;
+	@!%p4 bra 	BB33_10;
+	bra.uni 	BB33_9;
 
-BB17_9:
+BB33_9:
 	add.s64 	%rd93, %rd1, %rd3;
 	ld.local.u64 	%rd94, [%rd93];
 	add.s64 	%rd95, %rd120, %rd94;
 	ld.u64 	%rd120, [%rd95+-1];
 
-BB17_10:
+BB33_10:
 	add.s64 	%rd97, %rd18, %rd3;
-	// Callseq Start 1
+	// Callseq Start 5
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -588,40 +1309,40 @@ BB17_10:
 	.param .b32 param1;
 	st.param.b32	[param1+0], %r43;
 	.param .b64 retval0;
-	prototype_1 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	prototype_5 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
 	call (retval0), 
 	%rd120, 
 	(
 	param0, 
 	param1
 	)
-	, prototype_1;
+	, prototype_5;
 	ld.param.b64	%rd99, [retval0+0];
 	
 	//{
-	}// Callseq End 1
+	}// Callseq End 5
 	ld.f64 	%fd31, [%rd99];
 	add.f64 	%fd44, %fd44, %fd31;
 	add.s32 	%r16, %r43, %r9;
 	setp.ge.u32	%p5, %r16, %r5;
-	@%p5 bra 	BB17_14;
+	@%p5 bra 	BB33_14;
 
 	ld.local.u64 	%rd121, [%rd1+104];
 	and.b64  	%rd102, %rd121, 1;
 	setp.eq.b64	%p6, %rd102, 1;
 	ld.local.u64 	%rd8, [%rd1+112];
-	@!%p6 bra 	BB17_13;
-	bra.uni 	BB17_12;
+	@!%p6 bra 	BB33_13;
+	bra.uni 	BB33_12;
 
-BB17_12:
+BB33_12:
 	add.s64 	%rd105, %rd1, %rd8;
 	ld.local.u64 	%rd106, [%rd105];
 	add.s64 	%rd107, %rd121, %rd106;
 	ld.u64 	%rd121, [%rd107+-1];
 
-BB17_13:
+BB33_13:
 	add.s64 	%rd109, %rd18, %rd8;
-	// Callseq Start 2
+	// Callseq Start 6
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -630,143 +1351,143 @@ BB17_13:
 	.param .b32 param1;
 	st.param.b32	[param1+0], %r16;
 	.param .b64 retval0;
-	prototype_2 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	prototype_6 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
 	call (retval0), 
 	%rd121, 
 	(
 	param0, 
 	param1
 	)
-	, prototype_2;
+	, prototype_6;
 	ld.param.b64	%rd111, [retval0+0];
 	
 	//{
-	}// Callseq End 2
+	}// Callseq End 6
 	ld.f64 	%fd32, [%rd111];
 	add.f64 	%fd44, %fd44, %fd32;
 
-BB17_14:
+BB33_14:
 	shl.b32 	%r20, %r9, 1;
 	mov.u32 	%r21, %nctaid.x;
 	mad.lo.s32 	%r43, %r20, %r21, %r43;
 	setp.lt.u32	%p7, %r43, %r5;
-	@%p7 bra 	BB17_8;
+	@%p7 bra 	BB33_8;
 
-BB17_15:
+BB33_15:
 	shl.b32 	%r23, %r6, 3;
 	mov.u32 	%r24, memory;
 	add.s32 	%r4, %r24, %r23;
 	st.shared.f64 	[%r4], %fd44;
 	bar.sync 	0;
 	setp.lt.u32	%p8, %r9, 1024;
-	@%p8 bra 	BB17_19;
+	@%p8 bra 	BB33_19;
 
 	setp.gt.u32	%p9, %r6, 511;
-	@%p9 bra 	BB17_18;
+	@%p9 bra 	BB33_18;
 
 	ld.shared.f64 	%fd33, [%r4+4096];
 	add.f64 	%fd44, %fd44, %fd33;
 	st.shared.f64 	[%r4], %fd44;
 
-BB17_18:
+BB33_18:
 	bar.sync 	0;
 
-BB17_19:
+BB33_19:
 	setp.lt.u32	%p10, %r9, 512;
-	@%p10 bra 	BB17_23;
+	@%p10 bra 	BB33_23;
 
 	setp.gt.u32	%p11, %r6, 255;
-	@%p11 bra 	BB17_22;
+	@%p11 bra 	BB33_22;
 
 	ld.shared.f64 	%fd34, [%r4+2048];
 	add.f64 	%fd44, %fd44, %fd34;
 	st.shared.f64 	[%r4], %fd44;
 
-BB17_22:
+BB33_22:
 	bar.sync 	0;
 
-BB17_23:
+BB33_23:
 	setp.lt.u32	%p12, %r9, 256;
-	@%p12 bra 	BB17_27;
+	@%p12 bra 	BB33_27;
 
 	setp.gt.u32	%p13, %r6, 127;
-	@%p13 bra 	BB17_26;
+	@%p13 bra 	BB33_26;
 
 	ld.shared.f64 	%fd35, [%r4+1024];
 	add.f64 	%fd44, %fd44, %fd35;
 	st.shared.f64 	[%r4], %fd44;
 
-BB17_26:
+BB33_26:
 	bar.sync 	0;
 
-BB17_27:
+BB33_27:
 	setp.lt.u32	%p14, %r9, 128;
-	@%p14 bra 	BB17_31;
+	@%p14 bra 	BB33_31;
 
 	setp.gt.u32	%p15, %r6, 63;
-	@%p15 bra 	BB17_30;
+	@%p15 bra 	BB33_30;
 
 	ld.shared.f64 	%fd36, [%r4+512];
 	add.f64 	%fd44, %fd44, %fd36;
 	st.shared.f64 	[%r4], %fd44;
 
-BB17_30:
+BB33_30:
 	bar.sync 	0;
 
-BB17_31:
+BB33_31:
 	setp.gt.u32	%p16, %r6, 31;
-	@%p16 bra 	BB17_44;
+	@%p16 bra 	BB33_44;
 
 	setp.lt.u32	%p17, %r9, 64;
-	@%p17 bra 	BB17_34;
+	@%p17 bra 	BB33_34;
 
 	ld.volatile.shared.f64 	%fd37, [%r4+256];
 	add.f64 	%fd44, %fd44, %fd37;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB17_34:
+BB33_34:
 	setp.lt.u32	%p18, %r9, 32;
-	@%p18 bra 	BB17_36;
+	@%p18 bra 	BB33_36;
 
 	ld.volatile.shared.f64 	%fd38, [%r4+128];
 	add.f64 	%fd44, %fd44, %fd38;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB17_36:
+BB33_36:
 	setp.lt.u32	%p19, %r9, 16;
-	@%p19 bra 	BB17_38;
+	@%p19 bra 	BB33_38;
 
 	ld.volatile.shared.f64 	%fd39, [%r4+64];
 	add.f64 	%fd44, %fd44, %fd39;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB17_38:
+BB33_38:
 	setp.lt.u32	%p20, %r9, 8;
-	@%p20 bra 	BB17_40;
+	@%p20 bra 	BB33_40;
 
 	ld.volatile.shared.f64 	%fd40, [%r4+32];
 	add.f64 	%fd44, %fd44, %fd40;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB17_40:
+BB33_40:
 	setp.lt.u32	%p21, %r9, 4;
-	@%p21 bra 	BB17_42;
+	@%p21 bra 	BB33_42;
 
 	ld.volatile.shared.f64 	%fd41, [%r4+16];
 	add.f64 	%fd44, %fd44, %fd41;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB17_42:
+BB33_42:
 	setp.lt.u32	%p22, %r9, 2;
-	@%p22 bra 	BB17_44;
+	@%p22 bra 	BB33_44;
 
 	ld.volatile.shared.f64 	%fd42, [%r4+8];
 	add.f64 	%fd43, %fd44, %fd42;
 	st.volatile.shared.f64 	[%r4], %fd43;
 
-BB17_44:
+BB33_44:
 	setp.ne.s32	%p23, %r6, 0;
-	@%p23 bra 	BB17_48;
+	@%p23 bra 	BB33_48;
 
 	ld.shared.f64 	%fd28, [memory];
 	ld.local.u64 	%rd114, [%rd2+96];
@@ -775,17 +1496,17 @@ BB17_44:
 	ld.local.u64 	%rd122, [%rd2+88];
 	and.b64  	%rd115, %rd122, 1;
 	setp.eq.b64	%p24, %rd115, 1;
-	@!%p24 bra 	BB17_47;
-	bra.uni 	BB17_46;
+	@!%p24 bra 	BB33_47;
+	bra.uni 	BB33_46;
 
-BB17_46:
+BB33_46:
 	ld.local.u64 	%rd116, [%rd11];
 	add.s64 	%rd117, %rd122, %rd116;
 	ld.u64 	%rd122, [%rd117+-1];
 
-BB17_47:
+BB33_47:
 	mov.u32 	%r42, 0;
-	// Callseq Start 3
+	// Callseq Start 7
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -796,7 +1517,7 @@ BB17_47:
 	.param .b32 param2;
 	st.param.b32	[param2+0], %r7;
 	.param .b64 retval0;
-	prototype_3 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
+	prototype_7 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
 	call (retval0), 
 	%rd122, 
 	(
@@ -804,14 +1525,418 @@ BB17_47:
 	param1, 
 	param2
 	)
-	, prototype_3;
+	, prototype_7;
 	ld.param.b64	%rd119, [retval0+0];
 	
 	//{
-	}// Callseq End 3
+	}// Callseq End 7
 	st.f64 	[%rd119], %fd28;
 
-BB17_48:
+BB33_48:
+	ret;
+}
+
+	// .globl	reduce_max_f
+.visible .entry reduce_max_f(
+	.param .u64 reduce_max_f_param_0,
+	.param .u64 reduce_max_f_param_1,
+	.param .u32 reduce_max_f_param_2
+)
+{
+	.local .align 8 .b8 	__local_depot34[272];
+	.reg .b64 	%SP;
+	.reg .b64 	%SPL;
+	.reg .pred 	%p<25>;
+	.reg .f32 	%f<60>;
+	.reg .b32 	%r<44>;
+	.reg .b64 	%rd<123>;
+
+
+	mov.u64 	%SPL, __local_depot34;
+	cvta.local.u64 	%SP, %SPL;
+	ld.param.u64 	%rd17, [reduce_max_f_param_0];
+	ld.param.u64 	%rd16, [reduce_max_f_param_1];
+	ld.param.u32 	%r5, [reduce_max_f_param_2];
+	add.u64 	%rd18, %SP, 0;
+	add.u64 	%rd1, %SPL, 0;
+	st.local.u64 	[%rd1], %rd17;
+	cvta.to.global.u64 	%rd19, %rd17;
+	ld.global.u64 	%rd20, [%rd19+16];
+	setp.eq.s64	%p1, %rd20, 0;
+	@%p1 bra 	BB34_2;
+
+	mov.u64 	%rd21, _ZN14MatrixAccessorIfE10len_sparseEv;
+	st.local.u64 	[%rd1+8], %rd21;
+	mov.u64 	%rd23, 0;
+	st.local.u64 	[%rd1+16], %rd23;
+	mov.u64 	%rd24, _ZN14MatrixAccessorIfE10pos_sparseEj;
+	st.local.u64 	[%rd1+40], %rd24;
+	st.local.u64 	[%rd1+48], %rd23;
+	mov.u64 	%rd26, _ZN14MatrixAccessorIfE11cols_sparseEj;
+	st.local.u64 	[%rd1+56], %rd26;
+	st.local.u64 	[%rd1+64], %rd23;
+	mov.u64 	%rd28, _ZN14MatrixAccessorIfE13val_sparse_rcEjj;
+	st.local.u64 	[%rd1+88], %rd28;
+	st.local.u64 	[%rd1+96], %rd23;
+	mov.u64 	%rd30, _ZN14MatrixAccessorIfE11vals_sparseEj;
+	st.local.u64 	[%rd1+104], %rd30;
+	st.local.u64 	[%rd1+112], %rd23;
+	mov.u64 	%rd32, _ZN14MatrixAccessorIfE14row_len_sparseEj;
+	st.local.u64 	[%rd1+24], %rd32;
+	st.local.u64 	[%rd1+32], %rd23;
+	mov.u64 	%rd34, _ZN14MatrixAccessorIfE12val_sparse_iEj;
+	st.local.u64 	[%rd1+72], %rd34;
+	st.local.u64 	[%rd1+80], %rd23;
+	mov.u64 	%rd36, _ZN14MatrixAccessorIfE10set_sparseEjjf;
+	st.local.u64 	[%rd1+120], %rd36;
+	st.local.u64 	[%rd1+128], %rd23;
+	bra.uni 	BB34_3;
+
+BB34_2:
+	mov.u64 	%rd38, _ZN14MatrixAccessorIfE9len_denseEv;
+	st.local.u64 	[%rd1+8], %rd38;
+	mov.u64 	%rd40, 0;
+	st.local.u64 	[%rd1+16], %rd40;
+	mov.u64 	%rd41, _ZN14MatrixAccessorIfE9pos_denseEj;
+	st.local.u64 	[%rd1+40], %rd41;
+	st.local.u64 	[%rd1+48], %rd40;
+	mov.u64 	%rd43, _ZN14MatrixAccessorIfE10cols_denseEj;
+	st.local.u64 	[%rd1+56], %rd43;
+	st.local.u64 	[%rd1+64], %rd40;
+	mov.u64 	%rd45, _ZN14MatrixAccessorIfE12val_dense_rcEjj;
+	st.local.u64 	[%rd1+88], %rd45;
+	st.local.u64 	[%rd1+96], %rd40;
+	mov.u64 	%rd47, _ZN14MatrixAccessorIfE10vals_denseEj;
+	st.local.u64 	[%rd1+104], %rd47;
+	st.local.u64 	[%rd1+112], %rd40;
+	mov.u64 	%rd49, _ZN14MatrixAccessorIfE13row_len_denseEj;
+	st.local.u64 	[%rd1+24], %rd49;
+	st.local.u64 	[%rd1+32], %rd40;
+	mov.u64 	%rd51, _ZN14MatrixAccessorIfE11val_dense_iEj;
+	st.local.u64 	[%rd1+72], %rd51;
+	st.local.u64 	[%rd1+80], %rd40;
+
+BB34_3:
+	add.u64 	%rd53, %SP, 136;
+	add.u64 	%rd2, %SPL, 136;
+	st.local.u64 	[%rd2], %rd16;
+	cvta.to.global.u64 	%rd54, %rd16;
+	ld.global.u64 	%rd55, [%rd54+16];
+	setp.eq.s64	%p2, %rd55, 0;
+	@%p2 bra 	BB34_5;
+
+	mov.u64 	%rd56, _ZN14MatrixAccessorIfE10len_sparseEv;
+	st.local.u64 	[%rd2+8], %rd56;
+	mov.u64 	%rd58, 0;
+	st.local.u64 	[%rd2+16], %rd58;
+	mov.u64 	%rd59, _ZN14MatrixAccessorIfE10pos_sparseEj;
+	st.local.u64 	[%rd2+40], %rd59;
+	st.local.u64 	[%rd2+48], %rd58;
+	mov.u64 	%rd61, _ZN14MatrixAccessorIfE11cols_sparseEj;
+	st.local.u64 	[%rd2+56], %rd61;
+	st.local.u64 	[%rd2+64], %rd58;
+	mov.u64 	%rd63, _ZN14MatrixAccessorIfE13val_sparse_rcEjj;
+	st.local.u64 	[%rd2+88], %rd63;
+	st.local.u64 	[%rd2+96], %rd58;
+	mov.u64 	%rd65, _ZN14MatrixAccessorIfE11vals_sparseEj;
+	st.local.u64 	[%rd2+104], %rd65;
+	st.local.u64 	[%rd2+112], %rd58;
+	mov.u64 	%rd67, _ZN14MatrixAccessorIfE14row_len_sparseEj;
+	st.local.u64 	[%rd2+24], %rd67;
+	st.local.u64 	[%rd2+32], %rd58;
+	mov.u64 	%rd69, _ZN14MatrixAccessorIfE12val_sparse_iEj;
+	st.local.u64 	[%rd2+72], %rd69;
+	st.local.u64 	[%rd2+80], %rd58;
+	mov.u64 	%rd71, _ZN14MatrixAccessorIfE10set_sparseEjjf;
+	st.local.u64 	[%rd2+120], %rd71;
+	st.local.u64 	[%rd2+128], %rd58;
+	bra.uni 	BB34_6;
+
+BB34_5:
+	mov.u64 	%rd73, _ZN14MatrixAccessorIfE9len_denseEv;
+	st.local.u64 	[%rd2+8], %rd73;
+	mov.u64 	%rd75, 0;
+	st.local.u64 	[%rd2+16], %rd75;
+	mov.u64 	%rd76, _ZN14MatrixAccessorIfE9pos_denseEj;
+	st.local.u64 	[%rd2+40], %rd76;
+	st.local.u64 	[%rd2+48], %rd75;
+	mov.u64 	%rd78, _ZN14MatrixAccessorIfE10cols_denseEj;
+	st.local.u64 	[%rd2+56], %rd78;
+	st.local.u64 	[%rd2+64], %rd75;
+	mov.u64 	%rd80, _ZN14MatrixAccessorIfE12val_dense_rcEjj;
+	st.local.u64 	[%rd2+88], %rd80;
+	st.local.u64 	[%rd2+96], %rd75;
+	mov.u64 	%rd82, _ZN14MatrixAccessorIfE10vals_denseEj;
+	st.local.u64 	[%rd2+104], %rd82;
+	st.local.u64 	[%rd2+112], %rd75;
+	mov.u64 	%rd84, _ZN14MatrixAccessorIfE13row_len_denseEj;
+	st.local.u64 	[%rd2+24], %rd84;
+	st.local.u64 	[%rd2+32], %rd75;
+	mov.u64 	%rd86, _ZN14MatrixAccessorIfE11val_dense_iEj;
+	st.local.u64 	[%rd2+72], %rd86;
+	st.local.u64 	[%rd2+80], %rd75;
+
+BB34_6:
+	mov.u32 	%r6, %tid.x;
+	mov.u32 	%r7, %ctaid.x;
+	shl.b32 	%r8, %r7, 1;
+	mov.u32 	%r9, %ntid.x;
+	mad.lo.s32 	%r43, %r8, %r9, %r6;
+	mov.f32 	%f44, 0fFF800000;
+	setp.ge.u32	%p3, %r43, %r5;
+	@%p3 bra 	BB34_15;
+
+	mov.f32 	%f44, 0fFF800000;
+
+BB34_8:
+	ld.local.u64 	%rd3, [%rd1+112];
+	ld.local.u64 	%rd120, [%rd1+104];
+	and.b64  	%rd90, %rd120, 1;
+	setp.eq.b64	%p4, %rd90, 1;
+	@!%p4 bra 	BB34_10;
+	bra.uni 	BB34_9;
+
+BB34_9:
+	add.s64 	%rd93, %rd1, %rd3;
+	ld.local.u64 	%rd94, [%rd93];
+	add.s64 	%rd95, %rd120, %rd94;
+	ld.u64 	%rd120, [%rd95+-1];
+
+BB34_10:
+	add.s64 	%rd97, %rd18, %rd3;
+	// Callseq Start 8
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd97;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r43;
+	.param .b64 retval0;
+	prototype_8 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	call (retval0), 
+	%rd120, 
+	(
+	param0, 
+	param1
+	)
+	, prototype_8;
+	ld.param.b64	%rd99, [retval0+0];
+	
+	//{
+	}// Callseq End 8
+	ld.f32 	%f31, [%rd99];
+	max.f32 	%f44, %f44, %f31;
+	add.s32 	%r16, %r43, %r9;
+	setp.ge.u32	%p5, %r16, %r5;
+	@%p5 bra 	BB34_14;
+
+	ld.local.u64 	%rd121, [%rd1+104];
+	and.b64  	%rd102, %rd121, 1;
+	setp.eq.b64	%p6, %rd102, 1;
+	ld.local.u64 	%rd8, [%rd1+112];
+	@!%p6 bra 	BB34_13;
+	bra.uni 	BB34_12;
+
+BB34_12:
+	add.s64 	%rd105, %rd1, %rd8;
+	ld.local.u64 	%rd106, [%rd105];
+	add.s64 	%rd107, %rd121, %rd106;
+	ld.u64 	%rd121, [%rd107+-1];
+
+BB34_13:
+	add.s64 	%rd109, %rd18, %rd8;
+	// Callseq Start 9
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd109;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r16;
+	.param .b64 retval0;
+	prototype_9 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	call (retval0), 
+	%rd121, 
+	(
+	param0, 
+	param1
+	)
+	, prototype_9;
+	ld.param.b64	%rd111, [retval0+0];
+	
+	//{
+	}// Callseq End 9
+	ld.f32 	%f32, [%rd111];
+	max.f32 	%f44, %f44, %f32;
+
+BB34_14:
+	shl.b32 	%r20, %r9, 1;
+	mov.u32 	%r21, %nctaid.x;
+	mad.lo.s32 	%r43, %r20, %r21, %r43;
+	setp.lt.u32	%p7, %r43, %r5;
+	@%p7 bra 	BB34_8;
+
+BB34_15:
+	shl.b32 	%r23, %r6, 2;
+	mov.u32 	%r24, memory;
+	add.s32 	%r4, %r24, %r23;
+	st.shared.f32 	[%r4], %f44;
+	bar.sync 	0;
+	setp.lt.u32	%p8, %r9, 1024;
+	@%p8 bra 	BB34_19;
+
+	setp.gt.u32	%p9, %r6, 511;
+	@%p9 bra 	BB34_18;
+
+	ld.shared.f32 	%f33, [%r4+2048];
+	max.f32 	%f44, %f44, %f33;
+	st.shared.f32 	[%r4], %f44;
+
+BB34_18:
+	bar.sync 	0;
+
+BB34_19:
+	setp.lt.u32	%p10, %r9, 512;
+	@%p10 bra 	BB34_23;
+
+	setp.gt.u32	%p11, %r6, 255;
+	@%p11 bra 	BB34_22;
+
+	ld.shared.f32 	%f34, [%r4+1024];
+	max.f32 	%f44, %f44, %f34;
+	st.shared.f32 	[%r4], %f44;
+
+BB34_22:
+	bar.sync 	0;
+
+BB34_23:
+	setp.lt.u32	%p12, %r9, 256;
+	@%p12 bra 	BB34_27;
+
+	setp.gt.u32	%p13, %r6, 127;
+	@%p13 bra 	BB34_26;
+
+	ld.shared.f32 	%f35, [%r4+512];
+	max.f32 	%f44, %f44, %f35;
+	st.shared.f32 	[%r4], %f44;
+
+BB34_26:
+	bar.sync 	0;
+
+BB34_27:
+	setp.lt.u32	%p14, %r9, 128;
+	@%p14 bra 	BB34_31;
+
+	setp.gt.u32	%p15, %r6, 63;
+	@%p15 bra 	BB34_30;
+
+	ld.shared.f32 	%f36, [%r4+256];
+	max.f32 	%f44, %f44, %f36;
+	st.shared.f32 	[%r4], %f44;
+
+BB34_30:
+	bar.sync 	0;
+
+BB34_31:
+	setp.gt.u32	%p16, %r6, 31;
+	@%p16 bra 	BB34_44;
+
+	setp.lt.u32	%p17, %r9, 64;
+	@%p17 bra 	BB34_34;
+
+	ld.volatile.shared.f32 	%f37, [%r4+128];
+	max.f32 	%f44, %f44, %f37;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB34_34:
+	setp.lt.u32	%p18, %r9, 32;
+	@%p18 bra 	BB34_36;
+
+	ld.volatile.shared.f32 	%f38, [%r4+64];
+	max.f32 	%f44, %f44, %f38;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB34_36:
+	setp.lt.u32	%p19, %r9, 16;
+	@%p19 bra 	BB34_38;
+
+	ld.volatile.shared.f32 	%f39, [%r4+32];
+	max.f32 	%f44, %f44, %f39;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB34_38:
+	setp.lt.u32	%p20, %r9, 8;
+	@%p20 bra 	BB34_40;
+
+	ld.volatile.shared.f32 	%f40, [%r4+16];
+	max.f32 	%f44, %f44, %f40;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB34_40:
+	setp.lt.u32	%p21, %r9, 4;
+	@%p21 bra 	BB34_42;
+
+	ld.volatile.shared.f32 	%f41, [%r4+8];
+	max.f32 	%f44, %f44, %f41;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB34_42:
+	setp.lt.u32	%p22, %r9, 2;
+	@%p22 bra 	BB34_44;
+
+	ld.volatile.shared.f32 	%f42, [%r4+4];
+	max.f32 	%f43, %f44, %f42;
+	st.volatile.shared.f32 	[%r4], %f43;
+
+BB34_44:
+	setp.ne.s32	%p23, %r6, 0;
+	@%p23 bra 	BB34_48;
+
+	ld.shared.f32 	%f28, [memory];
+	ld.local.u64 	%rd114, [%rd2+96];
+	add.s64 	%rd11, %rd2, %rd114;
+	add.s64 	%rd12, %rd53, %rd114;
+	ld.local.u64 	%rd122, [%rd2+88];
+	and.b64  	%rd115, %rd122, 1;
+	setp.eq.b64	%p24, %rd115, 1;
+	@!%p24 bra 	BB34_47;
+	bra.uni 	BB34_46;
+
+BB34_46:
+	ld.local.u64 	%rd116, [%rd11];
+	add.s64 	%rd117, %rd122, %rd116;
+	ld.u64 	%rd122, [%rd117+-1];
+
+BB34_47:
+	mov.u32 	%r42, 0;
+	// Callseq Start 10
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd12;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r42;
+	.param .b32 param2;
+	st.param.b32	[param2+0], %r7;
+	.param .b64 retval0;
+	prototype_10 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
+	call (retval0), 
+	%rd122, 
+	(
+	param0, 
+	param1, 
+	param2
+	)
+	, prototype_10;
+	ld.param.b64	%rd119, [retval0+0];
+	
+	//{
+	}// Callseq End 10
+	st.f32 	[%rd119], %f28;
+
+BB34_48:
 	ret;
 }
 
@@ -822,7 +1947,7 @@ BB17_48:
 	.param .u32 reduce_max_d_param_2
 )
 {
-	.local .align 8 .b8 	__local_depot18[272];
+	.local .align 8 .b8 	__local_depot35[272];
 	.reg .b64 	%SP;
 	.reg .b64 	%SPL;
 	.reg .pred 	%p<25>;
@@ -831,7 +1956,7 @@ BB17_48:
 	.reg .b64 	%rd<123>;
 
 
-	mov.u64 	%SPL, __local_depot18;
+	mov.u64 	%SPL, __local_depot35;
 	cvta.local.u64 	%SP, %SPL;
 	ld.param.u64 	%rd17, [reduce_max_d_param_0];
 	ld.param.u64 	%rd16, [reduce_max_d_param_1];
@@ -840,9 +1965,9 @@ BB17_48:
 	add.u64 	%rd1, %SPL, 0;
 	st.local.u64 	[%rd1], %rd17;
 	cvta.to.global.u64 	%rd19, %rd17;
-	ld.global.u64 	%rd20, [%rd19+8];
+	ld.global.u64 	%rd20, [%rd19+16];
 	setp.eq.s64	%p1, %rd20, 0;
-	@%p1 bra 	BB18_2;
+	@%p1 bra 	BB35_2;
 
 	mov.u64 	%rd21, _ZN14MatrixAccessorIdE10len_sparseEv;
 	st.local.u64 	[%rd1+8], %rd21;
@@ -869,9 +1994,9 @@ BB17_48:
 	mov.u64 	%rd36, _ZN14MatrixAccessorIdE10set_sparseEjjd;
 	st.local.u64 	[%rd1+120], %rd36;
 	st.local.u64 	[%rd1+128], %rd23;
-	bra.uni 	BB18_3;
+	bra.uni 	BB35_3;
 
-BB18_2:
+BB35_2:
 	mov.u64 	%rd38, _ZN14MatrixAccessorIdE9len_denseEv;
 	st.local.u64 	[%rd1+8], %rd38;
 	mov.u64 	%rd40, 0;
@@ -895,14 +2020,14 @@ BB18_2:
 	st.local.u64 	[%rd1+72], %rd51;
 	st.local.u64 	[%rd1+80], %rd40;
 
-BB18_3:
+BB35_3:
 	add.u64 	%rd53, %SP, 136;
 	add.u64 	%rd2, %SPL, 136;
 	st.local.u64 	[%rd2], %rd16;
 	cvta.to.global.u64 	%rd54, %rd16;
-	ld.global.u64 	%rd55, [%rd54+8];
+	ld.global.u64 	%rd55, [%rd54+16];
 	setp.eq.s64	%p2, %rd55, 0;
-	@%p2 bra 	BB18_5;
+	@%p2 bra 	BB35_5;
 
 	mov.u64 	%rd56, _ZN14MatrixAccessorIdE10len_sparseEv;
 	st.local.u64 	[%rd2+8], %rd56;
@@ -929,9 +2054,9 @@ BB18_3:
 	mov.u64 	%rd71, _ZN14MatrixAccessorIdE10set_sparseEjjd;
 	st.local.u64 	[%rd2+120], %rd71;
 	st.local.u64 	[%rd2+128], %rd58;
-	bra.uni 	BB18_6;
+	bra.uni 	BB35_6;
 
-BB18_5:
+BB35_5:
 	mov.u64 	%rd73, _ZN14MatrixAccessorIdE9len_denseEv;
 	st.local.u64 	[%rd2+8], %rd73;
 	mov.u64 	%rd75, 0;
@@ -955,7 +2080,7 @@ BB18_5:
 	st.local.u64 	[%rd2+72], %rd86;
 	st.local.u64 	[%rd2+80], %rd75;
 
-BB18_6:
+BB35_6:
 	mov.u32 	%r6, %tid.x;
 	mov.u32 	%r7, %ctaid.x;
 	shl.b32 	%r8, %r7, 1;
@@ -963,27 +2088,27 @@ BB18_6:
 	mad.lo.s32 	%r43, %r8, %r9, %r6;
 	mov.f64 	%fd44, 0dFFF0000000000000;
 	setp.ge.u32	%p3, %r43, %r5;
-	@%p3 bra 	BB18_15;
+	@%p3 bra 	BB35_15;
 
 	mov.f64 	%fd44, 0dFFF0000000000000;
 
-BB18_8:
+BB35_8:
 	ld.local.u64 	%rd3, [%rd1+112];
 	ld.local.u64 	%rd120, [%rd1+104];
 	and.b64  	%rd90, %rd120, 1;
 	setp.eq.b64	%p4, %rd90, 1;
-	@!%p4 bra 	BB18_10;
-	bra.uni 	BB18_9;
+	@!%p4 bra 	BB35_10;
+	bra.uni 	BB35_9;
 
-BB18_9:
+BB35_9:
 	add.s64 	%rd93, %rd1, %rd3;
 	ld.local.u64 	%rd94, [%rd93];
 	add.s64 	%rd95, %rd120, %rd94;
 	ld.u64 	%rd120, [%rd95+-1];
 
-BB18_10:
+BB35_10:
 	add.s64 	%rd97, %rd18, %rd3;
-	// Callseq Start 4
+	// Callseq Start 11
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -992,40 +2117,40 @@ BB18_10:
 	.param .b32 param1;
 	st.param.b32	[param1+0], %r43;
 	.param .b64 retval0;
-	prototype_4 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	prototype_11 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
 	call (retval0), 
 	%rd120, 
 	(
 	param0, 
 	param1
 	)
-	, prototype_4;
+	, prototype_11;
 	ld.param.b64	%rd99, [retval0+0];
 	
 	//{
-	}// Callseq End 4
+	}// Callseq End 11
 	ld.f64 	%fd31, [%rd99];
 	max.f64 	%fd44, %fd44, %fd31;
 	add.s32 	%r16, %r43, %r9;
 	setp.ge.u32	%p5, %r16, %r5;
-	@%p5 bra 	BB18_14;
+	@%p5 bra 	BB35_14;
 
 	ld.local.u64 	%rd121, [%rd1+104];
 	and.b64  	%rd102, %rd121, 1;
 	setp.eq.b64	%p6, %rd102, 1;
 	ld.local.u64 	%rd8, [%rd1+112];
-	@!%p6 bra 	BB18_13;
-	bra.uni 	BB18_12;
+	@!%p6 bra 	BB35_13;
+	bra.uni 	BB35_12;
 
-BB18_12:
+BB35_12:
 	add.s64 	%rd105, %rd1, %rd8;
 	ld.local.u64 	%rd106, [%rd105];
 	add.s64 	%rd107, %rd121, %rd106;
 	ld.u64 	%rd121, [%rd107+-1];
 
-BB18_13:
+BB35_13:
 	add.s64 	%rd109, %rd18, %rd8;
-	// Callseq Start 5
+	// Callseq Start 12
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -1034,143 +2159,143 @@ BB18_13:
 	.param .b32 param1;
 	st.param.b32	[param1+0], %r16;
 	.param .b64 retval0;
-	prototype_5 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	prototype_12 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
 	call (retval0), 
 	%rd121, 
 	(
 	param0, 
 	param1
 	)
-	, prototype_5;
+	, prototype_12;
 	ld.param.b64	%rd111, [retval0+0];
 	
 	//{
-	}// Callseq End 5
+	}// Callseq End 12
 	ld.f64 	%fd32, [%rd111];
 	max.f64 	%fd44, %fd44, %fd32;
 
-BB18_14:
+BB35_14:
 	shl.b32 	%r20, %r9, 1;
 	mov.u32 	%r21, %nctaid.x;
 	mad.lo.s32 	%r43, %r20, %r21, %r43;
 	setp.lt.u32	%p7, %r43, %r5;
-	@%p7 bra 	BB18_8;
+	@%p7 bra 	BB35_8;
 
-BB18_15:
+BB35_15:
 	shl.b32 	%r23, %r6, 3;
 	mov.u32 	%r24, memory;
 	add.s32 	%r4, %r24, %r23;
 	st.shared.f64 	[%r4], %fd44;
 	bar.sync 	0;
 	setp.lt.u32	%p8, %r9, 1024;
-	@%p8 bra 	BB18_19;
+	@%p8 bra 	BB35_19;
 
 	setp.gt.u32	%p9, %r6, 511;
-	@%p9 bra 	BB18_18;
+	@%p9 bra 	BB35_18;
 
 	ld.shared.f64 	%fd33, [%r4+4096];
 	max.f64 	%fd44, %fd44, %fd33;
 	st.shared.f64 	[%r4], %fd44;
 
-BB18_18:
+BB35_18:
 	bar.sync 	0;
 
-BB18_19:
+BB35_19:
 	setp.lt.u32	%p10, %r9, 512;
-	@%p10 bra 	BB18_23;
+	@%p10 bra 	BB35_23;
 
 	setp.gt.u32	%p11, %r6, 255;
-	@%p11 bra 	BB18_22;
+	@%p11 bra 	BB35_22;
 
 	ld.shared.f64 	%fd34, [%r4+2048];
 	max.f64 	%fd44, %fd44, %fd34;
 	st.shared.f64 	[%r4], %fd44;
 
-BB18_22:
+BB35_22:
 	bar.sync 	0;
 
-BB18_23:
+BB35_23:
 	setp.lt.u32	%p12, %r9, 256;
-	@%p12 bra 	BB18_27;
+	@%p12 bra 	BB35_27;
 
 	setp.gt.u32	%p13, %r6, 127;
-	@%p13 bra 	BB18_26;
+	@%p13 bra 	BB35_26;
 
 	ld.shared.f64 	%fd35, [%r4+1024];
 	max.f64 	%fd44, %fd44, %fd35;
 	st.shared.f64 	[%r4], %fd44;
 
-BB18_26:
+BB35_26:
 	bar.sync 	0;
 
-BB18_27:
+BB35_27:
 	setp.lt.u32	%p14, %r9, 128;
-	@%p14 bra 	BB18_31;
+	@%p14 bra 	BB35_31;
 
 	setp.gt.u32	%p15, %r6, 63;
-	@%p15 bra 	BB18_30;
+	@%p15 bra 	BB35_30;
 
 	ld.shared.f64 	%fd36, [%r4+512];
 	max.f64 	%fd44, %fd44, %fd36;
 	st.shared.f64 	[%r4], %fd44;
 
-BB18_30:
+BB35_30:
 	bar.sync 	0;
 
-BB18_31:
+BB35_31:
 	setp.gt.u32	%p16, %r6, 31;
-	@%p16 bra 	BB18_44;
+	@%p16 bra 	BB35_44;
 
 	setp.lt.u32	%p17, %r9, 64;
-	@%p17 bra 	BB18_34;
+	@%p17 bra 	BB35_34;
 
 	ld.volatile.shared.f64 	%fd37, [%r4+256];
 	max.f64 	%fd44, %fd44, %fd37;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB18_34:
+BB35_34:
 	setp.lt.u32	%p18, %r9, 32;
-	@%p18 bra 	BB18_36;
+	@%p18 bra 	BB35_36;
 
 	ld.volatile.shared.f64 	%fd38, [%r4+128];
 	max.f64 	%fd44, %fd44, %fd38;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB18_36:
+BB35_36:
 	setp.lt.u32	%p19, %r9, 16;
-	@%p19 bra 	BB18_38;
+	@%p19 bra 	BB35_38;
 
 	ld.volatile.shared.f64 	%fd39, [%r4+64];
 	max.f64 	%fd44, %fd44, %fd39;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB18_38:
+BB35_38:
 	setp.lt.u32	%p20, %r9, 8;
-	@%p20 bra 	BB18_40;
+	@%p20 bra 	BB35_40;
 
 	ld.volatile.shared.f64 	%fd40, [%r4+32];
 	max.f64 	%fd44, %fd44, %fd40;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB18_40:
+BB35_40:
 	setp.lt.u32	%p21, %r9, 4;
-	@%p21 bra 	BB18_42;
+	@%p21 bra 	BB35_42;
 
 	ld.volatile.shared.f64 	%fd41, [%r4+16];
 	max.f64 	%fd44, %fd44, %fd41;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB18_42:
+BB35_42:
 	setp.lt.u32	%p22, %r9, 2;
-	@%p22 bra 	BB18_44;
+	@%p22 bra 	BB35_44;
 
 	ld.volatile.shared.f64 	%fd42, [%r4+8];
 	max.f64 	%fd43, %fd44, %fd42;
 	st.volatile.shared.f64 	[%r4], %fd43;
 
-BB18_44:
+BB35_44:
 	setp.ne.s32	%p23, %r6, 0;
-	@%p23 bra 	BB18_48;
+	@%p23 bra 	BB35_48;
 
 	ld.shared.f64 	%fd28, [memory];
 	ld.local.u64 	%rd114, [%rd2+96];
@@ -1179,17 +2304,17 @@ BB18_44:
 	ld.local.u64 	%rd122, [%rd2+88];
 	and.b64  	%rd115, %rd122, 1;
 	setp.eq.b64	%p24, %rd115, 1;
-	@!%p24 bra 	BB18_47;
-	bra.uni 	BB18_46;
+	@!%p24 bra 	BB35_47;
+	bra.uni 	BB35_46;
 
-BB18_46:
+BB35_46:
 	ld.local.u64 	%rd116, [%rd11];
 	add.s64 	%rd117, %rd122, %rd116;
 	ld.u64 	%rd122, [%rd117+-1];
 
-BB18_47:
+BB35_47:
 	mov.u32 	%r42, 0;
-	// Callseq Start 6
+	// Callseq Start 13
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -1200,7 +2325,7 @@ BB18_47:
 	.param .b32 param2;
 	st.param.b32	[param2+0], %r7;
 	.param .b64 retval0;
-	prototype_6 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
+	prototype_13 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
 	call (retval0), 
 	%rd122, 
 	(
@@ -1208,14 +2333,418 @@ BB18_47:
 	param1, 
 	param2
 	)
-	, prototype_6;
+	, prototype_13;
 	ld.param.b64	%rd119, [retval0+0];
 	
 	//{
-	}// Callseq End 6
+	}// Callseq End 13
 	st.f64 	[%rd119], %fd28;
 
-BB18_48:
+BB35_48:
+	ret;
+}
+
+	// .globl	reduce_min_f
+.visible .entry reduce_min_f(
+	.param .u64 reduce_min_f_param_0,
+	.param .u64 reduce_min_f_param_1,
+	.param .u32 reduce_min_f_param_2
+)
+{
+	.local .align 8 .b8 	__local_depot36[272];
+	.reg .b64 	%SP;
+	.reg .b64 	%SPL;
+	.reg .pred 	%p<25>;
+	.reg .f32 	%f<60>;
+	.reg .b32 	%r<44>;
+	.reg .b64 	%rd<123>;
+
+
+	mov.u64 	%SPL, __local_depot36;
+	cvta.local.u64 	%SP, %SPL;
+	ld.param.u64 	%rd17, [reduce_min_f_param_0];
+	ld.param.u64 	%rd16, [reduce_min_f_param_1];
+	ld.param.u32 	%r5, [reduce_min_f_param_2];
+	add.u64 	%rd18, %SP, 0;
+	add.u64 	%rd1, %SPL, 0;
+	st.local.u64 	[%rd1], %rd17;
+	cvta.to.global.u64 	%rd19, %rd17;
+	ld.global.u64 	%rd20, [%rd19+16];
+	setp.eq.s64	%p1, %rd20, 0;
+	@%p1 bra 	BB36_2;
+
+	mov.u64 	%rd21, _ZN14MatrixAccessorIfE10len_sparseEv;
+	st.local.u64 	[%rd1+8], %rd21;
+	mov.u64 	%rd23, 0;
+	st.local.u64 	[%rd1+16], %rd23;
+	mov.u64 	%rd24, _ZN14MatrixAccessorIfE10pos_sparseEj;
+	st.local.u64 	[%rd1+40], %rd24;
+	st.local.u64 	[%rd1+48], %rd23;
+	mov.u64 	%rd26, _ZN14MatrixAccessorIfE11cols_sparseEj;
+	st.local.u64 	[%rd1+56], %rd26;
+	st.local.u64 	[%rd1+64], %rd23;
+	mov.u64 	%rd28, _ZN14MatrixAccessorIfE13val_sparse_rcEjj;
+	st.local.u64 	[%rd1+88], %rd28;
+	st.local.u64 	[%rd1+96], %rd23;
+	mov.u64 	%rd30, _ZN14MatrixAccessorIfE11vals_sparseEj;
+	st.local.u64 	[%rd1+104], %rd30;
+	st.local.u64 	[%rd1+112], %rd23;
+	mov.u64 	%rd32, _ZN14MatrixAccessorIfE14row_len_sparseEj;
+	st.local.u64 	[%rd1+24], %rd32;
+	st.local.u64 	[%rd1+32], %rd23;
+	mov.u64 	%rd34, _ZN14MatrixAccessorIfE12val_sparse_iEj;
+	st.local.u64 	[%rd1+72], %rd34;
+	st.local.u64 	[%rd1+80], %rd23;
+	mov.u64 	%rd36, _ZN14MatrixAccessorIfE10set_sparseEjjf;
+	st.local.u64 	[%rd1+120], %rd36;
+	st.local.u64 	[%rd1+128], %rd23;
+	bra.uni 	BB36_3;
+
+BB36_2:
+	mov.u64 	%rd38, _ZN14MatrixAccessorIfE9len_denseEv;
+	st.local.u64 	[%rd1+8], %rd38;
+	mov.u64 	%rd40, 0;
+	st.local.u64 	[%rd1+16], %rd40;
+	mov.u64 	%rd41, _ZN14MatrixAccessorIfE9pos_denseEj;
+	st.local.u64 	[%rd1+40], %rd41;
+	st.local.u64 	[%rd1+48], %rd40;
+	mov.u64 	%rd43, _ZN14MatrixAccessorIfE10cols_denseEj;
+	st.local.u64 	[%rd1+56], %rd43;
+	st.local.u64 	[%rd1+64], %rd40;
+	mov.u64 	%rd45, _ZN14MatrixAccessorIfE12val_dense_rcEjj;
+	st.local.u64 	[%rd1+88], %rd45;
+	st.local.u64 	[%rd1+96], %rd40;
+	mov.u64 	%rd47, _ZN14MatrixAccessorIfE10vals_denseEj;
+	st.local.u64 	[%rd1+104], %rd47;
+	st.local.u64 	[%rd1+112], %rd40;
+	mov.u64 	%rd49, _ZN14MatrixAccessorIfE13row_len_denseEj;
+	st.local.u64 	[%rd1+24], %rd49;
+	st.local.u64 	[%rd1+32], %rd40;
+	mov.u64 	%rd51, _ZN14MatrixAccessorIfE11val_dense_iEj;
+	st.local.u64 	[%rd1+72], %rd51;
+	st.local.u64 	[%rd1+80], %rd40;
+
+BB36_3:
+	add.u64 	%rd53, %SP, 136;
+	add.u64 	%rd2, %SPL, 136;
+	st.local.u64 	[%rd2], %rd16;
+	cvta.to.global.u64 	%rd54, %rd16;
+	ld.global.u64 	%rd55, [%rd54+16];
+	setp.eq.s64	%p2, %rd55, 0;
+	@%p2 bra 	BB36_5;
+
+	mov.u64 	%rd56, _ZN14MatrixAccessorIfE10len_sparseEv;
+	st.local.u64 	[%rd2+8], %rd56;
+	mov.u64 	%rd58, 0;
+	st.local.u64 	[%rd2+16], %rd58;
+	mov.u64 	%rd59, _ZN14MatrixAccessorIfE10pos_sparseEj;
+	st.local.u64 	[%rd2+40], %rd59;
+	st.local.u64 	[%rd2+48], %rd58;
+	mov.u64 	%rd61, _ZN14MatrixAccessorIfE11cols_sparseEj;
+	st.local.u64 	[%rd2+56], %rd61;
+	st.local.u64 	[%rd2+64], %rd58;
+	mov.u64 	%rd63, _ZN14MatrixAccessorIfE13val_sparse_rcEjj;
+	st.local.u64 	[%rd2+88], %rd63;
+	st.local.u64 	[%rd2+96], %rd58;
+	mov.u64 	%rd65, _ZN14MatrixAccessorIfE11vals_sparseEj;
+	st.local.u64 	[%rd2+104], %rd65;
+	st.local.u64 	[%rd2+112], %rd58;
+	mov.u64 	%rd67, _ZN14MatrixAccessorIfE14row_len_sparseEj;
+	st.local.u64 	[%rd2+24], %rd67;
+	st.local.u64 	[%rd2+32], %rd58;
+	mov.u64 	%rd69, _ZN14MatrixAccessorIfE12val_sparse_iEj;
+	st.local.u64 	[%rd2+72], %rd69;
+	st.local.u64 	[%rd2+80], %rd58;
+	mov.u64 	%rd71, _ZN14MatrixAccessorIfE10set_sparseEjjf;
+	st.local.u64 	[%rd2+120], %rd71;
+	st.local.u64 	[%rd2+128], %rd58;
+	bra.uni 	BB36_6;
+
+BB36_5:
+	mov.u64 	%rd73, _ZN14MatrixAccessorIfE9len_denseEv;
+	st.local.u64 	[%rd2+8], %rd73;
+	mov.u64 	%rd75, 0;
+	st.local.u64 	[%rd2+16], %rd75;
+	mov.u64 	%rd76, _ZN14MatrixAccessorIfE9pos_denseEj;
+	st.local.u64 	[%rd2+40], %rd76;
+	st.local.u64 	[%rd2+48], %rd75;
+	mov.u64 	%rd78, _ZN14MatrixAccessorIfE10cols_denseEj;
+	st.local.u64 	[%rd2+56], %rd78;
+	st.local.u64 	[%rd2+64], %rd75;
+	mov.u64 	%rd80, _ZN14MatrixAccessorIfE12val_dense_rcEjj;
+	st.local.u64 	[%rd2+88], %rd80;
+	st.local.u64 	[%rd2+96], %rd75;
+	mov.u64 	%rd82, _ZN14MatrixAccessorIfE10vals_denseEj;
+	st.local.u64 	[%rd2+104], %rd82;
+	st.local.u64 	[%rd2+112], %rd75;
+	mov.u64 	%rd84, _ZN14MatrixAccessorIfE13row_len_denseEj;
+	st.local.u64 	[%rd2+24], %rd84;
+	st.local.u64 	[%rd2+32], %rd75;
+	mov.u64 	%rd86, _ZN14MatrixAccessorIfE11val_dense_iEj;
+	st.local.u64 	[%rd2+72], %rd86;
+	st.local.u64 	[%rd2+80], %rd75;
+
+BB36_6:
+	mov.u32 	%r6, %tid.x;
+	mov.u32 	%r7, %ctaid.x;
+	shl.b32 	%r8, %r7, 1;
+	mov.u32 	%r9, %ntid.x;
+	mad.lo.s32 	%r43, %r8, %r9, %r6;
+	mov.f32 	%f44, 0f7F800000;
+	setp.ge.u32	%p3, %r43, %r5;
+	@%p3 bra 	BB36_15;
+
+	mov.f32 	%f44, 0f7F800000;
+
+BB36_8:
+	ld.local.u64 	%rd3, [%rd1+112];
+	ld.local.u64 	%rd120, [%rd1+104];
+	and.b64  	%rd90, %rd120, 1;
+	setp.eq.b64	%p4, %rd90, 1;
+	@!%p4 bra 	BB36_10;
+	bra.uni 	BB36_9;
+
+BB36_9:
+	add.s64 	%rd93, %rd1, %rd3;
+	ld.local.u64 	%rd94, [%rd93];
+	add.s64 	%rd95, %rd120, %rd94;
+	ld.u64 	%rd120, [%rd95+-1];
+
+BB36_10:
+	add.s64 	%rd97, %rd18, %rd3;
+	// Callseq Start 14
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd97;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r43;
+	.param .b64 retval0;
+	prototype_14 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	call (retval0), 
+	%rd120, 
+	(
+	param0, 
+	param1
+	)
+	, prototype_14;
+	ld.param.b64	%rd99, [retval0+0];
+	
+	//{
+	}// Callseq End 14
+	ld.f32 	%f31, [%rd99];
+	min.f32 	%f44, %f44, %f31;
+	add.s32 	%r16, %r43, %r9;
+	setp.ge.u32	%p5, %r16, %r5;
+	@%p5 bra 	BB36_14;
+
+	ld.local.u64 	%rd121, [%rd1+104];
+	and.b64  	%rd102, %rd121, 1;
+	setp.eq.b64	%p6, %rd102, 1;
+	ld.local.u64 	%rd8, [%rd1+112];
+	@!%p6 bra 	BB36_13;
+	bra.uni 	BB36_12;
+
+BB36_12:
+	add.s64 	%rd105, %rd1, %rd8;
+	ld.local.u64 	%rd106, [%rd105];
+	add.s64 	%rd107, %rd121, %rd106;
+	ld.u64 	%rd121, [%rd107+-1];
+
+BB36_13:
+	add.s64 	%rd109, %rd18, %rd8;
+	// Callseq Start 15
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd109;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r16;
+	.param .b64 retval0;
+	prototype_15 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	call (retval0), 
+	%rd121, 
+	(
+	param0, 
+	param1
+	)
+	, prototype_15;
+	ld.param.b64	%rd111, [retval0+0];
+	
+	//{
+	}// Callseq End 15
+	ld.f32 	%f32, [%rd111];
+	min.f32 	%f44, %f44, %f32;
+
+BB36_14:
+	shl.b32 	%r20, %r9, 1;
+	mov.u32 	%r21, %nctaid.x;
+	mad.lo.s32 	%r43, %r20, %r21, %r43;
+	setp.lt.u32	%p7, %r43, %r5;
+	@%p7 bra 	BB36_8;
+
+BB36_15:
+	shl.b32 	%r23, %r6, 2;
+	mov.u32 	%r24, memory;
+	add.s32 	%r4, %r24, %r23;
+	st.shared.f32 	[%r4], %f44;
+	bar.sync 	0;
+	setp.lt.u32	%p8, %r9, 1024;
+	@%p8 bra 	BB36_19;
+
+	setp.gt.u32	%p9, %r6, 511;
+	@%p9 bra 	BB36_18;
+
+	ld.shared.f32 	%f33, [%r4+2048];
+	min.f32 	%f44, %f44, %f33;
+	st.shared.f32 	[%r4], %f44;
+
+BB36_18:
+	bar.sync 	0;
+
+BB36_19:
+	setp.lt.u32	%p10, %r9, 512;
+	@%p10 bra 	BB36_23;
+
+	setp.gt.u32	%p11, %r6, 255;
+	@%p11 bra 	BB36_22;
+
+	ld.shared.f32 	%f34, [%r4+1024];
+	min.f32 	%f44, %f44, %f34;
+	st.shared.f32 	[%r4], %f44;
+
+BB36_22:
+	bar.sync 	0;
+
+BB36_23:
+	setp.lt.u32	%p12, %r9, 256;
+	@%p12 bra 	BB36_27;
+
+	setp.gt.u32	%p13, %r6, 127;
+	@%p13 bra 	BB36_26;
+
+	ld.shared.f32 	%f35, [%r4+512];
+	min.f32 	%f44, %f44, %f35;
+	st.shared.f32 	[%r4], %f44;
+
+BB36_26:
+	bar.sync 	0;
+
+BB36_27:
+	setp.lt.u32	%p14, %r9, 128;
+	@%p14 bra 	BB36_31;
+
+	setp.gt.u32	%p15, %r6, 63;
+	@%p15 bra 	BB36_30;
+
+	ld.shared.f32 	%f36, [%r4+256];
+	min.f32 	%f44, %f44, %f36;
+	st.shared.f32 	[%r4], %f44;
+
+BB36_30:
+	bar.sync 	0;
+
+BB36_31:
+	setp.gt.u32	%p16, %r6, 31;
+	@%p16 bra 	BB36_44;
+
+	setp.lt.u32	%p17, %r9, 64;
+	@%p17 bra 	BB36_34;
+
+	ld.volatile.shared.f32 	%f37, [%r4+128];
+	min.f32 	%f44, %f44, %f37;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB36_34:
+	setp.lt.u32	%p18, %r9, 32;
+	@%p18 bra 	BB36_36;
+
+	ld.volatile.shared.f32 	%f38, [%r4+64];
+	min.f32 	%f44, %f44, %f38;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB36_36:
+	setp.lt.u32	%p19, %r9, 16;
+	@%p19 bra 	BB36_38;
+
+	ld.volatile.shared.f32 	%f39, [%r4+32];
+	min.f32 	%f44, %f44, %f39;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB36_38:
+	setp.lt.u32	%p20, %r9, 8;
+	@%p20 bra 	BB36_40;
+
+	ld.volatile.shared.f32 	%f40, [%r4+16];
+	min.f32 	%f44, %f44, %f40;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB36_40:
+	setp.lt.u32	%p21, %r9, 4;
+	@%p21 bra 	BB36_42;
+
+	ld.volatile.shared.f32 	%f41, [%r4+8];
+	min.f32 	%f44, %f44, %f41;
+	st.volatile.shared.f32 	[%r4], %f44;
+
+BB36_42:
+	setp.lt.u32	%p22, %r9, 2;
+	@%p22 bra 	BB36_44;
+
+	ld.volatile.shared.f32 	%f42, [%r4+4];
+	min.f32 	%f43, %f44, %f42;
+	st.volatile.shared.f32 	[%r4], %f43;
+
+BB36_44:
+	setp.ne.s32	%p23, %r6, 0;
+	@%p23 bra 	BB36_48;
+
+	ld.shared.f32 	%f28, [memory];
+	ld.local.u64 	%rd114, [%rd2+96];
+	add.s64 	%rd11, %rd2, %rd114;
+	add.s64 	%rd12, %rd53, %rd114;
+	ld.local.u64 	%rd122, [%rd2+88];
+	and.b64  	%rd115, %rd122, 1;
+	setp.eq.b64	%p24, %rd115, 1;
+	@!%p24 bra 	BB36_47;
+	bra.uni 	BB36_46;
+
+BB36_46:
+	ld.local.u64 	%rd116, [%rd11];
+	add.s64 	%rd117, %rd122, %rd116;
+	ld.u64 	%rd122, [%rd117+-1];
+
+BB36_47:
+	mov.u32 	%r42, 0;
+	// Callseq Start 16
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd12;
+	.param .b32 param1;
+	st.param.b32	[param1+0], %r42;
+	.param .b32 param2;
+	st.param.b32	[param2+0], %r7;
+	.param .b64 retval0;
+	prototype_16 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
+	call (retval0), 
+	%rd122, 
+	(
+	param0, 
+	param1, 
+	param2
+	)
+	, prototype_16;
+	ld.param.b64	%rd119, [retval0+0];
+	
+	//{
+	}// Callseq End 16
+	st.f32 	[%rd119], %f28;
+
+BB36_48:
 	ret;
 }
 
@@ -1226,7 +2755,7 @@ BB18_48:
 	.param .u32 reduce_min_d_param_2
 )
 {
-	.local .align 8 .b8 	__local_depot19[272];
+	.local .align 8 .b8 	__local_depot37[272];
 	.reg .b64 	%SP;
 	.reg .b64 	%SPL;
 	.reg .pred 	%p<25>;
@@ -1235,7 +2764,7 @@ BB18_48:
 	.reg .b64 	%rd<123>;
 
 
-	mov.u64 	%SPL, __local_depot19;
+	mov.u64 	%SPL, __local_depot37;
 	cvta.local.u64 	%SP, %SPL;
 	ld.param.u64 	%rd17, [reduce_min_d_param_0];
 	ld.param.u64 	%rd16, [reduce_min_d_param_1];
@@ -1244,9 +2773,9 @@ BB18_48:
 	add.u64 	%rd1, %SPL, 0;
 	st.local.u64 	[%rd1], %rd17;
 	cvta.to.global.u64 	%rd19, %rd17;
-	ld.global.u64 	%rd20, [%rd19+8];
+	ld.global.u64 	%rd20, [%rd19+16];
 	setp.eq.s64	%p1, %rd20, 0;
-	@%p1 bra 	BB19_2;
+	@%p1 bra 	BB37_2;
 
 	mov.u64 	%rd21, _ZN14MatrixAccessorIdE10len_sparseEv;
 	st.local.u64 	[%rd1+8], %rd21;
@@ -1273,9 +2802,9 @@ BB18_48:
 	mov.u64 	%rd36, _ZN14MatrixAccessorIdE10set_sparseEjjd;
 	st.local.u64 	[%rd1+120], %rd36;
 	st.local.u64 	[%rd1+128], %rd23;
-	bra.uni 	BB19_3;
+	bra.uni 	BB37_3;
 
-BB19_2:
+BB37_2:
 	mov.u64 	%rd38, _ZN14MatrixAccessorIdE9len_denseEv;
 	st.local.u64 	[%rd1+8], %rd38;
 	mov.u64 	%rd40, 0;
@@ -1299,14 +2828,14 @@ BB19_2:
 	st.local.u64 	[%rd1+72], %rd51;
 	st.local.u64 	[%rd1+80], %rd40;
 
-BB19_3:
+BB37_3:
 	add.u64 	%rd53, %SP, 136;
 	add.u64 	%rd2, %SPL, 136;
 	st.local.u64 	[%rd2], %rd16;
 	cvta.to.global.u64 	%rd54, %rd16;
-	ld.global.u64 	%rd55, [%rd54+8];
+	ld.global.u64 	%rd55, [%rd54+16];
 	setp.eq.s64	%p2, %rd55, 0;
-	@%p2 bra 	BB19_5;
+	@%p2 bra 	BB37_5;
 
 	mov.u64 	%rd56, _ZN14MatrixAccessorIdE10len_sparseEv;
 	st.local.u64 	[%rd2+8], %rd56;
@@ -1333,9 +2862,9 @@ BB19_3:
 	mov.u64 	%rd71, _ZN14MatrixAccessorIdE10set_sparseEjjd;
 	st.local.u64 	[%rd2+120], %rd71;
 	st.local.u64 	[%rd2+128], %rd58;
-	bra.uni 	BB19_6;
+	bra.uni 	BB37_6;
 
-BB19_5:
+BB37_5:
 	mov.u64 	%rd73, _ZN14MatrixAccessorIdE9len_denseEv;
 	st.local.u64 	[%rd2+8], %rd73;
 	mov.u64 	%rd75, 0;
@@ -1359,7 +2888,7 @@ BB19_5:
 	st.local.u64 	[%rd2+72], %rd86;
 	st.local.u64 	[%rd2+80], %rd75;
 
-BB19_6:
+BB37_6:
 	mov.u32 	%r6, %tid.x;
 	mov.u32 	%r7, %ctaid.x;
 	shl.b32 	%r8, %r7, 1;
@@ -1367,27 +2896,27 @@ BB19_6:
 	mad.lo.s32 	%r43, %r8, %r9, %r6;
 	mov.f64 	%fd44, 0d7FF0000000000000;
 	setp.ge.u32	%p3, %r43, %r5;
-	@%p3 bra 	BB19_15;
+	@%p3 bra 	BB37_15;
 
 	mov.f64 	%fd44, 0d7FF0000000000000;
 
-BB19_8:
+BB37_8:
 	ld.local.u64 	%rd3, [%rd1+112];
 	ld.local.u64 	%rd120, [%rd1+104];
 	and.b64  	%rd90, %rd120, 1;
 	setp.eq.b64	%p4, %rd90, 1;
-	@!%p4 bra 	BB19_10;
-	bra.uni 	BB19_9;
+	@!%p4 bra 	BB37_10;
+	bra.uni 	BB37_9;
 
-BB19_9:
+BB37_9:
 	add.s64 	%rd93, %rd1, %rd3;
 	ld.local.u64 	%rd94, [%rd93];
 	add.s64 	%rd95, %rd120, %rd94;
 	ld.u64 	%rd120, [%rd95+-1];
 
-BB19_10:
+BB37_10:
 	add.s64 	%rd97, %rd18, %rd3;
-	// Callseq Start 7
+	// Callseq Start 17
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -1396,40 +2925,40 @@ BB19_10:
 	.param .b32 param1;
 	st.param.b32	[param1+0], %r43;
 	.param .b64 retval0;
-	prototype_7 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	prototype_17 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
 	call (retval0), 
 	%rd120, 
 	(
 	param0, 
 	param1
 	)
-	, prototype_7;
+	, prototype_17;
 	ld.param.b64	%rd99, [retval0+0];
 	
 	//{
-	}// Callseq End 7
+	}// Callseq End 17
 	ld.f64 	%fd31, [%rd99];
 	min.f64 	%fd44, %fd44, %fd31;
 	add.s32 	%r16, %r43, %r9;
 	setp.ge.u32	%p5, %r16, %r5;
-	@%p5 bra 	BB19_14;
+	@%p5 bra 	BB37_14;
 
 	ld.local.u64 	%rd121, [%rd1+104];
 	and.b64  	%rd102, %rd121, 1;
 	setp.eq.b64	%p6, %rd102, 1;
 	ld.local.u64 	%rd8, [%rd1+112];
-	@!%p6 bra 	BB19_13;
-	bra.uni 	BB19_12;
+	@!%p6 bra 	BB37_13;
+	bra.uni 	BB37_12;
 
-BB19_12:
+BB37_12:
 	add.s64 	%rd105, %rd1, %rd8;
 	ld.local.u64 	%rd106, [%rd105];
 	add.s64 	%rd107, %rd121, %rd106;
 	ld.u64 	%rd121, [%rd107+-1];
 
-BB19_13:
+BB37_13:
 	add.s64 	%rd109, %rd18, %rd8;
-	// Callseq Start 8
+	// Callseq Start 18
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -1438,143 +2967,143 @@ BB19_13:
 	.param .b32 param1;
 	st.param.b32	[param1+0], %r16;
 	.param .b64 retval0;
-	prototype_8 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
+	prototype_18 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _) ;
 	call (retval0), 
 	%rd121, 
 	(
 	param0, 
 	param1
 	)
-	, prototype_8;
+	, prototype_18;
 	ld.param.b64	%rd111, [retval0+0];
 	
 	//{
-	}// Callseq End 8
+	}// Callseq End 18
 	ld.f64 	%fd32, [%rd111];
 	min.f64 	%fd44, %fd44, %fd32;
 
-BB19_14:
+BB37_14:
 	shl.b32 	%r20, %r9, 1;
 	mov.u32 	%r21, %nctaid.x;
 	mad.lo.s32 	%r43, %r20, %r21, %r43;
 	setp.lt.u32	%p7, %r43, %r5;
-	@%p7 bra 	BB19_8;
+	@%p7 bra 	BB37_8;
 
-BB19_15:
+BB37_15:
 	shl.b32 	%r23, %r6, 3;
 	mov.u32 	%r24, memory;
 	add.s32 	%r4, %r24, %r23;
 	st.shared.f64 	[%r4], %fd44;
 	bar.sync 	0;
 	setp.lt.u32	%p8, %r9, 1024;
-	@%p8 bra 	BB19_19;
+	@%p8 bra 	BB37_19;
 
 	setp.gt.u32	%p9, %r6, 511;
-	@%p9 bra 	BB19_18;
+	@%p9 bra 	BB37_18;
 
 	ld.shared.f64 	%fd33, [%r4+4096];
 	min.f64 	%fd44, %fd44, %fd33;
 	st.shared.f64 	[%r4], %fd44;
 
-BB19_18:
+BB37_18:
 	bar.sync 	0;
 
-BB19_19:
+BB37_19:
 	setp.lt.u32	%p10, %r9, 512;
-	@%p10 bra 	BB19_23;
+	@%p10 bra 	BB37_23;
 
 	setp.gt.u32	%p11, %r6, 255;
-	@%p11 bra 	BB19_22;
+	@%p11 bra 	BB37_22;
 
 	ld.shared.f64 	%fd34, [%r4+2048];
 	min.f64 	%fd44, %fd44, %fd34;
 	st.shared.f64 	[%r4], %fd44;
 
-BB19_22:
+BB37_22:
 	bar.sync 	0;
 
-BB19_23:
+BB37_23:
 	setp.lt.u32	%p12, %r9, 256;
-	@%p12 bra 	BB19_27;
+	@%p12 bra 	BB37_27;
 
 	setp.gt.u32	%p13, %r6, 127;
-	@%p13 bra 	BB19_26;
+	@%p13 bra 	BB37_26;
 
 	ld.shared.f64 	%fd35, [%r4+1024];
 	min.f64 	%fd44, %fd44, %fd35;
 	st.shared.f64 	[%r4], %fd44;
 
-BB19_26:
+BB37_26:
 	bar.sync 	0;
 
-BB19_27:
+BB37_27:
 	setp.lt.u32	%p14, %r9, 128;
-	@%p14 bra 	BB19_31;
+	@%p14 bra 	BB37_31;
 
 	setp.gt.u32	%p15, %r6, 63;
-	@%p15 bra 	BB19_30;
+	@%p15 bra 	BB37_30;
 
 	ld.shared.f64 	%fd36, [%r4+512];
 	min.f64 	%fd44, %fd44, %fd36;
 	st.shared.f64 	[%r4], %fd44;
 
-BB19_30:
+BB37_30:
 	bar.sync 	0;
 
-BB19_31:
+BB37_31:
 	setp.gt.u32	%p16, %r6, 31;
-	@%p16 bra 	BB19_44;
+	@%p16 bra 	BB37_44;
 
 	setp.lt.u32	%p17, %r9, 64;
-	@%p17 bra 	BB19_34;
+	@%p17 bra 	BB37_34;
 
 	ld.volatile.shared.f64 	%fd37, [%r4+256];
 	min.f64 	%fd44, %fd44, %fd37;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB19_34:
+BB37_34:
 	setp.lt.u32	%p18, %r9, 32;
-	@%p18 bra 	BB19_36;
+	@%p18 bra 	BB37_36;
 
 	ld.volatile.shared.f64 	%fd38, [%r4+128];
 	min.f64 	%fd44, %fd44, %fd38;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB19_36:
+BB37_36:
 	setp.lt.u32	%p19, %r9, 16;
-	@%p19 bra 	BB19_38;
+	@%p19 bra 	BB37_38;
 
 	ld.volatile.shared.f64 	%fd39, [%r4+64];
 	min.f64 	%fd44, %fd44, %fd39;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB19_38:
+BB37_38:
 	setp.lt.u32	%p20, %r9, 8;
-	@%p20 bra 	BB19_40;
+	@%p20 bra 	BB37_40;
 
 	ld.volatile.shared.f64 	%fd40, [%r4+32];
 	min.f64 	%fd44, %fd44, %fd40;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB19_40:
+BB37_40:
 	setp.lt.u32	%p21, %r9, 4;
-	@%p21 bra 	BB19_42;
+	@%p21 bra 	BB37_42;
 
 	ld.volatile.shared.f64 	%fd41, [%r4+16];
 	min.f64 	%fd44, %fd44, %fd41;
 	st.volatile.shared.f64 	[%r4], %fd44;
 
-BB19_42:
+BB37_42:
 	setp.lt.u32	%p22, %r9, 2;
-	@%p22 bra 	BB19_44;
+	@%p22 bra 	BB37_44;
 
 	ld.volatile.shared.f64 	%fd42, [%r4+8];
 	min.f64 	%fd43, %fd44, %fd42;
 	st.volatile.shared.f64 	[%r4], %fd43;
 
-BB19_44:
+BB37_44:
 	setp.ne.s32	%p23, %r6, 0;
-	@%p23 bra 	BB19_48;
+	@%p23 bra 	BB37_48;
 
 	ld.shared.f64 	%fd28, [memory];
 	ld.local.u64 	%rd114, [%rd2+96];
@@ -1583,17 +3112,17 @@ BB19_44:
 	ld.local.u64 	%rd122, [%rd2+88];
 	and.b64  	%rd115, %rd122, 1;
 	setp.eq.b64	%p24, %rd115, 1;
-	@!%p24 bra 	BB19_47;
-	bra.uni 	BB19_46;
+	@!%p24 bra 	BB37_47;
+	bra.uni 	BB37_46;
 
-BB19_46:
+BB37_46:
 	ld.local.u64 	%rd116, [%rd11];
 	add.s64 	%rd117, %rd122, %rd116;
 	ld.u64 	%rd122, [%rd117+-1];
 
-BB19_47:
+BB37_47:
 	mov.u32 	%r42, 0;
-	// Callseq Start 9
+	// Callseq Start 19
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
@@ -1604,7 +3133,7 @@ BB19_47:
 	.param .b32 param2;
 	st.param.b32	[param2+0], %r7;
 	.param .b64 retval0;
-	prototype_9 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
+	prototype_19 : .callprototype (.param .b64 _) _ (.param .b64 _, .param .b32 _, .param .b32 _) ;
 	call (retval0), 
 	%rd122, 
 	(
@@ -1612,14 +3141,14 @@ BB19_47:
 	param1, 
 	param2
 	)
-	, prototype_9;
+	, prototype_19;
 	ld.param.b64	%rd119, [retval0+0];
 	
 	//{
-	}// Callseq End 9
+	}// Callseq End 19
 	st.f64 	[%rd119], %fd28;
 
-BB19_48:
+BB37_48:
 	ret;
 }
 

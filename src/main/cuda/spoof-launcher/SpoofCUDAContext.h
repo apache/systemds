@@ -25,10 +25,7 @@
 	#define NOMINMAX
 #endif
 
-#ifndef NDEBUG
-	#define _DEBUG
-#endif
-//#ifdef _DEBUG
+//#ifndef NDEBUG
 //	#define JITIFY_PRINT_ALL 1
 //#endif
 
@@ -88,7 +85,7 @@ public:
 			CHECK_CUDART(cudaMemcpy(output.row_ptr, input.front().row_ptr, (input.front().rows+1)*sizeof(uint32_t),
 					cudaMemcpyDeviceToDevice));
 		}
-#ifdef _DEBUG
+#ifndef NDEBUG
 		std::cout << "output rows: " << output.rows << " cols: " << output.cols << " nnz: " << output.nnz << " format: " <<
 				(output.row_ptr == nullptr ? "dense" : "sparse") << std::endl;
 #endif

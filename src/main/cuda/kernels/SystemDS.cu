@@ -34,6 +34,7 @@ using uint = unsigned int;
 #include "cum_min.cuh"
 #include "cum_max.cuh"
 #include "cum_sum_prod.cuh"
+#include "operators.cuh"
 
 /**
  * This method performs an im2col operation on sparse input image
@@ -471,7 +472,7 @@ __forceinline__ __device__ T binaryOp(T x, T y, int op) {
 		if (isnan(v) || isinf(v)) {
 			return v;
 		} else {
-			v = floor(v);
+			v = FloorOp<T>::exec(v, v);
 		}
 		return x - v * y;
 	}
@@ -480,7 +481,7 @@ __forceinline__ __device__ T binaryOp(T x, T y, int op) {
 		if (isnan(v) || isinf(v)) {
 			return v;
 		} else {
-			return floor(v);
+			return FloorOp<T>::exec(v, v);
 		}
 	}
 	default:
@@ -1546,10 +1547,21 @@ extern "C" __global__ void matrix_log_f(float *A, float *C, unsigned int size) {
  * @param siz the length of the input and output matrices
  */
 template<typename T>
-__device__ void matrix_floor(T *A, T *C, unsigned int size) {
+__device__ void matrix_floor(T* A, T* C, unsigned int size);
+
+template<>
+__device__ void matrix_floor<double>(double* A, double* C, unsigned int size) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index < size) {
 		C[index] = floor(A[index]);
+	}
+}
+
+template<>
+__device__ void matrix_floor<float>(float* A, float* C, unsigned int size) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index < size) {
+		C[index] = floorf(A[index]);
 	}
 }
 
@@ -1573,7 +1585,7 @@ template<typename T>
 __device__ void matrix_ceil(T *A, T *C, unsigned int size) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index < size) {
-		C[index] = ceil(A[index]);
+		C[index] = CeilOp<T>::exec(A[index], A[index]);
 	}
 }
 

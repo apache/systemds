@@ -43,7 +43,7 @@ struct SpoofRowwise {
 		if(op->num_temp_vectors > 0) {
 			tmp_len = std::max(input.front().cols, op->const_dim2 < 0 ? 0 : static_cast<uint32_t>(op->const_dim2));
 			temp_buf_size = op->num_temp_vectors * tmp_len * input.front().rows * sizeof(T);
-#ifdef _DEBUG
+#ifndef NDEBUG
 			std::cout << "num_temp_vect: " << op->num_temp_vectors << " temp_buf_size: " << temp_buf_size << " tmp_len: " << tmp_len << std::endl;
 #endif
 			CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&d_temp), temp_buf_size));
@@ -54,7 +54,7 @@ struct SpoofRowwise {
 		if(sparse_input)
 			op_name = std::string(op->name + "_SPARSE");
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 		// ToDo: connect output to SystemDS logging facilities
 		std::cout << "launching spoof rowwise kernel " << op_name << " with " << NT * input.front().rows << " threads in "
 				<< input.front().rows << " blocks and " << shared_mem_size << " bytes of shared memory for "
@@ -62,7 +62,7 @@ struct SpoofRowwise {
 				<< temp_buf_size / 1024 << " kb of temp buffer in global memory." <<  std::endl;
 #endif
 		CHECK_CUDA(op->program->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(1ul, sides.size()), op->num_temp_vectors, tmp_len)
+						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()), op->num_temp_vectors, tmp_len)
 						   .configure(grid, block, shared_mem_size)
 						   .launch(dp.in, dp.sides, dp.out, dp.scalars, d_temp, grix));
 		

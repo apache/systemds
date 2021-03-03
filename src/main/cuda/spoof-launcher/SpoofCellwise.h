@@ -36,7 +36,7 @@ struct SpoofCellwiseFullAgg {
 		dim3 grid(NB, 1, 1);
 		dim3 block(NT, 1, 1);
 		uint32_t shared_mem_size = NT * sizeof(T);
-#ifdef _DEBUG
+#ifndef NDEBUG
 		// ToDo: connect output to SystemDS logging facilities
 				std::cout << "launching spoof cellwise kernel " << op_name << " with "
 						  << NT * NB << " threads in " << NB << " blocks and "
@@ -46,7 +46,7 @@ struct SpoofCellwiseFullAgg {
 						  << std::endl;
 #endif
 		CHECK_CUDA(op->program.get()->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(1ul, sides.size()))
+						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()))
 						   .configure(grid, block, shared_mem_size)
 						   .launch(dp.in, dp.sides, dp.out, dp.scalars, N, grix));
 		
@@ -56,7 +56,7 @@ struct SpoofCellwiseFullAgg {
 				void* args[3] = { &dp.out, &dp.out, &N};
 				
 				NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
-#ifdef _DEBUG
+#ifndef NDEBUG
 				std::cout << " launching spoof cellwise kernel " << op_name << " with "
                     << NT * NB << " threads in " << NB << " blocks and "
                     << shared_mem_size
@@ -83,14 +83,14 @@ struct SpoofCellwiseRowAgg {
 		dim3 grid(NB, 1, 1);
 		dim3 block(NT, 1, 1);
 		uint32_t shared_mem_size = NT * sizeof(T);
-#ifdef _DEBUG
+#ifndef NDEBUG
 		std::cout << " launching spoof cellwise kernel " << op_name << " with "
 					<< NT * NB << " threads in " << NB << " blocks and "
 					<< shared_mem_size << " bytes of shared memory for row aggregation of "
 					<< N << " elements" << std::endl;
 #endif
 		CHECK_CUDA(op->program->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(1ul, sides.size()))
+						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()))
 						   .configure(grid, block, shared_mem_size)
 						   .launch(dp.in, dp.sides, dp.out, dp.scalars, N, grix));
 		
@@ -110,13 +110,13 @@ struct SpoofCellwiseColAgg {
 		dim3 grid(NB,1, 1);
 		dim3 block(NT,1, 1);
 		uint32_t shared_mem_size = 0;
-#ifdef _DEBUG
+#ifndef NDEBUG
 		std::cout << " launching spoof cellwise kernel " << op_name << " with "
 						<< NT * NB << " threads in " << NB << " blocks for column aggregation of "
 						<< N << " elements" << std::endl;
 #endif
 		CHECK_CUDA(op->program->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(1ul, sides.size()))
+						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()))
 						   .configure(grid, block, shared_mem_size)
 						   .launch(dp.in, dp.sides, dp.out, dp.scalars, N, grix));
 		
@@ -141,7 +141,7 @@ struct SpoofCellwiseNoAgg {
 		dim3 block(NT, 1, 1);
 		uint32_t shared_mem_size = 0;
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 		if(sparse_input) {
 				std::cout << "launching sparse spoof cellwise kernel " << op_name << " with " << NT * NB
 						  << " threads in " << NB << " blocks without aggregation for " << N << " elements"
@@ -155,7 +155,7 @@ struct SpoofCellwiseNoAgg {
 #endif
 		
 		CHECK_CUDA(op->program->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(1ul, sides.size()))
+						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()))
 						   .configure(grid, block, shared_mem_size)
 						   .launch(dp.in, dp.sides, dp.out, dp.scalars, N, grix));
 	}

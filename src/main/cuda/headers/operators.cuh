@@ -49,15 +49,39 @@ struct RoundOp {
 
 template<typename T>
 struct FloorOp {
-	__device__  __forceinline__ static T exec(T a, T b) {
+	__device__  __forceinline__ static T exec(T a, T b);
+};
+
+template<>
+struct FloorOp<double> {
+	__device__  __forceinline__ static double exec(double a, double b) {
 		return floor(a);
+	}
+};
+
+template<>
+struct FloorOp<float> {
+	__device__  __forceinline__ static float exec(float a, float b) {
+		return floorf(a);
 	}
 };
 
 template<typename T>
 struct CeilOp {
-	__device__  __forceinline__ static T exec(T a, T b) {
+	__device__  __forceinline__ static T exec(T a, T b);
+};
+
+template<>
+struct CeilOp<double> {
+	__device__  __forceinline__ static double exec(double a, double b) {
 		return ceil(a);
+	}
+};
+
+template<>
+struct CeilOp<float> {
+	__device__  __forceinline__ static float exec(float a, float b) {
+		return ceilf(a);
 	}
 };
 

@@ -58,6 +58,8 @@ import org.apache.sysds.runtime.transform.decode.DecoderFactory;
 import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
 import org.apache.sysds.runtime.util.DataConverter;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
@@ -148,6 +150,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				|| opcode.equals("transformdecode")
 				|| opcode.equals("transformcolmap")
 				|| opcode.equals("transformmeta")
+				|| opcode.equals("tokenize")
 				|| opcode.equals("toString")
 				|| opcode.equals("nvlist")) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
@@ -255,6 +258,19 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			//release locks
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
+		}
+		else if ( opcode.equalsIgnoreCase("tokenize") ) {
+			//acquire locks
+			FrameBlock data = ec.getFrameInput(params.get("target"));
+
+			// compute tokenizer
+			Tokenizer tokenizer = TokenizerFactory.createTokenizer(
+					getParameterMap().get("spec"), Integer.parseInt(getParameterMap().get("max_tokens")));
+			FrameBlock fbout = tokenizer.tokenize(data, new FrameBlock(tokenizer.getSchema()));
+
+			//release locks
+			ec.setFrameOutput(output.getName(), fbout);
+			ec.releaseFrameInput(params.get("target"));
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply")) {
 			//acquire locks

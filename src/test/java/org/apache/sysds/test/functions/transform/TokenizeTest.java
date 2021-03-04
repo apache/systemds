@@ -20,18 +20,14 @@
 package org.apache.sysds.test.functions.transform;
 
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.runtime.io.*;
-import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 
-public class TokenizeTest extends AutomatedTestBase
-{
+public class TokenizeTest extends AutomatedTestBase  {
     private static final String TEST_DIR = "functions/transform/";
     private static final String TEST_CLASS_DIR = TEST_DIR + TokenizeTest.class.getSimpleName() + "/";
 
@@ -94,11 +90,10 @@ public class TokenizeTest extends AutomatedTestBase
         runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_LONG,false);
     }
 
-    // Long format on spark execution fails with: Number of non-zeros mismatch on merge disjoint
-//    @Test
-//    public void testTokenizeSparkNgramPosLong() {
-//        runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_LONG, false);
-//    }
+    @Test
+    public void testTokenizeSparkNgramPosLong() {
+        runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_LONG, false);
+    }
 
     @Test
     public void testTokenizeHybridNgramPosLong() {
@@ -110,11 +105,10 @@ public class TokenizeTest extends AutomatedTestBase
         runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_LONG, true);
     }
 
-    // Long format on spark execution fails with: Number of non-zeros mismatch on merge disjoint
-//    @Test
-//    public void testTokenizeParReadSparkNgramPosLong() {
-//        runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_LONG, true);
-//    }
+    @Test
+    public void testTokenizeParReadSparkNgramPosLong() {
+        runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_LONG, true);
+    }
 
     @Test
     public void testTokenizeParReadHybridNgramPosLong() {
@@ -201,13 +195,13 @@ public class TokenizeTest extends AutomatedTestBase
                     HOME + "input/" + DATASET, HOME + test_name + ".json", output("R") };
 
             runTest(true, false, null, -1);
-
+//          TODO add assertion tests
             //read input/output and compare
-            FrameReader reader2 = parRead ?
-                    new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) :
-                    new FrameReaderTextCSV( new FileFormatPropertiesCSV()  );
-            FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
-            System.out.println(DataConverter.toString(fb2));
+//            FrameReader reader2 = parRead ?
+//                    new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) :
+//                    new FrameReaderTextCSV( new FileFormatPropertiesCSV()  );
+//            FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
+//            System.out.println(DataConverter.toString(fb2));
         }
         catch(Exception ex) {
             throw new RuntimeException(ex);

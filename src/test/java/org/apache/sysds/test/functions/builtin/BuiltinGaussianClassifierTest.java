@@ -35,12 +35,38 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinGaussianClassifierTest.class.getSimpleName() + "/";
 
+	private final static String DATASET = SCRIPT_DIR + "functions/transform/input/iris/iris.csv";
+
 
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
 	}
 
+	@Test
+	public void testIrisPrediction()
+	{
+		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = HOME + TEST_NAME + "Prediction.dml";
+
+		double varSmoothing = 1e-9;
+
+		List<String> proArgs = new ArrayList<>();
+		proArgs.add("-args");
+		proArgs.add(DATASET);
+		proArgs.add(String.valueOf(varSmoothing));
+		proArgs.add(output("trueLabels"));
+		proArgs.add(output("predLabels"));
+
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+
+		HashMap<CellIndex, Double> trueLabels = readDMLMatrixFromOutputDir("trueLabels");
+		HashMap<CellIndex, Double> predLabels = readDMLMatrixFromOutputDir("predLabels");
+
+		TestUtils.compareMatrices(trueLabels, predLabels, 0, "trueLabels", "predLabels");
+	}
 
 	@Test
 	public void testSmallDenseFiveClasses() {
@@ -87,7 +113,7 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		;
+
 		double varSmoothing = 1e-9;
 
 		List<String> proArgs = new ArrayList<>();

@@ -1,0 +1,12 @@
+{
+  "algo": "ngram",
+  "algo_params": {
+    "min_gram": 2,
+    "max_gram": 3,
+    "regex": "\\\\W+"
+  },
+  "out": "position",
+  "format_wide": false,
+  "id_cols": [1,2],
+  "tokenize_col": 3
+}

@@ -259,6 +259,7 @@ public enum Builtins {
 	SCALEAPPLY("scaleApply", true, false),
 	TIME("time", false),
 	CVLM("cvlm", true, false),
+	TOKENIZE("tokenize", false, true),
 	TOSTRING("toString", false, true),
 	TRANSFORMAPPLY("transformapply", false, true),
 	TRANSFORMCOLMAP("transformcolmap", false, true),

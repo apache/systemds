@@ -214,6 +214,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uppertri",       CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "rexpand",        CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "toString",       CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "tokenize",       CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformapply", CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformdecode",CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformcolmap",CPType.ParameterizedBuiltin);

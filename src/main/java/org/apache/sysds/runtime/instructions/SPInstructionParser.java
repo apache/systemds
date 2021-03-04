@@ -266,6 +266,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "rexpand",        SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "lowertri",       SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "uppertri",       SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "tokenize",       SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transformapply", SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transformdecode",SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transformencode",SPType.MultiReturnBuiltin);

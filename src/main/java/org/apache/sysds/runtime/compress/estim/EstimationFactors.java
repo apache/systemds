@@ -66,7 +66,7 @@ public class EstimationFactors {
 		int[] cols) {
 
 		int numVals = (ubm != null) ? ubm.getNumValues() : 0;
-		boolean containsZero = (ubm != null) ? ubm.containsZero() : true;
+		boolean containsZero = ubm.getNumOffsets() < numRows;
 
 		int numRuns = 0;
 		int numOffs = 0;

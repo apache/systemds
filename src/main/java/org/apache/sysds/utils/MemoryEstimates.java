@@ -21,10 +21,22 @@ package org.apache.sysds.utils;
 
 /**
  * Memory Estimates is a helper class containing static classes that estimate the memory requirements of different types
- * of objects in java.
- * All estimates are worst case JVM x86-64bit uncompressed object pointers.
+ * of objects in java. All estimates are worst case JVM x86-64bit uncompressed object pointers. This in practice means
+ * that the objects are most commonly smaller, for instance the object references are often time (at low memory pressure
+ * 4 bits)
  */
 public class MemoryEstimates {
+
+	public static long bitSetCost(int length) {
+		long size = 0;
+		size += 8; // object reference
+		size += longArrayCost(length / 64 + (length % 64 > 0 ? 1 : 0));
+		size += 4; // words in Use
+		size += 1; // size is Sticky
+		size += 3; // padding.
+		return size;
+	}
+
 	public static long byteArrayCost(int length) {
 		long size = 0;
 		size += 8; // Byte array Reference
@@ -75,12 +87,17 @@ public class MemoryEstimates {
 		return size;
 	}
 
-	public static long doubleArrayCost(long length) {
+	public static long doubleArrayCost(int length) {
 		long size = 0;
 		size += 8; // _values double array reference
 		size += 20; // double array object header
 		size += 4; // padding inside double array object to align to 8 bytes.
 		size += 8 * length; // Each double fills 8 Bytes
 		return size;
+	}
+
+	public static long longArrayCost(int length) {
+		return doubleArrayCost(length);
+		// exactly the same size as a double array
 	}
 }

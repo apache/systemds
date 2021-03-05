@@ -86,7 +86,6 @@ public class CLALibAppend {
 
 		// meta data maintenance
 		ret.setNonZeros(nnz);
-		LOG.error(ret);
 		return ret;
 	}
 

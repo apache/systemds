@@ -112,16 +112,13 @@ public class CompressedSizeInfoColGroup {
 
 		switch(ct) {
 			case DDC:
-				if(fact.numVals < 256)
-					return ColGroupSizes.estimateInMemorySizeDDC1(fact.numCols, fact.numVals* fact.numCols, fact.numRows, fact.lossy);
-				else
-					return ColGroupSizes.estimateInMemorySizeDDC2(fact.numCols, fact.numVals* fact.numCols, fact.numRows, fact.lossy);
+				return ColGroupSizes.estimateInMemorySizeDDC(fact.numCols, fact.numVals + (fact.containsZero ? 1: 0), fact.numRows, fact.lossy);
 			case RLE:
 				return ColGroupSizes
 					.estimateInMemorySizeRLE(fact.numCols, fact.numVals * fact.numCols, fact.numRuns, fact.numRows, fact.lossy);
 			case OLE:
 				return ColGroupSizes
-					.estimateInMemorySizeOLE(fact.numCols, fact.numVals* fact.numCols, fact.numOffs + fact.numVals, fact.numRows, fact.lossy);
+					.estimateInMemorySizeOLE(fact.numCols, fact.numVals * fact.numCols, fact.numOffs + fact.numVals, fact.numRows, fact.lossy);
 			case UNCOMPRESSED:
 				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows,
 					fact.numCols,

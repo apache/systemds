@@ -1101,7 +1101,6 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		IPreAggregate ag = PreAggregateFactory.ag(retSize);
 		final int[] l = lhs._indexes;
-		final char[] ld = lhs._data;
 		final int defL = NVL - 1;
 
 		for(int kr = 0; kr < NVR; kr++) {
@@ -1116,7 +1115,7 @@ public class ColGroupOLE extends ColGroupOffset {
 					while(offL < l.length && l[offL] < row )
 						offL++;
 					if(offL < l.length && l[offL] == row)
-						ag.increment(ld[offL++] + krOff);
+						ag.increment(lhs.getIndex(offL++) + krOff);
 					else
 						ag.increment(defL+krOff);
 				}
@@ -1140,7 +1139,6 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		IPreAggregate ag = PreAggregateFactory.ag(retSize);
 		final int[] l = lhs._indexes;
-		final char[] ld = lhs._data;
 
 		for(int kr = 0; kr < NVR; kr++) {
 			int offL = 0;
@@ -1154,7 +1152,7 @@ public class ColGroupOLE extends ColGroupOffset {
 					while(offL < l.length && l[offL] < row )
 						offL++;
 					if(offL < l.length && l[offL] == row)
-						ag.increment(ld[offL++] + krOff);
+						ag.increment(lhs.getIndex(offL++) + krOff);
 				}
 			}
 		}

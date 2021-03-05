@@ -47,7 +47,8 @@ public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
 	protected ColumnGroupPartitionerCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
 		super(sizeEstimator, cs, numRows);
 
-		largestDistinct = Math.min(256, (int) (_numRows * 0.9));
+		largestDistinct = Math.min(10000, Math.max(256, (int) (_numRows * 0.01)));
+		
 	}
 
 	@Override

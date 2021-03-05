@@ -29,8 +29,6 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -49,7 +47,7 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibLeftMultBy {
-	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
+	// private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
 
 	private static ThreadLocal<double[]> memPoolLeftMult = new ThreadLocal<double[]>() {
 		@Override
@@ -138,49 +136,10 @@ public class CLALibLeftMultBy {
 				throw new DMLRuntimeException(e);
 			}
 		}
-		// if(!overlapping)
-		// leftMultBySelfDiagonalColGroup(groups, result, numColumns, v);
-		// LOG.error(result);
+
 		copyToUpperTriangle(result.getDenseBlockValues(), numColumns);
 
 		result.recomputeNonZeros();
-
-		// if(!overlapping)
-		// else{
-
-		// if(groups.size() > 1)
-		// if(k <= 1)
-		// leftMultByTransposeSelf(groups, result, v, 0, numColumns, 0, numColumns, overlapping);
-		// else
-		// try {
-		// ExecutorService pool = CommonThreadPool.get(k);
-		// ArrayList<MatrixMultTransposeReflectedTask> tasks = new ArrayList<>();
-		// int odd = numColumns % 2;
-		// for(int i = 0; i < numColumns / 2 + odd; i++) {
-		// // if(i < numColumns / 4 && numColumns > 100) {
-		// // int halfRemainingInRow = (i - numColumns) / 2;
-		// tasks.add(new MatrixMultTransposeReflectedTask(groups, result, i, i + 1, i, numColumns, v,
-		// overlapping));
-		// // tasks.add(new MatrixMultTransposeReflectedTask(groups, result, i, i + 1, i +
-		// // halfRemainingInRow,
-		// // numColumns, v, overlapping));
-		// // }
-		// // else
-		// // tasks.add(
-		// // new MatrixMultTransposeReflectedTask(groups, result, i, i + 1, i, numColumns, v,
-		// // overlapping));
-		// }
-
-		// List<Future<Object>> ret = pool.invokeAll(tasks);
-		// for(Future<Object> tret : ret)
-		// tret.get();
-		// pool.shutdown();
-		// }
-		// catch(InterruptedException | ExecutionException e) {
-		// throw new DMLRuntimeException(e);
-		// }
-		// }
-
 	}
 
 	private static void copyToUpperTriangle(final double[] c, final int cols) {
@@ -238,7 +197,6 @@ public class CLALibLeftMultBy {
 
 		}
 		catch(InterruptedException | ExecutionException e) {
-			LOG.error(e);
 			throw new DMLRuntimeException(e);
 		}
 
@@ -256,23 +214,18 @@ public class CLALibLeftMultBy {
 		List<AColGroup> thatCGs = that.getColGroups();
 		Pair<Integer, int[]> thatV = that.getMaxNumValues();
 
-		if(k <= 1) {
+		if(k <= 1)
 			leftMultByCompressedTransposedMatrix(colGroups, thatCGs, ret, false);
-		}
-		else {
+		else
 			try {
 				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<Callable<Object>> tasks = new ArrayList<>();
 				for(int i = 0; i < thatCGs.size(); i++) {
 
-					if(thatCGs.get(i).getNumCols() > 1 || thatCGs.get(i).getCompType() == CompressionType.CONST) {
-						;
+					if(thatCGs.get(i).getNumCols() > 1 || thatCGs.get(i).getCompType() == CompressionType.CONST)
 						tasks.add(new LeftMultByCompressedTransposedMatrixTask(colGroups, thatCGs.get(i), ret, 0,
 							colGroups.size(), false));
-
-					}
 					else {
-
 						int row = thatCGs.get(i).getColIndices()[0];
 						tasks.add(new leftMultByCompressedTransposedMatrixTask(colGroups, thatCGs, ret, v, thatV, row,
 							row + 1, overlapping, 1));
@@ -286,43 +239,9 @@ public class CLALibLeftMultBy {
 			catch(InterruptedException | ExecutionException e) {
 				throw new DMLRuntimeException(e);
 			}
-		}
+
 		ret.recomputeNonZeros();
 		return ret;
-		// if(!overlapping)
-		// else if(k <= 1)
-		// leftMultByCompressedTransposeRowSection(colGroups,
-		// that.getColGroups(),
-		// ret,
-		// v,
-		// thatV,
-		// 0,
-		// that.getNumColumns(),
-		// overlapping,
-		// k);
-		// else
-		// try {
-		// ExecutorService pool = CommonThreadPool.get(k);
-		// ArrayList<leftMultByCompressedTransposedMatrixTask> tasks = new ArrayList<>();
-		// int blklen = (int) (Math.ceil((double) that.getNumColumns() / k));
-		// int numBlocks = Math.max(that.getNumColumns() / blklen, 1);
-		// int numExtraThreads = Math.max(k / numBlocks, 1);
-
-		// for(int i = 0; i * blklen < that.getNumColumns(); i++)
-		// tasks.add(new leftMultByCompressedTransposedMatrixTask(colGroups, that.getColGroups(), ret, v,
-		// thatV, i * blklen, Math.min((i + 1) * blklen, that.getNumColumns()), overlapping,
-		// numExtraThreads));
-
-		// List<Future<Object>> futures = pool.invokeAll(tasks);
-		// for(Future<Object> tret : futures)
-		// tret.get(); // check for errors
-		// pool.shutdown();
-		// }
-		// catch(InterruptedException | ExecutionException e) {
-		// throw new DMLRuntimeException(e);
-		// }
-		// ret.recomputeNonZeros();
-		// return ret;
 	}
 
 	private static class LeftMultByCompressedTransposedMatrixTask implements Callable<Object> {
@@ -403,7 +322,6 @@ public class CLALibLeftMultBy {
 		else
 			for(; colGroupStart < colGroupEnd; colGroupStart++) {
 				final ColGroupValue rhsV = (ColGroupValue) thisCG.get(colGroupStart);
-				// LOG.error(rhsV);
 				rhsV.leftMultByAggregatedColGroup(lhs, c, rows, cols);
 			}
 
@@ -411,11 +329,11 @@ public class CLALibLeftMultBy {
 
 	private static MatrixBlock leftMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		int numColumns, Pair<Integer, int[]> v, boolean overlapping) {
-		if(that.isEmpty()){
+		if(that.isEmpty()) {
 			ret.setNonZeros(0);
 			return ret;
 		}
-		
+
 		ret.allocateDenseBlock();
 		if(that.isInSparseFormat())
 			ret = leftMultBySparseMatrix(colGroups, that, ret, k, numColumns, v, overlapping);
@@ -425,8 +343,8 @@ public class CLALibLeftMultBy {
 		return ret;
 	}
 
-	private static MatrixBlock leftMultByDenseMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-		int numColumns, Pair<Integer, int[]> v, boolean overlapping) {
+	private static MatrixBlock leftMultByDenseMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
+		int k, int numColumns, Pair<Integer, int[]> v, boolean overlapping) {
 		DenseBlock db = that.getDenseBlock();
 		if(db == null)
 			throw new DMLRuntimeException("Invalid LeftMult By Dense matrix, input matrix was sparse");
@@ -588,8 +506,8 @@ public class CLALibLeftMultBy {
 			leftMultByTransposeSelfNormal(groups, result, v, rl, ru, cl, cu);
 	}
 
-	private static void leftMultByTransposeSelfNormal(List<AColGroup> groups, MatrixBlock result, Pair<Integer, int[]> v,
-		int rl, int ru, int cl, int cu) {
+	private static void leftMultByTransposeSelfNormal(List<AColGroup> groups, MatrixBlock result,
+		Pair<Integer, int[]> v, int rl, int ru, int cl, int cu) {
 		// preallocated dense tmp matrix blocks
 
 		final int numRows = groups.get(0).getNumRows();
@@ -600,7 +518,6 @@ public class CLALibLeftMultBy {
 			if(!rowIsDone(result.getDenseBlockValues(), result.getNumColumns(), j)) {
 				AColGroup.decompressColumnToArray(lhs, j, groups);
 				leftMultSelfVectorTranspose(groups, lhs, resArray, Math.max(cl, rl), cu, j, nCol);
-				// LOG.error("tmpret " + Arrays.toString(tmpret));
 				// copyToUpperTriangle(resArray, tmpret, j, result.getNumColumns(), Math.max(cl, rl), cu);
 				Arrays.fill(lhs, 0);
 			}

@@ -63,7 +63,7 @@ public abstract class AColGroup implements Serializable {
 	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
 	public enum ColGroupType {
-		UNCOMPRESSED, RLE, OLE, DDC1, DDC2, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros;
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros;
 
 		public CompressionType getSuperType(ColGroupType c) {
 			switch(c) {
@@ -71,8 +71,7 @@ public abstract class AColGroup implements Serializable {
 					return CompressionType.RLE;
 				case OLE:
 					return CompressionType.OLE;
-				case DDC1:
-				case DDC2:
+				case DDC:
 					return CompressionType.DDC;
 				case CONST:
 				case EMPTY:

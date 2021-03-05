@@ -58,8 +58,8 @@ public class CLALibRightMultBy {
 		Pair<Integer, int[]> v, boolean allowOverlap) {
 
 		if(that instanceof CompressedMatrixBlock)
-			LOG.info("Decompression Right matrix");
-		
+			LOG.warn("Decompression Right matrix");
+
 		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
 
 		if(allowOverlappingOutput(colGroups, allowOverlap))

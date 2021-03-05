@@ -71,12 +71,15 @@ public class ColGroupIO {
 				case RLE:
 					grp = new ColGroupRLE();
 					break;
-				case DDC1:
-					grp = new ColGroupDDC1();
+				case DDC:
+					grp = new ColGroupDDC();
 					break;
-				case DDC2:
-					grp = new ColGroupDDC2();
-					break;
+				// case DDC1:
+				// 	grp = new ColGroupDDC1();
+				// 	break;
+				// case DDC2:
+				// 	grp = new ColGroupDDC2();
+				// 	break;
 				case CONST:
 					grp = new ColGroupConst();
 					break;

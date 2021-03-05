@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.data.SparseBlock.Type;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRowScalar;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
@@ -1687,9 +1688,16 @@ public class LibMatrixMult
 						ret.nonZeros += lnnz;
 					}
 				}
+
 				//optional scaling if not pure selection
 				if( avals[apos] != 1 && lnnz > 0 )
-					vectMultiplyInPlace(avals[apos], c.values(i), c.pos(i), c.size(i));
+					if(c.get(i) instanceof SparseRowScalar){
+						SparseRowScalar sv = (SparseRowScalar) c.get(i);
+						c.set(i, new SparseRowScalar(sv.getIndex(), sv.getValue() * avals[apos]), false);
+					}
+					else
+						vectMultiplyInPlace(avals[apos], c.values(i), c.pos(i), c.size(i));
+					
 			}
 			else { //GENERAL CASE
 				for( int k=apos; k<apos+alen; k++ ) {

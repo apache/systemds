@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -29,8 +29,13 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.tree.AInsertionSorter;
+import org.apache.sysds.runtime.compress.colgroup.tree.Naive;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
@@ -62,27 +67,26 @@ public class ColGroupFactory {
 	public static AColGroup[] compressColGroups(MatrixBlock in, CompressedSizeInfo csi,
 		CompressionSettings compSettings, int k) {
 		int[][] groups = csi.getGroups();
-		if(k <= 1) {
+		if(k <= 1)
 			return compressColGroups(in, groups, compSettings);
-		}
-		else {
+		else
 			try {
 				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<CompressTask> tasks = new ArrayList<>();
 				for(int[] colIndexes : groups)
 					tasks.add(new CompressTask(in, colIndexes, compSettings));
-				List<Future<AColGroup>> rtask = pool.invokeAll(tasks);
+
 				ArrayList<AColGroup> ret = new ArrayList<>();
-				for(Future<AColGroup> lrtask : rtask)
+				for(Future<AColGroup> lrtask : pool.invokeAll(tasks))
 					ret.add(lrtask.get());
 				pool.shutdown();
 				return ret.toArray(new AColGroup[groups.length]);
 			}
 			catch(InterruptedException | ExecutionException e) {
-				// If there is an error in the parallel execution default to the non parallel implementation
-				return compressColGroups(in, groups, compSettings);
+				// return compressColGroups(in, groups, compSettings);
+				throw new DMLRuntimeException("Failed compression ", e);
 			}
-		}
+
 	}
 
 	private static AColGroup[] compressColGroups(MatrixBlock in, int[][] groups, CompressionSettings compSettings) {
@@ -92,7 +96,8 @@ public class ColGroupFactory {
 		return ret;
 	}
 
-	// private static class CompressedColumn implements Comparable<CompressedColumn> {
+	// private static class CompressedColumn implements Comparable<CompressedColumn>
+	// {
 	// final int colIx;
 	// final double compRatio;
 
@@ -101,7 +106,8 @@ public class ColGroupFactory {
 	// this.compRatio = compRatio;
 	// }
 
-	// public static PriorityQueue<CompressedColumn> makePriorityQue(HashMap<Integer, Double> compRatios,
+	// public static PriorityQueue<CompressedColumn>
+	// makePriorityQue(HashMap<Integer, Double> compRatios,
 	// int[] colIndexes) {
 	// PriorityQueue<CompressedColumn> compRatioPQ;
 
@@ -140,7 +146,8 @@ public class ColGroupFactory {
 		return compressColGroupForced(in, colIndexes, compSettings);
 		// return (compRatios == null) ? compressColGroupForced(in,
 		// colIndexes,
-		// compSettings) : compressColGroupCorrecting(in, compRatios, colIndexes, compSettings);
+		// compSettings) : compressColGroupCorrecting(in, compRatios, colIndexes,
+		// compSettings);
 
 	}
 
@@ -152,18 +159,22 @@ public class ColGroupFactory {
 		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, compSettings.transposed);
 		CompressedSizeInfoColGroup sizeInfo = new CompressedSizeInfoColGroup(
 			estimator.estimateCompressedColGroupSize(ubm, colIndexes), compSettings.validCompressions);
+
 		int numRows = compSettings.transposed ? in.getNumColumns() : in.getNumRows();
 		return compress(colIndexes, numRows, ubm, sizeInfo.getBestCompressionType(), compSettings, in);
 	}
 
-	// private static AColGroup compressColGroupCorrecting(MatrixBlock in, HashMap<Integer, Double> compRatios,
+	// private static AColGroup compressColGroupCorrecting(MatrixBlock in,
+	// HashMap<Integer, Double> compRatios,
 	// int[] colIndexes, CompressionSettings compSettings) {
 
 	// int[] allGroupIndices = colIndexes.clone();
 	// CompressedSizeInfoColGroup sizeInfo;
 	// ABitmap ubm = null;
-	// PriorityQueue<CompressedColumn> compRatioPQ = CompressedColumn.makePriorityQue(compRatios, colIndexes);
-	// CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings, compSettings.transposed);
+	// PriorityQueue<CompressedColumn> compRatioPQ =
+	// CompressedColumn.makePriorityQue(compRatios, colIndexes);
+	// CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in,
+	// compSettings, compSettings.transposed);
 
 	// while(true) {
 
@@ -171,7 +182,9 @@ public class ColGroupFactory {
 	// // Extract the entire input column list and observe compression ratio
 	// ubm = BitmapEncoder.extractBitmap(colIndexes, in, compSettings.transposed);
 
-	// sizeInfo = new CompressedSizeInfoColGroup(estimator.estimateCompressedColGroupSize(ubm, colIndexes),
+	// sizeInfo = new
+	// CompressedSizeInfoColGroup(estimator.estimateCompressedColGroupSize(ubm,
+	// colIndexes),
 	// compSettings.validCompressions);
 
 	// // Throw error if for some reason the compression observed is 0.
@@ -181,13 +194,17 @@ public class ColGroupFactory {
 
 	// // STEP 2.
 	// // Calculate the compression ratio compared to an uncompressed ColGroup type.
-	// double compRatio = sizeInfo.getCompressionSize(CompressionType.UNCOMPRESSED) / sizeInfo.getMinSize();
+	// double compRatio = sizeInfo.getCompressionSize(CompressionType.UNCOMPRESSED)
+	// / sizeInfo.getMinSize();
 
 	// // STEP 3.
-	// // Finish the search and close this compression if the group show good compression.
-	// if(compRatio > 1.0 || PartitionerType.isCost(compSettings.columnPartitioner)) {
+	// // Finish the search and close this compression if the group show good
+	// compression.
+	// if(compRatio > 1.0 || PartitionerType.isCost(compSettings.columnPartitioner))
+	// {
 	// int rlen = compSettings.transposed ? in.getNumColumns() : in.getNumRows();
-	// return compress(colIndexes, rlen, ubm, sizeInfo.getBestCompressionType(), compSettings, in);
+	// return compress(colIndexes, rlen, ubm, sizeInfo.getBestCompressionType(),
+	// compSettings, in);
 	// }
 	// else {
 	// // STEP 4.
@@ -223,18 +240,14 @@ public class ColGroupFactory {
 	 */
 	public static AColGroup compress(int[] colIndexes, int rlen, ABitmap ubm, CompressionType compType,
 		CompressionSettings cs, MatrixBlock rawMatrixBlock) {
+
 		if(LOG.isTraceEnabled())
 			LOG.trace("compressing to: " + compType);
 		if(ubm.getOffsetList().length == 0)
 			return new ColGroupEmpty(colIndexes, rlen);
 		switch(compType) {
 			case DDC:
-				// if(colIndexes.length > 1)
-				// return compressSDC(colIndexes, rlen, ubm, cs);
-				if(ubm.getNumValues() < 256)
-					return new ColGroupDDC1(colIndexes, rlen, ubm, cs);
-				else
-					return new ColGroupDDC2(colIndexes, rlen, ubm, cs);
+				return compressDDC(colIndexes, rlen, ubm, cs);
 			case RLE:
 				return new ColGroupRLE(colIndexes, rlen, ubm, cs);
 			case OLE:
@@ -248,7 +261,7 @@ public class ColGroupFactory {
 		}
 	}
 
-	private static AColGroup compressSDC(int[] colIndices, int rlen, ABitmap ubm, CompressionSettings cs) {
+	private static AColGroup compressSDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
 
 		int numZeros = (int) ((long) rlen - (int) ubm.getNumOffsets());
 		int largestOffset = 0;
@@ -261,35 +274,32 @@ public class ColGroupFactory {
 			}
 			index++;
 		}
-
+		AColGroup cg;
 		ADictionary dict = new Dictionary(((Bitmap) ubm).getValues());
 		if(numZeros >= largestOffset && ubm.getOffsetList().length == 1)
-			return new ColGroupSDCSingleZeros(colIndices, rlen, dict, ubm.getOffsetList()[0].extractValues(true), null);
+			cg =  new ColGroupSDCSingleZeros(colIndexes, rlen, dict, ubm.getOffsetList()[0].extractValues(true), null);
 		else if(numZeros >= largestOffset)
-			return setupMultiValueZeroColGroup(colIndices, ubm, rlen, dict);
+			cg =  setupMultiValueZeroColGroup(colIndexes, ubm, rlen, dict);
 		else if(ubm.getOffsetList().length == 1 && ubm.getOffsetsList(0).size() == rlen)
-			return new ColGroupConst(colIndices, rlen, dict);
+			cg =  new ColGroupConst(colIndexes, rlen, dict);
 		else {
 			dict = moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
-			return setupMultiValueColGroup(colIndices, numZeros, largestOffset, ubm, rlen, largestIndex, dict);
+			cg =  setupMultiValueColGroup(colIndexes, numZeros, largestOffset, ubm, rlen, largestIndex, dict);
+			// return new ColGroupEmpty(colIndexes, rlen);
 		}
-
+		return cg;
 	}
 
-	private static AColGroup setupMultiValueZeroColGroup(int[] colIndices, ABitmap ubm, int numRows, ADictionary dict) {
+	private static AColGroup setupMultiValueZeroColGroup(int[] colIndexes, ABitmap ubm, int numRows, ADictionary dict) {
 		IntArrayList[] offsets = ubm.getOffsetList();
 		final int numOffsets = (int) ubm.getNumOffsets();
-		char[] data = new char[numOffsets];
+		IMapToData _data = MapToFactory.create(numOffsets, offsets.length);
 		int[] indexes = new int[numOffsets];
 
 		int[] offsetsRowIndex = new int[offsets.length];
-		int[][] offsetsMaterialized = new int[offsets.length][];
-
-		for(int i = 0; i < offsets.length; i++) {
-			offsetsMaterialized[i] = offsets[i].extractValues();
-		}
 
 		int lastIndex = -1;
+
 		for(int i = 0; i < indexes.length; i++) {
 			lastIndex++;
 			int start = Integer.MAX_VALUE;
@@ -297,7 +307,7 @@ public class ColGroupFactory {
 			for(int j = 0; j < offsets.length; j++) {
 				final int off = offsetsRowIndex[j];
 				if(off < offsets[j].size()) {
-					final int v = offsetsMaterialized[j][off];
+					final int v = offsets[j].get(off);
 					if(v == lastIndex) {
 						start = lastIndex;
 						groupId = j;
@@ -310,73 +320,30 @@ public class ColGroupFactory {
 				}
 			}
 			offsetsRowIndex[groupId]++;
-			data[i] = (char) groupId;
+			_data.set(i, groupId);
 			indexes[i] = start;
 			lastIndex = start;
 		}
 
-		return new ColGroupSDCZeros(colIndices, numRows, dict, indexes, data, null);
+		if(indexes[indexes.length-1] == 0 )
+			throw new DMLCompressionException("Invalid Index Structure" + Arrays.toString(indexes));
+
+		return new ColGroupSDCZeros(colIndexes, numRows, dict, indexes, _data, null);
 	}
 
-	private static AColGroup setupMultiValueColGroup(int[] colIndices, int numZeros, int largestOffset, ABitmap ubm,
+	private static AColGroup setupMultiValueColGroup(int[] colIndexes, int numZeros, int largestOffset, ABitmap ubm,
 		int numRows, int largestIndex, ADictionary dict) {
 		IntArrayList[] offsets = ubm.getOffsetList();
-		char[] _data = new char[numRows - largestOffset];
-		int[] _indexes = new int[numRows - largestOffset];
-		int[] offsetsRowIndex = new int[offsets.length];
-		int[][] offsetsMaterialized = new int[offsets.length][];
+		AInsertionSorter s = new Naive(numRows - largestOffset, offsets.length, numRows);
 
-		for(int i = 0; i < offsets.length; i++) {
-			offsetsMaterialized[i] = offsets[i].extractValues();
-		}
+		s.insert(offsets, largestIndex);
 
-		boolean isJ = false;
-		for(int i = 0, k = 0; i < numRows; i++) {
-			int beforeK = k;
-			isJ = false;
-			for(int j = 0; j < offsets.length; j++) {
-				final int extra = (j < largestIndex ? 0 : 1);
-				final int off = offsetsRowIndex[j];
-				if(off < offsets[j].size()) {
-					final int v = offsetsMaterialized[j][off];
-					if(v == i) {
-						if(j != largestIndex) {
-							_data[k] = (char) (j - extra);
-							_indexes[k] = i;
-							k++;
-							isJ = false;
-						}
-						else
-							isJ = true;
+		int[] _indexes = s.getIndexes();
+		IMapToData _data = s.getData();
+		AColGroup ret = new ColGroupSDC(colIndexes, numRows, dict, _indexes, _data, null);
 
-						offsetsRowIndex[j]++;
-						break;
-					}
-				}
-			}
-			if(!isJ && beforeK == k) { // materialize zeros.
-				_data[k] = (char) (offsets.length - 1);
-				_indexes[k] = i;
-				k++;
-			}
-		}
-
-		AColGroup ret = new ColGroupSDC(colIndices, numRows, dict, _indexes, _data, null);
 		return ret;
 	}
-
-	// private static ColGroup setupSingleValueColGroup(int[] colIndices, ABitmap ubm, int numRows, ADictionary dict) {
-	// int[] _indexes = new int[numRows - ubm.getOffsetsList(0).size()];
-	// int[] inverseIndexes = ubm.getOffsetsList(0).extractValues();
-	// for(int i = 0, j = 0, k = 0; i < ubm.getOffsetsList(0).size(); i++) {
-	// int v = inverseIndexes[i];
-	// while(v > j)
-	// _indexes[k++] = j++;
-	// j++;
-	// }
-
-	// return new ColGroupSDCSingle(colIndices, numRows, dict, inverseIndexes, null);
-	// }
 
 	private static ADictionary moveFrequentToLastDictionaryEntry(ADictionary dict, ABitmap ubm, int numRows,
 		int largestIndex) {
@@ -412,4 +379,39 @@ public class ColGroupFactory {
 		return new Dictionary(newDict);
 	}
 
+	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
+
+		boolean _zeros = ubm.getNumOffsets() < (long) rlen;
+		ADictionary dict;
+		double[] values = ((Bitmap) ubm).getValues();
+		if(_zeros) {
+			double[] appendedZero = new double[values.length + colIndexes.length];
+			System.arraycopy(values, 0, appendedZero, 0, values.length);
+			dict = new Dictionary(appendedZero);
+		}
+		else
+			dict = new Dictionary(values);
+
+		int numVals = ubm.getNumValues();
+		IMapToData _data = MapToFactory.create(rlen, numVals + (_zeros ? 1 : 0));
+		if(_zeros)
+			_data.fill(numVals);
+
+		// for(int i = 0; i < numVals; i++) {
+		// int[] tmpList = ubm.getOffsetsList(i).extractValues();
+		// int tmpListSize = ubm.getNumOffsets(i);
+		// for(int k = 0; k < tmpListSize; k++)
+		// _data[tmpList[k]] = (char) i;
+		// }
+
+		for(int i = 0; i < numVals; i++) {
+			int[] tmpList = ubm.getOffsetsList(i).extractValues();
+			int tmpListSize = ubm.getNumOffsets(i);
+			for(int k = 0; k < tmpListSize; k++)
+				_data.set(tmpList[k], i);
+		}
+
+		return new ColGroupDDC(colIndexes, rlen, dict, _data, null);
+
+	}
 }

@@ -72,8 +72,7 @@ import org.junit.runners.Parameterized.Parameters;
 public abstract class CompressedTestBase extends TestBase {
 	protected static final Log LOG = LogFactory.getLog(CompressedTestBase.class.getName());
 
-	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {
-		SparsityType.FULL,
+	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL,
 		// SparsityType.DENSE,
 		SparsityType.SPARSE,
 		// SparsityType.ULTRA_SPARSE,
@@ -83,16 +82,11 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static ValueType[] usedValueTypes = new ValueType[] {
 		// ValueType.RAND,
 		// ValueType.CONST,
-		ValueType.RAND_ROUND,
-		ValueType.OLE_COMPRESSIBLE,
-		ValueType.RLE_COMPRESSIBLE,
-	};
+		ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE, ValueType.RLE_COMPRESSIBLE,};
 
-	protected static ValueRange[] usedValueRanges = new ValueRange[] {
-		ValueRange.SMALL,
-		ValueRange.NEGATIVE,
+	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL, ValueRange.NEGATIVE,
 		// ValueRange.LARGE,
-		// ValueRange.BYTE,
+		ValueRange.BYTE,
 		// ValueRange.BOOLEAN,
 	};
 
@@ -102,7 +96,7 @@ public abstract class CompressedTestBase extends TestBase {
 		// OverLapping.MATRIX,
 		OverLapping.NONE,
 		// OverLapping.MATRIX_PLUS,
-		OverLapping.SQUASH,
+		// OverLapping.SQUASH,
 		// OverLapping.MATRIX_MULT_NEGATIVE
 	};
 
@@ -114,19 +108,25 @@ public abstract class CompressedTestBase extends TestBase {
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 			.setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true),
 
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.OLE)).setInvestigateEstimate(true),
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+		// .setValidCompressions(EnumSet.of(CompressionType.OLE)).setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+		// .setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true),
 
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
+		.setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
 
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.SDC, CompressionType.DDC)).setInvestigateEstimate(true),
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.OLE, CompressionType.SDC, CompressionType.DDC))
-			.setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+		// .setValidCompressions(EnumSet.of(CompressionType.SDC, CompressionType.DDC)).setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+		// .setValidCompressions(EnumSet.of(CompressionType.OLE, CompressionType.SDC, CompressionType.DDC))
+		// .setInvestigateEstimate(true),
+
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("false")
+		// 	.setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
+		// 	.setInvestigateEstimate(true),
+
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setInvestigateEstimate(true),
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDictionary(false).setmaxStaticColGroupCoCode(1),
@@ -156,8 +156,7 @@ public abstract class CompressedTestBase extends TestBase {
 	};
 
 	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
-		MatrixTypology.SMALL, 
-		MatrixTypology.FEW_COL,
+		MatrixTypology.SMALL, MatrixTypology.FEW_COL,
 		// MatrixTypology.FEW_ROW,
 		MatrixTypology.LARGE,
 		// // MatrixTypology.SINGLE_COL,
@@ -413,11 +412,10 @@ public abstract class CompressedTestBase extends TestBase {
 			// vector-matrix uncompressed
 
 			// vector-matrix compressed
-			MatrixBlock ret2 = cmb.aggregateBinaryOperations(matrix, cmb, new MatrixBlock(), abop);
 			MatrixBlock ret1 = mb.aggregateBinaryOperations(matrix, mb, new MatrixBlock(), abop);
+			MatrixBlock ret2 = cmb.aggregateBinaryOperations(matrix, cmb, new MatrixBlock(), abop);
 
 			// compare result with input
-
 			compareResultMatrices(ret1, ret2, 100);
 		}
 		catch(Exception e) {

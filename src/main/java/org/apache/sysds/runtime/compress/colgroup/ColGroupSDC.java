@@ -26,6 +26,8 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -52,14 +54,14 @@ public class ColGroupSDC extends ColGroupValue {
 	/**
 	 * Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.
 	 */
-	protected char[] _data;
+	protected IMapToData _data;
 
 	// Helper Constructors
 	protected ColGroupSDC() {
 		super();
 	}
 
-	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, char[] data,
+	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, IMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_indexes = indexes;
@@ -97,7 +99,7 @@ public class ColGroupSDC extends ColGroupValue {
 			off++;
 		for(; i < ru && off < _indexes.length; i++, offT += tCol) {
 			if(_indexes[off] == i) {
-				int offset = _data[off] * nCol;
+				int offset = _data.getIndex(off) * nCol;
 				for(int j = 0; j < nCol; j++)
 					c[offT + _colIndexes[j]] += values[offset + j];
 				off++;
@@ -127,7 +129,7 @@ public class ColGroupSDC extends ColGroupValue {
 		int i = 0;
 		for(; i < _numRows && off < _indexes.length; i++) {
 			if(_indexes[off] == i)
-				c[i] += values[_data[off++] * _colIndexes.length + colPos];
+				c[i] += values[_data.getIndex(off++) * _colIndexes.length + colPos];
 			else
 				c[i] += defaultVal;
 		}
@@ -153,7 +155,7 @@ public class ColGroupSDC extends ColGroupValue {
 			off++;
 		for(; i < ru && off < _indexes.length; i++, offT++) {
 			if(_indexes[off] == i) {
-				int offset = _data[off] * nCol;
+				int offset = _data.getIndex(off) * nCol;
 				c[offT] += values[offset + colpos];
 				off++;
 			}
@@ -175,7 +177,7 @@ public class ColGroupSDC extends ColGroupValue {
 		// // get value
 		int index = getIndex(r, 0);
 		if(index < _indexes.length && _indexes[index] == r)
-			return _dict.getValue(_data[index] * _colIndexes.length + ix);
+			return _dict.getValue(_data.getIndex(index) * _colIndexes.length + ix);
 		else
 			return _dict.getValue(getNumValues() * _colIndexes.length - _colIndexes.length + ix);
 	}
@@ -198,7 +200,7 @@ public class ColGroupSDC extends ColGroupValue {
 			if(index == _indexes.length || _indexes[index] != rix)
 				c[rix * mult] += vals[numVals - 1];
 			else
-				c[rix * mult] += vals[_data[index]];
+				c[rix * mult] += vals[_data.getIndex(index)];
 		}
 	}
 
@@ -231,26 +233,38 @@ public class ColGroupSDC extends ColGroupValue {
 					if(index == _indexes.length || _indexes[index] != i)
 						cVals[i] = builtin.execute(cVals[i], dictionary[offsetToDefault + j]);
 					else
-						cVals[i] = builtin.execute(cVals[i], dictionary[_data[index] * _colIndexes.length + j]);
+						cVals[i] = builtin.execute(cVals[i], dictionary[getIndex(index) * _colIndexes.length + j]);
 			}
 	}
 
 	@Override
 	public int[] getCounts(int[] counts) {
-		for(char v : _data)
-			counts[v]++;
-		counts[counts.length - 1] = _numRows - _data.length;
-		return counts;
+		return getCounts(0, _numRows, counts);
 	}
 
 	@Override
 	public int[] getCounts(int rl, int ru, int[] counts) {
-		throw new NotImplementedException("Not Implemented");
-		// for(int i = rl; i < ru; i++) {
-		// int index = getIndex(i);
-		// counts[index]++;
-		// }
-		// return counts;
+		final int def = counts.length - 1;
+		int off = 0;
+		int i = rl;
+		while(off < _indexes.length && _indexes[off] < i)
+			off++;
+
+		for(; i < ru && off < _indexes.length; i++) {
+			if(off < _indexes.length && i == _indexes[off])
+				counts[_data.getIndex(off++)]++;
+			else
+				counts[def]++;
+		}
+
+		if(i < ru)
+			counts[def] += ru -i;
+
+		return counts;
+	}
+
+	public int getIndex(int r){
+		return _data.getIndex(r);
 	}
 
 	@Override
@@ -283,7 +297,7 @@ public class ColGroupSDC extends ColGroupValue {
 			int offA = _numRows * row;
 			for(; i < _numRows && off < _indexes.length; i++, offA++) {
 				if(_indexes[off] == i) {
-					vals[_data[off]] += a[offA];
+					vals[getIndex(off)] += a[offA];
 					off++;
 				}
 				else
@@ -295,7 +309,7 @@ public class ColGroupSDC extends ColGroupValue {
 		else {
 			for(; i < _numRows && off < _indexes.length; i++)
 				if(_indexes[off] == i) {
-					vals[_data[off]] += a[i];
+					vals[getIndex(off)] += a[i];
 					off++;
 				}
 				else
@@ -330,7 +344,7 @@ public class ColGroupSDC extends ColGroupValue {
 			if(index == _indexes.length || _indexes[index] != indexes[i])
 				vals[numVals - 1] += sparseV[i];
 			else
-				vals[_data[index]] += sparseV[i];
+				vals[getIndex(index)] += sparseV[i];
 		}
 		return vals;
 	}
@@ -338,7 +352,7 @@ public class ColGroupSDC extends ColGroupValue {
 	@Override
 	public long estimateInMemorySize() {
 		return ColGroupSizes
-			.estimateInMemorySizeSDC(getNumCols(), _dict.size(), _numRows, _numRows - _data.length, isLossy());
+			.estimateInMemorySizeSDC(getNumCols(), _dict.size(), _numRows, _numRows - _indexes.length, isLossy());
 	}
 
 	@Override
@@ -358,7 +372,7 @@ public class ColGroupSDC extends ColGroupValue {
 		for(; i < ru && off < _indexes.length; i++) {
 			int rc = i * thatNrColumns;
 			if(_indexes[off] == i) {
-				int offset = _data[off] * outputColumns.length;
+				int offset = getIndex(off) * outputColumns.length;
 				for(int j = 0; j < nCol; j++) {
 					c[rc + outputColumns[j]] += preAggregatedB[offset + j];
 				}
@@ -395,8 +409,7 @@ public class ColGroupSDC extends ColGroupValue {
 		super.write(out);
 		// write data
 		out.writeInt(_indexes.length);
-		for(int i = 0; i < _indexes.length; i++)
-			out.writeChar(_data[i]);
+		_data.write(out);
 		for(int i = 0; i < _indexes.length; i++)
 			out.writeInt(_indexes[i]);
 	}
@@ -405,10 +418,8 @@ public class ColGroupSDC extends ColGroupValue {
 	public void readFields(DataInput in) throws IOException {
 		super.readFields(in);
 		int length = in.readInt();
-		_data = new char[length];
 		_indexes = new int[length];
-		for(int i = 0; i < length; i++)
-			_data[i] = in.readChar();
+		_data = MapToFactory.readIn(length, in, getNumValues());
 		for(int i = 0; i < length; i++)
 			_indexes[i] = in.readInt();
 	}
@@ -417,7 +428,7 @@ public class ColGroupSDC extends ColGroupValue {
 	public long getExactSizeOnDisk() {
 		long ret = super.getExactSizeOnDisk();
 		ret += 4;
-		ret += _data.length * 2;
+		ret += MapToFactory.getExactSizeOnDisk(_indexes.length, getNumValues());
 		ret += _indexes.length * 4;
 		return ret;
 	}
@@ -433,15 +444,7 @@ public class ColGroupSDC extends ColGroupValue {
 		sb.append(super.toString());
 		sb.append(String.format("\n%15s%5d ", "Indexes: ", this._indexes.length));
 		sb.append(Arrays.toString(this._indexes));
-		if(_data != null) {
-			sb.append(String.format("\n%15s%5d ", "Data: ", this._data.length));
-			sb.append("[");
-			for(char c : this._data) {
-				sb.append((int) c);
-				sb.append(" ");
-			}
-			sb.append("]");
-		}
+		sb.append(_data);
 		return sb.toString();
 	}
 
@@ -453,7 +456,6 @@ public class ColGroupSDC extends ColGroupValue {
 		IPreAggregate ag = PreAggregateFactory.ag(retSize);
 
 		final int[] sdcIndexes = this._indexes;
-		final char[] sdcData = this._data;
 		final int offsetToDefault = this.getNumValues() - 1;
 
 		int off = 0;
@@ -463,7 +465,7 @@ public class ColGroupSDC extends ColGroupValue {
 		for(; i < this._numRows && off < sdcIndexes.length; i++) {
 			int col = lhs.getIndex(i);
 			if(sdcIndexes[off] == i) {
-				row = sdcData[off];
+				row = getIndex(off);
 				off++;
 			}
 			else
@@ -497,19 +499,17 @@ public class ColGroupSDC extends ColGroupValue {
 
 		final int[] l = lhs._indexes;
 		final int[] r = this._indexes;
-		final char[] ld = lhs._data;
-		final char[] rd = this._data;
 
 		int i = 0;
 		int col;
 		int row;
 		for(; i < this._numRows && offL < l.length && offR < r.length; i++) {
 			if(l[offL] == i)
-				col = ld[offL++];
+				col = lhs.getIndex(offL++);
 			else
 				col = defL;
 			if(r[offR] == i)
-				row = rd[offR++];
+				row = this.getIndex(offR++);
 			else
 				row = defR;
 			ag.increment(col + row * nCol);
@@ -519,7 +519,7 @@ public class ColGroupSDC extends ColGroupValue {
 			row = defR;
 			for(; i < this._numRows && offL < l.length; i++) {
 				if(l[offL] == i)
-					col = ld[offL++];
+					col = lhs.getIndex(offL++);
 				else
 					col = defL;
 
@@ -531,7 +531,7 @@ public class ColGroupSDC extends ColGroupValue {
 			col = defL;
 			for(; i < this._numRows && offR < r.length; i++) {
 				if(r[offR] == i)
-					row = rd[offR++];
+					row = this.getIndex(offR++);
 				else
 					row = defR;
 				ag.increment(col + row * nCol);
@@ -559,7 +559,6 @@ public class ColGroupSDC extends ColGroupValue {
 
 		final int[] l = lhs._indexes;
 		final int[] r = this._indexes;
-		final char[] rd = this._data;
 
 		int i = 0;
 		int col;
@@ -572,7 +571,7 @@ public class ColGroupSDC extends ColGroupValue {
 			else
 				col = 0;
 			if(r[offR] == i)
-				row = rd[offR++];
+				row = this.getIndex(offR++);
 			else
 				row = defR;
 			ag.increment(col + row * nCol);
@@ -595,7 +594,7 @@ public class ColGroupSDC extends ColGroupValue {
 		if(offR < r.length) {
 			for(; i < this._numRows && offR < r.length; i++) {
 				if(r[offR] == i)
-					row = rd[offR++];
+					row = this.getIndex(offR++);
 				else
 					row = defR;
 				ag.increment(row * nCol);
@@ -620,19 +619,17 @@ public class ColGroupSDC extends ColGroupValue {
 		int offR = 0;
 		final int[] l = lhs._indexes;
 		final int[] r = this._indexes;
-		final char[] ld = lhs._data;
-		final char[] rd = this._data;
 
 		while(offL < l.length && offR < r.length)
 			if(l[offL] == r[offR])
-				ag.increment(ld[offL++] + rd[offR++] * nCol);
+				ag.increment(lhs.getIndex(offL++) + this.getIndex(offR++) * nCol);
 			else if(l[offL] > r[offR])
 				offR++;
 			else
-				ag.increment(ld[offL++] + defR);
+				ag.increment(lhs.getIndex(offL++) + defR);
 
 		while(offL < l.length)
-			ag.increment(ld[offL++] + defR);
+			ag.increment(lhs.getIndex(offL++) + defR);
 		return ag;
 	}
 
@@ -650,7 +647,6 @@ public class ColGroupSDC extends ColGroupValue {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		IPreAggregate ag = PreAggregateFactory.ag(retSize);
 		final int[] r = this._indexes;
-		final char[] rd = this._data;
 		final int defR = (NVR - 1) * NVL;
 
 		for(int kl = 0; kl < NVL; kl++) {
@@ -664,7 +660,7 @@ public class ColGroupSDC extends ColGroupValue {
 					while(offR < r.length &&  r[offR] < col)
 						offR++;
 					if(offR < r.length && r[offR] == col)
-						ag.increment(kl + rd[offR++] * NVL);
+						ag.increment(kl + this.getIndex(offR++) * NVL);
 					else 
 						ag.increment(kl + defR);
 					

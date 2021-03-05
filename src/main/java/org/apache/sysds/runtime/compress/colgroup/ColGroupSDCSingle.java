@@ -445,14 +445,13 @@ public class ColGroupSDCSingle extends ColGroupValue {
 
 		final int[] l = lhs._indexes;
 		final int[] r = this._indexes;
-		final char[] ld = lhs._data;
 
 		int i = 0;
 		int col;
 		int row;
 		for(; i < this._numRows && offL < l.length && offR < r.length; i++) {
 			if(l[offL] == i)
-				col = ld[offL++];
+				col = lhs.getIndex(offL++);
 			else
 				col = defL;
 			if(r[offR] == i){
@@ -468,7 +467,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 			row = 0;
 			for(; i < this._numRows && offL < l.length; i++) {
 				if(l[offL] == i)
-					col = ld[offL++];
+					col = lhs.getIndex(offL++);
 				else
 					col = defL;
 

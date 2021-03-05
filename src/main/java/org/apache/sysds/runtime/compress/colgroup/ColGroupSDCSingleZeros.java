@@ -387,10 +387,9 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		int offR = 0;
 		final int[] l = lhs._indexes;
 		final int[] r = this._indexes;
-		final char[] ld = lhs._data;
 		while(offL < l.length && offR < r.length)
 			if(l[offL] == r[offR]){
-				ag.increment(ld[offL++]);
+				ag.increment(lhs.getIndex(offL++));
 				offR++;
 			}
 			else if(l[offL] < r[offR])

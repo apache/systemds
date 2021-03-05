@@ -63,17 +63,24 @@ public class BuiltinKmTest extends AutomatedTestBase
 						   int numCatFeaturesGroup, int numCatFeaturesStrat, int maxNumLevels, double alpha, String err_type,
 						   String conf_type, String test_type) {
 		Types.ExecMode platformOld = setExecMode(LopProperties.ExecType.SPARK);
-		loadTestConfiguration(getTestConfiguration(TEST_NAME));
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
-		programArgs = new String[]{
-				"-nvargs", "O=" + output("O"), "M=" + output("M"), "T=" + output("T"),
-				"T_GROUPS_OE=" + output("T_GROUPS_OE"), "n=" + numRecords, "l=" + scaleWeibull,
-				"v=" + shapeWeibull, "p=" + prob, "g=" + numCatFeaturesGroup, "s=" + numCatFeaturesStrat,
-				"f=" + maxNumLevels, "alpha=" + alpha, "err_type=" + err_type,
-				"conf_type=" + conf_type, "test_type=" + test_type, "sd=" + 1};
+		try {
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
-		runTest(true, false, null, -1);
+			programArgs = new String[]{
+					"-nvargs", "O=" + output("O"), "M=" + output("M"), "T=" + output("T"),
+					"T_GROUPS_OE=" + output("T_GROUPS_OE"), "n=" + numRecords, "l=" + scaleWeibull,
+					"v=" + shapeWeibull, "p=" + prob, "g=" + numCatFeaturesGroup, "s=" + numCatFeaturesStrat,
+					"f=" + maxNumLevels, "alpha=" + alpha, "err_type=" + err_type,
+					"conf_type=" + conf_type, "test_type=" + test_type, "sd=" + 1};
+
+			runTest(true, false, null, -1);
+			//runRScript(true);
+
+		} finally {
+			rtplatform = platformOld;
+		}
 	}
 }

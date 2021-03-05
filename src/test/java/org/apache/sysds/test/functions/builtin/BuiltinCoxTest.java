@@ -43,16 +43,24 @@ public class BuiltinCoxTest extends AutomatedTestBase
 	public void runCoxTest(int numRecords, double scaleWeibull, double shapeWeibull, double prob,
 						   int numFeatures, double sparsity, double alpha, double tol, int moi, int mii) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
-		loadTestConfiguration(getTestConfiguration(TEST_NAME));
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
-		programArgs = new String[]{
-				"-nvargs", "M=" + output("M"), "S=" + output("S"), "T=" + output("T"), "COV=" + output("COV"),
-				"RT=" + output("RT"), "XO=" + output("XO"), "n=" + numRecords, "l=" + scaleWeibull,
-				"v=" + shapeWeibull, "p=" + prob, "m=" + numFeatures, "sp=" + sparsity,
-				"alpha=" + alpha, "tol=" + tol, "moi=" + moi, "mii=" + mii, "sd=" + 1};
+		try {
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
-		runTest(true, false, null, -1);
+			programArgs = new String[]{
+					"-nvargs", "M=" + output("M"), "S=" + output("S"), "T=" + output("T"), "COV=" + output("COV"),
+					"RT=" + output("RT"), "XO=" + output("XO"), "n=" + numRecords, "l=" + scaleWeibull,
+					"v=" + shapeWeibull, "p=" + prob, "m=" + numFeatures, "sp=" + sparsity,
+					"alpha=" + alpha, "tol=" + tol, "moi=" + moi, "mii=" + mii, "sd=" + 1};
+
+			runTest(true, false, null, -1);
+			//runRScript(true);
+
+		} finally {
+			rtplatform = platformOld;
+		}
+
 	}
 }

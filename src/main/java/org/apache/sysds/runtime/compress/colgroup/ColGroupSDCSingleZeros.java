@@ -348,6 +348,11 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
+	public int getIndexStructureHash(){
+		return _indexes.hashCode();
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

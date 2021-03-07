@@ -546,6 +546,11 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
+	public int getIndexStructureHash(){
+		return _data.hashCode();
+	}
+
+	@Override
 	public ColGroupType getColGroupType() {
 		return ColGroupType.DDC;
 		// if(_data instanceof MapToBit)

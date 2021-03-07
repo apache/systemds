@@ -42,19 +42,11 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 public class CLALibRightMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
 
-	/**
-	 * Right multiply by matrix. Meaning a left hand side compressed matrix is multiplied with a right hand side
-	 * uncompressed matrix.
-	 * 
-	 * @param colGroups    All Column groups in the compression
-	 * @param that         The right hand side matrix
-	 * @param ret          The MatrixBlock to return.
-	 * @param k            The parallelization degree to use.
-	 * @param v            The Precalculated counts and Maximum number of tuple entries in the column groups.
-	 * @param allowOverlap Allow the multiplication to return an overlapped matrix.
-	 * @return The Result Matrix, modified from the ret parameter.
-	 */
-	public static MatrixBlock rightMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
+	public static MatrixBlock rightMultByMatrix(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean allowOverlap){
+		return rightMultByMatrix(m1.getColGroups(), m2, ret, k, m1.getMaxNumValues(), allowOverlap);
+	}
+
+	private static MatrixBlock rightMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v, boolean allowOverlap) {
 
 		if(that instanceof CompressedMatrixBlock)
@@ -62,11 +54,20 @@ public class CLALibRightMultBy {
 
 		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
 
-		if(allowOverlappingOutput(colGroups, allowOverlap))
-			return rightMultByMatrixOverlapping(colGroups, that, ret, k, v);
-		else 
-			return rightMultByMatrixNonOverlapping(colGroups, that, ret, k, v);
+		MatrixBlock m = rightMultByMatrixOverlapping(colGroups, that, ret, k, v);
+		if(m instanceof CompressedMatrixBlock)
+			if(allowOverlappingOutput(colGroups, allowOverlap))
+				return m;
+			else 
+				return ((CompressedMatrixBlock) m).decompress(k);
+		else
+			return m;
 		
+
+		// 	if(allowOverlappingOutput(colGroups, allowOverlap))
+		// 	return rightMultByMatrixOverlapping(colGroups, that, ret, k, v);
+		// else 
+		// 	return rightMultByMatrixNonOverlapping(colGroups, that, ret, k, v);
 	}
 
 	private static boolean allowOverlappingOutput(List<AColGroup> colGroups, boolean allowOverlap) {
@@ -121,59 +122,59 @@ public class CLALibRightMultBy {
 		return ret;
 	}
 
-	/**
-	 * Multi-threaded version of rightMultByVector.
-	 * 
-	 * @param colGroups The Column groups used int the multiplication
-	 * @param vector    matrix block vector to multiply with
-	 * @param result    matrix block result to modify in the multiplication
-	 * @param k         number of threads to use
-	 * @param v         The Precalculated counts and Maximum number of tuple entries in the column groups
-	 */
-	public static void rightMultByVector(List<AColGroup> colGroups, MatrixBlock vector, MatrixBlock result, int k,
-		Pair<Integer, int[]> v) {
-		// initialize and allocate the result
-		result.allocateDenseBlock();
-		if(k <= 1) {
-			rightMultByVector(colGroups, vector, result, v);
-			return;
-		}
+	// /**
+	//  * Multi-threaded version of rightMultByVector.
+	//  * 
+	//  * @param colGroups The Column groups used int the multiplication
+	//  * @param vector    matrix block vector to multiply with
+	//  * @param result    matrix block result to modify in the multiplication
+	//  * @param k         number of threads to use
+	//  * @param v         The Precalculated counts and Maximum number of tuple entries in the column groups
+	//  */
+	// public static void rightMultByVector(List<AColGroup> colGroups, MatrixBlock vector, MatrixBlock result, int k,
+	// 	Pair<Integer, int[]> v) {
+	// 	// initialize and allocate the result
+	// 	result.allocateDenseBlock();
+	// 	if(k <= 1) {
+	// 		rightMultByVector(colGroups, vector, result, v);
+	// 		return;
+	// 	}
 
-		// multi-threaded execution of all groups
-		try {
-			// ColGroupUncompressed uc = getUncompressedColGroup();
+	// 	// multi-threaded execution of all groups
+	// 	try {
+	// 		// ColGroupUncompressed uc = getUncompressedColGroup();
 
-			// compute uncompressed column group in parallel
-			// if(uc != null)
-			// uc.rightMultByVector(vector, result, k);
+	// 		// compute uncompressed column group in parallel
+	// 		// if(uc != null)
+	// 		// uc.rightMultByVector(vector, result, k);
 
-			// compute remaining compressed column groups in parallel
-			// note: OLE needs alignment to segment size, otherwise wrong entry
-			ExecutorService pool = CommonThreadPool.get(k);
-			int rlen = colGroups.get(0).getNumRows();
-			int seqsz = CompressionSettings.BITMAP_BLOCK_SZ;
-			int blklen = (int) (Math.ceil((double) rlen / k));
-			blklen += (blklen % seqsz != 0) ? seqsz - blklen % seqsz : 0;
+	// 		// compute remaining compressed column groups in parallel
+	// 		// note: OLE needs alignment to segment size, otherwise wrong entry
+	// 		ExecutorService pool = CommonThreadPool.get(k);
+	// 		int rlen = colGroups.get(0).getNumRows();
+	// 		int seqsz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 		int blklen = (int) (Math.ceil((double) rlen / k));
+	// 		blklen += (blklen % seqsz != 0) ? seqsz - blklen % seqsz : 0;
 
-			ArrayList<RightMatrixVectorMultTask> tasks = new ArrayList<>();
-			for(int i = 0; i < k & i * blklen < rlen; i++) {
-				tasks.add(new RightMatrixVectorMultTask(colGroups, vector, result, i * blklen,
-					Math.min((i + 1) * blklen, rlen), v));
-			}
+	// 		ArrayList<RightMatrixVectorMultTask> tasks = new ArrayList<>();
+	// 		for(int i = 0; i < k & i * blklen < rlen; i++) {
+	// 			tasks.add(new RightMatrixVectorMultTask(colGroups, vector, result, i * blklen,
+	// 				Math.min((i + 1) * blklen, rlen), v));
+	// 		}
 
-			List<Future<Long>> ret = pool.invokeAll(tasks);
-			pool.shutdown();
+	// 		List<Future<Long>> ret = pool.invokeAll(tasks);
+	// 		pool.shutdown();
 
-			// error handling and nnz aggregation
-			long lnnz = 0;
-			for(Future<Long> tmp : ret)
-				lnnz += tmp.get();
-			result.setNonZeros(lnnz);
-		}
-		catch(InterruptedException | ExecutionException e) {
-			throw new DMLRuntimeException(e);
-		}
-	}
+	// 		// error handling and nnz aggregation
+	// 		long lnnz = 0;
+	// 		for(Future<Long> tmp : ret)
+	// 			lnnz += tmp.get();
+	// 		result.setNonZeros(lnnz);
+	// 	}
+	// 	catch(InterruptedException | ExecutionException e) {
+	// 		throw new DMLRuntimeException(e);
+	// 	}
+	// }
 
 	/**
 	 * Multiply this matrix block by a column vector on the right.
@@ -182,15 +183,15 @@ public class CLALibRightMultBy {
 	 * @param result buffer to hold the result; must have the appropriate size already
 	 * @param v      The Precalculated counts and Maximum number of tuple entries in the column groups.
 	 */
-	private static void rightMultByVector(List<AColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
-		Pair<Integer, int[]> v) {
+	// private static void rightMultByVector(List<AColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
+	// 	Pair<Integer, int[]> v) {
 
-		// delegate matrix-vector operation to each column group
-		rightMultByVector(colGroups, vector, result, 0, result.getNumRows(), v);
+	// 	// delegate matrix-vector operation to each column group
+	// 	rightMultByVector(colGroups, vector, result, 0, result.getNumRows(), v);
 
-		// post-processing
-		result.recomputeNonZeros();
-	}
+	// 	// post-processing
+	// 	result.recomputeNonZeros();
+	// }
 
 	private static MatrixBlock rightMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		Pair<Integer, int[]> v) {
@@ -232,7 +233,8 @@ public class CLALibRightMultBy {
 			ArrayList<RightMatrixMultTask> tasks = new ArrayList<>();
 
 			final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
-			int blklenRows = blkz * 2 / ret.getNumColumns();
+			// int blklenRows = blkz * 8 / ret.getNumColumns();
+			int blklenRows = Math.max(blkz,  ret.getNumColumns() / k);
 
 			try {
 				List<Future<Pair<int[], double[]>>> ag = pool.invokeAll(preAggregate(colGroups, that, that, v));
@@ -311,43 +313,43 @@ public class CLALibRightMultBy {
 		return preTask;
 	}
 
-	private static void rightMultByVector(List<AColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru,
-		Pair<Integer, int[]> v) {
-		// + 1 to enable containing a single 0 value in the dictionary that was not materialized.
-		// This is to handle the case of a DDC dictionary not materializing the zero values.
-		// A fine tradeoff!
-		ColGroupValue.setupThreadLocalMemory(v.getLeft() + 1);
+	// private static void rightMultByVector(List<AColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru,
+	// 	Pair<Integer, int[]> v) {
+	// 	// + 1 to enable containing a single 0 value in the dictionary that was not materialized.
+	// 	// This is to handle the case of a DDC dictionary not materializing the zero values.
+	// 	// A fine tradeoff!
+	// 	ColGroupValue.setupThreadLocalMemory(v.getLeft() + 1);
 
-		// boolean cacheDDC1 = ru - rl > CompressionSettings.BITMAP_BLOCK_SZ * 2;
+	// 	// boolean cacheDDC1 = ru - rl > CompressionSettings.BITMAP_BLOCK_SZ * 2;
 
-		// process uncompressed column group (overwrites output)
-		// if(inclUC) {
-		for(AColGroup grp : groups) {
-			if(grp instanceof ColGroupUncompressed)
-				((ColGroupUncompressed) grp).rightMultByVector(vect, ret, rl, ru);
-		}
+	// 	// process uncompressed column group (overwrites output)
+	// 	// if(inclUC) {
+	// 	for(AColGroup grp : groups) {
+	// 		if(grp instanceof ColGroupUncompressed)
+	// 			((ColGroupUncompressed) grp).rightMultByVector(vect, ret, rl, ru);
+	// 	}
 
-		// process cache-conscious DDC1 groups (adds to output)
+	// 	// process cache-conscious DDC1 groups (adds to output)
 
-		// if(cacheDDC1) {
-		// ArrayList<ColGroupDDC1> tmp = new ArrayList<>();
-		// for(ColGroup grp : groups)
-		// if(grp instanceof ColGroupDDC1)
-		// tmp.add((ColGroupDDC1) grp);
-		// if(!tmp.isEmpty())
-		// ColGroupDDC1.rightMultByVector(tmp.toArray(new ColGroupDDC1[0]), vect, ret, rl, ru);
-		// }
-		// process remaining groups (adds to output)
-		double[] values = ret.getDenseBlockValues();
-		for(AColGroup grp : groups) {
-			if(!(grp instanceof ColGroupUncompressed)) {
-				grp.rightMultByVector(vect.getDenseBlockValues(), values, rl, ru, grp.getValues());
-			}
-		}
+	// 	// if(cacheDDC1) {
+	// 	// ArrayList<ColGroupDDC1> tmp = new ArrayList<>();
+	// 	// for(ColGroup grp : groups)
+	// 	// if(grp instanceof ColGroupDDC1)
+	// 	// tmp.add((ColGroupDDC1) grp);
+	// 	// if(!tmp.isEmpty())
+	// 	// ColGroupDDC1.rightMultByVector(tmp.toArray(new ColGroupDDC1[0]), vect, ret, rl, ru);
+	// 	// }
+	// 	// process remaining groups (adds to output)
+	// 	double[] values = ret.getDenseBlockValues();
+	// 	for(AColGroup grp : groups) {
+	// 		if(!(grp instanceof ColGroupUncompressed)) {
+	// 			grp.rightMultByVector(vect.getDenseBlockValues(), values, rl, ru, grp.getValues());
+	// 		}
+	// 	}
 
-		ColGroupValue.cleanupThreadLocalMemory();
+	// 	ColGroupValue.cleanupThreadLocalMemory();
 
-	}
+	// }
 
 	private static class RightMatrixMultTask implements Callable<Object> {
 		private final List<AColGroup> _colGroups;
@@ -420,34 +422,34 @@ public class CLALibRightMultBy {
 		}
 	}
 
-	private static class RightMatrixVectorMultTask implements Callable<Long> {
-		private final List<AColGroup> _groups;
-		private final MatrixBlock _vect;
-		private final MatrixBlock _ret;
-		private final int _rl;
-		private final int _ru;
-		private final Pair<Integer, int[]> _v;
+	// private static class RightMatrixVectorMultTask implements Callable<Long> {
+	// 	private final List<AColGroup> _groups;
+	// 	private final MatrixBlock _vect;
+	// 	private final MatrixBlock _ret;
+	// 	private final int _rl;
+	// 	private final int _ru;
+	// 	private final Pair<Integer, int[]> _v;
 
-		protected RightMatrixVectorMultTask(List<AColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru,
-			Pair<Integer, int[]> v) {
-			_groups = groups;
-			_vect = vect;
-			_ret = ret;
-			_rl = rl;
-			_ru = ru;
-			_v = v;
-		}
+	// 	protected RightMatrixVectorMultTask(List<AColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru,
+	// 		Pair<Integer, int[]> v) {
+	// 		_groups = groups;
+	// 		_vect = vect;
+	// 		_ret = ret;
+	// 		_rl = rl;
+	// 		_ru = ru;
+	// 		_v = v;
+	// 	}
 
-		@Override
-		public Long call() {
-			try {
-				rightMultByVector(_groups, _vect, _ret, _rl, _ru, _v);
-				return _ret.recomputeNonZeros(_rl, _ru - 1, 0, 0);
-			}
-			catch(Exception e) {
-				LOG.error(e);
-				throw new DMLRuntimeException(e);
-			}
-		}
-	}
+	// 	@Override
+	// 	public Long call() {
+	// 		try {
+	// 			rightMultByVector(_groups, _vect, _ret, _rl, _ru, _v);
+	// 			return _ret.recomputeNonZeros(_rl, _ru - 1, 0, 0);
+	// 		}
+	// 		catch(Exception e) {
+	// 			LOG.error(e);
+	// 			throw new DMLRuntimeException(e);
+	// 		}
+	// 	}
+	// }
 }

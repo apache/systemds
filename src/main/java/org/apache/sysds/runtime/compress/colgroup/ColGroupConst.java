@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.pre.ArrPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -287,6 +288,11 @@ public class ColGroupConst extends ColGroupValue {
 	@Override
 	public boolean sameIndexStructure(ColGroupValue that) {
 		return that instanceof ColGroupConst;
+	}
+
+	@Override
+	public int getIndexStructureHash(){
+		throw new NotImplementedException("This function should not be called");
 	}
 
 	@Override

@@ -365,8 +365,14 @@ public class ColGroupSDCZeros extends ColGroupValue {
 
 	@Override
 	public boolean sameIndexStructure(ColGroupValue that) {
-		return that instanceof ColGroupSDCZeros && ((ColGroupSDCZeros) that)._indexes == _indexes;
+		return that instanceof ColGroupSDCZeros && ((ColGroupSDCZeros) that)._indexes == _indexes && ((ColGroupSDCZeros) that)._data == _data;
 	}
+
+	@Override
+	public int getIndexStructureHash(){
+		return _indexes.hashCode() + _data.hashCode();
+	}
+
 
 	@Override
 	public String toString() {

@@ -976,6 +976,11 @@ public class ColGroupRLE extends ColGroupOffset {
 		return that instanceof ColGroupRLE && ((ColGroupRLE) that)._data == _data;
 	}
 
+	@Override
+	public int getIndexStructureHash(){
+		return _data.hashCode();
+	}
+
 	/**
 	 * Encodes the bitmap as a series of run lengths and offsets.
 	 * 

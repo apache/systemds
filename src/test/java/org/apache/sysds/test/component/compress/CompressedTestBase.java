@@ -300,13 +300,11 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testMatrixMultChainXtXv() {
 		testMatrixMultChain(ChainType.XtXv);
 	}
 
 	@Test
-	@Ignore
 	public void testMatrixMultChainXtwXv() {
 		testMatrixMultChain(ChainType.XtwXv);
 	}
@@ -334,8 +332,11 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
 
+			// LOG.error(ret1);
+			// LOG.error(ret2);
 			// compare result with input
-			compareResultMatrices(ret1, ret2, 200);
+			TestUtils.compareMatricesPercentageDistance(DataConverter.convertToDoubleMatrix(
+					ret1), DataConverter.convertToDoubleMatrix(ret2), 0.9, 0.9, this.toString());
 
 		}
 		catch(Exception e) {

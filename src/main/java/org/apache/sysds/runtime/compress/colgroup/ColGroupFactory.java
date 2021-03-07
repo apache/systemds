@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
+import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -334,10 +335,9 @@ public class ColGroupFactory {
 	private static AColGroup setupMultiValueColGroup(int[] colIndexes, int numZeros, int largestOffset, ABitmap ubm,
 		int numRows, int largestIndex, ADictionary dict) {
 		IntArrayList[] offsets = ubm.getOffsetList();
+		// AInsertionSorter s = new BTree(numRows - largestOffset, offsets.length, numRows);
 		AInsertionSorter s = new Naive(numRows - largestOffset, offsets.length, numRows);
-
 		s.insert(offsets, largestIndex);
-
 		int[] _indexes = s.getIndexes();
 		IMapToData _data = s.getData();
 		AColGroup ret = new ColGroupSDC(colIndexes, numRows, dict, _indexes, _data, null);
@@ -383,7 +383,11 @@ public class ColGroupFactory {
 
 		boolean _zeros = ubm.getNumOffsets() < (long) rlen;
 		ADictionary dict;
-		double[] values = ((Bitmap) ubm).getValues();
+		if(ubm instanceof BitmapLossy)
+			dict = new QDictionary((BitmapLossy) ubm).makeDoubleDictionary();
+		else
+			dict = new Dictionary( ((Bitmap) ubm).getValues());
+		double[] values = dict.getValues();
 		if(_zeros) {
 			double[] appendedZero = new double[values.length + colIndexes.length];
 			System.arraycopy(values, 0, appendedZero, 0, values.length);

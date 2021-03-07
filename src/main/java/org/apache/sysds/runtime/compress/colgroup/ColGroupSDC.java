@@ -435,7 +435,13 @@ public class ColGroupSDC extends ColGroupValue {
 
 	@Override
 	public boolean sameIndexStructure(ColGroupValue that) {
-		return that instanceof ColGroupSDC && ((ColGroupSDC) that)._data == _data;
+		// TODO add such that if the column group switched from Zeros type it also matches.
+		return that instanceof ColGroupSDC && ((ColGroupSDC) that)._indexes == _indexes && ((ColGroupSDC) that)._data == _data;
+	}
+
+	@Override
+	public int getIndexStructureHash(){
+		return _data.hashCode() + _indexes.hashCode();
 	}
 
 	@Override

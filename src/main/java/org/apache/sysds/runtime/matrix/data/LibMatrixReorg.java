@@ -1022,25 +1022,32 @@ public class LibMatrixReorg {
 		DenseBlock values = in.getDenseBlock();
 		if(values.numBlocks()>1)
 			throw new NotImplementedException("Not Implemented in place transpose with more than one block");
-		int cols = in.getNumRows();
-		int rows = in.getNumColumns();
-
-	
+		
+		// Swap rows and cols
+		final int cols = in.getNumRows();
+		final int rows = in.getNumColumns();
+		
 		if(cols == 1 || rows == 1){
-			// do nothing
+			values.setDims(new int[] {rows, cols});
+			in.setNumColumns(cols);
+			in.setNumRows(rows);
+			// swap rows and column numbers;
 		}
 		else if(cols == rows){
 			// If the number of rows equals the number of columns simply swap each element along the diagonal.
 			// This only results in half - number of diagonal elements swaps.
 			transposeInPlaceTrivial(in.getDenseBlockValues(), cols, k);
-		}else{
+		}
+		else {
 			if(cols<rows){
+				// important to set dims after
 				c2r(in, k);
 				values.setDims(new int[]{rows,cols});
 				in.setNumColumns(cols);
 				in.setNumRows(rows);
 			}
 			else{
+				// important to set dims before
 				values.setDims(new int[]{rows,cols});
 				in.setNumColumns(cols);
 				in.setNumRows(rows);

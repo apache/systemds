@@ -67,6 +67,7 @@ public class CLALibBinaryCellOp {
 		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue);
 		LibMatrixBincell.isValidDimensionsBinary(m1, that);
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, that);
+		LOG.error(atype);
 		return selectProcessingBasedOnAccessType(op, m1, that, thatValue, result, atype, false);
 	}
 

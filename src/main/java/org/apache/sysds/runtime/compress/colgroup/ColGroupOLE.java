@@ -1016,6 +1016,11 @@ public class ColGroupOLE extends ColGroupOffset {
 		return that instanceof ColGroupOLE && ((ColGroupOLE) that)._data == _data;
 	}
 
+	@Override
+	public int getIndexStructureHash(){
+		return _data.hashCode();
+	}
+
 	/**
 	 * Encodes the bitmap in blocks of offsets. Within each block, the bits are stored as absolute offsets from the
 	 * start of the block.

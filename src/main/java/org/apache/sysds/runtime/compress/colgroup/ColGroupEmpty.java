@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -201,6 +202,11 @@ public class ColGroupEmpty extends ColGroupValue {
 	@Override
 	public boolean sameIndexStructure(ColGroupValue that) {
 		return false;
+	}
+
+	@Override
+	public int getIndexStructureHash(){
+		throw new NotImplementedException("This function should not be called");
 	}
 
 	@Override

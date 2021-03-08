@@ -34,15 +34,16 @@ public abstract class FEDInstruction extends Instruction {
 		Binary,
 		Init,
 		MultiReturnParameterizedBuiltin,
-		ParameterizedBuiltin,
-		Tsmm,
 		MMChain,
-		Reorg,
-		Reshape,
 		MatrixIndexing,
+		ParameterizedBuiltin,
 		Quaternary,
 		QSort,
 		QPick,
+		Reorg,
+		Reshape,
+		SpoofFused,
+		Tsmm,
 		Unary
 	}
 

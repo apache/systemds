@@ -19,6 +19,29 @@
 
 package org.apache.sysds.runtime.codegen;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
+import org.apache.sysds.runtime.codegen.SpoofOperator.SideInputSparseCell;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.utils.Statistics;
+import org.codehaus.janino.SimpleCompiler;
+
+import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,31 +53,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.tools.Diagnostic;
-import javax.tools.Diagnostic.Kind;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.matrix.data.Pair;
-import org.codehaus.janino.SimpleCompiler;
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.hops.codegen.SpoofCompiler;
-import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
-import org.apache.sysds.runtime.codegen.SpoofOperator.SideInputSparseCell;
-import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.LocalFileUtils;
-import org.apache.sysds.utils.Statistics;
 
 public class CodegenUtils 
 {

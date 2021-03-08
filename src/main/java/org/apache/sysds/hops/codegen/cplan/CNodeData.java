@@ -19,13 +19,13 @@
 
 package org.apache.sysds.hops.codegen.cplan;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+
 import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
 public class CNodeData extends CNode 

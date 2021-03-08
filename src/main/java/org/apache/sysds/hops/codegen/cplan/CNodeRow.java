@@ -19,20 +19,15 @@
 
 package org.apache.sysds.hops.codegen.cplan;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.stream.Collectors;
-
 import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 
-import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
+import java.util.ArrayList;
 
 public class CNodeRow extends CNodeTpl
 {

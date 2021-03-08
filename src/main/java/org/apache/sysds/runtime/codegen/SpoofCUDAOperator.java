@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.codegen;
 
-import java.util.ArrayList;
-
 import jcuda.Pointer;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -28,7 +26,8 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
-import org.json4s.ParserUtil;
+
+import java.util.ArrayList;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixCUDA.sizeOfDataType;
 

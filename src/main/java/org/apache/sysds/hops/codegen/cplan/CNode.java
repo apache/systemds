@@ -19,14 +19,13 @@
 
 package org.apache.sysds.hops.codegen.cplan;
 
-import java.util.ArrayList;
-
-import org.apache.sysds.hops.codegen.SpoofCompiler;
-import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+
+import java.util.ArrayList;
 
 public abstract class CNode
 {

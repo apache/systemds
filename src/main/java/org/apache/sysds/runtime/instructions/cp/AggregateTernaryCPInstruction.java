@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -29,6 +31,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
+
+	private static final Log LOG = LogFactory.getLog(AggregateTernaryCPInstruction.class.getName());
 
 	private AggregateTernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 		String opcode, String istr) {
@@ -88,9 +92,15 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 		int m2c = m2.getNumColumns();
 		int m3c = m3 == null ? m2c : m3.getNumColumns();
 
-		if(m1r != m2r || m1c != m2c || m2r != m3r || m2c != m3c)
+		if(m1r != m2r || m1c != m2c || m2r != m3r || m2c != m3c){
+			if(LOG.isTraceEnabled()){
+				LOG.trace("matBlock1:" + m1);
+				LOG.trace("matBlock2:" + m2);
+				LOG.trace("matBlock3:" + m3);
+			}
 			throw new DMLRuntimeException("Invalid dimensions for aggregate ternary (" + m1r + "x" + m1c + ", "
 				+ m2r + "x" + m2c + ", " + m3r + "x" + m3c + ").");
+		}
 				
 		if(!(op.aggOp.increOp.fn instanceof KahanPlus && op.binaryFn instanceof Multiply))
 			throw new DMLRuntimeException("Unsupported operator for aggregate ternary operations.");

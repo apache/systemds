@@ -32,6 +32,46 @@ public class Naive extends AInsertionSorter {
 	}
 
 	@Override
+	public void insert(final IntArrayList[] offsets) {
+		
+
+		int[] offsetsRowIndex = new int[offsets.length];
+
+		int lastIndex = -1;
+
+		for(int i = 0; i < _indexes.length; i++) {
+			lastIndex++;
+			int start = Integer.MAX_VALUE;
+			int groupId = Integer.MAX_VALUE;
+			for(int j = 0; j < offsets.length; j++) {
+				final int off = offsetsRowIndex[j];
+				if(off < offsets[j].size()) {
+					final int v = offsets[j].get(off);
+					if(v == lastIndex) {
+						start = lastIndex;
+						groupId = j;
+						break;
+					}
+					else if(v < start) {
+						start = v;
+						groupId = j;
+					}
+				}
+			}
+			offsetsRowIndex[groupId]++;
+			_labels.set(i, groupId);
+			_indexes[i] = start;
+			lastIndex = start;
+		}
+
+		if(_indexes[_indexes.length-1] == 0 )
+			throw new DMLCompressionException("Invalid Index Structure" + Arrays.toString(_indexes));
+
+
+	}
+
+
+	@Override
 	public void insert(final IntArrayList[] offsets, final int negativeIndex) {
 		
 		final int[] offsetsRowIndex = new int[offsets.length];

@@ -90,8 +90,8 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff, boolean lossy){
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
-		// size += MemoryEstimates.intArrayCost(nrRows- largestOff);
-		size += MemoryEstimates.byteArrayCost(nrRows- largestOff);
+		size += MemoryEstimates.intArrayCost(nrRows- largestOff);
+		// size += MemoryEstimates.byteArrayCost(nrRows- largestOff);
 		size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues);
 		return size;
 	}

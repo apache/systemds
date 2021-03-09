@@ -36,10 +36,10 @@ public class CLALibAppend {
 
 	public static MatrixBlock append(MatrixBlock left, MatrixBlock right) {
 		
-		if(left.isEmpty())
-			return right;
-		else if(right.isEmpty())
-			return left;
+		// if(left.isEmpty())
+		// 	return right;
+		// else if(right.isEmpty())
+		// 	return left;
 		final int m = left.getNumRows();
 		final int n = left.getNumColumns() + right.getNumColumns();
 		long nnz = left.getNonZeros() + right.getNonZeros();
@@ -63,7 +63,7 @@ public class CLALibAppend {
 
 		// if compression failed then use default append method.
 		if(!(left instanceof CompressedMatrixBlock && right instanceof CompressedMatrixBlock))
-			return uc(left).append(uc(right), new MatrixBlock());
+			return uc(left).append(uc(right), null);
 
 		CompressedMatrixBlock leftC = (CompressedMatrixBlock) left;
 		CompressedMatrixBlock rightC = (CompressedMatrixBlock) right;
@@ -72,12 +72,13 @@ public class CLALibAppend {
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
 
 		// shallow copy of lhs column groups
-		ret.allocateColGroupList(new ArrayList<AColGroup>());
+		ret.allocateColGroupList(new ArrayList<AColGroup>(leftC.getColGroups().size() + rightC.getColGroups().size()));
 
 		for(AColGroup group : leftC.getColGroups()){
 			AColGroup tmp = group.copy();
 			ret.getColGroups().add(tmp);
 		}
+
 		for(AColGroup group : rightC.getColGroups()) {
 			AColGroup tmp = group.copy();
 			tmp.shiftColIndices(left.getNumColumns());

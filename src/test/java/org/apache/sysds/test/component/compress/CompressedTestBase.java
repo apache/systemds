@@ -1058,4 +1058,7 @@ public abstract class CompressedTestBase extends TestBase {
 		double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
 		compareResultMatrices(d1, d2, toleranceMultiplier);
 	}
+
+
+
 }

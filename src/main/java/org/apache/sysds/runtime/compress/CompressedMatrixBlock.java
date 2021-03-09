@@ -55,7 +55,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
-import org.apache.sysds.runtime.compress.lib.CLALibReexpand;
+import org.apache.sysds.runtime.compress.lib.CLALibReExpand;
 import org.apache.sysds.runtime.compress.lib.CLALibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSquash;
@@ -422,6 +422,26 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		ret = CLALibAppend.append(this, that);
 		return ret;
 	}
+
+	@Override
+	public MatrixBlock append(MatrixBlock that, MatrixBlock ret, boolean cbind) {
+		if (cbind) // use supported operation
+			return append(that, ret);
+		printDecompressWarning("append-rbind", that);
+		MatrixBlock left = getUncompressed();
+		MatrixBlock right = getUncompressed(that);
+		return left.append(right, ret, cbind);
+	}
+
+	@Override
+	public void append(MatrixValue v2, ArrayList<IndexedMatrixValue> outlist, int blen, boolean cbind, boolean m2IsLast,
+			int nextNCol) {
+		printDecompressWarning("append", (MatrixBlock) v2);
+		MatrixBlock left = getUncompressed();
+		MatrixBlock right = getUncompressed(v2);
+		left.append(right, outlist, blen, cbind, m2IsLast, nextNCol);
+	}
+
 
 	@Override
 	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype) {
@@ -855,7 +875,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			MatrixBlock tmp = getUncompressed();
 			return tmp.rexpandOperations(ret, max, rows, cast, ignore, k);
 		} else
-			return CLALibReexpand.reExpand(this, ret, max, cast, ignore, k);
+			return CLALibReExpand.reExpand(this, ret, max, cast, ignore, k);
 	}
 
 	@Override
@@ -904,24 +924,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		throw new DMLRuntimeException("CompressedMatrixBlock: incrementalAggregate not supported.");
 	}
 
-	@Override
-	public MatrixBlock append(MatrixBlock that, MatrixBlock ret, boolean cbind) {
-		if (cbind) // use supported operation
-			return append(that, ret);
-		printDecompressWarning("append-rbind", that);
-		MatrixBlock left = getUncompressed();
-		MatrixBlock right = getUncompressed(that);
-		return left.append(right, ret, cbind);
-	}
-
-	@Override
-	public void append(MatrixValue v2, ArrayList<IndexedMatrixValue> outlist, int blen, boolean cbind, boolean m2IsLast,
-			int nextNCol) {
-		printDecompressWarning("append", (MatrixBlock) v2);
-		MatrixBlock left = getUncompressed();
-		MatrixBlock right = getUncompressed(v2);
-		left.append(right, outlist, blen, cbind, m2IsLast, nextNCol);
-	}
 
 	@Override
 	public void permutationMatrixMultOperations(MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val) {

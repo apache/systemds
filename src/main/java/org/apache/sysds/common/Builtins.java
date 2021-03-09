@@ -144,6 +144,7 @@ public enum Builtins {
 	KNN("knn", true),
 	DECISIONTREE("decisionTree", true),
 	L2SVM("l2svm", true),
+	L2SVMPREDICT("l2svmPredict", true),
 	LASSO("lasso", true),
 	LENGTH("length", false),
 	LINEAGE("lineage", false),

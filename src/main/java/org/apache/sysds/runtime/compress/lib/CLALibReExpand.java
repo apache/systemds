@@ -22,56 +22,63 @@ package org.apache.sysds.runtime.compress.lib;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.colgroup.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class CLALibReexpand {
-	public static MatrixBlock reExpand(CompressedMatrixBlock in, MatrixBlock ret, double max, boolean cast,
-		boolean ignore, int k) {
-		int iMax = UtilFunctions.toInt(max);
-		if(!ignore && in.min() == 0.0)
-			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false " + "(rlen="
-				+ in.getNumRows() + ", nnz=" + in.getNonZeros() + ").");
+public class CLALibReExpand {
 
-		if(in.isOverlapping() || in.getColGroups().size() > 1) {
+	private static final Log LOG = LogFactory.getLog(CLALibReExpand.class.getName());
+
+	public static MatrixBlock reExpand(CompressedMatrixBlock in, MatrixBlock ret, double max, boolean cast,
+			boolean ignore, int k) {
+		int iMax = UtilFunctions.toInt(max);
+		if (!ignore && in.min() == 0.0)
+			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false " + "(rlen="
+					+ in.getNumRows() + ", nnz=" + in.getNonZeros() + ").");
+
+		if (in.isOverlapping() || in.getColGroups().size() > 1) {
 			throw new DMLRuntimeException(
-				"Invalid input for re expand operations, currently not supporting overlapping or multi column groups");
+					"Invalid input for re expand operations, currently not supporting overlapping or multi column groups");
 		}
 
 		// check for empty inputs (for ignore=true)
-		if(in.isEmptyBlock(false)) {
+		if (in.isEmptyBlock(false)) {
 			ret.reset(in.getNumRows(), iMax, true);
 			return ret;
 		}
-		CompressedMatrixBlock retC = ret instanceof CompressedMatrixBlock ? (CompressedMatrixBlock) ret : new CompressedMatrixBlock(
-			in.getNumRows(), iMax);
+		CompressedMatrixBlock retC = ret instanceof CompressedMatrixBlock ? (CompressedMatrixBlock) ret
+				: new CompressedMatrixBlock(in.getNumRows(), iMax);
 
 		return reExpandRows(in, retC, iMax, cast, k);
 	}
 
 	private static CompressedMatrixBlock reExpandRows(CompressedMatrixBlock in, CompressedMatrixBlock ret, int max,
-		boolean cast, int k) {
+			boolean cast, int k) {
 		ColGroupValue oldGroup = ((ColGroupValue) in.getColGroups().get(0));
 
 		ADictionary newDictionary = oldGroup.getDictionary().reExpandColumns(max);
 		AColGroup newGroup = oldGroup.copyAndSet(getColIndexes(max), newDictionary);
 		List<AColGroup> newColGroups = new ArrayList<>(1);
 		newColGroups.add(newGroup);
-		
+
 		ret.allocateColGroupList(newColGroups);
 		ret.setOverlapping(true);
 		ret.setNonZeros(-1);
+
+		// LOG.error(ret);
 		return ret;
 	}
 
 	private static int[] getColIndexes(int max) {
 		int[] ret = new int[max];
-		for(int i = 0; i < max; i++) {
+		for (int i = 0; i < max; i++) {
 			ret[i] = i;
 		}
 		return ret;

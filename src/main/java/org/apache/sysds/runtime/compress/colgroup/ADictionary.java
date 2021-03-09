@@ -54,10 +54,10 @@ public abstract class ADictionary {
 	 * Determines if the content has a zero tuple. meaning all values at a specific row are zero value. This is useful
 	 * information to find out if the dictionary is used in a dense context. To improve some specific operations.
 	 * 
-	 * @param ncol The number of columns in the dictionary.
+	 * @param nCol The number of columns in the dictionary.
 	 * @return The index at which the zero tuple is located.
 	 */
-	public abstract int hasZeroTuple(int ncol);
+	public abstract int hasZeroTuple(int nCol);
 
 	/**
 	 * Returns the memory usage of the dictionary.
@@ -75,6 +75,15 @@ public abstract class ADictionary {
 	 * @return The aggregated value as a double.
 	 */
 	public abstract double aggregate(double init, Builtin fn);
+
+	/**
+	 * Aggregate all entries in the rows.
+	 * 
+	 * @param fn The aggregate function
+	 * @param nCol The number of columns contained in the dictionary.
+	 * @return Aggregates for this dictionary tuples.
+	 */
+	public abstract double[] aggregateTuples(Builtin fn, int nCol);
 
 	/**
 	 * returns the count of values contained in the dictionary.

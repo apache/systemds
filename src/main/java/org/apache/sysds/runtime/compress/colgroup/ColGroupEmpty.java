@@ -72,11 +72,10 @@ public class ColGroupEmpty extends ColGroupValue {
 	}
 
 	@Override
-	protected void computeRowMxx(MatrixBlock target, Builtin builtin, int rl, int ru) {
-		double[] c = target.getDenseBlockValues();
-		for(int i = rl; i < ru; i++) {
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+		for(int i = rl; i < ru; i++)
 			c[i] = builtin.execute(c[i], 0);
-		}
+		
 	}
 
 	@Override
@@ -205,7 +204,7 @@ public class ColGroupEmpty extends ColGroupValue {
 	}
 
 	@Override
-	public int getIndexStructureHash(){
+	public int getIndexStructureHash() {
 		throw new NotImplementedException("This function should not be called");
 	}
 

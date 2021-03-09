@@ -28,7 +28,6 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 
 /**
  * Base class for column groups encoded with various types of bitmap encoding.
@@ -94,7 +93,6 @@ public abstract class ColGroupOffset extends ColGroupValue {
 
 	}
 
-
 	protected final void sumAllValues(double[] b, double[] c) {
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
@@ -109,9 +107,8 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	protected final double mxxValues(int bitmapIx, Builtin builtin, double[] values) {
 		final int numCols = getNumCols();
 		final int valOff = bitmapIx * numCols;
-		double val = (builtin
-			.getBuiltinCode() == BuiltinCode.MAX) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-		for(int i = 0; i < numCols; i++)
+		double val = values[valOff];
+		for(int i = 1; i < numCols; i++)
 			val = builtin.execute(val, values[valOff + i]);
 
 		return val;
@@ -204,7 +201,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		return sb.toString();
 	}
 
-	protected static String charsToString(char[] data){
+	protected static String charsToString(char[] data) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("[");
 		for(int x = 0; x < data.length; x++) {

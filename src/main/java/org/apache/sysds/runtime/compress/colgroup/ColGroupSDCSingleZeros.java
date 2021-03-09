@@ -159,31 +159,27 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 
 	@Override
 	protected void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
-		double[] vals = _dict.sumAllRowsToDouble(square, _colIndexes.length);
+		double val = _dict.sumAllRowsToDouble(square, _colIndexes.length)[0];
 		int i = 0;
-		// TODO remove error correction from kahn.
-		final int mult = (2 + (mean ? 1 : 0));
-		while(_indexes[i] < rl) {
+
+		while(_indexes[i] < rl)
 			i++;
-		}
-		for(; i < _indexes.length && _indexes[i] < ru; i++) {
-			c[_indexes[i] * mult] += vals[0];
-		}
+		
+		for(; i < _indexes.length && _indexes[i] < ru; i++)
+			c[_indexes[i] ] += val;
+		
 	}
 
 	@Override
-	protected void computeRowMxx(MatrixBlock target, Builtin builtin, int rl, int ru) {
-		double[] c = target.getDenseBlockValues();
-		double[] vals = getValues();
-		int ncol = getNumCols();
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+		double val = _dict.aggregateTuples(builtin, _colIndexes.length)[0];
 		int i = 0;
-		while(_indexes[i] < rl) {
+		while(_indexes[i] < rl)
 			i++;
-		}
+		
 		for(; i < _indexes.length && _indexes[i] < ru; i++) {
 			int idx = _indexes[i];
-			for(int j = 0; j < ncol; j++)
-				c[idx] = builtin.execute(c[idx], vals[j]);
+			c[idx] = builtin.execute(c[idx], val);
 		}
 	}
 
@@ -348,7 +344,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	public int getIndexStructureHash(){
+	public int getIndexStructureHash() {
 		return _indexes.hashCode();
 	}
 
@@ -364,7 +360,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	@Override
 	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
 		IPreAggregate ag = PreAggregateFactory.ag(lhs.getNumValues());
-		for(int i = 0; i < _indexes.length; i++) 
+		for(int i = 0; i < _indexes.length; i++)
 			ag.increment(lhs.getIndex(_indexes[i]));
 		return ag;
 	}
@@ -393,7 +389,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		final int[] l = lhs._indexes;
 		final int[] r = this._indexes;
 		while(offL < l.length && offR < r.length)
-			if(l[offL] == r[offR]){
+			if(l[offL] == r[offR]) {
 				ag.increment(lhs.getIndex(offL++));
 				offR++;
 			}

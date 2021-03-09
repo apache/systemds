@@ -122,6 +122,22 @@ public class QDictionary extends ADictionary {
 		return ret;
 	}
 
+
+	@Override
+	public double[] aggregateTuples(Builtin fn, final int nCol){
+		if(nCol == 1)
+			return getValues();
+		final int nRows = _values.length / nCol;
+		double[] res = new double[nRows];
+		for(int i = 0; i < nRows; i++){
+			final int off = i * nCol;
+			res[i] = _values[off];
+			for(int j = off + 1; j < off + nCol; j++)
+				res[i] = fn.execute(res[i], _values[j] * _scale);
+		}
+		return res;
+	}
+
 	@Override
 	public QDictionary apply(ScalarOperator op) {
 		if(_values == null)
@@ -226,7 +242,6 @@ public class QDictionary extends ADictionary {
 	public QDictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
 		throw new NotImplementedException("Not Implemented yet");
 	}
-	
 
 	@Override
 	public int size() {
@@ -309,34 +324,34 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void colSum(double[] c, int[] counts, int[] colIndexes,  boolean square) {
+	protected void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		throw new NotImplementedException("Not Implemented");
 		// final int rows = c.length / 2;
 		// if(!(kplus instanceof KahanPlusSq)) {
-		// 	int[] sum = new int[colIndexes.length];
-		// 	int valOff = 0;
-		// 	for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
-		// 		int cntk = counts[k];
-		// 		for(int j = 0; j < colIndexes.length; j++) {
-		// 			sum[j] += cntk * getValueByte(valOff++);
-		// 		}
-		// 	}
-		// 	for(int j = 0; j < colIndexes.length; j++) {
-		// 		c[colIndexes[j]] = c[colIndexes[j]] + sum[j] * _scale;
-		// 	}
+		// int[] sum = new int[colIndexes.length];
+		// int valOff = 0;
+		// for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
+		// int cntk = counts[k];
+		// for(int j = 0; j < colIndexes.length; j++) {
+		// sum[j] += cntk * getValueByte(valOff++);
+		// }
+		// }
+		// for(int j = 0; j < colIndexes.length; j++) {
+		// c[colIndexes[j]] = c[colIndexes[j]] + sum[j] * _scale;
+		// }
 		// }
 		// else {
-		// 	KahanObject kbuff = new KahanObject(0, 0);
-		// 	int valOff = 0;
-		// 	for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
-		// 		int cntk = counts[k];
-		// 		for(int j = 0; j < colIndexes.length; j++) {
-		// 			kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
-		// 			kplus.execute3(kbuff, getValue(valOff++), cntk);
-		// 			c[colIndexes[j]] = kbuff._sum;
-		// 			c[colIndexes[j] + rows] = kbuff._correction;
-		// 		}
-		// 	}
+		// KahanObject kbuff = new KahanObject(0, 0);
+		// int valOff = 0;
+		// for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
+		// int cntk = counts[k];
+		// for(int j = 0; j < colIndexes.length; j++) {
+		// kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
+		// kplus.execute3(kbuff, getValue(valOff++), cntk);
+		// c[colIndexes[j]] = kbuff._sum;
+		// c[colIndexes[j] + rows] = kbuff._correction;
+		// }
+		// }
 		// }
 	}
 
@@ -420,11 +435,11 @@ public class QDictionary extends ADictionary {
 		return new QDictionary(newDictValues, _scale);
 	}
 
-	public ADictionary reExpandColumns(int max){
+	public ADictionary reExpandColumns(int max) {
 		byte[] newDictValues = new byte[_values.length * max];
 
-		for(int i = 0, offset = 0; i< _values.length; i++, offset += max){
-			int val = _values[i]-1;
+		for(int i = 0, offset = 0; i < _values.length; i++, offset += max) {
+			int val = _values[i] - 1;
 			newDictValues[offset + val] = 1;
 		}
 

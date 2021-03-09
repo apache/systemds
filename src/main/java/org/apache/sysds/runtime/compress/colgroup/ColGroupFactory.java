@@ -277,14 +277,14 @@ public class ColGroupFactory {
 		AColGroup cg;
 		ADictionary dict = new Dictionary(((Bitmap) ubm).getValues());
 		if(numZeros >= largestOffset && ubm.getOffsetList().length == 1)
-			cg =  new ColGroupSDCSingleZeros(colIndexes, rlen, dict, ubm.getOffsetList()[0].extractValues(true), null);
+			cg = new ColGroupSDCSingleZeros(colIndexes, rlen, dict, ubm.getOffsetList()[0].extractValues(true), null);
 		else if(numZeros >= largestOffset)
-			cg =  setupMultiValueZeroColGroup(colIndexes, ubm, rlen, dict);
+			cg = setupMultiValueZeroColGroup(colIndexes, ubm, rlen, dict);
 		else if(ubm.getOffsetList().length == 1 && ubm.getOffsetsList(0).size() == rlen)
-			cg =  new ColGroupConst(colIndexes, rlen, dict);
+			cg = new ColGroupConst(colIndexes, rlen, dict);
 		else {
 			dict = moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
-			cg =  setupMultiValueColGroup(colIndexes, numZeros, largestOffset, ubm, rlen, largestIndex, dict);
+			cg = setupMultiValueColGroup(colIndexes, numZeros, largestOffset, ubm, rlen, largestIndex, dict);
 			// return new ColGroupEmpty(colIndexes, rlen);
 		}
 		return cg;
@@ -307,7 +307,7 @@ public class ColGroupFactory {
 		IntArrayList[] offsets = ubm.getOffsetList();
 
 		AInsertionSorter s = InsertionSorterFactory.create(numRows - largestOffset, offsets.length, numRows);
-		
+
 		s.insert(offsets, largestIndex);
 		int[] _indexes = s.getIndexes();
 		IMapToData _data = s.getData();
@@ -357,7 +357,7 @@ public class ColGroupFactory {
 		if(ubm instanceof BitmapLossy)
 			dict = new QDictionary((BitmapLossy) ubm).makeDoubleDictionary();
 		else
-			dict = new Dictionary( ((Bitmap) ubm).getValues());
+			dict = new Dictionary(((Bitmap) ubm).getValues());
 		double[] values = dict.getValues();
 		if(_zeros) {
 			double[] appendedZero = new double[values.length + colIndexes.length];

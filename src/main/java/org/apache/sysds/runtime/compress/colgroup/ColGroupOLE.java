@@ -729,7 +729,6 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
 
-		final int mult = (2 + (mean ? 1 : 0));
 		if(numVals > 1 && _numRows > blksz) {
 			final int blksz2 = CompressionSettings.BITMAP_BLOCK_SZ;
 
@@ -757,7 +756,7 @@ public class ColGroupOLE extends ColGroupOffset {
 							int rix = ii + _data[boff + bix + i];
 							if(rix >= getNumRows())
 								throw new DMLCompressionException("Invalid row " + rix);
-							setandExecute(c, false, val, rix * mult);
+							c[rix] += val;
 						}
 						bix += len + 1;
 					}
@@ -782,7 +781,7 @@ public class ColGroupOLE extends ColGroupOffset {
 						slen = _data[boff + bix];
 						for(int i = 1; i <= slen; i++) {
 							int rix = off + _data[boff + bix + i];
-							setandExecute(c, false, val, rix * mult);
+							c[rix] += val;
 						}
 					}
 				}
@@ -791,7 +790,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected final void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {
+	protected final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 		// NOTE: zeros handled once for all column groups outside
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
@@ -812,7 +811,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				slen = _data[boff + bix];
 				for(int i = 1; i <= slen; i++) {
 					int rix = off + _data[boff + bix + i];
-					c.quickSetValue(rix, 0, builtin.execute(c.quickGetValue(rix, 0), val));
+					c[rix] = builtin.execute(c[rix], val);
 				}
 			}
 		}
@@ -1017,7 +1016,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public int getIndexStructureHash(){
+	public int getIndexStructureHash() {
 		return _data.hashCode();
 	}
 
@@ -1115,14 +1114,14 @@ public class ColGroupOLE extends ColGroupOffset {
 			final int krOff = kr * NVL;
 			for(int bixR = 0, offR = 0, sLenR = 0; bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
 				sLenR = this._data[bOffR + bixR];
-				for(int j = 1; j <= sLenR; j++){
+				for(int j = 1; j <= sLenR; j++) {
 					final int row = offR + this._data[bOffR + bixR + j];
-					while(offL < l.length && l[offL] < row )
+					while(offL < l.length && l[offL] < row)
 						offL++;
 					if(offL < l.length && l[offL] == row)
 						ag.increment(lhs.getIndex(offL++) + krOff);
 					else
-						ag.increment(defL+krOff);
+						ag.increment(defL + krOff);
 				}
 			}
 		}
@@ -1150,11 +1149,11 @@ public class ColGroupOLE extends ColGroupOffset {
 			final int bOffR = this._ptr[kr];
 			final int bLenR = this.len(kr);
 			final int krOff = kr * NVL;
-			for(int bixR = 0, offR = 0, sLenR = 0;offL < l.length && bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
+			for(int bixR = 0, offR = 0, sLenR = 0; offL < l.length && bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
 				sLenR = this._data[bOffR + bixR];
-				for(int j = 1; offL < l.length&& j <= sLenR; j++){
+				for(int j = 1; offL < l.length && j <= sLenR; j++) {
 					final int row = offR + this._data[bOffR + bixR + j];
-					while(offL < l.length && l[offL] < row )
+					while(offL < l.length && l[offL] < row)
 						offL++;
 					if(offL < l.length && l[offL] == row)
 						ag.increment(lhs.getIndex(offL++) + krOff);

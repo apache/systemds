@@ -520,7 +520,7 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values, int offT);
 
-	public abstract void leftMultBySelfDiagonalColGroup(double[] result, int numColumns );
+	public abstract void leftMultBySelfDiagonalColGroup(double[] result, int numColumns);
 
 	/**
 	 * Multiply with a matrix on the left.
@@ -578,7 +578,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param op The operator used
 	 * @param c  Rhe output matrix block.
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c);
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c);
 
 	/**
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
@@ -589,7 +589,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param rl The Starting Row to do aggregation from
 	 * @param ru The last Row to do aggregation to (not included)
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock c, int rl, int ru);
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru);
 
 	/**
 	 * Count the number of non-zeros per row

@@ -43,11 +43,11 @@ public class ColGroupSizes {
 	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, boolean lossy) {
 		long size = estimateInMemorySizeGroup(nrColumns);
 		size += 8; // Dictionary Reference.
-		if(lossy) 
+		if(lossy)
 			size += QDictionary.getInMemorySize(nrValues);
-		else 
+		else
 			size += Dictionary.getInMemorySize(nrValues);
-		
+
 		return size;
 	}
 
@@ -88,18 +88,19 @@ public class ColGroupSizes {
 		return size;
 	}
 
-	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff, boolean lossy){
+	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
-		size += MemoryEstimates.intArrayCost(nrRows- largestOff);
+		size += MemoryEstimates.intArrayCost(nrRows - largestOff);
 		// size += MemoryEstimates.byteArrayCost(nrRows- largestOff);
 		size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues);
 		return size;
 	}
 
-	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff, boolean lossy){
+	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff,
+		boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
 		// size += MemoryEstimates.intArrayCost(nrRows - largestOff);
-		size += MemoryEstimates.byteArrayCost(nrRows- largestOff);
+		size += MemoryEstimates.byteArrayCost(nrRows - largestOff);
 		return size;
 	}
 
@@ -108,7 +109,7 @@ public class ColGroupSizes {
 		return size;
 	}
 
-	public static long estimateInMemorySizeEMPTY(int nrColumns){
+	public static long estimateInMemorySizeEMPTY(int nrColumns) {
 		long size = estimateInMemorySizeGroup(nrColumns);
 		size += 8; // null pointer to _dict
 		return size;

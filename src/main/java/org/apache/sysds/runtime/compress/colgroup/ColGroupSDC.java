@@ -192,49 +192,47 @@ public class ColGroupSDC extends ColGroupValue {
 		final int numVals = getNumValues();
 		// // pre-aggregate nnz per value tuple
 		double[] vals = _dict.sumAllRowsToDouble(square, _colIndexes.length);
-
-		final int mult = (2 + (mean ? 1 : 0));
-		int index = 0;
-		for(int rix = rl; rix < ru; rix++) {
-			index = getIndex(rix, index);
-			if(index == _indexes.length || _indexes[index] != rix)
-				c[rix * mult] += vals[numVals - 1];
+		int i = 0;
+		while(i < _indexes.length && _indexes[i] < rl)
+			i++;
+		int rix = rl;
+		for(; rix < ru && i < _indexes.length; rix++) {
+			final int index = _indexes[i];
+			if( index != rix)
+				c[rix] += vals[numVals - 1];
 			else
-				c[rix * mult] += vals[_data.getIndex(index)];
+				c[rix] += vals[_data.getIndex(i++)];
 		}
+		for(; rix < ru; rix++){
+			c[rix] += vals[numVals - 1];
+		}
+
 	}
 
 	@Override
-	protected void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 
-		int ncol = getNumCols();
-		double[] dictionary = getValues();
-		double[] cVals = c.getDenseBlockValues();
-		int index = 0;
-		int offsetToDefault = dictionary.length - _colIndexes.length;
-		if(_indexes.length == 0) {
-			for(int i = rl; i < ru; i++)
-				for(int j = 0; j < ncol; j++)
-					cVals[i] = builtin.execute(cVals[i], dictionary[j]);
+		final int numVals = getNumValues();
+
+		double[] vals = _dict.aggregateTuples(builtin, _colIndexes.length);
+
+		int i = 0;
+		while(i < _indexes.length && _indexes[i] < rl)
+			i++;
+
+		int rix = rl;
+		for(; rix < ru && i < _indexes.length; rix++) {
+			final int index = _indexes[i];
+			if( index != rix)
+				c[rix] = builtin.execute(c[rix], vals[numVals - 1]);
+			else
+				c[rix] = builtin.execute(c[rix], vals[_data.getIndex(i++)]);
+
 		}
-		else if(_data == null)
-			for(int i = rl; i < ru; i++) {
-				index = getIndex(i, index);
-				for(int j = 0; j < ncol; j++)
-					if(index == _indexes.length || _indexes[index] != i)
-						cVals[i] = builtin.execute(cVals[i], dictionary[offsetToDefault + j]);
-					else
-						cVals[i] = builtin.execute(cVals[i], dictionary[j]);
-			}
-		else
-			for(int i = rl; i < ru; i++) {
-				index = getIndex(i, index);
-				for(int j = 0; j < ncol; j++)
-					if(index == _indexes.length || _indexes[index] != i)
-						cVals[i] = builtin.execute(cVals[i], dictionary[offsetToDefault + j]);
-					else
-						cVals[i] = builtin.execute(cVals[i], dictionary[getIndex(index) * _colIndexes.length + j]);
-			}
+		for(; rix < ru; rix++){
+			c[rix] = builtin.execute(c[rix], vals[numVals - 1]);
+		}
+		
 	}
 
 	@Override
@@ -258,12 +256,12 @@ public class ColGroupSDC extends ColGroupValue {
 		}
 
 		if(i < ru)
-			counts[def] += ru -i;
+			counts[def] += ru - i;
 
 		return counts;
 	}
 
-	public int getIndex(int r){
+	public int getIndex(int r) {
 		return _data.getIndex(r);
 	}
 
@@ -436,11 +434,12 @@ public class ColGroupSDC extends ColGroupValue {
 	@Override
 	public boolean sameIndexStructure(ColGroupValue that) {
 		// TODO add such that if the column group switched from Zeros type it also matches.
-		return that instanceof ColGroupSDC && ((ColGroupSDC) that)._indexes == _indexes && ((ColGroupSDC) that)._data == _data;
+		return that instanceof ColGroupSDC && ((ColGroupSDC) that)._indexes == _indexes &&
+			((ColGroupSDC) that)._data == _data;
 	}
 
 	@Override
-	public int getIndexStructureHash(){
+	public int getIndexStructureHash() {
 		return _data.hashCode() + _indexes.hashCode();
 	}
 
@@ -663,13 +662,13 @@ public class ColGroupSDC extends ColGroupValue {
 				sLenL = lhs._data[bOffL + bixL];
 				for(int i = 1; i <= sLenL; i++) {
 					final int col = offL + lhs._data[bOffL + bixL + i];
-					while(offR < r.length &&  r[offR] < col)
+					while(offR < r.length && r[offR] < col)
 						offR++;
 					if(offR < r.length && r[offR] == col)
 						ag.increment(kl + this.getIndex(offR++) * NVL);
-					else 
+					else
 						ag.increment(kl + defR);
-					
+
 				}
 			}
 		}

@@ -180,6 +180,8 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||
 				aggType == AggType.COLMINS || aggType == AggType.COLMEAN) ? cols : 1;
 
+			// LOG.error(ret1);
+			// LOG.error(ret2);
 			assertTrue("dim 1 is not equal in non compressed res  is: " + d1.length + "  Should be: " + dim1,
 				d1.length == dim1);
 			assertTrue("dim 1 is not equal in compressed res      is: " + d2.length + "  Should be: " + dim1,

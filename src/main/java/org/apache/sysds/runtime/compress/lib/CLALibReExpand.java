@@ -22,8 +22,6 @@ package org.apache.sysds.runtime.compress.lib;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -34,7 +32,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CLALibReExpand {
 
-	private static final Log LOG = LogFactory.getLog(CLALibReExpand.class.getName());
+	// private static final Log LOG = LogFactory.getLog(CLALibReExpand.class.getName());
 
 	public static MatrixBlock reExpand(CompressedMatrixBlock in, MatrixBlock ret, double max, boolean cast,
 			boolean ignore, int k) {
@@ -72,7 +70,6 @@ public class CLALibReExpand {
 		ret.setOverlapping(true);
 		ret.setNonZeros(-1);
 
-		// LOG.error(ret);
 		return ret;
 	}
 

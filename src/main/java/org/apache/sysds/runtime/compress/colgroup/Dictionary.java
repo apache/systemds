@@ -47,7 +47,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public double[] getValues() {
-		return (_values == null) ? new double[0]: _values;
+		return (_values == null) ? new double[0] : _values;
 	}
 
 	@Override
@@ -89,6 +89,21 @@ public class Dictionary extends ADictionary {
 		for(int i = 0; i < len; i++)
 			ret = fn.execute(ret, _values[i]);
 		return ret;
+	}
+
+	@Override
+	public double[] aggregateTuples(Builtin fn, final int nCol){
+		if(nCol == 1)
+			return _values;
+		final int nRows = _values.length / nCol;
+		double[] res = new double[nRows];
+		for(int i = 0; i < nRows; i++){
+			final int off = i * nCol;
+			res[i] = _values[off];
+			for(int j = off + 1; j < off + nCol; j++)
+				res[i] = fn.execute(res[i], _values[j]);
+		}
+		return res;
 	}
 
 	@Override
@@ -168,7 +183,6 @@ public class Dictionary extends ADictionary {
 		return new Dictionary(ret);
 	}
 
-
 	public static Dictionary read(DataInput in) throws IOException {
 		int numVals = in.readInt();
 		// read distinct values
@@ -190,7 +204,7 @@ public class Dictionary extends ADictionary {
 		return 4 + 8 * size();
 	}
 
-	public int size(){
+	public int size() {
 		return (_values == null) ? 0 : _values.length;
 	}
 
@@ -237,7 +251,7 @@ public class Dictionary extends ADictionary {
 	protected void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		if(_values == null)
 			return;
-		
+
 		for(int k = 0; k < _values.length / colIndexes.length; k++) {
 			int cntk = counts[k];
 			for(int j = 0; j < colIndexes.length; j++) {
@@ -260,7 +274,7 @@ public class Dictionary extends ADictionary {
 		for(int k = 0; k < _values.length / ncol; k++) {
 			int countK = counts[k];
 			for(int j = 0; j < ncol; j++) {
-				out +=  getValue(valOff++) *  countK;
+				out += getValue(valOff++) * countK;
 			}
 		}
 		return out;
@@ -276,7 +290,7 @@ public class Dictionary extends ADictionary {
 			int countK = counts[k];
 			for(int j = 0; j < ncol; j++) {
 				double val = getValue(valOff++);
-				out +=  val * val  * countK;
+				out += val * val * countK;
 			}
 		}
 		return out;
@@ -292,49 +306,48 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected void addMaxAndMin(double[] ret, int[] colIndexes){
+	protected void addMaxAndMin(double[] ret, int[] colIndexes) {
 		if(_values == null || _values.length == 0)
 			return;
 		double[] mins = new double[colIndexes.length];
 		double[] maxs = new double[colIndexes.length];
-		for(int i = 0; i < colIndexes.length; i++){
+		for(int i = 0; i < colIndexes.length; i++) {
 			mins[i] = _values[i];
 			maxs[i] = _values[i];
 		}
-		for(int i = colIndexes.length; i < _values.length; i++){
+		for(int i = colIndexes.length; i < _values.length; i++) {
 			int idx = i % colIndexes.length;
 			mins[idx] = Math.min(_values[i], mins[idx]);
 			maxs[idx] = Math.max(_values[i], maxs[idx]);
 		}
-		for(int i = 0; i < colIndexes.length; i ++){
-			int idy = colIndexes[i]*2;
+		for(int i = 0; i < colIndexes.length; i++) {
+			int idy = colIndexes[i] * 2;
 			ret[idy] += mins[i];
-			ret[idy+1] += maxs[i];
+			ret[idy + 1] += maxs[i];
 		}
 	}
 
 	public StringBuilder getString(StringBuilder sb, int colIndexes) {
 		sb.append("[");
-		for(int i = 0; i < _values.length-1; i++) {
+		for(int i = 0; i < _values.length - 1; i++) {
 			sb.append(_values[i]);
 			sb.append((i) % (colIndexes) == colIndexes - 1 ? ", " : ": ");
 		}
-		if(_values != null && _values.length > 0){
-			sb.append(_values[_values.length-1]);
+		if(_values != null && _values.length > 0) {
+			sb.append(_values[_values.length - 1]);
 		}
 		sb.append("]");
 		return sb;
 	}
 
-
-	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns){
+	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		int numberTuples = getNumberOfValues(previousNumberOfColumns);
 		int tupleLengthAfter = idxEnd - idxStart;
 		double[] newDictValues = new double[tupleLengthAfter * numberTuples];
 		int orgOffset = idxStart;
 		int targetOffset = 0;
-		for(int v = 0; v < numberTuples; v++){
-			for(int c = 0; c< tupleLengthAfter; c++, orgOffset++, targetOffset++){
+		for(int v = 0; v < numberTuples; v++) {
+			for(int c = 0; c < tupleLengthAfter; c++, orgOffset++, targetOffset++) {
 				newDictValues[targetOffset] = _values[orgOffset];
 			}
 			orgOffset += previousNumberOfColumns - idxEnd + idxStart;
@@ -342,12 +355,11 @@ public class Dictionary extends ADictionary {
 		return new Dictionary(newDictValues);
 	}
 
-
-	public ADictionary reExpandColumns(int max){
+	public ADictionary reExpandColumns(int max) {
 		double[] newDictValues = new double[_values.length * max];
 
-		for(int i = 0, offset = 0; i< _values.length; i++, offset += max){
-			int val = (int)Math.floor(_values[i]) -1;
+		for(int i = 0, offset = 0; i < _values.length; i++, offset += max) {
+			int val = (int) Math.floor(_values[i]) - 1;
 			newDictValues[offset + val] = 1;
 		}
 

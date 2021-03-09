@@ -19,9 +19,8 @@
 
 package org.apache.sysds.test.functions.privacy.fedplanning;
 
-	import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
-	import org.apache.sysds.runtime.privacy.FedDecision;
-	import org.junit.Ignore;
+	import org.apache.sysds.hops.OptimizerUtils;
+	import org.apache.sysds.test.functions.privacy.algorithms.FederatedL2SVMTest;
 	import org.junit.Test;
 	import org.junit.runner.RunWith;
 	import org.junit.runners.Parameterized;
@@ -31,19 +30,16 @@ package org.apache.sysds.test.functions.privacy.fedplanning;
 	import org.apache.sysds.test.AutomatedTestBase;
 	import org.apache.sysds.test.TestConfiguration;
 	import org.apache.sysds.test.TestUtils;
-	import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 
 	import java.util.Arrays;
 	import java.util.Collection;
-	import java.util.EnumSet;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
-
-	private final static String TEST_DIR = "functions/federated/";
-	private final static String TEST_NAME = "FederatedMultiplyTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + org.apache.sysds.test.functions.federated.primitives.FederatedMultiplyTest.class.getSimpleName() + "/";
+	private final static String TEST_DIR = "functions/privacy/";
+	private final static String TEST_NAME = "FederatedMultiplyPlanningTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedL2SVMTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -61,14 +57,13 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-			{100, 10}, {1000, 1},
+			{100, 10}
 		});
 	}
 
 	@Test
 	public void federatedMultiplyCP() {
-		FedDecision.activate();
-		FedDecision.addAllowedFEDInstructions(EnumSet.of(FEDType.AggregateBinary));
+		OptimizerUtils.FEDERATED_COMPILATION = true;
 		federatedMultiply(Types.ExecMode.SINGLE_NODE);
 	}
 
@@ -113,9 +108,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
 		runTest(true, false, null, -1);
 
-		// Deactivate FedDecision
-		FedDecision.deactivate();
-		FedDecision.deactivateRuntimeConversion();
+		OptimizerUtils.FEDERATED_COMPILATION = false;
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";

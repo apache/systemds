@@ -322,8 +322,7 @@ public class DataOp extends Hop {
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		updateETBasedOnPrivacy(getLops());
-	
+
 		return getLops();
 
 	}
@@ -488,7 +487,16 @@ public class DataOp extends Hop {
 		
 		return _etype;
 	}
-	
+
+	/**
+	 * True if execution is federated, if output is federated, or if OpOpData is federated.
+	 * @return true if federated
+	 */
+	@Override
+	public boolean isFederated() {
+		return super.isFederated() || getOp() == OpOpData.FEDERATED;
+	}
+
 	@Override
 	public void refreshSizeInformation() {
 		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE ) {

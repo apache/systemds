@@ -220,8 +220,7 @@ public class ReorgOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		updateETBasedOnPrivacy(getLops());
-		
+
 		return getLops();
 	}
 
@@ -366,6 +365,8 @@ public class ReorgOp extends MultiThreadedHop
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}
+
+		updateETFed();
 		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();

@@ -81,7 +81,7 @@ public class Binary extends Lop
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		if( getExecType() == ExecType.CP ) {
+		if( getExecType() == ExecType.CP || getExecType() == ExecType.FED ) {
 			return InstructionUtils.concatOperands(
 				getExecType().name(), getOpcode(),
 				getInputs().get(0).prepInputOperand(input1),

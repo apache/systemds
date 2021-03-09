@@ -251,8 +251,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		updateETBasedOnPrivacy(getLops());
-		
+
 		return getLops();
 	}
 
@@ -426,7 +425,9 @@ public class AggBinaryOp extends MultiThreadedHop
 			//pull binary aggregate into spark 
 			_etype = ExecType.SPARK;
 		}
-		
+
+		updateETFed();
+
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

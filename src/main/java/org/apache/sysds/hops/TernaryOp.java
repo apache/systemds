@@ -196,8 +196,7 @@ public class TernaryOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		updateETBasedOnPrivacy(getLops());
-		
+
 		return getLops();
 	}
 
@@ -500,6 +499,8 @@ public class TernaryOp extends MultiThreadedHop
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}
+
+		updateETFed();
 
 		//mark for recompile (forever)
 		// additional condition: when execType=CP and additional dimension inputs 

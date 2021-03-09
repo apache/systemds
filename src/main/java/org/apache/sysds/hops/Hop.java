@@ -51,7 +51,6 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.privacy.FedDecision;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -82,6 +81,8 @@ public abstract class Hop implements ParseInfo {
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
+
+	protected boolean _federatedOutput = false;
 	
 	// Estimated size for the output produced from this Hop
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -210,10 +211,6 @@ public abstract class Hop implements ParseInfo {
 		}
 		else if ( DMLScript.getGlobalExecMode() == ExecMode.SPARK )
 			_etypeForced = ExecType.SPARK; // enabled with -exec spark option
-
-		ExecType privacyBasedExecType = FedDecision.hopExecType(this);
-		if ( privacyBasedExecType != null )
-			_etypeForced = privacyBasedExecType;
 	}
 	
 	public void checkAndSetInvalidCPDimsAndSize()
@@ -740,15 +737,37 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	/**
-	 * Updates the execution type based on privacy constraints.
-	 * If no privacy constraints are involved, the execution type
-	 * will not be changed.
-	 * @param lop lop for which execution type may be updated
+	 * Update the execution type if input is federated and federated compilation is activated.
+	 * Federated compilation is activated in OptimizerUtils.
 	 */
-	protected void updateETBasedOnPrivacy(Lop lop){
-		ExecType privacyBasedExecType = FedDecision.lopExectype(lop);
-		if (privacyBasedExecType != null)
-			lop.setExecType(privacyBasedExecType);
+	protected void updateETFed(){
+		if ( inputETisFED() )
+			_etype = ExecType.FED;
+	}
+
+	/**
+	 * Returns true if any input has federated ExecType and configures such input to keep the output federated.
+	 * This method can only return true if FedDecision is activated.
+	 * @return true if any input has federated ExecType
+	 */
+	private boolean inputETisFED(){
+		if ( !OptimizerUtils.FEDERATED_COMPILATION ) return false;
+		boolean fedFound = false;
+		for ( Hop input : _input ){
+			if ( input.isFederated() ){
+				input._federatedOutput = true;
+				fedFound = true;
+			}
+		}
+		return fedFound;
+	}
+
+	/**
+	 * Returns true if the execution is federated and/or if the output is federated.
+	 * @return true if federated
+	 */
+	public boolean isFederated(){
+		return getExecType() == ExecType.FED || hasFederatedOutput();
 	}
 
 	public ArrayList<Hop> getParent() {
@@ -795,6 +814,10 @@ public abstract class Hop implements ParseInfo {
 
 	public PrivacyConstraint getPrivacy(){
 		return _privacyConstraint;
+	}
+
+	public boolean hasFederatedOutput(){
+		return _federatedOutput;
 	}
 
 	public void setUpdateType(UpdateType update){

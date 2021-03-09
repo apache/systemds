@@ -69,6 +69,7 @@ public class FederationUtils {
 		//TODO better and safe replacement of operand names --> instruction utils
 		long id = getNextFedDataID();
 		String linst = inst.replace(ExecType.SPARK.name(), ExecType.CP.name());
+		linst = linst.replace(ExecType.FED.name(), ExecType.CP.name());
 		linst = linst.replace(
 			Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX,
 			Lop.OPERAND_DELIMITOR+String.valueOf(id)+Lop.DATATYPE_PREFIX);

@@ -291,8 +291,7 @@ public class FunctionOp extends Hop
 		setLops(fcall);
 		
 		//note: no reblock lop because outputs directly bound
-		updateETBasedOnPrivacy(getLops());
-		
+
 		return getLops();
 	}
 

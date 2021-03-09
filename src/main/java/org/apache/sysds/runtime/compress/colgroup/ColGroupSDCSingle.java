@@ -182,34 +182,43 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		// // pre-aggregate nnz per value tuple
 		double[] vals = _dict.sumAllRowsToDouble(square, _colIndexes.length);
 
-		final int mult = (2 + (mean ? 1 : 0));
-		int index = 0;
-
-		for(int rix = rl; rix < ru; rix++) {
-			index = getIndex(rix, index);
-			if(index == _indexes.length || _indexes[index] != rix)
-				c[rix * mult] += vals[0];
-			else
-				c[rix * mult] += vals[1];
+		int i = 0;
+		while(i < _indexes.length && _indexes[i] < rl)
+			i++;
+		int rix = rl;
+		for(; rix < ru && i < _indexes.length; rix++) {
+			final int index = _indexes[i];
+			if(index != rix)
+				c[rix] += vals[0];
+			else{
+				c[rix] += vals[1];
+				i++;
+			}
+		}
+		for(; rix < ru; rix++){
+			c[rix] += vals[0];
 		}
 	}
 
 	@Override
-	protected void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 
-		int ncol = getNumCols();
-		double[] dictionary = getValues();
-		double[] cVals = c.getDenseBlockValues();
-		int index = 0;
-		int offsetToDefault = dictionary.length - _colIndexes.length;
-
-		for(int i = rl; i < ru; i++) {
-			index = getIndex(i, index);
-			for(int j = 0; j < ncol; j++)
-				if(index != _indexes.length && _indexes[index] == i)
-					cVals[i] = builtin.execute(cVals[i], dictionary[offsetToDefault + j]);
-				else
-					cVals[i] = builtin.execute(cVals[i], dictionary[j]);
+		double[] vals = _dict.aggregateTuples(builtin, _colIndexes.length);
+		int i = 0;
+		while(i < _indexes.length && _indexes[i] < rl)
+			i++;
+		int rix = rl;
+		for(; rix < ru && i < _indexes.length; rix++) {
+			final int index = _indexes[i];
+			if(index != rix)
+				c[rix] = builtin.execute(c[rix],  vals[0]);
+			else{
+				c[rix] = builtin.execute(c[rix],  vals[1]);
+				i++;
+			}
+		}
+		for(; rix < ru; rix++){
+			c[rix] = builtin.execute(c[rix],  vals[0]);
 		}
 	}
 
@@ -385,7 +394,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	}
 
 	@Override
-	public int getIndexStructureHash(){
+	public int getIndexStructureHash() {
 		return _indexes.hashCode();
 	}
 
@@ -441,7 +450,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		final int retSize = lhsNV * rhsNV;
 		final int nCol = lhs.getNumValues();
 		IPreAggregate ag = PreAggregateFactory.ag(retSize);
-		
+
 		int offL = 0;
 		int offR = 0;
 
@@ -459,9 +468,9 @@ public class ColGroupSDCSingle extends ColGroupValue {
 				col = lhs.getIndex(offL++);
 			else
 				col = defL;
-			if(r[offR] == i){
+			if(r[offR] == i) {
 				row = defR;
-				offR++;	
+				offR++;
 			}
 			else
 				row = 0;
@@ -483,7 +492,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		if(offR < r.length) {
 			col = defL;
 			for(; i < this._numRows && offR < r.length; i++) {
-				if(r[offR] == i){
+				if(r[offR] == i) {
 					row = defR;
 					offR++;
 				}
@@ -493,7 +502,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 			}
 		}
 
-		ag.increment(defL , this._numRows - i);
+		ag.increment(defL, this._numRows - i);
 
 		return ag;
 	}

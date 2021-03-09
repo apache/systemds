@@ -685,7 +685,6 @@ public class ColGroupRLE extends ColGroupOffset {
 
 		final int numVals = getNumValues();
 
-		final int mult = (2 + (mean ? 1 : 0));
 		if(numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
 			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 
@@ -714,9 +713,9 @@ public class ColGroupRLE extends ColGroupOffset {
 						int llen = _data[boff + bix + 1];
 						int from = Math.max(bi, start + lstart);
 						int to = Math.min(start + lstart + llen, bimax);
-						for(int rix = from; rix < to; rix++) {
-							setandExecute(c, false, val, rix * mult);
-						}
+						for(int rix = from; rix < to; rix++) 
+							c[rix] += val;
+						
 						if(start + lstart + llen >= bimax)
 							break;
 						start += lstart + llen;
@@ -742,9 +741,9 @@ public class ColGroupRLE extends ColGroupOffset {
 					for(; bix < blen && curRunEnd < ru; bix += 2) {
 						curRunStartOff = curRunEnd + _data[boff + bix];
 						curRunEnd = curRunStartOff + _data[boff + bix + 1];
-						for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++) {
-							setandExecute(c, false, val, rix * mult);
-						}
+						for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++) 
+							c[rix] += val;
+						
 					}
 				}
 			}
@@ -752,7 +751,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected final void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {
+	protected final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 		// NOTE: zeros handled once for all column groups outside
 		final int numVals = getNumValues();
 		// double[] c = result.getDenseBlockValues();
@@ -771,7 +770,7 @@ public class ColGroupRLE extends ColGroupOffset {
 				curRunStartOff = curRunEnd + _data[boff + bix];
 				curRunEnd = curRunStartOff + _data[boff + bix + 1];
 				for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
-					c.quickSetValue(rix, 0, builtin.execute(c.quickGetValue(rix, 0), val));
+					c[rix] =  builtin.execute(c[rix], val);
 			}
 		}
 	}
@@ -977,7 +976,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public int getIndexStructureHash(){
+	public int getIndexStructureHash() {
 		return _data.hashCode();
 	}
 
@@ -1076,7 +1075,6 @@ public class ColGroupRLE extends ColGroupOffset {
 		for(int i = 0; i < buf.size(); i++)
 			ret[i] = buf.get(i);
 
-
 		return ret;
 	}
 
@@ -1097,7 +1095,7 @@ public class ColGroupRLE extends ColGroupOffset {
 				final int endL = startL + lenL;
 				for(int i = startL; i < endL; i++)
 					ag.increment(lhs.getIndex(i) + offKr);
-				
+
 			}
 		}
 		return ag;
@@ -1155,11 +1153,11 @@ public class ColGroupRLE extends ColGroupOffset {
 						startR += _data[boffR + bixR];
 						lenR = _data[boffR + bixR + 1];
 						final int endR = startR + lenR;
-						if(startL < endR && startR < endL){
+						if(startL < endR && startR < endL) {
 							final int endOverlap = Math.min(endR, endL);
 							final int startOverlap = Math.max(startL, startR);
-							final int lenOverlap = endOverlap - startOverlap ;
-							ag.increment(kl + krOff, lenOverlap );
+							final int lenOverlap = endOverlap - startOverlap;
+							ag.increment(kl + krOff, lenOverlap);
 						}
 					}
 				}

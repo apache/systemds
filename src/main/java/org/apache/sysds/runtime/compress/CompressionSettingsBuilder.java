@@ -123,11 +123,12 @@ public class CompressionSettingsBuilder {
 	 * Specify if the input matrix should be transposed before compression. This improves cache efficiency while
 	 * compression the input matrix
 	 * 
-	 * @param transposeInput string specifying if the input should be transposed before compression, should be one of "auto", "true" or "false"
+	 * @param transposeInput string specifying if the input should be transposed before compression, should be one of
+	 *                       "auto", "true" or "false"
 	 * @return The CompressionSettingsBuilder
 	 */
 	public CompressionSettingsBuilder setTransposeInput(String transposeInput) {
-		switch(transposeInput){
+		switch(transposeInput) {
 			case "auto":
 			case "true":
 			case "false":

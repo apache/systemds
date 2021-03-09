@@ -159,7 +159,10 @@ public class ColGroupSDCZeros extends ColGroupValue {
 			i++;
 		}
 		for(; i < _indexes.length; i++) {
-			rnnz[_indexes[i]] += ncol;
+			if(_indexes[i] < ru)
+				rnnz[_indexes[i] - rl] += ncol;
+			else
+				break;
 		}
 	}
 
@@ -167,30 +170,24 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	protected void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
 		double[] vals = _dict.sumAllRowsToDouble(square, _colIndexes.length);
 		int i = 0;
-		// TODO remove error correction from kahn.
-		final int mult = (2 + (mean ? 1 : 0));
-		while(i < _indexes.length && _indexes[i] < rl) {
+		while(i < _indexes.length && _indexes[i] < rl)
 			i++;
-		}
-		for(; i < _indexes.length && _indexes[i] < ru; i++) {
-			c[_indexes[i] * mult] += vals[getIndex(i)];
-		}
+		
+		for(; i < _indexes.length && _indexes[i] < ru; i++) 
+			c[_indexes[i] ] += vals[getIndex(i)];
+		
 	}
 
 	@Override
-	protected void computeRowMxx(MatrixBlock target, Builtin builtin, int rl, int ru) {
-		// throw new NotImplementedException("Not Implemented Row Sums");
-		double[] c = target.getDenseBlockValues();
-		double[] vals = getValues();
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+		double[] vals = _dict.aggregateTuples(builtin, _colIndexes.length);
 		int i = 0;
-		while(i < _indexes.length && _indexes[i] < rl) {
+		while(i < _indexes.length && _indexes[i] < rl)
 			i++;
-		}
-		for(; i < _indexes.length && _indexes[i] < ru; i++) {
-			int idx = _indexes[i];
-			int off = getIndex(i) * _colIndexes.length;
-			for(int j = 0; j < _colIndexes.length; j++)
-				c[idx] = builtin.execute(c[idx], vals[off + j]);
+		
+		for(; i < _indexes.length && _indexes[i] < ru; i++){
+			final int idx = _indexes[i];
+			c[idx] = builtin.execute(c[idx], vals[getIndex(i)]);
 		}
 
 	}
@@ -207,20 +204,20 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		int i = rl;
 		while(off < _indexes.length && _indexes[off] < i)
 			off++;
-		
+
 		int zeros = 0;
-		while( off < _indexes.length && i < ru) {
+		while(off < _indexes.length && i < ru) {
 			int oldI = i;
 			i = _indexes[off];
-			zeros += i - oldI - 1; 
-			if(i < ru){
+			zeros += i - oldI - 1;
+			if(i < ru) {
 				counts[_data.getIndex(off++)]++;
 			}
-			
+
 		}
 
 		counts[counts.length - 1] += zeros + ru - i;
-		
+
 		return counts;
 	}
 
@@ -365,14 +362,14 @@ public class ColGroupSDCZeros extends ColGroupValue {
 
 	@Override
 	public boolean sameIndexStructure(ColGroupValue that) {
-		return that instanceof ColGroupSDCZeros && ((ColGroupSDCZeros) that)._indexes == _indexes && ((ColGroupSDCZeros) that)._data == _data;
+		return that instanceof ColGroupSDCZeros && ((ColGroupSDCZeros) that)._indexes == _indexes &&
+			((ColGroupSDCZeros) that)._data == _data;
 	}
 
 	@Override
-	public int getIndexStructureHash(){
+	public int getIndexStructureHash() {
 		return _indexes.hashCode() + _data.hashCode();
 	}
-
 
 	@Override
 	public String toString() {

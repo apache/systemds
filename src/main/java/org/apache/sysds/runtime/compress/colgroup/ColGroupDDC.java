@@ -190,35 +190,17 @@ public class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	protected void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
-		final int numVals = getNumValues();
-		// pre-aggregate nnz per value tuple
 		double[] vals = _dict.sumAllRowsToDouble(square, _colIndexes.length);
-
-		final int mult = (2 + (mean ? 1 : 0));
-		for(int rix = rl; rix < ru; rix++) {
-			int index = getIndex(rix);
-			if(index < numVals) {
-				setandExecute(c, false, vals[index], rix * mult);
-			}
-		}
+		for(int rix = rl; rix < ru; rix++) 
+			c[rix] += vals[ getIndex(rix)];
 	}
 
 	@Override
-	protected void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {
-		int ncol = getNumCols();
-		double[] dictionary = getValues();
-
-		for(int i = rl; i < ru; i++) {
-			int index = getIndex(i) * ncol;
-			for(int j = 0; j < ncol; j++) {
-				if(index < dictionary.length) {
-					c.quickSetValue(i, 0, builtin.execute(c.quickGetValue(i, 0), dictionary[index + j]));
-				}
-				else {
-					c.quickSetValue(i, 0, builtin.execute(c.quickGetValue(i, 0), 0.0));
-				}
-			}
-		}
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+		final int nCol = getNumCols();
+		double[] preAggregatedRows = _dict.aggregateTuples(builtin, nCol);
+		for(int i = rl; i < ru; i++) 
+			c[i] =  builtin.execute(c[i], preAggregatedRows[getIndex(i)]);
 	}
 
 	@Override
@@ -278,7 +260,7 @@ public class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	public double[] preAggregate(double[] a, int row) {
-		double[] vals = allocDVector(getNumValues() , true);
+		double[] vals = allocDVector(getNumValues(), true);
 		if(row > 0)
 			for(int i = 0, off = _numRows * row; i < _numRows; i++, off++)
 				vals[getIndex(i)] += a[off];
@@ -291,10 +273,10 @@ public class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	public double[] preAggregateSparse(SparseBlock sb, int row) {
-		
+
 		// LOG.error(this);
 		// LOG.error(sb);
-		double[] vals = allocDVector(getNumValues() , true);
+		double[] vals = allocDVector(getNumValues(), true);
 		int[] indexes = sb.indexes(row);
 		double[] sparseV = sb.values(row);
 		for(int i = sb.pos(row); i < sb.size(row) + sb.pos(row); i++)
@@ -546,7 +528,7 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public int getIndexStructureHash(){
+	public int getIndexStructureHash() {
 		return _data.hashCode();
 	}
 

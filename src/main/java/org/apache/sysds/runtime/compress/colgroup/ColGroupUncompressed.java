@@ -279,7 +279,6 @@ public class ColGroupUncompressed extends AColGroup {
 		}
 	}
 
-
 	@Override
 	public void decompressColumnToBlock(double[] target, int colpos, int rl, int ru) {
 		// empty block, nothing to add to output
@@ -290,10 +289,9 @@ public class ColGroupUncompressed extends AColGroup {
 		for(int row = rl; row < ru; row++) {
 			double cellVal = _data.quickGetValue(row, colpos);
 			// Apparently rows are cols here.
-			target[row] +=  cellVal;
+			target[row] += cellVal;
 		}
 	}
-
 
 	@Override
 	public double get(int r, int c) {
@@ -429,7 +427,7 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) {
+	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] result, int rl, int ru) {
 		throw new NotImplementedException("Unimplemented Specific Sub ColGroup Aggregation Operation");
 	}
 
@@ -508,17 +506,15 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public AColGroup sliceColumns(int cl, int cu){
+	public AColGroup sliceColumns(int cl, int cu) {
 		throw new NotImplementedException("Not implemented slice columns");
 	}
 
-
-	public double getMin(){
+	public double getMin() {
 		return _data.min();
 	}
 
-
-	public double getMax(){
+	public double getMax() {
 		return _data.max();
 	}
 

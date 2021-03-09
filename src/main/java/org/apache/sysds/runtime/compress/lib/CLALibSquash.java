@@ -67,7 +67,7 @@ public class CLALibSquash {
 	}
 
 	private static double[] extractMinMaxes(CompressedMatrixBlock m) {
-		double[] ret = new double[m.getNumColumns()*2];
+		double[] ret = new double[m.getNumColumns() * 2];
 		for(AColGroup g : m.getColGroups())
 			if(g instanceof ColGroupValue)
 				((ColGroupValue) g).addMinMax(ret);

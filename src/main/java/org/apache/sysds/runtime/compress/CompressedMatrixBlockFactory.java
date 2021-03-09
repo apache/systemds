@@ -102,14 +102,14 @@ public class CompressedMatrixBlockFactory {
 		return cmbf.compressMatrix();
 	}
 
-	public static CompressedMatrixBlock createConstant(int numRows, int numCols, double value){
+	public static CompressedMatrixBlock createConstant(int numRows, int numCols, double value) {
 		CompressedMatrixBlock block = new CompressedMatrixBlock(numRows, numCols);
 		ColGroupConst cg = ColGroupConst.genColGroupConst(numRows, numCols, value);
 		block.allocateColGroup(cg);
 		block.setNonZeros(value == 0.0 ? 0 : numRows * numCols);
 		return block;
 	}
-	
+
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
 		// Check for redundant compression
 		if(mb instanceof CompressedMatrixBlock) {
@@ -232,8 +232,8 @@ public class CompressedMatrixBlockFactory {
 					DblArrayIntListHashMap.hashMissCount = 0;
 					break;
 				// case 4:
-				// 	LOG.debug("--compression phase " + phase++ + " Share     : " + _stats.getLastTimePhase());
-				// 	break;
+				// LOG.debug("--compression phase " + phase++ + " Share : " + _stats.getLastTimePhase());
+				// break;
 				case 4:
 					LOG.debug("--num col groups: " + res.getColGroups().size());
 					LOG.debug("--compression phase " + phase + " Cleanup   : " + _stats.getLastTimePhase());
@@ -289,6 +289,5 @@ public class CompressedMatrixBlockFactory {
 			ret.add(i);
 		return ret;
 	}
-
 
 }

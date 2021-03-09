@@ -30,10 +30,10 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
  */
 public class CompressionSettings {
 
-	/** Size of the blocks used in a blocked bitmap representation. 
-	 * Note it is exactly Character.MAX_VALUE. 
-	 * This is not Character max value + 1 because it breaks the offsets in cases with fully
-	 * dense values.*/
+	/**
+	 * Size of the blocks used in a blocked bitmap representation. Note it is exactly Character.MAX_VALUE. This is not
+	 * Character max value + 1 because it breaks the offsets in cases with fully dense values.
+	 */
 	public static final int BITMAP_BLOCK_SZ = Character.MAX_VALUE;
 
 	/**
@@ -56,8 +56,8 @@ public class CompressionSettings {
 	public final String transposeInput;
 
 	/**
-	 * Transpose input matrix, to optimize access when extracting bitmaps.
-	 * This setting is changed inside the script based on the transposeInput setting.
+	 * Transpose input matrix, to optimize access when extracting bitmaps. This setting is changed inside the script
+	 * based on the transposeInput setting.
 	 */
 	public boolean transposed = false;
 

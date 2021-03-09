@@ -23,9 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -836,32 +834,32 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 
 	public abstract int getIndexStructureHash();
 
-
 	// try to make a memo table.
 	// private static Map<Integer,Map<Integer,Memo>> memorizer = new HashMap<>();
 
 	// private class Memo {
-	// 	ColGroupValue lhs;
-	// 	ColGroupValue rhs;
-	// 	IPreAggregate agg;
+	// ColGroupValue lhs;
+	// ColGroupValue rhs;
+	// IPreAggregate agg;
 
-	// 	private Memo(ColGroupValue lhs, ColGroupValue rhs, IPreAggregate agg) {
-	// 		this.lhs = lhs;
-	// 		this.rhs = rhs;
-	// 		this.agg = agg;
-	// 	}
+	// private Memo(ColGroupValue lhs, ColGroupValue rhs, IPreAggregate agg) {
+	// this.lhs = lhs;
+	// this.rhs = rhs;
+	// this.agg = agg;
+	// }
 	// }
 
 	public IPreAggregate preAggregate(ColGroupValue lhs) {
 		// int lhsH = lhs.getIndexStructureHash();
 		// int rhsH = this.getIndexStructureHash();
 		// if(memorizer.get(lhsH) == null){
-		// 	memorizer.put(lhsH, new HashMap<>()); 
+		// memorizer.put(lhsH, new HashMap<>());
 		// }
 		// Memo m = memorizer.get(lhsH).get(rhsH);
-		// if(m != null && lhs.sameIndexStructure(m.lhs) && this.sameIndexStructure(m.rhs))
-		// 	return m.agg;
-		
+		// if(m != null && lhs.sameIndexStructure(m.lhs) &&
+		// this.sameIndexStructure(m.rhs))
+		// return m.agg;
+
 		IPreAggregate r = preCallAggregate(lhs);
 		// Map<Integer,Memo> l = memorizer.get(lhsH);
 		// l.put(rhsH, new Memo(lhs, this, r));
@@ -938,8 +936,8 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 			for (int a = 0, off = 0; a < nvL; a++, off += nvL + 1)
 				leftMultDictEntry(agI[a], off, nvL, lCol, rCol, lhs, numCols, lhValues, rhValues, result);
 		} else {
-			// LOG.error(lCol +"  "+ nvL);
-			// LOG.error(rCol +"  "+ nvR);
+			// LOG.error(lCol +" "+ nvL);
+			// LOG.error(rCol +" "+ nvR);
 			IPreAggregate ag = preAggregate(lhs);
 			if (ag == null)
 				return;

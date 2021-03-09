@@ -91,9 +91,9 @@ public abstract class ABitmap {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
-		sb.append("\nzeros:  " + _numZeros);
-		sb.append("\ncolumns:" + _numCols);
+		sb.append(this.getClass().getSimpleName());
+		sb.append("  zeros:  " + _numZeros);
+		sb.append("  columns:" + _numCols);
 		sb.append("\nOffsets:" + Arrays.toString(_offsetsLists));
 		return sb.toString();
 	}

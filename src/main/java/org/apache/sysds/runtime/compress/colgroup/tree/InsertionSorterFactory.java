@@ -19,34 +19,15 @@
 
 package org.apache.sysds.runtime.compress.colgroup.tree;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
-import org.apache.sysds.runtime.compress.utils.IntArrayList;
+public class InsertionSorterFactory {
+	public static AInsertionSorter create(int endLength, int uniqueLabels, int knownMax) {
 
-public class BTree extends AInsertionSorter {
+		// if ((double) endLength / (double) knownMax > 0.5)
+		return new MaterializeSort(endLength, uniqueLabels, knownMax);
+		// if (uniqueLabels < 10)
+		// return new MergeSort(endLength, uniqueLabels, knownMax);
+		// else
+		// return new Naive(endLength, uniqueLabels, knownMax);
 
-	public BTree(int endLength, int uniqueLabels, int knownMax) {
-		super(endLength, uniqueLabels, knownMax);
 	}
-
-	@Override
-	protected void insert(IntArrayList array, int label) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	protected void negativeInsert(IntArrayList array) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public int[] getIndexes() {
-		return _indexes;
-	}
-
-	@Override
-	public IMapToData getData() {
-		return _labels;
-	}
-
 }

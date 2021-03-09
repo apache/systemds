@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -35,7 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.tree.AInsertionSorter;
-import org.apache.sysds.runtime.compress.colgroup.tree.Naive;
+import org.apache.sysds.runtime.compress.colgroup.tree.InsertionSorterFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
@@ -293,50 +292,22 @@ public class ColGroupFactory {
 
 	private static AColGroup setupMultiValueZeroColGroup(int[] colIndexes, ABitmap ubm, int numRows, ADictionary dict) {
 		IntArrayList[] offsets = ubm.getOffsetList();
+
 		final int numOffsets = (int) ubm.getNumOffsets();
-		IMapToData _data = MapToFactory.create(numOffsets, offsets.length);
-		int[] indexes = new int[numOffsets];
+		AInsertionSorter s = InsertionSorterFactory.create(numOffsets, offsets.length, numRows);
+		s.insert(offsets);
+		int[] _indexes = s.getIndexes();
+		IMapToData _data = s.getData();
 
-		int[] offsetsRowIndex = new int[offsets.length];
-
-		int lastIndex = -1;
-
-		for(int i = 0; i < indexes.length; i++) {
-			lastIndex++;
-			int start = Integer.MAX_VALUE;
-			int groupId = Integer.MAX_VALUE;
-			for(int j = 0; j < offsets.length; j++) {
-				final int off = offsetsRowIndex[j];
-				if(off < offsets[j].size()) {
-					final int v = offsets[j].get(off);
-					if(v == lastIndex) {
-						start = lastIndex;
-						groupId = j;
-						break;
-					}
-					else if(v < start) {
-						start = v;
-						groupId = j;
-					}
-				}
-			}
-			offsetsRowIndex[groupId]++;
-			_data.set(i, groupId);
-			indexes[i] = start;
-			lastIndex = start;
-		}
-
-		if(indexes[indexes.length-1] == 0 )
-			throw new DMLCompressionException("Invalid Index Structure" + Arrays.toString(indexes));
-
-		return new ColGroupSDCZeros(colIndexes, numRows, dict, indexes, _data, null);
+		return new ColGroupSDCZeros(colIndexes, numRows, dict, _indexes, _data, null);
 	}
 
 	private static AColGroup setupMultiValueColGroup(int[] colIndexes, int numZeros, int largestOffset, ABitmap ubm,
 		int numRows, int largestIndex, ADictionary dict) {
 		IntArrayList[] offsets = ubm.getOffsetList();
-		// AInsertionSorter s = new BTree(numRows - largestOffset, offsets.length, numRows);
-		AInsertionSorter s = new Naive(numRows - largestOffset, offsets.length, numRows);
+
+		AInsertionSorter s = InsertionSorterFactory.create(numRows - largestOffset, offsets.length, numRows);
+		
 		s.insert(offsets, largestIndex);
 		int[] _indexes = s.getIndexes();
 		IMapToData _data = s.getData();
@@ -409,10 +380,10 @@ public class ColGroupFactory {
 		// }
 
 		for(int i = 0; i < numVals; i++) {
-			int[] tmpList = ubm.getOffsetsList(i).extractValues();
-			int tmpListSize = ubm.getNumOffsets(i);
-			for(int k = 0; k < tmpListSize; k++)
-				_data.set(tmpList[k], i);
+			IntArrayList tmpList = ubm.getOffsetsList(i);
+			final int sz = tmpList.size();
+			for(int k = 0; k < sz; k++)
+				_data.set(tmpList.get(k), i);
 		}
 
 		return new ColGroupDDC(colIndexes, rlen, dict, _data, null);

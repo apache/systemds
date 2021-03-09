@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.binary.frame;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -112,7 +113,7 @@ public class FrameMapTest extends AutomatedTestBase {
 
 	@Test
 	public void testColumnStringToSherlockFeatures() {
-		runDmlMapTest("x -> UtilFunctions.columnStringToSherlockFeatures(x)", TestType.SHERLOCK_PREP, ExecType.SPARK);
+		runDmlMapTest("x -> UtilFunctions.columnStringToCSVString(x,\"§§\")", TestType.SHERLOCK_PREP, ExecType.SPARK);
 	}
 
 
@@ -137,8 +138,10 @@ public class FrameMapTest extends AutomatedTestBase {
 			}
 			else if(type == TestType.SHERLOCK_PREP) {
 				String[][] data = new String[1][1];
-				data[0][0] =  "['Global', 'United States', 'Australia']";
-				FrameWriterFactory.createFrameWriter(FileFormat.CSV).
+				data[0][0] =  "\"['Global', 'United States', 'Australia']\"";
+        FileFormatPropertiesCSV ffp = new FileFormatPropertiesCSV();
+        ffp.setDelim(";");
+				FrameWriterFactory.createFrameWriter(FileFormat.CSV, ffp).
 					writeFrameToHDFS(new FrameBlock(schemaStrings1, data), input("A"), 1, 1);
 			}
 			else {
@@ -179,7 +182,7 @@ public class FrameMapTest extends AutomatedTestBase {
 					break;
 				case SHERLOCK_PREP:
 					for(int i =0; i<input.length; i++) {
-            TestUtils.compareScalars(String.valueOf(UtilFunctions.columnStringToSherlockFeatures(input[i])), output[i]);
+            TestUtils.compareScalars(String.valueOf(UtilFunctions.columnStringToCSVString(input[i],"§§")), output[i]);
           }
 					break;
 			}

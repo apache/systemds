@@ -847,7 +847,7 @@ public class UtilFunctions {
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
 	}
 
-	public static String columnStringToSherlockFeatures(String input) {
+	public static String columnStringToCSVString(String input, String separator) {
 
     StringBuffer sb = new StringBuffer(input);
     StringBuilder outStringBuilder = new StringBuilder();
@@ -877,14 +877,7 @@ public class UtilFunctions {
       string_array = sb.toString().split(",");
     }
 
-    // TODO: convert strings to n-dimensional numerical vectors
-    // extract_bag_of_characters_features(raw_sample, n_values), ignore_index=True)
-    // extract_word_embeddings_features(raw_sample), ignore_index=True)
-    // infer_paragraph_embeddings_features(raw_sample, vec_dim), ignore_index=True)
-    // extract_bag_of_words_features(raw_sample), ignore_index=True)
-
     // select a suitable separator that can be used to read in the file properly
-    String separator = ",;,";
 		for(int i = 0; i< string_array.length; i++) {
 		  outStringBuilder.append(string_array[i]).append(separator);
     }

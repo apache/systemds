@@ -50,6 +50,7 @@
 		<jcuda.version>10.2.0</jcuda.version>
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
+		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>true</jacoco.skip>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
 		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
@@ -293,7 +294,7 @@
 					<reuseForks>false</reuseForks>
 					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
-					<rerunFailingTestsCount>2</rerunFailingTestsCount>
+					<rerunFailingTestsCount>${rerun.failing.tests.count}</rerunFailingTestsCount>
 				</configuration>
 			</plugin>
 

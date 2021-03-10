@@ -445,4 +445,11 @@ public class QDictionary extends ADictionary {
 
 		return new QDictionary(newDictValues, 1.0);
 	}
+
+	@Override
+	public boolean containsValue(double pattern){
+		if(Double.isNaN(pattern) || Double.isInfinite(pattern))
+			return false;
+		throw new NotImplementedException("Not contains value on Q Dictionary");
+	}
 }

@@ -532,11 +532,15 @@ public class ColGroupUncompressed extends AColGroup {
 	@Override
 	public void leftMultBySelfDiagonalColGroup(double[] result, int numColumns) {
 		throw new NotImplementedException("Not implemented slice columns");
-
 	}
 
 	@Override
 	public AColGroup copy() {
 		throw new NotImplementedException("Not implemented copy of uncompressed colGroup yet.");
+	}
+
+	@Override
+	public boolean containsValue(double pattern){
+		return _data.containsValue(pattern);
 	}
 }

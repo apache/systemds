@@ -92,12 +92,12 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] aggregateTuples(Builtin fn, final int nCol){
+	public double[] aggregateTuples(Builtin fn, final int nCol) {
 		if(nCol == 1)
 			return _values;
 		final int nRows = _values.length / nCol;
 		double[] res = new double[nRows];
-		for(int i = 0; i < nRows; i++){
+		for(int i = 0; i < nRows; i++) {
 			final int off = i * nCol;
 			res[i] = _values[off];
 			for(int j = off + 1; j < off + nCol; j++)
@@ -220,7 +220,7 @@ public class Dictionary extends ADictionary {
 
 		// pre-aggregate value tuple
 		final int numVals = getNumberOfValues(nrColumns);
-		double[] ret = ColGroupValue.allocDVector(numVals, false);
+		double[] ret = new double[numVals];
 		for(int k = 0; k < numVals; k++) {
 			ret[k] = sumRow(k, square, nrColumns);
 		}
@@ -364,5 +364,27 @@ public class Dictionary extends ADictionary {
 		}
 
 		return new Dictionary(newDictValues);
+	}
+
+	@Override
+	public boolean containsValue(double pattern) {
+
+		if(_values == null)
+			return false;
+
+		boolean NaNpattern = Double.isNaN(pattern);
+
+		if(NaNpattern) {
+			for(double v : _values)
+				if(Double.isNaN(v))
+					return true;
+		}
+		else {
+			for(double v : _values)
+				if(v == pattern)
+					return true;
+		}
+
+		return false;
 	}
 }

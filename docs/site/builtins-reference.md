@@ -32,6 +32,7 @@ limitations under the License.
     * [`discoverFD`-Function](#discoverFD-function)
     * [`dist`-Function](#dist-function)
     * [`dmv`-Function](#dmv-function)
+    * [`ema`-Function](#ema-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -597,6 +598,42 @@ imputeByFD(X, sourceAttribute, targetAttribute, threshold)
 ```r
 X = matrix("1 1 1 2 4 5 5 3 3 NaN 4 5 4 1", rows=7, cols=2)
 imputeByFD(X = X, source = 1, target = 2, threshold = 0.6, verbose = FALSE)
+```
+
+
+## `imputeEMA`-Function
+
+The `imputeEMA`-function imputes values with exponential moving average (single, double or triple).
+
+### Usage
+
+```r
+ema(X, search_iterations, mode, freq, alpha, beta, gamma)
+```
+
+### Arguments
+
+| Name      | Type    | Default  | Description |
+| :-------- | :------ | -------- | :---------- |
+| X         | Frame[Double]  | --       | Frame that contains timeseries data that needs to be imputed |
+| search_iterations    | Integer | --       | Budget iterations for parameter optimisation, used if parameters weren't set |
+| mode    | String | --       | Type of EMA method. Either "single", "double" or "triple" |
+| freq | Double  | --       | Seasonality when using triple EMA. |
+| alpha | Double  | --       | alpha- value for EMA |
+| beta | Double  | --       | beta- value for EMA |
+| gamma | Double  | --       | gamma- value for EMA |
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Frame[Double] | Frame with EMA results |
+
+### Example
+
+```r
+X = read("fileA", data_type="frame")
+ema(X = X, search_iterations = 1, mode = "triple", freq = 4, alpha = 0.1, beta = 0.1, gamma = 0.1,)
 ```
 
 ## `KMeans`-Function

@@ -111,6 +111,7 @@ public enum Builtins {
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
+	EMA("ema", true),
 	EXISTS("exists", false),
 	EXECUTE_PIPELINE("executePipeline", true),
 	EXP("exp", false),

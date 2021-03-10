@@ -248,4 +248,6 @@ public abstract class ADictionary {
 	 * @return The re expanded Dictionary.
 	 */
 	public abstract ADictionary reExpandColumns(int max);
+
+	public abstract boolean containsValue(double pattern);
 }

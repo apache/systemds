@@ -1026,4 +1026,8 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 		}
 	}
 
+	@Override
+	public boolean containsValue(double pattern){
+		return _dict.containsValue(pattern);
+	}
 }

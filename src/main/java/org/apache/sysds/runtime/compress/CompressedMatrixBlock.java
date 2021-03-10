@@ -625,22 +625,22 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
 
 		// if(op.aggOp.existsCorrection()) {
-		// 	switch(op.aggOp.correction) {
-		// 		case LASTROW:
-		// 			// tempCellIndex.row++;
-		// 			break;
-		// 		case LASTCOLUMN:
-		// 			// tempCellIndex.column++;
-		// 			break;
-		// 		case LASTTWOROWS:
-		// 			tempCellIndex.row += 1;
-		// 			break;
-		// 		case LASTTWOCOLUMNS:
-		// 			tempCellIndex.column += 1;
-		// 			break;
-		// 		default:
-		// 			throw new DMLRuntimeException("unrecognized correctionLocation: " + op.aggOp.correction);
-		// 	}
+		// switch(op.aggOp.correction) {
+		// case LASTROW:
+		// // tempCellIndex.row++;
+		// break;
+		// case LASTCOLUMN:
+		// // tempCellIndex.column++;
+		// break;
+		// case LASTTWOROWS:
+		// tempCellIndex.row += 1;
+		// break;
+		// case LASTTWOCOLUMNS:
+		// tempCellIndex.column += 1;
+		// break;
+		// default:
+		// throw new DMLRuntimeException("unrecognized correctionLocation: " + op.aggOp.correction);
+		// }
 		// }
 
 		// initialize and allocate the result
@@ -854,9 +854,28 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
+
+		// early abort for comparisons w/ special values
+		if(Builtin.isBuiltinCode(op.fn, BuiltinCode.ISNAN, BuiltinCode.ISNA) && !containsValue(op.getPattern()))
+			return new MatrixBlock(getNumRows(), getNumColumns(), 0); // avoid unnecessary allocation
+
 		printDecompressWarning("unaryOperations " + op.fn.toString());
 		MatrixBlock tmp = getUncompressed();
 		return tmp.unaryOperations(op, result);
+	}
+
+	@Override
+	public boolean containsValue(double pattern) {
+		if(isOverlapping()) {
+			throw new NotImplementedException("Not implemented contains value for overlapping matrix");
+		}
+		else {
+			for(AColGroup g : _colGroups) {
+				if(g.containsValue(pattern))
+					return true;
+			}
+			return false;
+		}
 	}
 
 	@Override

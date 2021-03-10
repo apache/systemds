@@ -644,6 +644,8 @@ public abstract class AColGroup implements Serializable {
 
 	public abstract AColGroup copy();
 
+	public abstract boolean containsValue(double pattern);
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

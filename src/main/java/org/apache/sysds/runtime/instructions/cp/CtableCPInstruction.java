@@ -39,17 +39,17 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	private final CPOperand _outDim2;
 	private final boolean _isExpand;
 	private final boolean _ignoreZeros;
-	private final boolean _removeEmpty;
+	private final int _fedSize;
 
 	private CtableCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
-			boolean ignoreZeros, boolean removeEmpty, String opcode, String istr) {
+			boolean ignoreZeros, int fedSize, String opcode, String istr) {
 		super(CPType.Ctable, null, in1, in2, in3, out, opcode, istr);
 		_outDim1 = new CPOperand(outputDim1, ValueType.FP64, DataType.SCALAR, dim1Literal);
 		_outDim2 = new CPOperand(outputDim2, ValueType.FP64, DataType.SCALAR, dim2Literal);
 		_isExpand = isExpand;
 		_ignoreZeros = ignoreZeros;
-		_removeEmpty = removeEmpty;
+		_fedSize = fedSize;
 	}
 
 	public static CtableCPInstruction parseInstruction(String inst)
@@ -76,10 +76,10 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 
 		CPOperand out = new CPOperand(parts[6]);
 		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
-		boolean removeEmpty = parts.length == 9 && Boolean.parseBoolean(parts[8]);
+		int fedSize = parts.length == 9 ? Integer.parseInt(parts[8]) : -1;
 
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new CtableCPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, removeEmpty, opcode, inst);
+		return new CtableCPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, fedSize, opcode, inst);
 	}
 
 	private Ctable.OperationTypes findCtableOperation() {
@@ -179,8 +179,8 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		}
 
 		// remove first empty rows in fed
-		if(_removeEmpty)
-			resultBlock = resultBlock.removeEmptyOperations(resultBlock, true, true);
+		if(_fedSize != -1)
+			resultBlock = resultBlock.slice(resultBlock.getNumRows() - _fedSize, resultBlock.getNumRows() - 1);
 
 		ec.setMatrixOutput(output.getName(), resultBlock);
 	}

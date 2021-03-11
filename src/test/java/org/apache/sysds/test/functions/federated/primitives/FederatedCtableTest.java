@@ -66,11 +66,6 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		federatedCtable(Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void federatedCtableHybrid() {
-		federatedCtable(Types.ExecMode.HYBRID);
-	}
-
 	public void federatedCtable(Types.ExecMode execMode) {
 		Types.ExecMode platformOld = setExecMode(execMode);
 

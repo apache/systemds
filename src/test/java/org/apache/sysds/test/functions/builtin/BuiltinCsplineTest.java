@@ -17,7 +17,7 @@
  * under the License.
  */
  
-package org.apache.sysds.test.applications;
+package org.apache.sysds.test.functions.builtin;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,8 +43,8 @@ public class BuiltinCsplineTest extends AutomatedTestBase {
 	
 	protected int numRecords;
 	private final static int numDim = 1;
-    
-    public BuiltinCsplineTest(int rows, int cols) {
+
+	public BuiltinCsplineTest(int rows, int cols) {
 		numRecords = rows;
 	}
 

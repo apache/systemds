@@ -18,6 +18,7 @@
  */
 package org.apache.sysds.runtime.instructions.gpu;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -26,6 +27,9 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCuMatMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -34,7 +38,7 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.utils.GPUStatistics;
 
-public class AggregateBinaryGPUInstruction extends GPUInstruction {
+public class AggregateBinaryGPUInstruction extends GPUInstruction implements LineageTraceable {
 	private CPOperand _input1 = null;
 	private CPOperand _input2 = null;
 	private CPOperand _output = null;
@@ -96,5 +100,11 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 	private static boolean isSparse(ExecutionContext ec, String var) {
 		MatrixObject mo = ec.getMatrixObject(var);
 		return LibMatrixCUDA.isInSparseFormat(ec.getGPUContext(0), mo);
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(_output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, _input1, _input2)));
 	}
 }

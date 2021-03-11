@@ -19,13 +19,18 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public abstract class ArithmeticBinaryGPUInstruction extends GPUInstruction {
+public abstract class ArithmeticBinaryGPUInstruction extends GPUInstruction implements LineageTraceable {
 	protected CPOperand _input1;
 	protected CPOperand _input2;
 	protected CPOperand _output;
@@ -64,5 +69,11 @@ public abstract class ArithmeticBinaryGPUInstruction extends GPUInstruction {
 		}
 		else
 			throw new DMLRuntimeException("Unsupported GPU ArithmeticInstruction.");
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(_output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, _input1, _input2)));
 	}
 }

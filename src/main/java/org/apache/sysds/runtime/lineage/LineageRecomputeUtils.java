@@ -89,7 +89,21 @@ public class LineageRecomputeUtils {
 		LineageItem root = LineageParser.parseLineageTrace(mainTrace);
 		if (dedupPatches != null)
 			LineageParser.parseLineageTraceDedup(dedupPatches);
+
+		// Disable GPU execution. TODO: Support GPU
+		boolean GPUenabled = false;
+		if (DMLScript.USE_ACCELERATOR) {
+			GPUenabled = true;
+			DMLScript.USE_ACCELERATOR = false;
+		}
+		// Reset statistics
+		if (DMLScript.STATISTICS)
+			Statistics.reset();
+
 		Data ret = computeByLineage(root);
+
+		if (GPUenabled)
+			DMLScript.USE_ACCELERATOR = true;
 		// Cleanup the statics
 		loopPatchMap.clear();
 		return ret;
@@ -115,9 +129,9 @@ public class LineageRecomputeUtils {
 		partDagRoots.put(varname, out);
 		constructBasicBlock(partDagRoots, varname, prog);
 		
-		// Reset cache due to cleaned data objects
+		// Reset cache to avoid erroneous reuse
 		LineageCache.resetCache();
-		//execute instructions and get result
+		// Execute instructions and get result
 		if (DEBUG) {
 			DMLScript.STATISTICS = true;
 			ExplainCounts counts = Explain.countDistributedOperations(prog);
@@ -125,10 +139,11 @@ public class LineageRecomputeUtils {
 		}
 		ec.setProgram(prog);
 		prog.execute(ec);
-		if (DEBUG) {
+		if (DEBUG || DMLScript.STATISTICS) {
 			Statistics.stopRunTimer();
 			System.out.println(Statistics.display(DMLScript.STATISTICS_COUNT));
 		}
+
 		return ec.getVariable(varname);
 	}
 	

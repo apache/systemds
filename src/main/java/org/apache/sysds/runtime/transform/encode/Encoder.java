@@ -48,46 +48,22 @@ public abstract class Encoder implements Externalizable
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected static final Log LOG = LogFactory.getLog(Encoder.class.getName());
 
-	protected int _clen = -1;
-	protected int[] _colList = null;
+	protected int _colID = -1;
 
-	protected Encoder( int[] colList, int clen ) {
-		_colList = colList;
-		_clen = clen;
+	protected Encoder(int colID) {
+		_colID = colID;
 	}
 
-	public int[] getColList() {
-		return _colList;
-	}
-
-	public void setColList(int[] colList) {
-		_colList = colList;
-	}
-
-	public int getNumCols() {
-		return _clen;
-	}
-
-	public int initColList(JSONArray attrs) {
-		_colList = new int[attrs.size()];
-		for(int i=0; i < _colList.length; i++)
-			_colList[i] = UtilFunctions.toInt(attrs.get(i));
-		return _colList.length;
-	}
-
-	public int initColList(int[] colList) {
-		_colList = colList;
-		return _colList.length;
-	}
+	public void setColID(int colID) { _colID = colID; }
 
 	/**
-	 * Indicates if this encoder is applicable, i.e, if there is at
-	 * least one column to encode.
+	 * Indicates if this encoder is applicable, i.e, if there is
+	 * a column to encode.
 	 *
-	 * @return true if at least one column to encode
+	 * @return true if a colID is set
 	 */
 	public boolean isApplicable()  {
-		return (_colList != null && _colList.length > 0);
+		return _colID != -1;
 	}
 
 	/**
@@ -97,11 +73,8 @@ public abstract class Encoder implements Externalizable
 	 * @param colID column ID
 	 * @return true if encoder is applicable for given column
 	 */
-	public int isApplicable(int colID) {
-		if(_colList == null)
-			return -1;
-		int idx = Arrays.binarySearch(_colList, colID);
-		return ( idx >= 0 ? idx : -1);
+	public boolean isApplicable(int colID) {
+		return colID == _colID;
 	}
 
 	/**
@@ -147,19 +120,6 @@ public abstract class Encoder implements Externalizable
 	 */
 	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
 
-	protected int[] subRangeColList(IndexRange ixRange) {
-		List<Integer> cols = new ArrayList<>();
-		for(int col : _colList) {
-			if(ixRange.inColRange(col)) {
-				// add the correct column, removed columns before start
-				// colStart - 1 because colStart is 1-based
-				int corrColumn = (int) (col - (ixRange.colStart - 1));
-				cols.add(corrColumn);
-			}
-		}
-		return cols.stream().mapToInt(i -> i).toArray();
-	}
-
 	/**
 	 * Returns a new Encoder that only handles a sub range of columns.
 	 *
@@ -169,25 +129,6 @@ public abstract class Encoder implements Externalizable
 	public Encoder subRangeEncoder(IndexRange ixRange) {
 		throw new DMLRuntimeException(
 			this.getClass().getSimpleName() + " does not support the creation of a sub-range encoder");
-	}
-
-	/**
-	 * Merges the column information, like how many columns the frame needs and which columns this encoder operates on.
-	 *
-	 * @param other the other encoder of the same type
-	 * @param col   column at which the second encoder will be merged in (1-based)
-	 */
-	protected void mergeColumnInfo(Encoder other, int col) {
-		// update number of columns
-		_clen = Math.max(_clen, col - 1 + other._clen);
-
-		// update the new columns that this encoder operates on
-		Set<Integer> colListAgg = new HashSet<>(); // for dedup
-		for(int i : _colList)
-			colListAgg.add(i);
-		for(int i : other._colList)
-			colListAgg.add(col - 1 + i);
-		_colList = colListAgg.stream().mapToInt(i -> i).toArray();
 	}
 
 	/**
@@ -251,10 +192,7 @@ public abstract class Encoder implements Externalizable
 	 */
 	@Override
 	public void writeExternal(ObjectOutput os) throws IOException {
-		os.writeInt(_clen);
-		os.writeInt(_colList.length);
-		for(int col : _colList)
-			os.writeInt(col);
+		os.writeInt(_colID);
 	}
 
 	/**
@@ -266,9 +204,6 @@ public abstract class Encoder implements Externalizable
 	 */
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
-		_clen = in.readInt();
-		_colList = new int[in.readInt()];
-		for(int i = 0; i < _colList.length; i++)
-			_colList[i] = in.readInt();
+		_colID = in.readInt();
 	}
 }

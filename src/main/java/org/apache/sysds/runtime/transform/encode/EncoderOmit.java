@@ -40,36 +40,30 @@ public class EncoderOmit extends Encoder
 {	
 	private static final long serialVersionUID = 1978852120416654195L;
 
-	private boolean _federated = false;
+	private boolean _federated = true;
 	private boolean[] _rmRows = new boolean[0];
 
-	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
-		throws JSONException 
-	{
-		super(null, clen);
-		if (!parsedSpec.containsKey(TfMethod.OMIT.toString()))
-			return;
-		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol);
-		initColList(collist);
-		_federated = minCol != -1 || maxCol != -1;
-	}
 	
 	public EncoderOmit() {
-		super(new int[0], 0);
+		super(-1);
 	}
 	
 	public EncoderOmit(boolean federated) {
 		this();
 		_federated = federated;
 	}
+
+	public EncoderOmit(int colID, boolean federated) {
+		super(colID);
+		_federated = federated;
+	}
 	
-	private EncoderOmit(int[] colList, int clen, boolean[] rmRows) {
-		super(colList, clen);
+	private EncoderOmit(int colID, boolean federated, boolean[] rmRows) {
+		this(colID, federated);
 		_rmRows = rmRows;
-		_federated = true;
 	}
 
-	public int getNumRemovedRows(boolean[] rmRows) {
+	public static int getNumRemovedRows(boolean[] rmRows) {
 		int cnt = 0;
 		for(boolean v : rmRows)
 			cnt += v ? 1 : 0;
@@ -79,18 +73,7 @@ public class EncoderOmit extends Encoder
 	public int getNumRemovedRows() {
 		return getNumRemovedRows(_rmRows);
 	}
-	
-	public boolean omit(String[] words, TfUtils agents) {
-		if( !isApplicable() )
-			return false;
-		
-		for(int i=0; i<_colList.length; i++) {
-			int colID = _colList[i];
-			if(TfUtils.isNA(agents.getNAStrings(),UtilFunctions.unquote(words[colID-1].trim())))
-				return true;
-		}
-		return false;
-	}
+
 
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
@@ -138,42 +121,15 @@ public class EncoderOmit extends Encoder
 		//TODO perf evaluate if column-wise scan more efficient
 		//  (sequential but less impact of early abort)
 		for(int i = 0; i < in.getNumRows(); i++) {
-			for(int colID : _colList) {
-				Object val = in.get(i, colID - 1);
-				if (val == null || (schema[colID - 1] == ValueType.STRING && val.toString().isEmpty())) {
-					rmRows[i] = true;
-					break; // early abort
-				}
+			Object val = in.get(i, _colID - 1);
+			if (val == null || (schema[_colID - 1] == ValueType.STRING && val.toString().isEmpty())) {
+				rmRows[i] = true;
+				break; // early abort
 			}
 		}
 		return rmRows;
 	}
 
-	@Override
-	public Encoder subRangeEncoder(IndexRange ixRange) {
-		int[] colList = subRangeColList(ixRange);
-		if(colList.length == 0)
-			// empty encoder -> sub range encoder does not exist
-			return null;
-		boolean[] rmRows = _rmRows;
-		if (_rmRows.length > 0)
-			rmRows = Arrays.copyOfRange(rmRows, (int) ixRange.rowStart - 1, (int) ixRange.rowEnd - 1);
-
-		return new EncoderOmit(colList, (int) (ixRange.colSpan()), rmRows);
-	}
-
-	@Override
-	public void mergeAt(Encoder other, int row, int col) {
-		if(other instanceof EncoderOmit) {
-			mergeColumnInfo(other, col);
-			EncoderOmit otherOmit = (EncoderOmit) other;
-			_rmRows = Arrays.copyOf(_rmRows, Math.max(_rmRows.length, (row - 1) + otherOmit._rmRows.length));
-			for (int i = 0; i < otherOmit._rmRows.length; i++)
-				_rmRows[(row - 1) + 1] |= otherOmit._rmRows[i];
-			return;
-		}
-		super.mergeAt(other, row, col);
-	}
 	
 	@Override
 	public void updateIndexRanges(long[] beginDims, long[] endDims) {

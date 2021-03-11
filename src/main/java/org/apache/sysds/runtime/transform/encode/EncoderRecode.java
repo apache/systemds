@@ -49,51 +49,40 @@ public class EncoderRecode extends Encoder
 	public static boolean SORT_RECODE_MAP = false;
 
 	//recode maps and custom map for partial recode maps
-	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<>();
-	private HashMap<Integer, HashSet<Object>> _rcdMapsPart = null;
+	private HashMap<String, Long> _rcdMap  = new HashMap<>();
+	private HashSet<Object> _rcdMapPart = null;
 
-	public EncoderRecode(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
-		throws JSONException
-	{
-		super(null, clen);
-		_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol);
-	}
-
-	private EncoderRecode(int[] colList, int clen) {
-		super(colList, clen);
+	private EncoderRecode(int colID) {
+		super(colID);
 	}
 
 	public EncoderRecode() {
-		this(new int[0], 0);
+		this(-1);
 	}
 
-	private EncoderRecode(int[] colList, int clen, HashMap<Integer, HashMap<String, Long>> rcdMaps) {
-		super(colList, clen);
-		_rcdMaps = rcdMaps;
+	private EncoderRecode(int colID, HashMap<String, Long> rcdMap) {
+		super(colID);
+		_rcdMap = rcdMap;
 	}
 
-	public HashMap<Integer, HashMap<String,Long>> getCPRecodeMaps() {
-		return _rcdMaps;
+	public HashMap<String,Long> getCPRecodeMaps() {
+		return _rcdMap;
 	}
 
-	public HashMap<Integer, HashSet<Object>> getCPRecodeMapsPartial() {
-		return _rcdMapsPart;
+	public HashSet<Object> getCPRecodeMapsPartial() {
+		return _rcdMapPart;
 	}
 
 	public void sortCPRecodeMaps() {
-		for( HashMap<String,Long> map : _rcdMaps.values() ) {
-			String[] keys= map.keySet().toArray(new String[0]);
-			Arrays.sort(keys);
-			map.clear();
-			for(String key : keys)
-				putCode(map, key);
-		}
+		String[] keys= _rcdMap.keySet().toArray(new String[0]);
+		Arrays.sort(keys);
+		_rcdMap.clear();
+		for(String key : keys)
+			putCode(_rcdMap, key);
 	}
 
-	private long lookupRCDMap(int colID, String key) {
-		if( !_rcdMaps.containsKey(colID) )
-			return -1; //empty recode map
-		Long tmp = _rcdMaps.get(colID).get(key);
+	private long lookupRCDMap(String key) {
+		Long tmp = _rcdMap.get(key);
 		return (tmp!=null) ? tmp : -1;
 	}
 
@@ -114,20 +103,13 @@ public class EncoderRecode extends Encoder
 		if( !isApplicable() )
 			return;
 
-		Iterator<String[]> iter = in.getStringRowIterator(_colList);
+		Iterator<String[]> iter = in.getStringRowIterator(_colID);
 		while( iter.hasNext() ) {
 			String[] row = iter.next();
-			for( int j=0; j<_colList.length; j++ ) {
-				int colID = _colList[j]; //1-based
-				//allocate column map if necessary
-				if( !_rcdMaps.containsKey(colID) )
-					_rcdMaps.put(colID, new HashMap<String,Long>());
-				//probe and build column map
-				HashMap<String,Long> map = _rcdMaps.get(colID);
-				String key = row[j];
-				if( key!=null && !key.isEmpty() && !map.containsKey(key) )
-					putCode(map, key);
-			}
+			//probe and build column map
+			String key = row[0];  // 0 since there is only one column in the row
+			if( key!=null && !key.isEmpty() && !_rcdMap.containsKey(key))
+				putCode(_rcdMap, key);
 		}
 
 		if( SORT_RECODE_MAP ) {
@@ -147,8 +129,8 @@ public class EncoderRecode extends Encoder
 	@Override
 	public void prepareBuildPartial() {
 		//ensure allocated partial recode map
-		if( _rcdMapsPart == null )
-			_rcdMapsPart = new HashMap<>();
+		if( _rcdMapPart == null )
+			_rcdMapPart = new HashSet<>();
 	}
 
 	@Override
@@ -157,99 +139,29 @@ public class EncoderRecode extends Encoder
 			return;
 
 		//construct partial recode map (tokens w/o codes)
-		//iterate over columns for sequential access
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j]; //1-based
-			//allocate column map if necessary
-			if( !_rcdMapsPart.containsKey(colID) )
-				_rcdMapsPart.put(colID, new HashSet<>());
-			HashSet<Object> map = _rcdMapsPart.get(colID);
-			//probe and build column map
-			for( int i=0; i<in.getNumRows(); i++ )
-				map.add(in.get(i, colID-1));
-			//cleanup unnecessary entries once
-			map.remove(null);
-			map.remove("");
-		}
-//		_rcdMapsPart = null;
+		//probe and build column map
+		for( int i=0; i<in.getNumRows(); i++ )
+			_rcdMapPart.add(in.get(i, _colID-1));
+		//cleanup unnecessary entries once
+		_rcdMapPart.remove(null);
+		_rcdMapPart.remove("");
 	}
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		//apply recode maps column wise
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j];
-			for( int i=0; i<in.getNumRows(); i++ ) {
-				Object okey = in.get(i, colID-1);
-				String key = (okey!=null) ? okey.toString() : null;
-				long code = lookupRCDMap(colID, key);
-				out.quickSetValue(i, colID-1,
-					(code >= 0) ? code : Double.NaN);
-			}
+		for( int i=0; i<in.getNumRows(); i++ ) {
+			Object okey = in.get(i, _colID-1);
+			String key = (okey!=null) ? okey.toString() : null;
+			long code = lookupRCDMap(key);
+			out.quickSetValue(i, _colID-1,
+				(code >= 0) ? code : Double.NaN);
 		}
-
 		return out;
 	}
 
-	@Override
-	public Encoder subRangeEncoder(IndexRange ixRange) {
-		List<Integer> cols = new ArrayList<>();
-		HashMap<Integer, HashMap<String, Long>> rcdMaps = new HashMap<>();
-		for(int col : _colList) {
-			if(ixRange.inColRange(col)) {
-				// add the correct column, removed columns before start
-				// colStart - 1 because colStart is 1-based
-				int corrColumn = (int) (col - (ixRange.colStart - 1));
-				cols.add(corrColumn);
-				// copy rcdMap for column
-				rcdMaps.put(corrColumn, new HashMap<>(_rcdMaps.get(col)));
-			}
-		}
-		if(cols.isEmpty())
-			// empty encoder -> sub range encoder does not exist
-			return null;
-
-		int[] colList = cols.stream().mapToInt(i -> i).toArray();
-		return new EncoderRecode(colList, (int) ixRange.colSpan(), rcdMaps);
-	}
-
-	@Override
-	public void mergeAt(Encoder other, int row, int col) {
-		if(other instanceof EncoderRecode) {
-			mergeColumnInfo(other, col);
-
-			// merge together overlapping columns or add new columns
-			EncoderRecode otherRec = (EncoderRecode) other;
-			for (int otherColID : other._colList) {
-				int colID = otherColID + col - 1;
-				//allocate column map if necessary
-				if( !_rcdMaps.containsKey(colID) )
-					_rcdMaps.put(colID, new HashMap<>());
-
-				HashMap<String, Long> otherMap = otherRec._rcdMaps.get(otherColID);
-				if(otherMap != null) {
-					// for each column, add all non present recode values
-					for(Map.Entry<String, Long> entry : otherMap.entrySet()) {
-						if (lookupRCDMap(colID, entry.getKey()) == -1) {
-							// key does not yet exist
-							putCode(_rcdMaps.get(colID), entry.getKey());
-						}
-					}
-				}
-			}
-			return;
-		}
-		super.mergeAt(other, row, col);
-	}
-
-	public int[] numDistinctValues() {
-		int[] numDistinct = new int[_colList.length];
-
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j]; //1-based
-			numDistinct[j] = _rcdMaps.get(colID).size();
-		}
-		return numDistinct;
+	// TODO rename getNumDistinctValues
+	public int numDistinctValues() {
+		return _rcdMap.size();
 	}
 
 	@Override
@@ -260,25 +172,16 @@ public class EncoderRecode extends Encoder
 		//inverse operation to initRecodeMaps
 
 		//allocate output rows
-		int maxDistinct = 0;
-		for( int j=0; j<_colList.length; j++ )
-			if( _rcdMaps.containsKey(_colList[j]) )
-				maxDistinct = Math.max(maxDistinct, _rcdMaps.get(_colList[j]).size());
-		meta.ensureAllocatedColumns(maxDistinct);
+		meta.ensureAllocatedColumns(numDistinctValues());
 
 		//create compact meta data representation
 		StringBuilder sb = new StringBuilder(); //for reuse
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j]; //1-based
-			int rowID = 0;
-			if( _rcdMaps.containsKey(_colList[j]) )
-				for( Entry<String, Long> e : _rcdMaps.get(colID).entrySet() ) {
-					meta.set(rowID++, colID-1,
-						constructRecodeMapEntry(e.getKey(), e.getValue(), sb));
-				}
-			meta.getColumnMetadata(colID-1).setNumDistinct(
-					_rcdMaps.get(colID).size());
+		int rowID = 0;
+		for( Entry<String, Long> e : _rcdMap.entrySet() ) {
+			meta.set(rowID++, _colID-1,   //1-based
+				constructRecodeMapEntry(e.getKey(), e.getValue(), sb));
 		}
+		meta.getColumnMetadata(_colID-1).setNumDistinct(numDistinctValues());
 
 		return meta;
 	}
@@ -294,41 +197,27 @@ public class EncoderRecode extends Encoder
 	public void initMetaData( FrameBlock meta ) {
 		if( meta == null || meta.getNumRows()<=0 )
 			return;
-
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j]; //1-based
-			_rcdMaps.put(colID, meta.getRecodeMap(colID-1));
-		}
+		_rcdMap = meta.getRecodeMap(_colID-1); //1-based
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
-		out.writeInt(_rcdMaps.size());
-		for(Entry<Integer, HashMap<String,Long>> e1 : _rcdMaps.entrySet()) {
-			out.writeInt(e1.getKey());
-			out.writeInt(e1.getValue().size());
-			for(Entry<String, Long> e2 : e1.getValue().entrySet()) {
-				out.writeUTF(e2.getKey());
-				out.writeLong(e2.getValue());
-			}
+		out.writeInt(_rcdMap.size());
+		for(Entry<String, Long> e : _rcdMap.entrySet()) {
+			out.writeUTF(e.getKey());
+			out.writeLong(e.getValue());
 		}
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
-		int size1 = in.readInt();
-		for(int i = 0; i < size1; i++) {
-			Integer key1 = in.readInt();
-			int size2 = in.readInt();
-			HashMap<String, Long> maps = new HashMap<>();
-			for(int j = 0; j < size2; j++){
-				String key2 = in.readUTF();
-				Long value = in.readLong();
-				maps.put(key2, value);
-			}
-			_rcdMaps.put(key1, maps);
+		int size = in.readInt();
+		for(int j = 0; j < size; j++){
+			String key = in.readUTF();
+			Long value = in.readLong();
+			_rcdMap.put(key, value);
 		}
 	}
 
@@ -370,11 +259,11 @@ public class EncoderRecode extends Encoder
 		if(o == null || getClass() != o.getClass())
 			return false;
 		EncoderRecode that = (EncoderRecode) o;
-		return Objects.equals(_rcdMaps, that._rcdMaps);
+		return Objects.equals(_rcdMap, that._rcdMap);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(_rcdMaps);
+		return Objects.hash(_rcdMap);
 	}
 }

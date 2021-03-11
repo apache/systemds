@@ -38,12 +38,12 @@ public class EncoderPassThrough extends Encoder
 {
 	private static final long serialVersionUID = -8473768154646831882L;
 	
-	protected EncoderPassThrough(int[] ptCols, int clen) {
-		super(ptCols, clen); //1-based 
+	protected EncoderPassThrough(int ptCols) {
+		super(ptCols); //1-based
 	}
 	
 	public EncoderPassThrough() {
-		this(new int[0], 0);
+		this(-1);
 	}
 
 	@Override
@@ -58,42 +58,14 @@ public class EncoderPassThrough extends Encoder
 	
 	@Override 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		for( int j=0; j<_colList.length; j++ ) {
-			int col = _colList[j]-1;
-			ValueType vt = in.getSchema()[col];
-			for( int i=0; i<in.getNumRows(); i++ ) {
-				Object val = in.get(i, col);
-				out.quickSetValue(i, col, (val==null||(vt==ValueType.STRING 
-					&& val.toString().isEmpty())) ? Double.NaN : 
-					UtilFunctions.objectToDouble(vt, val));
-			}
+		ValueType vt = in.getSchema()[_colID];
+		for( int i=0; i<in.getNumRows(); i++ ) {
+			Object val = in.get(i, _colID);
+			out.quickSetValue(i, _colID, (val==null||(vt==ValueType.STRING
+				&& val.toString().isEmpty())) ? Double.NaN :
+				UtilFunctions.objectToDouble(vt, val));
 		}
-		
 		return out;
-	}
-	
-	@Override
-	public Encoder subRangeEncoder(IndexRange ixRange) {
-		List<Integer> colList = new ArrayList<>();
-		for(int col : _colList) {
-			if(col >= ixRange.colStart && col < ixRange.colEnd)
-				// add the correct column, removed columns before start
-				colList.add((int) (col - (ixRange.colStart - 1)));
-		}
-		if(colList.isEmpty())
-			// empty encoder -> return null
-			return null;
-		return new EncoderPassThrough(colList.stream().mapToInt(i -> i).toArray(),
-			(int) (ixRange.colEnd - ixRange.colStart));
-	}
-	
-	@Override
-	public void mergeAt(Encoder other, int row, int col) {
-		if(other instanceof EncoderPassThrough) {
-			mergeColumnInfo(other, col);
-			return;
-		}
-		super.mergeAt(other, row, col);
 	}
 
 	@Override

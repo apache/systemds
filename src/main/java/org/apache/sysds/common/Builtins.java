@@ -103,6 +103,7 @@ public enum Builtins {
 	COR("cor", true),
 	DBSCAN("dbscan", true),
 	DETECTSCHEMA("detectSchema", false),
+	DENIALCONSTRAINTS("denialConstraints", true),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
 	DISCOVER_MD("mdedup", true),

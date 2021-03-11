@@ -20,19 +20,14 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.Objects;
-import java.util.concurrent.Future;
 
 import com.sun.tools.javac.util.List;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
 public class TernaryFEDInstruction extends ComputationFEDInstruction {
@@ -81,7 +76,6 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		out.getDataCharacteristics().set(mo1.getDataCharacteristics());
 		out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
 	}
-
 
 	private void process2MatrixScalarInput(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
 		CPOperand[] inputArgs = new CPOperand[] {input1, input2};
@@ -143,20 +137,17 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo3, false);
 
+			long vars[];
 			if(!mo1.isFederated())
 				if(mo2.isFederated())
-					fr3 = FederationUtils.callInstruction(instString,
-						output,
-						new CPOperand[] {input1, input2, input3},
-						new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), fr2[0].getID()});
+					vars = new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), fr2[0].getID()};
 				else
-					fr3 = FederationUtils.callInstruction(instString,
-						output,
-						new CPOperand[] {input1, input2, input3},
-						new long[] {fr1[0].getID(), fr2[0].getID(), mo1.getFedMapping().getID()});
-			else fr3 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[] {input1, input2, input3},
-				new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr2[0].getID()});
+					vars = new long[] {fr1[0].getID(), fr2[0].getID(), mo1.getFedMapping().getID()};
+			else
+				vars = new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr2[0].getID()};
+
+			fr3 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[] {input1, input2, input3}, vars);
 
 			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2[0].getID());
 			mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);

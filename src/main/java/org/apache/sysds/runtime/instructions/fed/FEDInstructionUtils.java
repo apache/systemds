@@ -174,15 +174,11 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof TernaryCPInstruction) {
 			TernaryCPInstruction tinst = (TernaryCPInstruction) inst;
-			if(tinst.input1.isMatrix() || tinst.input2.isMatrix() || tinst.input3.isMatrix()) {
-				CacheableData<?> fo1 = ec.getCacheableData(tinst.input1);
-				CacheableData<?> fo2 = ec.getCacheableData(tinst.input2);
-				CacheableData<?> fo3 = ec.getCacheableData(tinst.input3);
-				if(fo1.isFederated() || fo2.isFederated() || fo3.isFederated()) {
-					fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
-				}
+			if((tinst.input1.isMatrix() && ec.getCacheableData(tinst.input1).isFederated())
+				|| (tinst.input2.isMatrix() && ec.getCacheableData(tinst.input2).isFederated())
+				|| (tinst.input3.isMatrix() && ec.getCacheableData(tinst.input3).isFederated())) {
+				fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
 			}
-
 		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;

@@ -153,6 +153,5 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-
 	}
 }

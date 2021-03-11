@@ -43,7 +43,7 @@ import org.apache.wink.json4j.JSONArray;
  * interface for decoding frames to matrices.
  *
  */
-public abstract class Encoder implements Externalizable
+public abstract class Encoder implements Externalizable, Encode
 {
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected static final Log LOG = LogFactory.getLog(Encoder.class.getName());
@@ -77,22 +77,6 @@ public abstract class Encoder implements Externalizable
 		return colID == _colID;
 	}
 
-	/**
-	 * Block encode: build and apply (transform encode).
-	 *
-	 * @param in input frame block
-	 * @param out output matrix block
-	 * @return output matrix block
-	 */
-	public abstract MatrixBlock encode(FrameBlock in, MatrixBlock out);
-
-	/**
-	 * Build the transform meta data for the given block input. This call modifies
-	 * and keeps meta data as encoder state.
-	 *
-	 * @param in input frame block
-	 */
-	public abstract void build(FrameBlock in);
 
 	/**
 	 * Allocates internal data structures for partial build.
@@ -109,27 +93,7 @@ public abstract class Encoder implements Externalizable
 	public void buildPartial(FrameBlock in) {
 		//do nothing
 	}
-	
-	/**
-	 * Encode input data blockwise according to existing transform meta
-	 * data (transform apply).
-	 *
-	 * @param in input frame block
-	 * @param out output matrix block
-	 * @return output matrix block
-	 */
-	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
 
-	/**
-	 * Returns a new Encoder that only handles a sub range of columns.
-	 *
-	 * @param ixRange the range (1-based, begin inclusive, end exclusive)
-	 * @return an encoder of the same type, just for the sub-range
-	 */
-	public Encoder subRangeEncoder(IndexRange ixRange) {
-		throw new DMLRuntimeException(
-			this.getClass().getSimpleName() + " does not support the creation of a sub-range encoder");
-	}
 
 	/**
 	 * Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
@@ -140,7 +104,7 @@ public abstract class Encoder implements Externalizable
 	 * @param row   the row where it should be placed (1-based)
 	 * @param col   the col where it should be placed (1-based)
 	 */
-	public void mergeAt(Encoder other, int row, int col) {
+	public void mergeAt(Encoder other, int row) {
 		throw new DMLRuntimeException(
 			this.getClass().getSimpleName() + " does not support merging with " + other.getClass().getSimpleName());
 	}
@@ -154,21 +118,6 @@ public abstract class Encoder implements Externalizable
 	public void updateIndexRanges(long[] beginDims, long[] endDims) {
 		// do nothing - default
 	}
-
-	/**
-	 * Construct a frame block out of the transform meta data.
-	 *
-	 * @param out output frame block
-	 * @return output frame block?
-	 */
-	public abstract FrameBlock getMetaData(FrameBlock out);
-
-	/**
-	 * Sets up the required meta data for a subsequent call to apply.
-	 *
-	 * @param meta frame block
-	 */
-	public abstract void initMetaData(FrameBlock meta);
 
 	/**
 	 * Obtain the column mapping of encoded frames based on the passed
@@ -207,3 +156,4 @@ public abstract class Encoder implements Externalizable
 		_colID = in.readInt();
 	}
 }
+

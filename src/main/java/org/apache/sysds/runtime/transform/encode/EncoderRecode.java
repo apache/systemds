@@ -159,6 +159,28 @@ public class EncoderRecode extends Encoder
 		return out;
 	}
 
+
+	@Override
+	public void mergeAt(Encoder other, int row) {
+		if(!(other instanceof EncoderRecode)) {
+			super.mergeAt(other, row);
+			return;
+		}
+		assert other._colID == _colID;
+		// merge together overlapping columns
+		EncoderRecode otherRec = (EncoderRecode) other;
+		HashMap<String, Long> otherMap = otherRec._rcdMap;
+		if(otherMap != null) {
+			// for each column, add all non present recode values
+			for(Map.Entry<String, Long> entry : otherMap.entrySet()) {
+				if (lookupRCDMap(entry.getKey()) == -1) {
+					// key does not yet exist
+					putCode(_rcdMap, entry.getKey());
+				}
+			}
+		}
+	}
+
 	// TODO rename getNumDistinctValues
 	public int numDistinctValues() {
 		return _rcdMap.size();

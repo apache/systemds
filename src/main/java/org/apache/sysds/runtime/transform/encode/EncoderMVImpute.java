@@ -64,8 +64,8 @@ public class EncoderMVImpute extends Encoder {
 	private boolean _rc = false;
 	private HashMap<String,Long> _hist = null;
 
-	public String[] getReplacements() { return _replacementList; }
-	public KahanObject[] getMeans()   { return _meanList; }
+	public String getReplacements() { return _replacement; }
+	public KahanObject getMeans()   { return _mean; }
 	
 	public EncoderMVImpute() {
 		super(-1);
@@ -82,7 +82,8 @@ public class EncoderMVImpute extends Encoder {
 		initRecodeIDList(rcList);
 		_hist = new HashMap<>();
 	}
-	
+
+	/*
 	private void parseMethodsAndReplacements(JSONObject parsedSpec, String[] colnames, int offset) throws JSONException {
 		JSONArray mvspec = (JSONArray) parsedSpec.get(TfMethod.IMPUTE.toString());
 		boolean ids = parsedSpec.containsKey("ids") && parsedSpec.getBoolean("ids");
@@ -116,6 +117,8 @@ public class EncoderMVImpute extends Encoder {
 		_meanList = Arrays.copyOf(_meanList, listIx);
 		_countList = Arrays.copyOf(_countList, listIx);
 	}
+
+	 */
 	
 	public MVMethod getMethod(int colID) {
 		if(!isApplicable(colID))
@@ -187,7 +190,28 @@ public class EncoderMVImpute extends Encoder {
 		return out;
 	}
 
-	
+	@Override
+	public void mergeAt(Encoder other, int row) {
+		if(!(other instanceof EncoderMVImpute)) {
+			super.mergeAt(other, row);
+			return;
+		}
+		EncoderMVImpute otherImpute = (EncoderMVImpute) other;
+		assert otherImpute._colID == _colID;
+		assert otherImpute._mvMethod == _mvMethod;
+
+		ColInfo colInfo = new ColInfo(_mvMethod, _replacement, _mean, _count, _hist);
+		ColInfo otherColInfo = new ColInfo(otherImpute._mvMethod, otherImpute._replacement, otherImpute._mean,
+				otherImpute._count, otherImpute._hist);
+		colInfo.merge(otherColInfo);
+
+		_rc = _rc || otherImpute._rc;
+		_replacement = colInfo._replacement;
+		_mean = colInfo._mean;
+		_count = colInfo._count;
+		_hist = colInfo._hist;
+	}
+
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		out.getColumnMetadata(_colID-1).setMvValue(_replacement);

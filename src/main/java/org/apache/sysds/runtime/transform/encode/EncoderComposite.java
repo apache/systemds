@@ -48,20 +48,20 @@ public class EncoderComposite extends Encoder
 	private FrameBlock _meta = null;
 
 	public EncoderComposite() {
-		super(null, -1);
+		super( -1);
 	}
 
-	public EncoderComposite(List<Encoder> encoders) {
-		super(null, -1);
+	public EncoderComposite(List<Encoder> encoders, FrameBlock meta) {
+		super(-1);
+		if(!(encoders.size() > 0 && encoders.stream().allMatch((encoder -> encoder._colID == encoders.get(0)._colID))))
+			throw new DMLRuntimeException("Tried to create Composite Encoder with no encoders or mismatching columIDs");
+		_colID = encoders.get(0)._colID;
+		_meta = meta;
 		_encoders = encoders;
 	}
 
-	@Override
-	public int getNumCols() {
-		int clen = 0;
-		for( Encoder encoder : _encoders )
-			clen = Math.max(clen, encoder.getNumCols());
-		return clen;
+	public EncoderComposite(List<Encoder> encoders){
+		this(encoders, null);
 	}
 
 	public List<Encoder> getEncoders() {
@@ -78,8 +78,8 @@ public class EncoderComposite extends Encoder
 	
 	public boolean isEncoder(int colID, Class<?> type) {
 		for( Encoder encoder : _encoders ) {
-			if( encoder.getClass().equals(type) )
-				return ArrayUtils.contains(encoder.getColList(), colID);
+			if( encoder.getClass().equals(type) && encoder._colID == colID)
+				return true;
 		}
 		return false;
 	}
@@ -158,19 +158,8 @@ public class EncoderComposite extends Encoder
 	}
 
 	@Override
-	public Encoder subRangeEncoder(IndexRange ixRange) {
-		List<Encoder> subRangeEncoders = new ArrayList<>();
-		for (Encoder encoder : _encoders) {
-			Encoder subEncoder = encoder.subRangeEncoder(ixRange);
-			if (subEncoder != null) {
-				subRangeEncoders.add(subEncoder);
-			}
-		}
-		return new EncoderComposite(subRangeEncoders);
-	}
-
-	@Override
-	public void mergeAt(Encoder other, int row, int col) {
+	public void mergeAt(Encoder other, int row) {
+		assert other._colID == _colID;
 		if (other instanceof EncoderComposite) {
 			EncoderComposite otherComposite = (EncoderComposite) other;
 			// TODO maybe assert that the _encoders never have the same type of encoder twice or more
@@ -178,7 +167,7 @@ public class EncoderComposite extends Encoder
 				boolean mergedIn = false;
 				for (Encoder encoder : _encoders) {
 					if (encoder.getClass() == otherEnc.getClass()) {
-						encoder.mergeAt(otherEnc, row, col);
+						encoder.mergeAt(otherEnc, row);
 						mergedIn = true;
 						break;
 					}
@@ -199,7 +188,7 @@ public class EncoderComposite extends Encoder
 		}
 		for (Encoder encoder : _encoders) {
 			if (encoder.getClass() == other.getClass()) {
-				encoder.mergeAt(other, row, col);
+				encoder.mergeAt(other, row);
 				// update dummycode encoder domain sizes based on distinctness information from other encoders
 				for (Encoder encDummy : _encoders) {
 					if (encDummy instanceof EncoderDummycode) {
@@ -210,7 +199,7 @@ public class EncoderComposite extends Encoder
 				return;
 			}
 		}
-		super.mergeAt(other, row, col);
+		super.mergeAt(other, row);
 	}
 	
 	@Override
@@ -267,7 +256,7 @@ public class EncoderComposite extends Encoder
 			sb.append("-- ");
 			sb.append(encoder.getClass().getSimpleName());
 			sb.append(": ");
-			sb.append(Arrays.toString(encoder.getColList()));
+			sb.append(encoder._colID);
 			sb.append("\n");
 		}
 		return sb.toString();

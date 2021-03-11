@@ -130,7 +130,19 @@ public class EncoderOmit extends Encoder
 		return rmRows;
 	}
 
-	
+	@Override
+	public void mergeAt(Encoder other, int row) {
+		if(!(other instanceof EncoderOmit)) {
+			super.mergeAt(other, row);
+			return;
+		}
+		assert other._colID == _colID;
+		EncoderOmit otherOmit = (EncoderOmit) other;
+		_rmRows = Arrays.copyOf(_rmRows, Math.max(_rmRows.length, (row - 1) + otherOmit._rmRows.length));
+		for (int i = 0; i < otherOmit._rmRows.length; i++)
+			_rmRows[(row - 1) + 1] |= otherOmit._rmRows[i];
+	}
+
 	@Override
 	public void updateIndexRanges(long[] beginDims, long[] endDims) {
 		// first update begin dims

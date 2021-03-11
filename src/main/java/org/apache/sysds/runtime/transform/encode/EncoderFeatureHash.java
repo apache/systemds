@@ -40,20 +40,22 @@ public class EncoderFeatureHash extends Encoder
 	private static final long serialVersionUID = 7435806042138687342L;
 	private long _K;
 
+	/*
 	public EncoderFeatureHash(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException {
 		super(null, clen);
 		_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol);
 		_K = getK(parsedSpec);
 	}
-	
-	public EncoderFeatureHash(int[] colList, int clen, long K) {
-		super(colList, clen);
+
+	 */
+	public EncoderFeatureHash(int colID, long K) {
+		super(colID);
 		_K = K;
 	}
 	
 	public EncoderFeatureHash() {
-		super(new int[0], 0);
+		super(-1);
 		_K = 0;
 	}
 	
@@ -64,7 +66,6 @@ public class EncoderFeatureHash extends Encoder
 	 * @throws JSONException
 	 */
 	private static long getK(JSONObject parsedSpec) throws JSONException {
-		//TODO generalize to different k per feature
 		return parsedSpec.getLong("K");
 	}
 	
@@ -91,37 +92,26 @@ public class EncoderFeatureHash extends Encoder
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		//apply feature hashing column wise
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j];
-			for( int i=0; i<in.getNumRows(); i++ ) {
-				Object okey = in.get(i, colID-1);
-				String key = (okey!=null) ? okey.toString() : null;
-				long code = getCode(key);
-				out.quickSetValue(i, colID-1,
-					(code >= 0) ? code : Double.NaN);
-			}
+		for( int i=0; i<in.getNumRows(); i++ ) {
+			Object okey = in.get(i, _colID-1);
+			String key = (okey!=null) ? okey.toString() : null;
+			long code = getCode(key);
+			out.quickSetValue(i, _colID-1,
+				(code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
+
 	
 	@Override
-	public Encoder subRangeEncoder(IndexRange ixRange) {
-		int[] colList = subRangeColList(ixRange);
-		if(colList.length == 0)
-			// empty encoder -> sub range encoder does not exist
-			return null;
-		return new EncoderFeatureHash(colList, (int) ixRange.colSpan(), _K);
-	}
-	
-	@Override
-	public void mergeAt(Encoder other, int row, int col) {
+	public void mergeAt(Encoder other, int row) {
 		if(other instanceof EncoderFeatureHash) {
-			mergeColumnInfo(other, col);
+			assert other._colID == _colID;
 			if (((EncoderFeatureHash) other)._K != 0 && _K == 0)
 				_K = ((EncoderFeatureHash) other)._K;
 			return;
 		}
-		super.mergeAt(other, row, col);
+		super.mergeAt(other, row);
 	}
 	
 	@Override
@@ -130,11 +120,7 @@ public class EncoderFeatureHash extends Encoder
 			return meta;
 		
 		meta.ensureAllocatedColumns(1);
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j]; //1-based
-			meta.set(0, colID-1, String.valueOf(_K));
-		}
-		
+		meta.set(0, _colID-1, String.valueOf(_K));
 		return meta;
 	}
 
@@ -142,11 +128,7 @@ public class EncoderFeatureHash extends Encoder
 	public void initMetaData( FrameBlock meta ) {
 		if( meta == null || meta.getNumRows()<=0 )
 			return;
-		
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j]; //1-based
-			_K = UtilFunctions.parseToLong(meta.get(0, colID-1).toString());
-		}
+		_K = UtilFunctions.parseToLong(meta.get(0, _colID-1).toString());
 	}
 
 	@Override

@@ -68,6 +68,15 @@ public class EncoderPassThrough extends Encoder
 		return out;
 	}
 
+
+	@Override
+	public void mergeAt(Encoder other, int row) {
+		if(other instanceof EncoderPassThrough) {
+			return;
+		}
+		super.mergeAt(other, row);
+	}
+
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
 		//do nothing

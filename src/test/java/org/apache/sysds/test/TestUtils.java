@@ -78,6 +78,8 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 
+import jcuda.runtime.JCuda;
+
 
 /**
  * <p>
@@ -3062,5 +3064,11 @@ public class TestUtils
 			if (Double.isNaN(datum[col]))
 				return true;
 		return false;
+	}
+	
+	public static int isGPUAvailable() {
+		// returns cudaSuccess if at least one gpu is available
+		final int[] deviceCount = new int[1];
+		return JCuda.cudaGetDeviceCount(deviceCount);
 	}
 }

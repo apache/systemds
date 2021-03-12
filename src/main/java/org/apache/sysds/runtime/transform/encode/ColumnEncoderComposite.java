@@ -23,16 +23,13 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.IndexRange;
 
 /**
  * Simple composite encoder that applies a list of encoders 
@@ -40,45 +37,46 @@ import org.apache.sysds.runtime.util.IndexRange;
  * it can be used as a drop-in replacement for any other encoder. 
  * 
  */
-public class EncoderComposite extends Encoder
+// TODO assert each type of encoder can only be present once
+public class ColumnEncoderComposite extends ColumnEncoder
 {
 	private static final long serialVersionUID = -8473768154646831882L;
 	
-	private List<Encoder> _encoders = null;
+	private List<ColumnEncoder> _columnEncoders = null;
 	private FrameBlock _meta = null;
 
-	public EncoderComposite() {
+	public ColumnEncoderComposite() {
 		super( -1);
 	}
 
-	public EncoderComposite(List<Encoder> encoders, FrameBlock meta) {
+	public ColumnEncoderComposite(List<ColumnEncoder> columnEncoders, FrameBlock meta) {
 		super(-1);
-		if(!(encoders.size() > 0 && encoders.stream().allMatch((encoder -> encoder._colID == encoders.get(0)._colID))))
+		if(!(columnEncoders.size() > 0 && columnEncoders.stream().allMatch((encoder -> encoder._colID == columnEncoders.get(0)._colID))))
 			throw new DMLRuntimeException("Tried to create Composite Encoder with no encoders or mismatching columIDs");
-		_colID = encoders.get(0)._colID;
+		_colID = columnEncoders.get(0)._colID;
 		_meta = meta;
-		_encoders = encoders;
+		_columnEncoders = columnEncoders;
 	}
 
-	public EncoderComposite(List<Encoder> encoders){
-		this(encoders, null);
+	public ColumnEncoderComposite(List<ColumnEncoder> columnEncoders){
+		this(columnEncoders, null);
 	}
 
-	public List<Encoder> getEncoders() {
-		return _encoders;
+	public List<ColumnEncoder> getEncoders() {
+		return _columnEncoders;
 	}
 	
-	public Encoder getEncoder(Class<?> type) {
-		for( Encoder encoder : _encoders ) {
-			if( encoder.getClass().equals(type) )
-				return encoder;
+	public ColumnEncoder getEncoder(Class<?> type) {
+		for( ColumnEncoder columnEncoder : _columnEncoders) {
+			if( columnEncoder.getClass().equals(type) )
+				return columnEncoder;
 		}
 		return null;
 	}
 	
 	public boolean isEncoder(int colID, Class<?> type) {
-		for( Encoder encoder : _encoders ) {
-			if( encoder.getClass().equals(type) && encoder._colID == colID)
+		for( ColumnEncoder columnEncoder : _columnEncoders) {
+			if( columnEncoder.getClass().equals(type) && columnEncoder._colID == colID)
 				return true;
 		}
 		return false;
@@ -88,19 +86,19 @@ public class EncoderComposite extends Encoder
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
 		try {
 			//build meta data first (for all encoders)
-			for( Encoder encoder : _encoders )
-				encoder.build(in);
+			for( ColumnEncoder columnEncoder : _columnEncoders)
+				columnEncoder.build(in);
 			
 			//propagate meta data 
 			_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
-			for( Encoder encoder : _encoders )
-				_meta = encoder.getMetaData(_meta);
-			for( Encoder encoder : _encoders )
-				encoder.initMetaData(_meta);
+			for( ColumnEncoder columnEncoder : _columnEncoders)
+				_meta = columnEncoder.getMetaData(_meta);
+			for( ColumnEncoder columnEncoder : _columnEncoders)
+				columnEncoder.initMetaData(_meta);
 			
 			//apply meta data
-			for( Encoder encoder : _encoders )
-				out = encoder.apply(in, out);
+			for( ColumnEncoder columnEncoder : _columnEncoders)
+				out = columnEncoder.apply(in, out);
 		}
 		catch(Exception ex) {
 			LOG.error("Failed transform-encode frame with \n" + this);
@@ -112,27 +110,27 @@ public class EncoderComposite extends Encoder
 
 	@Override
 	public void build(FrameBlock in) {
-		for( Encoder encoder : _encoders )
-			encoder.build(in);
+		for( ColumnEncoder columnEncoder : _columnEncoders)
+			columnEncoder.build(in);
 	}
 	
 	@Override
 	public void prepareBuildPartial() {
-		for( Encoder encoder : _encoders )
-			encoder.prepareBuildPartial();
+		for( ColumnEncoder columnEncoder : _columnEncoders)
+			columnEncoder.prepareBuildPartial();
 	}
 	
 	@Override
 	public void buildPartial(FrameBlock in) {
-		for( Encoder encoder : _encoders )
-			encoder.buildPartial(in);
+		for( ColumnEncoder columnEncoder : _columnEncoders)
+			columnEncoder.buildPartial(in);
 	}
 	
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		try {
-			for( Encoder encoder : _encoders )
-				out = encoder.apply(in, out);
+			for( ColumnEncoder columnEncoder : _columnEncoders)
+				out = columnEncoder.apply(in, out);
 		}
 		catch(Exception ex) {
 			LOG.error("Failed to transform-apply frame with \n" + this);
@@ -147,27 +145,27 @@ public class EncoderComposite extends Encoder
 			return true;
 		if(o == null || getClass() != o.getClass())
 			return false;
-		EncoderComposite that = (EncoderComposite) o;
-		return _encoders.equals(that._encoders)
+		ColumnEncoderComposite that = (ColumnEncoderComposite) o;
+		return _columnEncoders.equals(that._columnEncoders)
 			&& Objects.equals(_meta, that._meta);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(_encoders, _meta);
+		return Objects.hash(_columnEncoders, _meta);
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int row) {
-		assert other._colID == _colID;
-		if (other instanceof EncoderComposite) {
-			EncoderComposite otherComposite = (EncoderComposite) other;
+	public void mergeAt(ColumnEncoder other, int row) {
+		if (other instanceof ColumnEncoderComposite) {
+			ColumnEncoderComposite otherComposite = (ColumnEncoderComposite) other;
+			assert otherComposite._colID == _colID;
 			// TODO maybe assert that the _encoders never have the same type of encoder twice or more
-			for (Encoder otherEnc : otherComposite.getEncoders()) {
+			for (ColumnEncoder otherEnc : otherComposite.getEncoders()) {
 				boolean mergedIn = false;
-				for (Encoder encoder : _encoders) {
-					if (encoder.getClass() == otherEnc.getClass()) {
-						encoder.mergeAt(otherEnc, row);
+				for (ColumnEncoder columnEncoder : _columnEncoders) {
+					if (columnEncoder.getClass() == otherEnc.getClass()) {
+						columnEncoder.mergeAt(otherEnc, row);
 						mergedIn = true;
 						break;
 					}
@@ -178,21 +176,21 @@ public class EncoderComposite extends Encoder
 				}
 			}
 			// update dummycode encoder domain sizes based on distinctness information from other encoders
-			for (Encoder encoder : _encoders) {
-				if (encoder instanceof EncoderDummycode) {
-					((EncoderDummycode) encoder).updateDomainSizes(_encoders);
+			for (ColumnEncoder columnEncoder : _columnEncoders) {
+				if (columnEncoder instanceof ColumnEncoderDummycode) {
+					((ColumnEncoderDummycode) columnEncoder).updateDomainSizes(_columnEncoders);
 					return;
 				}
 			}
 			return;
 		}
-		for (Encoder encoder : _encoders) {
-			if (encoder.getClass() == other.getClass()) {
-				encoder.mergeAt(other, row);
+		for (ColumnEncoder columnEncoder : _columnEncoders) {
+			if (columnEncoder.getClass() == other.getClass()) {
+				columnEncoder.mergeAt(other, row);
 				// update dummycode encoder domain sizes based on distinctness information from other encoders
-				for (Encoder encDummy : _encoders) {
-					if (encDummy instanceof EncoderDummycode) {
-						((EncoderDummycode) encDummy).updateDomainSizes(_encoders);
+				for (ColumnEncoder encDummy : _columnEncoders) {
+					if (encDummy instanceof ColumnEncoderDummycode) {
+						((ColumnEncoderDummycode) encDummy).updateDomainSizes(_columnEncoders);
 						return;
 					}
 				}
@@ -204,7 +202,7 @@ public class EncoderComposite extends Encoder
 	
 	@Override
 	public void updateIndexRanges(long[] beginDims, long[] endDims) {
-		for(Encoder enc : _encoders) {
+		for(ColumnEncoder enc : _columnEncoders) {
 			enc.updateIndexRanges(beginDims, endDims);
 		}
 	}
@@ -213,24 +211,24 @@ public class EncoderComposite extends Encoder
 	public FrameBlock getMetaData(FrameBlock out) {
 		if( _meta != null )
 			return _meta;
-		for( Encoder encoder : _encoders )
-			encoder.getMetaData(out);
+		for( ColumnEncoder columnEncoder : _columnEncoders)
+			columnEncoder.getMetaData(out);
 		return out;
 	}
 	
 	@Override
 	public void initMetaData(FrameBlock out) {
-		for( Encoder encoder : _encoders )
-			encoder.initMetaData(out);
+		for( ColumnEncoder columnEncoder : _columnEncoders)
+			columnEncoder.initMetaData(out);
 	}
 	
 	@Override
 	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
 		//determine if dummycode encoder exists
-		EncoderDummycode dummy = null;
-		for( Encoder encoder : _encoders )
-			if( encoder instanceof EncoderDummycode )
-				dummy = (EncoderDummycode) encoder;
+		ColumnEncoderDummycode dummy = null;
+		for( ColumnEncoder columnEncoder : _columnEncoders)
+			if( columnEncoder instanceof ColumnEncoderDummycode)
+				dummy = (ColumnEncoderDummycode) columnEncoder;
 		//computed shifted start positions
 		if( dummy != null ) {
 			//delete to dummycode encoder
@@ -251,12 +249,12 @@ public class EncoderComposite extends Encoder
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("CompositeEncoder("+_encoders.size()+"):\n");
-		for( Encoder encoder : _encoders ) {
+		sb.append("CompositeEncoder("+ _columnEncoders.size()+"):\n");
+		for( ColumnEncoder columnEncoder : _columnEncoders) {
 			sb.append("-- ");
-			sb.append(encoder.getClass().getSimpleName());
+			sb.append(columnEncoder.getClass().getSimpleName());
 			sb.append(": ");
-			sb.append(encoder._colID);
+			sb.append(columnEncoder._colID);
 			sb.append("\n");
 		}
 		return sb.toString();
@@ -264,10 +262,10 @@ public class EncoderComposite extends Encoder
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeInt(_encoders.size());
-		for(Encoder encoder : _encoders) {
-			out.writeByte(EncoderFactory.getEncoderType(encoder));
-			encoder.writeExternal(out);
+		out.writeInt(_columnEncoders.size());
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
+			out.writeByte(EncoderFactory.getEncoderType(columnEncoder));
+			columnEncoder.writeExternal(out);
 		}
 		out.writeBoolean(_meta != null);
 		if(_meta != null)
@@ -277,11 +275,11 @@ public class EncoderComposite extends Encoder
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
 		int encodersSize = in.readInt();
-		_encoders = new ArrayList<>();
+		_columnEncoders = new ArrayList<>();
 		for(int i = 0; i < encodersSize; i++) {
-			Encoder encoder = EncoderFactory.createInstance(in.readByte());
-			encoder.readExternal(in);
-			_encoders.add(encoder);
+			ColumnEncoder columnEncoder = EncoderFactory.createInstance(in.readByte());
+			columnEncoder.readExternal(in);
+			_columnEncoders.add(columnEncoder);
 		}
 		if (in.readBoolean()) {
 			FrameBlock meta = new FrameBlock();

@@ -22,33 +22,22 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
-public class EncoderMVImpute extends Encoder {
+public class ColumnEncoderMVImpute extends ColumnEncoder {
 	private static final long serialVersionUID = 9057868620144662194L;
 
 	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT }
@@ -65,25 +54,36 @@ public class EncoderMVImpute extends Encoder {
 	private HashMap<String,Long> _hist = null;
 
 	public String getReplacements() { return _replacement; }
-	public KahanObject getMeans()   { return _mean; }
+	public KahanObject getMean()   { return _mean; }
 	
-	public EncoderMVImpute() {
+	public ColumnEncoderMVImpute() {
 		super(-1);
 	}
 	
 	
-	public EncoderMVImpute(int colID, MVMethod mvMethod, String replacement, KahanObject mean,
-						   long count, List<Integer> rcList) {
+	public ColumnEncoderMVImpute(int colID, MVMethod mvMethod, String replacement, KahanObject mean,
+								 List<Integer> rcList) {
 		super(colID);
 		_mvMethod = mvMethod;
 		_replacement = replacement;
 		_mean = mean;
-		_count = count;
-		initRecodeIDList(rcList);
+		if(rcList != null)
+			initRecodeIDList(rcList);
 		_hist = new HashMap<>();
 	}
 
-	/*
+	public ColumnEncoderMVImpute(JSONObject colspec, String[] colnames, int minCol, int maxCol,
+								 boolean ids, List<Integer> rcList) throws JSONException {
+		this(-1, null, null, new KahanObject(0,0), null);
+		int id = TfMetaUtils.parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
+		MVMethod method = MVMethod.valueOf(colspec.get("method").toString().toUpperCase());
+		_colID = id;
+		_mvMethod = method;
+		_replacement = method == MVMethod.CONSTANT ? colspec.getString("value") : null;
+		initRecodeIDList(rcList);
+	}
+
+/*
 	private void parseMethodsAndReplacements(JSONObject parsedSpec, String[] colnames, int offset) throws JSONException {
 		JSONArray mvspec = (JSONArray) parsedSpec.get(TfMethod.IMPUTE.toString());
 		boolean ids = parsedSpec.containsKey("ids") && parsedSpec.getBoolean("ids");
@@ -118,21 +118,21 @@ public class EncoderMVImpute extends Encoder {
 		_countList = Arrays.copyOf(_countList, listIx);
 	}
 
-	 */
+ */
 	
-	public MVMethod getMethod(int colID) {
-		if(!isApplicable(colID))
+	public MVMethod getMethod() {
+		if(!isApplicable(_colID))
 			return MVMethod.INVALID;
 		else
 			return _mvMethod;
 	}
 	
-	public long getNonMVCount(int colID) {
-		return isApplicable(colID) ? _count: 0;
+	public long getNonMVCount() {
+		return isApplicable(_colID) ? _count: 0;
 	}
 	
-	public String getReplacement(int colID) {
-		return isApplicable(colID) ? _replacement : null;
+	public String getReplacement() {
+		return isApplicable(_colID) ? _replacement : null;
 	}
 	
 	@Override
@@ -191,12 +191,12 @@ public class EncoderMVImpute extends Encoder {
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int row) {
-		if(!(other instanceof EncoderMVImpute)) {
+	public void mergeAt(ColumnEncoder other, int row) {
+		if(!(other instanceof ColumnEncoderMVImpute)) {
 			super.mergeAt(other, row);
 			return;
 		}
-		EncoderMVImpute otherImpute = (EncoderMVImpute) other;
+		ColumnEncoderMVImpute otherImpute = (ColumnEncoderMVImpute) other;
 		assert otherImpute._colID == _colID;
 		assert otherImpute._mvMethod == _mvMethod;
 

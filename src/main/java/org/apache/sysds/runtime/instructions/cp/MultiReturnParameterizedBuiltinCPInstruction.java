@@ -33,8 +33,9 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 
 public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	protected final ArrayList<CPOperand> _outputs;
@@ -84,7 +85,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		String[] colnames = fin.getColumnNames(); 
 		
 		//execute block transform encode
-		Encoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
+		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
 		MatrixBlock data = encoder.encode(fin, new MatrixBlock(fin.getNumRows(), fin.getNumColumns(), false)); //build and apply
 		FrameBlock meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING));
 		meta.setColumnNames(colnames);

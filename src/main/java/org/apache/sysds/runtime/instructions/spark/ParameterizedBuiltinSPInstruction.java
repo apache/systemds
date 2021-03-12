@@ -69,8 +69,9 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
-import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.transform.meta.TfOffsetMap;
 import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
@@ -481,10 +482,11 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 			
 			//create encoder broadcast (avoiding replication per task) 
-			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), colnames,
+			MultiColumnEncoder encoder = EncoderFactory.createEncoder(params.get("spec"), colnames,
 				fo.getSchema(), (int)fo.getNumColumns(), meta);
-			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
-			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
+			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), fo.getSchema().length +
+					encoder.getNumExtraCols());
+			Broadcast<MultiColumnEncoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap!=null) ? sec.getSparkContext().broadcast(omap) : null;
 			
 			//execute transform apply
@@ -844,10 +846,10 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 	{
 		private static final long serialVersionUID = 5759813006068230916L;
 		
-		private Broadcast<Encoder> _bencoder = null;
+		private Broadcast<MultiColumnEncoder> _bencoder = null;
 		private Broadcast<TfOffsetMap> _omap = null;
 		
-		public RDDTransformApplyFunction(Broadcast<Encoder> bencoder, Broadcast<TfOffsetMap> omap) {
+		public RDDTransformApplyFunction(Broadcast<MultiColumnEncoder> bencoder, Broadcast<TfOffsetMap> omap) {
 			_bencoder = bencoder;
 			_omap = omap;
 		}
@@ -860,7 +862,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			FrameBlock blk = in._2();
 			
 			//execute block transform apply
-			Encoder encoder = _bencoder.getValue();
+			MultiColumnEncoder encoder = _bencoder.getValue();
 			MatrixBlock tmp = encoder.apply(blk, new MatrixBlock(blk.getNumRows(), blk.getNumColumns(), false));
 			
 			//remap keys

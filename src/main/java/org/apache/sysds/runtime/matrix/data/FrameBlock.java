@@ -57,7 +57,7 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -619,7 +619,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	 * @return string array iterator
 	 */
 	public Iterator<String[]> getStringRowIterator(int colID) {
-		return new StringRowIterator(0, _numRows, new int[]{col});
+		return new StringRowIterator(0, _numRows, new int[]{colID});
 	}
 
 	/**
@@ -1248,7 +1248,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-				String[] tmp = EncoderRecode.splitRecodeMapEntry(val.toString());
+				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
 				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}

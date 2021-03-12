@@ -19,12 +19,16 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.sysds.runtime.instructions.cp.KahanObject;
+import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -49,34 +53,36 @@ public class EncoderFactory
 	};
 
 	
-	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
 	}
 	
-	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta, int minCol,
-		int maxCol) {
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta, int minCol,
+											  int maxCol) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta, minCol, maxCol);
 	}
 
-	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen, FrameBlock meta) {
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen, FrameBlock meta) {
 		ValueType[] lschema = (schema==null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
 		return createEncoder(spec, colnames, lschema, meta);
 	}
 	
-	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
 		return createEncoder(spec, colnames, schema, meta, -1, -1);
 	}
 	
-	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int minCol,
-		int maxCol) {
-		Encoder encoder = null;
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int minCol,
+											  int maxCol) {
+		MultiColumnEncoder encoder = null;
 		int clen = schema.length;
 		
 		try {
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
-			List<Encoder> lencoders = new ArrayList<>();
-			
+			List<ColumnEncoder> lencoders = new ArrayList<>();
+			HashMap<Integer, List<ColumnEncoder>> colEncoders = new HashMap<>();
+			boolean ids = jSpec.containsKey("ids") && jSpec.getBoolean("ids");
+
 			//prepare basic id lists (recode, feature hash, dummycode, pass-through)
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
@@ -96,32 +102,53 @@ public class EncoderFactory
 			
 			//create individual encoders
 			if( !rcIDs.isEmpty() ) {
-				EncoderRecode ra = new EncoderRecode(jSpec, colnames, clen, minCol, maxCol);
-				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
-				lencoders.add(ra);
+				for(Integer id: rcIDs){
+					ColumnEncoderRecode ra = new ColumnEncoderRecode(id);
+					addEncoderToMap(ra, colEncoders);
+				}
 			}
 			if( !haIDs.isEmpty() ) {
-				EncoderFeatureHash ha = new EncoderFeatureHash(jSpec, colnames, clen, minCol, maxCol);
-				ha.setColList(ArrayUtils.toPrimitive(haIDs.toArray(new Integer[0])));
-				lencoders.add(ha);
+				for(Integer id: haIDs){
+					ColumnEncoderFeatureHash ha = new ColumnEncoderFeatureHash(id, TfMetaUtils.getK(jSpec));
+					addEncoderToMap(ha, colEncoders);
+				}
 			}
 			if( !ptIDs.isEmpty() )
-				lencoders.add(new EncoderPassThrough(
-						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));
+				for(Integer id: ptIDs){
+					ColumnEncoderPassThrough pt = new ColumnEncoderPassThrough(id);
+					addEncoderToMap(pt, colEncoders);
+				}
 			if( !binIDs.isEmpty() )
-				lencoders.add(new EncoderBin(jSpec, colnames, schema.length, minCol, maxCol));
+				for(Object o: (JSONArray) jSpec.get(TfMethod.BIN.toString())){
+					JSONObject colspec = (JSONObject) o;
+					int numBins = colspec.containsKey("numbins") ? colspec.getInt("numbins") : 1;
+					int id = TfMetaUtils.parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
+					ColumnEncoderBin bin = new ColumnEncoderBin(id, numBins);
+					addEncoderToMap(bin, colEncoders);
+				}
 			if( !dcIDs.isEmpty() )
-				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length, minCol, maxCol));
+				for (Integer id : dcIDs){
+					ColumnEncoderDummycode dc = new ColumnEncoderDummycode(id, schema.length);
+					addEncoderToMap(dc, colEncoders);
+				}
 			if( !oIDs.isEmpty() )
-				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length, minCol, maxCol));
+				for (Integer id : oIDs){
+					ColumnEncoderOmit o = new ColumnEncoderOmit(id, minCol != -1 || maxCol != -1);
+					addEncoderToMap(o, colEncoders);
+				}
 			if( !mvIDs.isEmpty() ) {
-				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length, minCol, maxCol);
-				ma.initRecodeIDList(rcIDs);
-				lencoders.add(ma);
+				for(Object o: (JSONArray) jSpec.get(TfMethod.IMPUTE.toString())){
+					JSONObject colspec = (JSONObject) o;
+					ColumnEncoderMVImpute mv = new ColumnEncoderMVImpute(colspec, colnames, minCol, maxCol, ids, rcIDs);
+					addEncoderToMap(mv, colEncoders);
+				}
 			}
 			
 			//create composite decoder of all created encoders
-			encoder = new EncoderComposite(lencoders);
+			for(Entry<Integer, List<ColumnEncoder>> listEntry: colEncoders.entrySet()){
+				lencoders.add(new ColumnEncoderComposite(listEntry.getValue()));
+			}
+			encoder = new MultiColumnEncoder(lencoders);
 			
 			//initialize meta data w/ robustness for superset of cols
 			if( meta != null ) {
@@ -152,36 +179,44 @@ public class EncoderFactory
 		}
 		return encoder;
 	}
-	
-	public static int getEncoderType(Encoder encoder) {
-		if( encoder instanceof EncoderBin )
-			return EncoderType.Bin.ordinal();
-		else if( encoder instanceof EncoderDummycode )
-			return EncoderType.Dummycode.ordinal();
-		else if( encoder instanceof EncoderFeatureHash )
-			return EncoderType.FeatureHash.ordinal();
-		else if( encoder instanceof EncoderMVImpute )
-			return EncoderType.MVImpute.ordinal();
-		else if( encoder instanceof EncoderOmit )
-			return EncoderType.Omit.ordinal();
-		else if( encoder instanceof EncoderPassThrough )
-			return EncoderType.PassThrough.ordinal();
-		else if( encoder instanceof EncoderRecode )
-			return EncoderType.Recode.ordinal();
-		throw new DMLRuntimeException("Unsupported encoder type: "
-			+ encoder.getClass().getCanonicalName());
+
+
+	private static void addEncoderToMap(ColumnEncoder encoder, HashMap<Integer, List<ColumnEncoder>> map){
+		if(!map.containsKey(encoder._colID)){
+			map.put(encoder._colID, new ArrayList<>());
+		}
+		map.get(encoder._colID).add(encoder);
 	}
 	
-	public static Encoder createInstance(int type) {
+	public static int getEncoderType(ColumnEncoder columnEncoder) {
+		if( columnEncoder instanceof ColumnEncoderBin)
+			return EncoderType.Bin.ordinal();
+		else if( columnEncoder instanceof ColumnEncoderDummycode)
+			return EncoderType.Dummycode.ordinal();
+		else if( columnEncoder instanceof ColumnEncoderFeatureHash)
+			return EncoderType.FeatureHash.ordinal();
+		else if( columnEncoder instanceof ColumnEncoderMVImpute)
+			return EncoderType.MVImpute.ordinal();
+		else if( columnEncoder instanceof ColumnEncoderOmit)
+			return EncoderType.Omit.ordinal();
+		else if( columnEncoder instanceof ColumnEncoderPassThrough)
+			return EncoderType.PassThrough.ordinal();
+		else if( columnEncoder instanceof ColumnEncoderRecode)
+			return EncoderType.Recode.ordinal();
+		throw new DMLRuntimeException("Unsupported encoder type: "
+			+ columnEncoder.getClass().getCanonicalName());
+	}
+	
+	public static ColumnEncoder createInstance(int type) {
 		EncoderType etype = EncoderType.values()[type];
 		switch(etype) {
-			case Bin:         return new EncoderBin();
-			case Dummycode:   return new EncoderDummycode();
-			case FeatureHash: return new EncoderFeatureHash();
-			case MVImpute:    return new EncoderMVImpute();
-			case Omit:        return new EncoderOmit();
-			case PassThrough: return new EncoderPassThrough();
-			case Recode:      return new EncoderRecode();
+			case Bin:         return new ColumnEncoderBin();
+			case Dummycode:   return new ColumnEncoderDummycode();
+			case FeatureHash: return new ColumnEncoderFeatureHash();
+			case MVImpute:    return new ColumnEncoderMVImpute();
+			case Omit:        return new ColumnEncoderOmit();
+			case PassThrough: return new ColumnEncoderPassThrough();
+			case Recode:      return new ColumnEncoderRecode();
 			default:
 				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
 		}

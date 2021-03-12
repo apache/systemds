@@ -22,26 +22,15 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
-import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 
-public class EncoderBin extends Encoder
+public class ColumnEncoderBin extends ColumnEncoder
 {
 	private static final long serialVersionUID = 1917445005206076078L;
 
@@ -60,7 +49,7 @@ public class EncoderBin extends Encoder
 	private double _colMins = -1f;
 	private double _colMaxs = -1f;
 
-	/*
+/*
 	public EncoderBin(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException, IOException
 	{
@@ -86,13 +75,20 @@ public class EncoderBin extends Encoder
 		}
 	}
 
-	 */
+ */
 
-	public EncoderBin() {
+
+
+	public ColumnEncoderBin() {
 		super(-1);
 	}
 
-	private EncoderBin(int colID, int numBin, double[] binMins, double[] binMaxs) {
+	public ColumnEncoderBin(int colID, int numBin) {
+		super(colID);
+		_numBin = numBin;
+	}
+
+	public ColumnEncoderBin(int colID, int numBin, double[] binMins, double[] binMaxs) {
 		super(colID);
 		_numBin = numBin;
 		_binMins = binMins;
@@ -185,9 +181,9 @@ public class EncoderBin extends Encoder
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int row) {
-		if(other instanceof EncoderBin) {
-			EncoderBin otherBin = (EncoderBin) other;
+	public void mergeAt(ColumnEncoder other, int row) {
+		if(other instanceof ColumnEncoderBin) {
+			ColumnEncoderBin otherBin = (ColumnEncoderBin) other;
 			assert other._colID == _colID;
 			// save the min, max as well as the number of bins for the column indexes
 			MutableTriple<Integer, Double, Double> entry = new MutableTriple<>(_numBin, _binMins[0], _binMaxs[_binMaxs.length - 1]);

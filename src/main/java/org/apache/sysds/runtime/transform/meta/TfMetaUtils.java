@@ -147,6 +147,23 @@ public class TfMetaUtils
 		return arr;
 	}
 
+	public static int parseJsonObjectID(JSONObject colspec, String[] colnames, int minCol, int maxCol, boolean ids) throws JSONException {
+		int ix;
+		if(ids) {
+			ix = colspec.getInt("id");
+			if(maxCol != -1 && ix >= maxCol)
+				ix = -1;
+			if(minCol != -1 && ix >= 0)
+				ix -= minCol - 1;
+		}
+		else {
+			ix = ArrayUtils.indexOf(colnames, colspec.get("name")) + 1;
+		}
+		if(ix > 0)
+			return ix;
+		throw new RuntimeException("Specified column '" + colspec.get(ids ? "id" : "name") + "' does not exist.");
+	}
+
 	public static int[] parseJsonObjectIDList(JSONObject spec, String[] colnames, String group, int minCol, int maxCol)
 		throws JSONException {
 		List<Integer> colList = new ArrayList<>();
@@ -157,22 +174,7 @@ public class TfMetaUtils
 			JSONArray colspecs = (JSONArray) spec.get(group);
 			for(Object o : colspecs) {
 				JSONObject colspec = (JSONObject) o;
-				int ix;
-				if(ids) {
-					ix = colspec.getInt("id");
-					if(maxCol != -1 && ix >= maxCol)
-						ix = -1;
-					if(minCol != -1 && ix >= 0)
-						ix -= minCol - 1;
-				}
-				else {
-					ix = ArrayUtils.indexOf(colnames, colspec.get("name")) + 1;
-				}
-				if(ix > 0)
-					colList.add(ix);
-				else if(minCol == -1 && maxCol == -1)
-					throw new RuntimeException(
-						"Specified column '" + colspec.get(ids ? "id" : "name") + "' does not exist.");
+				colList.add(parseJsonObjectID(colspec, colnames, minCol, maxCol, ids));
 			}
 
 			// ensure ascending order of column IDs
@@ -181,6 +183,17 @@ public class TfMetaUtils
 
 		return arr;
 	}
+
+	/**
+	 * Get K value used for calculation during feature hashing from parsed specifications.
+	 * @param parsedSpec parsed specifications
+	 * @return K value
+	 * @throws JSONException
+	 */
+	public static long getK(JSONObject parsedSpec) throws JSONException {
+		return parsedSpec.getLong("K");
+	}
+
 
 	/**
 	 * Reads transform meta data from an HDFS file path and converts it into an in-memory

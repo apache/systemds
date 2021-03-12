@@ -22,12 +22,10 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -35,13 +33,8 @@ import java.util.Objects;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
-import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 
-public class EncoderRecode extends Encoder
+public class ColumnEncoderRecode extends ColumnEncoder
 {
 	private static final long serialVersionUID = 8213163881283341874L;
 
@@ -52,15 +45,15 @@ public class EncoderRecode extends Encoder
 	private HashMap<String, Long> _rcdMap  = new HashMap<>();
 	private HashSet<Object> _rcdMapPart = null;
 
-	private EncoderRecode(int colID) {
+	public ColumnEncoderRecode(int colID) {
 		super(colID);
 	}
 
-	public EncoderRecode() {
+	public ColumnEncoderRecode() {
 		this(-1);
 	}
 
-	private EncoderRecode(int colID, HashMap<String, Long> rcdMap) {
+	private ColumnEncoderRecode(int colID, HashMap<String, Long> rcdMap) {
 		super(colID);
 		_rcdMap = rcdMap;
 	}
@@ -123,7 +116,7 @@ public class EncoderRecode extends Encoder
 	 * @param key key for the new entry
 	 */
 	protected void putCode(HashMap<String,Long> map, String key) {
-		map.put(key, Long.valueOf(map.size()+1));
+		map.put(key, (long) (map.size() + 1));
 	}
 
 	@Override
@@ -161,14 +154,14 @@ public class EncoderRecode extends Encoder
 
 
 	@Override
-	public void mergeAt(Encoder other, int row) {
-		if(!(other instanceof EncoderRecode)) {
+	public void mergeAt(ColumnEncoder other, int row) {
+		if(!(other instanceof ColumnEncoderRecode)) {
 			super.mergeAt(other, row);
 			return;
 		}
 		assert other._colID == _colID;
 		// merge together overlapping columns
-		EncoderRecode otherRec = (EncoderRecode) other;
+		ColumnEncoderRecode otherRec = (ColumnEncoderRecode) other;
 		HashMap<String, Long> otherMap = otherRec._rcdMap;
 		if(otherMap != null) {
 			// for each column, add all non present recode values
@@ -280,7 +273,7 @@ public class EncoderRecode extends Encoder
 			return true;
 		if(o == null || getClass() != o.getClass())
 			return false;
-		EncoderRecode that = (EncoderRecode) o;
+		ColumnEncoderRecode that = (ColumnEncoderRecode) o;
 		return Objects.equals(_rcdMap, that._rcdMap);
 	}
 

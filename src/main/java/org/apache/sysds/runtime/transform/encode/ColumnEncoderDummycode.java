@@ -22,22 +22,14 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
-import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 
-public class EncoderDummycode extends Encoder 
+public class ColumnEncoderDummycode extends ColumnEncoder
 {
 	private static final long serialVersionUID = 5832130477659116489L;
 
@@ -58,11 +50,16 @@ public class EncoderDummycode extends Encoder
 	}
 
 	 */
-	public EncoderDummycode() {
+	public ColumnEncoderDummycode() {
 		super(-1);
 	}
-	
-	public EncoderDummycode(int colID, int domainSize, long dummycodedLength, long clen) {
+
+	public ColumnEncoderDummycode(int colID, long clen) {
+		super(colID);
+		_clen = clen;
+	}
+
+	public ColumnEncoderDummycode(int colID, int domainSize, long dummycodedLength, long clen) {
 		super(colID);
 		_domainSize = domainSize;
 		_dummycodedLength = dummycodedLength;
@@ -114,8 +111,8 @@ public class EncoderDummycode extends Encoder
 
 
 	@Override
-	public void mergeAt(Encoder other, int row) {
-		if(other instanceof EncoderDummycode) {
+	public void mergeAt(ColumnEncoder other, int row) {
+		if(other instanceof ColumnEncoderDummycode) {
 			assert other._colID == _colID;
 			// temporary, will be updated later
 			_domainSize = 0;
@@ -141,18 +138,18 @@ public class EncoderDummycode extends Encoder
 		}
 	}
 	
-	public void updateDomainSizes(List<Encoder> encoders) {
+	public void updateDomainSizes(List<ColumnEncoder> columnEncoders) {
 		if(_colID == -1)
 			return;
 		_dummycodedLength = _clen;
-		for (Encoder encoder : encoders) {
+		for (ColumnEncoder columnEncoder : columnEncoders) {
 			int distinct = -1;
-			if (encoder instanceof EncoderRecode) {
-				EncoderRecode encoderRecode = (EncoderRecode) encoder;
-				distinct = encoderRecode.numDistinctValues();
+			if (columnEncoder instanceof ColumnEncoderRecode) {
+				ColumnEncoderRecode columnEncoderRecode = (ColumnEncoderRecode) columnEncoder;
+				distinct = columnEncoderRecode.numDistinctValues();
 			}
-			else if (encoder instanceof EncoderBin) {
-				distinct = ((EncoderBin) encoder)._numBin;
+			else if (columnEncoder instanceof ColumnEncoderBin) {
+				distinct = ((ColumnEncoderBin) columnEncoder)._numBin;
 			}
 			
 			if (distinct != -1) {
@@ -178,6 +175,7 @@ public class EncoderDummycode extends Encoder
 	
 	@Override
 	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
+		// TODO Optimisation across dummycoders!!! -> only one mapping
 		final int clen = out.getNumRows();
 		for(int colID=1, idx=0, ncolID=1; colID <= clen; colID++) {
 			int start = ncolID;
@@ -216,7 +214,7 @@ public class EncoderDummycode extends Encoder
 			return true;
 		if(o == null || getClass() != o.getClass())
 			return false;
-		EncoderDummycode that = (EncoderDummycode) o;
+		ColumnEncoderDummycode that = (ColumnEncoderDummycode) o;
 		return _dummycodedLength == that._dummycodedLength
 			&& (_domainSize == that._domainSize);
 	}

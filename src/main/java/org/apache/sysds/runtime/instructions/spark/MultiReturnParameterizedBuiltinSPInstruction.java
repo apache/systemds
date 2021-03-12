@@ -51,25 +51,18 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.transform.TfUtils;
-import org.apache.sysds.runtime.transform.encode.Encoder;
-import org.apache.sysds.runtime.transform.encode.EncoderBin;
-import org.apache.sysds.runtime.transform.encode.EncoderComposite;
-import org.apache.sysds.runtime.transform.encode.EncoderFactory;
-import org.apache.sysds.runtime.transform.encode.EncoderMVImpute;
-import org.apache.sysds.runtime.transform.encode.EncoderMVImpute.MVMethod;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.transform.encode.*;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderMVImpute.MVMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.transform.meta.TfOffsetMap;
 
 import scala.Tuple2;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
 	protected ArrayList<CPOperand> _outputs;
@@ -118,7 +111,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				in.lookup(1L).get(0).getColumnNames() : null; 
 			
 			//step 1: build transform meta data
-			EncoderComposite encoderBuild = (EncoderComposite) EncoderFactory
+			MultiColumnEncoder encoderBuild = (MultiColumnEncoder) EncoderFactory
 				.createEncoder(spec, colnames, fo.getSchema(), (int)fo.getNumColumns(), null);
 			
 			MaxLongAccumulator accMax = registerMaxLongAccumulator(sec.getSparkContext());
@@ -127,7 +120,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				.distinct().groupByKey()
 				.flatMap(new TransformEncodeGroupFunction(encoderBuild, accMax));
 			if( containsMVImputeEncoder(encoderBuild) ) {
-				EncoderMVImpute mva = getMVImputeEncoder(encoderBuild);
+				MultiColumnEncoder mva = new MultiColumnEncoder(encoderBuild.getColumnEncoders(ColumnEncoderMVImpute.class));
 				rcMaps = rcMaps.union(
 					in.mapPartitionsToPair(new TransformEncodeBuild2Function(mva))
 					  .groupByKey().flatMap(new TransformEncodeGroup2Function(mva)) );
@@ -150,10 +143,11 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			}
 			
 			//create encoder broadcast (avoiding replication per task) 
-			Encoder encoder = EncoderFactory.createEncoder(spec, colnames,
+			MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames,
 				fo.getSchema(), (int)fo.getNumColumns(), meta);
-			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
-			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
+			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), fo.getSchema().length +
+					encoder.getNumExtraCols());
+			Broadcast<MultiColumnEncoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap!=null) ? sec.getSparkContext().broadcast(omap) : null;
 			
 			//execute transform apply
@@ -174,18 +168,21 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	}
 
 	private static boolean containsMVImputeEncoder(Encoder encoder) {
-		if( encoder instanceof EncoderComposite )
-			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
-				if( cencoder instanceof EncoderMVImpute )
+		if( encoder instanceof ColumnEncoderComposite){
+			for( ColumnEncoder cencoder : ((ColumnEncoderComposite) encoder).getEncoders() )
+				if( cencoder instanceof ColumnEncoderMVImpute)
 					return true;
+		}else if (encoder instanceof MultiColumnEncoder){
+			return !((MultiColumnEncoder) encoder).getColumnEncoders(ColumnEncoderMVImpute.class).isEmpty();
+		}
 		return false;
 	}
 
-	private static EncoderMVImpute getMVImputeEncoder(Encoder encoder) {
-		if( encoder instanceof EncoderComposite )
-			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
-				if( cencoder instanceof EncoderMVImpute )
-					return (EncoderMVImpute) cencoder;
+	private static ColumnEncoderMVImpute getMVImputeEncoder(ColumnEncoder columnEncoder) {
+		if( columnEncoder instanceof ColumnEncoderComposite)
+			for( ColumnEncoder cencoder : ((ColumnEncoderComposite) columnEncoder).getEncoders() )
+				if( cencoder instanceof ColumnEncoderMVImpute)
+					return (ColumnEncoderMVImpute) cencoder;
 		return null;
 	}
 	
@@ -248,9 +245,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = 6336375833412029279L;
 
-		private EncoderComposite _encoder = null;
+		private MultiColumnEncoder _encoder = null;
 		
-		public TransformEncodeBuildFunction(EncoderComposite encoder) {
+		public TransformEncodeBuildFunction(MultiColumnEncoder encoder) {
 			_encoder = encoder;
 		}
 		
@@ -264,25 +261,27 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				_encoder.buildPartial(iter.next()._2());
 			
 			//encoder-specific outputs
-			EncoderRecode raEncoder = (EncoderRecode)_encoder.getEncoder(EncoderRecode.class);
-			EncoderBin baEncoder = (EncoderBin)_encoder.getEncoder(EncoderBin.class);
+			List<ColumnEncoderRecode> raEncoders = _encoder.getColumnEncoders(ColumnEncoderRecode.class);
+			List<ColumnEncoderBin> baEncoders = _encoder.getColumnEncoders(ColumnEncoderBin.class);
 			ArrayList<Tuple2<Integer,Object>> ret = new ArrayList<>();
-			
+
 			//output recode maps as columnID - token pairs
-			if( raEncoder != null ) {
-				HashMap<Integer,HashSet<Object>> tmp = raEncoder.getCPRecodeMapsPartial();
+			if( !raEncoders.isEmpty() ) {
+				// TODO check in debbuger if correct
+				Map<Integer,HashSet<Object>> tmp = raEncoders.stream().collect(Collectors.toMap(ColumnEncoder::getColID,
+						ColumnEncoderRecode::getCPRecodeMapsPartial));
 				for( Entry<Integer,HashSet<Object>> e1 : tmp.entrySet() )
 					for( Object token : e1.getValue() )
 						ret.add(new Tuple2<>(e1.getKey(), token));
-				if( raEncoder != null )
-					raEncoder.getCPRecodeMapsPartial().clear();
+				if(!raEncoders.isEmpty())
+					raEncoders.forEach(columnEncoderRecode -> columnEncoderRecode.getCPRecodeMapsPartial().clear());
 			}
 			
 			//output binning column min/max as columnID - min/max pairs
-			if( baEncoder != null ) {
-				int[] colIDs = baEncoder.getColList();
-				double[] colMins = baEncoder.getColMins();
-				double[] colMaxs = baEncoder.getColMaxs();
+			if( !baEncoders.isEmpty() ) {
+				int[] colIDs = _encoder.getFromAllIntArray(ColumnEncoderBin.class, ColumnEncoder::getColID);
+				double[] colMins = _encoder.getFromAllDoubleArray(ColumnEncoderBin.class, ColumnEncoderBin::getColMins);
+				double[] colMaxs = _encoder.getFromAllDoubleArray(ColumnEncoderBin.class, ColumnEncoderBin::getColMaxs);
 				for(int j=0; j<colIDs.length; j++) {
 					ret.add(new Tuple2<>(colIDs[j], String.valueOf(colMins[j])));
 					ret.add(new Tuple2<>(colIDs[j], String.valueOf(colMaxs[j])));
@@ -305,10 +304,10 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = -1034187226023517119L;
 
-		private final EncoderComposite _encoder;
+		private final MultiColumnEncoder _encoder;
 		private final MaxLongAccumulator _accMax;
 		
-		public TransformEncodeGroupFunction(EncoderComposite encoder, MaxLongAccumulator accMax) {
+		public TransformEncodeGroupFunction(MultiColumnEncoder encoder, MaxLongAccumulator accMax) {
 			_encoder = encoder;
 			_accMax = accMax;
 		}
@@ -326,19 +325,18 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			StringBuilder sb = new StringBuilder();
 			
 			//handle recode maps
-			if( _encoder.isEncoder(colID, EncoderRecode.class) ) {
+			if( _encoder.containsEncoderForID(colID, ColumnEncoderRecode.class) ) {
 				while( iter.hasNext() ) {
 					String token = TfUtils.sanitizeSpaces(iter.next().toString());
 					sb.append(rowID).append(' ').append(scolID).append(' ');
-					sb.append(EncoderRecode.constructRecodeMapEntry(token, rowID));
+					sb.append(ColumnEncoderRecode.constructRecodeMapEntry(token, rowID));
 					ret.add(sb.toString());
 					sb.setLength(0); 
 					rowID++;
 				}
 			}
 			//handle bin boundaries
-			else if( _encoder.isEncoder(colID, EncoderBin.class) ) {
-				EncoderBin baEncoder = (EncoderBin)_encoder.getEncoder(EncoderBin.class);
+			else if( _encoder.containsEncoderForID(colID, ColumnEncoderBin.class) ) {
 				double min = Double.MAX_VALUE;
 				double max = -Double.MAX_VALUE;
 				while( iter.hasNext() ) {
@@ -346,10 +344,12 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					min = Math.min(min, value);
 					max = Math.max(max, value);
 				}
-				int j = Arrays.binarySearch(baEncoder.getColList(), colID);
-				baEncoder.computeBins(j, min, max);
-				double[] binMins = baEncoder.getBinMins(j);
-				double[] binMaxs = baEncoder.getBinMaxs(j);
+				int j = Arrays.binarySearch(_encoder.getFromAllIntArray(ColumnEncoderBin.class, ColumnEncoder::getColID), colID);
+				ColumnEncoderBin baEncoder = _encoder.getColumnEncoder(j, ColumnEncoderBin.class);
+				assert baEncoder != null;
+				baEncoder.computeBins(min, max);
+				double[] binMins = baEncoder.getBinMins();
+				double[] binMaxs = baEncoder.getBinMaxs();
 				for(int i=0; i<binMins.length; i++) {
 					sb.append(rowID).append(' ').append(scolID).append(' ');
 					sb.append(binMins[i]).append(Lop.DATATYPE_PREFIX).append(binMaxs[i]);
@@ -371,9 +371,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = 6336375833412029279L;
 
-		private EncoderMVImpute _encoder = null;
+		private MultiColumnEncoder _encoder = null;
 		
-		public TransformEncodeBuild2Function(EncoderMVImpute encoder) {
+		public TransformEncodeBuild2Function(MultiColumnEncoder encoder) {
 			_encoder = encoder;
 		}
 		
@@ -389,21 +389,21 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			
 			//extract meta data
 			ArrayList<Tuple2<Integer,ColumnMetadata>> ret = new ArrayList<>();
-			int[] collist = _encoder.getColList();
-			for( int j=0; j<collist.length; j++ ) {
-				if( _encoder.getMethod(collist[j]) == MVMethod.GLOBAL_MODE ) {
-					HashMap<String,Long> hist = _encoder.getHistogram(collist[j]);
+			List<ColumnEncoderMVImpute> encoders = _encoder.getColumnEncoders(ColumnEncoderMVImpute.class);
+			for(ColumnEncoderMVImpute encoder: encoders) {
+				if( encoder.getMethod() == MVMethod.GLOBAL_MODE ) {
+					HashMap<String,Long> hist = encoder.getHistogram();
 					for( Entry<String,Long> e : hist.entrySet() )
-						ret.add(new Tuple2<>(collist[j], 
+						ret.add(new Tuple2<>(encoder.getColID(),
 								new ColumnMetadata(e.getValue(), e.getKey())));
 				}
-				else if( _encoder.getMethod(collist[j]) == MVMethod.GLOBAL_MEAN ) {
-					ret.add(new Tuple2<>(collist[j], 
-							new ColumnMetadata(_encoder.getNonMVCount(collist[j]), String.valueOf(_encoder.getMeans()[j]._sum))));
+				else if( encoder.getMethod() == MVMethod.GLOBAL_MEAN ) {
+					ret.add(new Tuple2<>(encoder.getColID(),
+							new ColumnMetadata(encoder.getNonMVCount(), String.valueOf(encoder.getMean()._sum))));
 				}
-				else if( _encoder.getMethod(collist[j]) == MVMethod.CONSTANT ) {
-					ret.add(new Tuple2<>(collist[j],
-							new ColumnMetadata(0, _encoder.getReplacement(collist[j]))));
+				else if( encoder.getMethod() == MVMethod.CONSTANT ) {
+					ret.add(new Tuple2<>(encoder.getColID(),
+							new ColumnMetadata(0, encoder.getReplacement())));
 				}
 			}
 			
@@ -415,9 +415,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = 702100641492347459L;
 		
-		private EncoderMVImpute _encoder = null;
+		private MultiColumnEncoder _encoder = null;
 		
-		public TransformEncodeGroup2Function(EncoderMVImpute encoder) {	
+		public TransformEncodeGroup2Function(MultiColumnEncoder encoder) {
 			_encoder = encoder;
 		}
 
@@ -428,9 +428,10 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			int colix = arg0._1();
 			Iterator<ColumnMetadata> iter = arg0._2().iterator();
 			ArrayList<String> ret = new ArrayList<>();
-			
+
+			ColumnEncoderMVImpute encoder = _encoder.getColumnEncoder(colix, ColumnEncoderMVImpute.class);
 			//compute global mode of categorical feature, i.e., value with highest frequency
-			if( _encoder.getMethod(colix) == MVMethod.GLOBAL_MODE ) {
+			if( encoder.getMethod() == MVMethod.GLOBAL_MODE ) {
 				HashMap<String, Long> hist = new HashMap<>();
 				while( iter.hasNext() ) {
 					ColumnMetadata cmeta = iter.next(); 
@@ -446,7 +447,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				ret.add("-2 " + colix + " " + TfUtils.sanitizeSpaces(mode));
 			}
 			//compute global mean of categorical feature
-			else if( _encoder.getMethod(colix) == MVMethod.GLOBAL_MEAN ) {
+			else if( encoder.getMethod() == MVMethod.GLOBAL_MEAN ) {
 				KahanObject kbuff = new KahanObject(0, 0);
 				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 				int count = 0;
@@ -459,7 +460,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					ret.add("-2 " + colix + " " + String.valueOf(kbuff._sum/count));
 			}
 			//pass-through constant label
-			else if( _encoder.getMethod(colix) == MVMethod.CONSTANT ) {
+			else if( encoder.getMethod() == MVMethod.CONSTANT ) {
 				if( iter.hasNext() )
 					ret.add("-2 " + colix + " " + TfUtils.sanitizeSpaces(iter.next().getMvValue()));
 			}

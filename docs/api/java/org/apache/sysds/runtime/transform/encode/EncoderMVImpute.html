@@ -100,10 +100,10 @@ var activeTableTab = "activeTableTab";
 <li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.Encoder</a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoder</a></li>
 <li>
 <ul class="inheritance">
-<li>org.apache.sysds.runtime.transform.encode.EncoderMVImpute</li>
+<li>org.apache.sysds.runtime.transform.encode.ColumnEncoderMVImpute</li>
 </ul>
 </li>
 </ul>
@@ -262,7 +262,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
        int&nbsp;row,
        int&nbsp;col)</code>
-<div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
+<div class="block">Merges another columnEncoder, of a compatible type, in after a certain position.</div>
 </td>
 </tr>
 <tr id="i13" class="rowColor">
@@ -425,7 +425,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <pre>public&nbsp;void&nbsp;build(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#build-org.apache.sysds.runtime.matrix.data.FrameBlock-">Encoder</a></code></span></div>
 <div class="block">Build the transform meta data for the given block input. This call modifies
- and keeps meta data as encoder state.</div>
+ and keeps meta data as columnEncoder state.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#build-org.apache.sysds.runtime.matrix.data.FrameBlock-">build</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
@@ -471,7 +471,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ixRange</code> - the range (1-based, begin inclusive, end exclusive)</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>an encoder of the same type, just for the sub-range</dd>
+<dd>an columnEncoder of the same type, just for the sub-range</dd>
 </dl>
 </li>
 </ul>
@@ -485,14 +485,14 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
                     int&nbsp;row,
                     int&nbsp;col)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">Encoder</a></code></span></div>
-<div class="block">Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
+<div class="block">Merges another columnEncoder, of a compatible type, in after a certain position. Resizes as necessary.
  <code>Encoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with every
  other <code>Encoder</code>.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>other</code> - the encoder that should be merged in</dd>
+<dd><code>other</code> - the columnEncoder that should be merged in</dd>
 <dd><code>row</code> - the row where it should be placed (1-based)</dd>
 <dd><code>col</code> - the col where it should be placed (1-based)</dd>
 </dl>

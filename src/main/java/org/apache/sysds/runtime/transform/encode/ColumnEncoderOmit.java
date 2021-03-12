@@ -28,15 +28,8 @@ import java.util.Objects;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.TfUtils;
-import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
-import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 
-public class EncoderOmit extends Encoder 
+public class ColumnEncoderOmit extends ColumnEncoder
 {	
 	private static final long serialVersionUID = 1978852120416654195L;
 
@@ -44,21 +37,21 @@ public class EncoderOmit extends Encoder
 	private boolean[] _rmRows = new boolean[0];
 
 	
-	public EncoderOmit() {
+	public ColumnEncoderOmit() {
 		super(-1);
 	}
 	
-	public EncoderOmit(boolean federated) {
+	public ColumnEncoderOmit(boolean federated) {
 		this();
 		_federated = federated;
 	}
 
-	public EncoderOmit(int colID, boolean federated) {
+	public ColumnEncoderOmit(int colID, boolean federated) {
 		super(colID);
 		_federated = federated;
 	}
 	
-	private EncoderOmit(int colID, boolean federated, boolean[] rmRows) {
+	private ColumnEncoderOmit(int colID, boolean federated, boolean[] rmRows) {
 		this(colID, federated);
 		_rmRows = rmRows;
 	}
@@ -131,13 +124,13 @@ public class EncoderOmit extends Encoder
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int row) {
-		if(!(other instanceof EncoderOmit)) {
+	public void mergeAt(ColumnEncoder other, int row) {
+		if(!(other instanceof ColumnEncoderOmit)) {
 			super.mergeAt(other, row);
 			return;
 		}
 		assert other._colID == _colID;
-		EncoderOmit otherOmit = (EncoderOmit) other;
+		ColumnEncoderOmit otherOmit = (ColumnEncoderOmit) other;
 		_rmRows = Arrays.copyOf(_rmRows, Math.max(_rmRows.length, (row - 1) + otherOmit._rmRows.length));
 		for (int i = 0; i < otherOmit._rmRows.length; i++)
 			_rmRows[(row - 1) + 1] |= otherOmit._rmRows[i];
@@ -195,7 +188,7 @@ public class EncoderOmit extends Encoder
 			return true;
 		if(o == null || getClass() != o.getClass())
 			return false;
-		EncoderOmit that = (EncoderOmit) o;
+		ColumnEncoderOmit that = (ColumnEncoderOmit) o;
 		return _federated == that._federated && Arrays.equals(_rmRows, that._rmRows);
 	}
 

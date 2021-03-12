@@ -25,9 +25,6 @@ import java.io.ObjectOutput;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
-import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
@@ -35,7 +32,7 @@ import org.apache.wink.json4j.JSONObject;
 /**
  * Class used for feature hashing transformation of frames. 
  */
-public class EncoderFeatureHash extends Encoder
+public class ColumnEncoderFeatureHash extends ColumnEncoder
 {
 	private static final long serialVersionUID = 7435806042138687342L;
 	private long _K;
@@ -49,25 +46,16 @@ public class EncoderFeatureHash extends Encoder
 	}
 
 	 */
-	public EncoderFeatureHash(int colID, long K) {
+	public ColumnEncoderFeatureHash(int colID, long K) {
 		super(colID);
 		_K = K;
 	}
 	
-	public EncoderFeatureHash() {
+	public ColumnEncoderFeatureHash() {
 		super(-1);
 		_K = 0;
 	}
-	
-	/**
-	 * Get K value used for calculation during feature hashing from parsed specifications.
-	 * @param parsedSpec parsed specifications
-	 * @return K value
-	 * @throws JSONException
-	 */
-	private static long getK(JSONObject parsedSpec) throws JSONException {
-		return parsedSpec.getLong("K");
-	}
+
 	
 	private long getCode(String key) {
 		return key.hashCode() % _K;
@@ -104,11 +92,11 @@ public class EncoderFeatureHash extends Encoder
 
 	
 	@Override
-	public void mergeAt(Encoder other, int row) {
-		if(other instanceof EncoderFeatureHash) {
+	public void mergeAt(ColumnEncoder other, int row) {
+		if(other instanceof ColumnEncoderFeatureHash) {
 			assert other._colID == _colID;
-			if (((EncoderFeatureHash) other)._K != 0 && _K == 0)
-				_K = ((EncoderFeatureHash) other)._K;
+			if (((ColumnEncoderFeatureHash) other)._K != 0 && _K == 0)
+				_K = ((ColumnEncoderFeatureHash) other)._K;
 			return;
 		}
 		super.mergeAt(other, row);

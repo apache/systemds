@@ -19,13 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -34,15 +30,15 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * it can be used as a drop-in replacement for any other encoder. 
  * 
  */
-public class EncoderPassThrough extends Encoder
+public class ColumnEncoderPassThrough extends ColumnEncoder
 {
 	private static final long serialVersionUID = -8473768154646831882L;
 	
-	protected EncoderPassThrough(int ptCols) {
+	protected ColumnEncoderPassThrough(int ptCols) {
 		super(ptCols); //1-based
 	}
 	
-	public EncoderPassThrough() {
+	public ColumnEncoderPassThrough() {
 		this(-1);
 	}
 
@@ -70,8 +66,8 @@ public class EncoderPassThrough extends Encoder
 
 
 	@Override
-	public void mergeAt(Encoder other, int row) {
-		if(other instanceof EncoderPassThrough) {
+	public void mergeAt(ColumnEncoder other, int row) {
+		if(other instanceof ColumnEncoderPassThrough) {
 			return;
 		}
 		super.mergeAt(other, row);

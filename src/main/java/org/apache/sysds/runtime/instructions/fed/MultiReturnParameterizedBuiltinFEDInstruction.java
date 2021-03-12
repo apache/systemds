@@ -51,16 +51,8 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.transform.encode.Encoder;
-import org.apache.sysds.runtime.transform.encode.EncoderBin;
-import org.apache.sysds.runtime.transform.encode.EncoderComposite;
-import org.apache.sysds.runtime.transform.encode.EncoderDummycode;
-import org.apache.sysds.runtime.transform.encode.EncoderFactory;
-import org.apache.sysds.runtime.transform.encode.EncoderFeatureHash;
-import org.apache.sysds.runtime.transform.encode.EncoderMVImpute;
-import org.apache.sysds.runtime.transform.encode.EncoderOmit;
-import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.transform.encode.*;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
@@ -105,15 +97,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		Arrays.fill(colNames, "");
 
 		// the encoder in which the complete encoding information will be aggregated
-		EncoderComposite globalEncoder = new EncoderComposite(
-			// IMPORTANT: Encoder order matters
-			Arrays.asList(new EncoderRecode(),
-				new EncoderFeatureHash(),
-				new EncoderPassThrough(),
-				new EncoderBin(),
-				new EncoderDummycode(),
-				new EncoderOmit(true),
-				new EncoderMVImpute()));
+		MultiColumnEncoder globalEncoder = new MultiColumnEncoder(new ArrayList<>());
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
 		FederationMap fedMapping = fin.getFedMapping();
@@ -128,10 +112,10 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// collect responses with encoders
 			try {
 				FederatedResponse response = responseFuture.get();
-				Encoder encoder = (Encoder) response.getData()[0];
+				MultiColumnEncoder encoder = (MultiColumnEncoder) response.getData()[0];
 				// merge this encoder into a composite encoder
 				synchronized(globalEncoder) {
-					globalEncoder.mergeAt(encoder, (int) (range.getBeginDims()[0] + 1), columnOffset);
+					globalEncoder.mergeAt(encoder, (int) (range.getBeginDims()[0] + 1));
 				}
 				// no synchronization necessary since names should anyway match
 				String[] subRangeColNames = (String[]) response.getData()[1];
@@ -144,10 +128,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		});
 		
 		//sort for consistent encoding in local and federated
-		if( EncoderRecode.SORT_RECODE_MAP ) {
-			for(Encoder encoder : globalEncoder.getEncoders())
-				if( encoder instanceof EncoderRecode )
-					((EncoderRecode)encoder).sortCPRecodeMaps();
+		if( ColumnEncoderRecode.SORT_RECODE_MAP ) {
+			globalEncoder.applyToAll(ColumnEncoderRecode.class, ColumnEncoderRecode::sortCPRecodeMaps);
 		}
 		
 		FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
@@ -161,7 +143,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		ec.setFrameOutput(getOutput(1).getName(), meta);
 	}
 	
-	public static void encodeFederatedFrames(FederationMap fedMapping, Encoder globalEncoder,
+	public static void encodeFederatedFrames(FederationMap fedMapping, MultiColumnEncoder globalencoder,
 		MatrixObject transformedMat) {
 		long varID = FederationUtils.getNextFedDataID();
 		FederationMap transformedFedMapping = fedMapping.mapParallel(varID, (range, data) -> {
@@ -171,14 +153,14 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);// make 1-based
 
 			// update begin end dims (column part) considering columns added by dummycoding
-			globalEncoder.updateIndexRanges(beginDims, endDims);
+			globalencoder.updateIndexRanges(beginDims, endDims);
 
 			// get the encoder segment that is relevant for this federated worker
-			Encoder encoder = globalEncoder.subRangeEncoder(ixRange);
+			MultiColumnEncoder columnEncoder = globalencoder.subRangeEncoder(ixRange);
 
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,
-					-1, new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
+					-1, new ExecuteFrameEncoder(data.getVarID(), varID, columnEncoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}
@@ -212,7 +194,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			String[] colNames = fb.getColumnNames();
 
 			// create the encoder
-			Encoder encoder = EncoderFactory.createEncoder(_spec, colNames,
+			MultiColumnEncoder encoder = EncoderFactory.createEncoder(_spec, colNames,
 				fb.getNumColumns(), null, _offset, _offset + fb.getNumColumns());
 			
 			// build necessary structures for encoding
@@ -232,9 +214,9 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 	public static class ExecuteFrameEncoder extends FederatedUDF {
 		private static final long serialVersionUID = 6034440964680578276L;
 		private final long _outputID;
-		private final Encoder _encoder;
+		private final MultiColumnEncoder _encoder;
 		
-		public ExecuteFrameEncoder(long input, long output, Encoder encoder) {
+		public ExecuteFrameEncoder(long input, long output, MultiColumnEncoder encoder) {
 			super(new long[] {input});
 			_outputID = output;
 			_encoder = encoder;

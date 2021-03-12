@@ -36,7 +36,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ReaderTextLIBSVM extends MatrixReader 
 {
@@ -174,7 +173,7 @@ public class ReaderTextLIBSVM extends MatrixReader
 		for( int i=1; i<parts.length; i++ ) {
 			//parse non-zero: <index#>:<value#>
 			String[] pair = parts[i].split(IOUtilFunctions.LIBSVM_INDEX_DELIM);
-			vect.append(Integer.parseInt(pair[0])-1, UtilFunctions.parseToDouble(pair[1],UtilFunctions.defaultNaString));
+			vect.append(Integer.parseInt(pair[0])-1, Double.parseDouble(pair[1]));
 		}
 		vect.append(clen-1, label);
 		return vect.size();

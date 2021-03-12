@@ -355,8 +355,8 @@ public class TfMetaUtils
 			if( map == null )
 				throw new IOException("Binning map for column '"+name+"' (id="+colID+") not existing.");
 			String[] fields = map.split(TfUtils.TXMTD_SEP);
-			double min = UtilFunctions.parseToDouble(fields[1], UtilFunctions.defaultNaString);
-			double binwidth = UtilFunctions.parseToDouble(fields[3], UtilFunctions.defaultNaString);
+			double min = Double.parseDouble(fields[1]);
+			double binwidth = Double.parseDouble(fields[3]);
 			int nbins = UtilFunctions.parseToInt(fields[4]);
 			//materialize bins to support equi-width/equi-height
 			for( int i=0; i<nbins; i++ ) { 

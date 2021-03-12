@@ -25,7 +25,6 @@ import java.util.HashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class FileFormatPropertiesCSV extends FileFormatProperties implements Serializable
 {
@@ -36,7 +35,7 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 	private String delim;
 	private boolean fill;
 	private double fillValue;
-	private HashSet<String> naStrings;
+	private HashSet<String> naStrings; // default null
 	
 	private boolean sparse;
 	
@@ -47,7 +46,7 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		this.fill = DataExpression.DEFAULT_DELIM_FILL;
 		this.fillValue = DataExpression.DEFAULT_DELIM_FILL_VALUE;
 		this.sparse = DataExpression.DEFAULT_DELIM_SPARSE;
-		this.naStrings = UtilFunctions.defaultNaString;
+
 		if(LOG.isDebugEnabled())
 			LOG.debug("FileFormatPropertiesCSV: " + this.toString());
 		
@@ -60,9 +59,12 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		this.fill = fill;
 		this.fillValue = fillValue;
 
-		this.naStrings = new HashSet<>();
-		for(String s: naStrings.split(DataExpression.DELIM_NA_STRING_SEP)){
-			this.naStrings.add(s);
+		String[] naS = naStrings.split(DataExpression.DELIM_NA_STRING_SEP);
+		
+		if(naS.length > 0  && !(naS.length ==1 && naS[0].isEmpty())){
+			this.naStrings = new HashSet<>();
+			for(String s: naS)
+				this.naStrings.add(s);
 		}
 		if(LOG.isDebugEnabled())
 			LOG.debug("FileFormatPropertiesCSV full settings: " + this.toString());
@@ -73,7 +75,6 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		this.header = hasHeader;
 		this.delim = delim;
 		this.sparse = sparse;
-		this.naStrings = UtilFunctions.defaultNaString;
 		if(LOG.isDebugEnabled()){
 			LOG.debug("FileFormatPropertiesCSV medium settings: " + this.toString());
 		}

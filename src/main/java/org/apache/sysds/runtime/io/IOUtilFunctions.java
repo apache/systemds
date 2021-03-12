@@ -180,6 +180,7 @@ public class IOUtilFunctions
 	{
 		//split by whole separator required for multi-character delimiters, preserve
 		//all tokens required for empty cells and in order to keep cell alignment
+	
 		return StringUtils.splitByWholeSeparatorPreserveAllTokens(str, delim);
 	}
 	
@@ -281,7 +282,7 @@ public class IOUtilFunctions
 			// slice out token and advance position
 			to = (to >= 0) ? to : len;
 			curString = str.substring(from, to);
-			tokens[pos++] = (naStrings.contains(curString)) ? null: curString;
+			tokens[pos++] = naStrings!= null ? ((naStrings.contains(curString)) ? null: curString): curString;
 			from = to + delim.length();
 		}
 		

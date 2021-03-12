@@ -58,12 +58,6 @@ public class UtilFunctions {
 	//because it determines the max hash domain size
 	public static final long ADD_PRIME1 = 99991;
 	public static final int DIVIDE_PRIME = 1405695061; 
-	
-	public static final HashSet<String> defaultNaString = new HashSet<>();
-
-	static{
-		defaultNaString.add("NA");
-	}
 
 	public static int intHashCode(int key1, int key2) {
 		return 31 * (31 + key1) + key2;
@@ -366,7 +360,7 @@ public class UtilFunctions {
 	 * @return double value
 	 */
 	public static double parseToDouble(String str, Set<String> isNan ) {
-		return isNan.contains(str) ?
+		return isNan != null && isNan.contains(str) ?
 			Double.NaN :
 			Double.parseDouble(str);
 	}

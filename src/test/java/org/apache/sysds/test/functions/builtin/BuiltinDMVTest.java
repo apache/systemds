@@ -124,12 +124,10 @@ public class BuiltinDMVTest extends AutomatedTestBase {
 			for(int i = 0; i < positions.size(); i++) {
 				String[] output = (String[]) outputFrame.getColumnData(i);
 				for(int j = 0; j < positions.get(i).size(); j++) {
-					if(replacement.equals("NA")) {
-					  TestUtils.compareScalars(null, output[positions.get(i).get(j)]);
-					}
-					else {
-					  TestUtils.compareScalars(replacement, output[positions.get(i).get(j)]);
-					}
+					if(replacement.equals("NaN")) 
+						TestUtils.compareScalars(null, output[positions.get(i).get(j)]);
+					else 
+						TestUtils.compareScalars(replacement, output[positions.get(i).get(j)]);
 				}
 			}
 		}

@@ -626,7 +626,7 @@ public class MLContextConversionUtil {
 		JavaPairRDD<Long, FrameBlock> rdd;
 		
 		rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc(), javaPairRDDText, mc, frameObject.getSchema(), false,
-			",", false, -1, UtilFunctions.defaultNaString);
+			",", false, -1, null);
 		
 		frameObject.setRDDHandle(new RDDObject(rdd));
 		return frameObject;

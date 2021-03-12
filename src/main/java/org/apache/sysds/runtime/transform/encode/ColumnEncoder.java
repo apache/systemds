@@ -41,10 +41,40 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
 
 	protected int _colID = -1;
+	protected int _writeOffset = 0;
 
 	protected ColumnEncoder(int colID) {
 		_colID = colID;
 	}
+
+
+	/**
+	 * Block encode: build and apply (transform encode).
+	 *
+	 * @param in input frame block
+	 * @param out output matrix block
+	 * @return output matrix block
+	 */
+	public abstract MatrixBlock encode(FrameBlock in, MatrixBlock out);
+
+	/**
+	 * Build the transform meta data for the given block input. This call modifies
+	 * and keeps meta data as encoder state.
+	 *
+	 * @param in input frame block
+	 */
+	public abstract void build(FrameBlock in);
+
+	/**
+	 * Encode input data blockwise according to existing transform meta
+	 * data (transform apply).
+	 *
+	 * @param in input frame block
+	 * @param out output matrix block
+	 * @return output matrix block
+	 */
+	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
+
 
 	public void setColID(int colID) { _colID = colID; }
 
@@ -134,6 +164,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	@Override
 	public void writeExternal(ObjectOutput os) throws IOException {
 		os.writeInt(_colID);
+		os.writeInt(_writeOffset);
 	}
 
 	/**
@@ -146,10 +177,15 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
 		_colID = in.readInt();
+		_writeOffset = in.readInt();
 	}
 
 	public int getColID() {
 		return _colID;
+	}
+
+	public void shiftOutCol(int shift){
+		_writeOffset += shift;
 	}
 }
 

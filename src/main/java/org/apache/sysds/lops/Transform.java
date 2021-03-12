@@ -168,10 +168,14 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
 		
-		if( getExecType()==ExecType.CP 
+		if( (getExecType()==ExecType.CP || getExecType()==ExecType.FED)
 			&& (_operation == ReOrgOp.TRANS || _operation == ReOrgOp.SORT) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
+			if ( federatedOutput ){
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( federatedOutput );
+			}
 		}
 		if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.RESHAPE ) {
 			sb.append( OPERAND_DELIMITOR );

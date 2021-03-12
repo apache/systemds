@@ -82,6 +82,11 @@ public abstract class Hop implements ParseInfo {
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
 
+	/**
+	 * Boolean defining if the output of the operation should be federated.
+	 * If it is true, the output should be kept at federated sites.
+	 * If it is false, the output should be retrieved by the coordinator.
+	 */
 	protected boolean _federatedOutput = false;
 	
 	// Estimated size for the output produced from this Hop
@@ -741,7 +746,7 @@ public abstract class Hop implements ParseInfo {
 	 * Federated compilation is activated in OptimizerUtils.
 	 */
 	protected void updateETFed(){
-		if ( inputETisFED() )
+		if ( inputIsFED() )
 			_etype = ExecType.FED;
 	}
 
@@ -750,7 +755,7 @@ public abstract class Hop implements ParseInfo {
 	 * This method can only return true if FedDecision is activated.
 	 * @return true if any input has federated ExecType
 	 */
-	private boolean inputETisFED(){
+	protected boolean inputIsFED(){
 		if ( !OptimizerUtils.FEDERATED_COMPILATION ) return false;
 		boolean fedFound = false;
 		for ( Hop input : _input ){
@@ -1451,6 +1456,10 @@ public abstract class Hop implements ParseInfo {
 	
 	protected void setPrivacy(Lop lop) {
 		lop.setPrivacyConstraint(getPrivacy());
+	}
+
+	protected void setFederatedOutput(Lop lop){
+		lop.setFederatedOutput(_federatedOutput);
 	}
 
 	/**

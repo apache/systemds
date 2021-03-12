@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 X = rbind(read($X1), read($X2))
-Y = cbind(read($Y1), read($Y2))
-Z = X %*% Y
+Y = rbind(read($Y1), read($Y2))
+Z0 = X * Y
+Z = t(Z0) %*% X
 write(Z, $Z)

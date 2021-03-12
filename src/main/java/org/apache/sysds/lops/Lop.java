@@ -113,6 +113,13 @@ public abstract class Lop
 	 * Privacy Constraint
 	 */
 	protected PrivacyConstraint privacyConstraint;
+
+	/**
+	 * Boolean defining if the output of the operation should be federated.
+	 * If it is true, the output should be kept at federated sites.
+	 * If it is false, the output should be retrieved by the coordinator.
+	 */
+	protected boolean federatedOutput = false;
 	
 	/**
 	 * refers to #lops whose input is equal to the output produced by this lop.
@@ -285,6 +292,10 @@ public abstract class Lop
 
 	public PrivacyConstraint getPrivacyConstraint(){
 		return privacyConstraint;
+	}
+
+	public void setFederatedOutput(boolean federatedOutput){
+		this.federatedOutput = federatedOutput;
 	}
 	
 	public void setConsumerCount(int cc) {

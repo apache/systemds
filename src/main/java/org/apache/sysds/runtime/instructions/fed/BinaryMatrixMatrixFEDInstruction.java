@@ -33,8 +33,8 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 {
 	protected BinaryMatrixMatrixFEDInstruction(Operator op,
-		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(FEDType.Binary, op, in1, in2, out, opcode, istr);
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, boolean federatedOutput) {
+		super(FEDType.Binary, op, in1, in2, out, opcode, istr, federatedOutput);
 	}
 
 	@Override
@@ -55,7 +55,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 		if( mo2.isFederated() ) {
 			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false)) {
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
+					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, _federatedOutput);
 				mo1.getFedMapping().execute(getTID(), true, fr2);
 			}
 			else {
@@ -70,7 +70,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					// only one partition (MM on a single fed worker)
 					FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 					fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-					new long[]{mo1.getFedMapping().getID(), fr1.getID()});
+					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, _federatedOutput);
 					FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 					//execute federated instruction and cleanup intermediates
 					mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
@@ -84,7 +84,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				// MV row partitioned row vector, MV col partitioned col vector
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-				new long[]{mo1.getFedMapping().getID(), fr1.getID()});
+				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, _federatedOutput);
 				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 				//execute federated instruction and cleanup intermediates
 				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
@@ -93,7 +93,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				// row partitioned MM or col partitioned MM
 				FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()});
+					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, _federatedOutput);
 				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
 				//execute federated instruction and cleanup intermediates
 				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);

@@ -97,6 +97,7 @@ public class BinaryOp extends MultiThreadedHop
 		op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
+		updateETFed();
 
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
@@ -462,7 +463,8 @@ public class BinaryOp extends MultiThreadedHop
 					binary = new Binary(getInput(0).constructLops(), getInput(1).constructLops(),
 						op, getDataType(), getValueType(), et,
 						OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
-				
+
+				setFederatedOutput(binary);
 				setOutputDimensions(binary);
 				setLineNumbers(binary);
 				setLops(binary);

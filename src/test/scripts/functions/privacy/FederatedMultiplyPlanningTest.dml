@@ -22,6 +22,7 @@
 X = federated(addresses=list($X1, $X2),
               ranges=list(list(0, 0), list($r / 2, $c), list($r / 2, 0), list($r, $c)))
 Y = federated(addresses=list($Y1, $Y2),
-              ranges=list(list(0, 0), list($c, $r / 2), list(0, $r / 2), list($c, $r)))
-Z = X %*% Y
+              ranges=list(list(0, 0), list($r/2, $c), list($r / 2, 0), list($r, $c)))
+Z0 = X * Y
+Z = t(Z0) %*% X
 write(Z, $Z)

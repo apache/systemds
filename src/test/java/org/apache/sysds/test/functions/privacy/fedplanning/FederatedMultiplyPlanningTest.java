@@ -19,27 +19,27 @@
 
 package org.apache.sysds.test.functions.privacy.fedplanning;
 
-	import org.apache.sysds.hops.OptimizerUtils;
-	import org.apache.sysds.test.functions.privacy.algorithms.FederatedL2SVMTest;
-	import org.junit.Test;
-	import org.junit.runner.RunWith;
-	import org.junit.runners.Parameterized;
-	import org.apache.sysds.api.DMLScript;
-	import org.apache.sysds.common.Types;
-	import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-	import org.apache.sysds.test.AutomatedTestBase;
-	import org.apache.sysds.test.TestConfiguration;
-	import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
-	import java.util.Arrays;
-	import java.util.Collection;
+import java.util.Arrays;
+import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/privacy/";
 	private final static String TEST_NAME = "FederatedMultiplyPlanningTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedL2SVMTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -67,6 +67,14 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE);
 	}
 
+	private void writeStandardMatrix(String matrixName, long seed){
+		int halfRows = rows/2;
+		double[][] matrix = getRandomMatrix(halfRows, cols, 0, 1, 1, seed);
+		writeInputMatrixWithMTD(matrixName, matrix, false,
+			new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols),
+			new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.PrivateAggregation));
+	}
+
 	public void federatedMultiply(Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
@@ -78,19 +86,11 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		// write input matrices
-		int halfRows = rows / 2;
-		// We have two matrices handled by a single federated worker
-		double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 42);
-		double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 1340);
-		// And another two matrices handled by a single federated worker
-		double[][] Y1 = getRandomMatrix(cols, halfRows, 0, 1, 1, 44);
-		double[][] Y2 = getRandomMatrix(cols, halfRows, 0, 1, 1, 21);
-
-		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
-		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
-		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(cols, halfRows, blocksize, halfRows * cols));
-		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(cols, halfRows, blocksize, halfRows * cols));
+		// Write input matrices
+		writeStandardMatrix("X1", 42);
+		writeStandardMatrix("X2", 1340);
+		writeStandardMatrix("Y1", 44);
+		writeStandardMatrix("Y2", 21);
 
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
@@ -118,6 +118,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 
 		// compare via files
 		compareResults(1e-9);
+		heavyHittersContainsString("fed_*", "fed_ba+*");
 
 		TestUtils.shutdownThreads(t1, t2);
 

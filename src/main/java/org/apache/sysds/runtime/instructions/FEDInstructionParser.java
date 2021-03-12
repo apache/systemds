@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.instructions.fed.BinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TsmmFEDInstruction;
 
 import java.util.HashMap;
@@ -35,16 +36,28 @@ public class FEDInstructionParser extends InstructionParser
 	public static final HashMap<String, FEDType> String2FEDInstructionType;
 	static {
 		String2FEDInstructionType = new HashMap<>();
-		String2FEDInstructionType.put("fedinit", FEDType.Init);
-		String2FEDInstructionType.put("ba+*",    FEDType.AggregateBinary);
-		String2FEDInstructionType.put("tsmm", FEDType.Tsmm);
-		String2FEDInstructionType.put("+", FEDType.Binary);
-		String2FEDInstructionType.put("uak+", FEDType.AggregateUnary);
+		String2FEDInstructionType.put("fedinit"  , FEDType.Init);
+		String2FEDInstructionType.put("tsmm"     , FEDType.Tsmm);
+		String2FEDInstructionType.put("ba+*"     , FEDType.AggregateBinary);
+
+		String2FEDInstructionType.put("uak+"     , FEDType.AggregateUnary);
 		String2FEDInstructionType.put( "uark+"   , FEDType.AggregateUnary);
 		String2FEDInstructionType.put( "uack+"   , FEDType.AggregateUnary);
 		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary);
 		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary);
 		String2FEDInstructionType.put( "uacsqk+" , FEDType.AggregateUnary);
+
+		// Arithmetic Instruction Opcodes
+		String2FEDInstructionType.put("+"  , FEDType.Binary);
+		String2FEDInstructionType.put( "-" , FEDType.Binary);
+		String2FEDInstructionType.put( "*" , FEDType.Binary);
+		String2FEDInstructionType.put( "/" , FEDType.Binary);
+
+		// Reorg Instruction Opcodes (repositioning of existing values)
+		String2FEDInstructionType.put("r'"     , FEDType.Reorg);
+		String2FEDInstructionType.put("rdiag"  , FEDType.Reorg);
+		String2FEDInstructionType.put("rshape" , FEDType.Reorg);
+
 	}
 
 	public static FEDInstruction parseSingleInstruction (String str ) {
@@ -73,6 +86,8 @@ public class FEDInstructionParser extends InstructionParser
 				return TsmmFEDInstruction.parseInstruction(str);
 			case Binary:
 				return BinaryFEDInstruction.parseInstruction(str);
+			case Reorg:
+				return ReorgFEDInstruction.parseInstruction(str);
 			default:
 				throw new DMLRuntimeException("Invalid FEDERATED Instruction Type: " + fedtype );
 		}

@@ -26,6 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
@@ -77,7 +79,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Tuple2;
 
 public class RDDConverterUtils {
-	// private static final Log LOG = LogFactory.getLog(RDDConverterUtils.class.getName());
+	private static final Log LOG = LogFactory.getLog(RDDConverterUtils.class.getName());
 
 	public static final String DF_ID_COLUMN = "__INDEX";
 
@@ -173,10 +175,10 @@ public class RDDConverterUtils {
 		//(w/ robustness for mistakenly counted header in nnz)
 		if( !mc.dimsKnown(true) ) {
 			LongAccumulator aNnz = sc.sc().longAccumulator("nnz");
-			JavaRDD<String> tmp = input.values()
-				.map(new CSVAnalysisFunction(aNnz, delim));
+			CSVAnalysisFunction csvAF = new CSVAnalysisFunction(aNnz, delim);
+			JavaRDD<String> tmp = input.values().map(csvAF);
 			long rlen = tmp.count() - (hasHeader ? 1 : 0);
-			long clen = tmp.first().split(delim).length;
+			long clen = IOUtilFunctions.split(tmp.first(), delim).length;
 			long nnz = Math.min(rlen*clen, UtilFunctions.toLong(aNnz.value()));
 			mc.set(rlen, clen, mc.getBlocksize(), nnz);
 		}
@@ -611,8 +613,8 @@ public class RDDConverterUtils {
 	{
 		private static final long serialVersionUID = 2310303223289674477L;
 
-		private LongAccumulator _aNnz = null;
-		private String _delim = null;
+		private final LongAccumulator _aNnz;
+		private final  String _delim;
 		
 		public CSVAnalysisFunction( LongAccumulator aNnz, String delim )
 		{
@@ -633,7 +635,6 @@ public class RDDConverterUtils {
 			
 			//update counters
 			_aNnz.add( lnnz );
-			
 			return line;
 		}
 		
@@ -673,7 +674,7 @@ public class RDDConverterUtils {
 			_delim = delim;
 			_fill = fill;
 			_fillValue = fillValue;
-			_naStrings = naStrings == null ? UtilFunctions.defaultNaString : naStrings;
+			_naStrings = naStrings;
 		}
 
 		@Override
@@ -710,18 +711,20 @@ public class RDDConverterUtils {
 				boolean emptyFound = false;
 				for( int cix=1, pix=0; cix<=ncblks; cix++ ) 
 				{
+					final MatrixBlock mbc = mb[cix-1];
 					int lclen = UtilFunctions.computeBlockSize(_clen, cix, _blen);
-					if( mb[cix-1].isInSparseFormat() ) {
+					if( mbc.isInSparseFormat() ) {
 						//allocate row once (avoid re-allocations)
 						int lnnz = IOUtilFunctions.countNnz(parts, pix, lclen);
-						mb[cix-1].getSparseBlock().allocate(pos, lnnz);
+						mbc.getSparseBlock().allocate(pos, lnnz);
 					}
+
 					for( int j=0; j<lclen; j++ ) {
 						String part = parts[pix++].trim();
 						emptyFound |= part.isEmpty() && !_fill;
 						double val = (part.isEmpty() && _fill) ?
 							_fillValue : UtilFunctions.parseToDouble(part, _naStrings);
-						mb[cix-1].appendValue(pos, j, val);
+						mbc.appendValue(pos, j, val);
 					}
 				}
 		

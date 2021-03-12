@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.instructions.spark;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -48,6 +50,9 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.Statistics;
 
 public class CSVReblockSPInstruction extends UnarySPInstruction {
+
+	private static final Log LOG = LogFactory.getLog(CSVReblockSPInstruction.class.getName());
+
 	private int _blen;
 	private boolean _hasHeader;
 	private String _delim;
@@ -84,11 +89,14 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		String delim = parts[5];
 		boolean fill = Boolean.parseBoolean(parts[6]);
 		double fillValue = Double.parseDouble(parts[7]);
+		Set<String> naStrings = null;
 
-		// Set<String> naStrings = UtilFunctions.defaultNaString;
-		Set<String> naStrings = new HashSet<>();
-		for(String s:parts[8].split(DataExpression.DELIM_NA_STRING_SEP)){
-			naStrings.add(s);
+		String[] naS = parts[8].split(DataExpression.DELIM_NA_STRING_SEP);
+
+		if(naS.length > 0  && !(naS.length ==1 && naS[0].isEmpty())){
+			naStrings = new HashSet<>();
+			for(String s: naS)
+				naStrings.add(s);
 		}
 
 		return new CSVReblockSPInstruction(null, in, out, blen, blen,
@@ -110,6 +118,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//set output characteristics
 		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+
 		mcOut.set(mcIn.getRows(), mcIn.getCols(), _blen);
 
 		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)

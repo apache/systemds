@@ -37,7 +37,6 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
-import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -229,7 +228,6 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 				.readFrameFromHDFS(HOME + "input/" + DATASET, -1, -1);
 
 			// default for write
-			ffpCSV.setNAStrings(UtilFunctions.defaultNaString);
 			FrameWriter fw = FrameWriterFactory.createFrameWriter(FileFormat.CSV, ffpCSV);
 
 			writeDatasetSlice(dataset, fw, ffpCSV, "AH",

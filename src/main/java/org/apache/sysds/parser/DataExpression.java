@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.DMLScript;
@@ -2429,6 +2430,7 @@ public class DataExpression extends DataIdentifier
 			try (BufferedReader br = new BufferedReader(new InputStreamReader(
 				IOUtilFunctions.getFileSystem(path).open(path))))
 			{
+//				MetaDataAll metaDataAll = new MetaDataAll(br);
 				retVal = new JSONObject(br);
 			} 
 			catch (Exception e){
@@ -2438,6 +2440,147 @@ public class DataExpression extends DataIdentifier
 		
 		return retVal;
 	}
+//
+//	// TODO
+//	@SuppressWarnings("unchecked")
+//	private void parseMetaDataFileParameters_new(String mtdFileName, JSONObject configObject, boolean conditional)
+//	{
+//		for( Object obj : configObject.entrySet() ){
+//			Entry<Object,Object> e = (Entry<Object, Object>) obj;
+//			Object key = e.getKey();
+//			Object val = e.getValue();
+//
+//			boolean isValidName = READ_VALID_MTD_PARAM_NAMES.contains(key);
+//
+//			if (!isValidName){ //wrong parameters always rejected
+//				raiseValidateError("MTD file " + mtdFileName + " contains invalid parameter name: " + key, false);
+//			}
+//
+//			// if the read method parameter is a constant, then verify value matches MTD metadata file
+//			if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier)
+//				&& !getVarParam(key.toString()).toString().equalsIgnoreCase(val.toString())) {
+//				raiseValidateError("Parameter '" + key.toString()
+//					+ "' has conflicting values in metadata and read statement. MTD file value: '"
+//					+ val.toString() + "'. Read statement value: '" + getVarParam(key.toString()) + "'.", conditional);
+//			} else {
+//				// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
+//				if (getVarParam(key.toString()) == null){
+//					if (( !key.toString().equalsIgnoreCase(DESCRIPTIONPARAM) ) &&
+//						( !key.toString().equalsIgnoreCase(AUTHORPARAM) ) &&
+//						( !key.toString().equalsIgnoreCase(CREATEDPARAM) ) )
+//					{
+//						StringIdentifier strId = new StringIdentifier(val.toString(), this);
+//
+//						if ( key.toString().equalsIgnoreCase(DELIM_HAS_HEADER_ROW)
+//							|| key.toString().equalsIgnoreCase(DELIM_FILL)
+//							|| key.toString().equalsIgnoreCase(DELIM_SPARSE)
+//						) {
+//							// parse these parameters as boolean values
+//							BooleanIdentifier boolId = null;
+//							if (strId.toString().equalsIgnoreCase("true")) {
+//								boolId = new BooleanIdentifier(true, this);
+//							} else if (strId.toString().equalsIgnoreCase("false")) {
+//								boolId = new BooleanIdentifier(false, this);
+//							} else {
+//								raiseValidateError("Invalid value provided for '" + DELIM_HAS_HEADER_ROW + "' in metadata file '" + mtdFileName + "'. "
+//									+ "Must be either TRUE or FALSE.", conditional);
+//							}
+//							removeVarParam(key.toString());
+//							addVarParam(key.toString(), boolId);
+//						}
+//						else if ( key.toString().equalsIgnoreCase(DELIM_FILL_VALUE)) {
+//							// parse these parameters as numeric values
+//							DoubleIdentifier doubleId = new DoubleIdentifier(Double.parseDouble(strId.toString()),
+//								this);
+//							removeVarParam(key.toString());
+//							addVarParam(key.toString(), doubleId);
+//						}
+//						else if (key.toString().equalsIgnoreCase(DELIM_NA_STRINGS)
+//							|| key.toString().equalsIgnoreCase(PRIVACY)
+//							|| key.toString().equalsIgnoreCase(FINE_GRAINED_PRIVACY)) {
+//							String naStrings = null;
+//							if ( val instanceof String) {
+//								naStrings = val.toString();
+//							}
+//							else if (val instanceof JSONArray) {
+//								StringBuilder sb = new StringBuilder();
+//								JSONArray valarr = (JSONArray)val;
+//								for(int naid=0; naid < valarr.size(); naid++ ) {
+//									sb.append( (String) valarr.get(naid) );
+//									if ( naid < valarr.size()-1)
+//										sb.append( DELIM_NA_STRING_SEP );
+//								}
+//								naStrings = sb.toString();
+//							}
+//							else if ( val instanceof JSONObject ){
+//								JSONObject valJsonObject = (JSONObject)val;
+//								naStrings = valJsonObject.toString();
+//							}
+//							else {
+//								throw new ParseException("Type of value " + val
+//									+ " from metadata not recognized by parser.");
+//							}
+//							StringIdentifier sid = new StringIdentifier(naStrings, this);
+//							removeVarParam(key.toString());
+//							addVarParam(key.toString(), sid);
+//						}
+//						else {
+//							// by default, treat a parameter as a string
+//							addVarParam(key.toString(), strId);
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+//
+//	public JSONObject readMetadataFile_new(String filename, boolean conditional)
+//	{
+//		JSONObject retVal = null;
+//		boolean exists = HDFSTool.existsFileOnHDFS(filename);
+//		boolean isDir = HDFSTool.isDirectory(filename);
+//
+//		// CASE: filename is a directory -- process as a directory
+//		if( exists && isDir )
+//		{
+//			retVal = new JSONObject();
+//			for(FileStatus stat : HDFSTool.getDirectoryListing(filename)) {
+//				Path childPath = stat.getPath(); // gives directory name
+//				if( !childPath.getName().startsWith("part") )
+//					continue;
+//				try (BufferedReader br = new BufferedReader(new InputStreamReader(
+//					IOUtilFunctions.getFileSystem(childPath).open(childPath))))
+//				{
+//					JSONObject childObj = JSONHelper.parse(br);
+//					for( Object obj : childObj.entrySet() ){
+//						@SuppressWarnings("unchecked")
+//						Entry<Object,Object> e = (Entry<Object, Object>) obj;
+//						Object key = e.getKey();
+//						Object val = e.getValue();
+//						retVal.put(key, val);
+//					}
+//				}
+//				catch(Exception e){
+//					raiseValidateError("for MTD file in directory, error parting part of MTD file with path " + childPath.toString() + ": " + e.getMessage(), conditional);
+//				}
+//			}
+//		}
+//		// CASE: filename points to a file
+//		else if (exists) {
+//			Path path = new Path(filename);
+//			try (BufferedReader br = new BufferedReader(new InputStreamReader(
+//				IOUtilFunctions.getFileSystem(path).open(path))))
+//			{
+//				retVal = new JSONObject(br);
+//			}
+//			catch (Exception e){
+//				raiseValidateError("error parsing MTD file with path " + filename + ": " + e.getMessage(), conditional);
+//			}
+//		}
+//
+//		return retVal;
+//	}
+//	//
 	
 	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional) 
 	{

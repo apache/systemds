@@ -24,6 +24,7 @@ import static org.junit.Assert.assertFalse;
 
 import java.util.HashMap;
 
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.junit.Test;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -134,8 +135,8 @@ public class ScalarPropagationTest extends AutomatedTestBase
 			String actualPrivacyValue = readDMLMetaDataValueCatchException("scalar", "out/", DataExpression.PRIVACY);
 			assertEquals(String.valueOf(expectedPrivacyLevel), actualPrivacyValue);
 		} else {
-			JSONObject meta = getMetaDataJSON("scalar", "out/");
-			assertFalse( "Metadata found for output scalar with privacy constraint set, but input privacy level is none", meta != null && meta.has(DataExpression.PRIVACY) );
+			MetaDataAll meta = getMetaData("scalar", "out/");
+			assertFalse( "Metadata found for output scalar with privacy constraint set, but input privacy level is none", meta.mtdExists() && meta.getParam(DataExpression.PRIVACY) != null );
 		}
 	}
 

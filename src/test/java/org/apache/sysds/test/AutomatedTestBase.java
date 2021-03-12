@@ -76,6 +76,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -905,9 +906,9 @@ public abstract class AutomatedTestBase {
 
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {
 		try {
-			JSONObject meta = getMetaDataJSON(fileName);
-			long rlen = Long.parseLong(meta.get(DataExpression.READROWPARAM).toString());
-			long clen = Long.parseLong(meta.get(DataExpression.READCOLPARAM).toString());
+			MetaDataAll metaDataAll = new MetaDataAll(fileName, false);
+			long rlen = metaDataAll.getDim1();
+			long clen = metaDataAll.getDim2();
 			return new MatrixCharacteristics(rlen, clen, -1, -1);
 		}
 		catch(Exception ex) {
@@ -915,13 +916,22 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
-	public static JSONObject getMetaDataJSON(String fileName) {
-		return getMetaDataJSON(fileName, OUTPUT_DIR);
+//	public static JSONObject getMetaDataJSON(String fileName) {
+//		return getMetaDataJSON(fileName, OUTPUT_DIR);
+//	}
+//
+//	public static JSONObject getMetaDataJSON(String fileName, String outputDir) {
+//		String fname = baseDirectory + outputDir + fileName + ".mtd";
+//		return new DataExpression().readMetadataFile(fname, false);
+//	}
+
+	public static MetaDataAll getMetaData(String fileName) {
+		return getMetaData(fileName, OUTPUT_DIR);
 	}
 
-	public static JSONObject getMetaDataJSON(String fileName, String outputDir) {
+	public static MetaDataAll getMetaData(String fileName, String outputDir) {
 		String fname = baseDirectory + outputDir + fileName + ".mtd";
-		return new DataExpression().readMetadataFile(fname, false);
+		return new MetaDataAll(fname, false);
 	}
 
 	/**
@@ -933,16 +943,17 @@ public abstract class AutomatedTestBase {
 	public static PrivacyConstraint getPrivacyConstraintFromMetaData(String fileName, String dir) throws DMLRuntimeException {
 		PrivacyConstraint outputPrivacyConstraint = new PrivacyConstraint();
 		try {
-			JSONObject metadata = getMetaDataJSON(fileName, dir);
-			if ( metadata != null ){
-				if ( metadata.containsKey(DataExpression.PRIVACY) ){
-					PrivacyLevel readPrivacyLevel = PrivacyLevel.valueOf(metadata.get(DataExpression.PRIVACY).toString());
+			MetaDataAll metadata = getMetaData(fileName, dir);
+			Object metaValue;
+			if ( metadata.mtdExists() ){
+				if ( (metaValue = metadata.getParam(DataExpression.PRIVACY)) != null){
+					PrivacyLevel readPrivacyLevel = PrivacyLevel.valueOf(metaValue.toString());
 					outputPrivacyConstraint.setPrivacyLevel(readPrivacyLevel);
 				} else {
 					outputPrivacyConstraint.setPrivacyLevel(PrivacyLevel.None);
 				}
-				if ( metadata.containsKey(DataExpression.FINE_GRAINED_PRIVACY)){
-					JSONObject fineGrainedJSON = (JSONObject) metadata.get(DataExpression.FINE_GRAINED_PRIVACY);
+				if ((metaValue = metadata.getParam(DataExpression.FINE_GRAINED_PRIVACY)) != null ){
+					JSONObject fineGrainedJSON = (JSONObject) metaValue;
 					PrivacyUtils.putFineGrainedConstraintsFromString(outputPrivacyConstraint.getFineGrainedPrivacy(), fineGrainedJSON.toString());
 				}
 			}
@@ -956,9 +967,9 @@ public abstract class AutomatedTestBase {
 		return getPrivacyConstraintFromMetaData(fileName, OUTPUT_DIR);
 	}
 
-	public static String readDMLMetaDataValue(String fileName, String outputDir, String key) throws JSONException {
-		JSONObject meta = getMetaDataJSON(fileName, outputDir);
-		return meta.get(key).toString();
+	public static String readDMLMetaDataValue(String fileName, String outputDir, String key) {
+		MetaDataAll meta = getMetaData(fileName, outputDir);
+		return meta.getParam(key).toString();
 	}
 
 	/**
@@ -973,7 +984,7 @@ public abstract class AutomatedTestBase {
 		try {
 			return readDMLMetaDataValue(fileName, outputDir, key);
 		}
-		catch(JSONException | NullPointerException e) {
+		catch(NullPointerException e) {
 			fail("Privacy constraint not written to output metadata file:\n" + e);
 			return null;
 		}
@@ -981,8 +992,8 @@ public abstract class AutomatedTestBase {
 
 	public static ValueType readDMLMetaDataValueType(String fileName) {
 		try {
-			JSONObject meta = getMetaDataJSON(fileName);
-			return ValueType.fromExternalString(meta.get(DataExpression.VALUETYPEPARAM).toString());
+			MetaDataAll meta = getMetaData(fileName);
+			return ValueType.fromExternalString(meta.getParam(DataExpression.VALUETYPEPARAM).toString());
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

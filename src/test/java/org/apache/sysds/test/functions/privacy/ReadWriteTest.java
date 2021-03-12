@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.privacy.finegrained.DataRange;
@@ -66,8 +68,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 
 		writeA();
 		
-		JSONObject metadata = getMetaDataJSON("a", "in/");
-		assertTrue(metadata.containsKey("fine_grained_privacy"));
+		MetaDataAll metadata = getMetaData("a", "in/");
+		assertTrue(metadata.containsParam(DataExpression.FINE_GRAINED_PRIVACY));
 	}
 
 	@Test
@@ -85,8 +87,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 		runTest(true,false,null,-1);
 		compareResults(1e-9);
 
-		JSONObject metadata = getMetaDataJSON("b");
-		assertTrue(metadata.containsKey("fine_grained_privacy"));
+		MetaDataAll metadata = getMetaData("b");
+		assertTrue(metadata.containsParam(DataExpression.FINE_GRAINED_PRIVACY));
 	}
 
 	@Test
@@ -96,8 +98,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 
 		writeA();
 
-		JSONObject metadata = getMetaDataJSON("a", "in/");
-		assertTrue(metadata.containsKey("fine_grained_privacy"));
+		MetaDataAll metadata = getMetaData("a", "in/");
+		assertTrue(metadata.containsParam(DataExpression.FINE_GRAINED_PRIVACY));
 
 		PrivacyConstraint expectedPC = new PrivacyConstraint();
 		setFineGrained(expectedPC);
@@ -112,8 +114,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 
 		writeA();
 
-		JSONObject metadata = getMetaDataJSON("a", "in/");
-		assertTrue(metadata.containsKey("fine_grained_privacy"));
+		MetaDataAll metadata = getMetaData("a", "in/");
+		assertTrue(metadata.containsParam(DataExpression.FINE_GRAINED_PRIVACY));
 
 		PrivacyConstraint expectedPC = new PrivacyConstraint();
 		setFineGrained(expectedPC);

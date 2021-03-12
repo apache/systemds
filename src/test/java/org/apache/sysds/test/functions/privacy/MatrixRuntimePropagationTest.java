@@ -111,8 +111,6 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase
 			String actualPrivacyValue = null;
 			try{
 				actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
-			} catch (JSONException e){
-				JSONExceptionThrown = true;
 			} catch (Exception e){
 				fail("Exception occured, but JSONException was expected. The exception thrown is: " + e.getMessage());
 				e.printStackTrace();

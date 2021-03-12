@@ -156,8 +156,6 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		boolean JSONExceptionThrown = false;
 		try{
 			readDMLMetaDataValue(variable, dir, DataExpression.PRIVACY);
-		} catch (JSONException e){
-			JSONExceptionThrown = true;
 		} catch (Exception e){
 			fail("Exception occured, but JSONException was expected. The exception thrown is: " + e.getMessage());
 			e.printStackTrace();

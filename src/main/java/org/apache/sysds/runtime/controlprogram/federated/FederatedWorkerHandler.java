@@ -23,6 +23,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -54,18 +58,11 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
-import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
-import org.apache.sysds.utils.JSONHelper;
 import org.apache.sysds.utils.Statistics;
-import org.apache.wink.json4j.JSONObject;
-
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
@@ -195,24 +192,25 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		FileFormat fmt = null;
 		boolean header = false;
+		String delim = null;
 		FileSystem fs = null;
+		MetaDataAll mtd;
 		try {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
 			fs = IOUtilFunctions.getFileSystem(mtdname);
 			try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-				JSONObject mtd = JSONHelper.parse(br);
-				if(mtd == null)
+				mtd = new MetaDataAll(br);
+				if(!mtd.mtdExists())
 					return new FederatedResponse(ResponseType.ERROR,
 						new FederatedWorkerHandlerException("Could not parse metadata file"));
-				mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
-				mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
-				if(mtd.containsKey(DataExpression.READNNZPARAM))
-					mc.setNonZeros(mtd.getLong(DataExpression.READNNZPARAM));
-				if(mtd.has(DataExpression.DELIM_HAS_HEADER_ROW))
-					header = mtd.getBoolean(DataExpression.DELIM_HAS_HEADER_ROW);
-				cd = (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
-				fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
+				mc.setRows(mtd.getDim1());
+				mc.setCols(mtd.getDim2());
+				mc.setNonZeros(mtd.getNnz());
+				header = mtd.getHasHeader();
+				cd = mtd.parseAndSetPrivacyConstraint(cd);
+				fmt = mtd.getFileFormat();
+				delim = mtd.getDelim();
 			}
 		}
 		catch (DMLPrivacyException | FederatedWorkerHandlerException ex){

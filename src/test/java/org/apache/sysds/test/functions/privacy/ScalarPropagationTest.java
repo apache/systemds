@@ -24,6 +24,7 @@ import static org.junit.Assert.assertFalse;
 
 import java.util.HashMap;
 
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.junit.Test;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -73,7 +74,7 @@ public class ScalarPropagationTest extends AutomatedTestBase
 		assertEquals("Values mismatch: DMLvalue " + dmlvalue + " != ExpectedValue " + roundScalar, 
 			roundScalar, dmlvalue, 0.001);
 
-		String actualPrivacyValue = readDMLMetaDataValueCatchException("scalar", "out/", DataExpression.PRIVACY);
+		String actualPrivacyValue = readDMLMetaDataPrivacyValueCatchException("scalar", "out/", DataExpression.PRIVACY);
 		assertEquals(String.valueOf(PrivacyLevel.Private), actualPrivacyValue);
 	}
 
@@ -131,11 +132,11 @@ public class ScalarPropagationTest extends AutomatedTestBase
 			expectedScalar, actualScalar, 0.001);
 
 		if ( expectedPrivacyLevel != PrivacyLevel.None ){
-			String actualPrivacyValue = readDMLMetaDataValueCatchException("scalar", "out/", DataExpression.PRIVACY);
+			String actualPrivacyValue = readDMLMetaDataPrivacyValueCatchException("scalar", "out/", DataExpression.PRIVACY);
 			assertEquals(String.valueOf(expectedPrivacyLevel), actualPrivacyValue);
 		} else {
-			JSONObject meta = getMetaDataJSON("scalar", "out/");
-			assertFalse( "Metadata found for output scalar with privacy constraint set, but input privacy level is none", meta != null && meta.has(DataExpression.PRIVACY) );
+			MetaDataAll meta = getMetaData("scalar", "out/");
+			assertFalse( "Metadata found for output scalar with privacy constraint set, but input privacy level is none", meta.mtdExists() && meta.getPrivacy().getPrivacyLevel() != PrivacyLevel.None );
 		}
 	}
 

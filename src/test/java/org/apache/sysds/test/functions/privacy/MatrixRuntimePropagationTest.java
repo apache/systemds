@@ -95,11 +95,11 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase
 
 		// Check that the output metadata is correct
 		if ( privacyLevel.equals(PrivacyLevel.Private) ) {
-			String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
+			String actualPrivacyValue = readDMLMetaDataPrivacyValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
 			assertEquals(PrivacyLevel.Private.name(), actualPrivacyValue);
 		}
 		else if ( privacyLevel.equals(PrivacyLevel.PrivateAggregation) ){
-			String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
+			String actualPrivacyValue = readDMLMetaDataPrivacyValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
 			assertEquals(PrivacyLevel.PrivateAggregation.name(), actualPrivacyValue);
 		} 
 		else {
@@ -107,17 +107,14 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase
 			// or that privacy level is set to none 
 			// because no privacy metadata should be written to c
 			// except if the privacy written is set to private
-			boolean JSONExceptionThrown = false;
 			String actualPrivacyValue = null;
 			try{
-				actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
-			} catch (JSONException e){
-				JSONExceptionThrown = true;
+				actualPrivacyValue = readDMLMetaDataPrivacyValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
 			} catch (Exception e){
 				fail("Exception occured, but JSONException was expected. The exception thrown is: " + e.getMessage());
 				e.printStackTrace();
 			}
-			assert(JSONExceptionThrown || (PrivacyLevel.None.name().equals(actualPrivacyValue)));
+			assert((PrivacyLevel.None.name().equals(actualPrivacyValue)));
 		}
 	}
 }

@@ -31,7 +31,7 @@ import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.wink.json4j.JSONObject;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
@@ -362,17 +362,14 @@ public class Connection implements Closeable
 		try {
 			//read json meta data 
 			String fnamemtd = DataExpression.getMTDFileName(fname);
-			JSONObject jmtd = new DataExpression().readMetadataFile(fnamemtd, false);
+			MetaDataAll metaObj = new MetaDataAll(fnamemtd, false, true);
 			
-			//parse json meta data 
-			long rows = jmtd.getLong(DataExpression.READROWPARAM);
-			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
-			int blen = jmtd.containsKey(DataExpression.ROWBLOCKCOUNTPARAM)?
-				jmtd.getInt(DataExpression.ROWBLOCKCOUNTPARAM) : -1;
-			long nnz = jmtd.containsKey(DataExpression.READNNZPARAM)?
-					jmtd.getLong(DataExpression.READNNZPARAM) : -1;
-			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			FileFormat fmt = FileFormat.safeValueOf(format);
+			//parse meta data
+			long rows = metaObj.getDim1();
+			long cols = metaObj.getDim2();
+			int blen = metaObj.getBlocksize();
+			long nnz = metaObj.getNnz();
+			FileFormat fmt = metaObj.getFileFormat();
 		
 			//read matrix file
 			return readDoubleMatrix(fname, fmt, rows, cols, blen, nnz);
@@ -505,11 +502,11 @@ public class Connection implements Closeable
 		throws IOException
 	{
 		try {
-			//parse json meta data 
-			JSONObject jmtd = new JSONObject(meta);
-			int rows = jmtd.getInt(DataExpression.READROWPARAM);
-			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
-			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			//parse meta data
+			MetaDataAll mtd = new MetaDataAll(meta);
+			int rows = (int) mtd.getDim1();
+			int cols = (int) mtd.getDim2();
+			String format = mtd.getFormatTypeString();
 			
 			//parse the input matrix
 			return convertToMatrix(input, rows, cols, format);
@@ -607,13 +604,13 @@ public class Connection implements Closeable
 		try {
 			//read json meta data 
 			String fnamemtd = DataExpression.getMTDFileName(fname);
-			JSONObject jmtd = new DataExpression().readMetadataFile(fnamemtd, false);
-			
-			//parse json meta data 
-			long rows = jmtd.getLong(DataExpression.READROWPARAM);
-			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
-			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			FileFormat fmt = FileFormat.safeValueOf(format);
+
+			MetaDataAll metaObj = new MetaDataAll(fnamemtd, false, true);
+
+			//parse meta data
+			long rows = metaObj.getDim1();
+			long cols = metaObj.getDim2();
+			FileFormat fmt = metaObj.getFileFormat();
 		
 			//read frame file
 			return readStringFrame(fname, fmt, rows, cols);
@@ -744,11 +741,11 @@ public class Connection implements Closeable
 		throws IOException
 	{
 		try {
-			//parse json meta data 
-			JSONObject jmtd = new JSONObject(meta);
-			int rows = jmtd.getInt(DataExpression.READROWPARAM);
-			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
-			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			//parse meta data
+			MetaDataAll mtd = new MetaDataAll(meta);
+			int rows = (int) mtd.getDim1();
+			int cols = (int) mtd.getDim2();
+			String format = mtd.getFormatTypeString();
 			
 			//parse the input frame
 			return convertToFrame(input, rows, cols, format);

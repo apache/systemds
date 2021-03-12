@@ -58,13 +58,13 @@ public class ReaderTextCSV extends MatrixReader
 			ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 		
 		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//check existence and non-empty file
-		checkValidInputFile(fs, path); 
-	
+		checkValidInputFile(fs, path);
+
 		//core read 
 		ret = readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen, 
 			_props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue(), _props.getNAStrings() );
@@ -108,7 +108,7 @@ public class ReaderTextCSV extends MatrixReader
 		}
 		else
 			files.add(path);
-		
+
 		//determine matrix size via additional pass if required
 		if ( dest == null ) {
 			dest = computeCSVSize(files, job, fs, hasHeader, delim, fill, fillValue);

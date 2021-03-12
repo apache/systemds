@@ -77,6 +77,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 		// prepare file access
 		_job = new JobConf(ConfigurationManager.getCachedJobConf());
+
 		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, _job);
 
@@ -495,7 +496,8 @@ public class ReaderTextCSVParallel extends MatrixReader {
 	}
 
 	private class CSVReadSparseNoNanTaskAndFill extends CSVReadTask {
-		public CSVReadSparseNoNanTaskAndFill(InputSplit split, TextInputFormat informat, MatrixBlock dest, int splitCount) {
+		public CSVReadSparseNoNanTaskAndFill(InputSplit split, TextInputFormat informat, MatrixBlock dest,
+			int splitCount) {
 			super(split, informat, dest, splitCount);
 		}
 

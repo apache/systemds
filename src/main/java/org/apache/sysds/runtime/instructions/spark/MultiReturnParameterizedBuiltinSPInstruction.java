@@ -120,7 +120,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				.distinct().groupByKey()
 				.flatMap(new TransformEncodeGroupFunction(encoderBuild, accMax));
 			if( containsMVImputeEncoder(encoderBuild) ) {
-				MultiColumnEncoder mva = new MultiColumnEncoder(encoderBuild.getColumnEncoders(ColumnEncoderMVImpute.class));
+				List<ColumnEncoderComposite> mv = encoderBuild.getColumnEncoders(ColumnEncoderMVImpute.class).stream()
+						.map(ColumnEncoderComposite::new).collect(Collectors.toList());
+				MultiColumnEncoder mva = new MultiColumnEncoder(mv);
 				rcMaps = rcMaps.union(
 					in.mapPartitionsToPair(new TransformEncodeBuild2Function(mva))
 					  .groupByKey().flatMap(new TransformEncodeGroup2Function(mva)) );
@@ -145,7 +147,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			//create encoder broadcast (avoiding replication per task) 
 			MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames,
 				fo.getSchema(), (int)fo.getNumColumns(), meta);
-			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), fo.getSchema().length +
+			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), (int)fo.getNumColumns() +
 					encoder.getNumExtraCols());
 			Broadcast<MultiColumnEncoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap!=null) ? sec.getSparkContext().broadcast(omap) : null;
@@ -344,8 +346,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					min = Math.min(min, value);
 					max = Math.max(max, value);
 				}
-				int j = Arrays.binarySearch(_encoder.getFromAllIntArray(ColumnEncoderBin.class, ColumnEncoder::getColID), colID);
-				ColumnEncoderBin baEncoder = _encoder.getColumnEncoder(j, ColumnEncoderBin.class);
+				ColumnEncoderBin baEncoder = _encoder.getColumnEncoder(colID, ColumnEncoderBin.class);
 				assert baEncoder != null;
 				baEncoder.computeBins(min, max);
 				double[] binMins = baEncoder.getBinMins();

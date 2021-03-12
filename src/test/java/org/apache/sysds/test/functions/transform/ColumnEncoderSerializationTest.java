@@ -107,11 +107,13 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 		// serialization and deserialization
 		encoderOut = (MultiColumnEncoder) serializeDeserialize(encoderIn);
 		// compare
-		Assert.assertArrayEquals(encoderIn.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID), encoderOut.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID));
-		Assert.assertEquals(encoderIn.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID), encoderOut.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID));
+		Assert.assertArrayEquals(encoderIn.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID),
+				encoderOut.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID));
+		Assert.assertEquals(encoderIn.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID),
+				encoderOut.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID));
 
-		List<ColumnEncoder> eListIn = ((MultiColumnEncoder) encoderIn).getColumnEncoders();
-		List<ColumnEncoder> eListOut = encoderOut.getColumnEncoders();
+		List<ColumnEncoderComposite> eListIn = ((MultiColumnEncoder) encoderIn).getColumnEncoders();
+		List<ColumnEncoderComposite> eListOut = encoderOut.getColumnEncoders();
 		/* TODO
 		for(int i = 0; i < eListIn.size();  i++) {
 			Assert.assertArrayEquals(eListIn.get(i).getColList(), eListOut.get(i).getColList());

@@ -185,7 +185,7 @@ public class ColumnEncoderMVImpute extends ColumnEncoder {
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		for(int i=0; i<in.getNumRows(); i++) {
 			if( Double.isNaN(out.quickGetValue(i, _colID-1)) )
-				out.quickSetValue(i, _colID-1, Double.parseDouble(_replacement));
+				out.quickSetValue(i, _colID-1+_writeOffset, Double.parseDouble(_replacement));
 		}
 		return out;
 	}

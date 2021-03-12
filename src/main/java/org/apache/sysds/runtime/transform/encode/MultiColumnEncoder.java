@@ -19,19 +19,18 @@ import java.util.stream.Collectors;
 
 public class MultiColumnEncoder implements Encoder {
 
-    private List<ColumnEncoder> _columnEncoders = null;
+    private List<ColumnEncoderComposite> _columnEncoders = null;
     private FrameBlock _meta = null;
     protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
 
-    public <T extends ColumnEncoder> MultiColumnEncoder(List<T> columnEncoders){
-        _columnEncoders = columnEncoders.stream().map(encoder -> encoder).collect(Collectors.toList());
+    public MultiColumnEncoder(List<ColumnEncoderComposite> columnEncoders){
+        _columnEncoders = columnEncoders;
     }
 
     public MultiColumnEncoder() {
         _columnEncoders = new ArrayList<>();
     }
 
-    @Override
     public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
         try {
             build(in);
@@ -40,7 +39,7 @@ public class MultiColumnEncoder implements Encoder {
                 _meta = columnEncoder.getMetaData(_meta);
             for( ColumnEncoder columnEncoder : _columnEncoders)
                 columnEncoder.initMetaData(_meta);
-
+            resolveInterEncoderDependencies();
             //apply meta data
             for( ColumnEncoder columnEncoder : _columnEncoders)
                 out = columnEncoder.apply(in, out);
@@ -53,15 +52,14 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
     }
 
-    @Override
     public void build(FrameBlock in) {
         for( ColumnEncoder columnEncoder : _columnEncoders)
             columnEncoder.build(in);
     }
 
-    @Override
     public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
         try {
+            resolveInterEncoderDependencies();
             for( ColumnEncoder columnEncoder : _columnEncoders)
                 out = columnEncoder.apply(in, out);
         }
@@ -73,12 +71,12 @@ public class MultiColumnEncoder implements Encoder {
     }
 
     @Override
-    public FrameBlock getMetaData(FrameBlock out) {
+    public FrameBlock getMetaData(FrameBlock meta) {
         if( _meta != null )
             return _meta;
         for( ColumnEncoder columnEncoder : _columnEncoders)
-            columnEncoder.getMetaData(out);
-        return out;
+            columnEncoder.getMetaData(meta);
+        return meta;
     }
 
     @Override
@@ -120,36 +118,121 @@ public class MultiColumnEncoder implements Encoder {
         _columnEncoders.forEach(encoder -> encoder.updateIndexRanges(beginDims, endDims));
     }
 
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeInt(_columnEncoders.size());
+        for(ColumnEncoder columnEncoder : _columnEncoders) {
+            out.writeInt(columnEncoder._colID);
+            columnEncoder.writeExternal(out);
+        }
+        out.writeBoolean(_meta != null);
+        if(_meta != null)
+            _meta.write(out);
+    }
 
-    public List<ColumnEncoder> getColumnEncoders(){
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        int encodersSize = in.readInt();
+        _columnEncoders = new ArrayList<>();
+        for(int i = 0; i < encodersSize; i++) {
+            int colID = in.readInt();
+            ColumnEncoderComposite columnEncoder = new ColumnEncoderComposite();
+            columnEncoder.readExternal(in);
+            columnEncoder.setColID(colID);
+            _columnEncoders.add(columnEncoder);
+        }
+        if (in.readBoolean()) {
+            FrameBlock meta = new FrameBlock();
+            meta.readFields(in);
+            _meta = meta;
+        }
+    }
+
+
+    public <T extends ColumnEncoder> List<T> getColumnEncoders(Class<T> type){
+        // TODO cache results for faster access
+        List<T> ret = new ArrayList<>();
+        for(ColumnEncoder encoder: _columnEncoders){
+            if (encoder.getClass().equals(ColumnEncoderComposite.class)){
+                encoder = ((ColumnEncoderComposite) encoder).getEncoder(type);
+            }
+            if (encoder != null && encoder.getClass().equals(type)){
+                ret.add((T) encoder);
+            }
+        }
+        return ret;
+    }
+
+    public <T extends ColumnEncoder> T getColumnEncoder(int colID, Class<T> type){
+        for(T encoder: getColumnEncoders(type)){
+            if(encoder._colID == colID){
+                return encoder;
+            }
+        }
+        return null;
+    }
+
+    public <T extends ColumnEncoder, E> List<E> getFromAll(Class<T> type, Function<? super T, ? extends  E> mapper){
+        return getColumnEncoders(type).stream().map(mapper).collect(Collectors.toList());
+    }
+
+    public <T extends ColumnEncoder> int[] getFromAllIntArray(Class<T> type, Function<? super T, ? extends  Integer> mapper){
+        return getFromAll(type, mapper).stream().mapToInt(i->i).toArray();
+    }
+
+    public <T extends ColumnEncoder> double[] getFromAllDoubleArray(Class<T> type, Function<? super T, ? extends  Double> mapper) {
+        return getFromAll(type, mapper).stream().mapToDouble(i -> i).toArray();
+    }
+
+
+    public List<ColumnEncoderComposite> getColumnEncoders(){
         return _columnEncoders;
     }
 
-    public List<ColumnEncoder> getEncodersForID(int colID){
+    public List<ColumnEncoderComposite> getCompositeEncodersForID(int colID){
         return _columnEncoders.stream().filter(encoder -> encoder._colID == colID).collect(Collectors.toList());
+    }
+
+    public int getNumExtraCols(){
+        List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class);
+        if(dc.isEmpty()){
+            return 0;
+        }
+        return dc.stream().map(ColumnEncoderDummycode::getNumCols).mapToInt(i->i).max().getAsInt();
+    }
+
+    public <T extends ColumnEncoder> boolean containsEncoderForID(int colID, Class<T> type){
+        return getColumnEncoders(type).stream().anyMatch(encoder -> encoder.getColID() == colID);
+    }
+
+    public <T extends ColumnEncoder, E> void applyToAll(Class<T> type, Consumer<? super T> function){
+        getColumnEncoders(type).forEach(function);
     }
 
 
     public MultiColumnEncoder subRangeEncoder(IndexRange ixRange){
-        List<ColumnEncoder> encoders = new ArrayList<>();
+        List<ColumnEncoderComposite> encoders = new ArrayList<>();
         for(long i = ixRange.colStart; i < ixRange.colEnd; i++){
-            encoders.addAll(getEncodersForID((int) i));
+            encoders.addAll(getCompositeEncodersForID((int) i));
         }
         return new MultiColumnEncoder(encoders);
     }
 
 
     public <T extends  ColumnEncoder> MultiColumnEncoder subRangeEncoder(IndexRange ixRange, Class<T> type){
-        List<ColumnEncoder> encoders = new ArrayList<>();
+        List<T> encoders = new ArrayList<>();
         for(long i = ixRange.colStart; i < ixRange.colEnd; i++){
             encoders.add(getColumnEncoder((int) i, type));
         }
-        return new MultiColumnEncoder(encoders);
+        if(type.equals(ColumnEncoderComposite.class))
+            return new MultiColumnEncoder((List<ColumnEncoderComposite>) encoders);
+        else
+            return new MultiColumnEncoder(encoders.stream().map(ColumnEncoderComposite::new).collect(Collectors.toList()));
     }
 
     public void mergeReplace(MultiColumnEncoder multiEncoder) {
-        for(ColumnEncoder otherEncoder: multiEncoder._columnEncoders){
-            ColumnEncoder encoder = getColumnEncoder(otherEncoder._colID, otherEncoder.getClass());
+        for(ColumnEncoderComposite otherEncoder: multiEncoder._columnEncoders){
+            ColumnEncoderComposite encoder = getColumnEncoder(otherEncoder._colID, otherEncoder.getClass());
             if(encoder != null){
                 _columnEncoders.remove(encoder);
             }
@@ -180,93 +263,25 @@ public class MultiColumnEncoder implements Encoder {
                 presentComposite.mergeAt(encoder, row);
             }else{
                 if(encoder instanceof ColumnEncoderComposite){
-                    _columnEncoders.add(encoder);
+                    _columnEncoders.add((ColumnEncoderComposite) encoder);
                 }else{
-                    List<ColumnEncoder> list = new ArrayList<>();
-                    list.add(encoder);
-                    _columnEncoders.add(new ColumnEncoderComposite(list));
+                    _columnEncoders.add(new ColumnEncoderComposite(encoder));
                 }
             }
         }
     }
 
-    public int getNumExtraCols(){
-        List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class);
-        if(dc.isEmpty()){
-           return 0;
-        }
-        return dc.stream().map(ColumnEncoderDummycode::getNumCols).mapToInt(i->i).max().getAsInt();
-    }
 
-
-    public <T extends ColumnEncoder> boolean containsEncoderForID(int colID, Class<T> type){
-        return getColumnEncoders(type).stream().anyMatch(encoder -> encoder.getColID() == colID);
-    }
-
-    public <T extends ColumnEncoder> List<T> getColumnEncoders(Class<T> type){
-        // TODO cache results for faster access
-        List<T> ret = new ArrayList<>();
-        for(ColumnEncoder encoder: _columnEncoders){
-            if (encoder.getClass().equals(ColumnEncoderComposite.class)){
-                encoder = ((ColumnEncoderComposite) encoder).getEncoder(type);
-            }
-            if (encoder.getClass().equals(type)){
-                ret.add((T) encoder);
+    public void resolveInterEncoderDependencies(){
+        int domainSize = 0;
+        for(ColumnEncoderDummycode dc: getColumnEncoders(ColumnEncoderDummycode.class)){
+            domainSize += dc._domainSize - 1;
+            for (ColumnEncoder encoder: _columnEncoders.stream().filter(encoder -> encoder._colID > dc._colID).collect(Collectors.toList())){
+                encoder.shiftOutCol(dc._domainSize-1);
             }
         }
-        return ret;
-    }
-
-    public <T extends ColumnEncoder> T getColumnEncoder(int colID, Class<T> type){
-        for(T encoder: getColumnEncoders(type)){
-            if(encoder._colID == colID){
-                return encoder;
-            }
-        }
-        return null;
-    }
-
-    public <T extends ColumnEncoder, E> List<E> getFromAll(Class<T> type, Function<? super T, ? extends  E> mapper){
-        return getColumnEncoders(type).stream().map(mapper).collect(Collectors.toList());
-    }
-
-    public <T extends ColumnEncoder> int[] getFromAllIntArray(Class<T> type, Function<? super T, ? extends  Integer> mapper){
-        return getFromAll(type, mapper).stream().mapToInt(i->i).toArray();
-    }
-
-    public <T extends ColumnEncoder> double[] getFromAllDoubleArray(Class<T> type, Function<? super T, ? extends  Double> mapper){
-        return getFromAll(type, mapper).stream().mapToDouble(i->i).toArray();
-    }
-
-    public <T extends ColumnEncoder, E> void applyToAll(Class<T> type, Consumer<? super T> function){
-        getColumnEncoders(type).forEach(function);
-    }
-
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeInt(_columnEncoders.size());
-        for(ColumnEncoder columnEncoder : _columnEncoders) {
-            out.writeByte(EncoderFactory.getEncoderType(columnEncoder));
-            columnEncoder.writeExternal(out);
-        }
-        out.writeBoolean(_meta != null);
-        if(_meta != null)
-            _meta.write(out);
-    }
-
-    @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        int encodersSize = in.readInt();
-        _columnEncoders = new ArrayList<>();
-        for(int i = 0; i < encodersSize; i++) {
-            ColumnEncoder columnEncoder = EncoderFactory.createInstance(in.readByte());
-            columnEncoder.readExternal(in);
-            _columnEncoders.add(columnEncoder);
-        }
-        if (in.readBoolean()) {
-            FrameBlock meta = new FrameBlock();
-            meta.readFields(in);
-            _meta = meta;
+        for(ColumnEncoderDummycode dc: getColumnEncoders(ColumnEncoderDummycode.class)){
+            dc._dummycodedLength = domainSize + dc._clen;
         }
     }
 

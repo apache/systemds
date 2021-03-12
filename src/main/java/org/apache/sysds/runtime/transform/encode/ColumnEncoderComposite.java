@@ -62,6 +62,12 @@ public class ColumnEncoderComposite extends ColumnEncoder
 		this(columnEncoders, null);
 	}
 
+	public ColumnEncoderComposite(ColumnEncoder columnEncoder){
+		super(columnEncoder._colID);
+		_columnEncoders = new ArrayList<>();
+		_columnEncoders.add(columnEncoder);
+	}
+
 	public List<ColumnEncoder> getEncoders() {
 		return _columnEncoders;
 	}
@@ -264,6 +270,7 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeInt(_columnEncoders.size());
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
+			out.writeInt(columnEncoder._colID);
 			out.writeByte(EncoderFactory.getEncoderType(columnEncoder));
 			columnEncoder.writeExternal(out);
 		}
@@ -277,8 +284,10 @@ public class ColumnEncoderComposite extends ColumnEncoder
 		int encodersSize = in.readInt();
 		_columnEncoders = new ArrayList<>();
 		for(int i = 0; i < encodersSize; i++) {
+			int colID = in.readInt();
 			ColumnEncoder columnEncoder = EncoderFactory.createInstance(in.readByte());
 			columnEncoder.readExternal(in);
+			columnEncoder.setColID(colID);
 			_columnEncoders.add(columnEncoder);
 		}
 		if (in.readBoolean()) {
@@ -286,5 +295,13 @@ public class ColumnEncoderComposite extends ColumnEncoder
 			meta.readFields(in);
 			_meta = meta;
 		}
+	}
+
+	@Override
+	public void shiftOutCol(int shift){
+		for(ColumnEncoder encoder: _columnEncoders){
+			encoder.shiftOutCol(shift);
+		}
+		_colID += shift;
 	}
 }

@@ -49,7 +49,8 @@ public class EncoderFactory
 		MVImpute,
 		Omit,
 		PassThrough,
-		Recode
+		Recode,
+		Composite
 	};
 
 	
@@ -79,7 +80,7 @@ public class EncoderFactory
 		try {
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
-			List<ColumnEncoder> lencoders = new ArrayList<>();
+			List<ColumnEncoderComposite> lencoders = new ArrayList<>();
 			HashMap<Integer, List<ColumnEncoder>> colEncoders = new HashMap<>();
 			boolean ids = jSpec.containsKey("ids") && jSpec.getBoolean("ids");
 

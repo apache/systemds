@@ -54,10 +54,11 @@ public class ColumnEncoderPassThrough extends ColumnEncoder
 	
 	@Override 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		ValueType vt = in.getSchema()[_colID];
+		int col = _colID - 1; // 1-based
+		ValueType vt = in.getSchema()[col];
 		for( int i=0; i<in.getNumRows(); i++ ) {
-			Object val = in.get(i, _colID);
-			out.quickSetValue(i, _colID, (val==null||(vt==ValueType.STRING
+			Object val = in.get(i, col);
+			out.quickSetValue(i, col+_writeOffset, (val==null||(vt==ValueType.STRING
 				&& val.toString().isEmpty())) ? Double.NaN :
 				UtilFunctions.objectToDouble(vt, val));
 		}

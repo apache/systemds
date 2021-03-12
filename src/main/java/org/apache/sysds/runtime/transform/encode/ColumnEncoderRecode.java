@@ -146,7 +146,7 @@ public class ColumnEncoderRecode extends ColumnEncoder
 			Object okey = in.get(i, _colID-1);
 			String key = (okey!=null) ? okey.toString() : null;
 			long code = lookupRCDMap(key);
-			out.quickSetValue(i, _colID-1,
+			out.quickSetValue(i, _colID-1+_writeOffset,
 				(code >= 0) ? code : Double.NaN);
 		}
 		return out;

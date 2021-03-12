@@ -34,8 +34,8 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	private static final long serialVersionUID = 5832130477659116489L;
 
 	public int _domainSize = -1;  // length = #of dummycoded columns
-	private long _dummycodedLength = 0; // #of columns after dummycoded
-	private long _clen = 0;
+	protected long _dummycodedLength = 0; // #of columns after dummycoded
+	protected long _clen = 0;
 
 	/*
 	public EncoderDummycode(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
@@ -94,7 +94,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		for( int i=0; i<out.getNumRows(); i++ ) {
 			for(int colID=1, idx=0, ncolID=1; colID <= clen; colID++) {
 				double val = out.quickGetValue(i, colID-1);
-				if(colID == _colID) {
+				if(colID == _colID+_writeOffset) {
 					ret.appendValue(i, ncolID-1+(int)val-1, 1);
 					ncolID += _domainSize;
 					idx ++;

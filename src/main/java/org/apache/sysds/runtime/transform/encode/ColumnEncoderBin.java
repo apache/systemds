@@ -175,7 +175,7 @@ public class ColumnEncoderBin extends ColumnEncoder
 				in.getSchema()[_colID-1], in.get(i, _colID-1));
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix+1) : ix) + 1;
-			out.quickSetValue(i, _colID-1, binID);
+			out.quickSetValue(i, _colID-1+_writeOffset, binID);
 		}
 		return out;
 	}

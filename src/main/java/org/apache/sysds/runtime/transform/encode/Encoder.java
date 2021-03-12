@@ -6,33 +6,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import java.io.Externalizable;
 
 public interface Encoder extends Externalizable {
-    /**
-     * Block encode: build and apply (transform encode).
-     *
-     * @param in input frame block
-     * @param out output matrix block
-     * @return output matrix block
-     */
-    MatrixBlock encode(FrameBlock in, MatrixBlock out);
-
-    /**
-     * Build the transform meta data for the given block input. This call modifies
-     * and keeps meta data as encoder state.
-     *
-     * @param in input frame block
-     */
-    void build(FrameBlock in);
-
-    /**
-     * Encode input data blockwise according to existing transform meta
-     * data (transform apply).
-     *
-     * @param in input frame block
-     * @param out output matrix block
-     * @return output matrix block
-     */
-    MatrixBlock apply(FrameBlock in, MatrixBlock out);
-
 
     /**
      * Construct a frame block out of the transform meta data.

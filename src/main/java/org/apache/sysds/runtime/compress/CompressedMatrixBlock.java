@@ -1235,7 +1235,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed, int k) {
 		throw new DMLRuntimeException("CompressedMatrixBlock: randOperationsInPlace not supported.");
 	}
-
+	
 	@Override
 	public MatrixBlock seqOperationsInPlace(double from, double to, double incr) {
 		// output should always be uncompressed

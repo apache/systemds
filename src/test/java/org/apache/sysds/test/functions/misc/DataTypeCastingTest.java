@@ -87,6 +87,7 @@ public class DataTypeCastingTest extends AutomatedTestBase
 	 */
 	private void runTest( String testName, boolean matrixInput, Class<?> exceptionClass ) 
 	{
+		setOutputBuffering(true);
 		String TEST_NAME = testName;
 		int numVals = (exceptionClass != null ? 7 : 1);
 		
@@ -134,5 +135,6 @@ public class DataTypeCastingTest extends AutomatedTestBase
 		{
 			throw new RuntimeException(ex);
 		}
+		setOutputBuffering(false);
 	}
 }

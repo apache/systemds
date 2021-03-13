@@ -163,6 +163,7 @@ public class ListAndStructTest extends AutomatedTestBase
 	
 	private void runListStructTest(String testname, boolean rewrites)
 	{
+		setOutputBuffering(true);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try {
@@ -193,5 +194,6 @@ public class ListAndStructTest extends AutomatedTestBase
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
+		setOutputBuffering(false);
 	}
 }

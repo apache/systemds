@@ -54,6 +54,7 @@ public class IPANnzPropagationTest extends AutomatedTestBase
 
 	private void runIPANnzPropgationTest(String testname)
 	{
+		setOutputBuffering(true);
 		// Save old settings
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
@@ -79,5 +80,6 @@ public class IPANnzPropagationTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			rtplatform = platformOld;
 		}
+		setOutputBuffering(false);
 	}
 }

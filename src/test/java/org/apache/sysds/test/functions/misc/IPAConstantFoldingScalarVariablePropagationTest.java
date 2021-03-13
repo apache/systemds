@@ -94,6 +94,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 	 */
 	private void runIPAScalarVariablePropagationTest(String testname, boolean IPA_SECOND_CHANCE)
 	{
+		setOutputBuffering(true);
 		// Save old settings
 		int oldIPANumRep = OptimizerUtils.IPA_NUM_REPETITIONS;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -125,5 +126,6 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			rtplatform = platformOld;
 		}
+		setOutputBuffering(false);
 	}
 }

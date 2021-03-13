@@ -24,8 +24,8 @@ foo = function(matrix[double] X) return (double sum) {
     sum = sum(X);
 }
 
-X = rand(rows=1000, cols=1000000000, sparsity=1e-6)
+X = rand(rows=1000, cols=100000000, sparsity=1e-6)
 s1 = foo(X);
-X = rand(rows=1000, cols=1000000000, sparsity=1e-7)
+X = rand(rows=1000, cols=100000000, sparsity=1e-7)
 s2 = foo(X);
 print(s1+" "+s2);

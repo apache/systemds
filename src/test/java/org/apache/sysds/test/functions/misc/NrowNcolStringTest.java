@@ -69,6 +69,7 @@ public class NrowNcolStringTest extends AutomatedTestBase
 	 */
 	private void runNxxStringTest( String testName ) 
 	{
+		setOutputBuffering(true);
 		String TEST_NAME = testName;
 		
 		try
@@ -86,5 +87,6 @@ public class NrowNcolStringTest extends AutomatedTestBase
 		{
 			throw new RuntimeException(ex);
 		}
+		setOutputBuffering(false);
 	}
 }

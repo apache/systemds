@@ -215,7 +215,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		private int numberCompressedOpsExecuted = 0;
 		private int numberDecompressedOpsExecuted = 0;
 		private int inefficientSupportedOpsExecuted = 0;
-		private int superEfficientSuportedOpsExecuted = 0;
+		// private int superEfficientSupportedOpsExecuted = 0;
 
 		private boolean foundStart = false;
 		private boolean usedInLoop = false;

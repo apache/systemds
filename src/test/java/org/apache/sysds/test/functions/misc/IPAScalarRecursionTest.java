@@ -42,6 +42,7 @@ public class IPAScalarRecursionTest extends AutomatedTestBase
 	@Test
 	public void testScalarRecursion() 
 	{
+		setOutputBuffering(true);
 		String TEST_NAME = TEST_NAME1;
 		
 		try
@@ -59,5 +60,6 @@ public class IPAScalarRecursionTest extends AutomatedTestBase
 		{
 			throw new RuntimeException(ex);
 		}
+		setOutputBuffering(false);
 	}
 }

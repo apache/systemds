@@ -102,6 +102,7 @@ public class ConditionalValidateTest extends AutomatedTestBase
 	
 	private void runTest( String testName, Class<?> exceptionClass, boolean fileExists )
 	{
+		setOutputBuffering(true);
 		String TEST_NAME = testName;
 
 		try
@@ -135,5 +136,6 @@ public class ConditionalValidateTest extends AutomatedTestBase
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
+		setOutputBuffering(false);
 	}
 }

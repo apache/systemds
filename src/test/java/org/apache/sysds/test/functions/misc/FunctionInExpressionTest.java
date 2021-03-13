@@ -89,12 +89,13 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	
 	private void runFunInExpressionTest( String testName )
 	{
+		setOutputBuffering(true);
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-stats", "-args", output("R") };
+		programArgs = new String[]{"-args", output("R") };
 		
 		fullRScriptName = HOME + testName + ".R";
 		rCmd = getRCmd(expectedDir());
@@ -105,5 +106,6 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		//compare results
 		double val = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 		Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -13));
+		setOutputBuffering(false);
 	}
 }

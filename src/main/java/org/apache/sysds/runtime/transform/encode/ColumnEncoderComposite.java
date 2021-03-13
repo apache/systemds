@@ -292,12 +292,4 @@ public class ColumnEncoderComposite extends ColumnEncoder
 			_meta = meta;
 		}
 	}
-
-	@Override
-	public void shiftOutCol(int shift){
-		for(ColumnEncoder encoder: _columnEncoders){
-			encoder.shiftOutCol(shift);
-		}
-		_colID += shift;
-	}
 }

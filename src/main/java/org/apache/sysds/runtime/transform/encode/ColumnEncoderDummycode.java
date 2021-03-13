@@ -39,22 +39,8 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	private static final long serialVersionUID = 5832130477659116489L;
 
 	public int _domainSize = -1;  // length = #of dummycoded columns
-	protected long _dummycodedLength = 0; // #of columns after dummycoded
 	protected long _clen = 0;
 
-	/*
-	public EncoderDummycode(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
-		throws JSONException {
-		super(null, clen);
-
-		if(parsedSpec.containsKey(TfMethod.DUMMYCODE.toString())) {
-			int[] collist = TfMetaUtils
-				.parseJsonIDList(parsedSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol);
-			initColList(collist);
-		}
-	}
-
-	 */
 	public ColumnEncoderDummycode() {
 		super(-1);
 	}
@@ -64,16 +50,12 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		_clen = clen;
 	}
 
-	public ColumnEncoderDummycode(int colID, int domainSize, long dummycodedLength, long clen) {
+	public ColumnEncoderDummycode(int colID, int domainSize, long clen) {
 		super(colID);
 		_domainSize = domainSize;
-		_dummycodedLength = dummycodedLength;
 		_clen = clen;
 	}
 
-	public int getNumCols() {
-		return (int)_dummycodedLength;
-	}
 	
 	@Override
 	public MatrixBlock encode(FrameBlock in) {
@@ -105,7 +87,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		assert in.getNumColumns() == 1;
 		//allocate output in dense or sparse representation
 		final boolean sparse = MatrixBlock.evalSparseFormatInMemory(
-			in.getNumRows(), getNumCols(), in.getNonZeros());
+			in.getNumRows(), _domainSize, in.getNonZeros());
 		MatrixBlock ret = new MatrixBlock(in.getNumRows(), _domainSize, sparse);
 		
 		//append dummy coded or unchanged values to output
@@ -124,7 +106,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 			assert other._colID == _colID;
 			// temporary, will be updated later
 			_domainSize = 0;
-			_dummycodedLength = _clen;
 			return;
 		}
 		super.mergeAt(other, row);
@@ -149,7 +130,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	public void updateDomainSizes(List<ColumnEncoder> columnEncoders) {
 		if(_colID == -1)
 			return;
-		_dummycodedLength = _clen;
 		for (ColumnEncoder columnEncoder : columnEncoders) {
 			int distinct = -1;
 			if (columnEncoder instanceof ColumnEncoderRecode) {
@@ -162,30 +142,26 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 			
 			if (distinct != -1) {
 					_domainSize = distinct;
-					_dummycodedLength += _domainSize - 1;
 			}
 		}
 	}
 
 	@Override
-	public FrameBlock getMetaData(FrameBlock out) {
-		return out;
+	public FrameBlock getMetaData(FrameBlock meta) {
+		return meta;
 	}
 	
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		//initialize domain sizes and output num columns
 		_domainSize = -1;
-		_dummycodedLength = _clen;
 		_domainSize= (int)meta.getColumnMetadata()[_colID-1].getNumDistinct();
-		_dummycodedLength += _domainSize-1;
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
 		out.writeLong(_clen);
-		out.writeLong(_dummycodedLength);
 		out.writeInt(_domainSize);
 	}
 
@@ -193,7 +169,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
 		_clen = in.readLong();
-		_dummycodedLength = in.readLong();
 		_domainSize = in.readInt();
 	}
 
@@ -204,13 +179,13 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		if(o == null || getClass() != o.getClass())
 			return false;
 		ColumnEncoderDummycode that = (ColumnEncoderDummycode) o;
-		return _dummycodedLength == that._dummycodedLength
+		return _colID == that._colID
 			&& (_domainSize == that._domainSize);
 	}
 
 	@Override
 	public int hashCode() {
-		int result = Objects.hash(_dummycodedLength);
+		int result = Objects.hash(_colID);
 		result = 31 * result + Objects.hashCode(_domainSize);
 		return result;
 	}

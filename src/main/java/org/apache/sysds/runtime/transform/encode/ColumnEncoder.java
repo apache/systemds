@@ -41,7 +41,6 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
 
 	protected int _colID = -1;
-	protected int _writeOffset = 0;
 
 	protected ColumnEncoder(int colID) {
 		_colID = colID;
@@ -138,7 +137,6 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	@Override
 	public void writeExternal(ObjectOutput os) throws IOException {
 		os.writeInt(_colID);
-		os.writeInt(_writeOffset);
 	}
 
 	/**
@@ -151,15 +149,11 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
 		_colID = in.readInt();
-		_writeOffset = in.readInt();
 	}
 
 	public int getColID() {
 		return _colID;
 	}
 
-	public void shiftOutCol(int shift){
-		_writeOffset += shift;
-	}
 }
 

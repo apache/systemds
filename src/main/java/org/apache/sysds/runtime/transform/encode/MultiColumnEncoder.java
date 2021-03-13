@@ -41,22 +41,8 @@ public class MultiColumnEncoder implements Encoder {
         MatrixBlock out = null;
         try {
             build(in);
-            _meta = new FrameBlock(in.getNumColumns(), Types.ValueType.STRING);
-            for( ColumnEncoder columnEncoder : _columnEncoders)
-                _meta = columnEncoder.getMetaData(_meta);
-            if(_legacyOmit != null)
-                _legacyOmit.getMetaData(_meta);
-            if(_legacyMVImpute != null)
-                _legacyMVImpute.getMetaData(_meta);
-
-            for( ColumnEncoder columnEncoder : _columnEncoders)
-                columnEncoder.initMetaData(_meta);
-            if(_legacyOmit != null)
-                _legacyOmit.initMetaData(_meta);
-            if(_legacyMVImpute != null)
-                _legacyMVImpute.initMetaData(_meta);
-
-            resolveInterEncoderDependencies();
+            _meta = getMetaData(new FrameBlock(in.getNumColumns(), Types.ValueType.STRING));
+            initMetaData(_meta);
             //apply meta data
             out = apply(in);
         }
@@ -64,7 +50,6 @@ public class MultiColumnEncoder implements Encoder {
             LOG.error("Failed transform-encode frame with \n" + this);
             throw ex;
         }
-
 		return out;
     }
 
@@ -83,20 +68,20 @@ public class MultiColumnEncoder implements Encoder {
 
     public MatrixBlock apply(FrameBlock in) {
         MatrixBlock out = null;
+        if(in.getNumColumns() != getFromAll(ColumnEncoderComposite.class, ColumnEncoder::getColID).size())
+            throw new DMLRuntimeException("Not every column in has a CompositeEncoder. Please make sure every column " +
+                    "has a encoder or slice the input accordingly");
         try {
-            resolveInterEncoderDependencies();
             for( ColumnEncoderComposite columnEncoder : _columnEncoders){
                 if(out == null)
                     out = columnEncoder.apply(in);
                 else
                     out = out.append(columnEncoder.apply(in), null);
             }
-
             if(_legacyOmit != null)
                 out = _legacyOmit.apply(in, out);
             if(_legacyMVImpute != null)
                 out = _legacyMVImpute.apply(in, out);
-
         }
         catch(Exception ex) {
             LOG.error("Failed to transform-apply frame with \n" + this);
@@ -358,19 +343,6 @@ public class MultiColumnEncoder implements Encoder {
         }
     }
 
-
-    public void resolveInterEncoderDependencies(){
-        int domainSize = 0;
-        for(ColumnEncoderDummycode dc: getColumnEncoders(ColumnEncoderDummycode.class)){
-            domainSize += dc._domainSize - 1;
-            for (ColumnEncoder encoder: _columnEncoders.stream().filter(encoder -> encoder._colID > dc._colID).collect(Collectors.toList())){
-                encoder.shiftOutCol(dc._domainSize-1);
-            }
-        }
-        for(ColumnEncoderDummycode dc: getColumnEncoders(ColumnEncoderDummycode.class)){
-            dc._dummycodedLength = domainSize + dc._clen;
-        }
-    }
 
 
     public <T extends LegacyEncoder> void addReplaceLegacyEncoder(T encoder) {

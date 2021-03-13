@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Arrays;
@@ -27,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.common.Types.ValueType;
@@ -132,24 +130,21 @@ public class EncoderFactory
 					ColumnEncoderDummycode dc = new ColumnEncoderDummycode(id, schema.length);
 					addEncoderToMap(dc, colEncoders);
 				}
-			if( !oIDs.isEmpty() )
-				for (Integer id : oIDs){
-					ColumnEncoderOmit o = new ColumnEncoderOmit(id, minCol != -1 || maxCol != -1);
-					addEncoderToMap(o, colEncoders);
-				}
-			if( !mvIDs.isEmpty() ) {
-				for(Object o: (JSONArray) jSpec.get(TfMethod.IMPUTE.toString())){
-					JSONObject colspec = (JSONObject) o;
-					ColumnEncoderMVImpute mv = new ColumnEncoderMVImpute(colspec, colnames, minCol, maxCol, ids, rcIDs);
-					addEncoderToMap(mv, colEncoders);
-				}
-			}
-			
 			//create composite decoder of all created encoders
 			for(Entry<Integer, List<ColumnEncoder>> listEntry: colEncoders.entrySet()){
 				lencoders.add(new ColumnEncoderComposite(listEntry.getValue()));
 			}
 			encoder = new MultiColumnEncoder(lencoders);
+			if( !oIDs.isEmpty() ){
+				encoder.addReplaceLegacyEncoder(new EncoderOmit(jSpec, colnames, schema.length, minCol, maxCol));
+			}
+			if( !mvIDs.isEmpty() ) {
+				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length, minCol, maxCol);
+				ma.initRecodeIDList(rcIDs);
+				encoder.addReplaceLegacyEncoder(ma);
+			}
+			
+
 			
 			//initialize meta data w/ robustness for superset of cols
 			if( meta != null ) {
@@ -196,10 +191,6 @@ public class EncoderFactory
 			return EncoderType.Dummycode.ordinal();
 		else if( columnEncoder instanceof ColumnEncoderFeatureHash)
 			return EncoderType.FeatureHash.ordinal();
-		else if( columnEncoder instanceof ColumnEncoderMVImpute)
-			return EncoderType.MVImpute.ordinal();
-		else if( columnEncoder instanceof ColumnEncoderOmit)
-			return EncoderType.Omit.ordinal();
 		else if( columnEncoder instanceof ColumnEncoderPassThrough)
 			return EncoderType.PassThrough.ordinal();
 		else if( columnEncoder instanceof ColumnEncoderRecode)
@@ -214,8 +205,6 @@ public class EncoderFactory
 			case Bin:         return new ColumnEncoderBin();
 			case Dummycode:   return new ColumnEncoderDummycode();
 			case FeatureHash: return new ColumnEncoderFeatureHash();
-			case MVImpute:    return new ColumnEncoderMVImpute();
-			case Omit:        return new ColumnEncoderOmit();
 			case PassThrough: return new ColumnEncoderPassThrough();
 			case Recode:      return new ColumnEncoderRecode();
 			default:

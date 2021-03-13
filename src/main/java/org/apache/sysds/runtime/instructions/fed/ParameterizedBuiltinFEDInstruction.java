@@ -69,8 +69,6 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
 import org.apache.sysds.runtime.transform.encode.*;
-import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
-import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
 
 public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final LinkedHashMap<String, String> params;
@@ -503,48 +501,39 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		MultiColumnEncoder globalEncoder = EncoderFactory.createEncoder(spec, colNames, colNames.length, meta);
 
-		/*
-		// check if EncoderOmit exists
-		List<ColumnEncoder> columnEncoders = ((ColumnEncoderComposite) globalEncoder).getEncoders();
-		int omitIx = -1;
-		for(int i = 0; i < columnEncoders.size(); i++) {
-			if(columnEncoders.get(i) instanceof ColumnEncoderOmit) {
-				omitIx = i;
-				break;
-			}
+		if(globalEncoder.hasLegacyEncoder(EncoderOmit.class)) {
+			// extra step, build the omit encoder: we need information about all the rows to omit, if our federated
+			// ranges are split up row-wise we need to build the encoder separately and combine it
+			globalEncoder.addReplaceLegacyEncoder(buildOmitEncoder(fedMapping, globalEncoder.getLegacyEncoder(EncoderOmit.class)));
 		}
 
-		 */
-		// extra step, build the omit encoder: we need information about all the rows to omit, if our federated
-		// ranges are split up row-wise we need to build the encoder separately and combine it
-		buildOmitEncoder(fedMapping, globalEncoder);
-
-
 		MultiReturnParameterizedBuiltinFEDInstruction
-			.encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutputVariableName()));
+				.encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutputVariableName()));
 
 		// release locks
 		ec.releaseFrameInput(params.get("meta"));
 	}
 
-	private void buildOmitEncoder(FederationMap fedMapping, MultiColumnEncoder globalEncoder) {
-		MultiColumnEncoder newOmit = new MultiColumnEncoder();
+	private static EncoderOmit buildOmitEncoder(FederationMap fedMapping, EncoderOmit omitEncoder) {
+		EncoderOmit newOmit = new EncoderOmit(true);
 		fedMapping.forEachParallel((range, data) -> {
 			try {
-				MultiColumnEncoder subRangeEncoder = globalEncoder.subRangeEncoder(range.asIndexRange(), ColumnEncoderOmit.class);
+				EncoderOmit subRangeEncoder = omitEncoder.subRangeEncoder(range.asIndexRange().add(1));
 				FederatedResponse response = data
 						.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
 								new InitRowsToRemoveOmit(data.getVarID(), subRangeEncoder)))
 						.get();
+
 				// no synchronization necessary since names should anyway match
-				MultiColumnEncoder builtEncoder = (MultiColumnEncoder) response.getData()[0];
-				newOmit.mergeAt(builtEncoder, (int) (range.getBeginDims()[0] + 1));
-			}catch(Exception e) {
+				Encoder builtEncoder = (Encoder) response.getData()[0];
+				newOmit.mergeAt((EncoderOmit) builtEncoder, (int) (range.getBeginDims()[0] + 1), (int) (range.getBeginDims()[1] + 1));
+			}
+			catch(Exception e) {
 				throw new DMLRuntimeException(e);
 			}
 			return null;
 		});
-		globalEncoder.mergeReplace(newOmit);
+		return newOmit;
 	}
 
 	public CacheableData<?> getTarget(ExecutionContext ec) {
@@ -650,9 +639,9 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 	private static class InitRowsToRemoveOmit extends FederatedUDF {
 		private static final long serialVersionUID = -8196730717390438411L;
 
-		MultiColumnEncoder _encoder;
+		EncoderOmit _encoder;
 
-		public InitRowsToRemoveOmit(long varID, MultiColumnEncoder encoder) {
+		public InitRowsToRemoveOmit(long varID, EncoderOmit encoder) {
 			super(new long[] {varID});
 			_encoder = encoder;
 		}

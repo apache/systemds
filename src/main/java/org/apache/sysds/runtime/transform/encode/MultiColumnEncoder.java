@@ -3,11 +3,11 @@ package org.apache.sysds.runtime.transform.encode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.IndexRange;
 
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -21,6 +21,11 @@ import java.util.stream.Collectors;
 public class MultiColumnEncoder implements Encoder {
 
     private List<ColumnEncoderComposite> _columnEncoders = null;
+
+    // These encoders are deprecated and will be fazed out soon.
+    private EncoderMVImpute _legacyMVImpute = null;
+    private EncoderOmit _legacyOmit = null;
+
     private FrameBlock _meta = null;
     protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
 
@@ -39,8 +44,18 @@ public class MultiColumnEncoder implements Encoder {
             _meta = new FrameBlock(in.getNumColumns(), Types.ValueType.STRING);
             for( ColumnEncoder columnEncoder : _columnEncoders)
                 _meta = columnEncoder.getMetaData(_meta);
+            if(_legacyOmit != null)
+                _legacyOmit.getMetaData(_meta);
+            if(_legacyMVImpute != null)
+                _legacyMVImpute.getMetaData(_meta);
+
             for( ColumnEncoder columnEncoder : _columnEncoders)
                 columnEncoder.initMetaData(_meta);
+            if(_legacyOmit != null)
+                _legacyOmit.initMetaData(_meta);
+            if(_legacyMVImpute != null)
+                _legacyMVImpute.initMetaData(_meta);
+
             resolveInterEncoderDependencies();
             //apply meta data
             out = apply(in);
@@ -56,6 +71,14 @@ public class MultiColumnEncoder implements Encoder {
     public void build(FrameBlock in) {
         for( ColumnEncoder columnEncoder : _columnEncoders)
             columnEncoder.build(in);
+        legacyBuild(in);
+    }
+
+    public void legacyBuild(FrameBlock in) {
+        if(_legacyOmit != null)
+            _legacyOmit.build(in);
+        if(_legacyMVImpute != null)
+            _legacyMVImpute.build(in);
     }
 
     public MatrixBlock apply(FrameBlock in) {
@@ -68,6 +91,12 @@ public class MultiColumnEncoder implements Encoder {
                 else
                     out = out.append(columnEncoder.apply(in), null);
             }
+
+            if(_legacyOmit != null)
+                out = _legacyOmit.apply(in, out);
+            if(_legacyMVImpute != null)
+                out = _legacyMVImpute.apply(in, out);
+
         }
         catch(Exception ex) {
             LOG.error("Failed to transform-apply frame with \n" + this);
@@ -82,6 +111,10 @@ public class MultiColumnEncoder implements Encoder {
             return _meta;
         for( ColumnEncoder columnEncoder : _columnEncoders)
             columnEncoder.getMetaData(meta);
+        if(_legacyOmit != null)
+            _legacyOmit.getMetaData(meta);
+        if(_legacyMVImpute != null)
+            _legacyMVImpute.getMetaData(meta);
         return meta;
     }
 
@@ -89,6 +122,10 @@ public class MultiColumnEncoder implements Encoder {
     public void initMetaData(FrameBlock meta) {
         for( ColumnEncoder columnEncoder : _columnEncoders)
             columnEncoder.initMetaData(meta);
+        if(_legacyOmit != null)
+            _legacyOmit.initMetaData(meta);
+        if(_legacyMVImpute != null)
+            _legacyMVImpute.initMetaData(meta);
     }
 
     @Override
@@ -108,7 +145,6 @@ public class MultiColumnEncoder implements Encoder {
      * meta data frame.
      *
      * @param meta meta data frame block
-     * @param out output matrix
      * @return matrix with column mapping (one row per attribute)
      */
     public MatrixBlock getColMapping(FrameBlock meta) {
@@ -139,6 +175,13 @@ public class MultiColumnEncoder implements Encoder {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeBoolean(_legacyMVImpute != null);
+        if(_legacyMVImpute != null)
+            _legacyMVImpute.writeExternal(out);
+        out.writeBoolean(_legacyOmit != null);
+        if(_legacyOmit != null)
+            _legacyOmit.writeExternal(out);
+
         out.writeInt(_columnEncoders.size());
         for(ColumnEncoder columnEncoder : _columnEncoders) {
             out.writeInt(columnEncoder._colID);
@@ -151,6 +194,15 @@ public class MultiColumnEncoder implements Encoder {
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        if(in.readBoolean()){
+            _legacyMVImpute = new EncoderMVImpute();
+            _legacyMVImpute.readExternal(in);
+        }
+        if(in.readBoolean()){
+            _legacyOmit = new EncoderOmit();
+            _legacyOmit.readExternal(in);
+        }
+
         int encodersSize = in.readInt();
         _columnEncoders = new ArrayList<>();
         for(int i = 0; i < encodersSize; i++) {
@@ -321,4 +373,30 @@ public class MultiColumnEncoder implements Encoder {
     }
 
 
+    public <T extends LegacyEncoder> void addReplaceLegacyEncoder(T encoder) {
+        if(encoder.getClass() == EncoderMVImpute.class){
+            _legacyMVImpute = (EncoderMVImpute) encoder;
+        }else if(encoder.getClass().equals(EncoderOmit.class)){
+            _legacyOmit = (EncoderOmit) encoder;
+        }else {
+            throw new DMLRuntimeException("Tried to add non legacy Encoder");
+        }
+    }
+
+    public <T extends LegacyEncoder> boolean hasLegacyEncoder(Class<T> type) {
+        if(type.equals(EncoderMVImpute.class))
+            return _legacyMVImpute != null;
+        if(type.equals(EncoderOmit.class))
+            return _legacyOmit != null;
+        assert false;
+        return false;
+    }
+    public <T extends LegacyEncoder> T getLegacyEncoder(Class<T> type) {
+        if(type.equals(EncoderMVImpute.class))
+            return (T) _legacyMVImpute;
+        if(type.equals(EncoderOmit.class))
+            return (T) _legacyOmit;
+        assert false;
+        return null;
+    }
 }

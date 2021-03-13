@@ -53,7 +53,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.encode.*;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
-import org.apache.sysds.runtime.transform.encode.ColumnEncoderMVImpute.MVMethod;
+import org.apache.sysds.runtime.transform.encode.EncoderMVImpute.MVMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.transform.meta.TfOffsetMap;
 
@@ -120,9 +120,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				.distinct().groupByKey()
 				.flatMap(new TransformEncodeGroupFunction(encoderBuild, accMax));
 			if( containsMVImputeEncoder(encoderBuild) ) {
-				List<ColumnEncoderComposite> mv = encoderBuild.getColumnEncoders(ColumnEncoderMVImpute.class).stream()
-						.map(ColumnEncoderComposite::new).collect(Collectors.toList());
-				MultiColumnEncoder mva = new MultiColumnEncoder(mv);
+				EncoderMVImpute mva = encoderBuild.getLegacyEncoder(EncoderMVImpute.class);
 				rcMaps = rcMaps.union(
 					in.mapPartitionsToPair(new TransformEncodeBuild2Function(mva))
 					  .groupByKey().flatMap(new TransformEncodeGroup2Function(mva)) );
@@ -171,22 +169,13 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 
 	private static boolean containsMVImputeEncoder(Encoder encoder) {
 		if( encoder instanceof ColumnEncoderComposite){
-			for( ColumnEncoder cencoder : ((ColumnEncoderComposite) encoder).getEncoders() )
-				if( cencoder instanceof ColumnEncoderMVImpute)
-					return true;
+			throw new DMLRuntimeException("CompositeEncoders cannot contain legacy encoder MVImpute");
 		}else if (encoder instanceof MultiColumnEncoder){
-			return !((MultiColumnEncoder) encoder).getColumnEncoders(ColumnEncoderMVImpute.class).isEmpty();
+			return ((MultiColumnEncoder) encoder).hasLegacyEncoder(EncoderMVImpute.class);
 		}
 		return false;
 	}
 
-	private static ColumnEncoderMVImpute getMVImputeEncoder(ColumnEncoder columnEncoder) {
-		if( columnEncoder instanceof ColumnEncoderComposite)
-			for( ColumnEncoder cencoder : ((ColumnEncoderComposite) columnEncoder).getEncoders() )
-				if( cencoder instanceof ColumnEncoderMVImpute)
-					return (ColumnEncoderMVImpute) cencoder;
-		return null;
-	}
 	
 	private static MaxLongAccumulator registerMaxLongAccumulator(JavaSparkContext sc) {
 		MaxLongAccumulator acc = new MaxLongAccumulator(Long.MIN_VALUE);
@@ -372,42 +361,42 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	{
 		private static final long serialVersionUID = 6336375833412029279L;
 
-		private MultiColumnEncoder _encoder = null;
-		
-		public TransformEncodeBuild2Function(MultiColumnEncoder encoder) {
+		private EncoderMVImpute _encoder = null;
+
+		public TransformEncodeBuild2Function(EncoderMVImpute encoder) {
 			_encoder = encoder;
 		}
-		
+
 		@Override
 		public Iterator<Tuple2<Integer, ColumnMetadata>> call(Iterator<Tuple2<Long, FrameBlock>> iter)
-			throws Exception 
+				throws Exception
 		{
 			//build meta data (e.g., histograms and means)
 			while( iter.hasNext() ) {
 				FrameBlock block = iter.next()._2();
-				_encoder.build(block);	
+				_encoder.build(block);
 			}
-			
+
 			//extract meta data
 			ArrayList<Tuple2<Integer,ColumnMetadata>> ret = new ArrayList<>();
-			List<ColumnEncoderMVImpute> encoders = _encoder.getColumnEncoders(ColumnEncoderMVImpute.class);
-			for(ColumnEncoderMVImpute encoder: encoders) {
-				if( encoder.getMethod() == MVMethod.GLOBAL_MODE ) {
-					HashMap<String,Long> hist = encoder.getHistogram();
+			int[] collist = _encoder.getColList();
+			for( int j=0; j<collist.length; j++ ) {
+				if( _encoder.getMethod(collist[j]) == MVMethod.GLOBAL_MODE ) {
+					HashMap<String,Long> hist = _encoder.getHistogram(collist[j]);
 					for( Entry<String,Long> e : hist.entrySet() )
-						ret.add(new Tuple2<>(encoder.getColID(),
+						ret.add(new Tuple2<>(collist[j],
 								new ColumnMetadata(e.getValue(), e.getKey())));
 				}
-				else if( encoder.getMethod() == MVMethod.GLOBAL_MEAN ) {
-					ret.add(new Tuple2<>(encoder.getColID(),
-							new ColumnMetadata(encoder.getNonMVCount(), String.valueOf(encoder.getMean()._sum))));
+				else if( _encoder.getMethod(collist[j]) == MVMethod.GLOBAL_MEAN ) {
+					ret.add(new Tuple2<>(collist[j],
+							new ColumnMetadata(_encoder.getNonMVCount(collist[j]), String.valueOf(_encoder.getMeans()[j]._sum))));
 				}
-				else if( encoder.getMethod() == MVMethod.CONSTANT ) {
-					ret.add(new Tuple2<>(encoder.getColID(),
-							new ColumnMetadata(0, encoder.getReplacement())));
+				else if( _encoder.getMethod(collist[j]) == MVMethod.CONSTANT ) {
+					ret.add(new Tuple2<>(collist[j],
+							new ColumnMetadata(0, _encoder.getReplacement(collist[j]))));
 				}
 			}
-			
+
 			return ret.iterator();
 		}
 	}
@@ -415,32 +404,31 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 	public static class TransformEncodeGroup2Function implements FlatMapFunction<Tuple2<Integer, Iterable<ColumnMetadata>>, String>
 	{
 		private static final long serialVersionUID = 702100641492347459L;
-		
-		private MultiColumnEncoder _encoder = null;
-		
-		public TransformEncodeGroup2Function(MultiColumnEncoder encoder) {
+
+		private EncoderMVImpute _encoder = null;
+
+		public TransformEncodeGroup2Function(EncoderMVImpute encoder) {
 			_encoder = encoder;
 		}
 
 		@Override
 		public Iterator<String> call(Tuple2<Integer, Iterable<ColumnMetadata>> arg0)
-				throws Exception 
+				throws Exception
 		{
 			int colix = arg0._1();
 			Iterator<ColumnMetadata> iter = arg0._2().iterator();
 			ArrayList<String> ret = new ArrayList<>();
 
-			ColumnEncoderMVImpute encoder = _encoder.getColumnEncoder(colix, ColumnEncoderMVImpute.class);
 			//compute global mode of categorical feature, i.e., value with highest frequency
-			if( encoder.getMethod() == MVMethod.GLOBAL_MODE ) {
+			if( _encoder.getMethod(colix) == MVMethod.GLOBAL_MODE ) {
 				HashMap<String, Long> hist = new HashMap<>();
 				while( iter.hasNext() ) {
-					ColumnMetadata cmeta = iter.next(); 
+					ColumnMetadata cmeta = iter.next();
 					Long tmp = hist.get(cmeta.getMvValue());
 					hist.put(cmeta.getMvValue(), cmeta.getNumDistinct() + ((tmp!=null)?tmp:0));
 				}
 				long max = Long.MIN_VALUE; String mode = null;
-				for( Entry<String, Long> e : hist.entrySet() ) 
+				for( Entry<String, Long> e : hist.entrySet() )
 					if( e.getValue() > max  ) {
 						mode = e.getKey();
 						max = e.getValue();
@@ -448,12 +436,12 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				ret.add("-2 " + colix + " " + TfUtils.sanitizeSpaces(mode));
 			}
 			//compute global mean of categorical feature
-			else if( encoder.getMethod() == MVMethod.GLOBAL_MEAN ) {
+			else if( _encoder.getMethod(colix) == MVMethod.GLOBAL_MEAN ) {
 				KahanObject kbuff = new KahanObject(0, 0);
 				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 				int count = 0;
 				while( iter.hasNext() ) {
-					ColumnMetadata cmeta = iter.next(); 
+					ColumnMetadata cmeta = iter.next();
 					kplus.execute2(kbuff, Double.parseDouble(cmeta.getMvValue()));
 					count += cmeta.getNumDistinct();
 				}
@@ -461,11 +449,11 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					ret.add("-2 " + colix + " " + String.valueOf(kbuff._sum/count));
 			}
 			//pass-through constant label
-			else if( encoder.getMethod() == MVMethod.CONSTANT ) {
+			else if( _encoder.getMethod(colix) == MVMethod.CONSTANT ) {
 				if( iter.hasNext() )
 					ret.add("-2 " + colix + " " + TfUtils.sanitizeSpaces(iter.next().getMvValue()));
 			}
-			
+
 			return ret.iterator();
 		}
 	}

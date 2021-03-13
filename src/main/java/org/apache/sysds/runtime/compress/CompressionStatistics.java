@@ -31,6 +31,7 @@ public class CompressionStatistics {
 	private double lastPhase;
 	public double ratio;
 	public long originalSize;
+	public long denseSize;
 	public long estimatedSizeColGroups;
 	public long estimatedSizeCols;
 	public long size;

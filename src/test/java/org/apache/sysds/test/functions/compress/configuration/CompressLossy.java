@@ -24,7 +24,7 @@ import java.io.File;
 public class CompressLossy extends CompressForce {
 
 	public String TEST_NAME = "compress";
-	public String TEST_DIR = "functions/compress/force/lossy/";
+	public String TEST_DIR = "functions/compress/force/";
 	public String TEST_CLASS_DIR = TEST_DIR + CompressLossy.class.getSimpleName() + "/";
 	private String TEST_CONF = "SystemDS-config-compress-lossy.xml";
 	private File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);

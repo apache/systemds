@@ -25,6 +25,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 /**
  * This DenseBlock is an abstraction for different dense, row-major 
@@ -673,5 +674,14 @@ public abstract class DenseBlock implements Serializable
 			ret[i-1] = prod;
 		}
 		return ret;
+	}
+
+	public static long estimateSizeDenseInMemory(int nRows, int nCols){
+		long size = 16; // object
+		size += 4; // int
+		size += 4; // padding
+		size += MemoryEstimates.intArrayCost(1); // odims typically 1
+		size += 8; // pointer to reuse that is typically null;
+		return size;
 	}
 }

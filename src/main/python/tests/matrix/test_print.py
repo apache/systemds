@@ -46,11 +46,11 @@ class TestPrint(unittest.TestCase):
 
     def test_print_01(self):
         Matrix(self.sds, np.array([1])).to_string().print().compute()
-        self.assertEqual('1.000',self.sds.get_stdout()[0])
+        self.assertEqual(1,float(self.sds.get_stdout()[0]))
 
     def test_print_02(self):
         self.sds.scalar(1).print().compute()
-        self.assertEqual('1', self.sds.get_stdout()[0])
+        self.assertEqual(1,float(self.sds.get_stdout()[0]))
 
 if __name__ == "__main__":
     unittest.main(exit=False)

@@ -156,6 +156,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	 */
 	public void runScalarAssignmentTest( ControlFlowConstruct cfc, ValueType vt ) 
 	{
+		setOutputBuffering(true);
 		String TEST_NAME = null;
 		switch( cfc )
 		{
@@ -188,5 +189,6 @@ public class ScalarAssignmentTest extends AutomatedTestBase
         boolean exceptionExpected = (cfc==ControlFlowConstruct.PARFOR)? true : false; //dependency analysis
         int expectedNumberOfJobs = -1;
 		runTest(true, exceptionExpected, LanguageException.class, expectedNumberOfJobs);
+		setOutputBuffering(false);
 	}
 }

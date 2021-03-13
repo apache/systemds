@@ -87,6 +87,7 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 
 	private void runIPALiteralReplacementTest( String testname, boolean IPA )
 	{
+		setOutputBuffering(true);
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try {
@@ -106,5 +107,6 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
+		setOutputBuffering(false);
 	}
 }

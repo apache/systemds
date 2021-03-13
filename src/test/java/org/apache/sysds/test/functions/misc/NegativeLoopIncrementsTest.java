@@ -21,12 +21,12 @@ package org.apache.sysds.test.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Test;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 /**
  * 
@@ -91,6 +91,7 @@ public class NegativeLoopIncrementsTest extends AutomatedTestBase
 	
 	private void runNegativeLoopIncrementsTest( String testname, boolean vect, boolean multiStep )
 	{
+		setOutputBuffering(true);
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
@@ -118,5 +119,6 @@ public class NegativeLoopIncrementsTest extends AutomatedTestBase
 			
 		//check meta data
 		checkDMLMetaDataFile("R", new MatrixCharacteristics(1,1,1,1));
+		setOutputBuffering(false);
 	}
 }

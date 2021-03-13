@@ -150,9 +150,9 @@ public class SparseBlockCOO extends SparseBlock
 		
 		//32B overhead per array, int/int/double arr in nnz 
 		double size = 16 + 8;   //object + 2 int fields
-		size += MemoryEstimates.intArrayCost((int)lnnz); ; //rindexes array (row indexes)
-		size += MemoryEstimates.intArrayCost((int) lnnz);   ; //cindexes array (column indexes)
-		size += MemoryEstimates.doubleArrayCost((int) lnnz);; //values array (non-zero values)
+		size += MemoryEstimates.intArrayCost((int)lnnz); //rindexes array (row indexes)
+		size += MemoryEstimates.intArrayCost((int) lnnz); //cindexes array (column indexes)
+		size += MemoryEstimates.doubleArrayCost((int) lnnz); //values array (non-zero values)
 		
 		//robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);

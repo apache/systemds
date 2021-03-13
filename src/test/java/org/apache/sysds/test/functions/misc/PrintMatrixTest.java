@@ -45,6 +45,7 @@ public class PrintMatrixTest extends AutomatedTestBase
 	
 	private void runTest( String testName, boolean exceptionExpected ) 
 	{
+		setOutputBuffering(true);
 		TestConfiguration config = getTestConfiguration(TEST_NAME1);
 		loadTestConfiguration(config);
 		
@@ -54,5 +55,6 @@ public class PrintMatrixTest extends AutomatedTestBase
 		
 		//run tests
 		runTest(true, exceptionExpected, DMLException.class, -1);
+		setOutputBuffering(false);
 	}
 }

@@ -92,6 +92,7 @@ public class LongOverflowTest extends AutomatedTestBase
 	 */
 	private void runOverflowTest( String testscript, boolean error ) 
 	{
+		setOutputBuffering(true);
 		String TEST_NAME = testscript;
 		
 		try
@@ -113,5 +114,6 @@ public class LongOverflowTest extends AutomatedTestBase
 		{
 			throw new RuntimeException(ex);
 		}
+		setOutputBuffering(false);
 	}
 }

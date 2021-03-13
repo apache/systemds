@@ -50,6 +50,7 @@ public class FunctionNotFoundTest extends AutomatedTestBase {
 	}
 
 	private void runFunctionNotFoundTest(String testName, Class<?> error) {
+		setOutputBuffering(true);
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 
@@ -58,5 +59,6 @@ public class FunctionNotFoundTest extends AutomatedTestBase {
 		programArgs = new String[] {};
 
 		runTest(true, true, error, -1);
+		setOutputBuffering(false);
 	}
 }

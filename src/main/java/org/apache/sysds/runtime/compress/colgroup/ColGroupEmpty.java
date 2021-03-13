@@ -38,6 +38,7 @@ public class ColGroupEmpty extends ColGroupValue {
 		super();
 	}
 
+
 	/**
 	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
 	 * 
@@ -47,6 +48,14 @@ public class ColGroupEmpty extends ColGroupValue {
 	public ColGroupEmpty(int[] colIndices, int numRows) {
 		super(colIndices, numRows, (ADictionary) null, null);
 		_zeros = true;
+	}
+
+	public static ColGroupEmpty generate(int nCol, int nRow){
+		int[] cols = new int[nCol];
+		for(int i =0; i < nCol; i++){
+			cols[i] =i;
+		}
+		return new ColGroupEmpty(cols,nRow);
 	}
 
 	@Override

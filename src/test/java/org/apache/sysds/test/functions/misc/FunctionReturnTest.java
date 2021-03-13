@@ -58,6 +58,8 @@ public class FunctionReturnTest extends AutomatedTestBase
 	}
 
 	private void runFunctionReturnTest( String testname, boolean IPA ) {
+
+		setOutputBuffering(true);
 		boolean oldIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 		try {
@@ -66,12 +68,14 @@ public class FunctionReturnTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain"};
+			programArgs = new String[]{};
 	
 			runTest(true, false, null, -1); 
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldIPA;
 		}
+
+		setOutputBuffering(false);
 	}
 }

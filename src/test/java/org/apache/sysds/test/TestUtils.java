@@ -1047,10 +1047,12 @@ public class TestUtils
 			if (!compareCellValue(v1, v2, 0, ignoreNaN)) {
 				if (!compareCellValue(v1, v2, tolerance, ignoreNaN)) {
 					countErrorWithinTolerance++;
-					if(!flag)
-						System.out.println(e.getKey()+": "+v1+" <--> "+v2);
-					else
-						System.out.println(e.getKey()+": "+v2+" <--> "+v1);
+					if(LOG.isDebugEnabled()){
+						if(!flag)
+							LOG.debug(e.getKey()+": "+v1+" <--> "+v2);
+						else
+							LOG.debug(e.getKey()+": "+v2+" <--> "+v1);
+					}
 				}
 			} else {
 				countIdentical++;

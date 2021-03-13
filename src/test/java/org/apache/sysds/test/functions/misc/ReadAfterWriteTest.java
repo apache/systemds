@@ -105,6 +105,7 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 	 */
 	private void runReadAfterWriteTest( String testName, boolean positive ) 
 	{
+		setOutputBuffering(true);
 		String TEST_NAME = testName;
 		
 		try
@@ -134,5 +135,6 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 	        //cleanup
 	        TestUtils.clearDirectory(outputDir());
 		}
+		setOutputBuffering(false);
 	}
 }

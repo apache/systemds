@@ -62,14 +62,11 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder
 	}
 	
 	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock encode(FrameBlock in) {
 		if( !isApplicable() )
-			return out;
-		
+			return null;
 		//apply only
-		apply(in, out);
-		
-		return out;
+		return apply(in);
 	}
 
 	@Override
@@ -78,18 +75,33 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock apply(FrameBlock in) {
+		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
 		//apply feature hashing column wise
 		for( int i=0; i<in.getNumRows(); i++ ) {
 			Object okey = in.get(i, _colID-1);
 			String key = (okey!=null) ? okey.toString() : null;
 			long code = getCode(key);
-			out.quickSetValue(i, _colID-1+_writeOffset,
+			out.quickSetValue(i, 0,
 				(code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
 
+	@Override
+	public MatrixBlock apply(MatrixBlock in) {
+		assert in.getNumColumns() == 1;
+		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
+		//apply feature hashing column wise
+		for( int i=0; i<in.getNumRows(); i++ ) {
+			Object okey = in.quickGetValue(i, 0);
+			String key = (okey!=null) ? okey.toString() : null;
+			long code = getCode(key);
+			out.quickSetValue(i, 0,
+					(code >= 0) ? code : Double.NaN);
+		}
+		return out;
+	}
 	
 	@Override
 	public void mergeAt(ColumnEncoder other, int row) {

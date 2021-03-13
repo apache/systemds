@@ -53,7 +53,7 @@ public class TransformApplyEmptyRecodeMapTest extends AutomatedTestBase
 			//execute transform apply
 			MultiColumnEncoder encoder = EncoderFactory.createEncoder(
 				"{ids:true, recode:[1]}", data.getColumnNames(), meta.getSchema(), meta);
-			MatrixBlock out = encoder.apply(data, new MatrixBlock(rows, cols, true));
+			MatrixBlock out = encoder.apply(data);
 			
 			//check outputs
 			Assert.assertEquals(rows, out.getNumRows());

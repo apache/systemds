@@ -89,7 +89,8 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	}
 	
 	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock encode(FrameBlock in) {
+		MatrixBlock out = null;
 		try {
 			//build meta data first (for all encoders)
 			for( ColumnEncoder columnEncoder : _columnEncoders)
@@ -101,10 +102,8 @@ public class ColumnEncoderComposite extends ColumnEncoder
 				_meta = columnEncoder.getMetaData(_meta);
 			for( ColumnEncoder columnEncoder : _columnEncoders)
 				columnEncoder.initMetaData(_meta);
-			
 			//apply meta data
-			for( ColumnEncoder columnEncoder : _columnEncoders)
-				out = columnEncoder.apply(in, out);
+			out = apply(in);
 		}
 		catch(Exception ex) {
 			LOG.error("Failed transform-encode frame with \n" + this);
@@ -133,16 +132,36 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	}
 	
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock apply(FrameBlock in) {
+		MatrixBlock out = null;
 		try {
-			for( ColumnEncoder columnEncoder : _columnEncoders)
-				out = columnEncoder.apply(in, out);
+			for( ColumnEncoder columnEncoder : _columnEncoders){
+				if(out != null){
+					out = columnEncoder.apply(out);
+				}else {
+					out = columnEncoder.apply(in);
+				}
+			}
 		}
 		catch(Exception ex) {
 			LOG.error("Failed to transform-apply frame with \n" + this);
 			throw ex;
 		}
 		return out;
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in) {
+		try {
+			for( ColumnEncoder columnEncoder : _columnEncoders){
+				in = columnEncoder.apply(in);
+			}
+		}
+		catch(Exception ex) {
+			LOG.error("Failed to transform-apply frame with \n" + this);
+			throw ex;
+		}
+		return in;
 	}
 
 	@Override

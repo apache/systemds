@@ -28,6 +28,7 @@ import java.util.Objects;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ColumnEncoderOmit extends ColumnEncoder
 {	
@@ -69,8 +70,8 @@ public class ColumnEncoderOmit extends ColumnEncoder
 
 
 	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		return apply(in, out);
+	public MatrixBlock encode(FrameBlock in) {
+		return apply(in);
 	}
 	
 	@Override
@@ -80,31 +81,52 @@ public class ColumnEncoderOmit extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock apply(FrameBlock in) {
 		// local rmRows for broadcasting encoder in spark
 		boolean[] rmRows;
 		if(_federated)
 			rmRows = _rmRows;
 		else
 			rmRows = computeRmRows(in);
-
 		// determine output size
-		int numRows = out.getNumRows() - getNumRemovedRows(rmRows);
-
+		int numRows = in.getNumRows() - getNumRemovedRows(rmRows);
 		// copy over valid rows into the output
-		MatrixBlock ret = new MatrixBlock(numRows, out.getNumColumns(), false);
+		MatrixBlock ret = new MatrixBlock(numRows, in.getNumColumns(), false);
 		int pos = 0;
 		for(int i = 0; i < in.getNumRows(); i++) {
 			// copy row if necessary
 			if(!rmRows[i]) {
-				for(int j = 0; j < out.getNumColumns(); j++)
-					ret.quickSetValue(pos, j, out.quickGetValue(i, j));
+				for(int j = 0; j < in.getNumColumns(); j++)
+					ret.quickSetValue(pos, j, UtilFunctions.objectToDouble(in.getSchema()[j], in.get(i, j)));
 				pos++;
 			}
 		}
-
 		_rmRows = rmRows;
+		return ret;
+	}
 
+	@Override
+	public MatrixBlock apply(MatrixBlock in) {
+		// local rmRows for broadcasting encoder in spark
+		boolean[] rmRows;
+		if(_federated)
+			rmRows = _rmRows;
+		else
+			rmRows = computeRmRows(in);
+		// determine output size
+		int numRows = in.getNumRows() - getNumRemovedRows(rmRows);
+		// copy over valid rows into the output
+		MatrixBlock ret = new MatrixBlock(numRows, in.getNumColumns(), false);
+		int pos = 0;
+		for(int i = 0; i < in.getNumRows(); i++) {
+			// copy row if necessary
+			if(!rmRows[i]) {
+				for(int j = 0; j < in.getNumColumns(); j++)
+					ret.quickSetValue(pos, j, in.quickGetValue(i, j));
+				pos++;
+			}
+		}
+		_rmRows = rmRows;
 		return ret;
 	}
 
@@ -116,6 +138,18 @@ public class ColumnEncoderOmit extends ColumnEncoder
 		for(int i = 0; i < in.getNumRows(); i++) {
 			Object val = in.get(i, _colID - 1);
 			if (val == null || (schema[_colID - 1] == ValueType.STRING && val.toString().isEmpty())) {
+				rmRows[i] = true;
+				break; // early abort
+			}
+		}
+		return rmRows;
+	}
+
+	private boolean[] computeRmRows(MatrixBlock in) {
+		boolean[] rmRows = new boolean[in.getNumRows()];
+		for(int i = 0; i < in.getNumRows(); i++) {
+			Object val = in.quickGetValue(i, _colID - 1 + _writeOffset);  //offset in case dummyCoding was performed
+			if (val.toString().isEmpty()) {
 				rmRows[i] = true;
 				break; // early abort
 			}

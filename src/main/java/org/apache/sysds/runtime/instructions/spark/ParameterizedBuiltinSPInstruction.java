@@ -863,7 +863,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			
 			//execute block transform apply
 			MultiColumnEncoder encoder = _bencoder.getValue();
-			MatrixBlock tmp = encoder.apply(blk, new MatrixBlock(blk.getNumRows(), blk.getNumColumns(), false));
+			MatrixBlock tmp = encoder.apply(blk);
 			
 			//remap keys
 			if( _omap != null ) {

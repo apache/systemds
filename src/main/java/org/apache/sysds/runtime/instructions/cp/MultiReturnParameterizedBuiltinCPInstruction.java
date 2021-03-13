@@ -86,7 +86,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		
 		//execute block transform encode
 		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
-		MatrixBlock data = encoder.encode(fin, new MatrixBlock(fin.getNumRows(), fin.getNumColumns(), false)); //build and apply
+		MatrixBlock data = encoder.encode(fin); //build and apply
 		FrameBlock meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING));
 		meta.setColumnNames(colnames);
 		

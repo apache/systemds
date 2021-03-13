@@ -112,9 +112,9 @@ public class ColumnEncoderBin extends ColumnEncoder
 	}
 	
 	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock encode(FrameBlock in) {
 		build(in);
-		return apply(in, out);
+		return apply(in);
 	}
 
 	@Override
@@ -169,13 +169,27 @@ public class ColumnEncoderBin extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock apply(FrameBlock in) {
+		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
 		for( int i=0; i<in.getNumRows(); i++ ) {
 			double inVal = UtilFunctions.objectToDouble(
 				in.getSchema()[_colID-1], in.get(i, _colID-1));
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix+1) : ix) + 1;
-			out.quickSetValue(i, _colID-1+_writeOffset, binID);
+			out.quickSetValue(i, 0, binID);
+		}
+		return out;
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in) {
+		assert in.getNumColumns() == 1;
+		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
+		for( int i=0; i<in.getNumRows(); i++ ) {
+			double inVal = in.quickGetValue(i, 0);
+			int ix = Arrays.binarySearch(_binMaxs, inVal);
+			int binID = ((ix < 0) ? Math.abs(ix+1) : ix) + 1;
+			out.quickSetValue(i, 0, binID);
 		}
 		return out;
 	}

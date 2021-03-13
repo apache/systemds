@@ -31,7 +31,8 @@ public class MultiColumnEncoder implements Encoder {
         _columnEncoders = new ArrayList<>();
     }
 
-    public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+    public MatrixBlock encode(FrameBlock in) {
+        MatrixBlock out = null;
         try {
             build(in);
             _meta = new FrameBlock(in.getNumColumns(), Types.ValueType.STRING);
@@ -41,8 +42,13 @@ public class MultiColumnEncoder implements Encoder {
                 columnEncoder.initMetaData(_meta);
             resolveInterEncoderDependencies();
             //apply meta data
-            for( ColumnEncoder columnEncoder : _columnEncoders)
-                out = columnEncoder.apply(in, out);
+            for( ColumnEncoder columnEncoder : _columnEncoders){
+                if(out == null)
+                    out = columnEncoder.apply(in);
+                else
+                    out = out.append(columnEncoder.apply(in), null);
+            }
+
         }
 		catch(Exception ex) {
             LOG.error("Failed transform-encode frame with \n" + this);
@@ -57,11 +63,16 @@ public class MultiColumnEncoder implements Encoder {
             columnEncoder.build(in);
     }
 
-    public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+    public MatrixBlock apply(FrameBlock in) {
+        MatrixBlock out = null;
         try {
             resolveInterEncoderDependencies();
-            for( ColumnEncoder columnEncoder : _columnEncoders)
-                out = columnEncoder.apply(in, out);
+            for( ColumnEncoderComposite columnEncoder : _columnEncoders){
+                if(out == null)
+                    out = columnEncoder.apply(in);
+                else
+                    out = out.append(columnEncoder.apply(in), null);
+            }
         }
         catch(Exception ex) {
             LOG.error("Failed to transform-apply frame with \n" + this);
@@ -198,7 +209,7 @@ public class MultiColumnEncoder implements Encoder {
         if(dc.isEmpty()){
             return 0;
         }
-        return dc.stream().map(ColumnEncoderDummycode::getNumCols).mapToInt(i->i).max().getAsInt();
+        return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i->i).sum() - dc.size();
     }
 
     public <T extends ColumnEncoder> boolean containsEncoderForID(int colID, Class<T> type){

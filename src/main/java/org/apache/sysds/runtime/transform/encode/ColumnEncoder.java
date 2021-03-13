@@ -48,33 +48,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	}
 
 
-	/**
-	 * Block encode: build and apply (transform encode).
-	 *
-	 * @param in input frame block
-	 * @param out output matrix block
-	 * @return output matrix block
-	 */
-	public abstract MatrixBlock encode(FrameBlock in, MatrixBlock out);
-
-	/**
-	 * Build the transform meta data for the given block input. This call modifies
-	 * and keeps meta data as encoder state.
-	 *
-	 * @param in input frame block
-	 */
-	public abstract void build(FrameBlock in);
-
-	/**
-	 * Encode input data blockwise according to existing transform meta
-	 * data (transform apply).
-	 *
-	 * @param in input frame block
-	 * @param out output matrix block
-	 * @return output matrix block
-	 */
-	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
-
+	public abstract MatrixBlock apply(MatrixBlock in);
 
 	public void setColID(int colID) { _colID = colID; }
 

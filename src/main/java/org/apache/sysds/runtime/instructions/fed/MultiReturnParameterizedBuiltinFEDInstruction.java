@@ -227,8 +227,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
 
 			// apply transformation
-			MatrixBlock mbout = _encoder.apply(fb,
-				new MatrixBlock(fb.getNumRows(), fb.getNumColumns(), false));
+			MatrixBlock mbout = _encoder.apply(fb);
 
 			// create output matrix object
 			MatrixObject mo = ExecutionContext.createMatrixObject(mbout);

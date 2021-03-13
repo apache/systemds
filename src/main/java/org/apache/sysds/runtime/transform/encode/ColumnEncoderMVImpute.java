@@ -83,42 +83,6 @@ public class ColumnEncoderMVImpute extends ColumnEncoder {
 		initRecodeIDList(rcList);
 	}
 
-/*
-	private void parseMethodsAndReplacements(JSONObject parsedSpec, String[] colnames, int offset) throws JSONException {
-		JSONArray mvspec = (JSONArray) parsedSpec.get(TfMethod.IMPUTE.toString());
-		boolean ids = parsedSpec.containsKey("ids") && parsedSpec.getBoolean("ids");
-		// make space for all elements
-		_mvMethodList = new MVMethod[mvspec.size()];
-		_replacementList = new String[mvspec.size()];
-		_meanList = new KahanObject[mvspec.size()];
-		_countList = new long[mvspec.size()];
-		// sort for binary search
-		Arrays.sort(_colList);
-		
-		int listIx = 0;
-		for(Object o : mvspec) {
-			JSONObject mvobj = (JSONObject) o;
-			int ixOffset = offset == -1 ? 0 : offset - 1;
-			// check for position -> -1 if not present
-			int pos = Arrays.binarySearch(_colList,
-				ids ? mvobj.getInt("id") - ixOffset : ArrayUtils.indexOf(colnames, mvobj.get("name")) + 1);
-			if(pos >= 0) {
-				// add to arrays
-				_mvMethodList[listIx] = MVMethod.valueOf(mvobj.get("method").toString().toUpperCase());
-				if(_mvMethodList[listIx] == MVMethod.CONSTANT) {
-					_replacementList[listIx] = mvobj.getString("value");
-				}
-				_meanList[listIx++] = new KahanObject(0, 0);
-			}
-		}
-		// make arrays required size
-		_mvMethodList = Arrays.copyOf(_mvMethodList, listIx);
-		_replacementList = Arrays.copyOf(_replacementList, listIx);
-		_meanList = Arrays.copyOf(_meanList, listIx);
-		_countList = Arrays.copyOf(_countList, listIx);
-	}
-
- */
 	
 	public MVMethod getMethod() {
 		if(!isApplicable(_colID))
@@ -136,9 +100,9 @@ public class ColumnEncoderMVImpute extends ColumnEncoder {
 	}
 	
 	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock encode(FrameBlock in) {
 		build(in);
-		return apply(in, out);
+		return apply(in);
 	}
 	
 	@Override
@@ -182,10 +146,23 @@ public class ColumnEncoderMVImpute extends ColumnEncoder {
 	}
 	
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock apply(FrameBlock in) {
+		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
 		for(int i=0; i<in.getNumRows(); i++) {
 			if( Double.isNaN(out.quickGetValue(i, _colID-1)) )
-				out.quickSetValue(i, _colID-1+_writeOffset, Double.parseDouble(_replacement));
+				out.quickSetValue(i, 0, Double.parseDouble(_replacement));
+		}
+		return out;
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in) {
+		if(in.getNumColumns() > 1)
+			return in;  // can only be > 1 if dummyCoding was before thus no values can be missing
+		MatrixBlock out = in;
+		for(int i=0; i<in.getNumRows(); i++) {
+			if( Double.isNaN(out.quickGetValue(i, 0)) )
+				out.quickSetValue(i, 0, Double.parseDouble(_replacement));
 		}
 		return out;
 	}

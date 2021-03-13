@@ -26,8 +26,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ColumnEncoderDummycode extends ColumnEncoder
 {
@@ -71,8 +76,12 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	}
 	
 	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		return apply(in, out);
+	public MatrixBlock encode(FrameBlock in) {
+		return apply(in);
+	}
+
+	public MatrixBlock encode(MatrixBlock in) {
+		return apply(in);
 	}
 
 	@Override
@@ -80,31 +89,30 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		//do nothing
 	}
 
-	// TODO Not optimal now since ret is allocated for each colum that is dummycoded.
-	// TODO Optimisation across dummycoders!!! -> Matrix allocation only once
+
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock apply(FrameBlock in){
+		if(!in.getSchema()[_colID-1].isNumeric())
+			throw new DMLRuntimeException("DummyCoder input with non numeric value");
+		MatrixBlock in_ = new MatrixBlock(in.getNumRows(), 1, false);
+		for(int i = 0; i < in.getNumRows(); i++){
+			in_.quickSetValue(i, 0, UtilFunctions.objectToDouble(in.getSchema()[i], in.get(i, _colID-1)));
+		}
+		return apply(in_);
+	}
+
+	public MatrixBlock apply(MatrixBlock in) {
+		assert in.getNumColumns() == 1;
 		//allocate output in dense or sparse representation
 		final boolean sparse = MatrixBlock.evalSparseFormatInMemory(
-			out.getNumRows(), getNumCols(), out.getNonZeros());
-		MatrixBlock ret = new MatrixBlock(out.getNumRows(), getNumCols(), sparse);
+			in.getNumRows(), getNumCols(), in.getNonZeros());
+		MatrixBlock ret = new MatrixBlock(in.getNumRows(), _domainSize, sparse);
 		
 		//append dummy coded or unchanged values to output
-		final int clen = out.getNumColumns();
-		for( int i=0; i<out.getNumRows(); i++ ) {
-			for(int colID=1, idx=0, ncolID=1; colID <= clen; colID++) {
-				double val = out.quickGetValue(i, colID-1);
-				if(colID == _colID+_writeOffset) {
-					ret.appendValue(i, ncolID-1+(int)val-1, 1);
-					ncolID += _domainSize;
-					idx ++;
-				}
-				else {
-					double ptval = out.quickGetValue(i, colID-1);
-					ret.appendValue(i, ncolID-1, ptval);
-					ncolID ++;
-				}
-			}
+		final int clen = in.getNumColumns();
+		for( int i=0; i<in.getNumRows(); i++ ) {
+			double val = in.quickGetValue(i, 0);
+			ret.appendValue(i, (int)val-1, 1);
 		}
 		return ret;
 	}
@@ -224,5 +232,9 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		int result = Objects.hash(_dummycodedLength);
 		result = 31 * result + Objects.hashCode(_domainSize);
 		return result;
+	}
+
+	public int getDomainSize() {
+		return _domainSize;
 	}
 }

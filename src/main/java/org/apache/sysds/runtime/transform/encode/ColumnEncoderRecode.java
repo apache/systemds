@@ -31,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -80,15 +81,13 @@ public class ColumnEncoderRecode extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock encode(FrameBlock in) {
 		if( !isApplicable() )
-			return out;
+			return null;
 
 		//build and apply recode maps
 		build(in);
-		apply(in, out);
-
-		return out;
+		return apply(in);
 	}
 
 	@Override
@@ -141,17 +140,24 @@ public class ColumnEncoderRecode extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+	public MatrixBlock apply(FrameBlock in) {
+		//TODO maybe sparse if we know some info
+		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
 		for( int i=0; i<in.getNumRows(); i++ ) {
 			Object okey = in.get(i, _colID-1);
 			String key = (okey!=null) ? okey.toString() : null;
 			long code = lookupRCDMap(key);
-			out.quickSetValue(i, _colID-1+_writeOffset,
+			out.quickSetValue(i, 0,
 				(code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
 
+	@Override
+	public MatrixBlock apply(MatrixBlock in){
+		throw new DMLRuntimeException("Recode called with MatrixBlock. Should not happen since Recode is the first " +
+				"encoder in the Stack");
+	}
 
 	@Override
 	public void mergeAt(ColumnEncoder other, int row) {

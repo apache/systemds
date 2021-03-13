@@ -59,7 +59,7 @@ public class CLALibSquash {
 
 		ret.allocateColGroupList(retCg);
 		ret.setOverlapping(false);
-		ret.setNonZeros(-1);
+		ret.recomputeNonZeros();
 
 		if(ret.isOverlapping())
 			throw new DMLCompressionException("Squash should output compressed nonOverlapping matrix");

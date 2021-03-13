@@ -205,32 +205,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		// preallocation sparse rows to avoid repeated reallocations
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1);
+		if(nonZeros == -1)
+			ret.setNonZeros(this.recomputeNonZeros());
+		else
+			ret.setNonZeros(nonZeros);
 		ret.allocateDenseBlock();
-		// (nonZeros == -1) ?
-		// .allocateBlock() : new MatrixBlock(rlen, clen, sparse,
-		// nonZeros).allocateBlock();
+		// todo Add sparse decompress.
 
-		// if(ret.isInSparseFormat()) {
-		// int[] rnnz = new int[rlen];
-		// // for(ColGroup grp : _colGroups)
-		// // grp.countNonZerosPerRow(rnnz, 0, rlen);
-		// ret.allocateSparseRowsBlock();
-		// SparseBlock rows = ret.getSparseBlock();
-		// for(int i = 0; i < rlen; i++)
-		// rows.allocate(i, rnnz[i]);
-		// }
-
-		// core decompression (append if sparse)
 		for(AColGroup grp : _colGroups)
 			grp.decompressToBlockUnSafe(ret, 0, rlen, 0, grp.getValues());
 
-		// post-processing (for append in decompress)
-		if(ret.getNonZeros() == -1 || nonZeros == -1) {
-			ret.recomputeNonZeros();
-		}
-		else {
-			ret.setNonZeros(nonZeros);
-		}
 		if(ret.isInSparseFormat())
 			ret.sortSparseRows();
 
@@ -256,8 +240,10 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		Timing time = new Timing(true);
 
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1).allocateBlock();
-
-		nonZeros = 0;
+		if(nonZeros == -1)
+			ret.setNonZeros(this.recomputeNonZeros());
+		else
+			ret.setNonZeros(nonZeros);
 		boolean overlapping = isOverlapping();
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
@@ -272,19 +258,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			List<Future<Long>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
 			for(Future<Long> rt : rtasks)
-				nonZeros += rt.get(); // error handling
+				rt.get(); // error handling
 		}
 		catch(InterruptedException | ExecutionException ex) {
 			LOG.error("Parallel decompression failed defaulting to non parallel implementation " + ex.getMessage());
-			nonZeros = -1;
 			ex.printStackTrace();
 			return decompress();
-		}
-		if(overlapping) {
-			ret.recomputeNonZeros();
-		}
-		else {
-			ret.setNonZeros(nonZeros);
 		}
 
 		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
@@ -297,6 +276,22 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	public CompressedMatrixBlock squash(int k) {
 		return CLALibSquash.squash(this, k);
+	}
+
+	@Override
+	public long recomputeNonZeros() {
+		if(overlappingColGroups) {
+			nonZeros = clen * rlen;
+		}
+		else {
+			long nnz = 0;
+			for(AColGroup g : _colGroups) {
+				nnz += g.getNumberNonZeros();
+			}
+			nonZeros = nnz;
+		}
+		return nonZeros;
+
 	}
 
 	/**
@@ -497,6 +492,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		CLALibLeftMultBy.leftMultByMatrixTransposed(this, tmp, out, k);
 		out = LibMatrixReorg.transposeInPlace(out, k);
 
+		out.recomputeNonZeros();
 		return out;
 	}
 

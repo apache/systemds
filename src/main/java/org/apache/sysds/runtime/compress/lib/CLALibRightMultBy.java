@@ -42,7 +42,9 @@ public class CLALibRightMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
 
 	public static MatrixBlock rightMultByMatrix(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean allowOverlap){
-		return rightMultByMatrix(m1.getColGroups(), m2, ret, k, m1.getMaxNumValues(), allowOverlap);
+		ret =  rightMultByMatrix(m1.getColGroups(), m2, ret, k, m1.getMaxNumValues(), allowOverlap);
+		ret.recomputeNonZeros();
+		return ret;
 	}
 
 	private static MatrixBlock rightMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,

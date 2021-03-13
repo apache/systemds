@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
@@ -114,7 +115,7 @@ public abstract class CompressedTestBase extends TestBase {
 		// .setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true),
 
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-		.setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
+			.setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.SDC, CompressionType.DDC)).setInvestigateEstimate(true),
@@ -123,9 +124,9 @@ public abstract class CompressedTestBase extends TestBase {
 		// .setInvestigateEstimate(true),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("false")
-		// 	.setInvestigateEstimate(true),
+		// .setInvestigateEstimate(true),
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
-		// 	.setInvestigateEstimate(true),
+		// .setInvestigateEstimate(true),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setInvestigateEstimate(true),
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
@@ -335,8 +336,8 @@ public abstract class CompressedTestBase extends TestBase {
 			// LOG.error(ret1);
 			// LOG.error(ret2);
 			// compare result with input
-			TestUtils.compareMatricesPercentageDistance(DataConverter.convertToDoubleMatrix(
-					ret1), DataConverter.convertToDoubleMatrix(ret2), 0.9, 0.9, this.toString());
+			TestUtils.compareMatricesPercentageDistance(DataConverter
+				.convertToDoubleMatrix(ret1), DataConverter.convertToDoubleMatrix(ret2), 0.9, 0.9, this.toString());
 
 		}
 		catch(Exception e) {
@@ -1025,6 +1026,7 @@ public abstract class CompressedTestBase extends TestBase {
 				return;
 			MatrixBlock ret2 = cmb.slice(rl, ru, cl, cu);
 			MatrixBlock ret1 = mb.slice(rl, ru, cl, cu);
+			assertEquals(ret1.getNonZeros(), ret2.getNonZeros());
 			compareResultMatrices(ret1, ret2, 1);
 		}
 		catch(Exception e) {
@@ -1058,7 +1060,5 @@ public abstract class CompressedTestBase extends TestBase {
 		double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
 		compareResultMatrices(d1, d2, toleranceMultiplier);
 	}
-
-
 
 }

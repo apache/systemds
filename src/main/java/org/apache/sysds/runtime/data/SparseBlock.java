@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.data;
 import java.io.Serializable;
 import java.util.Iterator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.matrix.data.IJV;
 
 /**
@@ -37,6 +39,9 @@ import org.apache.sysds.runtime.matrix.data.IJV;
  */
 public abstract class SparseBlock implements Serializable
 {
+
+	protected static final Log LOG = LogFactory.getLog(SparseBlock.class.getName());
+
 	private static final long serialVersionUID = -5008747088111141395L;
 	
 	//internal configuration parameters for all sparse blocks

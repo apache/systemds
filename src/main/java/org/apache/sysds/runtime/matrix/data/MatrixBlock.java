@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
@@ -2432,24 +2433,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//determine sparse/dense representation
 		boolean sparse = evalSparseFormatInMemory(nrows, ncols, (long)(sparsity*nrows*ncols));
-		
+
+		// basic variables and references sizes
+		long size = 16; // header
+		size += 12; // ints
+		size += 1; // boolean
+		size += 3; // padding
+		size += 8 * 2; // object references		
+
 		//estimate memory consumption for sparse/dense
 		if( sparse )
-			return estimateSizeSparseInMemory(nrows, ncols, sparsity);
+			return size + estimateSizeSparseInMemory(nrows, ncols, sparsity);
 		else
-			return estimateSizeDenseInMemory(nrows, ncols);
+			return size + estimateSizeDenseInMemory(nrows, ncols);
 	}
 
 	public static long estimateSizeDenseInMemory(long nrows, long ncols)
 	{
-		// basic variables and references sizes
-		double size = 44;
-		
-		// core dense matrix block (double array)
-		size += 8d * nrows * ncols;
-		
-		// robustness for long overflows
-		return (long) Math.min(size, Long.MAX_VALUE);
+		return (long) Math.min(DenseBlockFP64.estimateSizeDenseInMemory((int)nrows, (int)ncols), Long.MAX_VALUE);
 	}
 
 	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity) {
@@ -2458,15 +2459,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, SparseBlock.Type stype)
 	{
-		// basic variables and references sizes
-		double size = 44;
-		
 		// delegate memory estimate to individual sparse blocks
-		size += SparseBlockFactory.estimateSizeSparseInMemory(
-			stype, nrows, ncols, sparsity);
-		
-		// robustness for long overflows
-		return (long) Math.min(size, Long.MAX_VALUE);
+		return Math.min(SparseBlockFactory.estimateSizeSparseInMemory(
+			stype, nrows, ncols, sparsity),Long.MAX_VALUE);
 	}
 
 	public long estimateSizeOnDisk()

@@ -122,7 +122,7 @@ public class CompressedSizeInfoColGroup {
 			case UNCOMPRESSED:
 				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows,
 					fact.numCols,
-					((double) fact.numVals / (fact.numRows * fact.numCols)));
+					((double) fact.numOffs / (fact.numRows * fact.numCols)));
 			case SDC:
 				if(fact.numOffs == 1)
 					return ColGroupSizes.estimateInMemorySizeSDCSingle(fact.numCols,

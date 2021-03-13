@@ -21,6 +21,7 @@
 package org.apache.sysds.runtime.data;
 
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 import java.util.Arrays;
 
@@ -191,5 +192,11 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	@Override
 	public long getLong(int[] ix) {
 		return UtilFunctions.toLong(_data[pos(ix)]);
+	}
+	
+	public static long estimateSizeDenseInMemory(int nRows, int nCols){
+		long size = DenseBlock.estimateSizeDenseInMemory(nRows, nCols);// pointer to reuse that is typically null;
+		size += MemoryEstimates.doubleArrayCost(nRows * nCols);
+		return size;
 	}
 }

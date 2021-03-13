@@ -20,6 +20,6 @@
 <root>
 	<sysds.compressed.linalg>cost</sysds.compressed.linalg>
 	<sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
-	<sysds.scratch>target/cost_scale_scratch_space)OLE</sysds.scratch>
+	<sysds.scratch>target/cost_scale_scratch_space_OLE</sysds.scratch>
 	<sysds.compressed.valid.compressions>OLE</sysds.compressed.valid.compressions>
 </root>

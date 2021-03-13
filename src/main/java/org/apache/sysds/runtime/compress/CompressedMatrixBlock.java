@@ -205,10 +205,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		// preallocation sparse rows to avoid repeated reallocations
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1);
-		if(nonZeros == -1)
-			ret.setNonZeros(this.recomputeNonZeros());
-		else
-			ret.setNonZeros(nonZeros);
+
 		ret.allocateDenseBlock();
 		// todo Add sparse decompress.
 
@@ -217,6 +214,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		if(ret.isInSparseFormat())
 			ret.sortSparseRows();
+
+		if(nonZeros == -1)
+			ret.setNonZeros(this.recomputeNonZeros());
+		else
+			ret.setNonZeros(nonZeros);
 
 		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
 			double t = time.stop();
@@ -240,11 +242,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		Timing time = new Timing(true);
 
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1).allocateBlock();
+		ret.allocateDenseBlock();
 		if(nonZeros == -1)
 			ret.setNonZeros(this.recomputeNonZeros());
 		else
 			ret.setNonZeros(nonZeros);
-		boolean overlapping = isOverlapping();
+
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
@@ -254,7 +257,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			ArrayList<DecompressTask> tasks = new ArrayList<>();
 			for(int i = 0; i < k & i * blklen < getNumRows(); i++)
 				tasks.add(
-					new DecompressTask(_colGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen), overlapping));
+					new DecompressTask(_colGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen), overlappingColGroups));
 			List<Future<Long>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
 			for(Future<Long> rt : rtasks)
@@ -271,6 +274,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			LOG.debug("decompressed block w/ k=" + k + " in " + time.stop() + "ms.");
 			DMLCompressionStatistics.addDecompressTime(t, k);
 		}
+
 		return ret;
 	}
 
@@ -807,7 +811,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			tmp = new MatrixBlock(ru + 1 - rl, getNumColumns(), false).allocateDenseBlock();
 			for(AColGroup g : getColGroups())
 				g.decompressToBlock(tmp, rl, ru + 1, 0);
-
+			tmp.recomputeNonZeros();
 			return tmp;
 		}
 		else {
@@ -821,6 +825,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			// this is fine.
 			tmp = tmp.slice(rl, ru, 0, tmp.getNumColumns() - 1, ret);
 		}
+		tmp.recomputeNonZeros();
 		ret = tmp;
 		return tmp;
 	}

@@ -42,9 +42,7 @@ public class CLALibAppend {
 		// 	return left;
 		final int m = left.getNumRows();
 		final int n = left.getNumColumns() + right.getNumColumns();
-		long nnz = left.getNonZeros() + right.getNonZeros();
-		if(left.getNonZeros() < 0 || right.getNonZeros() < 0)
-			nnz = -1;
+
 
 		// try to compress both sides (if not already compressed).
 		if(!(left instanceof CompressedMatrixBlock) && m > 1000){
@@ -85,8 +83,11 @@ public class CLALibAppend {
 			ret.getColGroups().add(tmp);
 		}
 
+		long nnzl = (leftC.getNonZeros() <= -1 ) ? leftC.recomputeNonZeros() : leftC.getNonZeros() ;
+		long nnzr = (rightC.getNonZeros() <= -1 ) ? rightC.recomputeNonZeros() : rightC.getNonZeros() ;
+		
 		// meta data maintenance
-		ret.setNonZeros(nnz);
+		ret.setNonZeros(nnzl + nnzr);
 		return ret;
 	}
 

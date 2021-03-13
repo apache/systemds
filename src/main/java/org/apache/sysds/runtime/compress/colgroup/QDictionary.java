@@ -452,4 +452,20 @@ public class QDictionary extends ADictionary {
 			return false;
 		throw new NotImplementedException("Not contains value on Q Dictionary");
 	}
+
+	@Override
+	public long getNumberNonZeros(int[] counts, int nCol){
+		long nnz =  0;
+		final int nRow = _values.length / nCol;
+		for(int i = 0; i < nRow; i++){
+			long rowCount = 0;
+			final int off = i * nCol; 
+			for(int j = off; j < off + nCol; j++){
+				if(_values[j] != 0)
+					rowCount ++;
+			}
+			nnz += rowCount * counts[i];
+		}
+		return nnz;
+	}
 }

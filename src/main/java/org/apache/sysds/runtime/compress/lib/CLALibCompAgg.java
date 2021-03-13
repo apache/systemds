@@ -56,7 +56,7 @@ public class CLALibCompAgg {
 	// private static final Log LOG = LogFactory.getLog(LibCompAgg.class.getName());
 
 	// private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024 * 1024;
-	private static final long MIN_PAR_AGG_THRESHOLD = 8;
+	private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024 ;
 
 	private static ThreadLocal<MatrixBlock> memPool = new ThreadLocal<MatrixBlock>() {
 		@Override

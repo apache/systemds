@@ -68,8 +68,8 @@ public class CLALibReExpand {
 
 		ret.allocateColGroupList(newColGroups);
 		ret.setOverlapping(true);
-		ret.setNonZeros(-1);
 
+		ret.recomputeNonZeros();
 		return ret;
 	}
 

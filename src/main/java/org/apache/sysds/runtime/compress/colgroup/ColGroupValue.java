@@ -1030,4 +1030,10 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	public boolean containsValue(double pattern){
 		return _dict.containsValue(pattern);
 	}
+
+	@Override
+	public long getNumberNonZeros(){
+		int[] counts = getCounts();
+		return _dict.getNumberNonZeros(counts, _colIndexes.length);
+	}
 }

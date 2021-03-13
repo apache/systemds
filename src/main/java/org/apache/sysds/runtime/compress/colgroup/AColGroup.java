@@ -646,6 +646,8 @@ public abstract class AColGroup implements Serializable {
 
 	public abstract boolean containsValue(double pattern);
 
+	public abstract long getNumberNonZeros();
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

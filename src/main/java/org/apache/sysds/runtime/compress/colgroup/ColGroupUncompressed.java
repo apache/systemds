@@ -543,4 +543,9 @@ public class ColGroupUncompressed extends AColGroup {
 	public boolean containsValue(double pattern){
 		return _data.containsValue(pattern);
 	}
+
+	@Override
+	public long getNumberNonZeros(){
+		return _data.getNonZeros();
+	}
 }

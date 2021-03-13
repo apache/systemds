@@ -31,8 +31,6 @@ import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -81,7 +79,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  * 
  */
 public class DataConverter {
-	private static final Log LOG = LogFactory.getLog(DataConverter.class.getName());
+	// private static final Log LOG = LogFactory.getLog(DataConverter.class.getName());
 	private static final String DELIM = " ";
 	
 	//////////////
@@ -102,9 +100,6 @@ public class DataConverter {
 	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, FileFormat fmt, DataCharacteristics dc, int replication, FileFormatProperties formatProperties, boolean diag)
 		throws IOException {
 		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter( fmt, replication, formatProperties );
-		if(mat instanceof CompressedMatrixBlock)
-			mat = CompressedMatrixBlock.getUncompressed(mat);
-		LOG.error(mat.getNonZeros());
 		writer.writeMatrixToHDFS(mat, dir, dc.getRows(), dc.getCols(), dc.getBlocksize(), dc.getNonZeros(), diag);
 	}
 

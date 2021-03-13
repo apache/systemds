@@ -20,5 +20,5 @@
 <root>
 	<sysds.compressed.linalg>cost</sysds.compressed.linalg>
 	<sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
-	<sysds.scratch>cost_scratch_space</sysds.scratch>
+	<sysds.scratch>target/rewrite_cost_scratch_space</sysds.scratch>
 </root>

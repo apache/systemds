@@ -64,17 +64,6 @@ public interface Encoder extends Externalizable {
      */
     public void buildPartial(FrameBlock in);
 
-
-    /**
-     * Obtain the column mapping of encoded frames based on the passed
-     * meta data frame.
-     *
-     * @param meta meta data frame block
-     * @param out output matrix
-     * @return matrix with column mapping (one row per attribute)
-     */
-    public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out);
-
     /**
      * Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.
      *

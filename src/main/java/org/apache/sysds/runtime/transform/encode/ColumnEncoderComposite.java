@@ -189,6 +189,7 @@ public class ColumnEncoderComposite extends ColumnEncoder
 			for (ColumnEncoder otherEnc : otherComposite.getEncoders()) {
 				boolean mergedIn = false;
 				for (ColumnEncoder columnEncoder : _columnEncoders) {
+					assert columnEncoder.getColID() == other.getColID();
 					if (columnEncoder.getClass() == otherEnc.getClass()) {
 						columnEncoder.mergeAt(otherEnc, row);
 						mergedIn = true;
@@ -196,8 +197,8 @@ public class ColumnEncoderComposite extends ColumnEncoder
 					}
 				}
 				if(!mergedIn) {
-					throw new DMLRuntimeException("Tried to merge in encoder of class that is not present in "
-						+ "EncoderComposite: " + otherEnc.getClass().getSimpleName());
+					//TODO order matters
+					_columnEncoders.add(otherEnc);
 				}
 			}
 			// update dummycode encoder domain sizes based on distinctness information from other encoders
@@ -245,30 +246,6 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	public void initMetaData(FrameBlock out) {
 		for( ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.initMetaData(out);
-	}
-	
-	@Override
-	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
-		//determine if dummycode encoder exists
-		ColumnEncoderDummycode dummy = null;
-		for( ColumnEncoder columnEncoder : _columnEncoders)
-			if( columnEncoder instanceof ColumnEncoderDummycode)
-				dummy = (ColumnEncoderDummycode) columnEncoder;
-		//computed shifted start positions
-		if( dummy != null ) {
-			//delete to dummycode encoder
-			out = dummy.getColMapping(meta, out);
-		}
-		//use simple 1-1 mapping
-		else {
-			for(int i=0; i<out.getNumRows(); i++) {
-				out.quickSetValue(i, 0, i+1);
-				out.quickSetValue(i, 1, i+1);
-				out.quickSetValue(i, 2, i+1);
-			}
-		}
-		
-		return out;
 	}
 	
 	@Override

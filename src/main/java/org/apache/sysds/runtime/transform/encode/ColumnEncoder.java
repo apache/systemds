@@ -123,9 +123,9 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	 * @param out output matrix
 	 * @return matrix with column mapping (one row per attribute)
 	 */
-	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
+	public MatrixBlock getColMapping(FrameBlock meta) {
 		//default: do nothing
-		return out;
+		return null;
 	}
 
 	/**

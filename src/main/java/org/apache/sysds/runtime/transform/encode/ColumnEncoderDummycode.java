@@ -180,31 +180,11 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		_domainSize= (int)meta.getColumnMetadata()[_colID-1].getNumDistinct();
 		_dummycodedLength += _domainSize-1;
 	}
-	
-	@Override
-	public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
-		// TODO Optimisation across dummycoders!!! -> only one mapping
-		final int clen = out.getNumRows();
-		for(int colID=1, idx=0, ncolID=1; colID <= clen; colID++) {
-			int start = ncolID;
-			if( colID == _colID ) {
-				ncolID += meta.getColumnMetadata(colID-1).getNumDistinct();
-				idx ++;
-			}
-			else {
-				ncolID ++;
-			}
-			out.quickSetValue(colID-1, 0, colID);
-			out.quickSetValue(colID-1, 1, start);
-			out.quickSetValue(colID-1, 2, ncolID-1);
-		}
-		
-		return out;
-	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
+		out.writeLong(_clen);
 		out.writeLong(_dummycodedLength);
 		out.writeInt(_domainSize);
 	}
@@ -212,6 +192,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
+		_clen = in.readLong();
 		_dummycodedLength = in.readLong();
 		_domainSize = in.readInt();
 	}

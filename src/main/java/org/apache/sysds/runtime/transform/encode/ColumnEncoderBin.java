@@ -49,35 +49,6 @@ public class ColumnEncoderBin extends ColumnEncoder
 	private double _colMins = -1f;
 	private double _colMaxs = -1f;
 
-/*
-	public EncoderBin(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
-		throws JSONException, IOException
-	{
-		super( null, clen );
-		if ( !parsedSpec.containsKey(TfMethod.BIN.toString()) )
-			return;
-
-		//parse column names or column ids
-		List<Integer> collist = TfMetaUtils.parseBinningColIDs(parsedSpec, colnames, minCol, maxCol);
-		initColList(ArrayUtils.toPrimitive(collist.toArray(new Integer[0])));
-
-		//parse number of bins per column
-		boolean ids = parsedSpec.containsKey("ids") && parsedSpec.getBoolean("ids");
-		JSONArray group = (JSONArray) parsedSpec.get(TfMethod.BIN.toString());
-		_numBins = new int[collist.size()];
-		for (Object o : group) {
-			JSONObject colspec = (JSONObject) o;
-			int ixOffset = minCol == -1 ? 0 : minCol - 1;
-			int pos = collist.indexOf(ids ? colspec.getInt("id") - ixOffset :
-				ArrayUtils.indexOf(colnames, colspec.get("name")) + 1);
-			if(pos >= 0)
-				_numBins[pos] = colspec.containsKey("numbins") ? colspec.getInt("numbins") : 1;
-		}
-	}
-
- */
-
-
 
 	public ColumnEncoderBin() {
 		super(-1);

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -42,13 +43,7 @@ public class MultiColumnEncoder implements Encoder {
                 columnEncoder.initMetaData(_meta);
             resolveInterEncoderDependencies();
             //apply meta data
-            for( ColumnEncoder columnEncoder : _columnEncoders){
-                if(out == null)
-                    out = columnEncoder.apply(in);
-                else
-                    out = out.append(columnEncoder.apply(in), null);
-            }
-
+            out = apply(in);
         }
 		catch(Exception ex) {
             LOG.error("Failed transform-encode frame with \n" + this);
@@ -108,18 +103,31 @@ public class MultiColumnEncoder implements Encoder {
             encoder.buildPartial(in);
     }
 
-    @Override
-    public MatrixBlock getColMapping(FrameBlock meta, MatrixBlock out) {
+    /**
+     * Obtain the column mapping of encoded frames based on the passed
+     * meta data frame.
+     *
+     * @param meta meta data frame block
+     * @param out output matrix
+     * @return matrix with column mapping (one row per attribute)
+     */
+    public MatrixBlock getColMapping(FrameBlock meta) {
+        MatrixBlock out = new MatrixBlock(meta.getNumColumns(), 3, false);
         List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class);
-        if(!dc.isEmpty()){
-            for (Encoder encoder: dc)
-                out = encoder.getColMapping(meta,out);
-        }else{
-            for(int i=0; i<out.getNumRows(); i++) {
-                out.quickSetValue(i, 0, i+1);
-                out.quickSetValue(i, 1, i+1);
-                out.quickSetValue(i, 2, i+1);
+
+        for(int i = 0, ni = 0; i < out.getNumRows(); i++){
+            final int colID = i + 1; // 1-based
+            int nColID = ni + 1;
+            List<ColumnEncoderDummycode> encoder = dc.stream().filter(e -> e.getColID() == colID).collect(Collectors.toList());
+            assert encoder.size() <= 1;
+            if(encoder.size() == 1){
+                ni += meta.getColumnMetadata(i).getNumDistinct();
+            }else{
+                ni++;
             }
+            out.quickSetValue(i, 0, colID);
+            out.quickSetValue(i, 1, nColID);
+            out.quickSetValue(i, 2, ni);
         }
         return out;
     }
@@ -164,7 +172,7 @@ public class MultiColumnEncoder implements Encoder {
         // TODO cache results for faster access
         List<T> ret = new ArrayList<>();
         for(ColumnEncoder encoder: _columnEncoders){
-            if (encoder.getClass().equals(ColumnEncoderComposite.class)){
+            if (encoder.getClass().equals(ColumnEncoderComposite.class) && type != ColumnEncoderComposite.class){
                 encoder = ((ColumnEncoderComposite) encoder).getEncoder(type);
             }
             if (encoder != null && encoder.getClass().equals(type)){
@@ -202,6 +210,22 @@ public class MultiColumnEncoder implements Encoder {
 
     public List<ColumnEncoderComposite> getCompositeEncodersForID(int colID){
         return _columnEncoders.stream().filter(encoder -> encoder._colID == colID).collect(Collectors.toList());
+    }
+
+    public <T extends ColumnEncoder> List<Class<T>> getEncoderTypes(int colID){
+        HashSet<Class<T>> set = new HashSet<>();
+        for(ColumnEncoderComposite encoderComp: _columnEncoders){
+            if(encoderComp._colID != colID && colID != -1)
+                continue;
+            for(ColumnEncoder encoder: encoderComp.getEncoders()){
+                set.add((Class<T>) encoder.getClass());
+            }
+        }
+        return new ArrayList<>(set);
+    }
+
+    public <T extends ColumnEncoder> List<Class<T>> getEncoderTypes(){
+        return getEncoderTypes(-1);
     }
 
     public int getNumExtraCols(){

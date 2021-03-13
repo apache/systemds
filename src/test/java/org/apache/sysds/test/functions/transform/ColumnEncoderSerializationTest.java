@@ -54,7 +54,8 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 
 	public enum TransformType {
 		RECODE,
-		DUMMY
+		DUMMY,
+		IMPUTE
 	}
 
 	@Override
@@ -74,6 +75,11 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 	@Test
 	public void testComposite4() { runTransformSerTest(TransformType.DUMMY, schemaMixed); }
 
+	@Test
+	public void testComposite5() { runTransformSerTest(TransformType.IMPUTE, schemaMixed); }
+
+	@Test
+	public void testComposite6() { runTransformSerTest(TransformType.IMPUTE, schemaStrings); }
 
 	private void runTransformSerTest(TransformType type, Types.ValueType[] schema) {
 		//data generation
@@ -96,7 +102,9 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 			spec = "{\n \"ids\": true\n, \"dummycode\":[ 2, 7, 8, 1 ]\n\n}";
 		else if(type == TransformType.RECODE)
 			spec = "{\n \"ids\": true\n, \"recode\":[ 2, 7, 1, 8 ]\n\n}";
-
+		else if(type == TransformType.IMPUTE)
+			spec = "{\n \"ids\": true\n, \"impute\":[ { \"id\": 6, \"method\": \"constant\", \"value\": \"1\" }, " +
+					"{ \"id\": 7, \"method\": \"global_mode\" }, { \"id\": 9, \"method\": \"global_mean\" } ]\n\n}";
 
 		frame.setSchema(schema);
 		String[] cnames = frame.getColumnNames();
@@ -109,18 +117,19 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 		// compare
 		Assert.assertArrayEquals(encoderIn.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID),
 				encoderOut.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID));
-		Assert.assertEquals(encoderIn.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID),
-				encoderOut.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID));
 
-		List<ColumnEncoderComposite> eListIn = ((MultiColumnEncoder) encoderIn).getColumnEncoders();
-		List<ColumnEncoderComposite> eListOut = encoderOut.getColumnEncoders();
-		/* TODO
-		for(int i = 0; i < eListIn.size();  i++) {
-			Assert.assertArrayEquals(eListIn.get(i).getColList(), eListOut.get(i).getColList());
-			Assert.assertEquals(eListIn.get(i).getNumCols(), eListOut.get(i).getNumCols());
+		int numIn = encoderIn.getColumnEncoders().size();
+		int numOut = encoderOut.getColumnEncoders().size();
+		Assert.assertEquals(numIn, numOut);
+		List<Class<ColumnEncoder>> typesIn = encoderIn.getEncoderTypes();
+		List<Class<ColumnEncoder>> typesOut = encoderOut.getEncoderTypes();
+		Assert.assertArrayEquals(typesIn.toArray(), typesOut.toArray());
+
+		for(Class<ColumnEncoder> classtype: typesIn){
+			Assert.assertArrayEquals(encoderIn.getFromAllIntArray(classtype, ColumnEncoder::getColID), encoderOut.getFromAllIntArray(classtype, ColumnEncoder::getColID));
 		}
 
-		 */
+
 	}
 
 	private MultiColumnEncoder serializeDeserialize(MultiColumnEncoder encoderIn) {

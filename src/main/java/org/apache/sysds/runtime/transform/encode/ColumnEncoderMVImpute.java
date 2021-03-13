@@ -231,6 +231,7 @@ public class ColumnEncoderMVImpute extends ColumnEncoder {
 		out.writeByte(_mvMethod.ordinal());
 		out.writeLong(_count);
 
+		out.writeBoolean(_replacement != null);
 		if(_replacement != null) {
 			out.writeUTF(_replacement);
 		}
@@ -253,7 +254,8 @@ public class ColumnEncoderMVImpute extends ColumnEncoder {
 		_count = in.readLong();
 		_mean = new KahanObject(0, 0);
 
-		_replacement = in.readUTF();
+		if(in.readBoolean())
+			_replacement = in.readUTF();
 
 		_rc = in.readBoolean();
 

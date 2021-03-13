@@ -312,7 +312,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 			//compute transformapply
 			MultiColumnEncoder encoder = EncoderFactory.createEncoder(params.get("spec"), colNames, meta.getNumColumns(), null);
-			MatrixBlock mbout = encoder.getColMapping(meta, new MatrixBlock(meta.getNumColumns(), 3, false));
+			MatrixBlock mbout = encoder.getColMapping(meta);
 			
 			//release locks
 			ec.setMatrixOutput(output.getName(), mbout);

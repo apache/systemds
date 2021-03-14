@@ -29,7 +29,7 @@ This guide helps in the install and setup of SystemDS from source code.
 
 ## Windows
 
-TODO
+[Developer Guide](https://github.com/apache/systemds/blob/master/dev/docs/windows-source-installation.md)
 
 ---
 

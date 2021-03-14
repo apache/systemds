@@ -161,51 +161,33 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	}
 
 	@Override
-	public void mergeAt(ColumnEncoder other, int row) {
+	public void mergeAt(ColumnEncoder other) {
 		if (other instanceof ColumnEncoderComposite) {
 			ColumnEncoderComposite otherComposite = (ColumnEncoderComposite) other;
 			assert otherComposite._colID == _colID;
 			// TODO maybe assert that the _encoders never have the same type of encoder twice or more
 			for (ColumnEncoder otherEnc : otherComposite.getEncoders()) {
-				boolean mergedIn = false;
-				for (ColumnEncoder columnEncoder : _columnEncoders) {
-					assert columnEncoder.getColID() == other.getColID();
-					if (columnEncoder.getClass() == otherEnc.getClass()) {
-						columnEncoder.mergeAt(otherEnc, row);
-						mergedIn = true;
-						break;
-					}
-				}
-				if(!mergedIn) {
-					//TODO order matters
-					_columnEncoders.add(otherEnc);
-				}
+				addEncoder(otherEnc);
 			}
-			// update dummycode encoder domain sizes based on distinctness information from other encoders
-			for (ColumnEncoder columnEncoder : _columnEncoders) {
-				if (columnEncoder instanceof ColumnEncoderDummycode) {
-					((ColumnEncoderDummycode) columnEncoder).updateDomainSizes(_columnEncoders);
-					return;
-				}
-			}
-			return;
+		}else{
+			addEncoder(other);
 		}
-		for (ColumnEncoder columnEncoder : _columnEncoders) {
-			if (columnEncoder.getClass() == other.getClass()) {
-				columnEncoder.mergeAt(other, row);
-				// update dummycode encoder domain sizes based on distinctness information from other encoders
-				for (ColumnEncoder encDummy : _columnEncoders) {
-					if (encDummy instanceof ColumnEncoderDummycode) {
-						((ColumnEncoderDummycode) encDummy).updateDomainSizes(_columnEncoders);
-						return;
-					}
-				}
-				return;
-			}
-		}
-		super.mergeAt(other, row);
+		// update dummycode encoder domain sizes based on distinctness information from other encoders
+		ColumnEncoderDummycode dc = getEncoder(ColumnEncoderDummycode.class);
+		if(dc != null)
+			dc.updateDomainSizes(_columnEncoders);
 	}
-	
+
+	private void addEncoder(ColumnEncoder other){
+		ColumnEncoder encoder = getEncoder(other.getClass());
+		assert _colID == other._colID;
+		if(encoder != null)
+			encoder.mergeAt(other);
+		else
+			//TODO order matters
+			_columnEncoders.add(other);
+	}
+
 	@Override
 	public void updateIndexRanges(long[] beginDims, long[] endDims) {
 		for(ColumnEncoder enc : _columnEncoders) {
@@ -277,4 +259,9 @@ public class ColumnEncoderComposite extends ColumnEncoder
 		return _columnEncoders.stream().anyMatch(encoder -> encoder.getClass().equals(type));
 	}
 
+	@Override
+	public void shiftCol(int columnOffset) {
+		super.shiftCol(columnOffset);
+		_columnEncoders.forEach(e -> e.shiftCol(columnOffset));
+	}
 }

@@ -147,10 +147,13 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		runTransformTest(TransformType.BIN_DUMMY, true, false);
 	}
 
+	/*
 	@Test
 	public void testHomesOmitColnamesCSV() {
 		runTransformTest(TransformType.OMIT, true, false);
 	}
+
+	 */
 
 	@Test
 	public void testHomesImputeColnamesCSV() {

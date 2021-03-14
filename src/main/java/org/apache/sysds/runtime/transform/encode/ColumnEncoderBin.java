@@ -157,7 +157,7 @@ public class ColumnEncoderBin extends ColumnEncoder
 	}
 
 	@Override
-	public void mergeAt(ColumnEncoder other, int row) {
+	public void mergeAt(ColumnEncoder other) {
 		if(other instanceof ColumnEncoderBin) {
 			ColumnEncoderBin otherBin = (ColumnEncoderBin) other;
 			assert other._colID == _colID;
@@ -180,7 +180,7 @@ public class ColumnEncoderBin extends ColumnEncoder
 			}
 			return;
 		}
-		super.mergeAt(other, row);
+		super.mergeAt(other);
 	}
 
 	@Override

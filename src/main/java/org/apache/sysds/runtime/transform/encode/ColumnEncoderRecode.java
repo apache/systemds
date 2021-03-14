@@ -148,9 +148,9 @@ public class ColumnEncoderRecode extends ColumnEncoder
 	}
 
 	@Override
-	public void mergeAt(ColumnEncoder other, int row) {
+	public void mergeAt(ColumnEncoder other) {
 		if(!(other instanceof ColumnEncoderRecode)) {
-			super.mergeAt(other, row);
+			super.mergeAt(other);
 			return;
 		}
 		assert other._colID == _colID;

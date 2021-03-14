@@ -93,14 +93,14 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder
 	}
 	
 	@Override
-	public void mergeAt(ColumnEncoder other, int row) {
+	public void mergeAt(ColumnEncoder other) {
 		if(other instanceof ColumnEncoderFeatureHash) {
 			assert other._colID == _colID;
 			if (((ColumnEncoderFeatureHash) other)._K != 0 && _K == 0)
 				_K = ((ColumnEncoderFeatureHash) other)._K;
 			return;
 		}
-		super.mergeAt(other, row);
+		super.mergeAt(other);
 	}
 	
 	@Override

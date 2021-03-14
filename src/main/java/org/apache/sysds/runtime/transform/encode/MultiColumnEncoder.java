@@ -26,6 +26,7 @@ public class MultiColumnEncoder implements Encoder {
     private EncoderMVImpute _legacyMVImpute = null;
     private EncoderOmit _legacyOmit = null;
 
+    private int _colOffset = 0;  // offset for federated Workers who are using subrange encoders
     private FrameBlock _meta = null;
     protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
 
@@ -175,6 +176,7 @@ public class MultiColumnEncoder implements Encoder {
         if(_legacyOmit != null)
             _legacyOmit.writeExternal(out);
 
+        out.writeInt(_colOffset);
         out.writeInt(_columnEncoders.size());
         for(ColumnEncoder columnEncoder : _columnEncoders) {
             out.writeInt(columnEncoder._colID);
@@ -196,6 +198,7 @@ public class MultiColumnEncoder implements Encoder {
             _legacyOmit.readExternal(in);
         }
 
+        _colOffset = in.readInt();
         int encodersSize = in.readInt();
         _columnEncoders = new ArrayList<>();
         for(int i = 0; i < encodersSize; i++) {
@@ -289,13 +292,20 @@ public class MultiColumnEncoder implements Encoder {
         getColumnEncoders(type).forEach(function);
     }
 
+    public <T extends ColumnEncoder, E> void applyToAll(Consumer<? super ColumnEncoderComposite> function){
+        getColumnEncoders().forEach(function);
+    }
+
 
     public MultiColumnEncoder subRangeEncoder(IndexRange ixRange){
         List<ColumnEncoderComposite> encoders = new ArrayList<>();
         for(long i = ixRange.colStart; i < ixRange.colEnd; i++){
             encoders.addAll(getCompositeEncodersForID((int) i));
         }
-        return new MultiColumnEncoder(encoders);
+        // TODO deepcopy or offset in MultiColEncoder
+        MultiColumnEncoder subRangeEncoder = new MultiColumnEncoder(encoders);
+        subRangeEncoder._colOffset = (int) -ixRange.colStart + 1;
+        return subRangeEncoder;
     }
 
 
@@ -320,28 +330,33 @@ public class MultiColumnEncoder implements Encoder {
         }
     }
 
-    public void mergeAt(Encoder other, int row) {
+    public void mergeAt(Encoder other, int columnOffset) {
         if(other instanceof MultiColumnEncoder){
             for(ColumnEncoder encoder: ((MultiColumnEncoder) other)._columnEncoders){
-                addEncoder(encoder, row);
+                addEncoder(encoder, columnOffset);
             }
         }else{
-            addEncoder((ColumnEncoder) other, row);
+            addEncoder((ColumnEncoder) other, columnOffset);
         }
+        //TODO Omit and Impute
     }
 
-    private void addEncoder(ColumnEncoder encoder, int row){
+    private void addEncoder(ColumnEncoder encoder, int columnOffset){
         //Check if same encoder exists
-        ColumnEncoder presentEncoder = getColumnEncoder(encoder._colID, encoder.getClass());
+        int colId = encoder._colID + columnOffset;
+        ColumnEncoder presentEncoder = getColumnEncoder(colId, encoder.getClass());
         if(presentEncoder != null){
-            presentEncoder.mergeAt(encoder, row);
+            encoder.shiftCol(columnOffset);
+            presentEncoder.mergeAt(encoder);
         }else{
             //Check if CompositeEncoder for this colID exists
-            ColumnEncoderComposite presentComposite = getColumnEncoder(encoder._colID, ColumnEncoderComposite.class);
+            ColumnEncoderComposite presentComposite = getColumnEncoder(colId, ColumnEncoderComposite.class);
             if(presentComposite != null){
                 // if here encoder can never be a CompositeEncoder
-                presentComposite.mergeAt(encoder, row);
+                encoder.shiftCol(columnOffset);
+                presentComposite.mergeAt(encoder);
             }else{
+                encoder.shiftCol(columnOffset);
                 if(encoder instanceof ColumnEncoderComposite){
                     _columnEncoders.add((ColumnEncoderComposite) encoder);
                 }else{
@@ -379,4 +394,13 @@ public class MultiColumnEncoder implements Encoder {
         assert false;
         return null;
     }
+
+    /*
+    This function applies the _columOffset to all encoders.
+    Used in federated env.
+     */
+    public void applyColumnOffset(){
+        applyToAll(e -> e.shiftCol(_colOffset));
+    }
+
 }

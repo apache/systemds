@@ -73,11 +73,11 @@ public class ColumnEncoderPassThrough extends ColumnEncoder
 
 
 	@Override
-	public void mergeAt(ColumnEncoder other, int row) {
+	public void mergeAt(ColumnEncoder other) {
 		if(other instanceof ColumnEncoderPassThrough) {
 			return;
 		}
-		super.mergeAt(other, row);
+		super.mergeAt(other);
 	}
 
 	@Override

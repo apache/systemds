@@ -102,20 +102,20 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		// encoder
 		FederationMap fedMapping = fin.getFedMapping();
 		fedMapping.forEachParallel((range, data) -> {
-			int columnOffset = (int) range.getBeginDims()[1] + 1;
+			int columnOffset = (int) range.getBeginDims()[1];
 
-			// create an encoder with the given spec. The columnOffset (which is 1 based) has to be used to
+			// create an encoder with the given spec. The columnOffset (which is 0 based) has to be used to
 			// tell the federated worker how much the indexes in the spec have to be offset.
 			Future<FederatedResponse> responseFuture = data.executeFederatedOperation(
 				new FederatedRequest(RequestType.EXEC_UDF, -1,
-					new CreateFrameEncoder(data.getVarID(), spec, columnOffset)));
+					new CreateFrameEncoder(data.getVarID(), spec, columnOffset + 1)));
 			// collect responses with encoders
 			try {
 				FederatedResponse response = responseFuture.get();
 				MultiColumnEncoder encoder = (MultiColumnEncoder) response.getData()[0];
 				// merge this encoder into a composite encoder
 				synchronized(globalEncoder) {
-					globalEncoder.mergeAt(encoder, (int) (range.getBeginDims()[0] + 1));
+					globalEncoder.mergeAt(encoder, columnOffset);
 				}
 				// no synchronization necessary since names should anyway match
 				String[] subRangeColNames = (String[]) response.getData()[1];
@@ -156,11 +156,11 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			globalencoder.updateIndexRanges(beginDims, endDims);
 
 			// get the encoder segment that is relevant for this federated worker
-			MultiColumnEncoder columnEncoder = globalencoder.subRangeEncoder(ixRange);
+			MultiColumnEncoder encoder = globalencoder.subRangeEncoder(ixRange);
 
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,
-					-1, new ExecuteFrameEncoder(data.getVarID(), varID, columnEncoder))).get();
+					-1, new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}
@@ -226,6 +226,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
 
+			// offset is applied on the Worker to shift the local encoders to their respective column
+			_encoder.applyColumnOffset();
 			// apply transformation
 			MatrixBlock mbout = _encoder.apply(fb);
 

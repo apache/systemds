@@ -99,7 +99,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	 * @param row   the row where it should be placed (1-based)
 	 * @param col   the col where it should be placed (1-based)
 	 */
-	public void mergeAt(ColumnEncoder other, int row) {
+	public void mergeAt(ColumnEncoder other) {
 		throw new DMLRuntimeException(
 			this.getClass().getSimpleName() + " does not support merging with " + other.getClass().getSimpleName());
 	}
@@ -153,6 +153,10 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 
 	public int getColID() {
 		return _colID;
+	}
+
+	public void shiftCol(int columnOffset){
+		_colID += columnOffset;
 	}
 
 }

@@ -86,14 +86,14 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 
 
 	@Override
-	public void mergeAt(ColumnEncoder other, int row) {
+	public void mergeAt(ColumnEncoder other) {
 		if(other instanceof ColumnEncoderDummycode) {
 			assert other._colID == _colID;
 			// temporary, will be updated later
 			_domainSize = 0;
 			return;
 		}
-		super.mergeAt(other, row);
+		super.mergeAt(other);
 	}
 	
 	@Override

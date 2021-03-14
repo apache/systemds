@@ -122,6 +122,8 @@ public class EncoderFactory
 					JSONObject colspec = (JSONObject) o;
 					int numBins = colspec.containsKey("numbins") ? colspec.getInt("numbins") : 1;
 					int id = TfMetaUtils.parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
+					if(id <= 0)
+						continue;
 					ColumnEncoderBin bin = new ColumnEncoderBin(id, numBins);
 					addEncoderToMap(bin, colEncoders);
 				}

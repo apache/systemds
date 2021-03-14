@@ -161,7 +161,9 @@ public class TfMetaUtils
 		}
 		if(ix > 0)
 			return ix;
-		throw new RuntimeException("Specified column '" + colspec.get(ids ? "id" : "name") + "' does not exist.");
+		else if(minCol == -1 && maxCol == -1)
+			throw new RuntimeException("Specified column '" + colspec.get(ids ? "id" : "name") + "' does not exist.");
+		return -1;
 	}
 
 	public static int[] parseJsonObjectIDList(JSONObject spec, String[] colnames, String group, int minCol, int maxCol)
@@ -174,7 +176,9 @@ public class TfMetaUtils
 			JSONArray colspecs = (JSONArray) spec.get(group);
 			for(Object o : colspecs) {
 				JSONObject colspec = (JSONObject) o;
-				colList.add(parseJsonObjectID(colspec, colnames, minCol, maxCol, ids));
+				int id = parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
+				if(id > 0)
+					colList.add(id);
 			}
 
 			// ensure ascending order of column IDs

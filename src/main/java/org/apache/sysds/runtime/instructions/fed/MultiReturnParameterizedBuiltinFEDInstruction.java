@@ -115,7 +115,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				MultiColumnEncoder encoder = (MultiColumnEncoder) response.getData()[0];
 				// merge this encoder into a composite encoder
 				synchronized(globalEncoder) {
-					globalEncoder.mergeAt(encoder, columnOffset);
+					globalEncoder.mergeAt(encoder, columnOffset, (int) (range.getBeginDims()[0] + 1));
 				}
 				// no synchronization necessary since names should anyway match
 				String[] subRangeColNames = (String[]) response.getData()[1];
@@ -152,11 +152,13 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			long[] endDims = range.getEndDims();
 			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);// make 1-based
 
-			// update begin end dims (column part) considering columns added by dummycoding
-			globalencoder.updateIndexRanges(beginDims, endDims);
+
 
 			// get the encoder segment that is relevant for this federated worker
 			MultiColumnEncoder encoder = globalencoder.subRangeEncoder(ixRange);
+			// update begin end dims (column part) considering columns added by dummycoding
+			encoder.updateIndexRanges(beginDims, endDims);
+
 
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,

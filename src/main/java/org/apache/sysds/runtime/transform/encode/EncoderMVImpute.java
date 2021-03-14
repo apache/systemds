@@ -220,7 +220,7 @@ public class EncoderMVImpute extends LegacyEncoder {
         for(int i = 0; i < _colList.length; i++) {
             int col = _colList[i];
             if(ixRange.inColRange(col))
-                map.put((int) (_colList[i] - (ixRange.colStart - 1)),
+                map.put((int) (_colList[i]),
                         new ColInfo(_mvMethodList[i], _replacementList[i], _meanList[i], _countList[i], _hist.get(i)));
         }
         if(map.size() == 0)
@@ -269,7 +269,7 @@ public class EncoderMVImpute extends LegacyEncoder {
                         new ColInfo(_mvMethodList[i], _replacementList[i], _meanList[i], _countList[i], _hist.get(i + 1)));
             }
             for(int i = 0; i < other._colList.length; i++) {
-                int column = other._colList[i] + (col - 1);
+                int column = other._colList[i];
                 ColInfo otherColInfo = new ColInfo(otherImpute._mvMethodList[i], otherImpute._replacementList[i],
                         otherImpute._meanList[i], otherImpute._countList[i], otherImpute._hist.get(i + 1));
                 ColInfo colInfo = map.get(column);

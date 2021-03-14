@@ -302,9 +302,12 @@ public class MultiColumnEncoder implements Encoder {
         for(long i = ixRange.colStart; i < ixRange.colEnd; i++){
             encoders.addAll(getCompositeEncodersForID((int) i));
         }
-        // TODO deepcopy or offset in MultiColEncoder
         MultiColumnEncoder subRangeEncoder = new MultiColumnEncoder(encoders);
         subRangeEncoder._colOffset = (int) -ixRange.colStart + 1;
+        if(_legacyOmit != null)
+            subRangeEncoder.addReplaceLegacyEncoder(_legacyOmit.subRangeEncoder(ixRange));
+        if(_legacyMVImpute != null)
+            subRangeEncoder.addReplaceLegacyEncoder(_legacyMVImpute.subRangeEncoder(ixRange));
         return subRangeEncoder;
     }
 
@@ -330,15 +333,34 @@ public class MultiColumnEncoder implements Encoder {
         }
     }
 
-    public void mergeAt(Encoder other, int columnOffset) {
+    public void mergeAt(Encoder other, int columnOffset, int row) {
         if(other instanceof MultiColumnEncoder){
             for(ColumnEncoder encoder: ((MultiColumnEncoder) other)._columnEncoders){
                 addEncoder(encoder, columnOffset);
             }
+            // +1 since legacy function uses 1-based
+            legacyMergeAt((MultiColumnEncoder) other, row, columnOffset + 1);
         }else{
             addEncoder((ColumnEncoder) other, columnOffset);
         }
-        //TODO Omit and Impute
+    }
+
+    private void legacyMergeAt(MultiColumnEncoder other, int row , int col){
+        if(other._legacyOmit != null)
+            other._legacyOmit.shiftCols(col-1);
+        if(_legacyOmit != null && other._legacyOmit != null)
+            _legacyOmit.mergeAt(other._legacyOmit, row, col);
+        else if(_legacyOmit == null)
+            _legacyOmit = other._legacyOmit;
+
+        if(other._legacyMVImpute != null)
+            other._legacyMVImpute.shiftCols(col-1);
+        if(_legacyMVImpute != null && other._legacyMVImpute != null)
+            _legacyMVImpute.mergeAt(other._legacyMVImpute, row, col);
+        else if(_legacyMVImpute == null)
+            _legacyMVImpute = other._legacyMVImpute;
+
+
     }
 
     private void addEncoder(ColumnEncoder encoder, int columnOffset){
@@ -401,6 +423,10 @@ public class MultiColumnEncoder implements Encoder {
      */
     public void applyColumnOffset(){
         applyToAll(e -> e.shiftCol(_colOffset));
+        if(_legacyOmit != null)
+            _legacyOmit.shiftCols(_colOffset);
+        if(_legacyMVImpute != null)
+            _legacyMVImpute.shiftCols(_colOffset);
     }
 
 }

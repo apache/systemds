@@ -271,4 +271,10 @@ public abstract class LegacyEncoder implements Externalizable
         for(int i = 0; i < _colList.length; i++)
             _colList[i] = in.readInt();
     }
+
+    public void shiftCols(int offset){
+        for(int i = 0; i < _colList.length; i++){
+            _colList[i] += offset;
+        }
+    }
 }

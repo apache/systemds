@@ -49,8 +49,6 @@ public class EncoderOmit extends LegacyEncoder
     private static final long serialVersionUID = 1978852120416654195L;
 
     protected static final Log LOG = LogFactory.getLog(Encoder.class.getName());
-    protected int _clen = -1;
-    protected int[] _colList = null;
     private boolean _federated = false;
     private boolean[] _rmRows = new boolean[0];
 
@@ -254,10 +252,7 @@ public class EncoderOmit extends LegacyEncoder
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeInt(_clen);
-        out.writeInt(_colList.length);
-        for(int col : _colList)
-            out.writeInt(col);
+        super.writeExternal(out);
         out.writeBoolean(_federated);
         out.writeInt(_rmRows.length);
         for(boolean r : _rmRows)
@@ -266,10 +261,7 @@ public class EncoderOmit extends LegacyEncoder
 
     @Override
     public void readExternal(ObjectInput in) throws IOException {
-        _clen = in.readInt();
-        _colList = new int[in.readInt()];
-        for(int i = 0; i < _colList.length; i++)
-            _colList[i] = in.readInt();
+        super.readExternal(in);
         if(_rmRows.length == 0) {
             _federated = in.readBoolean();
             _rmRows = new boolean[in.readInt()];

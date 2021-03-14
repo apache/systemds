@@ -55,7 +55,8 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 	public enum TransformType {
 		RECODE,
 		DUMMY,
-		IMPUTE
+		IMPUTE,
+		OMIT
 	}
 
 	@Override
@@ -81,6 +82,15 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 	@Test
 	public void testComposite6() { runTransformSerTest(TransformType.IMPUTE, schemaStrings); }
 
+	@Test
+	public void testComposite7() { runTransformSerTest(TransformType.OMIT, schemaMixed); }
+
+	@Test
+	public void testComposite8() { runTransformSerTest(TransformType.OMIT, schemaStrings); }
+
+
+
+
 	private void runTransformSerTest(TransformType type, Types.ValueType[] schema) {
 		//data generation
 		double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.9, 8234);
@@ -105,6 +115,8 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 		else if(type == TransformType.IMPUTE)
 			spec = "{\n \"ids\": true\n, \"impute\":[ { \"id\": 6, \"method\": \"constant\", \"value\": \"1\" }, " +
 					"{ \"id\": 7, \"method\": \"global_mode\" }, { \"id\": 9, \"method\": \"global_mean\" } ]\n\n}";
+		else if (type == TransformType.OMIT)
+			spec = "{ \"ids\": true, \"omit\": [ 1,2,4,5,6,7,8,9 ], \"recode\": [ 2, 7 ] }";
 
 		frame.setSchema(schema);
 		String[] cnames = frame.getColumnNames();

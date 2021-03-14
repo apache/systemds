@@ -72,10 +72,10 @@ public class ColumnEncoderComposite extends ColumnEncoder
 		return _columnEncoders;
 	}
 	
-	public ColumnEncoder getEncoder(Class<?> type) {
+	public <T extends ColumnEncoder> T getEncoder(Class<T> type) {
 		for( ColumnEncoder columnEncoder : _columnEncoders) {
 			if( columnEncoder.getClass().equals(type) )
-				return columnEncoder;
+				return (T) columnEncoder;
 		}
 		return null;
 	}
@@ -86,31 +86,6 @@ public class ColumnEncoderComposite extends ColumnEncoder
 				return true;
 		}
 		return false;
-	}
-	
-	@Override
-	public MatrixBlock encode(FrameBlock in) {
-		MatrixBlock out = null;
-		try {
-			//build meta data first (for all encoders)
-			for( ColumnEncoder columnEncoder : _columnEncoders)
-				columnEncoder.build(in);
-			
-			//propagate meta data 
-			_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
-			for( ColumnEncoder columnEncoder : _columnEncoders)
-				_meta = columnEncoder.getMetaData(_meta);
-			for( ColumnEncoder columnEncoder : _columnEncoders)
-				columnEncoder.initMetaData(_meta);
-			//apply meta data
-			out = apply(in);
-		}
-		catch(Exception ex) {
-			LOG.error("Failed transform-encode frame with \n" + this);
-			throw ex;
-		}
-		
-		return out;
 	}
 
 	@Override
@@ -132,14 +107,14 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	}
 	
 	@Override
-	public MatrixBlock apply(FrameBlock in) {
-		MatrixBlock out = null;
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		try {
-			for( ColumnEncoder columnEncoder : _columnEncoders){
-				if(out != null){
-					out = columnEncoder.apply(out);
+			for( int i = 0; i < _columnEncoders.size(); i++){
+				if(i == 0){
+					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
+					_columnEncoders.get(i).apply(in, out, outputCol);
 				}else {
-					out = columnEncoder.apply(in);
+					_columnEncoders.get(i).apply(out, out, outputCol);
 				}
 			}
 		}
@@ -151,10 +126,15 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in) {
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
 		try {
-			for( ColumnEncoder columnEncoder : _columnEncoders){
-				in = columnEncoder.apply(in);
+			for( int i = 0; i < _columnEncoders.size(); i++){
+				if(i == 0){
+					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
+					_columnEncoders.get(i).apply(in, out, outputCol);
+				}else {
+					_columnEncoders.get(i).apply(out, out, outputCol);
+				}
 			}
 		}
 		catch(Exception ex) {
@@ -292,4 +272,9 @@ public class ColumnEncoderComposite extends ColumnEncoder
 			_meta = meta;
 		}
 	}
+
+	public <T extends ColumnEncoder> boolean hasEncoder(Class<T> type){
+		return _columnEncoders.stream().anyMatch(encoder -> encoder.getClass().equals(type));
+	}
+
 }

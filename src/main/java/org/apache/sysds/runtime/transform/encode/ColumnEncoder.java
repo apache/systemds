@@ -47,7 +47,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	}
 
 
-	public abstract MatrixBlock apply(MatrixBlock in);
+	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol);
 
 	public void setColID(int colID) { _colID = colID; }
 

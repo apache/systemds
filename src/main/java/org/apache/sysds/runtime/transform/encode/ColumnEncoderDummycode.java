@@ -56,15 +56,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		_clen = clen;
 	}
 
-	
-	@Override
-	public MatrixBlock encode(FrameBlock in) {
-		return apply(in);
-	}
-
-	public MatrixBlock encode(MatrixBlock in) {
-		return apply(in);
-	}
 
 	@Override
 	public void build(FrameBlock in) {
@@ -73,30 +64,24 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 
 
 	@Override
-	public MatrixBlock apply(FrameBlock in){
-		if(!in.getSchema()[_colID-1].isNumeric())
-			throw new DMLRuntimeException("DummyCoder input with non numeric value");
-		MatrixBlock in_ = new MatrixBlock(in.getNumRows(), 1, false);
-		for(int i = 0; i < in.getNumRows(); i++){
-			in_.quickSetValue(i, 0, UtilFunctions.objectToDouble(in.getSchema()[i], in.get(i, _colID-1)));
-		}
-		return apply(in_);
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol){
+		throw new DMLRuntimeException("Called DummyCoder with FrameBlock");
 	}
 
-	public MatrixBlock apply(MatrixBlock in) {
-		assert in.getNumColumns() == 1;
-		//allocate output in dense or sparse representation
-		final boolean sparse = MatrixBlock.evalSparseFormatInMemory(
-			in.getNumRows(), _domainSize, in.getNonZeros());
-		MatrixBlock ret = new MatrixBlock(in.getNumRows(), _domainSize, sparse);
-		
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		// Out Matrix should already be correct size!
 		//append dummy coded or unchanged values to output
 		final int clen = in.getNumColumns();
 		for( int i=0; i<in.getNumRows(); i++ ) {
-			double val = in.quickGetValue(i, 0);
-			ret.appendValue(i, (int)val-1, 1);
+			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
+			// applied in a previous encoder
+			double val = in.quickGetValue(i, outputCol);
+			int nCol = outputCol+(int)val-1;
+			out.quickSetValue(i, nCol, 1);
+			if(nCol != outputCol)
+				out.quickSetValue(i, outputCol, 0);
 		}
-		return ret;
+		return out;
 	}
 
 

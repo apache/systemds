@@ -43,23 +43,17 @@ public class ColumnEncoderPassThrough extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock encode(FrameBlock in) {
-		return apply(in);
-	}
-
-	@Override
 	public void build(FrameBlock in) {
 		//do nothing
 	}
 	
 	@Override 
-	public MatrixBlock apply(FrameBlock in) {
-		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		int col = _colID - 1; // 1-based
 		ValueType vt = in.getSchema()[col];
 		for( int i=0; i<in.getNumRows(); i++ ) {
 			Object val = in.get(i, col);
-			out.quickSetValue(i, 0, (val==null||(vt==ValueType.STRING
+			out.quickSetValue(i, outputCol, (val==null||(vt==ValueType.STRING
 				&& val.toString().isEmpty())) ? Double.NaN :
 				UtilFunctions.objectToDouble(vt, val));
 		}
@@ -67,8 +61,14 @@ public class ColumnEncoderPassThrough extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in) {
-		return in;  // nothing to do
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		// only transfer from in to out
+		int col = _colID - 1; // 1-based
+		for( int i=0; i<in.getNumRows(); i++ ) {
+			double val = in.quickGetValue(i, col);
+			out.quickSetValue(i, outputCol, val);
+		}
+		return out;
 	}
 
 

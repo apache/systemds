@@ -60,14 +60,6 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder
 	private long getCode(String key) {
 		return key.hashCode() % _K;
 	}
-	
-	@Override
-	public MatrixBlock encode(FrameBlock in) {
-		if( !isApplicable() )
-			return null;
-		//apply only
-		return apply(in);
-	}
 
 	@Override
 	public void build(FrameBlock in) {
@@ -75,29 +67,26 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in) {
-		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		//apply feature hashing column wise
 		for( int i=0; i<in.getNumRows(); i++ ) {
 			Object okey = in.get(i, _colID-1);
 			String key = (okey!=null) ? okey.toString() : null;
 			long code = getCode(key);
-			out.quickSetValue(i, 0,
+			out.quickSetValue(i, outputCol,
 				(code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in) {
-		assert in.getNumColumns() == 1;
-		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
 		//apply feature hashing column wise
 		for( int i=0; i<in.getNumRows(); i++ ) {
-			Object okey = in.quickGetValue(i, 0);
-			String key = (okey!=null) ? okey.toString() : null;
+			Object okey = in.quickGetValue(i, _colID-1);
+			String key = okey.toString();
 			long code = getCode(key);
-			out.quickSetValue(i, 0,
+			out.quickSetValue(i, outputCol,
 					(code >= 0) ? code : Double.NaN);
 		}
 		return out;

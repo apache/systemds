@@ -66,17 +66,25 @@ public class MultiColumnEncoder implements Encoder {
             _legacyMVImpute.build(in);
     }
 
-    public MatrixBlock apply(FrameBlock in) {
-        MatrixBlock out = null;
-        if(in.getNumColumns() != getFromAll(ColumnEncoderComposite.class, ColumnEncoder::getColID).size())
+    public MatrixBlock apply(FrameBlock in){
+        int numCols = in.getNumColumns() + getNumExtraCols();
+        MatrixBlock out = new MatrixBlock(in.getNumRows(),numCols,false);
+        return apply(in, out, 0);
+    }
+
+    public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
+        // There should be a encoder for every column
+        int numEncoders = getFromAll(ColumnEncoderComposite.class, ColumnEncoder::getColID).size();
+        if(in.getNumColumns() != numEncoders)
             throw new DMLRuntimeException("Not every column in has a CompositeEncoder. Please make sure every column " +
                     "has a encoder or slice the input accordingly");
+
         try {
+            int offset = outputCol;
             for( ColumnEncoderComposite columnEncoder : _columnEncoders){
-                if(out == null)
-                    out = columnEncoder.apply(in);
-                else
-                    out = out.append(columnEncoder.apply(in), null);
+                columnEncoder.apply(in, out, columnEncoder._colID - 1 + offset);
+                if (columnEncoder.hasEncoder(ColumnEncoderDummycode.class))
+                    offset += columnEncoder.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
             }
             if(_legacyOmit != null)
                 out = _legacyOmit.apply(in, out);

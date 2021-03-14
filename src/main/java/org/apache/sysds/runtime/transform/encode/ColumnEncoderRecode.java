@@ -81,16 +81,6 @@ public class ColumnEncoderRecode extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock encode(FrameBlock in) {
-		if( !isApplicable() )
-			return null;
-
-		//build and apply recode maps
-		build(in);
-		return apply(in);
-	}
-
-	@Override
 	public void build(FrameBlock in) {
 		if( !isApplicable() )
 			return;
@@ -140,21 +130,19 @@ public class ColumnEncoderRecode extends ColumnEncoder
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in) {
-		//TODO maybe sparse if we know some info
-		MatrixBlock out = new MatrixBlock(in.getNumRows(), 1, false);
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		for( int i=0; i<in.getNumRows(); i++ ) {
 			Object okey = in.get(i, _colID-1);
 			String key = (okey!=null) ? okey.toString() : null;
 			long code = lookupRCDMap(key);
-			out.quickSetValue(i, 0,
+			out.quickSetValue(i, outputCol,
 				(code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in){
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol){
 		throw new DMLRuntimeException("Recode called with MatrixBlock. Should not happen since Recode is the first " +
 				"encoder in the Stack");
 	}

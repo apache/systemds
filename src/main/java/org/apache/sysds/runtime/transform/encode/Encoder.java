@@ -9,15 +9,6 @@ public interface Encoder extends Externalizable {
 
 
     /**
-     * Block encode: build and apply (transform encode).
-     *
-     * @param in input frame block
-     * @param out output matrix block
-     * @return output matrix block
-     */
-    MatrixBlock encode(FrameBlock in);
-
-    /**
      * Build the transform meta data for the given block input. This call modifies
      * and keeps meta data as encoder state.
      *
@@ -33,7 +24,7 @@ public interface Encoder extends Externalizable {
      * @param out output matrix block
      * @return output matrix block
      */
-    MatrixBlock apply(FrameBlock in);
+    MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol);
 
 
     /**

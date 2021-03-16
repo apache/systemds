@@ -33,7 +33,18 @@ import org.apache.sysds.runtime.meta.TensorCharacteristics;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UtilFunctions {
 	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
@@ -852,17 +863,76 @@ public class UtilFunctions {
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
 	}
 
-	 public static double jaccardSim(String x, String y) {
+	public static FrameBlock getSplittedString (String input) {
+		//Frame f = new Frame();
+		String[] string_array = input.split("'[ ]*,[ ]*'");
+		ValueType[] schema = new ValueType[string_array.length];
+		for(int i=0; i< string_array.length; i++)
+			schema[i] = ValueType.STRING;
+		FrameBlock fb = new FrameBlock(schema);
+		fb.appendRow(string_array);
+		List<String>r = Arrays.asList(string_array);
+		System.out.println("converted FrameBlock: " + fb.toString());
+		return fb;//.subList(0,2);
+	}
+
+	public static String[] getSplittedStringAsArray (String input) {
+		//Frame f = new Frame();
+		String[] string_array = input.split("'[ ]*,[ ]*'");
+		return string_array;//.subList(0,2);
+	}
+	
+	public static double jaccardSim(String x, String y) {
 		Set<String> charsX = new LinkedHashSet<>(Arrays.asList(x.split("(?!^)")));
 		Set<String> charsY = new LinkedHashSet<>(Arrays.asList(y.split("(?!^)")));
-
+	
 		final int sa = charsX.size();
 		final int sb = charsY.size();
 		charsX.retainAll(charsY);
 		final int intersection = charsX.size();
 		return 1d / (sa + sb - charsX.size()) * intersection;
 	}
-
+	
+	public static String columnStringToCSVString(String input, String separator) {
+		StringBuffer sb = new StringBuffer(input);
+		StringBuilder outStringBuilder = new StringBuilder();
+		String[] string_array;
+		
+		// remove leading and trailing brackets: []
+		int startOfArray = sb.indexOf("\"[");
+		if (startOfArray >=0)
+		  sb.delete(startOfArray, startOfArray + 2);
+		
+		
+		int endOfArray = sb.lastIndexOf("]\"");
+		if (endOfArray >=0) 
+		  sb.delete(endOfArray, endOfArray + 2);
+		
+	
+		// split values depending on their format
+		if (sb.indexOf("'") != -1) { // string contains strings
+		  // replace "None" with "'None'"
+		  Pattern p = Pattern.compile(", None,");
+		  Matcher m = p.matcher(sb);
+		  string_array = m.replaceAll(", 'None',").split("'[ ]*,[ ]*'");
+		
+		  // remove apostrophe in first and last string element
+		  string_array[0] = string_array[0].replaceFirst("'", "");
+		  int lastArrayIndex = string_array.length - 1;
+		  string_array[lastArrayIndex] = string_array[lastArrayIndex]
+				.substring(0, string_array[lastArrayIndex].length() - 1);
+		} 
+		else  // string contains numbers only
+		  string_array = sb.toString().split(",");
+	
+		// select a suitable separator that can be used to read in the file properly
+		for(String s : string_array) 
+			outStringBuilder.append(s).append(separator);
+		
+		outStringBuilder.delete(outStringBuilder.length() - separator.length(), outStringBuilder.length());
+		return outStringBuilder.toString();
+	}
+	
 	/**
 	 * Generates a random FrameBlock with given parameters.
 	 * 
@@ -872,7 +942,7 @@ public class UtilFunctions {
 	 * @param random random number generator
 	 * @return FrameBlock
 	 */
-	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random){
+	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random) {
 		String[] names = new String[cols];
 		for(int i = 0; i < cols; i++)
 			names[i] = schema[i].toString();
@@ -891,7 +961,7 @@ public class UtilFunctions {
 	 * @param random random number generator
 	 * @return Object
 	 */
-	public static Object generateRandomValueFromValueType(ValueType valueType, Random random){
+	public static Object generateRandomValueFromValueType(ValueType valueType, Random random) {
 		switch (valueType){
 			case FP32:    return random.nextFloat();
 			case FP64:    return random.nextDouble();

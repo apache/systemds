@@ -1,0 +1,226 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+source("nn/layers/affine.dml") as affine
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/dropout.dml") as dropout
+source("nn/layers/relu.dml") as relu
+source("nn/layers/softmax.dml")as softmax
+source("nn/optim/adam.dml") as adam
+source("scripts/staging/entity-resolution/primitives/evaluation.dml") as evaluation
+
+# Implements Neural Network for Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+#
+# [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
+# Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
+# 2019.]
+
+# Trains a 2 hidden layer softmax classifier.
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X_train      Matrix    ---      input data matrix, of shape (N, D)
+# y_train      Matrix    ---      target matrix, of shape (N, K)
+# hidden_layer_neurons int        number of neurons per hidden layer
+# ---------------------------------------------------------------------------------------------
+# W            Matrix             weights (parameters) matrix, of shape (D, M, 3).
+# b            Matrix             biases vector, of shape (1, M, 3).
+
+train = function(matrix[double] X_train, matrix[double] y_train, int hidden_layer_neurons)
+  return (matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] W3, matrix[double] b3) {
+
+  # Generate input data
+  N = nrow(X_train) # num examples
+  D = ncol(X_train)# num features
+  t = 78 # num target cols
+  print("Training with " + N + " rows, " + D + " cols of data")
+  # Create network:
+  # batch -> affine1 -> relu1 -> dropout1 -> affine2 -> relu2 -> affine3 -> softmax
+  H1 = hidden_layer_neurons # number of neurons in 1st hidden layer
+  H2 = hidden_layer_neurons # number of neurons in 2nd hidden layer
+  p = 0.3  # dropout probability
+  [W1, b1] = affine::init(D, H1, -1)
+  [W2, b2] = affine::init(H1, H2, -1)
+  [W3, b3] = affine::init(H2, t, -1)
+
+  # Initialize Adams parameter
+  initial_lr = 0.0001  # learning rate
+  decay = 0.0001  # learning rate decay constant for weight decay
+
+  beta1   = 0.9;       # [0, 1)
+  beta2   = 0.999;     # [0, 1)
+  epsilon = 0.00000001;
+  adam_t       = 0; # timestamp in adam function
+
+  # Adams optimizer
+  [mW1, vW1] = adam::init(W1);[mb1, vb1] = adam::init(b1)
+  [mW2, vW2] = adam::init(W2);[mb2, vb2] = adam::init(b2)
+  [mW3, vW3] = adam::init(W3);[mb3, vb3] = adam::init(b3)
+
+  # Optimize
+  print("Starting optimization")
+  batch_size = 256 #?
+  epochs = 100
+  iters = ceil(N / batch_size)
+  lr = initial_lr
+  print("init lr: " + initial_lr + " decay: " + decay + "iters: " + iters)
+  for (e in 1:epochs) {
+    for(i in 1:iters){
+      # Get next batch
+      beg = ((i-1) * batch_size) %% N + 1
+      end = min(N, beg + batch_size - 1)
+      X_batch = X_train[beg:end,]
+      y_batch = y_train[beg:end,]
+
+      # Compute forward pass
+      ## layer 1:
+      out1 = affine::forward(X_batch, W1, b1)
+      outr1 = relu::forward(out1)
+      [outd1, maskd1] = dropout::forward(outr1, p, -1)
+      ## layer 2:
+      out2 = affine::forward(outd1, W2, b2)
+      outr2 = relu::forward(out2)
+      ## layer 3:
+      out3 = affine::forward(outr2, W3, b3)
+      probs = softmax::forward(out3)
+
+      if (i==1) {
+        # Compute loss
+        loss = cross_entropy_loss::forward(probs, y_batch)
+        accuracy = mean(rowIndexMax(probs) == rowIndexMax(y_batch))
+
+        # Compute validation loss & accuracy
+        probs_val = predict(X_train, W1, b1, W2, b2, W3, b3)
+        loss_val = cross_entropy_loss::forward(probs_val, y_train)
+        accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(y_train))
+
+        # Output results
+        print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
+        + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+      }
+
+      # Compute backward pass
+      ## loss:
+      dprobs = cross_entropy_loss::backward(probs, y_batch)
+      ## layer 3:
+      dout3 = softmax::backward(dprobs, out3)
+      [doutr2, dW3, db3] = affine::backward(dout3, outr2, W3, b3)
+      ## layer 2:
+      dout2 = relu::backward(doutr2, out2)
+      [doutd1, dW2, db2] = affine::backward(dout2, outd1, W2, b2)
+      ## layer 1:
+      doutr1 = dropout::backward(doutd1, outr1, p, maskd1)
+      dout1 = relu::backward(doutr1, out1)
+      [dX_batch, dW1, db1] = affine::backward(dout1, X_batch, W1, b1)
+
+      # Optimize with Adam
+      [W1, mW1, vW1] = adam::update(W1, dW1, lr, beta1, beta2, epsilon, adam_t, mW1, vW1)
+      [b1, mb1, vb1] = adam::update(b1, db1, lr, beta1, beta2, epsilon, adam_t, mb1, vb1)
+      [W2, mW2, vW2] = adam::update(W2, dW2, lr, beta1, beta2, epsilon, adam_t, mW2, vW2)
+      [b2, mb2, vb2] = adam::update(b2, db2, lr, beta1, beta2, epsilon, adam_t, mb2, vb2)
+      [W3, mW3, vW3] = adam::update(W3, dW3, lr, beta1, beta2, epsilon, adam_t, mW3, vW3)
+      [b3, mb3, vb3] = adam::update(b3, db3, lr, beta1, beta2, epsilon, adam_t, mb3, vb3)
+    }
+
+    # Decay learning rate
+    adam_t = adam_t + 1
+    lr = initial_lr * (1 / (1 + decay * e))
+  }
+}
+
+# Computes the class probability predictions of a softmax classifier
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# test_val     Matrix    ---      input data matrix, of shape (N, D) each with D features
+# W            Matrix             weights (parameters) matrix, of shape (D, M, 3).
+# b            Matrix             biases vector, of shape (1, M, 3).
+# ---------------------------------------------------------------------------------------------
+# probs        Matrix             class probabilities of shape (N, K)
+
+predict = function(matrix[double] test_val,
+                    matrix[double] W1, matrix[double] b1,
+                    matrix[double] W2, matrix[double] b2,
+                    matrix[double] W3, matrix[double] b3)
+              return (matrix[double] probs) {
+
+  N = nrow(test_val)
+  K = ncol(W3) # num features
+
+  # Network:
+  # batch -> affine1 -> relu1 -> affine2 -> relu2 -> affine3 -> softmax
+  # Compute predictions over mini-batches
+
+  probs = matrix(0, rows=N, cols=K)
+
+  batch_size = 128
+  iters = ceil(N / batch_size)
+  for(i in 1:iters) {
+    # Get next batch
+    beg = ((i-1) * batch_size) %% N + 1
+    end = min(N, beg + batch_size - 1)
+    end = min(end, N)
+    X_batch = test_val[beg:end,]
+
+    # Compute forward pass
+    ## layer 1:
+    out1 = affine::forward(X_batch, W1, b1)
+    outr1 = relu::forward(out1)
+    ## layer 2:
+    out2 = affine::forward(outr1, W2, b2)
+    outr2 = relu::forward(out2)
+    ## layer 3:
+    out3 = affine::forward(outr2, W3, b3)
+    probs_batch = softmax::forward(out3)
+
+    # Store predictions
+    probs[beg:end,] = probs_batch
+  }
+}
+
+# Evaluates the performance of the network.
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# probs        Matrix             class probabilities of shape (N, K) (one-hot encoded)
+# Y            Matrix             target matrix of shape (N, K)
+# ---------------------------------------------------------------------------------------------
+# loss         double             scalar loss, of shape (1)
+# accuracy     double             scalar accuracy, of shape (1)
+# f1 score     double             scalar f1 score, of shape (1)
+# precision    double             scalar precission, of shape (1)
+# recall       double             scalar recall, of shape (1)
+
+eval = function(matrix[double] probs, matrix[double] Y)
+  return (double loss, double accuracy, double f1, double precision, double recall) {
+  # Compute loss & accuracy
+  loss = cross_entropy_loss::forward(probs, Y)
+  correct_pred = rowIndexMax(probs) == rowIndexMax(Y)
+  accuracy = mean(correct_pred)
+
+  #calc f1 score
+  rows = nrow(Y)
+  cols = ncol(Y)
+  predBooleanMatrix = matrix(0, rows=rows, cols=cols)
+  for ( i in 1:rows) {
+    predBooleanMatrix[i, as.scalar(rowIndexMax(probs[i,1:cols]))] = 1
+  }
+  [f1, precision, recall] = evaluation::f1(predBooleanMatrix, Y)
+}

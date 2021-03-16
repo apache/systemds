@@ -1,0 +1,70 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+source("scripts/builtin/sherlock.dml") as sherlock
+
+X = read($X)
+Y = read($Y)
+[ cW1,  cb1,
+cW2,  cb2,
+cW3,  cb3,
+wW1,  wb1,
+wW2,  wb2,
+wW3,  wb3,
+pW1,  pb1,
+pW2,  pb2,
+pW3,  pb3,
+sW1,  sb1,
+sW2,  sb2,
+sW3,  sb3,
+fW1,  fb1,
+fW2,  fb2,
+fW3,  fb3] = sherlock(X, Y)
+
+write(cW1, $cW1)
+write(cb1, $cb1)
+write(cW2, $cW2)
+write(cb2, $cb2)
+write(cW3, $cW3)
+write(cb3, $cb3)
+write(wW1, $wW1)
+write(wb1, $wb1)
+write(wW2, $wW2)
+write(wb2, $wb2)
+write(wW3, $wW3)
+write(wb3, $wb3)
+write(pW1, $pW1)
+write(pb1, $pb1)
+write(pW2, $pW2)
+write(pb2, $pb2)
+write(pW3, $pW3)
+write(pb3, $pb3)
+write(sW1, $sW1)
+write(sb1, $sb1)
+write(sW2, $sW2)
+write(sb2, $sb2)
+write(sW3, $sW3)
+write(sb3, $sb3)
+write(fW1, $fW1)
+write(fb1, $fb1)
+write(fW2, $fW2)
+write(fb2, $fb2)
+write(fW3, $fW3)
+write(fb3, $fb3)

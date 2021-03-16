@@ -1,0 +1,185 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+source("scripts/builtin/sherlockNet.dml") as sherlockNet
+
+# Implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+#
+# [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
+# Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
+# 2019.]
+
+# Split feature matrix into four different feature categories and train neural networks on the
+# respective single features. Then combine all trained features to train final neural network.
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X_train      Matrix    ---      maxtrix of feature vectors
+# y_train      Matrix    ---      matrix Y of class labels of semantic data type
+# ---------------------------------------------------------------------------------------------
+# cW           Matrix    ---      weights (parameters) matrices for character distribtions
+# cb           Matrix    ---      biases vectors for character distribtions
+# wW           Matrix    ---      weights (parameters) matrices for word embeddings
+# wb           Matrix    ---      biases vectors for word embeddings
+# pW           Matrix    ---      weights (parameters) matrices for paragraph vectors
+# pb           Matrix    ---      biases vectors for paragraph vectors
+# sW           Matrix    ---      weights (parameters) matrices for global statistics
+# sb           Matrix    ---      biases vectors for global statistics
+# fW           Matrix    ---      weights (parameters) matrices for  combining all trained features (final)
+# fb           Matrix    ---      biases vectors for combining all trained features (final)
+# ---------------------------------------------------------------------------------------------
+
+m_sherlock = function(matrix[double] X_train, matrix[double] y_train)
+      return (matrix[double] cW1, matrix[double] cb1,
+            matrix[double] cW2, matrix[double] cb2,
+            matrix[double] cW3, matrix[double] cb3,
+            matrix[double] wW1, matrix[double] wb1,
+            matrix[double] wW2, matrix[double] wb2,
+            matrix[double] wW3, matrix[double] wb3,
+            matrix[double] pW1, matrix[double] pb1,
+            matrix[double] pW2, matrix[double] pb2,
+            matrix[double] pW3, matrix[double] pb3,
+            matrix[double] sW1, matrix[double] sb1,
+            matrix[double] sW2, matrix[double] sb2,
+            matrix[double] sW3, matrix[double] sb3,
+            matrix[double] fW1, matrix[double] fb1,
+            matrix[double] fW2, matrix[double] fb2,
+            matrix[double] fW3, matrix[double] fb3) {
+  train_cols = ncol(X_train)
+  train_rows = nrow(X_train)
+  [cW1, cb1, cW2, cb2, cW3, cb3] = sherlockNet::train(X_train[1:train_rows, 224:1183], y_train, 300)
+  [wW1, wb1, wW2, wb2, wW3, wb3] = sherlockNet::train(cbind(X_train[1:train_rows, 13:212], X_train[1:train_rows, 1188]), y_train, 200)
+  [pW1, pb1, pW2, pb2, pW3, pb3] = sherlockNet::train(X_train[1:train_rows, 1189:1588], y_train, 400)
+  [sW1, sb1, sW2, sb2, sW3, sb3] = sherlockNet::train(cbind(X_train[1:train_rows, 1:12], X_train[1:train_rows, 213:223], X_train[1:train_rows, 1184:1187]), y_train, 80)
+
+  # train features seperate
+  cprobs = sherlockNet::predict(X_train[1:train_rows, 224:1183], cW1, cb1, cW2, cb2, cW3, cb3)
+  wprobs = sherlockNet::predict(cbind(X_train[1:train_rows, 13:212], X_train[1:train_rows, 1188]), wW1,wb1, wW2, wb2, wW3, wb3)
+  pprobs = sherlockNet::predict(X_train[1:train_rows, 1189:1588], pW1, pb1, pW2, pb2, pW3, pb3)
+  sprobs = sherlockNet::predict(cbind(X_train[1:train_rows, 1:12], X_train[1:train_rows, 213:223], X_train[1:train_rows, 1184:1187]), sW1, sb1, sW2, sb2, sW3, sb3)
+
+  #use trained features to train final net
+  first_predictions = cbind(cprobs, wprobs, pprobs, sprobs)
+  [fW1, fb1, fW2, fb2, fW3, fb3] = sherlockNet::train(first_predictions, y_train, 500)
+}
+
+# ---------------------------------------------------------------------------------------------
+# methods to load and transform the data in order to pass valid input to sherlock function
+# ---------------------------------------------------------------------------------------------
+# Function to transform processed X values from the original sherlock project to
+# valid input for sherlock X input matrices.
+
+# ---------------------------------------------------------------------------------------------
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# data         String    ---      String with processed X values from original sherlock project
+# ---------------------------------------------------------------------------------------------
+# m_data       Matrix    ---      transformed matrix containing X values
+
+transform_values = function(frame[string] data) return (matrix[double] m_data) {
+
+  rows = nrow(data)
+  cols = ncol(data)
+  data = data[1:rows,2:cols]
+
+  #replace True/Fasle with 1/0
+  data = map(data, "d -> d.replace(\"True\",\"1\")")
+  data = map(data, "d -> d.replace(\"False\",\"0\")")
+  m_data = as.matrix(data)
+}
+
+# ---------------------------------------------------------------------------------------------
+# Function to encode the string labels from the original sherlock project (y data)
+# to a numerical representation.
+# ---------------------------------------------------------------------------------------------
+
+# NAME            TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# data            String    ---      String labels from original sherlock project
+# transform_spec  String    ---      Transformation specification to encode label column to numerical represenation
+#                                       example: "{ "recode":[ "label" ] }"
+# ---------------------------------------------------------------------------------------------
+# ground_truth    Matrix    ---      matrix containing ground truth in numerical representation
+# meta_data       String    ---      String contaning meta data of transformation encoding
+
+transform_encode_labels = function(frame[string] data, string transform_spec) return (matrix[double] ground_truth , frame[string] meta_data) {
+
+  rows = nrow(data)
+  cols = ncol(data)
+
+  #replace label with number
+  [m_data, meta_data] = transformencode(target=data[1:rows,2:cols],
+    spec=transform_spec)
+
+  ground_truth = matrix(0, rows=rows, cols=78)
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(m_data[i,1])] = 1
+  }
+}
+
+# ---------------------------------------------------------------------------------------------
+# Use the encoding from transform_encode_labels() to transform y labels to a
+# numerical representation.
+# ---------------------------------------------------------------------------------------------
+
+# NAME            TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# data            String    ---      String labels from original sherlock project
+# meta_data       String    ---      String contaning meta data of transformation encoding
+# transform_spec  String    ---      Transformation specification to encode label column to numerical represenation
+#                                       example: "{ "recode":[ "label" ] }"
+# ---------------------------------------------------------------------------------------------
+# ground_truth    Matrix    ---      matrix containing ground truth in numerical representation
+
+transform_apply_labels = function(frame[string] data, frame[string] meta_data, string transform_spec) return (matrix[double] ground_truth) {
+  #remove index row
+  rows = nrow(data)
+  cols = ncol(data)
+
+  #replace label with number
+  m_data = transformapply(target=data[1:rows,2:cols],
+                  spec=transform_spec,
+                  meta=meta_data)
+
+  ground_truth = matrix(0, rows=rows, cols=78)
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(m_data[i,1])] = 1
+  }
+}
+
+# ---------------------------------------------------------------------------------------------
+# Transform y labels to ground truth
+# ---------------------------------------------------------------------------------------------
+
+# NAME         TYPE      DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# data         Matrix    ---      matrix with labels from original sherlock project
+# ---------------------------------------------------------------------------------------------
+# ground_truth Matrix    ---      matrix containing ground truth in numerical representation
+
+transform_labels_to_ground_truth = function(matrix[double] data)
+  return(matrix[double] ground_truth) {
+
+  rows = nrow(data)
+  ground_truth = matrix(0, rows=rows, cols=78)
+  for ( i in 1:rows) {
+    ground_truth[i, as.scalar(data[i,1])] = 1
+  }
+}

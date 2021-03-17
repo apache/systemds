@@ -34,24 +34,14 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder.EncoderType;
 import static org.apache.sysds.runtime.util.CollectionUtils.except;
 import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
 
 public class EncoderFactory 
 {
-	public enum EncoderType {
-		Bin,
-		Dummycode,
-		FeatureHash,
-		MVImpute,
-		Omit,
-		PassThrough,
-		Recode,
-		Composite
-	};
 
-	
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
 	}
@@ -72,7 +62,7 @@ public class EncoderFactory
 	
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int minCol,
 											  int maxCol) {
-		MultiColumnEncoder encoder = null;
+		MultiColumnEncoder encoder;
 		int clen = schema.length;
 		
 		try {
@@ -220,4 +210,5 @@ public class EncoderFactory
 			ret.put(colnames[i], i);
 		return ret;
 	}
+
 }

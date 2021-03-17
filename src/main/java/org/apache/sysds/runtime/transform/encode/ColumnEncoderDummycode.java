@@ -22,17 +22,12 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
-import org.apache.sysds.runtime.util.UtilFunctions;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ColumnEncoderDummycode extends ColumnEncoder
 {
@@ -112,7 +107,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 			int distinct = -1;
 			if (columnEncoder instanceof ColumnEncoderRecode) {
 				ColumnEncoderRecode columnEncoderRecode = (ColumnEncoderRecode) columnEncoder;
-				distinct = columnEncoderRecode.numDistinctValues();
+				distinct = columnEncoderRecode.getNumDistinctValues();
 			}
 			else if (columnEncoder instanceof ColumnEncoderBin) {
 				distinct = ((ColumnEncoderBin) columnEncoder)._numBin;

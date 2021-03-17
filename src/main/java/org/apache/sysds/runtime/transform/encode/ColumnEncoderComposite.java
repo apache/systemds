@@ -178,14 +178,15 @@ public class ColumnEncoderComposite extends ColumnEncoder
 			dc.updateDomainSizes(_columnEncoders);
 	}
 
-	private void addEncoder(ColumnEncoder other){
+	public void addEncoder(ColumnEncoder other){
 		ColumnEncoder encoder = getEncoder(other.getClass());
 		assert _colID == other._colID;
 		if(encoder != null)
 			encoder.mergeAt(other);
-		else
-			//TODO order matters
+		else{
 			_columnEncoders.add(other);
+			_columnEncoders.sort(null);
+		}
 	}
 
 	@Override
@@ -213,7 +214,7 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("CompositeEncoder("+ _columnEncoders.size()+"):\n");
+		sb.append("CompositeEncoder(").append(_columnEncoders.size()).append("):\n");
 		for( ColumnEncoder columnEncoder : _columnEncoders) {
 			sb.append("-- ");
 			sb.append(columnEncoder.getClass().getSimpleName());

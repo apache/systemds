@@ -23,6 +23,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Comparator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,17 +31,30 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncoderType;
+
 /**
  * Base class for all transform encoders providing both a row and block
  * interface for decoding frames to matrices.
  *
  */
-public abstract class ColumnEncoder implements Externalizable, Encoder
+public abstract class ColumnEncoder implements Externalizable, Encoder, Comparable<ColumnEncoder>
 {
+	public enum EncoderType {
+		Recode,
+		FeatureHash,
+		PassThrough,
+		Bin,
+		Dummycode,
+		Omit,
+		MVImpute,
+		Composite
+	}
+
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
 
-	protected int _colID = -1;
+	protected int _colID;
 
 	protected ColumnEncoder(int colID) {
 		_colID = colID;
@@ -159,5 +173,9 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 		_colID += columnOffset;
 	}
 
+	@Override
+	public int compareTo(ColumnEncoder o) {
+		return Integer.compare(getEncoderType(this), getEncoderType(o));
+	}
 }
 

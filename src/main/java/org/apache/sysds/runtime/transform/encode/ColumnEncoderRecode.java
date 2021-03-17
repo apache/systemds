@@ -168,8 +168,7 @@ public class ColumnEncoderRecode extends ColumnEncoder
 		}
 	}
 
-	// TODO rename getNumDistinctValues
-	public int numDistinctValues() {
+	public int getNumDistinctValues() {
 		return _rcdMap.size();
 	}
 
@@ -181,7 +180,7 @@ public class ColumnEncoderRecode extends ColumnEncoder
 		//inverse operation to initRecodeMaps
 
 		//allocate output rows
-		meta.ensureAllocatedColumns(numDistinctValues());
+		meta.ensureAllocatedColumns(getNumDistinctValues());
 
 		//create compact meta data representation
 		StringBuilder sb = new StringBuilder(); //for reuse
@@ -190,7 +189,7 @@ public class ColumnEncoderRecode extends ColumnEncoder
 			meta.set(rowID++, _colID-1,   //1-based
 				constructRecodeMapEntry(e.getKey(), e.getValue(), sb));
 		}
-		meta.getColumnMetadata(_colID-1).setNumDistinct(numDistinctValues());
+		meta.getColumnMetadata(_colID-1).setNumDistinct(getNumDistinctValues());
 
 		return meta;
 	}
@@ -257,7 +256,7 @@ public class ColumnEncoderRecode extends ColumnEncoder
 	public static String[] splitRecodeMapEntry(String value) {
 		// Instead of using splitCSV which is forcing string with RFC-4180 format,
 		// using Lop.DATATYPE_PREFIX separator to split token and code
-		int pos = value.toString().lastIndexOf(Lop.DATATYPE_PREFIX);
+		int pos = value.lastIndexOf(Lop.DATATYPE_PREFIX);
 		return new String[] {value.substring(0, pos), value.substring(pos+1)};
 	}
 

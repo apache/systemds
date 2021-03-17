@@ -34,21 +34,18 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	private static final long serialVersionUID = 5832130477659116489L;
 
 	public int _domainSize = -1;  // length = #of dummycoded columns
-	protected long _clen = 0;
 
 	public ColumnEncoderDummycode() {
 		super(-1);
 	}
 
-	public ColumnEncoderDummycode(int colID, long clen) {
+	public ColumnEncoderDummycode(int colID) {
 		super(colID);
-		_clen = clen;
 	}
 
-	public ColumnEncoderDummycode(int colID, int domainSize, long clen) {
+	public ColumnEncoderDummycode(int colID, int domainSize) {
 		super(colID);
 		_domainSize = domainSize;
-		_clen = clen;
 	}
 
 
@@ -134,14 +131,12 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
-		out.writeLong(_clen);
 		out.writeInt(_domainSize);
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
-		_clen = in.readLong();
 		_domainSize = in.readInt();
 	}
 

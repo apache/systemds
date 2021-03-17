@@ -5,6 +5,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.Externalizable;
 
+/*
+Interface for all Encoder like objects
+ */
+
 public interface Encoder extends Externalizable {
 
 
@@ -17,11 +21,12 @@ public interface Encoder extends Externalizable {
     void build(FrameBlock in);
 
     /**
-     * Encode input data blockwise according to existing transform meta
-     * data (transform apply).
+     * Apply the generated metadata to the FrameBlock and saved the result in out.
      *
      * @param in input frame block
      * @param out output matrix block
+     * @param outputCol is a offset in the output matrix.
+     *                  column in FrameBlock + outputCol = column in out
      * @return output matrix block
      */
     MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol);
@@ -60,6 +65,7 @@ public interface Encoder extends Externalizable {
      *
      * @param beginDims begin dimensions of range
      * @param endDims end dimensions of range
+     * @param offset is applied to begin and endDims
      */
     public void updateIndexRanges(long[] beginDims, long[] endDims, int offset);
 

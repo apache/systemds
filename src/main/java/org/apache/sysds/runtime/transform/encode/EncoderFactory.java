@@ -119,7 +119,7 @@ public class EncoderFactory
 				}
 			if( !dcIDs.isEmpty() )
 				for (Integer id : dcIDs){
-					ColumnEncoderDummycode dc = new ColumnEncoderDummycode(id, schema.length);
+					ColumnEncoderDummycode dc = new ColumnEncoderDummycode(id);
 					addEncoderToMap(dc, colEncoders);
 				}
 			//create composite decoder of all created encoders

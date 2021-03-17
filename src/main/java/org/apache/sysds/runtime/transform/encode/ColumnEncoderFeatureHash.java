@@ -23,101 +23,95 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 
 /**
- * Class used for feature hashing transformation of frames. 
+ * Class used for feature hashing transformation of frames.
  */
-public class ColumnEncoderFeatureHash extends ColumnEncoder
-{
+public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	private static final long serialVersionUID = 7435806042138687342L;
 	private long _K;
 
 	/*
-	public EncoderFeatureHash(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
-		throws JSONException {
-		super(null, clen);
-		_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol);
-		_K = getK(parsedSpec);
-	}
-
+	 * public EncoderFeatureHash(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol) throws
+	 * JSONException { super(null, clen); _colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames,
+	 * TfMethod.HASH.toString(), minCol, maxCol); _K = getK(parsedSpec); }
+	 * 
 	 */
 	public ColumnEncoderFeatureHash(int colID, long K) {
 		super(colID);
 		_K = K;
 	}
-	
+
 	public ColumnEncoderFeatureHash() {
 		super(-1);
 		_K = 0;
 	}
 
-	
 	private long getCode(String key) {
 		return key.hashCode() % _K;
 	}
 
 	@Override
 	public void build(FrameBlock in) {
-		//do nothing (no meta data other than K)
+		// do nothing (no meta data other than K)
 	}
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
-		//apply feature hashing column wise
-		for( int i=0; i<in.getNumRows(); i++ ) {
-			Object okey = in.get(i, _colID-1);
-			String key = (okey!=null) ? okey.toString() : null;
+		// apply feature hashing column wise
+		for(int i = 0; i < in.getNumRows(); i++) {
+			Object okey = in.get(i, _colID - 1);
+			String key = (okey != null) ? okey.toString() : null;
+			if(key == null)
+				throw new DMLRuntimeException("Missing Value encountered in input Frame for FeatureHash");
 			long code = getCode(key);
-			out.quickSetValue(i, outputCol,
-				(code >= 0) ? code : Double.NaN);
+			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
 
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
-		//apply feature hashing column wise
-		for( int i=0; i<in.getNumRows(); i++ ) {
-			Object okey = in.quickGetValue(i, _colID-1);
+		// apply feature hashing column wise
+		for(int i = 0; i < in.getNumRows(); i++) {
+			Object okey = in.quickGetValue(i, _colID - 1);
 			String key = okey.toString();
 			long code = getCode(key);
-			out.quickSetValue(i, outputCol,
-					(code >= 0) ? code : Double.NaN);
+			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
-	
+
 	@Override
 	public void mergeAt(ColumnEncoder other) {
 		if(other instanceof ColumnEncoderFeatureHash) {
 			assert other._colID == _colID;
-			if (((ColumnEncoderFeatureHash) other)._K != 0 && _K == 0)
+			if(((ColumnEncoderFeatureHash) other)._K != 0 && _K == 0)
 				_K = ((ColumnEncoderFeatureHash) other)._K;
 			return;
 		}
 		super.mergeAt(other);
 	}
-	
+
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
-		if( !isApplicable() )
+		if(!isApplicable())
 			return meta;
-		
+
 		meta.ensureAllocatedColumns(1);
-		meta.set(0, _colID-1, String.valueOf(_K));
+		meta.set(0, _colID - 1, String.valueOf(_K));
 		return meta;
 	}
 
 	@Override
-	public void initMetaData( FrameBlock meta ) {
-		if( meta == null || meta.getNumRows()<=0 )
+	public void initMetaData(FrameBlock meta) {
+		if(meta == null || meta.getNumRows() <= 0)
 			return;
-		_K = UtilFunctions.parseToLong(meta.get(0, _colID-1).toString());
+		_K = UtilFunctions.parseToLong(meta.get(0, _colID - 1).toString());
 	}
 
 	@Override

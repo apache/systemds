@@ -29,7 +29,6 @@ import java.util.zip.Checksum;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.spark.sql.sources.In;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -37,13 +36,9 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.*;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -52,8 +47,9 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.transform.encode.*;
-import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
+import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
@@ -93,7 +89,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		// obtain and pin input frame
 		FrameObject fin = ec.getFrameObject(input1.getName());
 		String spec = ec.getScalarInput(input2).getStringValue();
-		
+
 		String[] colNames = new String[(int) fin.getNumColumns()];
 		Arrays.fill(colNames, "");
 
@@ -107,9 +103,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 			// create an encoder with the given spec. The columnOffset (which is 0 based) has to be used to
 			// tell the federated worker how much the indexes in the spec have to be offset.
-			Future<FederatedResponse> responseFuture = data.executeFederatedOperation(
-				new FederatedRequest(RequestType.EXEC_UDF, -1,
-					new CreateFrameEncoder(data.getVarID(), spec, columnOffset + 1)));
+			Future<FederatedResponse> responseFuture = data.executeFederatedOperation(new FederatedRequest(
+				RequestType.EXEC_UDF, -1, new CreateFrameEncoder(data.getVarID(), spec, columnOffset + 1)));
 			// collect responses with encoders
 			try {
 				FederatedResponse response = responseFuture.get();
@@ -127,23 +122,23 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			}
 			return null;
 		});
-		
-		//sort for consistent encoding in local and federated
-		if( ColumnEncoderRecode.SORT_RECODE_MAP ) {
+
+		// sort for consistent encoding in local and federated
+		if(ColumnEncoderRecode.SORT_RECODE_MAP) {
 			globalEncoder.applyToAll(ColumnEncoderRecode.class, ColumnEncoderRecode::sortCPRecodeMaps);
 		}
-		
+
 		FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
 		meta.setColumnNames(colNames);
 		globalEncoder.getMetaData(meta);
 		globalEncoder.initMetaData(meta);
 
 		encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
-		
+
 		// release input and outputs
 		ec.setFrameOutput(getOutput(1).getName(), meta);
 	}
-	
+
 	public static void encodeFederatedFrames(FederationMap fedMapping, MultiColumnEncoder globalencoder,
 		MatrixObject transformedMat) {
 		long varID = FederationUtils.getNextFedDataID();
@@ -151,14 +146,14 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// copy because we reuse it
 			long[] beginDims = range.getBeginDims();
 			long[] endDims = range.getEndDims();
-			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);// make 1-based
+			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);// make
+																											// 1-based
 			IndexRange ixRangeInv = new IndexRange(0, beginDims[0], 0, beginDims[1]);
 
 			// get the encoder segment that is relevant for this federated worker
 			MultiColumnEncoder encoder = globalencoder.subRangeEncoder(ixRange);
 			// update begin end dims (column part) considering columns added by dummycoding
 			encoder.updateIndexRanges(beginDims, endDims, globalencoder.getNumExtraCols(ixRangeInv));
-
 
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,
@@ -173,18 +168,18 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		});
 
 		// construct a federated matrix with the encoded data
-		transformedMat.getDataCharacteristics().setDimension(
-			transformedFedMapping.getMaxIndexInRange(0), transformedFedMapping.getMaxIndexInRange(1));
+		transformedMat.getDataCharacteristics().setDimension(transformedFedMapping.getMaxIndexInRange(0),
+			transformedFedMapping.getMaxIndexInRange(1));
 		transformedMat.setFedMapping(transformedFedMapping);
 	}
-	
+
 	public static class CreateFrameEncoder extends FederatedUDF {
 		private static final long serialVersionUID = 2376756757742169692L;
 		private final String _spec;
 		private final int _offset;
-		
+
 		public CreateFrameEncoder(long input, String spec, int offset) {
-			super(new long[]{input});
+			super(new long[] {input});
 			_spec = spec;
 			_offset = offset;
 		}
@@ -196,9 +191,9 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			String[] colNames = fb.getColumnNames();
 
 			// create the encoder
-			MultiColumnEncoder encoder = EncoderFactory.createEncoder(_spec, colNames,
-				fb.getNumColumns(), null, _offset, _offset + fb.getNumColumns());
-			
+			MultiColumnEncoder encoder = EncoderFactory
+				.createEncoder(_spec, colNames, fb.getNumColumns(), null, _offset, _offset + fb.getNumColumns());
+
 			// build necessary structures for encoding
 			encoder.build(fb);
 			fo.release();
@@ -217,7 +212,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		private static final long serialVersionUID = 6034440964680578276L;
 		private final long _outputID;
 		private final MultiColumnEncoder _encoder;
-		
+
 		public ExecuteFrameEncoder(long input, long output, MultiColumnEncoder encoder) {
 			super(new long[] {input});
 			_outputID = output;
@@ -226,7 +221,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
+			FrameBlock fb = ((FrameObject) data[0]).acquireReadAndRelease();
 
 			// offset is applied on the Worker to shift the local encoders to their respective column
 			_encoder.applyColumnOffset();
@@ -238,7 +233,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 			// add it to the list of variables
 			ec.setVariable(String.valueOf(_outputID), mo);
-		
+
 			// return id handle
 			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 		}
@@ -251,18 +246,17 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		@Override
 		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 			LineageItem[] liUdfInputs = Arrays.stream(getInputIDs())
-					.mapToObj(id -> ec.getLineage().get(String.valueOf(id))).toArray(LineageItem[]::new);
+				.mapToObj(id -> ec.getLineage().get(String.valueOf(id))).toArray(LineageItem[]::new);
 			// calculate checksum for the encoder
 			Checksum checksum = new Adler32();
-			byte bytes[] = SerializationUtils.serialize(_encoder);
+			byte[] bytes = SerializationUtils.serialize(_encoder);
 			checksum.update(bytes, 0, bytes.length);
-			CPOperand encoder = new CPOperand(String.valueOf(checksum.getValue()), 
-					ValueType.INT64, DataType.SCALAR, true);
+			CPOperand encoder = new CPOperand(String.valueOf(checksum.getValue()), ValueType.INT64, DataType.SCALAR,
+				true);
 			LineageItem[] otherInputs = LineageItemUtils.getLineage(ec, encoder);
 			LineageItem[] liInputs = Stream.concat(Arrays.stream(liUdfInputs), Arrays.stream(otherInputs))
-					.toArray(LineageItem[]::new);
-			return Pair.of(String.valueOf(_outputID), 
-					new LineageItem(getClass().getSimpleName(), liInputs));
+				.toArray(LineageItem[]::new);
+			return Pair.of(String.valueOf(_outputID), new LineageItem(getClass().getSimpleName(), liInputs));
 		}
 	}
 }

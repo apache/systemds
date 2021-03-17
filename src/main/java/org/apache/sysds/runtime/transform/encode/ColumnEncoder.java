@@ -19,11 +19,12 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncoderType;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Comparator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,53 +32,32 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncoderType;
-
 /**
- * Base class for all transform encoders providing both a row and block
- * interface for decoding frames to matrices.
+ * Base class for all transform encoders providing both a row and block interface for decoding frames to matrices.
  *
  */
-public abstract class ColumnEncoder implements Externalizable, Encoder, Comparable<ColumnEncoder>
-{
-	public enum EncoderType {
-		Recode,
-		FeatureHash,
-		PassThrough,
-		Bin,
-		Dummycode,
-		Omit,
-		MVImpute,
-		Composite
-	}
-
-	private static final long serialVersionUID = 2299156350718979064L;
+public abstract class ColumnEncoder implements Externalizable, Encoder, Comparable<ColumnEncoder> {
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
-
+	private static final long serialVersionUID = 2299156350718979064L;
 	protected int _colID;
 
 	protected ColumnEncoder(int colID) {
 		_colID = colID;
 	}
 
-
 	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol);
 
-	public void setColID(int colID) { _colID = colID; }
-
 	/**
-	 * Indicates if this encoder is applicable, i.e, if there is
-	 * a column to encode.
+	 * Indicates if this encoder is applicable, i.e, if there is a column to encode.
 	 *
 	 * @return true if a colID is set
 	 */
-	public boolean isApplicable()  {
+	public boolean isApplicable() {
 		return _colID != -1;
 	}
 
 	/**
-	 * Indicates if this encoder is applicable for the given column ID,
-	 * i.e., if it is subject to this transformation.
+	 * Indicates if this encoder is applicable for the given column ID, i.e., if it is subject to this transformation.
 	 *
 	 * @param colID column ID
 	 * @return true if encoder is applicable for given column
@@ -86,32 +66,28 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		return colID == _colID;
 	}
 
-
 	/**
 	 * Allocates internal data structures for partial build.
 	 */
 	public void prepareBuildPartial() {
-		//do nothing
+		// do nothing
 	}
-	
+
 	/**
 	 * Partial build of internal data structures (e.g., in distributed spark operations).
-	 * 
+	 *
 	 * @param in input frame block
 	 */
 	public void buildPartial(FrameBlock in) {
-		//do nothing
+		// do nothing
 	}
-
 
 	/**
 	 * Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
-	 * <code>Encoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with every
-	 * other <code>Encoder</code>.
+	 * <code>ColumnEncoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with
+	 * every other <code>ColumnEncoders</code>. <code>MultiColumnEncoders</code> are compatible with every encoder
 	 *
 	 * @param other the encoder that should be merged in
-	 * @param row   the row where it should be placed (1-based)
-	 * @param col   the col where it should be placed (1-based)
 	 */
 	public void mergeAt(ColumnEncoder other) {
 		throw new DMLRuntimeException(
@@ -122,28 +98,26 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	 * Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.
 	 *
 	 * @param beginDims begin dimensions of range
-	 * @param endDims end dimensions of range
+	 * @param endDims   end dimensions of range
 	 */
 	public void updateIndexRanges(long[] beginDims, long[] endDims, int colOffset) {
 		// do nothing - default
 	}
 
 	/**
-	 * Obtain the column mapping of encoded frames based on the passed
-	 * meta data frame.
+	 * Obtain the column mapping of encoded frames based on the passed meta data frame.
 	 *
 	 * @param meta meta data frame block
-	 * @param out output matrix
 	 * @return matrix with column mapping (one row per attribute)
 	 */
 	public MatrixBlock getColMapping(FrameBlock meta) {
-		//default: do nothing
+		// default: do nothing
 		return null;
 	}
 
 	/**
-	 * Redirects the default java serialization via externalizable to our default
-	 * hadoop writable serialization for efficient broadcast/rdd serialization.
+	 * Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+	 * efficient broadcast/rdd serialization.
 	 *
 	 * @param os object output
 	 * @throws IOException if IOException occurs
@@ -154,8 +128,8 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	}
 
 	/**
-	 * Redirects the default java serialization via externalizable to our default
-	 * hadoop writable serialization for efficient broadcast/rdd deserialization.
+	 * Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+	 * efficient broadcast/rdd deserialization.
 	 *
 	 * @param in object input
 	 * @throws IOException if IOException occur
@@ -169,7 +143,11 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		return _colID;
 	}
 
-	public void shiftCol(int columnOffset){
+	public void setColID(int colID) {
+		_colID = colID;
+	}
+
+	public void shiftCol(int columnOffset) {
 		_colID += columnOffset;
 	}
 
@@ -177,5 +155,8 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	public int compareTo(ColumnEncoder o) {
 		return Integer.compare(getEncoderType(this), getEncoderType(o));
 	}
-}
 
+	public enum EncoderType {
+		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
+	}
+}

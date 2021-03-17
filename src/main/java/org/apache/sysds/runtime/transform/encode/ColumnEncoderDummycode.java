@@ -29,11 +29,10 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class ColumnEncoderDummycode extends ColumnEncoder
-{
+public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
 
-	public int _domainSize = -1;  // length = #of dummycoded columns
+	public int _domainSize = -1; // length = #of dummycoded columns
 
 	public ColumnEncoderDummycode() {
 		super(-1);
@@ -48,34 +47,31 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		_domainSize = domainSize;
 	}
 
-
 	@Override
 	public void build(FrameBlock in) {
-		//do nothing
+		// do nothing
 	}
 
-
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol){
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		throw new DMLRuntimeException("Called DummyCoder with FrameBlock");
 	}
 
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
 		// Out Matrix should already be correct size!
-		//append dummy coded or unchanged values to output
+		// append dummy coded or unchanged values to output
 		final int clen = in.getNumColumns();
-		for( int i=0; i<in.getNumRows(); i++ ) {
+		for(int i = 0; i < in.getNumRows(); i++) {
 			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
 			// applied in a previous encoder
 			double val = in.quickGetValue(i, outputCol);
-			int nCol = outputCol+(int)val-1;
+			int nCol = outputCol + (int) val - 1;
 			out.quickSetValue(i, nCol, 1);
 			if(nCol != outputCol)
 				out.quickSetValue(i, outputCol, 0);
 		}
 		return out;
 	}
-
 
 	@Override
 	public void mergeAt(ColumnEncoder other) {
@@ -87,7 +83,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		}
 		super.mergeAt(other);
 	}
-	
+
 	@Override
 	public void updateIndexRanges(long[] beginDims, long[] endDims, int colOffset) {
 
@@ -96,22 +92,21 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		endDims[1] += _domainSize - 1 + colOffset;
 	}
 
-
 	public void updateDomainSizes(List<ColumnEncoder> columnEncoders) {
 		if(_colID == -1)
 			return;
-		for (ColumnEncoder columnEncoder : columnEncoders) {
+		for(ColumnEncoder columnEncoder : columnEncoders) {
 			int distinct = -1;
-			if (columnEncoder instanceof ColumnEncoderRecode) {
+			if(columnEncoder instanceof ColumnEncoderRecode) {
 				ColumnEncoderRecode columnEncoderRecode = (ColumnEncoderRecode) columnEncoder;
 				distinct = columnEncoderRecode.getNumDistinctValues();
 			}
-			else if (columnEncoder instanceof ColumnEncoderBin) {
+			else if(columnEncoder instanceof ColumnEncoderBin) {
 				distinct = ((ColumnEncoderBin) columnEncoder)._numBin;
 			}
-			
-			if (distinct != -1) {
-					_domainSize = distinct;
+
+			if(distinct != -1) {
+				_domainSize = distinct;
 			}
 		}
 	}
@@ -120,12 +115,12 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	public FrameBlock getMetaData(FrameBlock meta) {
 		return meta;
 	}
-	
+
 	@Override
 	public void initMetaData(FrameBlock meta) {
-		//initialize domain sizes and output num columns
+		// initialize domain sizes and output num columns
 		_domainSize = -1;
-		_domainSize= (int)meta.getColumnMetadata()[_colID-1].getNumDistinct();
+		_domainSize = (int) meta.getColumnMetadata()[_colID - 1].getNumDistinct();
 	}
 
 	@Override
@@ -147,8 +142,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 		if(o == null || getClass() != o.getClass())
 			return false;
 		ColumnEncoderDummycode that = (ColumnEncoderDummycode) o;
-		return _colID == that._colID
-			&& (_domainSize == that._domainSize);
+		return _colID == that._colID && (_domainSize == that._domainSize);
 	}
 
 	@Override

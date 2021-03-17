@@ -19,26 +19,10 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.Serializable;
+import java.io.*;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Function;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -52,17 +36,16 @@ import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
-import org.apache.sysds.runtime.instructions.cp.*;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
-import org.apache.sysds.runtime.util.CommonThreadPool;
-import org.apache.sysds.runtime.util.DMVUtils;
-import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.runtime.util.EMAUtils;
+import org.apache.sysds.runtime.util.*;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
 public class FrameBlock implements CacheBlock, Externalizable  {
@@ -612,14 +595,14 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	/**
-	 * Get a row iterator over the frame where all selected fields are
-	 * encoded as strings independent of their value types.
+	 * Get a row iterator over the frame where all selected fields are encoded as strings independent of their value
+	 * types.
 	 *
 	 * @param colID column selection, 1-based
 	 * @return string array iterator
 	 */
 	public Iterator<String[]> getStringRowIterator(int colID) {
-		return new StringRowIterator(0, _numRows, new int[]{colID});
+		return new StringRowIterator(0, _numRows, new int[] {colID});
 	}
 
 	/**

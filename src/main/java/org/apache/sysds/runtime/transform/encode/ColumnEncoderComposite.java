@@ -26,43 +26,41 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * Simple composite encoder that applies a list of encoders 
- * in specified order. By implementing the default encoder API
- * it can be used as a drop-in replacement for any other encoder. 
+ * Simple composite encoder that applies a list of encoders in specified order. By implementing the default encoder API
+ * it can be used as a drop-in replacement for any other encoder.
  * 
  */
 // TODO assert each type of encoder can only be present once
-public class ColumnEncoderComposite extends ColumnEncoder
-{
+public class ColumnEncoderComposite extends ColumnEncoder {
 	private static final long serialVersionUID = -8473768154646831882L;
-	
+
 	private List<ColumnEncoder> _columnEncoders = null;
 	private FrameBlock _meta = null;
 
 	public ColumnEncoderComposite() {
-		super( -1);
+		super(-1);
 	}
 
 	public ColumnEncoderComposite(List<ColumnEncoder> columnEncoders, FrameBlock meta) {
 		super(-1);
-		if(!(columnEncoders.size() > 0 && columnEncoders.stream().allMatch((encoder -> encoder._colID == columnEncoders.get(0)._colID))))
+		if(!(columnEncoders.size() > 0 &&
+			columnEncoders.stream().allMatch((encoder -> encoder._colID == columnEncoders.get(0)._colID))))
 			throw new DMLRuntimeException("Tried to create Composite Encoder with no encoders or mismatching columIDs");
 		_colID = columnEncoders.get(0)._colID;
 		_meta = meta;
 		_columnEncoders = columnEncoders;
 	}
 
-	public ColumnEncoderComposite(List<ColumnEncoder> columnEncoders){
+	public ColumnEncoderComposite(List<ColumnEncoder> columnEncoders) {
 		this(columnEncoders, null);
 	}
 
-	public ColumnEncoderComposite(ColumnEncoder columnEncoder){
+	public ColumnEncoderComposite(ColumnEncoder columnEncoder) {
 		super(columnEncoder._colID);
 		_columnEncoders = new ArrayList<>();
 		_columnEncoders.add(columnEncoder);
@@ -71,18 +69,18 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	public List<ColumnEncoder> getEncoders() {
 		return _columnEncoders;
 	}
-	
+
 	public <T extends ColumnEncoder> T getEncoder(Class<T> type) {
-		for( ColumnEncoder columnEncoder : _columnEncoders) {
-			if( columnEncoder.getClass().equals(type) )
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
+			if(columnEncoder.getClass().equals(type))
 				return (T) columnEncoder;
 		}
 		return null;
 	}
-	
+
 	public boolean isEncoder(int colID, Class<?> type) {
-		for( ColumnEncoder columnEncoder : _columnEncoders) {
-			if( columnEncoder.getClass().equals(type) && columnEncoder._colID == colID)
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
+			if(columnEncoder.getClass().equals(type) && columnEncoder._colID == colID)
 				return true;
 		}
 		return false;
@@ -90,30 +88,31 @@ public class ColumnEncoderComposite extends ColumnEncoder
 
 	@Override
 	public void build(FrameBlock in) {
-		for( ColumnEncoder columnEncoder : _columnEncoders)
+		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.build(in);
 	}
-	
+
 	@Override
 	public void prepareBuildPartial() {
-		for( ColumnEncoder columnEncoder : _columnEncoders)
+		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.prepareBuildPartial();
 	}
-	
+
 	@Override
 	public void buildPartial(FrameBlock in) {
-		for( ColumnEncoder columnEncoder : _columnEncoders)
+		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.buildPartial(in);
 	}
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		try {
-			for( int i = 0; i < _columnEncoders.size(); i++){
-				if(i == 0){
+			for(int i = 0; i < _columnEncoders.size(); i++) {
+				if(i == 0) {
 					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
 					_columnEncoders.get(i).apply(in, out, outputCol);
-				}else {
+				}
+				else {
 					_columnEncoders.get(i).apply(out, out, outputCol);
 				}
 			}
@@ -128,11 +127,12 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
 		try {
-			for( int i = 0; i < _columnEncoders.size(); i++){
-				if(i == 0){
+			for(int i = 0; i < _columnEncoders.size(); i++) {
+				if(i == 0) {
 					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
 					_columnEncoders.get(i).apply(in, out, outputCol);
-				}else {
+				}
+				else {
 					_columnEncoders.get(i).apply(out, out, outputCol);
 				}
 			}
@@ -151,8 +151,7 @@ public class ColumnEncoderComposite extends ColumnEncoder
 		if(o == null || getClass() != o.getClass())
 			return false;
 		ColumnEncoderComposite that = (ColumnEncoderComposite) o;
-		return _columnEncoders.equals(that._columnEncoders)
-			&& Objects.equals(_meta, that._meta);
+		return _columnEncoders.equals(that._columnEncoders) && Objects.equals(_meta, that._meta);
 	}
 
 	@Override
@@ -162,14 +161,15 @@ public class ColumnEncoderComposite extends ColumnEncoder
 
 	@Override
 	public void mergeAt(ColumnEncoder other) {
-		if (other instanceof ColumnEncoderComposite) {
+		if(other instanceof ColumnEncoderComposite) {
 			ColumnEncoderComposite otherComposite = (ColumnEncoderComposite) other;
 			assert otherComposite._colID == _colID;
 			// TODO maybe assert that the _encoders never have the same type of encoder twice or more
-			for (ColumnEncoder otherEnc : otherComposite.getEncoders()) {
+			for(ColumnEncoder otherEnc : otherComposite.getEncoders()) {
 				addEncoder(otherEnc);
 			}
-		}else{
+		}
+		else {
 			addEncoder(other);
 		}
 		// update dummycode encoder domain sizes based on distinctness information from other encoders
@@ -178,12 +178,12 @@ public class ColumnEncoderComposite extends ColumnEncoder
 			dc.updateDomainSizes(_columnEncoders);
 	}
 
-	public void addEncoder(ColumnEncoder other){
+	public void addEncoder(ColumnEncoder other) {
 		ColumnEncoder encoder = getEncoder(other.getClass());
 		assert _colID == other._colID;
 		if(encoder != null)
 			encoder.mergeAt(other);
-		else{
+		else {
 			_columnEncoders.add(other);
 			_columnEncoders.sort(null);
 		}
@@ -198,24 +198,24 @@ public class ColumnEncoderComposite extends ColumnEncoder
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
-		if( _meta != null )
+		if(_meta != null)
 			return _meta;
-		for( ColumnEncoder columnEncoder : _columnEncoders)
+		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.getMetaData(out);
 		return out;
 	}
-	
+
 	@Override
 	public void initMetaData(FrameBlock out) {
-		for( ColumnEncoder columnEncoder : _columnEncoders)
+		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.initMetaData(out);
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CompositeEncoder(").append(_columnEncoders.size()).append("):\n");
-		for( ColumnEncoder columnEncoder : _columnEncoders) {
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
 			sb.append("-- ");
 			sb.append(columnEncoder.getClass().getSimpleName());
 			sb.append(": ");
@@ -249,14 +249,14 @@ public class ColumnEncoderComposite extends ColumnEncoder
 			columnEncoder.setColID(colID);
 			_columnEncoders.add(columnEncoder);
 		}
-		if (in.readBoolean()) {
+		if(in.readBoolean()) {
 			FrameBlock meta = new FrameBlock();
 			meta.readFields(in);
 			_meta = meta;
 		}
 	}
 
-	public <T extends ColumnEncoder> boolean hasEncoder(Class<T> type){
+	public <T extends ColumnEncoder> boolean hasEncoder(Class<T> type) {
 		return _columnEncoders.stream().anyMatch(encoder -> encoder.getClass().equals(type));
 	}
 

@@ -25,17 +25,15 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
- * Simple composite encoder that applies a list of encoders 
- * in specified order. By implementing the default encoder API
- * it can be used as a drop-in replacement for any other encoder. 
+ * Simple composite encoder that applies a list of encoders in specified order. By implementing the default encoder API
+ * it can be used as a drop-in replacement for any other encoder.
  * 
  */
-public class ColumnEncoderPassThrough extends ColumnEncoder
-{
+public class ColumnEncoderPassThrough extends ColumnEncoder {
 	private static final long serialVersionUID = -8473768154646831882L;
-	
+
 	protected ColumnEncoderPassThrough(int ptCols) {
-		super(ptCols); //1-based
+		super(ptCols); // 1-based
 	}
 
 	public ColumnEncoderPassThrough() {
@@ -44,18 +42,19 @@ public class ColumnEncoderPassThrough extends ColumnEncoder
 
 	@Override
 	public void build(FrameBlock in) {
-		//do nothing
+		// do nothing
 	}
-	
-	@Override 
+
+	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		int col = _colID - 1; // 1-based
 		ValueType vt = in.getSchema()[col];
-		for( int i=0; i<in.getNumRows(); i++ ) {
+		for(int i = 0; i < in.getNumRows(); i++) {
 			Object val = in.get(i, col);
-			out.quickSetValue(i, outputCol, (val==null||(vt==ValueType.STRING
-				&& val.toString().isEmpty())) ? Double.NaN :
-				UtilFunctions.objectToDouble(vt, val));
+			out.quickSetValue(i,
+				outputCol,
+				(val == null || (vt == ValueType.STRING && val.toString().isEmpty())) ? Double.NaN : UtilFunctions
+					.objectToDouble(vt, val));
 		}
 		return out;
 	}
@@ -64,13 +63,12 @@ public class ColumnEncoderPassThrough extends ColumnEncoder
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
 		// only transfer from in to out
 		int col = _colID - 1; // 1-based
-		for( int i=0; i<in.getNumRows(); i++ ) {
+		for(int i = 0; i < in.getNumRows(); i++) {
 			double val = in.quickGetValue(i, col);
 			out.quickSetValue(i, outputCol, val);
 		}
 		return out;
 	}
-
 
 	@Override
 	public void mergeAt(ColumnEncoder other) {
@@ -82,12 +80,12 @@ public class ColumnEncoderPassThrough extends ColumnEncoder
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
-		//do nothing
+		// do nothing
 		return meta;
 	}
-	
+
 	@Override
 	public void initMetaData(FrameBlock meta) {
-		//do nothing
+		// do nothing
 	}
 }

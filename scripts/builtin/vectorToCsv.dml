@@ -21,14 +21,31 @@
 
 # Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
 
-# function to convert vector into csv
+# function to convert vector into csv string sunch as [1 0 0 1 1 0 1] = "1,4,5,7"
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# mask            Double    ---        Data vector (having 0 for excluded indexes)
+# ---------------------------------------------------------------------------------------------
+ 
 
-m_vectorToCsv = function(Matrix[Double] vector)
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME                  TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# indexes               Double   ---        string indexes
+
+
+
+
+m_vectorToCsv = function(Matrix[Double] mask)
 return (String indexes){
 
+  vector  = mask * t(seq(1, ncol(mask)))
+  vector = removeEmpty(target = vector, margin = "cols")
   if(nrow(vector) >  ncol(vector))
     vector = t(vector)
-  vector = removeEmpty(target= vector, margin = "cols")
   s = ""
   if(ncol(vector) > 1) {
     for(i in 1:ncol(vector)-1)

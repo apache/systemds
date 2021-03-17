@@ -22,12 +22,27 @@
 # Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
 # Built-in for sorting frames
 
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# F               String    ---       Data frame of string values
+# ---------------------------------------------------------------------------------------------
+ 
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME                  TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# f_odered             String   ---        sorted dataset by column 1 in decreasing order
+
+
 
 s_frameSort = function(Frame[String] F)
 return (Frame[String] f_odered)
 {
-  idx = seq(1, ncol(F))
-  idx[1] = 0 # to save accuracy column from encoding 
+  idx = matrix(1, 1, ncol(F))
+  idx[1,1] = 0 # to save accuracy column from encoding 
   index = vectorToCsv(idx)
   # recode logical pipelines for easy handling
   jspecR = "{ids:true, recode:["+index+"]}";

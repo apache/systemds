@@ -28,6 +28,9 @@
 # X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
 # cMask           Double    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
 # iter            Integer    3         Number of iteration for multiple imputations 
+# threshold       Double     0.8      confidence value [0, 1] for robust imputation, values will only be imputed
+#                                      if the predicted value has probability greater than threshold, 
+#                                      only applicable for categorical data
 # ---------------------------------------------------------------------------------------------
  
 
@@ -39,10 +42,13 @@
 
 
 # Assumption missing value are represented with empty string i.e ",," in CSV file  
-# variables with suffix n are storing continuos/numeric data and variables with suffix c are storing categorical data
-m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boolean verbose = FALSE)
+# variables with suffix n are storing continuos/numeric data and variables with 
+# suffix c are storing categorical data
+m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, 
+  Double threshold = 0.8, Boolean verbose = FALSE)
   return(Matrix[Double] output)
 {
+
   if(ncol(X) < 2)
     stop("MICE can not be applied on single vectors.
          expected number of columns > 1 found: "+ncol(X))
@@ -73,15 +79,16 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boole
     
   # store the mask of categorical missing values 
   Mask_c = is.na(cX);
-  cX = replace(target=cX, pattern=NaN, replacement=0);
-  colMode = colMode(cX)
+  X_c = imputeByMode(cX)
   # initial mode imputation
-  X_c = cX+(Mask_c*colMode)
-  
+
   # reconstruct original matrix using sparse matrices p and q 
-  p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(cMask)), margin="rows", select=t(cMask==0)), ncol(nX), ncol(X))
-  q = table(seq(1, ncol(cX)), removeEmpty(target=seq(1, ncol(cMask)), margin="rows", select=t(cMask)), ncol(cX), ncol(X))
+  p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(cMask)), margin="rows", 
+    select=t(cMask==0)), ncol(nX), ncol(X))
+  q = table(seq(1, ncol(cX)), removeEmpty(target=seq(1, ncol(cMask)), margin="rows", 
+    select=t(cMask)), ncol(cX), ncol(X))
   X1 = (X_n %*% p) + (X_c %*% q)
+
   Mask1 =  is.na(X)
   
   X = replace(target=X, pattern=NaN, replacement=0);
@@ -100,12 +107,12 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boole
   
   for(k in 1:iter) # start iterative imputation
   {
-    Mask_Filled = Mask1
+    Mask_Filled = Mask1 # use this to store predictions for missing values
+    weightMatrix = Mask1 # uses this to keep track of probabilities less than threshold
     inverseMask = Mask1 == 0
     # OHE of categorical features
     [dX, dM] = transformencode(target=as.frame(X1), spec=jspecDC);
     dist = colDist(X1, cMask) # number of distinct items in categorical features
-    while(FALSE){}
     i=1; j=1; in_c=1;
 
     while(i < ncol(dX))
@@ -135,10 +142,11 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boole
         # predicting missing values 
         pred = lmPredict(X=test_X, B=beta, icpt=1)
         # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
-        R = removeEmpty(target=Mask_Filled[, in_c] * seq(1,nrow(X1)), margin="rows");
+        R = removeEmpty(target=Mask_Filled[, in_c] * seq(1,n), margin="rows");
         # TODO modify removeEmpty to return zero row and n columns
-        if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0)))
-          Mask_Filled[,in_c] = table(R, 1, pred, nrow(X1), 1);
+        if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0))) 
+          Mask_Filled[,in_c] = table(R, 1, pred, n, 1);
+          
       }
       else if (sum(Mask1[, in_c]) > 0 & as.scalar(cMask[, in_c]) != 0) # impute categorical features
       {
@@ -157,46 +165,48 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boole
         test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
         test_Y = slice2a[,in_c]
         # train classification model
-        if(min(train_Y) == max(train_Y))
+        if(min(train_Y) == max(train_Y)) { # if the train_Y has only one class then do not train
           pred = matrix(min(train_Y), nrow(test_Y), 1)
+          prob = matrix(1, nrow(test_Y), 1)
+        }
         else {
-          beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.00001, reg = 0.00001, maxi = 50, maxii=50, verbose=FALSE)
+          beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.0001, reg = 0.00001, 
+            maxi = 50, maxii=50, verbose=FALSE)
           # predicting missing values 
           [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
+          prob = rowMaxs(prob)
         }
-        # beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.00001, reg = 0.00001, maxi = 50, maxii=50, verbose=FALSE)
-        # # predicting missing values 
-        # [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
+
+        validThreshold = prob > threshold
+        pred = (pred * validThreshold) + (test_Y * (validThreshold == 0))
         # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
         R = removeEmpty(target=Mask_Filled[,in_c] * seq(1,n), margin="rows");
+        wR = removeEmpty(target=weightMatrix[, in_c] * seq(1,n), margin="rows");
         #TODO modify removeEmpty to return zero row and n columns
-        if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0)))
-          Mask_Filled[,in_c] = table(R, 1, pred, n, 1); 
+        if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0))) {
+          Mask_Filled[,in_c] = table(R, 1, pred, n, 1);
+          weightMatrix[, in_c] = table(wR, 1, prob, n, 1)
+        }
       }
       i = as.integer(j)+1
       in_c = in_c + 1
     }
     X1 = X + Mask_Filled
   }
-  output = X1[,1:lastIndex] 
+  # Finalize the predictions, if the weight for some predictions is less than threshold than do not fill-in
+  # leave the values as NaN as we do not have enough confidence about the prediction
+  invalidImputations = (weightMatrix < threshold) & (weightMatrix > 0)
+  makeNas = replace(target = invalidImputations, pattern = 1, replacement = NaN)
+  X1 = X1 + makeNas
+  output = X1[,1:lastIndex]
 }
 
-colMode = function (Matrix[Double] X) return (Matrix[Double] colMode) {
-  d = ncol(X)
-  n = nrow(X)
-  colMode = matrix(0, 1, ncol(X))
-  # compute column wise mode
-  for(i in 1: d) {
-    X_c = removeEmpty(target=X, margin = "rows", select=(rowSums(X != 0)==d))
-    cat_counts = table(X_c[, i], 1, n, 1);  # counts for each category
-    colMode[1,i] = as.scalar(rowIndexMax(t(cat_counts))) # mode
-  }
-}
 
 colDist= function(Matrix[Double] X, Matrix[Double] mask)
 return (Matrix[Double] dist){
   dist = matrix(1, 1, ncol(X))
-  for(i in 1:ncol(X))
+  X = replace(target=X, pattern=0, replacement=min(X))
+  parfor(i in 1:ncol(X))
   {
     if(as.scalar(mask[,i]) == 1)
     {
@@ -205,3 +215,4 @@ return (Matrix[Double] dist){
     }
   }
 }
+

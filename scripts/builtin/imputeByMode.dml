@@ -1,0 +1,60 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Related to [SYSTEMDS-2902] dependency function for cleaning pipelines
+
+# impute the data by mode value 
+
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
+# ---------------------------------------------------------------------------------------------
+ 
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME                  TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Double   ---        imputed dataset
+
+
+m_imputeByMode = function(Matrix[Double] X)
+return(Matrix[Double] X)
+{
+
+  Mask = is.na(X)
+  X = replace(target=X, pattern=NaN, replacement=0)
+  colMode = matrix(0, 1, ncol(X))
+  for(i in 1: ncol(X)) {
+    X_c = removeEmpty(target=X[, i], margin = "rows", select=(X[, i] < 1)==0)
+    if(sum(X_c) == 0)
+      colMode[1, i] = 1
+    else {
+      cat_counts = table(X_c, 1, nrow(X_c), 1);  # counts for each category
+      colMode[1,i] = as.scalar(rowIndexMax(t(cat_counts))) # mode
+    }
+  }
+  Mask = Mask * colMode
+  X = X + Mask
+}
+

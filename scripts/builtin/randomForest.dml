@@ -1498,7 +1498,6 @@ binning =
     col_bins = matrix(0, rows = num_bins +1, cols = 1);
 
 
-
     for (i in 1:num_bins_defined)
     {
         col_bins[i] = (col_bins_temp[i] + col_bins_temp[i+1])/2;

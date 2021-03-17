@@ -21,12 +21,14 @@
 
 
 # Builtin function for handing class imbalance using Synthetic Minority Over-sampling Technique (SMOTE)
+# by Nitesh V. Chawla et. al. In Journal of Artificial Intelligence Research 16 (2002). 321–357
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # X               Double   ---       Matrix of minority class samples 
+# mask             Double   ---       0/1 mask vector where 0 represent numeric value and 1 represent categorical value
 # s               Integer   25       Amount of SMOTE (percentage of oversampling), integral multiple of 100
 # k               Integer   1        Number of nearest neighbour
 # ---------------------------------------------------------------------------------------------
@@ -38,7 +40,7 @@
 # ---------------------------------------------------------------------------------------------
 # Y               Double   ---       Matrix of (N/100)-1 * nrow(X) synthetic minority class samples 
 
-m_smote = function(Matrix[Double] X, Integer s = 200, Integer k = 1, Boolean verbose = FALSE) 
+m_smote = function(Matrix[Double] X, Matrix[Double] mask, Integer s = 200, Integer k = 1, Boolean verbose = FALSE) 
 return (Matrix[Double] Y) {
 
   if(s < 100 | (s%%100) != 0)
@@ -46,18 +48,19 @@ return (Matrix[Double] Y) {
     print("the number of samples should be an integral multiple of 100. Setting s = 100")
     s = 100
   }
-  
   if(k < 1) {
     print("k should not be less than 1. Setting k value to default k = 1.")
     k = 1
   }
+  if(ncol(mask) != ncol(X))
+    stop("column mismatch: no. of columns in mask vector should be equal to no. of columns in data matrix")
   
   # matrix to keep the index of KNN for each minority sample
   knn_index = matrix(0,k,nrow(X))
   # find nearest neighbour
   for(i in 1:nrow(X))
   {
-    knn = nn(X, X[i, ], k)
+    knn = nn(X, X[i, ], mask, k)
     knn_index[, i] = knn
   }
   
@@ -79,13 +82,28 @@ return (Matrix[Double] Y) {
     # pick the random NN
     knn_sample = knn_index[as.scalar(rand_index[iter+1]),] 
     # generate sample    
-    for(i in 1:ncol(knn_index))
-    {
+    for(i in 1:ncol(knn_index)) {
       index = as.scalar(knn_sample[1,i])
+
       X_diff = X[index,] - X[i, ]
       gap = as.scalar(Rand(rows=1, cols=1, min=0, max=1, seed = 42))
+      # generate synthetic sample
       X_sys = X[i, ] + (gap*X_diff)
+      # for nominal features replace their value with majority voting
+      if(sum(mask) > 0) {
+        categorical = X_sys * mask
+        # get all nn values
+        computation_matrix = table(knn_index[,i], knn_index[, i], nrow(X), nrow(X))
+        nn_X = computation_matrix %*% X
+        nn_X = removeEmpty(target=nn_X, margin = "rows")
+        nn_X = nn_X * mask
+        freq = getFrequentValue(nn_X)
+        categorical = (categorical > 0) * freq
+        X_sys = X_sys * (mask == 0)
+        X_sys = X_sys + categorical
+      }
       synthetic_samples[iter*ncol(knn_index)+i,] = X_sys;
+
     }
     iter = iter + 1
   }
@@ -97,19 +115,41 @@ return (Matrix[Double] Y) {
 
 }
   
+# as described in the paper, fr categorical columns compute the difference by replacing the 
+# categorical values with the median of standard deviation of numerical values
 
-
-nn = function(Matrix[Double] X, Matrix[Double] instance, Integer k )
+nn = function(Matrix[Double] X, Matrix[Double] instance, Matrix[Double] mask, Integer k )
 return (Matrix[Double] knn_)
 {
   if(nrow(X) < k)
     stop("can not pick "+k+" nearest neighbours from "+nrow(X)+" total instances")
 
-  # compute the euclidean distance
   diff = X - instance
+  diff_nominal  = diff * mask
+  if(sum(diff_nominal) != 0) {
+    only_number = removeEmpty(target=X, margin="cols", select=(mask==0))
+    num_std = colSds(only_number)
+    num_std_median = median(t(num_std))
+    diff_nominal = (diff_nominal != 0)
+    diff_nominal = diff_nominal * num_std_median 
+    diff = diff_nominal + (diff * (mask==0))  
+  }
   square_diff = diff^2
   distance = sqrt(rowSums(square_diff))
   sort_dist = order(target = distance, by = 1, decreasing= FALSE, index.return =  TRUE)
   knn_ = sort_dist[2:k+1,]
+}
+
+getFrequentValue = function(Matrix[Double] X)
+return (Matrix[Double] freq)
+{
+  freq = matrix(0, rows=1, cols=ncol(X))
+  for(i in 1:ncol(X))
+  {
+    if(sum(X[, i]) != 0) {
+      cat_counts = table(X[, i], 1, nrow(X), 1);  # counts for each category
+      freq[1,i] = as.scalar(rowIndexMax(t(cat_counts))) # mode
+    }
+  }
 }
 

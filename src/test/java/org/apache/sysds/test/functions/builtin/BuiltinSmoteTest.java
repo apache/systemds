@@ -49,29 +49,45 @@ public class BuiltinSmoteTest extends AutomatedTestBase {
 
 	@Test
 	public void testSmote0CP() {
-		runSmoteTest(100, 1, LopProperties.ExecType.CP);
+		double[][] mask =  new double[][]{{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
+		runSmoteTest(100, 3, mask, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testSmote1CP() {
-		runSmoteTest(300, 10, LopProperties.ExecType.CP);
+		double[][] mask =  new double[][]{{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}};
+		runSmoteTest(300, 10, mask, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testSmote2CP() {
-		runSmoteTest(400, 5, LopProperties.ExecType.CP);
+		double[][] mask =  new double[][]{{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
+		runSmoteTest(400, 5, mask, LopProperties.ExecType.CP);
 	}
 
 	@Test
-	public void testSmote1Spark() {
-		runSmoteTest(300, 3, LopProperties.ExecType.SPARK);
+	public void testSmote3CP() {
+		double[][] mask =  new double[][]{{1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0}};
+		runSmoteTest(300, 3, mask, LopProperties.ExecType.CP);
 	}
 
 	@Test
-	public void testSmote2Spark() { runSmoteTest(400, 5, LopProperties.ExecType.SPARK);	}
+	public void testSmote4CP() {
+		double[][] mask =  new double[][]{{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
+		runSmoteTest(400, 5, mask, LopProperties.ExecType.CP);	}
 
+	public void testSmote3Spark() {
+		double[][] mask =  new double[][]{{1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0}};
+		runSmoteTest(300, 3, mask, LopProperties.ExecType.SPARK);
+	}
 
-	private void runSmoteTest(int sample, int nn, LopProperties.ExecType instType) {
+	@Test
+	public void testSmote4Spark() {
+		double[][] mask =  new double[][]{{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
+		runSmoteTest(400, 5, mask, LopProperties.ExecType.SPARK);	}
+		
+
+	private void runSmoteTest(int sample, int nn, double[][] mask, LopProperties.ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -81,13 +97,16 @@ public class BuiltinSmoteTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "X=" + input("X"), "S=" + sample, "K=" + nn , "Z="+output("Sum"), "T="+input("T")};
+			programArgs = new String[] {"-nvargs", "X=" + input("X"), "S=" + sample, "M="+input("M"),
+				"K=" + nn , "Z="+output("Sum"), "T="+input("T")};
 
-			double[][] X = getRandomMatrix(rows, colsX, 0, 1, 0.3, 1);
-
+			double[][] X = getRandomMatrix(rows, colsX, 1, 10, 1, 1);
+			X = TestUtils.round(X);
 			writeInputMatrixWithMTD("X", X, true);
+			writeInputMatrixWithMTD("M", mask, true);
 
-			double[][] T = getRandomMatrix(rows, colsX, 2, 3.0, 0.3, 3);
+			double[][] T = getRandomMatrix(rows, colsX, 20, 30, 1, 3);
+			T = TestUtils.round(T);
 
 			writeInputMatrixWithMTD("T", T, true);
 

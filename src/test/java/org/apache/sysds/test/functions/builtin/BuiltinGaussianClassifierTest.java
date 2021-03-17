@@ -85,6 +85,7 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 
 	public void testGaussianClassifier(int rows, int cols, double sparsity, int classes)
 	{
+		setOutputBuffering(true);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -136,7 +137,7 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 		double[][] invcovsSYSTEMDS = TestUtils.convertHashMapToDoubleArray(invcovsSYSTEMDStemp);
 
 		TestUtils.compareMatrices(priorR, priorSYSTEMDS, Math.pow(10, -5.0), "priorR", "priorSYSTEMDS");
-		TestUtils.compareMatricesBitAvgDistance(meansR, meansSYSTEMDS, 5L,5L, this.toString());
+		TestUtils.compareMatricesBitAvgDistance(meansR, meansSYSTEMDS, 10L,10L, this.toString());
 		TestUtils.compareMatricesBitAvgDistance(determinantsR, determinantsSYSTEMDS, (long)2E+12,(long)2E+12, this.toString());
 		TestUtils.compareMatricesBitAvgDistance(invcovsR, invcovsSYSTEMDS, (long)2E+20,(long)2E+20, this.toString());
 	}

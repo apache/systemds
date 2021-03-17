@@ -287,8 +287,6 @@ public class EncoderMVImpute extends LegacyEncoder {
             _hist = new HashMap<>();
 
             fillListsFromMap(map, _colList, _mvMethodList, _replacementList, _meanList, _countList, _hist);
-            // update number of columns
-            _clen = Math.max(_clen, col - 1 + other._clen);
 
             if(_rcList == null)
                 _rcList = new ArrayList<>();

@@ -163,8 +163,12 @@ public class MultiColumnEncoder implements Encoder {
     }
 
     @Override
-    public void updateIndexRanges(long[] beginDims, long[] endDims) {
-        _columnEncoders.forEach(encoder -> encoder.updateIndexRanges(beginDims, endDims));
+    public void updateIndexRanges(long[] beginDims, long[] endDims, int offset) {
+        _columnEncoders.forEach(encoder -> encoder.updateIndexRanges(beginDims, endDims, offset));
+        if(_legacyOmit != null)
+            _legacyOmit.updateIndexRanges(beginDims, endDims);
+        if(_legacyMVImpute != null)
+            _legacyMVImpute.updateIndexRanges(beginDims, endDims);
     }
 
     @Override
@@ -284,6 +288,15 @@ public class MultiColumnEncoder implements Encoder {
         return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i->i).sum() - dc.size();
     }
 
+    public int getNumExtraCols(IndexRange ixRange){
+        List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class).stream()
+                .filter(dce -> ixRange.inColRange(dce._colID)).collect(Collectors.toList());
+        if(dc.isEmpty()){
+            return 0;
+        }
+        return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i->i).sum() - dc.size();
+    }
+
     public <T extends ColumnEncoder> boolean containsEncoderForID(int colID, Class<T> type){
         return getColumnEncoders(type).stream().anyMatch(encoder -> encoder.getColID() == colID);
     }
@@ -348,10 +361,11 @@ public class MultiColumnEncoder implements Encoder {
     private void legacyMergeAt(MultiColumnEncoder other, int row , int col){
         if(other._legacyOmit != null)
             other._legacyOmit.shiftCols(col-1);
-        if(_legacyOmit != null && other._legacyOmit != null)
+        if(other._legacyOmit != null){
+            if(_legacyOmit == null)
+                _legacyOmit = new EncoderOmit();
             _legacyOmit.mergeAt(other._legacyOmit, row, col);
-        else if(_legacyOmit == null)
-            _legacyOmit = other._legacyOmit;
+        }
 
         if(other._legacyMVImpute != null)
             other._legacyMVImpute.shiftCols(col-1);
@@ -428,5 +442,4 @@ public class MultiColumnEncoder implements Encoder {
         if(_legacyMVImpute != null)
             _legacyMVImpute.shiftCols(_colOffset);
     }
-
 }

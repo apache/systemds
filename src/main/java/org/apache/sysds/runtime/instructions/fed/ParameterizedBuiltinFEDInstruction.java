@@ -518,10 +518,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		EncoderOmit newOmit = new EncoderOmit(true);
 		fedMapping.forEachParallel((range, data) -> {
 			try {
+				int colOffset = (int) range.getBeginDims()[1];
 				EncoderOmit subRangeEncoder = omitEncoder.subRangeEncoder(range.asIndexRange().add(1));
 				FederatedResponse response = data
 						.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-								new InitRowsToRemoveOmit(data.getVarID(), subRangeEncoder)))
+								new InitRowsToRemoveOmit(data.getVarID(), subRangeEncoder, colOffset)))
 						.get();
 
 				// no synchronization necessary since names should anyway match
@@ -640,15 +641,18 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		private static final long serialVersionUID = -8196730717390438411L;
 
 		EncoderOmit _encoder;
+		int _offset;
 
-		public InitRowsToRemoveOmit(long varID, EncoderOmit encoder) {
+		public InitRowsToRemoveOmit(long varID, EncoderOmit encoder, int offset) {
 			super(new long[] {varID});
 			_encoder = encoder;
+			_offset = offset;
 		}
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			FrameBlock fb = ((FrameObject) data[0]).acquireReadAndRelease();
+			_encoder.shiftCols(-_offset);
 			_encoder.build(fb);
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {_encoder});
 		}

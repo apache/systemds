@@ -105,7 +105,7 @@ public class ColumnEncoderComposite extends ColumnEncoder
 		for( ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.buildPartial(in);
 	}
-	
+
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		try {
@@ -189,12 +189,12 @@ public class ColumnEncoderComposite extends ColumnEncoder
 	}
 
 	@Override
-	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+	public void updateIndexRanges(long[] beginDims, long[] endDims, int colOffset) {
 		for(ColumnEncoder enc : _columnEncoders) {
-			enc.updateIndexRanges(beginDims, endDims);
+			enc.updateIndexRanges(beginDims, endDims, colOffset);
 		}
 	}
-	
+
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		if( _meta != null )

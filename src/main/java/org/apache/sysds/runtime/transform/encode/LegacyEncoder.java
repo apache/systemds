@@ -48,12 +48,10 @@ public abstract class LegacyEncoder implements Externalizable
     private static final long serialVersionUID = 2299156350718979064L;
     protected static final Log LOG = LogFactory.getLog(Encoder.class.getName());
 
-    protected int _clen = -1;
     protected int[] _colList = null;
 
     protected LegacyEncoder( int[] colList, int clen ) {
         _colList = colList;
-        _clen = clen;
     }
 
     public int[] getColList() {
@@ -62,10 +60,6 @@ public abstract class LegacyEncoder implements Externalizable
 
     public void setColList(int[] colList) {
         _colList = colList;
-    }
-
-    public int getNumCols() {
-        return _clen;
     }
 
     public int initColList(JSONArray attrs) {
@@ -179,14 +173,13 @@ public abstract class LegacyEncoder implements Externalizable
      */
     protected void mergeColumnInfo(LegacyEncoder other, int col) {
         // update number of columns
-        _clen = Math.max(_clen, col - 1 + other._clen);
 
         // update the new columns that this encoder operates on
         Set<Integer> colListAgg = new HashSet<>(); // for dedup
         for(int i : _colList)
             colListAgg.add(i);
         for(int i : other._colList)
-            colListAgg.add(col - 1 + i);
+            colListAgg.add(i);
         _colList = colListAgg.stream().mapToInt(i -> i).toArray();
     }
 
@@ -251,7 +244,6 @@ public abstract class LegacyEncoder implements Externalizable
      */
     @Override
     public void writeExternal(ObjectOutput os) throws IOException {
-        os.writeInt(_clen);
         os.writeInt(_colList.length);
         for(int col : _colList)
             os.writeInt(col);
@@ -266,7 +258,6 @@ public abstract class LegacyEncoder implements Externalizable
      */
     @Override
     public void readExternal(ObjectInput in) throws IOException {
-        _clen = in.readInt();
         _colList = new int[in.readInt()];
         for(int i = 0; i < _colList.length; i++)
             _colList[i] = in.readInt();

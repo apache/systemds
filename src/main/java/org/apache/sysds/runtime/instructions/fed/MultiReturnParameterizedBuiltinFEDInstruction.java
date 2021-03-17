@@ -29,6 +29,7 @@ import java.util.zip.Checksum;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.spark.sql.sources.In;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -151,13 +152,12 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			long[] beginDims = range.getBeginDims();
 			long[] endDims = range.getEndDims();
 			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);// make 1-based
-
-
+			IndexRange ixRangeInv = new IndexRange(0, beginDims[0], 0, beginDims[1]);
 
 			// get the encoder segment that is relevant for this federated worker
 			MultiColumnEncoder encoder = globalencoder.subRangeEncoder(ixRange);
 			// update begin end dims (column part) considering columns added by dummycoding
-			encoder.updateIndexRanges(beginDims, endDims);
+			encoder.updateIndexRanges(beginDims, endDims, globalencoder.getNumExtraCols(ixRangeInv));
 
 
 			try {

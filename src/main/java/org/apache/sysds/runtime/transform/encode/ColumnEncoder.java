@@ -110,7 +110,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder
 	 * @param beginDims begin dimensions of range
 	 * @param endDims end dimensions of range
 	 */
-	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+	public void updateIndexRanges(long[] beginDims, long[] endDims, int colOffset) {
 		// do nothing - default
 	}
 

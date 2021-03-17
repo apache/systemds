@@ -97,21 +97,14 @@ public class ColumnEncoderDummycode extends ColumnEncoder
 	}
 	
 	@Override
-	public void updateIndexRanges(long[] beginDims, long[] endDims) {
-		long[] initialBegin = Arrays.copyOf(beginDims, beginDims.length);
-		long[] initialEnd = Arrays.copyOf(endDims, endDims.length);
-		// 1-based vs 0-based
-		if(_colID < initialBegin[1] + 1) {
-			// new columns inserted left of the columns of this partial (federated) block
-			beginDims[1] += _domainSize - 1;
-			endDims[1] += _domainSize - 1;
-		}
-		else if(_colID < initialEnd[1] + 1) {
-			// new columns inserted in this (federated) block
-			endDims[1] += _domainSize - 1;
-		}
+	public void updateIndexRanges(long[] beginDims, long[] endDims, int colOffset) {
+
+		// new columns inserted in this (federated) block
+		beginDims[1] += colOffset;
+		endDims[1] += _domainSize - 1 + colOffset;
 	}
-	
+
+
 	public void updateDomainSizes(List<ColumnEncoder> columnEncoders) {
 		if(_colID == -1)
 			return;

@@ -193,8 +193,7 @@ public class EncoderOmit extends LegacyEncoder
             if(ixRange.inColRange(col)) {
                 // add the correct column, removed columns before start
                 // colStart - 1 because colStart is 1-based
-                int corrColumn = (int) (col - (ixRange.colStart - 1));
-                cols.add(corrColumn);
+                cols.add(col);
             }
         }
         return cols.stream().mapToInt(i -> i).toArray();
@@ -205,25 +204,6 @@ public class EncoderOmit extends LegacyEncoder
         _rmRows = Arrays.copyOf(_rmRows, Math.max(_rmRows.length, (row - 1) + other._rmRows.length));
         for (int i = 0; i < other._rmRows.length; i++)
             _rmRows[(row - 1) + 1] |= other._rmRows[i];
-    }
-
-    /**
-     * Merges the column information, like how many columns the frame needs and which columns this encoder operates on.
-     *
-     * @param other the other encoder of the same type
-     * @param col   column at which the second encoder will be merged in (1-based)
-     */
-    protected void mergeColumnInfo(EncoderOmit other, int col) {
-        // update number of columns
-        _clen = Math.max(_clen, col - 1 + other._clen);
-
-        // update the new columns that this encoder operates on
-        Set<Integer> colListAgg = new HashSet<>(); // for dedup
-        for(int i : _colList)
-            colListAgg.add(i);
-        for(int i : other._colList)
-            colListAgg.add(col - 1 + i);
-        _colList = colListAgg.stream().mapToInt(i -> i).toArray();
     }
 
 

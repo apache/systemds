@@ -72,8 +72,9 @@ s_randomForest = function (String X = " ", String Y = " ", String R = " ", Integ
                                             String impurity = "Gini", String C = " ", String C_map = " ", String S_map = " ", String fmt = "text")
    return(Double m)
 {
- #this is just a dummy function for now
- print("entered s_randomForest");
+	 #this is just a dummy function for now
+	 m = 7;
+	 print("entered s_randomForest");
 }
 
 m_randomForest = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] R, Integer bins = 20, Integer depth = 25,
@@ -1494,9 +1495,6 @@ binning =
      }
 
     #Bins should be represented by the middle value (first bin + second bin /2)
-
-    #print("number of Bins defined: " + num_bins_defined);
-
     col_bins = matrix(0, rows = num_bins +1, cols = 1);
 
 
@@ -1506,8 +1504,4 @@ binning =
         col_bins[i] = (col_bins_temp[i] + col_bins_temp[i+1])/2;
     }
 
-    #print("Value of num_bins is : " + num_bins);
-    #print("Value of num_bins_defined is : " + num_bins_defined);
-
-    #print("Going to return");
 }

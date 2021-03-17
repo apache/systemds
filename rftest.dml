@@ -1,0 +1,26 @@
+print("starting rftest ...\n")
+
+
+
+#X = matrix(0, rows = 10,cols = 10);
+X= read("/home/christof/Desktop/DILA_new/DILA/temp/linRegData.train.data.csv",  data_type="matrix", format="csv");
+#Y = matrix(0, rows = 10,cols = 10);
+Y= read("/home/christof/Desktop/DILA_new/DILA/temp/linRegData.train.labels.csv",  data_type="matrix", format="csv");
+R = matrix(1, rows = 10,cols = 3);
+bins = 20;
+depth = 25;
+num_leafs = 10;
+num_samples = 3000;
+num_trees = 10;
+subsamp_rate = 1.0;
+feature_subset = 0.5;
+impurity = "Gini";
+S_map = " ";
+C_map = " ";
+C = " ";
+fmt = "text";
+
+
+#M = matrix(0, rows = 10,cols = 10);
+M = randomForest(X, Y, R, bins, depth, num_leafs, num_samples, num_trees, subsamp_rate, feature_subset,
+                                           impurity, S_map, C_map, C, fmt)

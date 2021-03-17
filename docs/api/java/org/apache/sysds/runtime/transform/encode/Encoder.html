@@ -100,7 +100,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li>org.apache.sysds.runtime.transform.encode.ColumnEncoder</li>
+<li>org.apache.sysds.runtime.transform.encode.Encoder</li>
 </ul>
 </li>
 </ul>
@@ -120,7 +120,7 @@ var activeTableTab = "activeTableTab";
 <pre>public abstract class <span class="typeNameLabel">Encoder</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
 implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></pre>
-<div class="block">Base class for all transform columnEncoders providing both a row and block
+<div class="block">Base class for all transform encoders providing both a row and block
  interface for decoding frames to matrices.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -204,14 +204,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable--">isApplicable</a></span>()</code>
-<div class="block">Indicates if this columnEncoder is applicable, i.e, if there is at
+<div class="block">Indicates if this encoder is applicable, i.e, if there is at 
  least one column to encode.</div>
 </td>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable-int-">isApplicable</a></span>(int&nbsp;colID)</code>
-<div class="block">Indicates if this columnEncoder is applicable for the given column ID,
+<div class="block">Indicates if this encoder is applicable for the given column ID,
  i.e., if it is subject to this transformation.</div>
 </td>
 </tr>
@@ -220,7 +220,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
        int&nbsp;row,
        int&nbsp;col)</code>
-<div class="block">Merges another columnEncoder, of a compatible type, in after a certain position.</div>
+<div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
 </td>
 </tr>
 <tr id="i13" class="rowColor">
@@ -314,7 +314,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>isApplicable</h4>
 <pre>public&nbsp;boolean&nbsp;isApplicable()</pre>
-<div class="block">Indicates if this columnEncoder is applicable, i.e, if there is at
+<div class="block">Indicates if this encoder is applicable, i.e, if there is at 
  least one column to encode.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -329,13 +329,13 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>isApplicable</h4>
 <pre>public&nbsp;int&nbsp;isApplicable(int&nbsp;colID)</pre>
-<div class="block">Indicates if this columnEncoder is applicable for the given column ID,
+<div class="block">Indicates if this encoder is applicable for the given column ID,
  i.e., if it is subject to this transformation.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>colID</code> - column ID</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>true if columnEncoder is applicable for given column</dd>
+<dd>true if encoder is applicable for given column</dd>
 </dl>
 </li>
 </ul>
@@ -365,7 +365,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <h4>build</h4>
 <pre>public abstract&nbsp;void&nbsp;build(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
 <div class="block">Build the transform meta data for the given block input. This call modifies
- and keeps meta data as columnEncoder state.</div>
+ and keeps meta data as encoder state.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
@@ -403,7 +403,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ixRange</code> - the range (1-based, begin inclusive, end exclusive)</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>an columnEncoder of the same type, just for the sub-range</dd>
+<dd>an encoder of the same type, just for the sub-range</dd>
 </dl>
 </li>
 </ul>
@@ -416,12 +416,12 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <pre>public&nbsp;void&nbsp;mergeAt(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
                     int&nbsp;row,
                     int&nbsp;col)</pre>
-<div class="block">Merges another columnEncoder, of a compatible type, in after a certain position. Resizes as necessary.
+<div class="block">Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
  <code>Encoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with every
  other <code>Encoder</code>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>other</code> - the columnEncoder that should be merged in</dd>
+<dd><code>other</code> - the encoder that should be merged in</dd>
 <dd><code>row</code> - the row where it should be placed (1-based)</dd>
 <dd><code>col</code> - the col where it should be placed (1-based)</dd>
 </dl>

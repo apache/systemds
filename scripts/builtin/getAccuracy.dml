@@ -21,7 +21,6 @@
 
 # compute the weighted and simple accuracy for given predictions
 
-# Built-in function Implements Multiple Imputation using Chained Equations (MICE) 
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -43,7 +42,7 @@
 m_getAccuracy = function(Matrix[Double] y, Matrix[Double] yhat, Boolean isWeighted = FALSE)
 return (Double accuracy)
 {
-  if(isWeighted)
+  if(!isWeighted)
   {
     sum = sum(y == yhat)
     accuracy = (sum/nrow(y)) * 100
@@ -51,8 +50,7 @@ return (Double accuracy)
   else 
   {
     n = nrow(y)
-    classes = table(y, 1)
-    class_weight = n/(nrow(classes) * classes)
+    classes = table(y, 1, max(y), 1)
     resp = matrix(0, nrow(y), nrow(classes))
     resp = resp + t(seq(1, nrow(classes)))
 
@@ -63,5 +61,4 @@ return (Double accuracy)
     classes = replace(target = classes, pattern = 0, replacement = 1)
     accuracy = mean(colSums(pred)/t(classes)) * 100
   }
-
 }

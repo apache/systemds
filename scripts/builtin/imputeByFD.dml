@@ -70,9 +70,9 @@ imputeAndCorrect = function(Matrix[Double] X, Matrix[Double] Y, Double threshold
   
   # create mapping between source and target
   ctab = table(XY[,1], XY[,2], 1)
- 
+
   # remove the table column representing missing values
-  if(sum(missing_mask[,2]) > 0)
+  if(sum(missing_mask[,2]) > 0 & ncol(ctab) > 1)
     ctab = ctab[,1:ncol(ctab)-1]
 
   ctab = ctab/(rowSums(ctab)) > threshold 

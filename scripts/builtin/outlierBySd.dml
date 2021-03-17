@@ -44,6 +44,7 @@
 m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 1, 
   Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y) 
 {
+
   # variable initialization 
   sumPrevious = as.double(0)
   sumNext = as.double(1)
@@ -55,8 +56,8 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
 
   while( max_iterations == 0 | counter < max_iterations )
   {
-    colSD = colSds(X)
-    colMean = (colMeans(X))
+    colSD = getColSd(X)
+    colMean = getColMean(X)
 
     upperBound = colMean + k * colSD
     lowerBound = colMean - k * colSD
@@ -109,3 +110,28 @@ fix_outliers_sd = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integ
 
   fixed_X = X
 }
+
+getColSd = function(Matrix[Double] X)
+return(Matrix[Double] colSd)
+{
+  colSd = matrix(0, 1, ncol(X))
+  for(i in 1:ncol(X))
+  {
+    isNull = is.na(X[, i])
+    Xt = removeEmpty(target=X[, i], margin="rows", select=(isNull == 0))
+    colSd[1, i] = sd(Xt)
+  }
+}
+
+getColMean = function(Matrix[Double] X)
+return(Matrix[Double] colMean)
+{
+  colMean = matrix(0, 1, ncol(X))
+  for(i in 1:ncol(X))
+  {
+    isNull = is.na(X[, i])
+    Xt = removeEmpty(target=X[, i], margin="rows", select=(isNull == 0))
+    colMean[1, i] = mean(Xt)
+  }
+}
+

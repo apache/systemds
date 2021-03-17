@@ -24,6 +24,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CleaningTest extends AutomatedTestBase {
@@ -44,7 +45,7 @@ public class CleaningTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"R"}));
 	}
 
-	@Test
+	@Ignore
 	public void testCP() {
 		runCleaningTest(Types.ExecMode.SINGLE_NODE);
 	}

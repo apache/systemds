@@ -1,0 +1,89 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Related to [SYSTEMDS-2902] dependency function for cleaning pipelines
+
+# Split input data X and Y into contiguous balanced ratio  
+# ------------------------------------------------------------------------------
+# NAME   TYPE    DEFAULT  MEANING
+# ------------------------------------------------------------------------------
+# X       Matrix  ---      Input feature matrix
+# Y       Matrix  ---      Input Labels
+# f       Double  0.7      Train set fraction [0,1]
+# verbose Boolean FALSE    print available 
+# ------------------------------------------------------------------------------
+# X_train Matrix  ---      Train split of feature matrix
+# X_test  Matrix  ---      Test split of feature matrix
+# y_train Matrix  ---      Train split of label matrix
+# y_test  Matrix  ---      Test split of label matrix
+# ------------------------------------------------------------------------------
+
+m_splitBalanced = function(Matrix[Double] X, Matrix[Double] Y, Double splitRatio, Boolean verbose)
+return (Matrix[Double] X_train, Matrix[Double] y_train, Matrix[Double] X_test, 
+        Matrix[Double] y_test) 
+{
+
+  XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+  # get the class count 
+  classes = table(XY[, 1], 1)
+  split = floor(nrow(X) * splitRatio)
+  start_class = 1
+  train_row_s = 1 
+  test_row_s = 1 
+  train_row_e = 0
+  test_row_e = 0
+  end_class = 0
+  
+  outTrain = matrix(0, split+nrow(classes), ncol(XY))
+  outTest =  matrix(0, (nrow(X) - split)+nrow(classes), ncol(XY))
+  
+  classes_ratio_train = floor(classes*splitRatio)
+  classes_ratio_test = classes - classes_ratio_train
+  if(verbose) {
+    print("rows "+nrow(X))
+    print("classes \n"+toString(classes))
+    print("train ratio \n"+toString(classes_ratio_train))
+    print("test ratio \n"+toString(classes_ratio_test))
+  }
+  for(i in 1:nrow(classes))
+  {
+    end_class = end_class + as.scalar(classes[i])
+    class_t = XY[start_class:end_class, ]
+
+    train_row_e = train_row_e + as.scalar(classes_ratio_train[i]) 
+    test_row_e = test_row_e + as.scalar(classes_ratio_test[i]) 
+    
+    outTrain[train_row_s:train_row_e, ] = class_t[1:as.scalar(classes_ratio_train[i]), ]
+   
+    outTest[test_row_s:test_row_e, ] = class_t[as.scalar(classes_ratio_train[i])+1:nrow(class_t), ]
+
+    train_row_s = train_row_e + 1
+    test_row_s = test_row_e + 1
+    start_class = end_class + 1
+  }
+  outTrain = removeEmpty(target = outTrain, margin = "rows")
+  outTest = removeEmpty(target = outTest, margin = "rows")
+  y_train = outTrain[, 1]
+  X_train = outTrain[, 2:ncol(outTrain)]
+  y_test = outTest[, 1]
+  X_test = outTest[, 2:ncol(outTest)]
+
+}

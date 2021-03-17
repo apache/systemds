@@ -1,0 +1,96 @@
+#test = matrix(rand, rows = 20, cols =1);
+
+test = rand (rows = 493, cols = 1);
+
+ #for (i in 1:20)
+   # {
+
+    #    print("col _ bins is: " + as.scalar(test[i,1]));
+   # }
+
+
+bin_size = max (as.integer (nrow(test) / 10), 1);
+
+print("bin isze is:" + bin_size);
+
+[col_bins, numb_bins_defined] = binning(test, bin_size, 10);
+
+print(numb_bins_defined);
+print(as.scalar(col_bins[1]));
+print(ncol(col_bins));
+print(nrow(col_bins));
+
+
+
+#Function used to bin the col of the Matrix
+# input sorted vector of double Values
+# returns matrix of bins
+binning =
+    function (Matrix[double] col, int bin_size, int num_bins)
+    return (Matrix[double] col_bins, int num_bins_defined)
+{
+    print("binning");
+
+    size_of_col = nrow(col);
+
+    #print("size of col is = " + size_of_col);
+
+    position_in_input_col = 1;
+
+    col_bins_temp = matrix(0, rows = num_bins + 1, cols = 1);
+
+    num_bins_defined = 0;
+
+    col_bins_temp[1] = col[1];
+
+     while((position_in_input_col < size_of_col) & (num_bins_defined < num_bins))
+     {
+        position_in_input_col = position_in_input_col + bin_size;
+
+        if(position_in_input_col >= size_of_col)
+        {
+            position_in_input_col = size_of_col;
+        }
+
+        current_bin_entry = col[position_in_input_col];
+
+        col_bins_temp[num_bins_defined + 1] = current_bin_entry;
+
+        condition = 0;
+
+        while((position_in_input_col < size_of_col) & (condition == 0))
+        {
+            if(as.scalar(col[position_in_input_col + 1]) == as.scalar(current_bin_entry))
+            {
+                position_in_input_col = position_in_input_col + 1;
+            }
+            else
+            {
+                condition = 1;
+            }
+        }
+
+
+        # I increase the current amount of bins
+       # print("Number bins defined is:" + num_bins_defined);
+        num_bins_defined = num_bins_defined + 1;
+     }
+
+    #Bins should be represented by the middle value (first bin + second bin /2)
+
+    #print("number of Bins defined: " + num_bins_defined);
+
+    col_bins = matrix(0, rows = num_bins + 1, cols = 1);
+
+
+
+    for (i in 1:num_bins_defined)
+    {
+        col_bins[i] = (col_bins_temp[i] + col_bins_temp[i+1])/2;
+    }
+
+    print("Value of num_bins is : " + num_bins);
+    print("Value of num_bins_defined is : " + num_bins_defined);
+
+    #print("Going to return");
+}

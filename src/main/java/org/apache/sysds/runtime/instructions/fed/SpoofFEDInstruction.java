@@ -31,7 +31,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -39,9 +38,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.Future;
-import java.util.stream.Stream;
 
 public class SpoofFEDInstruction extends FEDInstruction
 {
@@ -66,7 +63,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 
-		// ArrayList<CPOperand> inputList = new ArrayList<CPOperand>();
 		CPOperand[] inputCpo = new CPOperand[parts.length - 3 - 2];
 		Class<?> cla = CodegenUtils.getClass(parts[2]);
 		SpoofOperator op = CodegenUtils.createInstance(cla);
@@ -74,12 +70,10 @@ public class SpoofFEDInstruction extends FEDInstruction
 		String opcode = parts[0] + op.getSpoofType();
 
 		for(int counter = 3; counter < parts.length - 2; counter++) {
-			// inputList.add(new CPOperand(parts[counter]));
 			inputCpo[counter - 3] = new CPOperand(parts[counter]);
 		}
 		CPOperand out = new CPOperand(parts[parts.length - 2]);
 
-		// return new SpoofFEDInstruction(op, cls, classBytes, inputList.toArray(new CPOperand[0]), out, opcode, str);
 		return new SpoofFEDInstruction(op, cla, classBytes, inputCpo, out, opcode, str);
 	}
 
@@ -119,8 +113,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 		int index = 0;
 		frIds[index++] = fedMap.getID(); // insert federation map id at the beginning
 		for(MatrixObject mo : inMo) {
-			if((fedMo.isFederated(FType.ROW) && mo.getNumRows() > 1 && mo.getNumColumns() == 1)
-				|| (fedMo.isFederated(FType.COL) && mo.getNumRows() == 1 && mo.getNumColumns() > 1)) {
+			if((fedMo.isFederated(FType.ROW) && mo.getNumRows() > 1 && (mo.getNumColumns() == 1 || mo.getNumColumns() == fedMap.getSize()))
+				|| (fedMo.isFederated(FType.COL) && (mo.getNumRows() == 1 || mo.getNumRows() == fedMap.getSize()) && mo.getNumColumns() > 1)) {
 				FederatedRequest[] tmpFr = fedMap.broadcastSliced(mo, false);
 				frIds[index++] = tmpFr[0].getID();
 				frBroadcastSliced.add(tmpFr);
@@ -137,24 +131,16 @@ public class SpoofFEDInstruction extends FEDInstruction
 			frBroadcast.add(tmpFr);
 		}
 
-		// change the is_literal flag from true to false because when broadcasted it is no literal anymore
+		// change the is_literal flag from true to false because when broadcasted it is not a literal anymore
 		instString = instString.replace("true", "false");
 
-		// ArrayList<CPOperand> inCpo = new ArrayList<>(inCpoMat);
 		CPOperand[] inCpo = ArrayUtils.addAll(inCpoMat.toArray(new CPOperand[0]), inCpoScal.toArray(new CPOperand[0]));
-		// inCpo.addAll(inCpoScal);
 
-		// FederatedRequest frCompute = FederationUtils.callInstruction(instString, _output,
-		// 	Stream.of(inCpoMat.toArray(new CPOperand[0]), inCpoScal.toArray(new CPOperand[0])).flatMap(Stream::of).toArray(CPOperand[]::new), frIds);
-		// FederatedRequest frCompute = FederationUtils.callInstruction(instString, _output,
-		// 	inCpo.toArray(new CPOperand[0]), frIds);
 		FederatedRequest frCompute = FederationUtils.callInstruction(instString, _output,
 			inCpo, frIds);
 
 		// get partial results from federated workers
 		FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frCompute.getID());
-
-		// assert false: "SpoofFEDInstruction.java:138 - cpos: " + Stream.of(inCpoMat.toArray(new CPOperand[0]), inCpoScal.toArray(new CPOperand[0])).flatMap(Stream::of).toArray(CPOperand[]::new).length;
 
 		ArrayList<FederatedRequest> frCleanup = new ArrayList<FederatedRequest>();
 		frCleanup.add(fedMap.cleanup(getTID(), frCompute.getID()));
@@ -165,20 +151,9 @@ public class SpoofFEDInstruction extends FEDInstruction
 			frCleanup.add(fedMap.cleanup(getTID(), fr[0].getID()));
 		}
 
-		// *************************************************************************
-		// *************************************************************************
-		// *************************************************************************
-		// *************************************************************************
-		// ArrayList<FederatedRequest> frAll = new ArrayList<>(frBroadcast);
-		// frAll.add(frCompute);
-		// frAll.add(frGet);
-		// frAll.addAll(frCleanup);
 		FederatedRequest[] frAll = ArrayUtils.addAll(ArrayUtils.addAll(frBroadcast.toArray(new FederatedRequest[0]), frCompute, frGet), frCleanup.toArray(new FederatedRequest[0]));
-		// Future<FederatedResponse>[] response = fedMap.executeMultipleSlices(
-		// 	getTID(), true, frBroadcastSliced.toArray(new FederatedRequest[0][]),
-		// 	frAll.toArray(new FederatedRequest[0]));
 		Future<FederatedResponse>[] response = fedMap.executeMultipleSlices(
-			getTID(), true, frBroadcastSliced.toArray(new FederatedRequest[0][]),
+			getTID(), true, true, frBroadcastSliced.toArray(new FederatedRequest[0][]),
 			frAll);
 
 		if(_output.isScalar() && ((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM) {
@@ -194,7 +169,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 			// bind partial results from federated responses
 			ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
 		}
-
 	}
 
 }

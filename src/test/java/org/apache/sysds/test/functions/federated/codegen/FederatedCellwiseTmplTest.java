@@ -81,7 +81,8 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 			{5, 4, 4, 1, true},
 			{6, 4, 1, 1, true},
 
-			// {7, 1000, 1, 1, true},
+			{7, 1000, 1, 1, true},
+			{9, 500, 2, 1, true},
 
 			// {8, 1002, 23, 1, true},
 

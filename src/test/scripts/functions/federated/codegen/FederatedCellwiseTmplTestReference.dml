@@ -80,5 +80,12 @@ else if(test_num == 8) {
 
   Z = X * ((X + 7.7) * Y);
 }
+else if(test_num == 9) {
+  # X = matrix(seq(7, 1006), 500, 2);
+  Y = matrix(seq(6, 1005), 500, 2);
+
+  U = X + 7 * Y;
+  Z = as.matrix(sum(U^2))
+}
 
 write(Z, $out_Z);

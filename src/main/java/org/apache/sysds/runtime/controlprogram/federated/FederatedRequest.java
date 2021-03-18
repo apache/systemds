@@ -98,6 +98,13 @@ public class FederatedRequest implements Serializable {
 		return _data.get(i);
 	}
 
+<<<<<<< HEAD
+=======
+	public void setParam(int i, Object obj) {
+		_data.set(i, obj);
+	}
+
+>>>>>>> feat(SpoofCellwise.java): add the row offset to rix
 	public FederatedRequest appendParam(Object obj) {
 		_data.add(obj);
 		return this;

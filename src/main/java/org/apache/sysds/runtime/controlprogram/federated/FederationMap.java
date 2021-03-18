@@ -329,6 +329,35 @@ public class FederationMap {
 		return ret.toArray(new Future[0]);
 	}
 
+	private FederatedRequest[] rewriteFedReqWithOffset(FederatedRequest[] fr, FederatedRange fedRange) {
+		for(int counter = 0; counter < fr.length; counter++) {
+			// only implemented for spoof instructions yet
+			if(fr[counter].getType() == RequestType.EXEC_INST && fr[counter].getNumParams() > 0 && ((String)fr[counter].getParam(0)).contains("CP" + Lop.OPERAND_DELIMITOR + "spoof")) {
+				FederatedRequest tmpFr = fr[counter].deepClone();
+				Object frParam = tmpFr.getParam(0);
+				if(frParam instanceof String) {
+					String[] parts = ((String)frParam).split(Lop.OPERAND_DELIMITOR, -1);
+					long[] beginDims = fedRange.getBeginDims();
+					if(parts[parts.length - 2].startsWith("RowOff") && parts[parts.length - 1].startsWith("ColOff")) {
+						// update offset suffix
+						parts[parts.length - 2] = "RowOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[0]);
+						parts[parts.length - 1] = "ColOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[1]);
+						frParam = String.join(Lop.OPERAND_DELIMITOR, parts);
+					}
+					else {
+						// append offset suffix
+						frParam += Lop.OPERAND_DELIMITOR + "RowOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[0]);
+						frParam += Lop.OPERAND_DELIMITOR + "ColOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[1]);
+					}
+					tmpFr.setParam(0, frParam);
+				}
+				fr[counter] = tmpFr;
+			}
+		}
+
+		return fr;
+	}
+
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {
 		if(!isInitialized())
 			throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");

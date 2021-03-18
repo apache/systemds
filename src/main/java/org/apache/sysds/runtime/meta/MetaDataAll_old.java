@@ -15,7 +15,7 @@ import org.apache.sysds.parser.Expression;
 import org.apache.sysds.parser.StringIdentifier;
 import org.scalactic.Bool;
 
-public class MetaDataAll {
+public class MetaDataAll_old {
 	//format
 	//data type
 	//properties (delim)
@@ -142,7 +142,7 @@ public class MetaDataAll {
 	public static final String DELIM_NA_STRINGS = "naStrings";
 
 
-	public MetaDataAll(String format, String dataType, String valueType, String delimiter, int nnz, int rows, int cols) {
+	public MetaDataAll_old(String format, String dataType, String valueType, String delimiter, int nnz, int rows, int cols) {
 		_format = format;
 		_dataType = Types.DataType.valueOf(dataType);
 		_valueType = Types.ValueType.valueOf(valueType);
@@ -152,7 +152,7 @@ public class MetaDataAll {
 		_delimiter = delimiter;
 	}
 
-	public MetaDataAll(BufferedReader br) {
+	public MetaDataAll_old(BufferedReader br) {
 		String line;
 
 		try {

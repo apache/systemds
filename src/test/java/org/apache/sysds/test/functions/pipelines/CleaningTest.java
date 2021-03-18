@@ -28,8 +28,8 @@ import org.junit.Test;
 
 public class CleaningTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "mainScript";
-	private final static String TEST_NAME2 = "cleanData";
-	private final static String TEST_NAME3 = "compareAccuracy";
+	private final static String TEST_NAME2 = "compareAccuracy";
+
 	protected static final String SCRIPT_DIR = "./scripts/pipelines/";
 	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTest.class.getSimpleName() + "/";
 
@@ -49,7 +49,6 @@ public class CleaningTest extends AutomatedTestBase {
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"R"}));
 	}
 
 
@@ -65,12 +64,14 @@ public class CleaningTest extends AutomatedTestBase {
 	}
 
 
-	private void runFindPipelineTest(Double sample, int topk, int resources,
-		int crossfold, boolean weightedAccuracy, Types.ExecMode et) {
-			String HOME = SCRIPT_DIR+"scripts/" ;
-			Types.ExecMode modeOld = setExecMode(et);
-			try {
-				loadTestConfiguration(getTestConfiguration(TEST_NAME1));
+	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
+		boolean weightedAccuracy, Types.ExecMode et) {
+
+		setOutputBuffering(true);
+		String HOME = SCRIPT_DIR+"scripts/" ;
+		Types.ExecMode modeOld = setExecMode(et);
+		try {
+			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-args", DIRTY, META, PRIMITIVES,
@@ -88,6 +89,7 @@ public class CleaningTest extends AutomatedTestBase {
 	}
 
 	private void runCleanAndCompareTest( Types.ExecMode et) {
+
 		String HOME = SCRIPT_DIR+"scripts/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {

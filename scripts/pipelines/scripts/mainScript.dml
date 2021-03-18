@@ -22,7 +22,7 @@
 
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
-source("scripts/pipelines/scripts/gridSearchMLR.dml") as gs;
+source("scripts/pipelines/scripts/gridsearchMLR.dml") as gs;
 
 # read the inputs
 F = read($1, data_type="frame", format="csv", header=FALSE, 

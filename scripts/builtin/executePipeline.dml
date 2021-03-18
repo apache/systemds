@@ -188,3 +188,20 @@ return (Matrix[Double] X)
     # print("recreated data \n"+toString(X, rows = 20))
 }
 
+#######################################################################
+# Wrapper of transformencode OHE call, to call inside eval as a function
+# Inputs: The input dataset X, and  mask of the columns
+# Output: OHEd matrix X
+#######################################################################
+
+dummycoding = function(Matrix[Double] X, Matrix[Double] mask)
+return (Matrix[Double] dX_train) {
+  X = replace(target=X, pattern=NaN, replacement=0)
+  idx = vectorToCsv(mask)
+  
+  # specifications for one-hot encoding of categorical features
+  jspecDC = "{ids:true, dummycode:["+idx+"]}";
+  # OHE of categorical features
+  [dX_train, dM] = transformencode(target=as.frame(X), spec=jspecDC);
+
+}

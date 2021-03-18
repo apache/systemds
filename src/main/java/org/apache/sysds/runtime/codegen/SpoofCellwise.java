@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -49,81 +49,81 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public abstract class SpoofCellwise extends SpoofOperator implements Serializable
 {
 	private static final long serialVersionUID = 3442528770573293590L;
-	
+
 	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum CellType {
 		NO_AGG(0),
 		FULL_AGG(1),
 		ROW_AGG(2),
 		COL_AGG(3);
-		
+
 		private final int value;
 		private final static HashMap<Integer, CellType> map = new HashMap<>();
-		
+
 		CellType(int value) {
 			this.value = value;
 		}
-		
+
 		static {
 			for (CellType cellType : CellType.values()) {
 				map.put(cellType.value, cellType);
 			}
 		}
-		
+
 		public static CellType valueOf(int cellType) {
 			return map.get(cellType);
 		}
-		
+
 		public int getValue() {
 			return value;
-		}			
+		}
 	}
-	
+
 	//redefinition of Hop.AggOp for cleaner imports in generate class
 	public enum AggOp {
-		SUM, 
+		SUM,
 		SUM_SQ,
 		MIN,
 		MAX,
 	}
-	
+
 	protected final CellType _type;
 	private final AggOp _aggOp;
 	private final boolean _sparseSafe;
 	private final boolean _containsSeq;
-	
+
 	public SpoofCellwise(CellType type, boolean sparseSafe, boolean containsSeq, AggOp aggOp) {
 		_type = type;
 		_aggOp = aggOp;
 		_sparseSafe = sparseSafe;
 		_containsSeq = containsSeq;
 	}
-	
+
 	public CellType getCellType() {
 		return _type;
 	}
-	
+
 	public AggOp getAggOp() {
 		return _aggOp;
 	}
-	
+
 	public boolean isSparseSafe() {
 		return _sparseSafe;
 	}
-	
+
 	public boolean containsSeq() {
 		return _containsSeq;
 	}
-	
+
 	@Override public SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep) {
 		return new SpoofCUDACellwise(_type, _sparseSafe, _containsSeq, _aggOp, opID, ep, this);
-	} 
-	
+	}
+
 	@Override
 	public String getSpoofType() {
 		return "Cell" +  getClass().getName().split("\\.")[1];
 	}
-	
+
 	private ValueFunction getAggFunction() {
 		switch( _aggOp ) {
 			case SUM: return KahanPlus.getKahanPlusFnObject();
@@ -135,34 +135,37 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 						+ "aggregation type: "+_aggOp.name());
 		}
 	}
-	
+
 	@Override
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int k) {
 		return execute(inputs, scalarObjects, k, 0);
 	}
-	
+
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int k, long rix) {
 		//sanity check
 		if( inputs==null || inputs.size() < 1  )
 			throw new RuntimeException("Invalid input arguments.");
-		
+
 		//input preparation
 		MatrixBlock a = inputs.get(0);
 		SideInput[] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = a.getNumRows();
 		final int n = a.getNumColumns();
-		
+
+		// row offset for federated spoof operations
+		rix += _row_off;
+
 		//sparse safe check
 		boolean sparseSafe = isSparseSafe() || (b.length == 0
 				&& genexec( 0, b, scalars, m, n, 0, 0 ) == 0);
-		
-		long inputSize = sparseSafe ? 
+
+		long inputSize = sparseSafe ?
 			getTotalInputNnz(inputs) : getTotalInputSize(inputs);
 		if( inputSize < PAR_NUMCELL_THRESHOLD ) {
 			k = 1; //serial execution
 		}
-		
+
 		double ret = 0;
 		if( k <= 1 ) //SINGLE-THREADED
 		{
@@ -183,7 +186,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				//execute tasks
 				List<Future<Double>> taskret = pool.invokeAll(tasks);
 				pool.shutdown();
-				
+
 				//aggregate partial results
 				ValueFunction vfun = getAggFunction();
 				if( vfun instanceof KahanFunction ) {
@@ -202,12 +205,12 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				throw new DMLRuntimeException(ex);
 			}
 		}
-		
+
 		//correction for min/max
-		if( (_aggOp == AggOp.MIN || _aggOp == AggOp.MAX) && sparseSafe 
+		if( (_aggOp == AggOp.MIN || _aggOp == AggOp.MAX) && sparseSafe
 			&& a.getNonZeros()<a.getNumRows()*a.getNumColumns() )
 			ret = getAggFunction().execute(ret, 0); //unseen 0 might be max or min value
-		
+
 		return new DoubleObject(ret);
 	}
 
@@ -215,34 +218,37 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) {
 		return execute(inputs, scalarObjects, out, 1, 0);
 	}
-	
+
 	@Override
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k) {
 		return execute(inputs, scalarObjects, out, k, 0);
 	}
-	
+
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k, long rix) {
 		//sanity check
 		if( inputs==null || inputs.size() < 1 || out==null )
 			throw new RuntimeException("Invalid input arguments.");
-		
+
+		// row offset for federated spoof operations
+		rix += _row_off;
+
 		//input preparation
 		MatrixBlock a = inputs.get(0);
 		SideInput[] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = a.getNumRows();
 		final int n = a.getNumColumns();
-		
-		//sparse safe check 
+
+		//sparse safe check
 		boolean sparseSafe = isSparseSafe() || (b.length == 0
 				&& genexec( 0, b, scalars, m, n, 0, 0 ) == 0);
-		
-		long inputSize = sparseSafe ? 
+
+		long inputSize = sparseSafe ?
 			getTotalInputNnz(inputs) : getTotalInputSize(inputs);
 		if( inputSize < PAR_NUMCELL_THRESHOLD ) {
 			k = 1; //serial execution
 		}
-		
+
 		//result allocation and preparations
 		boolean sparseOut = _type == CellType.NO_AGG
 			&& sparseSafe && a.isInSparseFormat();
@@ -253,7 +259,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			default: throw new DMLRuntimeException("Invalid cell type: "+_type);
 		}
 		out.allocateBlock();
-		
+
 		long lnnz = 0;
 		if( k <= 1 ) //SINGLE-THREADED
 		{
@@ -275,7 +281,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				//execute tasks
 				List<Future<Long>> taskret = pool.invokeAll(tasks);
 				pool.shutdown();
-				
+
 				//aggregate nnz and error handling
 				for( Future<Long> task : taskret )
 					lnnz += task.get();
@@ -301,21 +307,21 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				throw new DMLRuntimeException(ex);
 			}
 		}
-		
+
 		//post-processing
 		out.setNonZeros(lnnz);
 		out.examSparsity();
 		return out;
 	}
-	
+
 	/////////
 	//function dispatch
-	
-	private long executeDense(DenseBlock a, SideInput[] b, double[] scalars, 
+
+	private long executeDense(DenseBlock a, SideInput[] b, double[] scalars,
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix) {
 		DenseBlock c = out.getDenseBlock();
 		SideInput[] lb = createSparseSideInputs(b);
-		
+
 		if( _type == CellType.NO_AGG ) {
 			return executeDenseNoAgg(a, lb, scalars, c, m, n, sparseSafe, rl, ru, rix);
 		}
@@ -333,25 +339,25 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		return -1;
 	}
-	
-	private double executeDenseAndAgg(DenseBlock a, SideInput[] b, double[] scalars, 
+
+	private double executeDenseAndAgg(DenseBlock a, SideInput[] b, double[] scalars,
 			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		SideInput[] lb = createSparseSideInputs(b);
-		
+
 		//numerically stable aggregation for sum/sum_sq
 		if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
 			return executeDenseAggSum(a, lb, scalars, m, n, sparseSafe, rl, ru, rix);
 		else
 			return executeDenseAggMxx(a, lb, scalars, m, n, sparseSafe, rl, ru, rix);
 	}
-	
+
 	private long executeSparse(SparseBlock sblock, SideInput[] b, double[] scalars,
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		if( sparseSafe && sblock == null )
 			return 0;
-		
+
 		SideInput[] lb = createSparseSideInputs(b);
 		if( _type == CellType.NO_AGG ) {
 			if( out.isInSparseFormat() )
@@ -371,23 +377,23 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			else
 				return executeSparseColAggMxx(sblock, lb, scalars, out, m, n, sparseSafe, rl, ru, rix);
 		}
-		
+
 		return -1;
 	}
-	
+
 	private double executeSparseAndAgg(SparseBlock sblock, SideInput[] b, double[] scalars,
 			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		if( sparseSafe && sblock == null )
 			return 0;
-		
+
 		SideInput[] lb = createSparseSideInputs(b);
 		if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
 			return executeSparseAggSum(sblock, lb, scalars, m, n, sparseSafe, rl, ru, rix);
 		else
 			return executeSparseAggMxx(sblock, lb, scalars, m, n, sparseSafe, rl, ru, rix);
 	}
-	
+
 	/////////
 	//core operator skeletons for dense, sparse, and compressed
 
@@ -415,10 +421,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				}
 			}
 		}
-		
+
 		return lnnz;
 	}
-	
+
 	private long executeDenseRowAggSum(DenseBlock a, SideInput[] b, double[] scalars,
 		DenseBlock c, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
@@ -426,7 +432,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		double[] lc = c.valuesAt(0);
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
-		
+
 		long lnnz = 0;
 		if( a == null && !sparseSafe ) {
 			for( int i=rl; i<ru; i++ ) {
@@ -449,15 +455,15 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				lnnz += ((lc[i] = kbuff._sum)!=0) ? 1 : 0;
 			}
 		}
-		
+
 		return lnnz;
 	}
-	
+
 	private long executeDenseRowAggMxx(DenseBlock a, SideInput[] b, double[] scalars,
 			DenseBlock c, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		double[] lc = c.valuesAt(0); //single block
-		
+
 		double initialVal = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
 		long lnnz = 0;
@@ -486,16 +492,16 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		return lnnz;
 	}
-	
+
 	private long executeDenseColAggSum(DenseBlock a, SideInput[] b, double[] scalars,
 		DenseBlock c, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		double[] lc = c.valuesAt(0); //single block
-		
+
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
 		double[] corr = new double[n];
-		
+
 		if( a == null && !sparseSafe ) {
 			for( int i=rl; i<ru; i++ )
 				for( int j=0; j<n; j++ ) {
@@ -520,19 +526,19 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				}
 			}
 		}
-		
+
 		return -1;
 	}
-	
+
 	private long executeDenseColAggMxx(DenseBlock a, SideInput[] b, double[] scalars,
 			DenseBlock c, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		double[] lc = c.valuesAt(0); //single block
-		
+
 		double initialVal = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
 		Arrays.fill(lc, initialVal);
-		
+
 		if( a == null && !sparseSafe ) { //empty
 			for( int i=rl; i<ru; i++ )
 				for( int j=0; j<n; j++ )
@@ -558,13 +564,13 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		return -1;
 	}
-	
+
 	private double executeDenseAggSum(DenseBlock a, SideInput[] b, double[] scalars,
 			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
-		
+
 		if( a == null && !sparseSafe ) {
 			for( int i=rl; i<ru; i++ )
 				for( int j=0; j<n; j++ )
@@ -581,10 +587,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				}
 			}
 		}
-		
+
 		return kbuff._sum;
 	}
-	
+
 	private double executeDenseAggMxx(DenseBlock a, SideInput[] b, double[] scalars,
 			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
@@ -592,7 +598,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		//note: sparse safe with zero value as min/max handled outside
 		double ret = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
-		
+
 		if( a == null && !sparseSafe ) {
 			for( int i=rl; i<ru; i++ )
 				for( int j=0; j<n; j++ )
@@ -609,10 +615,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				}
 			}
 		}
-		
+
 		return ret;
 	}
-	
+
 	private long executeSparseNoAggSparse(SparseBlock sblock, SideInput[] b, double[] scalars,
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
@@ -645,10 +651,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 					c.append(i, j, genexec(0, b, scalars, m, n, rix+i, i, j));
 			lnnz += c.size(i);
 		}
-		
+
 		return lnnz;
 	}
-	
+
 	private long executeSparseNoAggDense(SparseBlock sblock, SideInput[] b, double[] scalars,
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
@@ -686,7 +692,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		return lnnz;
 	}
-	
+
 	private long executeSparseRowAggSum(SparseBlock sblock, SideInput[] b, double[] scalars,
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
@@ -724,15 +730,15 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		return lnnz;
 	}
-	
+
 	private long executeSparseRowAggMxx(SparseBlock sblock, SideInput[] b, double[] scalars,
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		double initialVal = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ValueFunction vfun = getAggFunction();
-		
-		//note: sequential scan algorithm for both sparse-safe and -unsafe 
-		//in order to avoid binary search for sparse-unsafe 
+
+		//note: sequential scan algorithm for both sparse-safe and -unsafe
+		//in order to avoid binary search for sparse-unsafe
 		double[] c = out.getDenseBlockValues();
 		long lnnz = 0;
 		for(int i=rl; i<ru; i++) {
@@ -769,7 +775,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
 		double[] corr = new double[n];
-		
+
 		//note: sequential scan algorithm for both sparse-safe and -unsafe
 		//in order to avoid binary search for sparse-unsafe
 		double[] c = out.getDenseBlockValues();
@@ -810,7 +816,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		return -1;
 	}
-	
+
 	private long executeSparseColAggMxx(SparseBlock sblock, SideInput[] b, double[] scalars,
 			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
@@ -819,7 +825,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		double[] c = out.getDenseBlockValues();
 		Arrays.fill(c, initialVal);
 		int[] count = new int[n];
-		
+
 		//note: sequential scan algorithm for both sparse-safe and -unsafe
 		//in order to avoid binary search for sparse-unsafe
 		for(int i=rl; i<ru; i++) {
@@ -848,18 +854,18 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				for(int j=lastj+1; j<n; j++)
 					c[j] = vfun.execute(c[j], genexec(0, b, scalars, m, n, rix+i, i, j));
 		}
-		
+
 		return -1;
 	}
-	
+
 	private double executeSparseAggSum(SparseBlock sblock, SideInput[] b, double[] scalars,
 			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
-		
-		//note: sequential scan algorithm for both sparse-safe and -unsafe 
-		//in order to avoid binary search for sparse-unsafe 
+
+		//note: sequential scan algorithm for both sparse-safe and -unsafe
+		//in order to avoid binary search for sparse-unsafe
 		for(int i=rl; i<ru; i++) {
 			int lastj = -1;
 			//handle non-empty rows
@@ -885,14 +891,14 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		return kbuff._sum;
 	}
-	
+
 	private double executeSparseAggMxx(SparseBlock sblock, SideInput[] b, double[] scalars,
 			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		double ret = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		ret = (sparseSafe && sblock.size() < (long)m*n) ? 0 : ret;
 		ValueFunction vfun = getAggFunction();
-		
+
 		//note: sequential scan algorithm for both sparse-safe and -unsafe
 		//in order to avoid binary search for sparse-unsafe
 		for(int i=rl; i<ru; i++) {
@@ -920,18 +926,18 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		}
 		return ret;
 	}
-	
+
 	//local execution where grix==rix
 	protected final double genexec( double a, SideInput[] b,
 		double[] scalars, int m, int n, int rix, int cix) {
 		return genexec(a, b, scalars, m, n, rix, rix, cix);
 	}
-	
+
 	//distributed execution with additional global row index
 	protected abstract double genexec( double a, SideInput[] b,
 		double[] scalars, int m, int n, long gix, int rix, int cix);
-	
-	private class ParAggTask implements Callable<Double> 
+
+	private class ParAggTask implements Callable<Double>
 	{
 		private final MatrixBlock _a;
 		private final SideInput[] _b;
@@ -942,7 +948,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		private final int _rl;
 		private final int _ru;
 
-		protected ParAggTask( MatrixBlock a, SideInput[] b, double[] scalars, 
+		protected ParAggTask( MatrixBlock a, SideInput[] b, double[] scalars,
 				int rlen, int clen, boolean sparseSafe, int rl, int ru ) {
 			_a = a;
 			_b = b;
@@ -953,7 +959,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			_rl = rl;
 			_ru = ru;
 		}
-		
+
 		@Override
 		public Double call() {
 			if (!_a.isInSparseFormat())
@@ -987,7 +993,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			_rl = rl;
 			_ru = ru;
 		}
-		
+
 		@Override
 		public Long call() {
 			if( _type==CellType.COL_AGG ) {
@@ -999,7 +1005,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			else
 				return executeSparse(_a.getSparseBlock(), _b, _scalars, _c, _rlen, _clen, _safe, _rl, _ru, 0);
 		}
-		
+
 		public MatrixBlock getResult() {
 			return _c;
 		}

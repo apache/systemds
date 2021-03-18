@@ -34,10 +34,11 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -213,10 +214,14 @@ public class FederationMap {
 		return ret.toArray(new Future[0]);
 	}
 
+	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait,
+		FederatedRequest[][] frSlices, FederatedRequest... fr) {
+			return executeMultipleSlices(tid, wait, false, frSlices, fr);
+	}
 
 	@SuppressWarnings("unchecked")
-	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait, FederatedRequest[][] frSlices,
-		FederatedRequest... fr) {
+	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait, boolean offset,
+		FederatedRequest[][] frSlices, FederatedRequest[] fr) {
 		// executes step1[] - ... - stepM[] - stepM+1 - ... stepN (only first step federated-data-specific)
 		FederatedRequest[] allSlices = Arrays.stream(frSlices).flatMap(Stream::of).toArray(FederatedRequest[]::new);
 		setThreadID(tid, allSlices, fr);
@@ -224,7 +229,9 @@ public class FederationMap {
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
 		{
-			FederatedRequest[] fedReq = fr;
+			if(offset)
+				fr = rewriteFedReqWithOffset(fr, e.getKey());
+			FederatedRequest[] fedReq = offset ? Arrays.copyOf(fr, fr.length) : fr;
 			for(FederatedRequest[] slice : frSlices) {
 				fedReq = addAll(slice[pos], fedReq);
 			}
@@ -237,6 +244,35 @@ public class FederationMap {
 		if(wait)
 			FederationUtils.waitFor(ret);
 		return ret.toArray(new Future[0]);
+	}
+
+	private FederatedRequest[] rewriteFedReqWithOffset(FederatedRequest[] fr, FederatedRange fedRange) {
+		for(int counter = 0; counter < fr.length; counter++) {
+			// only implemented for spoof instructions yet
+			if(fr[counter].getType() == RequestType.EXEC_INST && fr[counter].getNumParams() > 0 && ((String)fr[counter].getParam(0)).contains("CP" + Lop.OPERAND_DELIMITOR + "spoof")) {
+				FederatedRequest tmpFr = fr[counter].deepClone();
+				Object frParam = tmpFr.getParam(0);
+				if(frParam instanceof String) {
+					String[] parts = ((String)frParam).split(Lop.OPERAND_DELIMITOR, -1);
+					long[] beginDims = fedRange.getBeginDims();
+					if(parts[parts.length - 2].startsWith("RowOff") && parts[parts.length - 1].startsWith("ColOff")) {
+						// update offset suffix
+						parts[parts.length - 2] = "RowOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[0]);
+						parts[parts.length - 1] = "ColOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[1]);
+						frParam = String.join(Lop.OPERAND_DELIMITOR, parts);
+					}
+					else {
+						// append offset suffix
+						frParam += Lop.OPERAND_DELIMITOR + "RowOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[0]);
+						frParam += Lop.OPERAND_DELIMITOR + "ColOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[1]);
+					}
+					tmpFr.setParam(0, frParam);
+				}
+				fr[counter] = tmpFr;
+			}
+		}
+
+		return fr;
 	}
 
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {

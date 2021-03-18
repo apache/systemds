@@ -20,11 +20,13 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -65,6 +67,17 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		Class<?> cla = CodegenUtils.getClass(parts[2]);
 		SpoofOperator op = CodegenUtils.createInstance(cla);
 		String opcode =  parts[0] + op.getSpoofType();
+
+		if(parts[parts.length - 2].startsWith("RowOff") && parts[parts.length - 1].startsWith("ColOff")) {
+			long rowOff = 0, colOff = 0;
+			rowOff = Long.parseLong(parts[parts.length - 2].split(Lop.LITERAL_PREFIX)[1]);
+			colOff = Long.parseLong(parts[parts.length - 1].split(Lop.LITERAL_PREFIX)[1]);
+			parts = Arrays.copyOfRange(parts, 0, parts.length - 2);
+			// str = "CP" + Lop.OPERAND_DELIMITOR + String.join(Lop.OPERAND_DELIMITOR, parts);
+			op.setOffset(true, rowOff);
+			op.setOffset(false, colOff);
+		}
+
 
 		for( int i=3; i<parts.length-2; i++ )
 			inlist.add(new CPOperand(parts[i]));

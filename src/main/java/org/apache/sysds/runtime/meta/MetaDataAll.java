@@ -133,7 +133,7 @@ public class MetaDataAll extends DataIdentifier {
 //	private boolean _strInit = false; //string initialize
 //	private boolean _checkMetadata = true; // local skip meta data reads
 
-	// TODO added
+	// TODO add
 	private JSONObject _metaObj;
 
 	public String _formatTypeString;

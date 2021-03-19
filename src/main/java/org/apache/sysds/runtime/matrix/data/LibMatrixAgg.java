@@ -129,13 +129,10 @@ public class LibMatrixAgg
 	 * 
 	 * @param in input matrix
 	 * @param aggVal current aggregate values (in/out)
-	 * @param aggCorr current aggregate correction (in/out)
 	 * @param deep deep copy flag
 	 */
-	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr, boolean deep) {
-		//Timing time = new Timing(true);
-		//boolean saggVal = aggVal.sparse, saggCorr = aggCorr.sparse;
-		//long naggVal = aggVal.nonZeros, naggCorr = aggCorr.nonZeros;
+	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, boolean deep) {
+
 		
 		//common empty block handling
 		if( in.isEmptyBlock(false) ) {
@@ -150,26 +147,23 @@ public class LibMatrixAgg
 		//ensure MCSR instead of CSR for update in-place
 		if( aggVal.sparse && aggVal.isAllocated() && aggVal.getSparseBlock() instanceof SparseBlockCSR )
 			aggVal.sparseBlock = SparseBlockFactory.copySparseBlock(SparseBlock.Type.MCSR, aggVal.getSparseBlock(), true);
-		if( aggCorr.sparse && aggCorr.isAllocated() && aggCorr.getSparseBlock() instanceof SparseBlockCSR )
-			aggCorr.sparseBlock = SparseBlockFactory.copySparseBlock(SparseBlock.Type.MCSR, aggCorr.getSparseBlock(), true);
 		
 		//core aggregation
-		if(!in.sparse && !aggVal.sparse && !aggCorr.sparse)
-			aggregateBinaryMatrixAllDense(in, aggVal, aggCorr);
-		else if(in.sparse && !aggVal.sparse && !aggCorr.sparse)
-			aggregateBinaryMatrixSparseDense(in, aggVal, aggCorr);
-		else if(in.sparse ) //any aggVal, aggCorr
-			aggregateBinaryMatrixSparseGeneric(in, aggVal, aggCorr);
-		else //if( !in.sparse ) //any aggVal, aggCorr
-			aggregateBinaryMatrixDenseGeneric(in, aggVal, aggCorr);
+		if(!in.sparse && !aggVal.sparse)
+			aggregateBinaryMatrixAllDense(in, aggVal);
+		else if(in.sparse && !aggVal.sparse)
+			aggregateBinaryMatrixSparseDense(in, aggVal);
+		else if(in.sparse ) //  in.sparse && aggVal.sparse
+			aggregateBinaryMatrixSparseSparse(in, aggVal);
+		else //if( !in.sparse && aggVal.sparse) //any aggVal
+			aggregateBinaryMatrixDenseSparse(in, aggVal);
 		
-		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.nonZeros+","+in.sparse+"), ("+naggVal+","+saggVal+"), ("+naggCorr+","+saggCorr+") -> " +
-		//	"("+aggVal.nonZeros+","+aggVal.sparse+"), ("+aggCorr.nonZeros+","+aggCorr.sparse+") in "+time.stop()+"ms.");
 	}
 	
 	/**
 	 * Core incremental matrix aggregate (ak+) as used for uack+ and acrk+.
-	 * Embedded correction values.
+	 * 
+	 * OBS NO LONGER USING CORRECTION
 	 * 
 	 * @param in matrix block
 	 * @param aggVal aggregate operator
@@ -1007,48 +1001,36 @@ public class LibMatrixAgg
 		}
 	}
 
-	private static void aggregateBinaryMatrixAllDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
+	private static void aggregateBinaryMatrixAllDense(MatrixBlock in, MatrixBlock aggVal) {
 		//allocate output arrays (if required)
 		aggVal.allocateDenseBlock(); //should always stay in dense
-		aggCorr.allocateDenseBlock(); //should always stay in dense
 		
 		double[] a = in.getDenseBlockValues();
 		double[] c = aggVal.getDenseBlockValues();
-		double[] cc = aggCorr.getDenseBlockValues();
 		
 		KahanObject buffer1 = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
 		final int len = Math.min(a.length, in.rlen*in.clen);
 		
 		int nnzC = 0;
-		int nnzCC = 0;
 		
 		for( int i=0; i<len; i++ )
 		{
 			buffer1._sum        = c[i];
-			buffer1._correction = cc[i];
 			akplus.execute2(buffer1, a[i]);
 			c[i]  = buffer1._sum;
-			cc[i] = buffer1._correction;
 			nnzC += (buffer1._sum!=0)?1:0;
-			nnzCC += (buffer1._correction!=0)?1:0;
 		}
 		
 		aggVal.nonZeros = nnzC;
-		aggCorr.nonZeros = nnzCC;
 	}
 
-	private static void aggregateBinaryMatrixSparseDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
+	private static void aggregateBinaryMatrixSparseDense(MatrixBlock in, MatrixBlock aggVal) {
 		//allocate output arrays (if required)
 		aggVal.allocateDenseBlock(); //should always stay in dense
-		aggCorr.allocateDenseBlock(); //should always stay in dense
 		
 		SparseBlock a = in.getSparseBlock();
 		double[] c = aggVal.getDenseBlockValues();
-		double[] cc = aggCorr.getDenseBlockValues();
-		
-		KahanObject buffer1 = new KahanObject(0, 0);
-		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
 		
 		final int m = in.rlen;
 		final int n = in.clen;
@@ -1066,24 +1048,16 @@ public class LibMatrixAgg
 				for( int j=apos; j<apos+alen; j++ )
 				{
 					int ix = cix+aix[j];
-					buffer1._sum        = c[ix];
-					buffer1._correction = cc[ix];
-					akplus.execute2(buffer1, avals[j]);
-					c[ix]  = buffer1._sum;
-					cc[ix] = buffer1._correction;
+					c[ix]  += avals[j];
 				}
 			}
 		}
 		
 		aggVal.recomputeNonZeros();
-		aggCorr.recomputeNonZeros(); 
 	}
 
-	private static void aggregateBinaryMatrixSparseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
+	private static void aggregateBinaryMatrixSparseSparse(MatrixBlock in, MatrixBlock aggVal) {
 		SparseBlock a = in.getSparseBlock();
-		
-		KahanObject buffer1 = new KahanObject(0, 0);
-		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
 		
 		final int m = in.rlen;
 		final int rlen = Math.min(a.numRows(), m);
@@ -1100,11 +1074,7 @@ public class LibMatrixAgg
 				for( int j=apos; j<apos+alen; j++ )
 				{
 					int jix = aix[j];
-					buffer1._sum        = aggVal.quickGetValue(i, jix);
-					buffer1._correction = aggCorr.quickGetValue(i, jix);
-					akplus.execute2(buffer1, avals[j]);
-					aggVal.quickSetValue(i, jix, buffer1._sum);
-					aggCorr.quickSetValue(i, jix, buffer1._correction);
+					aggVal.quickSetValue(i, jix, aggVal.quickGetValue(i, jix) + avals[j]);
 				}
 			}
 		}
@@ -1112,35 +1082,24 @@ public class LibMatrixAgg
 		//note: nnz of aggVal/aggCorr maintained internally
 		if( aggVal.sparse )
 			aggVal.examSparsity(false);
-		if( aggCorr.sparse )
-			aggCorr.examSparsity(false);
 	}
 
-	private static void aggregateBinaryMatrixDenseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
-		final int m = in.rlen;
-		final int n = in.clen;
-		
+	private static void aggregateBinaryMatrixDenseSparse(MatrixBlock in, MatrixBlock aggVal) {
 		double[] a = in.getDenseBlockValues();
-		
-		KahanObject buffer = new KahanObject(0, 0);
-		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
-		
+		// we first change the aggVal to become dense because we know that it should become dense.
+		aggVal.sparseToDense();
+		double[] b = aggVal.getDenseBlockValues();
+		final int len = Math.min(a.length, in.rlen*in.clen);
+
 		//incl implicit nnz maintenance
-		for(int i=0, ix=0; i<m; i++)
-			for(int j=0; j<n; j++, ix++)
-			{
-				buffer._sum = aggVal.quickGetValue(i, j);
-				buffer._correction = aggCorr.quickGetValue(i, j);
-				akplus.execute(buffer, a[ix]);
-				aggVal.quickSetValue(i, j, buffer._sum);
-				aggCorr.quickSetValue(i, j, buffer._correction);
-			}
+		for( int i=0; i<len; i++ )
+		{
+			b[i] += a[i];
+		}
 		
 		//note: nnz of aggVal/aggCorr maintained internally 
 		if( aggVal.sparse )
 			aggVal.examSparsity(false);
-		if( aggCorr.sparse )
-			aggCorr.examSparsity(false);
 	}
 
 	private static void aggregateBinaryMatrixLastRowDenseGeneric(MatrixBlock in, MatrixBlock aggVal) {

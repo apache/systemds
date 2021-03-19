@@ -28,6 +28,8 @@ import org.apache.sysds.runtime.util.DnnUtils;
 /**
  * This class is container that stores parameters required for executing following operations:
  * conv2d, conv2d_backward_data, conv2d_backward_filter, maxpooling, maxpooling_backward 
+ * 
+ * NCHW - Number Channels Height Width
  */
 public class DnnParameters implements Serializable 
 {

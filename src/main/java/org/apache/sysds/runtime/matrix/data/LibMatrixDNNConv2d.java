@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -34,6 +36,9 @@ import org.apache.sysds.utils.Statistics;
  */
 public class LibMatrixDNNConv2d 
 {
+
+	protected static final Log LOG =  LogFactory.getLog(LibMatrixDNNConv2d.class.getName());
+
 	/**
 	 * Factory method that returns list of callable tasks for performing conv2d
 	 * 
@@ -92,7 +97,6 @@ public class LibMatrixDNNConv2d
 		// data structures such as im2col blocks.
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));
-		
 		boolean isEmptyDenseInput = (!params.input1.isInSparseFormat() && params.input1.denseBlock == null) || 
 			(!params.input2.isInSparseFormat() && params.input2.denseBlock == null);
 		boolean applyNative = isEligibleForConv2dBackwardFilterSparseDense(params)

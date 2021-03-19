@@ -255,11 +255,11 @@ public class PartialAggregate extends Lop
 				// except that they also produce correction values along with partial
 				// sums.
 				if( dir == Direction.RowCol )
-					return "uak+";
+					return "ua+";
 				else if( dir == Direction.Row )
-					return "uark+";
+					return "uar+";
 				else if( dir == Direction.Col )
-					return "uack+";
+					return "uac+";
 				break;
 			}
 

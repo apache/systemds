@@ -3022,8 +3022,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else if(aggOp.correction==CorrectionLocationType.NONE) {
 			//e.g., ak+ kahan plus as used in sum, mapmult, mmcj and tsmm
-			if(aggOp.increOp.fn instanceof KahanPlus) {
-				LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, cor, deep);
+			if(aggOp.increOp.fn instanceof KahanPlus || aggOp.increOp.fn instanceof Plus) {
+				LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, deep);
 			}
 			else
 			{

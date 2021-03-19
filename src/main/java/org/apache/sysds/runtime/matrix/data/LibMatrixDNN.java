@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
@@ -67,51 +67,11 @@ import org.apache.sysds.runtime.util.DnnUtils;
 public class LibMatrixDNN {
 	
 	protected static final Log LOG =  LogFactory.getLog(LibMatrixDNN.class.getName());
+	
 	public static enum PoolingType {
 		MAX, AVG
 	}
 	
-	//library configurations and external contracts
-	// ------------------------------------------------------------------------------------------------
-	private static AtomicLong conv2dSparseCount = new AtomicLong(0);
-	private static AtomicLong conv2dDenseCount = new AtomicLong(0);
-	private static AtomicLong conv2dBwdFilterSparseCount = new AtomicLong(0);
-	private static AtomicLong conv2dBwdFilterDenseCount = new AtomicLong(0);
-	private static AtomicLong conv2dBwdDataSparseCount = new AtomicLong(0);
-	private static AtomicLong conv2dBwdDataDenseCount = new AtomicLong(0);
-	private static AtomicLong im2colSparseCount = new AtomicLong(0);
-	private static AtomicLong im2colDenseCount = new AtomicLong(0);
-	private static AtomicLong maxPoolBwdSparseCount = new AtomicLong(0);
-	private static AtomicLong maxPoolBwdDenseCount = new AtomicLong(0);
-	static AtomicLong loopedConvMatMultTime = new AtomicLong(0);
-	static AtomicLong loopedConvIm2ColTime = new AtomicLong(0);
-	static AtomicLong loopedConvBwdFilterMatMultTime = new AtomicLong(0);
-	static AtomicLong loopedConvBwdFilterIm2ColTime = new AtomicLong(0);
-	static AtomicLong loopedConvBwdDataMatMultTime = new AtomicLong(0);
-	static AtomicLong loopedConvBwdDataCol2ImTime = new AtomicLong(0);
-	
-	public static void resetStatistics() {
-		conv2dDenseCount.set(0);
-		conv2dBwdFilterDenseCount.set(0);
-		conv2dBwdDataDenseCount.set(0);
-		im2colDenseCount.set(0);
-		maxPoolBwdDenseCount.set(0);
-		
-		conv2dSparseCount.set(0);
-		conv2dBwdFilterSparseCount.set(0);
-		conv2dBwdDataSparseCount.set(0);
-		im2colSparseCount.set(0);
-		maxPoolBwdSparseCount.set(0);
-		
-		loopedConvIm2ColTime.set(0);
-		loopedConvMatMultTime.set(0);
-		loopedConvBwdFilterMatMultTime.set(0);
-		loopedConvBwdFilterIm2ColTime.set(0);
-		loopedConvBwdDataMatMultTime.set(0);
-		loopedConvBwdDataCol2ImTime.set(0);
-	}
-
-	// ------------------------------------------------------------------------------------------------
 	
 	/**
 	 * This method performs convolution (i.e. cross-correlation) operation on input
@@ -140,8 +100,7 @@ public class LibMatrixDNN {
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
-	 
-*/
+	 */
 	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
 		checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		
@@ -163,11 +122,12 @@ public class LibMatrixDNN {
 	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
 		checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
 		
+		Timing time = new Timing(true);
 		execute(LibMatrixDNNConv2d.getConv2dBackwardFilterWorkers(params), params);
-		
 		//post-processing: maintain nnz
 		outputBlock.recomputeNonZeros(); 
 		outputBlock.examSparsity();
+		LOG.error("conv2dBackwardFilter :" + time.stop());
 	}
 	
 	public static void pooling(MatrixBlock input, MatrixBlock output, DnnParameters params, PoolingType poolType) {

@@ -21,10 +21,10 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
@@ -34,12 +34,16 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
@@ -103,11 +107,10 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			throw new DMLRuntimeException("Federated ctable: Input vectors should be nx1.");
 
 		// get new output dims
-		long[] dims1 = getOutputDimension(ec, input1, _outDim1, mo1.getFedMapping().getFederatedRanges());
-		long[] dims2 = getOutputDimension(ec, input2, _outDim2, mo1.getFedMapping().getFederatedRanges());
+		Long[] dims1 = getOutputDimension(ec, input1, _outDim1, mo1.getFedMapping().getFederatedRanges());
+		Long[] dims2 = getOutputDimension(ec, input2, _outDim2, mo1.getFedMapping().getFederatedRanges());
 
 		MatrixObject mo3 = input3 != null && input3.isMatrix() ? ec.getMatrixObject(input3) : null;
-		Future<FederatedResponse>[] ffr;
 
 		boolean reversedWeights = mo3 != null && mo3.isFederated() && !(mo1.isFederated() || mo2.isFederated());
 		if(reversedWeights) {
@@ -115,17 +118,15 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			mo1 = ec.getMatrixObject(input3);
 		}
 
-		MatrixObject finalMo = mo1;
-		boolean fedOutput = Arrays.stream(dims1).allMatch(e -> e % finalMo.getFedMapping().getSize() == 0) && dims1.length == new HashSet(Collections.singletonList(dims1)).size();
-		processRequest(ec, mo1, mo2, mo3, reversed, reversedWeights, fedOutput, fedOutput ? (int) Arrays.stream(dims1).max().getAsLong() / mo1.getFedMapping().getSize() : -1, dims1, dims2);
+		long dim1 = Collections.max(Arrays.asList(dims1), Long::compare);
+		boolean fedOutput = dim1 % mo1.getFedMapping().getSize() == 0 && dims1.length == Arrays.stream(dims1).distinct().count();
+
+		processRequest(ec, mo1, mo2, mo3, reversed, reversedWeights, fedOutput, dims1, dims2);
 	}
 
 	private Future<FederatedResponse>[] processRequest(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3,
-		boolean reversed, boolean reversedWeights, boolean fedOutput, int fedSize, long[] dims1, long[] dims2) {
+		boolean reversed, boolean reversedWeights, boolean fedOutput, Long[] dims1, Long[] dims2) {
 		Future<FederatedResponse>[] ffr;
-
-		// modify instruction string by adding fedSize - size of one range
-		instString = fedSize == -1 ? instString : String.join(Lop.OPERAND_DELIMITOR, new String[] {instString, String.valueOf(fedSize)});
 
 		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 		FederatedRequest fr2, fr3;
@@ -137,7 +138,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 
 			fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
 			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr4);
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
 
 		} else {
 			FederatedRequest[] fr4 = mo1.getFedMapping().broadcastSliced(mo3, false);
@@ -150,21 +151,57 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 
 			fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
 			FederatedRequest fr5 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr4[0].getID());
-			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr4[0], fr5);
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4[0], fr5);
 		}
-		if(!fedOutput) {
-			ffr = mo1.getFedMapping().execute(getTID(), true, fr3);
-			ec.setMatrixOutput(output.getName(), aggResult(ffr));
-		} else {
+
+		long fedSize = Collections.max(Arrays.asList(dims1), Long::compare) / ffr.length;
+
+		if(fedOutput && isFedOutput(ffr, fedSize)) {
+			// modify instruction string to remove first empty rows
 			MatrixObject out = ec.getMatrixObject(output);
-			setFedOutput(fr2, mo1, out, dims1, dims2);
+			setFedOutput(fr2, mo1, out, dims1, dims2, fedSize);
+		} else {
+			ec.setMatrixOutput(output.getName(), aggResult(ffr));
 		}
 		return ffr;
 	}
 
-	private void setFedOutput(FederatedRequest fr, MatrixObject mo1, MatrixObject out, long[] dims1, long[] dims2) {
-		long d1 = Arrays.stream(dims1).max().getAsLong();
-		long d2 = Arrays.stream(dims2).max().getAsLong();
+	boolean isFedOutput(Future<FederatedResponse>[] ffr, long fedSize) {
+		boolean fedOutput = true;
+
+		try {
+			MatrixBlock curr;
+			MatrixBlock prev =(MatrixBlock) ffr[0].get().getData()[0];
+			for(int i = 1; i < ffr.length && fedOutput; i++) {
+				curr = (MatrixBlock) ffr[i].get().getData()[0];
+				MatrixBlock sliced = curr.slice((int) (curr.getNumRows() - fedSize), curr.getNumRows() - 1);
+
+				// no intersection
+				if(curr.getNumRows() == (i+1) * prev.getNumRows() && curr.getNonZeros() <= prev.getLength()
+					&& (curr.getNumRows() - sliced.getNumRows()) == i * prev.getNumRows()
+					&& curr.getNonZeros() - sliced.getNonZeros() == 0)
+					continue;
+
+				// check intersect with AND and compare number of nnz
+				MatrixBlock prevExtend = new MatrixBlock(curr.getNumRows(), curr.getNumColumns(), 0.0);
+				prevExtend.copy(0, prev.getNumRows()-1, 0, prev.getNumColumns()-1, prev, true);
+
+				MatrixBlock  intersect = curr.binaryOperationsInPlace(new BinaryOperator(And.getAndFnObject()), prevExtend);
+				if(intersect.getNonZeros() != 0)
+					fedOutput = false;
+				prev = sliced;
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		return fedOutput;
+	}
+
+
+	private void setFedOutput(FederatedRequest fr, MatrixObject mo1, MatrixObject out, Long[] dims1, Long[] dims2, long fedSize) {
+		long d1 = Collections.max(Arrays.asList(dims1), Long::compare);
+		long d2 = Collections.max(Arrays.asList(dims1), Long::compare);
 
 		FederationMap fedMap = mo1.getFedMapping();
 		// modify fed ranges
@@ -179,6 +216,21 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		// set output
 		out.getDataCharacteristics().set(d1, d2, (int) mo1.getBlocksize(), mo1.getNnz());
 		out.setFedMapping(fedMap.copyWithNewID(fr.getID()));
+
+		long varID = FederationUtils.getNextFedDataID();
+		out.getFedMapping().mapParallel(varID, (range, data) -> {
+			try {
+				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
+					FederatedRequest.RequestType.EXEC_UDF, -1,
+					new SliceOutput(data.getVarID(), fedSize))).get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+			return null;
+		});
 	}
 
 	private MatrixBlock aggResult(Future<FederatedResponse>[] ffr) {
@@ -208,9 +260,9 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		return resultBlock;
 	}
 
-	private long[] getOutputDimension(ExecutionContext ec, CPOperand inOp, CPOperand outOp, FederatedRange[] federatedRanges) {
+	private Long[] getOutputDimension(ExecutionContext ec, CPOperand inOp, CPOperand outOp, FederatedRange[] federatedRanges) {
 		MatrixObject in = ec.getMatrixObject(inOp);
-		long[] fedDims = new long[federatedRanges.length];
+		Long[] fedDims = new Long[federatedRanges.length];
 
 		if(!in.isFederated()) {
 			//slice
@@ -249,5 +301,31 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			}
 		}
 		return fedDims;
+	}
+
+	private static class SliceOutput extends FederatedUDF {
+
+		private static final long serialVersionUID = -2808597461054603816L;
+		private final long _fedSize;
+
+		protected SliceOutput(long input, long fedSize) {
+			super(new long[] {input});
+			_fedSize = fedSize;
+		}
+
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixObject mo = (MatrixObject) data[0];
+			MatrixBlock mb = mo.acquireReadAndRelease();
+
+			MatrixBlock sliced = mb.slice((int) (mb.getNumRows()-_fedSize), mb.getNumRows()-1);
+			mo.acquireModify(sliced);
+			mo.release();
+
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {});
+		}
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
+		}
 	}
 }

@@ -39,23 +39,21 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	private final CPOperand _outDim2;
 	private final boolean _isExpand;
 	private final boolean _ignoreZeros;
-	private final int _fedSize;
 
 	private CtableCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
-			boolean ignoreZeros, int fedSize, String opcode, String istr) {
+			boolean ignoreZeros, String opcode, String istr) {
 		super(CPType.Ctable, null, in1, in2, in3, out, opcode, istr);
 		_outDim1 = new CPOperand(outputDim1, ValueType.FP64, DataType.SCALAR, dim1Literal);
 		_outDim2 = new CPOperand(outputDim2, ValueType.FP64, DataType.SCALAR, dim2Literal);
 		_isExpand = isExpand;
 		_ignoreZeros = ignoreZeros;
-		_fedSize = fedSize;
 	}
 
 	public static CtableCPInstruction parseInstruction(String inst)
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
-//		InstructionUtils.checkNumFields ( parts, 7 );
+		InstructionUtils.checkNumFields ( parts, 7 );
 		
 		String opcode = parts[0];
 		
@@ -76,10 +74,9 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 
 		CPOperand out = new CPOperand(parts[6]);
 		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
-		int fedSize = parts.length == 9 ? Integer.parseInt(parts[8]) : -1;
 
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new CtableCPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, fedSize, opcode, inst);
+		return new CtableCPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
 	}
 
 	private Ctable.OperationTypes findCtableOperation() {
@@ -177,10 +174,6 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		if( checkGuardedRepresentationChange(matBlock1, matBlock2, resultBlock) ) {
 			resultBlock.examSparsity();
 		}
-
-		// remove first empty rows in fed
-		if(_fedSize != -1)
-			resultBlock = resultBlock.slice(resultBlock.getNumRows() - _fedSize, resultBlock.getNumRows() - 1);
 
 		ec.setMatrixOutput(output.getName(), resultBlock);
 	}

@@ -1290,7 +1290,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	}
 
-	private CompressedMatrixBlock checkType(MatrixValue thatValue) {
+	private static CompressedMatrixBlock checkType(MatrixValue thatValue) {
 		if(thatValue == null || !(thatValue instanceof CompressedMatrixBlock)) {
 			throw new DMLRuntimeException("Invalid call to copy, requre a compressed MatrixBlock to copy to");
 		}

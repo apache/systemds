@@ -200,12 +200,12 @@ public class IntIntMap {
 		}
 	}
 
-	private int phiMix(final int x) {
+	private static int phiMix(final int x) {
 		final int h = x * INT_PHI;
 		return h ^ (h >> 16);
 	}
 
-	private long nextPowerOfTwo(int x) {
+	private static long nextPowerOfTwo(int x) {
 		if(x == 0)
 			return 1;
 		x--;

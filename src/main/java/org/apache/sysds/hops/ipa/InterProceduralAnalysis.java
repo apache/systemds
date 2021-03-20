@@ -117,7 +117,7 @@ public class InterProceduralAnalysis
 		_sb = null;
 		_fgraph = new FunctionCallGraph(dmlp);
 		
-		//create order list of IPA passes
+		//create ordered list of IPA passes
 		_passes = new ArrayList<>();
 		_passes.add(new IPAPassRemoveUnusedFunctions());
 		_passes.add(new IPAPassFlagFunctionsRecompileOnce());

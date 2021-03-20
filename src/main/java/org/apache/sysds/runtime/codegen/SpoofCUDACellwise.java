@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import java.util.ArrayList;
 
 public class SpoofCUDACellwise extends SpoofCellwise implements SpoofCUDAOperator {
+	private static final long serialVersionUID = -5255791443086948200L;
 	private static final Log LOG = LogFactory.getLog(SpoofCUDACellwise.class.getName());
 	private final int ID;
 	private final PrecisionProxy call;
@@ -130,7 +131,7 @@ public class SpoofCUDACellwise extends SpoofCellwise implements SpoofCUDAOperato
 		return out_obj;
 	}
 	
-	private boolean inputIsEmpty(GPUObject g) {
+	private static boolean inputIsEmpty(GPUObject g) {
 		return g.getDensePointer() == null && g.getSparseMatrixCudaPointer() == null;
 	}
 	

@@ -821,11 +821,9 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		private static final long serialVersionUID = -8788298032616522019L;
 
 		private Tokenizer _tokenizer = null;
-		private int _blen = -1;
-
+		
 		public RDDTokenizeFunction(Tokenizer tokenizer, int blen) {
 			_tokenizer = tokenizer;
-			_blen = blen;
 		}
 
 		@Override

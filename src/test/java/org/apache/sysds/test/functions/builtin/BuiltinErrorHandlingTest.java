@@ -63,7 +63,6 @@ public class BuiltinErrorHandlingTest extends AutomatedTestBase {
 		double[][] X = getRandomMatrix(10, 5, 0, 1, 0.8, -1);
 		writeInputMatrixWithMTD("X", X, true);
 		
-		setOutputBuffering(true);
 		runTest(true, true, LanguageException.class, "typo", -1);
 	}
 }

@@ -66,7 +66,6 @@ public class BuiltinSplitBalancedTest extends AutomatedTestBase {
 		ExecMode platformOld = setExecMode(instType);
 
 		try {
-			setOutputBuffering(true);
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
 			String HOME = SCRIPT_DIR + TEST_DIR;

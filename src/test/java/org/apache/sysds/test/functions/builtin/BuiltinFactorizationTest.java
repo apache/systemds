@@ -59,17 +59,18 @@ public class BuiltinFactorizationTest extends AutomatedTestBase
 	public void testGNMFNoRewritesCP() {
 		runFactorizationTest(TEST_NAME1, false, ExecType.CP);
 	}
-	
-	@Test
-	public void testGNMFRewritesSpark() {
-		runFactorizationTest(TEST_NAME1, true, ExecType.SPARK);
-	}
 
-	@Test
-	public void testGNMFNoRewritesSpark() {
-		runFactorizationTest(TEST_NAME1, false, ExecType.SPARK);
-	}
-	
+// Note: too expensive in forced spark mode (lazy evaluation across iterations)
+//	@Test
+//	public void testGNMFRewritesSpark() {
+//		runFactorizationTest(TEST_NAME1, true, ExecType.SPARK);
+//	}
+//
+//	@Test
+//	public void testGNMFNoRewritesSpark() {
+//		runFactorizationTest(TEST_NAME1, false, ExecType.SPARK);
+//	}
+//	
 	@Test
 	public void testPNMFRewritesCP() {
 		runFactorizationTest(TEST_NAME2, true, ExecType.CP);

@@ -84,7 +84,6 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 	@SuppressWarnings("unused")
 	public void testGaussianClassifier(int rows, int cols, double sparsity, int classes)
 	{
-		setOutputBuffering(true);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";

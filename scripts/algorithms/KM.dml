@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 #  
-# THIS SCRIPT ANALIZES SURVIVAL DATA USING KAPLAN-MEIER ESTIMATES 
+# THIS SCRIPT ANALYZES SURVIVAL DATA USING KAPLAN-MEIER ESTIMATES
 #
 # INPUT   PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -41,7 +41,7 @@
 # etype   String   "greenwood"  Parameter to specify the error type according to "greenwood" (the default) or "peto"
 # ctype   String   "log"        Parameter to modify the confidence interval; "plain" keeps the lower and upper bound of 
 #								the confidence interval unmodified,	"log" (the default) corresponds to logistic transformation and 
-#								"log-log" corresponds to the complementary log-log transformation 
+#								"log-log" corresponds to the complementary log-log transformation
 # ttype   String   "none"   	If survival data for multiple groups is available specifies which test to perform for comparing 
 #								survival data across multiple groups: "none" (the default) "log-rank" or "wilcoxon" test   
 # fmt     String   "text"       The output format of results of the Kaplan-Meier analysis, such as "text" or "csv"
@@ -419,7 +419,7 @@ parfor (s in 1:num_strata, check = 0) {
 				KM[1:n_time,KM_offset + 7] = CI_r;				
 			}			
 						
-			######## ESTIMATE MEDIAN OF SERVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
+			######## ESTIMATE MEDIAN OF SURVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
 		
 			p_5 = (surv <= 0.5); 
 			pn_5 = sum (p_5);
@@ -479,8 +479,7 @@ parfor (s in 1:num_strata, check = 0) {
 			M_cols[M_offset,1] = 0;
 		}		
 	}
-	
-			
+
 	######## COMPARISON BETWEEN DIFFERENT GROUPS USING LOG-RANK OR WILCOXON TEST
 		
 	if (num_groups > 1 & test_type != "none") {
@@ -504,7 +503,7 @@ parfor (s in 1:num_strata, check = 0) {
 			EXP[g + 1, s] = sum(E);
 		}
 		
-		# parfor (i1 in 0:(num_groups - 2), check = 0) {
+
 		for (i1 in 0:(num_groups - 2), check = 0) {
 		
 			n_risk = n_risk_n_event_stratum[,1 + i1 * 2]; 

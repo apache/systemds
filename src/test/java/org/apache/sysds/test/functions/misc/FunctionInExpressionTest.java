@@ -89,7 +89,6 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	
 	private void runFunInExpressionTest( String testName )
 	{
-		setOutputBuffering(true);
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		
@@ -106,6 +105,5 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		//compare results
 		double val = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 		Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -13));
-		setOutputBuffering(false);
 	}
 }

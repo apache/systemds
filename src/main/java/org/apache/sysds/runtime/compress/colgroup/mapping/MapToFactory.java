@@ -23,47 +23,47 @@ import java.io.DataInput;
 import java.io.IOException;
 
 public class MapToFactory {
-    public static IMapToData create(int size, int numTuples) {
-        if(numTuples <= 1)
-            return new MapToBit(size);
-        else if(numTuples <= 256)
-            return new MapToByte(size);
-        else if(numTuples <= Character.MAX_VALUE)
-            return new MapToChar(size);
-        else
-            return new MapToInt(size);
-    }
+	public static IMapToData create(int size, int numTuples) {
+		if(numTuples <= 1)
+			return new MapToBit(size);
+		else if(numTuples <= 256)
+			return new MapToByte(size);
+		else if(numTuples <= Character.MAX_VALUE)
+			return new MapToChar(size);
+		else
+			return new MapToInt(size);
+	}
 
-    public static long estimateInMemorySize(int size, int numTuples) {
-        if(numTuples <= 1)
-            return MapToBit.getInMemorySize(size);
-        else if(numTuples <= 256)
-            return MapToByte.getInMemorySize(size);
-        else if(numTuples <= Character.MAX_VALUE)
-            return MapToChar.getInMemorySize(size);
-        else
-            return MapToInt.getInMemorySize(size);
-    }
+	public static long estimateInMemorySize(int size, int numTuples) {
+		if(numTuples <= 1)
+			return MapToBit.getInMemorySize(size);
+		else if(numTuples <= 256)
+			return MapToByte.getInMemorySize(size);
+		else if(numTuples <= Character.MAX_VALUE)
+			return MapToChar.getInMemorySize(size);
+		else
+			return MapToInt.getInMemorySize(size);
+	}
 
-    public static IMapToData readIn(int size, DataInput in, int numTuples) throws IOException {
-        if(numTuples <= 1)
-            return new MapToBit(size).readFields(in);
-        else if(numTuples <= 255)
-            return new MapToByte(size).readFields(in);
-        else if(numTuples <= Character.MAX_VALUE)
-            return new MapToChar(size).readFields(in);
-        else
-            return new MapToInt(size).readFields(in);
-    }
+	public static IMapToData readIn(int size, DataInput in, int numTuples) throws IOException {
+		if(numTuples <= 1)
+			return new MapToBit(size).readFields(in);
+		else if(numTuples <= 255)
+			return new MapToByte(size).readFields(in);
+		else if(numTuples <= Character.MAX_VALUE)
+			return new MapToChar(size).readFields(in);
+		else
+			return new MapToInt(size).readFields(in);
+	}
 
-    public static long getExactSizeOnDisk(int size, int numTuples) {
-        if(numTuples <= 1)
-            return 4 + size / 8 + (size % 8 > 1 ? 1 : 0);
-        else if(numTuples <= 256)
-            return size;
-        else if(numTuples <= Character.MAX_VALUE)
-            return size * 2;
-        else
-            return size * 4;
-    }
+	public static long getExactSizeOnDisk(int size, int numTuples) {
+		if(numTuples <= 1)
+			return 4 + size / 8 + (size % 8 > 1 ? 1 : 0);
+		else if(numTuples <= 256)
+			return size;
+		else if(numTuples <= Character.MAX_VALUE)
+			return size * 2;
+		else
+			return size * 4;
+	}
 }

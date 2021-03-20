@@ -161,7 +161,6 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	
 	private void runFunctionNamespaceTest(String TEST_NAME)
 	{
-		setOutputBuffering(true);
 		getAndLoadTestConfiguration(TEST_NAME);
 		
 		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
@@ -184,7 +183,6 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		finally {
 			System.setErr(origStdErr);
 		}
-		setOutputBuffering(false);
 	}
 
 	private void runFunctionNoInliningNamespaceTest(String TEST_NAME, boolean IPA)

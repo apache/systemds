@@ -84,8 +84,7 @@ public class FunctionInliningTest extends AutomatedTestBase
 	}
 
 	private void runInliningTest( String testname, boolean IPA )
-	{	
-		setOutputBuffering(true);
+	{
 		boolean oldIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
@@ -118,15 +117,12 @@ public class FunctionInliningTest extends AutomatedTestBase
 			Assert.assertEquals("Unexpected number of executed Spark instructions.", 
 				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			Assert.fail("Failed to run test: "+ex.getMessage());
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldIPA;
 		}
-		setOutputBuffering(false);
 	}
 	
 }

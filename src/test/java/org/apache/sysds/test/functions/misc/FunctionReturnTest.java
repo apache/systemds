@@ -58,8 +58,6 @@ public class FunctionReturnTest extends AutomatedTestBase
 	}
 
 	private void runFunctionReturnTest( String testname, boolean IPA ) {
-
-		setOutputBuffering(true);
 		boolean oldIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 		try {
@@ -75,7 +73,5 @@ public class FunctionReturnTest extends AutomatedTestBase
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldIPA;
 		}
-
-		setOutputBuffering(false);
 	}
 }

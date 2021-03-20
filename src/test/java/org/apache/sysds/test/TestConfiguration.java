@@ -47,125 +47,124 @@ public class TestConfiguration
 	private HashMap<String, String> variables = new HashMap<>();
 
 	/**
-     * <p>
-     *  Creates a new test configuration with the name of the test script and the output files which are produced by
-     *  the test.
-     * </p>
-     * 
-     * @param testScript test script
-     * @param outputFiles output files
-     * @deprecated use TestConfiguration(String, String, String[]) instead
-     */
-    @Deprecated
-    public TestConfiguration(String testScript, String[] outputFiles) {
-        this.testScript = testScript;
-        this.outputFiles = outputFiles;
-    }
-    
-    /**
-     * <p>
-     *  Creates a new test configuration with the directory where the test data can be found, the name of the test
-     *  script and the output files which are produced by the test.
-     * </p>
-     * 
-     * @param testDirectory test directory
-     * @param testScript test script
-     * @param outputFiles output files
-     */
-    public TestConfiguration(String testDirectory, String testScript, String[] outputFiles) {
-        this.testDirectory = testDirectory;
-        this.testScript = testScript;
-        this.outputFiles = outputFiles;
-    }
-    
-    /**
-     * <p>
-     *  Creates a new test configuration with the directory where the test data can be found and the name of the test
-     *  script.
-     * </p>
-     * 
-     * @param testDirectory test directory
-     * @param testScript test script
-     */
-    public TestConfiguration(String testDirectory, String testScript) {
-    	this.testDirectory = testDirectory;
-    	this.testScript = testScript;
-    }
-    
-    /**
-     * <p>Adds a variable to the test configuration.</p>
-     * 
-     * @param variableName variable name
-     * @param variableValue variable value
-     */
-    public void addVariable(String variableName, String variableValue) {
-        variables.put(variableName, variableValue);
-    }
-    
-    /**
-     * <p>Adds a variable to the test configuration.</p>
-     * 
-     * @param variableName variable name
-     * @param variableValue variable value
-     */
-    public void addVariable(String variableName, Boolean variableValue) {
-        variables.put(variableName, variableValue.toString());
-    }
+	 * <p>
+	 *  Creates a new test configuration with the name of the test script and the output files which are produced by
+	 *  the test.
+	 * </p>
+	 * 
+	 * @param testScript test script
+	 * @param outputFiles output files
+	 * @deprecated use TestConfiguration(String, String, String[]) instead
+	 */
+	@Deprecated
+	public TestConfiguration(String testScript, String[] outputFiles) {
+		this.testScript = testScript;
+		this.outputFiles = outputFiles;
+	}
+	
+	/**
+	 * <p>
+	 *  Creates a new test configuration with the directory where the test data can be found, the name of the test
+	 *  script and the output files which are produced by the test.
+	 * </p>
+	 * 
+	 * @param testDirectory test directory
+	 * @param testScript test script
+	 * @param outputFiles output files
+	 */
+	public TestConfiguration(String testDirectory, String testScript, String[] outputFiles) {
+		this.testDirectory = testDirectory;
+		this.testScript = testScript;
+		this.outputFiles = outputFiles;
+	}
+	
+	/**
+	 * <p>
+	 *  Creates a new test configuration with the directory where the test data can be found and the name of the test
+	 *  script.
+	 * </p>
+	 * 
+	 * @param testDirectory test directory
+	 * @param testScript test script
+	 */
+	public TestConfiguration(String testDirectory, String testScript) {
+		this.testDirectory = testDirectory;
+		this.testScript = testScript;
+	}
+	
+	/**
+	 * <p>Adds a variable to the test configuration.</p>
+	 * 
+	 * @param variableName variable name
+	 * @param variableValue variable value
+	 */
+	public void addVariable(String variableName, String variableValue) {
+		variables.put(variableName, variableValue);
+	}
+	
+	/**
+	 * <p>Adds a variable to the test configuration.</p>
+	 * 
+	 * @param variableName variable name
+	 * @param variableValue variable value
+	 */
+	public void addVariable(String variableName, Boolean variableValue) {
+		variables.put(variableName, variableValue.toString());
+	}
 
-    /**
-     * <p>Adds a variable to the test configuration.</p>
-     * 
-     * @param variableName variable name
-     * @param variableValue variable value
-     */
-    public void addVariable(String variableName, double variableValue) {
-    	variables.put(variableName, TestUtils.getStringRepresentationForDouble(variableValue));
-    }
-    
-    /**
-     * <p>Adds a variable to the test configuration.</p>
-     * 
-     * @param variableName variable name
-     * @param variableValue variable value
-     */
-    public void addVariable(String variableName, long variableValue) {
-        variables.put(variableName, Long.toString(variableValue));
-    }
-    
-    /**
-     * <p>Provides the directory which contains the test data.</p>
-     * 
-     * @return test directory
-     */
-    public String getTestDirectory() {
-        return testDirectory;
-    }
-    
-    /**
-     * <p>Provides the name of the test script.</p>
-     * 
-     * @return test script name
-     */
-    public String getTestScript() {
-        return testScript;
-    }
-    
-    /**
-     * <p>Provides the list of specified output files for the test.</p>
-     * 
-     * @return output files
-     */
-    public String[] getOutputFiles() {
-        return outputFiles;
-    }
-    
-    /**
-     * <p>Provides the list of the specified variables with their replacements.</p>
-     * 
-     * @return variables
-     */
-    public HashMap<String, String> getVariables() {
-        return variables;
-    }
-    
+	/**
+	 * <p>Adds a variable to the test configuration.</p>
+	 * 
+	 * @param variableName variable name
+	 * @param variableValue variable value
+	 */
+	public void addVariable(String variableName, double variableValue) {
+		variables.put(variableName, TestUtils.getStringRepresentationForDouble(variableValue));
+	}
+	
+	/**
+	 * <p>Adds a variable to the test configuration.</p>
+	 * 
+	 * @param variableName variable name
+	 * @param variableValue variable value
+	 */
+	public void addVariable(String variableName, long variableValue) {
+		variables.put(variableName, Long.toString(variableValue));
+	}
+	
+	/**
+	 * <p>Provides the directory which contains the test data.</p>
+	 * 
+	 * @return test directory
+	 */
+	public String getTestDirectory() {
+		return testDirectory;
+	}
+	
+	/**
+	 * <p>Provides the name of the test script.</p>
+	 * 
+	 * @return test script name
+	 */
+	public String getTestScript() {
+		return testScript;
+	}
+	
+	/**
+	 * <p>Provides the list of specified output files for the test.</p>
+	 * 
+	 * @return output files
+	 */
+	public String[] getOutputFiles() {
+		return outputFiles;
+	}
+	
+	/**
+	 * <p>Provides the list of the specified variables with their replacements.</p>
+	 * 
+	 * @return variables
+	 */
+	public HashMap<String, String> getVariables() {
+		return variables;
+	}
 }

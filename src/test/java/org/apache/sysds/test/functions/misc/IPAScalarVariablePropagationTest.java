@@ -60,9 +60,7 @@ public class IPAScalarVariablePropagationTest extends AutomatedTestBase
 	 * @param IPA
 	 */
 	private void runIPAScalarVariablePropagationTest( String testname, boolean IPA )
-	{	
-
-		setOutputBuffering(true);
+	{
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
@@ -89,7 +87,5 @@ public class IPAScalarVariablePropagationTest extends AutomatedTestBase
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
-
-		setOutputBuffering(false);
-	}	
+	}
 }

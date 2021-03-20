@@ -238,7 +238,7 @@ public class ToStringTest extends AutomatedTestBase {
 								"3 1 5.000\n" +
 								"3 2 6.000\n" +
 								"3 3 7.000\n";
-								
+		
 		addTestConfiguration(testName, new TestConfiguration(TEST_CLASS_DIR, testName));
 		toStringTestHelper(ExecMode.SINGLE_NODE, testName, expectedOutput);
 	}
@@ -248,30 +248,26 @@ public class ToStringTest extends AutomatedTestBase {
 		
 		rtplatform = platform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == ExecMode.SPARK)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-        try {
-            // Create and load test configuration
-        	getAndLoadTestConfiguration(testName);
-            String HOME = SCRIPT_DIR + TEST_DIR;
-            fullDMLScriptName = HOME + testName + ".dml";
-            programArgs = new String[]{"-args", output(OUTPUT_NAME)};
+		if (rtplatform == ExecMode.SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		try {
+			// Create and load test configuration
+			getAndLoadTestConfiguration(testName);
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + testName + ".dml";
+			programArgs = new String[]{"-args", output(OUTPUT_NAME)};
 
+			// Run DML and R scripts
+			runTest(true, false, null, -1);
 
-            // Run DML and R scripts
-            runTest(true, false, null, -1);
-
-            // Compare output strings
-            String output = TestUtils.readDMLString(output(OUTPUT_NAME));
-            TestUtils.compareScalars(expectedOutput, output);
-           
-        }
-        finally {
-            // Reset settings
-            rtplatform = platformOld;
-            DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-        }
+			// Compare output strings
+			String output = TestUtils.readDMLString(output(OUTPUT_NAME));
+			TestUtils.compareScalars(expectedOutput, output);
+		}
+		finally {
+			// Reset settings
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
 	}
-	
-
 }

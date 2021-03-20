@@ -122,7 +122,6 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 	
 	private void runIPAFunInlineTest( String testName, boolean IPA )
 	{
-		setOutputBuffering(true);
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
@@ -163,6 +162,5 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
-		setOutputBuffering(false);
 	}
 }

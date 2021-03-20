@@ -76,7 +76,6 @@ public class BuiltinLogSumExpTest extends AutomatedTestBase
 	private void runlogSumExpTest(String axis, ExecType instType)
 	{
 		ExecMode platformOld = setExecMode(instType);
-		setOutputBuffering(false);
 		try
 		{
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

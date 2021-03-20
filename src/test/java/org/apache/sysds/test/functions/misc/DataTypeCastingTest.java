@@ -30,12 +30,8 @@ import org.apache.sysds.test.TestConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- *   
- */
 public class DataTypeCastingTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + DataTypeCastingTest.class.getSimpleName() + "/";
 	
@@ -87,16 +83,15 @@ public class DataTypeCastingTest extends AutomatedTestBase
 	 */
 	private void runTest( String testName, boolean matrixInput, Class<?> exceptionClass ) 
 	{
-		setOutputBuffering(true);
 		String TEST_NAME = testName;
 		int numVals = (exceptionClass != null ? 7 : 1);
 		
 		try
-		{		
+		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);	
 			loadTestConfiguration(config);
-   
-		    String HOME = SCRIPT_DIR + TEST_DIR;
+
+			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", input("V"), 
 				Integer.toString(numVals), Integer.toString(numVals),
@@ -105,7 +100,7 @@ public class DataTypeCastingTest extends AutomatedTestBase
 			//write input
 			double[][] V = getRandomMatrix(numVals, numVals, 0, 1, 1.0, 7);
 			if( matrixInput ){
-				writeInputMatrix("V", V, false);	
+				writeInputMatrix("V", V, false);
 			}
 			else{
 				HDFSTool.writeDoubleToHDFS(V[0][0], input("V"));
@@ -113,28 +108,26 @@ public class DataTypeCastingTest extends AutomatedTestBase
 			}
 			
 			//run tests
-	        runTest(true, exceptionClass != null, exceptionClass, -1);
-	        
-	        if( exceptionClass == null ){
-		        //read output
-		        double ret = -1;
-		        if( testName.equals(TEST_NAME2) ){
-		        	HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-		        	ret = dmlfile.get(new CellIndex(1,1));		
-		        }
+			runTest(true, exceptionClass != null, exceptionClass, -1);
+	
+			if( exceptionClass == null ){
+				//read output
+				double ret = -1;
+				if( testName.equals(TEST_NAME2) ){
+					HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+					ret = dmlfile.get(new CellIndex(1,1));
+				}
 				else if( testName.equals(TEST_NAME1) ){
 					HashMap<CellIndex, Double> dmlfile = readDMLScalarFromOutputDir("R");
 					ret = dmlfile.get(new CellIndex(1,1));
 				}
-		        
-		        //compare results
-		        Assert.assertEquals(V[0][0], ret, 1e-16);
-	        }
+		
+				//compare results
+				Assert.assertEquals(V[0][0], ret, 1e-16);
+			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
-		setOutputBuffering(false);
 	}
 }

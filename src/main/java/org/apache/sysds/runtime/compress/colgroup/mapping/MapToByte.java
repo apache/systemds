@@ -28,60 +28,57 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToByte implements IMapToData {
 
-    private byte[] _data;
+	private byte[] _data;
 
-    public MapToByte(int size) {
-        _data = new byte[size];
-    }
+	public MapToByte(int size) {
+		_data = new byte[size];
+	}
 
-    @Override
-    public int getIndex(int n) {
-        return _data[n] & 0xFF;
-    }
+	@Override
+	public int getIndex(int n) {
+		return _data[n] & 0xFF;
+	}
 
-    @Override
-    public void fill(int v) {
-        Arrays.fill(_data, (byte) v);
-    }
+	@Override
+	public void fill(int v) {
+		Arrays.fill(_data, (byte) v);
+	}
 
-    @Override
-    public long getInMemorySize() {
-        return getInMemorySize(_data.length);
-    }
+	@Override
+	public long getInMemorySize() {
+		return getInMemorySize(_data.length);
+	}
 
-    public static long getInMemorySize(int dataLength) {
-        long size = 16; // object header
-        size += MemoryEstimates.byteArrayCost(dataLength);
-        return size;
-    }
+	public static long getInMemorySize(int dataLength) {
+		long size = 16; // object header
+		size += MemoryEstimates.byteArrayCost(dataLength);
+		return size;
+	}
 
-    @Override
-    public void set(int n, int v) {
-        _data[n] = (byte) v;
-    }
+	@Override
+	public void set(int n, int v) {
+		_data[n] = (byte) v;
+	}
 
-    @Override
-    public void write(DataOutput out) throws IOException {
+	@Override
+	public void write(DataOutput out) throws IOException {
 
-        for(int i = 0; i < _data.length; i++)
-            out.writeByte(_data[i]);
-    }
+		for(int i = 0; i < _data.length; i++)
+			out.writeByte(_data[i]);
+	}
 
-    @Override
-    public MapToByte readFields(DataInput in) throws IOException {
-        for(int i = 0; i < _data.length; i++)
-            _data[i] = in.readByte();
-        return this;
-    }
-
+	@Override
+	public MapToByte readFields(DataInput in) throws IOException {
+		for(int i = 0; i < _data.length; i++)
+			_data[i] = in.readByte();
+		return this;
+	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-        sb.append("\nDataLength: " + this._data.length);
-        sb.append(Arrays.toString(this._data));
+		sb.append("\nDataLength: " + this._data.length);
+		sb.append(Arrays.toString(this._data));
 		return sb.toString();
 	}
-
-
 }

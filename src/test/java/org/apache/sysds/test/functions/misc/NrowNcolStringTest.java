@@ -69,24 +69,21 @@ public class NrowNcolStringTest extends AutomatedTestBase
 	 */
 	private void runNxxStringTest( String testName ) 
 	{
-		setOutputBuffering(true);
 		String TEST_NAME = testName;
 		
 		try
 		{	
 			//test configuration
 			getAndLoadTestConfiguration(TEST_NAME);
-		    String HOME = SCRIPT_DIR + TEST_DIR;
+			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", "100", "10"};
 			
 			//run tests
-	        runTest(true, false, null, -1);
+			runTest(true, false, null, -1);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
-		setOutputBuffering(false);
 	}
 }

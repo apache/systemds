@@ -96,7 +96,6 @@ public class ListAppendRemove extends AutomatedTestBase
 	
 	private void runListAppendRemove(String testname, ExecType type, boolean rewrites, boolean conditional)
 	{
-		setOutputBuffering(true);
 		Types.ExecMode platformOld = setExecMode(type);
 		boolean rewriteOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
@@ -133,6 +132,5 @@ public class ListAppendRemove extends AutomatedTestBase
 			rtplatform = platformOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewriteOld;
 		}
-		setOutputBuffering(false);
 	}
 }

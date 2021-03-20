@@ -160,7 +160,6 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 	
 	private void runEmptyMatrixTest( String testname, boolean rewrites, boolean emptyRet, ExecType et )
 	{
-		setOutputBuffering(true);
 		ExecMode platformOld = rtplatform;
 		switch( et ){
 			case SPARK: rtplatform = ExecMode.SPARK; break;
@@ -206,6 +205,5 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-		setOutputBuffering(false);
 	}
 }

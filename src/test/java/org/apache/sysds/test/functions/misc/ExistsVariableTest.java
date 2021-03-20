@@ -63,7 +63,6 @@ public class ExistsVariableTest extends AutomatedTestBase
 	}
 	
 	private void runExistsTest(String testName, boolean pos) {
-		setOutputBuffering(true);
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -79,6 +78,5 @@ public class ExistsVariableTest extends AutomatedTestBase
 		val = (val!=null) ? val : 0;
 		Assert.assertTrue("Wrong result: "+param+" vs "+val,
 			val==Double.parseDouble(param));
-		setOutputBuffering(false);
 	}
 }

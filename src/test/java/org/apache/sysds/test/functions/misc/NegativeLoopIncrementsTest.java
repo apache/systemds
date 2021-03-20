@@ -91,7 +91,6 @@ public class NegativeLoopIncrementsTest extends AutomatedTestBase
 	
 	private void runNegativeLoopIncrementsTest( String testname, boolean vect, boolean multiStep )
 	{
-		setOutputBuffering(true);
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
@@ -119,6 +118,5 @@ public class NegativeLoopIncrementsTest extends AutomatedTestBase
 			
 		//check meta data
 		checkDMLMetaDataFile("R", new MatrixCharacteristics(1,1,1,1));
-		setOutputBuffering(false);
 	}
 }

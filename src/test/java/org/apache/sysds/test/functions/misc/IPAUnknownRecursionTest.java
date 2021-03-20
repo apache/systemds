@@ -62,8 +62,7 @@ public class IPAUnknownRecursionTest extends AutomatedTestBase
 	 * @param IPA
 	 */
 	private void runIPAUnknownRecursionTest( boolean IPA )
-	{	
-		setOutputBuffering(true);
+	{
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
@@ -92,6 +91,5 @@ public class IPAUnknownRecursionTest extends AutomatedTestBase
 		{
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
-		setOutputBuffering(false);
-	}	
+	}
 }

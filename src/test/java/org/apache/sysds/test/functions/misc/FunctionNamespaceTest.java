@@ -187,7 +187,6 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 
 	private void runFunctionNoInliningNamespaceTest(String TEST_NAME, boolean IPA)
 	{
-		setOutputBuffering(true);
 		boolean origIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -230,6 +229,5 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 			System.setErr(originalStdErr);
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = origIPA;
 		}
-		setOutputBuffering(false);
 	}
 }

@@ -197,7 +197,7 @@ public class CLALibLeftMultBy {
 							colGroups.size(), false));
 					else {
 						int row = thatCGs.get(i).getColIndices()[0];
-						tasks.add(new leftMultByCompressedTransposedMatrixTask(colGroups, thatCGs, ret, v, thatV, row,
+						tasks.add(new LeftMultByCompressedTransposedMatrixTask2(colGroups, thatCGs, ret, v, thatV, row,
 							row + 1, overlapping, 1));
 					}
 				}
@@ -868,7 +868,7 @@ public class CLALibLeftMultBy {
 		}
 	}
 
-	private static class leftMultByCompressedTransposedMatrixTask implements Callable<Object> {
+	private static class LeftMultByCompressedTransposedMatrixTask2 implements Callable<Object> {
 		private final List<AColGroup> _groups;
 		private final List<AColGroup> _thatGroups;
 		private final MatrixBlock _ret;
@@ -879,7 +879,7 @@ public class CLALibLeftMultBy {
 		private final boolean _overlapping;
 		private final int _extraThreads;
 
-		protected leftMultByCompressedTransposedMatrixTask(List<AColGroup> thisGroups, List<AColGroup> thatGroups,
+		protected LeftMultByCompressedTransposedMatrixTask2(List<AColGroup> thisGroups, List<AColGroup> thatGroups,
 			MatrixBlock ret, Pair<Integer, int[]> v, Pair<Integer, int[]> thatV, int rl, int ru, boolean overlapping,
 			int extraThreads) {
 			_groups = thisGroups;

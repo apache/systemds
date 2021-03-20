@@ -68,7 +68,6 @@ public class CleaningTest extends AutomatedTestBase {
 	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
 		boolean weightedAccuracy, Types.ExecMode et) {
 
-		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"scripts/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {

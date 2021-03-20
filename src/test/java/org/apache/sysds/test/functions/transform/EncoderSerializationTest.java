@@ -117,7 +117,7 @@ public class EncoderSerializationTest extends AutomatedTestBase
 		}
 	}
 
-	private Encoder serializeDeserialize(Encoder encoderIn) {
+	private static Encoder serializeDeserialize(Encoder encoderIn) {
 		try {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			ObjectOutputStream oos = new ObjectOutputStream(bos);

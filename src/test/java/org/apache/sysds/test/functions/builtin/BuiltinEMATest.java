@@ -166,14 +166,10 @@ public class BuiltinEMATest extends AutomatedTestBase {
 		runTest(f, ExecType.CP,  100, "triple", 4, 0.5, 0.5, 0.5, na_ma_ref, e);
 	}
 
-	private double calcRMSE(Double[] list1, Double[] list2) {
+	private static double calcRMSE(Double[] list1, Double[] list2) {
 		double sum = 0;
-
 		for(int i =0; i< list1.length; i++)
-		{
 			sum += Math.pow(list1[i] - list2[i], 2);
-		}
-
 		return Math.sqrt(sum / list1.length);
 	}
 

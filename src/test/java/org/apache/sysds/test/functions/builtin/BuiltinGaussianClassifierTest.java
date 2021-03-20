@@ -81,6 +81,7 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 		testGaussianClassifier(80, 30, 0.3, 10);
 	}
 
+	@SuppressWarnings("unused")
 	public void testGaussianClassifier(int rows, int cols, double sparsity, int classes)
 	{
 		setOutputBuffering(true);

@@ -80,11 +80,11 @@ public class MemoryEstimateTest {
 				break;
 			case INT:
 				int[] arrayInt = new int[length];
-				assertEquals(MemoryEstimates.intArrayCost(length), measure(arrayInt));
+				assertEquals((long)MemoryEstimates.intArrayCost(length), measure(arrayInt));
 				break;
 			case DOUBLE:
 				double[] arrayDouble = new double[length];
-				assertEquals(MemoryEstimates.doubleArrayCost(length), measure(arrayDouble));
+				assertEquals((long)MemoryEstimates.doubleArrayCost(length), measure(arrayDouble));
 				break;
 			default:
 				System.out.println(arrayToMeasure.getClass().getSimpleName());

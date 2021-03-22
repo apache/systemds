@@ -155,6 +155,15 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public abstract void reset(int rlen, int[] odims, double v);
 	
+	
+	public static double estimateMemory(long nrows, long ncols){
+		long size = 16; // object
+		size += 4; // int
+		size += 4; // padding
+		size += MemoryEstimates.intArrayCost(1); // odims typically 1
+		size += 8; // pointer to reuse that is typically null;
+		return size;
+	}
 
 	/**
 	 * Set the dimensions of the dense MatrixBlock.
@@ -674,14 +683,5 @@ public abstract class DenseBlock implements Serializable
 			ret[i-1] = prod;
 		}
 		return ret;
-	}
-
-	public static long estimateSizeDenseInMemory(int nRows, int nCols){
-		long size = 16; // object
-		size += 4; // int
-		size += 4; // padding
-		size += MemoryEstimates.intArrayCost(1); // odims typically 1
-		size += 8; // pointer to reuse that is typically null;
-		return size;
 	}
 }

@@ -65,6 +65,13 @@ public class DenseBlockFP64 extends DenseBlockDRB
 		_rlen = rlen;
 		_odims = odims;
 	}
+	
+	public static double estimateMemory(long nrows, long ncols) {
+		if( (double)nrows + ncols > Long.MAX_VALUE )
+			return Long.MAX_VALUE;
+		return DenseBlock.estimateMemory(nrows, ncols)
+			+ MemoryEstimates.doubleArrayCost(nrows * ncols);
+	}
 
 	@Override
 	public long capacity() {
@@ -192,11 +199,5 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	@Override
 	public long getLong(int[] ix) {
 		return UtilFunctions.toLong(_data[pos(ix)]);
-	}
-	
-	public static long estimateSizeDenseInMemory(int nRows, int nCols){
-		long size = DenseBlock.estimateSizeDenseInMemory(nRows, nCols);// pointer to reuse that is typically null;
-		size += MemoryEstimates.doubleArrayCost(nRows * nCols);
-		return size;
 	}
 }

@@ -97,15 +97,15 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static long intArrayCost(int length) {
-		long size = 0;
+	public static double intArrayCost(long length) {
+		double size = 0;
 		size += 8; // _ptr int[] reference
 		size += 20; // int array Object header
 		if(length <= 1) {
 			size += 4;
 		}
 		else {
-			size += length * 4; // offsets 4 bytes per int
+			size += 4d * length; // offsets 4 bytes per int
 			if(length % 2 == 0) {
 				size += 4;
 			}
@@ -119,12 +119,12 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static long doubleArrayCost(int length) {
-		long size = 0;
+	public static double doubleArrayCost(long length) {
+		double size = 0;
 		size += 8; // _values double array reference
 		size += 20; // double array object header
 		size += 4; // padding inside double array object to align to 8 bytes.
-		size += 8 * length; // Each double fills 8 Bytes
+		size += 8d * length; // Each double fills 8 Bytes
 		return size;
 	}
 
@@ -134,7 +134,7 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static long objectArrayCost(int length) {
+	public static long objectArrayCost(long length) {
 		long size = 0;
 		size += 8; // reference to array
 		size += 20; // header
@@ -149,7 +149,7 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static long longArrayCost(int length) {
+	public static double longArrayCost(int length) {
 		return doubleArrayCost(length);
 		// exactly the same size as a double array
 	}

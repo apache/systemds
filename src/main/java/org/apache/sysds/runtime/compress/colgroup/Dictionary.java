@@ -63,7 +63,7 @@ public class Dictionary extends ADictionary {
 
 	protected static long getInMemorySize(int valuesCount) {
 		// object + values array
-		return 16 + MemoryEstimates.doubleArrayCost(valuesCount);
+		return 16 + (long)MemoryEstimates.doubleArrayCost(valuesCount);
 	}
 
 	@Override

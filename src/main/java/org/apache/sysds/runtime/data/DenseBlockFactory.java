@@ -112,4 +112,11 @@ public abstract class DenseBlockFactory
 		return (dblock instanceof DenseBlockDRB) ? DenseBlock.Type.DRB :
 			(dblock instanceof DenseBlockLDRB) ? DenseBlock.Type.LDRB : null;
 	}
+
+	public static double estimateSizeDenseInMemory(long nrows, long ncols) {
+		// estimating the size of a dense matrix by the basic block estimate
+		// is a good approximation as for large, partitioned dense blocks, the
+		// array headers are in the noise and can be ignored
+		return DenseBlockFP64.estimateMemory(nrows, ncols);
+	}
 }

@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.TernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TsmmFEDInstruction;
 
 import java.util.HashMap;
@@ -46,18 +47,25 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uacsqk+" , FEDType.AggregateUnary );
+		String2FEDInstructionType.put( "uavar"   , FEDType.AggregateUnary);
+		String2FEDInstructionType.put( "uarvar"  , FEDType.AggregateUnary);
+		String2FEDInstructionType.put( "uacvar"  , FEDType.AggregateUnary);
 
 		// Arithmetic Instruction Opcodes
 		String2FEDInstructionType.put( "+" , FEDType.Binary );
 		String2FEDInstructionType.put( "-" , FEDType.Binary );
 		String2FEDInstructionType.put( "*" , FEDType.Binary );
 		String2FEDInstructionType.put( "/" , FEDType.Binary );
+		String2FEDInstructionType.put( "1-*" , FEDType.Binary); //special * case
 
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2FEDInstructionType.put( "r'"     , FEDType.Reorg );
 		String2FEDInstructionType.put( "rdiag"  , FEDType.Reorg );
 		String2FEDInstructionType.put( "rshape" , FEDType.Reorg );
 
+		// Ternary Instruction Opcodes
+		String2FEDInstructionType.put( "+*" , FEDType.Ternary);
+		String2FEDInstructionType.put( "-*" , FEDType.Ternary);
 	}
 
 	public static FEDInstruction parseSingleInstruction (String str ) {
@@ -86,6 +94,8 @@ public class FEDInstructionParser extends InstructionParser
 				return TsmmFEDInstruction.parseInstruction(str);
 			case Binary:
 				return BinaryFEDInstruction.parseInstruction(str);
+			case Ternary:
+				return TernaryFEDInstruction.parseInstruction(str);
 			case Reorg:
 				return ReorgFEDInstruction.parseInstruction(str);
 			default:

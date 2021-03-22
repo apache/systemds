@@ -1033,16 +1033,78 @@ public class InstructionUtils
 		parts[parts.length-1] = newName;
 		return concatOperands(parts);
 	}
-	
+
+	/**
+	 * Concat the inputs as operands to generate the instruction string.
+	 * The inputs are separated by the operand delimiter and appended
+	 * using a ThreadLocal StringBuilder.
+	 * @param inputs operand inputs given as strings
+	 * @return the instruction string with the given inputs concatenated
+	 */
 	public static String concatOperands(String... inputs) {
-		return concatOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+		concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+		return _strBuilders.get().toString();
 	}
-	
+
+	/**
+	 * Concat the input parts with the value type delimiter.
+	 * @param inputs input operand parts as strings
+	 * @return concatenated input parts
+	 */
 	public static String concatOperandParts(String... inputs) {
-		return concatOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
+		concatBaseOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
+		return _strBuilders.get().toString();
 	}
-	
-	private static String concatOperandsWithDelim(String delim, String... inputs) {
+
+	/**
+	 * Concat the inputs as operands to generate the base instruction string.
+	 * The base instruction string can subsequently be extended with the
+	 * concatAdditional methods. The concatenation will be done using a
+	 * ThreadLocal StringBuilder, so the concatenation is local to the thread.
+	 * When all additional operands have been appended, the complete instruction
+	 * string can be retrieved by calling the getInstructionString method.
+	 * @param inputs operand inputs given as strings
+	 */
+	public static void concatBaseOperands(String... inputs){
+		concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+	}
+
+	/**
+	 * Concat input as an additional operand to the current thread-local base instruction string.
+	 * @param input operand input given as string
+	 */
+	public static void concatAdditionalOperand(String input){
+		StringBuilder sb = _strBuilders.get();
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(input);
+	}
+
+	/**
+	 * Concat inputs as additional operands to the current thread-local base instruction string.
+	 * @param inputs operand inputs given as strings
+	 */
+	public static void concatAdditionalOperands(String... inputs){
+		concatOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+	}
+
+	/**
+	 * Returns the current thread-local instruction string.
+	 * This instruction string is built using the concat methods.
+	 * @return instruction string
+	 */
+	public static String getInstructionString(){
+		return _strBuilders.get().toString();
+	}
+
+	private static void concatOperandsWithDelim(String delim, String... inputs){
+		StringBuilder sb = _strBuilders.get();
+		for( int i=0; i<inputs.length; i++ ) {
+			sb.append(delim);
+			sb.append(inputs[i]);
+		}
+	}
+
+	private static void concatBaseOperandsWithDelim(String delim, String... inputs){
 		StringBuilder sb = _strBuilders.get();
 		sb.setLength(0); //reuse allocated space
 		for( int i=0; i<inputs.length-1; i++ ) {
@@ -1050,7 +1112,6 @@ public class InstructionUtils
 			sb.append(delim);
 		}
 		sb.append(inputs[inputs.length-1]);
-		return sb.toString();
 	}
 	
 	public static String concatStrings(String... inputs) {

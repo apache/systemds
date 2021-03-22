@@ -20,12 +20,15 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.Objects;
+import java.util.concurrent.Future;
 
 import com.sun.tools.javac.util.List;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -33,8 +36,9 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
 public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
-	private TernaryFEDInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str) {
-		super(FEDInstruction.FEDType.Ternary, op, in1, in2, in3, out, opcode, str);
+	private TernaryFEDInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+		String opcode, String str, boolean federatedOutput) {
+		super(FEDInstruction.FEDType.Ternary, op, in1, in2, in3, out, opcode, str, federatedOutput);
 	}
 
 	public static TernaryFEDInstruction parseInstruction(String str) {
@@ -44,8 +48,10 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		CPOperand operand2 = new CPOperand(parts[2]);
 		CPOperand operand3 = new CPOperand(parts[3]);
 		CPOperand outOperand = new CPOperand(parts[4]);
-		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode);
-		return new TernaryFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, str);
+		int numThreads = parts.length>5 ? Integer.parseInt(parts[5]) : 1;
+		boolean federatedOutput = parts.length > 6 && parts[6].equals("true");
+		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode, numThreads);
+		return new TernaryFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, str, federatedOutput);
 	}
 
 	@Override
@@ -87,9 +93,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
 	private void processMatrixScalarInput(ExecutionContext ec, MatrixObject mo1, CPOperand in) {
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, new CPOperand[] {in}, new long[] {mo1.getFedMapping().getID()});
-		mo1.getFedMapping().execute(getTID(), true, fr1);
-
-		setOutputFedMapping(ec, mo1, fr1.getID());
+		sendFederatedRequests(ec, mo1, fr1.getID(), fr1);
 	}
 
 	private void process2MatrixScalarInput(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, CPOperand in1, CPOperand in2) {
@@ -112,19 +116,95 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 			varNewIn = new long[]{fr1[0].getID(), mo1.getFedMapping().getID()};
 		}
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, varOldIn, varNewIn);
-		FederatedRequest fr3;
 
 		// 2 aligned inputs
 		if(fr1 == null) {
-			mo1.getFedMapping().execute(getTID(), true, fr2);
+			sendFederatedRequests(ec, mo1, fr2.getID(), fr2);
 		} else {
 			if(cleanupIn) {
-				fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
-			} else
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
+				sendFederatedRequests(ec, mo1, fr2.getID(), fr1, fr2, fr3);
+			}
+			else
+				sendFederatedRequests(ec, mo1, fr2.getID(), fr1, fr2);
 		}
-		setOutputFedMapping(ec, mo1, fr2.getID());
+	}
+
+	/**
+	 * Send federated requests and retrieve output if federated output flag is set.
+	 * @param ec execution context
+	 * @param fedMapObj matrix object with federated mapping where federated requests are sent to.
+	 * @param fedOutputID ID of federated output
+	 * @param federatedRequests federated requests for processing instruction
+	 */
+	private void sendFederatedRequests(ExecutionContext ec, MatrixObject fedMapObj, long fedOutputID,
+		FederatedRequest... federatedRequests){
+		sendFederatedRequests(ec, fedMapObj, fedOutputID, null, null, federatedRequests);
+	}
+
+	/**
+	 * Send federated requests and retrieve output if federated output flag is set.
+	 * @param ec execution context
+	 * @param fedMapObj matrix object with federated mapping where federated requests are sent to.
+	 * @param fedOutputID ID of federated output
+	 * @param federatedSlices federated requests for broadcasting slices before processing instruction
+	 * @param federatedRequests federated requests for processing instruction
+	 */
+	private void sendFederatedRequests(ExecutionContext ec, MatrixObject fedMapObj, long fedOutputID,
+		FederatedRequest[] federatedSlices, FederatedRequest... federatedRequests){
+		sendFederatedRequests(ec, fedMapObj, fedOutputID, federatedSlices, null, federatedRequests);
+	}
+
+	/**
+	 * Send federated requests and retrieve output if federated output flag is set.
+	 * @param ec execution context
+	 * @param fedMapObj matrix object with federated mapping where federated requests are sent to.
+	 * @param fedOutputID ID of federated output
+	 * @param federatedSlices1 federated requests for broadcasting slices before processing instruction
+	 * @param federatedSlices2 federated requests for broadcasting slices before processing instruction
+	 * @param federatedRequests federated requests for processing instruction
+	 */
+	private void sendFederatedRequests(ExecutionContext ec, MatrixObject fedMapObj, long fedOutputID,
+		FederatedRequest[] federatedSlices1, FederatedRequest[] federatedSlices2, FederatedRequest... federatedRequests){
+		if ( _federatedOutput ){
+			fedMapObj.getFedMapping().execute(getTID(), true, federatedSlices1, federatedSlices2, federatedRequests);
+			setOutputFedMapping(ec, fedMapObj, fedOutputID);
+		} else {
+			processAndRetrieve(ec, fedMapObj, fedOutputID, federatedSlices1, federatedSlices2, federatedRequests);
+		}
+	}
+
+	/**
+	 * Process instruction and get output from federated workers.
+	 * @param ec execution context
+	 * @param fedMapObj matrix object with federated mapping where federated requests are sent to.
+	 * @param fedOutputID ID of federated output
+	 * @param federatedSlices1 federated requests for broadcasting slices before processing instruction
+	 * @param federatedSlices2 federated requests for broadcasting slices before processing instruction
+	 * @param federatedRequests federated requests for processing instruction
+	 */
+	private void processAndRetrieve(ExecutionContext ec, MatrixObject fedMapObj, long fedOutputID,
+		FederatedRequest[] federatedSlices1, FederatedRequest[] federatedSlices2, FederatedRequest... federatedRequests){
+		FederatedRequest getRequest = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fedOutputID);
+		Future<FederatedResponse>[] executionResponse = fedMapObj.getFedMapping().execute(
+			getTID(), true, federatedSlices1, federatedSlices2, collectRequests(federatedRequests, getRequest));
+		ec.setMatrixOutput(output.getName(), FederationUtils.bind(executionResponse,
+			fedMapObj.isFederated(FederationMap.FType.COL)));
+	}
+
+	/**
+	 * Collect federated requests into a single array of federated requests.
+	 * The federated requests are added in the same order as the parameters of this method.
+	 * @param fedRequests array of federated requests
+	 * @param fedRequest1 federated request to occur after array
+	 * @return federated requests collected in a single array
+	 */
+	private FederatedRequest[] collectRequests(FederatedRequest[] fedRequests, FederatedRequest fedRequest1){
+		FederatedRequest[] allRequests = new FederatedRequest[fedRequests.length + 1];
+		for ( int i = 0; i < fedRequests.length; i++ )
+			allRequests[i] = fedRequests[i];
+		allRequests[allRequests.length-1] = fedRequest1;
+		return allRequests;
 	}
 
 	private void processMatrixInput(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
@@ -139,13 +219,13 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		if(retAlignedValues._allAligned) {
 			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
 				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()});
-			mo1.getFedMapping().execute(getTID(), fr3);
+			sendFederatedRequests(ec, mo1, fr3.getID(), fr3);
 		}
 		// 2 fed aligned inputs
 		else if(retAlignedValues._twoAligned) {
 			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, retAlignedValues._vars);
 			fr4 = mo1.getFedMapping().cleanup(getTID(), retAlignedValues._fr[0].getID());
-			mo1.getFedMapping().execute(getTID(), true, retAlignedValues._fr, fr3, fr4);
+			sendFederatedRequests(ec, mo1, fr3.getID(), retAlignedValues._fr, fr3, fr4);
 		}
 		// 1 fed input or not aligned
 		else {
@@ -169,11 +249,8 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
 			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, vars);
 			fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2[0].getID());
-			mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
+			sendFederatedRequests(ec, mo1, fr3.getID(), fr1, fr2, fr3, fr4);
 		}
-
-		//derive new fed mapping for output
-		setOutputFedMapping(ec, mo1, fr3.getID());
 	}
 
 	/**
@@ -225,9 +302,14 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		}
 	}
 
+	/**
+	 * Set fed mapping of output. The data characteristics are not set.
+	 * @param ec execution context
+	 * @param fedMapObj federated matrix object from which federated mapping is derived
+	 * @param fedOutputID ID for the fed mapping of output
+	 */
 	private void setOutputFedMapping(ExecutionContext ec, MatrixObject fedMapObj, long fedOutputID) {
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(fedMapObj.getDataCharacteristics());
 		out.setFedMapping(fedMapObj.getFedMapping().copyWithNewID(fedOutputID));
 	}
 }

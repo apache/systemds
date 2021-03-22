@@ -29,6 +29,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
+@net.jcip.annotations.NotThreadSafe
 public class FederatedLmCGTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "lmCGFederated";

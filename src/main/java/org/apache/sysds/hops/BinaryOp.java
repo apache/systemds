@@ -224,6 +224,8 @@ public class BinaryOp extends MultiThreadedHop
 				constructLopsBinaryDefault();
 		}
 
+		setFederatedOutput(getLops());
+
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
 
@@ -464,7 +466,6 @@ public class BinaryOp extends MultiThreadedHop
 						op, getDataType(), getValueType(), et,
 						OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 
-				setFederatedOutput(binary);
 				setOutputDimensions(binary);
 				setLineNumbers(binary);
 				setLops(binary);

@@ -25,7 +25,7 @@ import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.ValueType;
-
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 /**
  * Lop to perform Sum of a matrix with another matrix multiplied by Scalar.
@@ -59,25 +59,19 @@ public class Ternary extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output)  {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _op.toString() );
-		
-		//process three operands and output
-		String[] inputs = new String[]{input1, input2, input3};
-		for( int i=0; i<3; i++ ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(i).prepInputOperand(inputs[i]) );
+		InstructionUtils.concatOperands(
+			getExecType().name(),
+			_op.toString(),
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			getInputs().get(2).prepInputOperand(input3),
+			prepOutputOperand(output)
+		);
+		if( (getExecType() == ExecType.CP || getExecType() == ExecType.FED ) && getDataType().isMatrix() ){
+			InstructionUtils.concatAdditionalOperand(String.valueOf(_numThreads));
+			if ( federatedOutput )
+				InstructionUtils.concatAdditionalOperand(String.valueOf(federatedOutput));
 		}
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
-		
-		if( getExecType() == ExecType.CP && getDataType().isMatrix() ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-		}
-		
-		return sb.toString();
+		return InstructionUtils.getInstructionString();
 	}
 }

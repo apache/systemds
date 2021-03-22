@@ -39,6 +39,8 @@ import java.util.Collection;
 public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/privacy/";
 	private final static String TEST_NAME = "FederatedMultiplyPlanningTest";
+	private final static String TEST_NAME_2 = "FederatedMultiplyPlanningTest2";
+	private final static String TEST_NAME_3 = "FederatedMultiplyPlanningTest3";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -51,6 +53,8 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_2, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_3, new String[] {"Z.scalar"}));
 	}
 
 	@Parameterized.Parameters
@@ -64,7 +68,19 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	@Test
 	public void federatedMultiplyCP() {
 		OptimizerUtils.FEDERATED_COMPILATION = true;
-		federatedMultiply(Types.ExecMode.SINGLE_NODE);
+		federatedTwoMatricesSingleNodeTest(TEST_NAME);
+	}
+
+	@Test
+	public void federatedRowSum(){
+		OptimizerUtils.FEDERATED_COMPILATION = true;
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_2);
+	}
+
+	@Test
+	public void federatedTernarySequence(){
+		OptimizerUtils.FEDERATED_COMPILATION = true;
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_3);
 	}
 
 	private void writeStandardMatrix(String matrixName, long seed){
@@ -75,7 +91,11 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.PrivateAggregation));
 	}
 
-	public void federatedMultiply(Types.ExecMode execMode) {
+	public void federatedTwoMatricesSingleNodeTest(String testName){
+		federatedTwoMatricesTest(Types.ExecMode.SINGLE_NODE, testName);
+	}
+
+	public void federatedTwoMatricesTest(Types.ExecMode execMode, String testName) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -83,7 +103,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 
-		getAndLoadTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(testName);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		// Write input matrices
@@ -97,11 +117,11 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
 
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+		TestConfiguration config = availableTestConfigurations.get(testName);
 		loadTestConfiguration(config);
 
 		// Run actual dml script with federated matrix
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		fullDMLScriptName = HOME + testName + ".dml";
 		programArgs = new String[] {"-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
@@ -111,7 +131,59 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		OptimizerUtils.FEDERATED_COMPILATION = false;
 
 		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		fullDMLScriptName = HOME + testName + "Reference.dml";
+		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
+			"Y2=" + input("Y2"), "Z=" + expected("Z")};
+		runTest(true, false, null, -1);
+
+		// compare via files
+		compareResults(1e-9);
+		heavyHittersContainsString("fed_*", "fed_ba+*");
+
+		TestUtils.shutdownThreads(t1, t2);
+
+		rtplatform = platformOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+	}
+
+	public void federatedThreeMatricesTest(Types.ExecMode execMode, String testName) {
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		Types.ExecMode platformOld = rtplatform;
+		rtplatform = execMode;
+		if(rtplatform == Types.ExecMode.SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		}
+
+		getAndLoadTestConfiguration(testName);
+		String HOME = SCRIPT_DIR + TEST_DIR;
+
+		// Write input matrices
+		writeStandardMatrix("X1", 42);
+		writeStandardMatrix("X2", 1340);
+		writeStandardMatrix("Y1", 44);
+		writeStandardMatrix("Y2", 21);
+		writeStandardMatrix("W1", 55);
+
+		int port1 = getRandomAvailablePort();
+		int port2 = getRandomAvailablePort();
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
+		Thread t2 = startLocalFedWorkerThread(port2);
+
+		TestConfiguration config = availableTestConfigurations.get(testName);
+		loadTestConfiguration(config);
+
+		// Run actual dml script with federated matrix
+		fullDMLScriptName = HOME + testName + ".dml";
+		programArgs = new String[] {"-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
+		runTest(true, false, null, -1);
+
+		OptimizerUtils.FEDERATED_COMPILATION = false;
+
+		// Run reference dml script with normal matrix
+		fullDMLScriptName = HOME + testName + "Reference.dml";
 		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
 			"Y2=" + input("Y2"), "Z=" + expected("Z")};
 		runTest(true, false, null, -1);

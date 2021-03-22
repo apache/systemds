@@ -59,6 +59,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		_direction = idx;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
+		updateETFed();
 	}
 
 	@Override
@@ -151,13 +152,15 @@ public class AggUnaryOp extends MultiThreadedHop
 					agg1 = new PartialAggregate(input.constructLops(),
 							_op, _direction, getDataType(),getValueType(), et, k);
 				}
-				
+
 				setOutputDimensions(agg1);
 				setLineNumbers(agg1);
 				setLops(agg1);
 				
 				if (getDataType() == DataType.SCALAR) {
 					agg1.getOutputParameters().setDimensions(1, 1, getBlocksize(), getNnz());
+				} else {
+					setFederatedOutput(agg1);
 				}
 			}
 			else if( et == ExecType.SPARK )

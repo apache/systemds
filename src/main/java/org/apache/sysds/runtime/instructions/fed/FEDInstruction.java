@@ -38,6 +38,7 @@ public abstract class FEDInstruction extends Instruction {
 		MMChain,
 		MatrixIndexing,
 		Ternary,
+		Tsmm,
 		ParameterizedBuiltin,
 		Quaternary,
 		QSort,
@@ -45,7 +46,6 @@ public abstract class FEDInstruction extends Instruction {
 		Reorg,
 		Reshape,
 		SpoofFused,
-		Tsmm,
 		Unary
 	}
 

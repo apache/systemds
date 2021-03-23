@@ -2427,10 +2427,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static long getHeaderSize() {
 		// basic variables and references sizes
 		long size = 16; // header
-		size += 12; // ints
-		size += 1; // boolean
+		size += 12; // 3 x ints (rlen, clen, ennz/row)
+		size += 1; // boolean (sparse)
 		size += 3; // padding
-		size += 8 * 2; // object references
+		size += 8; // nonZeros
+		size += 2 * 8; // object references
 		return size;
 	}
 	
@@ -2462,8 +2463,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, SparseBlock.Type stype) {
-		double size = getHeaderSize()
-			+ SparseBlockFactory.estimateSizeSparseInMemory(stype, nrows, ncols, sparsity);
+		double size = getHeaderSize() + ((sparsity == 0) ? 0 : //allocated on demand
+			SparseBlockFactory.estimateSizeSparseInMemory(stype, nrows, ncols, sparsity));
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
@@ -2618,7 +2619,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public long getInMemorySize() {
 		//in-memory size given by header if not allocated
 		if( !isAllocated() ) 
-			return 44;
+			return getHeaderSize();
 		//in-memory size of dense/sparse representation
 		return !sparse ? estimateSizeDenseInMemory(rlen, clen) :
 			estimateSizeSparseInMemory(rlen, clen, getSparsity(),

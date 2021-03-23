@@ -100,8 +100,9 @@ public class SparseBlockMCSR extends SparseBlock
 	 * @return memory estimate
 	 */
 	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity) {
-		double cnnz = Math.max(SparseRowVector.initialCapacity, Math.ceil(sparsity*ncols));
-		double rlen = Math.min(nrows, Math.ceil(sparsity*nrows*ncols));
+		double nnz = Math.ceil(sparsity*nrows*ncols);
+		double rlen = Math.min(nrows, nnz); // num sparse row objects
+		double cnnz = Math.max(SparseRowVector.initialCapacity, nnz/rlen);
 		
 		//Each sparse row has a fixed overhead of 16B (object) + 12B (3 ints),
 		//24B (int array), 24B (double array), i.e., in total 76B
@@ -111,11 +112,12 @@ public class SparseBlockMCSR extends SparseBlock
 		double size = 16; //object
 		size += MemoryEstimates.objectArrayCost((long)rlen); //references
 		long sparseRowSize = 16; // object
-		sparseRowSize += MemoryEstimates.intArrayCost((long)cnnz);
-		sparseRowSize += MemoryEstimates.doubleArrayCost((long)cnnz);
 		sparseRowSize += 4*4; // 3 integers + padding
+		sparseRowSize += MemoryEstimates.intArrayCost(0);
+		sparseRowSize += MemoryEstimates.doubleArrayCost(0);
+		sparseRowSize += 12*Math.max(1, cnnz); //avoid bias by down cast for ultra-sparse
 		size += rlen * sparseRowSize; //sparse rows
-		
+
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}

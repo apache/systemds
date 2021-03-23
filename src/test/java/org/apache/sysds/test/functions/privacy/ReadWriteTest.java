@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.privacy;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.FileInputStream;
@@ -69,7 +70,7 @@ public class ReadWriteTest extends AutomatedTestBase {
 		writeA();
 		
 		MetaDataAll metadata = getMetaData("a", "in/");
-		assertTrue(metadata.containsParam(DataExpression.FINE_GRAINED_PRIVACY));
+		assertNotNull(metadata.getFineGrainedPrivacy());
 	}
 
 	@Test
@@ -88,7 +89,7 @@ public class ReadWriteTest extends AutomatedTestBase {
 		compareResults(1e-9);
 
 		MetaDataAll metadata = getMetaData("b");
-		assertTrue(metadata.containsParam(DataExpression.FINE_GRAINED_PRIVACY));
+		assertNotNull(metadata.getFineGrainedPrivacy());
 	}
 
 	@Test
@@ -99,7 +100,7 @@ public class ReadWriteTest extends AutomatedTestBase {
 		writeA();
 
 		MetaDataAll metadata = getMetaData("a", "in/");
-		assertTrue(metadata.containsParam(DataExpression.FINE_GRAINED_PRIVACY));
+		assertNotNull(metadata.getFineGrainedPrivacy());
 
 		PrivacyConstraint expectedPC = new PrivacyConstraint();
 		setFineGrained(expectedPC);
@@ -115,7 +116,7 @@ public class ReadWriteTest extends AutomatedTestBase {
 		writeA();
 
 		MetaDataAll metadata = getMetaData("a", "in/");
-		assertTrue(metadata.containsParam(DataExpression.FINE_GRAINED_PRIVACY));
+		assertNotNull(metadata.getFineGrainedPrivacy());
 
 		PrivacyConstraint expectedPC = new PrivacyConstraint();
 		setFineGrained(expectedPC);

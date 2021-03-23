@@ -1060,7 +1060,7 @@ public class DataExpression extends DataIdentifier
 			boolean isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.CSV.toString()));
 			
 			if (shouldReadMTD){
-				configObj = new MetaDataAll(mtdFileName, conditional);
+				configObj = new MetaDataAll(mtdFileName, conditional, false);
 				if (configObj.mtdExists()){
 					_varParams = configObj.parseMetaDataFileParameters(mtdFileName, conditional, _varParams);
 					inferredFormatType = true;
@@ -2301,7 +2301,7 @@ public class DataExpression extends DataIdentifier
 	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional) 
 	{
 		// Check the MTD file exists. if there is an MTD file, return false.
-		MetaDataAll mtdObject = new MetaDataAll(mtdFileName, conditional);
+		MetaDataAll mtdObject = new MetaDataAll(mtdFileName, conditional, false);
 		if (mtdObject.mtdExists())
 			return false;
 		
@@ -2326,10 +2326,10 @@ public class DataExpression extends DataIdentifier
 	
 	public String checkHasDelimitedFormat(String filename, boolean conditional) {
 		// if the MTD file exists, check the format is not binary
-		MetaDataAll mtdObject = new MetaDataAll(filename + ".mtd", conditional);
+		MetaDataAll mtdObject = new MetaDataAll(filename + ".mtd", conditional, true);
 		if (mtdObject.mtdExists())
-			if( FileFormat.isDelimitedFormat(mtdObject._formatTypeString) )
-				return mtdObject._formatTypeString;
+			if( FileFormat.isDelimitedFormat(mtdObject.getFormatTypeString()) )
+				return mtdObject.getFormatTypeString();
 		return null;
 		// The file format must be specified either in .mtd file or in read() statement
 		// Therefore, one need not actually read the data to infer the format.

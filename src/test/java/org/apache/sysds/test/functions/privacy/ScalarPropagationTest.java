@@ -74,7 +74,7 @@ public class ScalarPropagationTest extends AutomatedTestBase
 		assertEquals("Values mismatch: DMLvalue " + dmlvalue + " != ExpectedValue " + roundScalar, 
 			roundScalar, dmlvalue, 0.001);
 
-		String actualPrivacyValue = readDMLMetaDataValueCatchException("scalar", "out/", DataExpression.PRIVACY);
+		String actualPrivacyValue = readDMLMetaDataPrivacyValueCatchException("scalar", "out/", DataExpression.PRIVACY);
 		assertEquals(String.valueOf(PrivacyLevel.Private), actualPrivacyValue);
 	}
 
@@ -132,11 +132,11 @@ public class ScalarPropagationTest extends AutomatedTestBase
 			expectedScalar, actualScalar, 0.001);
 
 		if ( expectedPrivacyLevel != PrivacyLevel.None ){
-			String actualPrivacyValue = readDMLMetaDataValueCatchException("scalar", "out/", DataExpression.PRIVACY);
+			String actualPrivacyValue = readDMLMetaDataPrivacyValueCatchException("scalar", "out/", DataExpression.PRIVACY);
 			assertEquals(String.valueOf(expectedPrivacyLevel), actualPrivacyValue);
 		} else {
 			MetaDataAll meta = getMetaData("scalar", "out/");
-			assertFalse( "Metadata found for output scalar with privacy constraint set, but input privacy level is none", meta.mtdExists() && meta.getParam(DataExpression.PRIVACY) != null );
+			assertFalse( "Metadata found for output scalar with privacy constraint set, but input privacy level is none", meta.mtdExists() && meta.getPrivacy() != null );
 		}
 	}
 

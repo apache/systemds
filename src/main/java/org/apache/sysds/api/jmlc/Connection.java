@@ -363,7 +363,7 @@ public class Connection implements Closeable
 		try {
 			//read json meta data 
 			String fnamemtd = DataExpression.getMTDFileName(fname);
-			MetaDataAll metaObj = new MetaDataAll(fnamemtd, false);
+			MetaDataAll metaObj = new MetaDataAll(fnamemtd, false, true);
 			
 			//parse meta data
 			long rows = metaObj.getDim1();
@@ -606,7 +606,7 @@ public class Connection implements Closeable
 			//read json meta data 
 			String fnamemtd = DataExpression.getMTDFileName(fname);
 
-			MetaDataAll metaObj = new MetaDataAll(fnamemtd, false);
+			MetaDataAll metaObj = new MetaDataAll(fnamemtd, false, true);
 
 			//parse meta data
 			long rows = metaObj.getDim1();

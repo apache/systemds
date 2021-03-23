@@ -37,139 +37,30 @@ import org.apache.sysds.parser.Expression;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.parser.StringIdentifier;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 public class MetaDataAll extends DataIdentifier {
-//	private static final Log LOG = LogFactory.getLog(DataExpression.class.getName());
-//
-//	public static final String RAND_DIMS = "dims";
-//
-//	public static final String RAND_ROWS = "rows";
-//	public static final String RAND_COLS = "cols";
-//	public static final String RAND_MIN = "min";
-//	public static final String RAND_MAX = "max";
-//	public static final String RAND_SPARSITY = "sparsity";
-//	public static final String RAND_SEED = "seed";
-//	public static final String RAND_PDF = "pdf";
-//	public static final String RAND_LAMBDA = "lambda";
-//
-//	public static final String RAND_PDF_UNIFORM = "uniform";
-//
-//	public static final String RAND_BY_ROW = "byrow";
-//	public static final String RAND_DIMNAMES = "dimnames";
-//	public static final String RAND_DATA = "data";
-//
-//	public static final String IO_FILENAME = "iofilename";
-//	public static final String READROWPARAM = "rows";
-//	public static final String READCOLPARAM = "cols";
-//	public static final String READNNZPARAM = "nnz";
-//
-//	public static final String SQL_CONN = "conn";
-//	public static final String SQL_USER = "user";
-//	public static final String SQL_PASS = "password";
-//	public static final String SQL_QUERY = "query";
-//
-//	public static final String FED_ADDRESSES = "addresses";
-//	public static final String FED_RANGES = "ranges";
-//	public static final String FED_TYPE = "type";
-//
-//	public static final String FORMAT_TYPE = "format";
-//
-//	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
-//	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
-//	public static final String DATATYPEPARAM = "data_type";
-//	public static final String VALUETYPEPARAM = "value_type";
-//	public static final String DESCRIPTIONPARAM = "description";
-//	public static final String AUTHORPARAM = "author";
-//	public static final String SCHEMAPARAM = "schema";
-//	public static final String CREATEDPARAM = "created";
-//
-//	public static final String PRIVACY = "privacy";
-//	public static final String FINE_GRAINED_PRIVACY = "fine_grained_privacy";
-//
-//	// Parameter names relevant to reading/writing delimited/csv files
-//	public static final String DELIM_DELIMITER = "sep";
-//	public static final String DELIM_HAS_HEADER_ROW = "header";
-//	public static final String DELIM_FILL = "fill";
-//	public static final String DELIM_FILL_VALUE = "default";
-//	public static final String DELIM_NA_STRINGS = "naStrings";
-//	public static final String DELIM_NA_STRING_SEP = "\u00b7";
-//
-//
-//	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
-//
-//	/** Valid parameter names in metadata file */
-//	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =new HashSet<>(
-//		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM,
-//			FORMAT_TYPE, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM,
-//			VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM, AUTHORPARAM, CREATEDPARAM,
-//			// Parameters related to delimited/csv files.
-//			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
-//			// Parameters related to privacy
-//			PRIVACY, FINE_GRAINED_PRIVACY));
-//
-//	/** Valid parameter names in arguments to read instruction */
-//	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
-//		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM,
-//			VALUETYPEPARAM, SCHEMAPARAM, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
-//			// Parameters related to delimited/csv files.
-//			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS));
-//
-//	/* Default Values for delimited (CSV/LIBSVM) files */
-//	public static final String  DEFAULT_DELIM_DELIMITER = ",";
-//	public static final boolean DEFAULT_DELIM_HAS_HEADER_ROW = false;
-//	public static final boolean DEFAULT_DELIM_FILL = true;
-//	public static final double  DEFAULT_DELIM_FILL_VALUE = 0.0;
-//	public static final boolean DEFAULT_DELIM_SPARSE = false;
-//	public static final String  DEFAULT_NA_STRINGS = "";
-//	public static final String  DEFAULT_SCHEMAPARAM = "NULL";
-//
-//	private Expression.DataOp _opcode;
-//	private HashMap<String, Expression> _varParams;
-//	private boolean _strInit = false; //string initialize
-//	private boolean _checkMetadata = true; // local skip meta data reads
 
-	// TODO add
 	private JSONObject _metaObj;
 
-	public String _formatTypeString;
+	protected String _formatTypeString;
+	protected String _fineGrainedPrivacy;
+	protected String _delim;
+	protected String _schema;
 
-//
-//	//csv
-//	private String _delimiter = null;
-//
-//	public int _rowsInBlock;
-//	public int _colsInBlock;
-//
-//	public Types.DataType _dataType;
-//	public Types.ValueType _valueType;
-//	public String _schema;
-//
-//	public boolean _header;
-//	public boolean _sparse;
-//	public boolean _fill;
-//
-//	public String _privacy;
 
 	public MetaDataAll() {
 		// do nothing
 	}
 
-	public MetaDataAll(String mtdFileName, boolean conditional) {
+	public MetaDataAll(String mtdFileName, boolean conditional, boolean parseMeta) {
 		_metaObj = readMetadataFile(mtdFileName, conditional);
-		setFormatTypeString(null);
-
-		//TODO parse the most important params
-	}
-
-	public void setFormatTypeString(String format) {
-		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;
-		if( Types.FileFormat.isDelimitedFormat(this._formatTypeString) )
-			this.setFileFormat(Types.FileFormat.safeValueOf(_formatTypeString));
+		if(parseMeta)
+			parseMetaDataParams();
 	}
 
 	public JSONObject readMetadataFile(String filename, boolean conditional)
@@ -219,10 +110,42 @@ public class MetaDataAll extends DataIdentifier {
 		return retVal;
 	}
 
-	public boolean mtdExists() { return _metaObj != null; }
+	private void parseMetaDataParams()
+	{
+		for( Object obj : _metaObj.entrySet() ){
+			Map.Entry<Object,Object> e = (Map.Entry<Object, Object>) obj;
+			Object key = e.getKey();
+			Object val = e.getValue();
 
-	public JSONObject getMetaObject() { return _metaObj; }
+			boolean isValidName = DataExpression.READ_VALID_MTD_PARAM_NAMES.contains(key);
 
+			if (!isValidName){ //wrong parameters always rejected
+				raiseValidateError("MTD file " + " contains invalid parameter name: " + key, false);
+			}
+
+			parseMetaDataParam(key, val);
+
+			if(_format == null)
+				setFormatTypeString(null);
+		}
+	}
+
+	private void parseMetaDataParam(Object key, Object val)
+	{
+		switch(key.toString()) {
+			case DataExpression.READROWPARAM: _dim1 = (Integer) val; break;
+			case DataExpression.READCOLPARAM: _dim2 = (Integer) val; break;
+			case DataExpression.ROWBLOCKCOUNTPARAM: setBlocksize((Integer) val); break;
+			case DataExpression.READNNZPARAM: setNnz((Integer) val); break;
+			case DataExpression.FORMAT_TYPE: setFormatTypeString((String) val); break;
+			case DataExpression.DATATYPEPARAM: setDataType(Types.DataType.valueOf(((String) val).toUpperCase())); break;
+			case DataExpression.VALUETYPEPARAM: setValueType(Types.ValueType.fromExternalString((String) val)); break;
+			case DataExpression.PRIVACY: setPrivacy(PrivacyConstraint.PrivacyLevel.valueOf((String) val)); break;
+			case DataExpression.FINE_GRAINED_PRIVACY:  setFineGrainedPrivacy(val.toString()); break;
+			case DataExpression.DELIM_DELIMITER: setDelim(val.toString()); break;
+			case DataExpression.SCHEMAPARAM: setSchema(val.toString()); break;
+		}
+	}
 
 	@SuppressWarnings("unchecked")
 	public HashMap<String, Expression> parseMetaDataFileParameters(String mtdFileName, boolean conditional, HashMap<String, Expression> varParams)
@@ -237,6 +160,8 @@ public class MetaDataAll extends DataIdentifier {
 			if (!isValidName){ //wrong parameters always rejected
 				raiseValidateError("MTD file " + mtdFileName + " contains invalid parameter name: " + key, false);
 			}
+
+			parseMetaDataParam(key, val);
 
 			// if the read method parameter is a constant, then verify value matches MTD metadata file
 			if (varParams.get(key.toString()) != null && (varParams.get(key.toString()) instanceof ConstIdentifier)
@@ -320,33 +245,47 @@ public class MetaDataAll extends DataIdentifier {
 					}
 				}
 			}
+
+			if(_format == null)
+				setFormatTypeString(null);
 		}
 		return varParams;
-
-
-//		//parse json meta data
-//		long rows = jmtd.getLong(DataExpression.READROWPARAM);
-//		long cols = jmtd.getLong(DataExpression.READCOLPARAM);
-//		int blen = jmtd.containsKey(DataExpression.ROWBLOCKCOUNTPARAM)?
-//			jmtd.getInt(DataExpression.ROWBLOCKCOUNTPARAM) : -1;
-//		long nnz = jmtd.containsKey(DataExpression.READNNZPARAM)?
-//			jmtd.getLong(DataExpression.READNNZPARAM) : -1;
-//		String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-//		Types.FileFormat fmt = Types.FileFormat.safeValueOf(format);
 	}
 
-	public Object getParam(String key) {
-		try {
-			if(_metaObj.containsKey(key))
-				return _metaObj.get(key);
-		}
-		catch(JSONException e) {
-			e.printStackTrace();
-		}
-		return null;
+	public boolean mtdExists() { return _metaObj != null; }
+
+	public String getFormatTypeString() {
+		return _formatTypeString;
 	}
 
-	public boolean containsParam(String key) { return _metaObj.containsKey(key); }
+	public String getFineGrainedPrivacy() {
+		return _fineGrainedPrivacy;
+	}
+
+	public String getDelim() {
+		return _delim;
+	}
+	public String getSchema() {
+		return _schema;
+	}
+
+	public void setFineGrainedPrivacy(String fineGrainedPrivacy) {
+		this._fineGrainedPrivacy = fineGrainedPrivacy;
+	}
+
+	public void setSchema(String schema) {
+		this._schema = schema;
+	}
+
+	public void setDelim(String delim) {
+		this._delim = delim;
+	}
+
+	public void setFormatTypeString(String format) {
+		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;
+		if( Types.FileFormat.isDelimitedFormat(this._formatTypeString) )
+			this.setFileFormat(Types.FileFormat.safeValueOf(_formatTypeString));
+	}
 
 	public void addVarParam(String name, Expression value, HashMap<String, Expression> varParams) {
 		if (DMLScript.VALIDATOR_IGNORE_ISSUES && (value == null)) {
@@ -362,5 +301,4 @@ public class MetaDataAll extends DataIdentifier {
 		if (getEndColumn() == 0) setEndColumn(value.getEndColumn());
 		if (getText() == null) setText(value.getText());
 	}
-
 }

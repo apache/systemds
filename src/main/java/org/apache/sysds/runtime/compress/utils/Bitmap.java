@@ -34,8 +34,8 @@ public final class Bitmap extends ABitmap {
 	 */
 	private double[] _values;
 
-	public Bitmap(int numCols, IntArrayList[] offsetsLists, int numZeroGroups, double[] values) {
-		super(numCols, offsetsLists, numZeroGroups);
+	public Bitmap(int numCols, IntArrayList[] offsetsLists, double[] values, int rows) {
+		super(numCols, offsetsLists, rows);
 		_values = values;
 	}
 

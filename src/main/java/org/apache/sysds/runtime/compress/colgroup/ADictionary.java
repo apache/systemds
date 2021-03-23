@@ -23,6 +23,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.compress.utils.Bitmap;
+import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -79,7 +82,7 @@ public abstract class ADictionary {
 	/**
 	 * Aggregate all entries in the rows.
 	 * 
-	 * @param fn The aggregate function
+	 * @param fn   The aggregate function
 	 * @param nCol The number of columns contained in the dictionary.
 	 * @return Aggregates for this dictionary tuples.
 	 */
@@ -114,9 +117,7 @@ public abstract class ADictionary {
 
 	public ADictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes,
 		boolean left) {
-		return (left) ? applyBinaryRowOpLeft(fn, v, sparseSafe, colIndexes) : applyBinaryRowOpRight(fn,
-			v,
-			sparseSafe,
+		return (left) ? applyBinaryRowOpLeft(fn, v, sparseSafe, colIndexes) : applyBinaryRowOpRight(fn, v, sparseSafe,
 			colIndexes);
 	}
 
@@ -252,4 +253,22 @@ public abstract class ADictionary {
 	public abstract boolean containsValue(double pattern);
 
 	public abstract long getNumberNonZeros(int[] counts, int nCol);
+
+	/**
+	 * Copies and adds the dictionary entry from this dictionary to the d dictionary
+	 * 
+	 * @param d    the target dictionary
+	 * @param fr   the from index
+	 * @param to   the to index
+	 * @param nCol the number of columns
+	 */
+	public abstract void addToEntry(Dictionary d, int fr, int to, int nCol);
+
+
+	public static ADictionary getDictionary(ABitmap ubm){
+		if(ubm instanceof BitmapLossy)
+			return new QDictionary((BitmapLossy) ubm).makeDoubleDictionary();
+		else
+			return new Dictionary(((Bitmap) ubm).getValues());
+	}
 }

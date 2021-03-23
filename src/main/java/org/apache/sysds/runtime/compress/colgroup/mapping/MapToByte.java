@@ -28,10 +28,14 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToByte implements IMapToData {
 
-	private byte[] _data;
+	private final byte[] _data;
 
 	public MapToByte(int size) {
 		_data = new byte[size];
+	}
+
+	private MapToByte(byte[] data) {
+		_data = data;
 	}
 
 	@Override
@@ -56,29 +60,44 @@ public class MapToByte implements IMapToData {
 	}
 
 	@Override
+	public long getExactSizeOnDisk() {
+		return 4 + _data.length;
+	}
+
+	@Override
 	public void set(int n, int v) {
 		_data[n] = (byte) v;
 	}
 
 	@Override
-	public void write(DataOutput out) throws IOException {
+	public int size() {
+		return _data.length;
+	}
 
+	@Override
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(_data.length);
 		for(int i = 0; i < _data.length; i++)
 			out.writeByte(_data[i]);
 	}
 
-	@Override
-	public MapToByte readFields(DataInput in) throws IOException {
-		for(int i = 0; i < _data.length; i++)
-			_data[i] = in.readByte();
-		return this;
+	public static MapToByte readFields(DataInput in) throws IOException {
+		final int length = in.readInt();
+		final byte[] data = new byte[length];
+		for(int i = 0; i < length; i++)
+			data[i] = in.readByte();
+		return new MapToByte(data);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\nDataLength: " + this._data.length);
-		sb.append(Arrays.toString(this._data));
+		sb.append("[");
+		for(byte c : _data) {
+			sb.append((int) c);
+			sb.append(", ");
+		}
+		sb.append("]");
 		return sb.toString();
 	}
 }

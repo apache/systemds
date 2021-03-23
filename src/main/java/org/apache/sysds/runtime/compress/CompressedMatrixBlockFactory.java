@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
@@ -116,6 +117,7 @@ public class CompressedMatrixBlockFactory {
 			throw new DMLRuntimeException("Redundant compression, block already compressed.");
 		}
 		original = mb;
+		_stats.originalSize = original.getInMemorySize();
 		mb = new MatrixBlock().copyShallow(mb);
 
 		classifyPhase();
@@ -123,7 +125,9 @@ public class CompressedMatrixBlockFactory {
 			return abortCompression();
 		transposePhase();
 		compressPhase();
+		sharePhase();
 		cleanupPhase();
+
 		if(res == null)
 			return abortCompression();
 
@@ -139,9 +143,13 @@ public class CompressedMatrixBlockFactory {
 			_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 
 		logPhase();
-		// LOG.error(sizeInfos);
-		if(sizeInfos.isCompressible(original.getInMemorySize()))
+		long memoryEstimate = sizeInfos.memoryEstimate();
+		if(memoryEstimate < _stats.originalSize)
 			coCodePhase(sizeEstimator, sizeInfos, mb.getNumRows());
+		else{
+			LOG.info("Estimated Size of singleColGroups: " + memoryEstimate );
+			LOG.info("Original size                    : " + _stats.originalSize );
+		}
 	}
 
 	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos, int numRows) {
@@ -170,7 +178,7 @@ public class CompressedMatrixBlockFactory {
 				if(original.isInSparseFormat()) {
 					boolean isAboveRowNumbers = mb.getNumRows() > 500000;
 					boolean isAboveThreadToColumnRatio = coCodeColGroups.getNumberColGroups() > mb.getNumColumns() / 2;
-					compSettings.transposed = isAboveRowNumbers || isAboveThreadToColumnRatio;
+					compSettings.transposed = isAboveRowNumbers && isAboveThreadToColumnRatio;
 				}
 				else
 					compSettings.transposed = false;
@@ -185,13 +193,57 @@ public class CompressedMatrixBlockFactory {
 		logPhase();
 	}
 
+	private void sharePhase(){
+		// Combine Empty ColGroups.
+		List<ColGroupEmpty> e = new ArrayList<>();
+		// List<ColGroupConst> c = new ArrayList<>();
+		List<AColGroup> o = new ArrayList<>(); 
+		for(AColGroup g : res.getColGroups()){
+			if(g instanceof ColGroupEmpty)
+				e.add((ColGroupEmpty)g);
+			// else if( g instanceof ColGroupConst)
+			// 	c.add((ColGroupConst)g);
+			else
+				o.add(g);
+		}
+
+		if(!e.isEmpty())
+			o.add(combineEmpty(e));
+		// o.add(combineConst(c));
+
+		res.allocateColGroupList(o);
+		logPhase();
+	}
+
+	private AColGroup combineEmpty(List<ColGroupEmpty> e){
+		int numCols = 0;
+		for(ColGroupEmpty g : e){
+			numCols += g.getNumCols();
+		}
+
+		int[] resCols = new int[numCols];
+
+		int index = 0;
+		for(ColGroupEmpty g: e){
+			for(int c : g.getColIndices()){
+				resCols[index++] = c;
+			}
+		}
+
+		Arrays.sort(resCols);
+		return new ColGroupEmpty(resCols, e.get(0).getNumRows());
+	}
+
+	// private AColGroup combineConst(List<ColGroupConst> c){
+
+	// }
+
 	private void cleanupPhase() {
 
 		res.cleanupBlock(true, true);
 		mb.cleanupBlock(true, true);
 
 		_stats.size = res.estimateCompressedSizeInMemory();
-		_stats.originalSize = original.estimateSizeInMemory();
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(original.getNumRows(), original.getNumColumns(), 1.0);
 		_stats.ratio = _stats.originalSize / (double) _stats.size;
 
@@ -235,10 +287,10 @@ public class CompressedMatrixBlockFactory {
 					LOG.debug("--compression Hash collisions:" + DblArrayIntListHashMap.hashMissCount);
 					DblArrayIntListHashMap.hashMissCount = 0;
 					break;
-				// case 4:
-				// LOG.debug("--compression phase " + phase++ + " Share : " + _stats.getLastTimePhase());
-				// break;
 				case 4:
+					LOG.debug("--compression phase " + phase + " Share : " + _stats.getLastTimePhase());
+					break;
+				case 5:
 					LOG.debug("--num col groups: " + res.getColGroups().size());
 					LOG.debug("--compression phase " + phase + " Cleanup   : " + _stats.getLastTimePhase());
 					LOG.debug("--col groups types " + _stats.getGroupsTypesString());

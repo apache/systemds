@@ -23,6 +23,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLCompressionException;
 
 public abstract class ABitmap {
 	protected static final Log LOG = LogFactory.getLog(ABitmap.class.getName());
@@ -39,9 +40,21 @@ public abstract class ABitmap {
 	/** int specifying the number of zero value groups contained in the rows. */
 	protected final int _numZeros;
 
-	public ABitmap(int numCols, IntArrayList[] offsetsLists, int numZeroGroups) {
+	public ABitmap(int numCols, IntArrayList[] offsetsLists, int rows) {
 		_numCols = numCols;
-		_numZeros = numZeroGroups;
+		int offsetsTotal = 0;
+		if(offsetsLists != null){
+			for(IntArrayList a: offsetsLists){
+				offsetsTotal += a.size();
+			}
+			_numZeros = rows - offsetsTotal;
+			if(_numZeros < 0){
+				throw new DMLCompressionException("Error in constructing bitmap");
+			}
+		}
+		else{
+			_numZeros = rows;
+		}
 		_offsetsLists = offsetsLists;
 	}
 

@@ -33,6 +33,8 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
  */
 public class CompressedSizeInfoColGroup {
 
+	// private static final Log LOG = LogFactory.getLog(CompressedSizeInfoColGroup.class.getName());
+
 	private final int[] _columns;
 	private final int _numVals;
 	private final int _numOffs;
@@ -40,6 +42,18 @@ public class CompressedSizeInfoColGroup {
 	private final long _minSize;
 	private final CompressionType _bestCompressionType;
 	private final Map<CompressionType, Long> _sizes;
+
+	// Join of column groups without analyzing
+	public CompressedSizeInfoColGroup(int[] columns, int numVals, int numRows ){
+		_numVals = numVals;
+		_numOffs = -1;
+		_cardinalityRatio = numVals > 0  ? numRows / numVals : Double.POSITIVE_INFINITY;
+		_columns = columns;
+		_sizes = null;
+		_bestCompressionType = null;
+		_minSize = ColGroupSizes.estimateInMemorySizeDDC(columns.length, _numVals, numRows, false);
+
+	}
 
 	public CompressedSizeInfoColGroup(EstimationFactors fact, Set<CompressionType> validCompressionTypes) {
 		_numVals = fact.numVals;
@@ -135,7 +149,7 @@ public class CompressedSizeInfoColGroup {
 			case CONST:
 				if(fact.numOffs == 0)
 					return ColGroupSizes.estimateInMemorySizeEMPTY(fact.numCols);
-				else if(fact.numOffs == fact.numRuns && fact.numVals == 1)
+				else if(fact.numOffs == fact.numRows && fact.numVals == 1)
 					return ColGroupSizes.estimateInMemorySizeCONST(fact.numCols, fact.numVals, fact.lossy);
 				else
 					return Long.MAX_VALUE;

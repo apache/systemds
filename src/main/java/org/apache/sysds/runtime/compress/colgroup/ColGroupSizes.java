@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -90,8 +91,7 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
-		size += MemoryEstimates.intArrayCost(nrRows - largestOff);
-		// size += MemoryEstimates.byteArrayCost(nrRows- largestOff);
+		size += OffsetFactory.estimateInMemorySize(nrRows- largestOff, nrRows);
 		size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues);
 		return size;
 	}
@@ -99,8 +99,7 @@ public class ColGroupSizes {
 	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff,
 		boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
-		// size += MemoryEstimates.intArrayCost(nrRows - largestOff);
-		size += MemoryEstimates.byteArrayCost(nrRows - largestOff);
+		size += OffsetFactory.estimateInMemorySize(nrRows- largestOff, nrRows);
 		return size;
 	}
 

@@ -34,8 +34,8 @@ public final class BitmapLossy extends ABitmap {
 	private final byte[] _values;
 	private final double _scale;
 
-	public BitmapLossy(int numCols, IntArrayList[] offsetsLists, int numZeroGroups, byte[] values, double scale) {
-		super(numCols, offsetsLists, numZeroGroups);
+	public BitmapLossy(int numCols, IntArrayList[] offsetsLists, byte[] values, double scale, int rows) {
+		super(numCols, offsetsLists, rows);
 		_values = values;
 		_scale = scale;
 	}

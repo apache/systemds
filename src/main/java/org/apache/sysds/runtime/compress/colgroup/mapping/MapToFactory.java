@@ -45,25 +45,14 @@ public class MapToFactory {
 			return MapToInt.getInMemorySize(size);
 	}
 
-	public static IMapToData readIn(int size, DataInput in, int numTuples) throws IOException {
+	public static IMapToData readIn(DataInput in, int numTuples) throws IOException {
 		if(numTuples <= 1)
-			return new MapToBit(size).readFields(in);
+			return MapToBit.readFields(in);
 		else if(numTuples <= 255)
-			return new MapToByte(size).readFields(in);
+			return MapToByte.readFields(in);
 		else if(numTuples <= Character.MAX_VALUE)
-			return new MapToChar(size).readFields(in);
+			return MapToChar.readFields(in);
 		else
-			return new MapToInt(size).readFields(in);
-	}
-
-	public static long getExactSizeOnDisk(int size, int numTuples) {
-		if(numTuples <= 1)
-			return 4 + size / 8 + (size % 8 > 1 ? 1 : 0);
-		else if(numTuples <= 256)
-			return size;
-		else if(numTuples <= Character.MAX_VALUE)
-			return size * 2;
-		else
-			return size * 4;
+			return MapToInt.readFields(in);
 	}
 }

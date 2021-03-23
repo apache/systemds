@@ -192,7 +192,7 @@ public class TfMetaUtils
 	 * Get K value used for calculation during feature hashing from parsed specifications.
 	 * @param parsedSpec parsed specifications
 	 * @return K value
-	 * @throws JSONException
+	 * @throws JSONException if JSONException occurs
 	 */
 	public static long getK(JSONObject parsedSpec) throws JSONException {
 		return parsedSpec.getLong("K");

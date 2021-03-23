@@ -24,11 +24,6 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-/**
- * Simple composite encoder that applies a list of encoders in specified order. By implementing the default encoder API
- * it can be used as a drop-in replacement for any other encoder.
- * 
- */
 public class ColumnEncoderPassThrough extends ColumnEncoder {
 	private static final long serialVersionUID = -8473768154646831882L;
 

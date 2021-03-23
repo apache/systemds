@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.runtime.transform.encode;
 
 import java.io.Externalizable;
@@ -46,14 +65,14 @@ public interface Encoder extends Externalizable {
 	/**
 	 * Allocates internal data structures for partial build.
 	 */
-    void prepareBuildPartial();
+	void prepareBuildPartial();
 
 	/**
 	 * Partial build of internal data structures (e.g., in distributed spark operations).
 	 *
 	 * @param in input frame block
 	 */
-    void buildPartial(FrameBlock in);
+	void buildPartial(FrameBlock in);
 
 	/**
 	 * Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.
@@ -62,6 +81,6 @@ public interface Encoder extends Externalizable {
 	 * @param endDims   end dimensions of range
 	 * @param offset    is applied to begin and endDims
 	 */
-    void updateIndexRanges(long[] beginDims, long[] endDims, int offset);
+	void updateIndexRanges(long[] beginDims, long[] endDims, int offset);
 
 }

@@ -73,7 +73,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	public <T extends ColumnEncoder> T getEncoder(Class<T> type) {
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
 			if(columnEncoder.getClass().equals(type))
-				return (T) columnEncoder;
+				return type.cast(columnEncoder);
 		}
 		return null;
 	}

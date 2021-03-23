@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.runtime.transform.encode;
 
 import java.io.IOException;
@@ -226,7 +245,7 @@ public class MultiColumnEncoder implements Encoder {
 				encoder = ((ColumnEncoderComposite) encoder).getEncoder(type);
 			}
 			if(encoder != null && encoder.getClass().equals(type)) {
-				ret.add((T) encoder);
+				ret.add(type.cast(encoder));
 			}
 		}
 		return ret;
@@ -263,19 +282,19 @@ public class MultiColumnEncoder implements Encoder {
 		return _columnEncoders.stream().filter(encoder -> encoder._colID == colID).collect(Collectors.toList());
 	}
 
-	public <T extends ColumnEncoder> List<Class<T>> getEncoderTypes(int colID) {
-		HashSet<Class<T>> set = new HashSet<>();
+	public List<Class<? extends ColumnEncoder>> getEncoderTypes(int colID) {
+		HashSet<Class<? extends ColumnEncoder>> set = new HashSet<>();
 		for(ColumnEncoderComposite encoderComp : _columnEncoders) {
 			if(encoderComp._colID != colID && colID != -1)
 				continue;
 			for(ColumnEncoder encoder : encoderComp.getEncoders()) {
-				set.add((Class<T>) encoder.getClass());
+				set.add(encoder.getClass());
 			}
 		}
 		return new ArrayList<>(set);
 	}
 
-	public <T extends ColumnEncoder> List<Class<T>> getEncoderTypes() {
+	public List<Class<? extends ColumnEncoder>> getEncoderTypes() {
 		return getEncoderTypes(-1);
 	}
 
@@ -328,7 +347,8 @@ public class MultiColumnEncoder implements Encoder {
 			encoders.add(getColumnEncoder((int) i, type));
 		}
 		if(type.equals(ColumnEncoderComposite.class))
-			return new MultiColumnEncoder((List<ColumnEncoderComposite>) encoders);
+			return new MultiColumnEncoder(
+				encoders.stream().map(e -> ((ColumnEncoderComposite) e)).collect(Collectors.toList()));
 		else
 			return new MultiColumnEncoder(
 				encoders.stream().map(ColumnEncoderComposite::new).collect(Collectors.toList()));
@@ -426,9 +446,9 @@ public class MultiColumnEncoder implements Encoder {
 
 	public <T extends LegacyEncoder> T getLegacyEncoder(Class<T> type) {
 		if(type.equals(EncoderMVImpute.class))
-			return (T) _legacyMVImpute;
+			return type.cast(_legacyMVImpute);
 		if(type.equals(EncoderOmit.class))
-			return (T) _legacyOmit;
+			return type.cast(_legacyOmit);
 		assert false;
 		return null;
 	}

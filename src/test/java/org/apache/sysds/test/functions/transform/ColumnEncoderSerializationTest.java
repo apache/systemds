@@ -125,19 +125,20 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 		MultiColumnEncoder encoderOut;
 
 		// serialization and deserialization
-		encoderOut = (MultiColumnEncoder) serializeDeserialize(encoderIn);
+		encoderOut = serializeDeserialize(encoderIn);
 		// compare
+		assert encoderOut != null;
 		Assert.assertArrayEquals(encoderIn.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID),
 				encoderOut.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID));
 
 		int numIn = encoderIn.getColumnEncoders().size();
 		int numOut = encoderOut.getColumnEncoders().size();
 		Assert.assertEquals(numIn, numOut);
-		List<Class<ColumnEncoder>> typesIn = encoderIn.getEncoderTypes();
-		List<Class<ColumnEncoder>> typesOut = encoderOut.getEncoderTypes();
+		List<Class<? extends ColumnEncoder>> typesIn = encoderIn.getEncoderTypes();
+		List<Class<? extends ColumnEncoder>> typesOut = encoderOut.getEncoderTypes();
 		Assert.assertArrayEquals(typesIn.toArray(), typesOut.toArray());
 
-		for(Class<ColumnEncoder> classtype: typesIn){
+		for(Class<? extends ColumnEncoder> classtype: typesIn){
 			Assert.assertArrayEquals(encoderIn.getFromAllIntArray(classtype, ColumnEncoder::getColID), encoderOut.getFromAllIntArray(classtype, ColumnEncoder::getColID));
 		}
 
@@ -154,9 +155,7 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 
 			ByteArrayInputStream bis = new ByteArrayInputStream(encoderBytes);
 			ObjectInput in = new ObjectInputStream(bis);
-			MultiColumnEncoder encoderOut = (MultiColumnEncoder) in.readObject();
-
-			return encoderOut;
+			return (MultiColumnEncoder) in.readObject();
 		}
 		catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();

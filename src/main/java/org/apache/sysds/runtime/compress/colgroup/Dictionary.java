@@ -403,4 +403,14 @@ public class Dictionary extends ADictionary {
 		}
 		return nnz;
 	}
+
+	@Override
+	public void addToEntry(Dictionary d, int fr, int to, int nCol){
+		final int sf = nCol * fr; // start from
+		final int ef = sf + nCol; // end from
+		double[] v = d.getValues();
+		for(int i = sf, j = nCol * to; i < ef; i++, j++){
+			v[j] += _values[i];
+		}
+	}
 }

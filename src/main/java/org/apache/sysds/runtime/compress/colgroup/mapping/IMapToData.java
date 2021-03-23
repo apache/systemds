@@ -19,22 +19,22 @@
 
 package org.apache.sysds.runtime.compress.colgroup.mapping;
 
-import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 public interface IMapToData {
-    public int getIndex(int n);
+	public int getIndex(int n);
 
-    public void set(int n, int v);
+	public void set(int n, int v);
 
-    public void fill(int v);
+	public void fill(int v);
 
-    public long getInMemorySize();
+	public long getInMemorySize();
 
-    public void write(DataOutput out) throws IOException;
+	public long getExactSizeOnDisk();
 
-	public IMapToData readFields(DataInput in) throws IOException;
+	public int size();
 
-    // public int[] materializeMultiplied(int value);
+	public void write(DataOutput out) throws IOException;
+
 }

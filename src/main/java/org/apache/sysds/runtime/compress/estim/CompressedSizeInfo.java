@@ -84,15 +84,6 @@ public class CompressedSizeInfo {
 		return compressionInfo.length;
 	}
 
-	public boolean isCompressible(long orgSize) {
-		long sum = 0;
-		for(CompressedSizeInfoColGroup g : compressionInfo) {
-			sum += g.getMinSize();
-		}
-		// LOG.error("Original size :" + orgSize + "compressedSingleColumns: " + sum);
-		return sum <= orgSize;
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

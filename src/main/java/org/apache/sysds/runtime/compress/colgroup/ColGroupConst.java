@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.pre.ArrPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -319,5 +320,25 @@ public class ColGroupConst extends ColGroupValue {
 	@Override
 	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
 		return new ArrPreAggregate(lhs.getCounts());
+	}
+
+	@Override
+	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret){
+		throw new DMLCompressionException("Does not make sense to call this");
+	}
+	
+	@Override
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret){
+		throw new DMLCompressionException("Does not make sense to call this");
+	}
+	
+	@Override
+	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret){
+		throw new DMLCompressionException("Does not make sense to call this");
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 }

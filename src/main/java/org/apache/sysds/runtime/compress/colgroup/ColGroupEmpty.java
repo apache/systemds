@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -38,7 +38,6 @@ public class ColGroupEmpty extends ColGroupValue {
 		super();
 	}
 
-
 	/**
 	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
 	 * 
@@ -50,12 +49,12 @@ public class ColGroupEmpty extends ColGroupValue {
 		_zeros = true;
 	}
 
-	public static ColGroupEmpty generate(int nCol, int nRow){
+	public static ColGroupEmpty generate(int nCol, int nRow) {
 		int[] cols = new int[nCol];
-		for(int i =0; i < nCol; i++){
-			cols[i] =i;
+		for(int i = 0; i < nCol; i++) {
+			cols[i] = i;
 		}
-		return new ColGroupEmpty(cols,nRow);
+		return new ColGroupEmpty(cols, nRow);
 	}
 
 	@Override
@@ -84,7 +83,7 @@ public class ColGroupEmpty extends ColGroupValue {
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 		for(int i = rl; i < ru; i++)
 			c[i] = builtin.execute(c[i], 0);
-		
+
 	}
 
 	@Override
@@ -214,41 +213,61 @@ public class ColGroupEmpty extends ColGroupValue {
 
 	@Override
 	public int getIndexStructureHash() {
-		throw new NotImplementedException("This function should not be called");
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
 	@Override
 	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
-		return null;
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
 	@Override
 	public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
-		return null;
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
 	@Override
 	public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
-		return null;
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
 	@Override
 	public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
-		return null;
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
 	@Override
 	public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
-		return null;
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
 	@Override
 	public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
-		return null;
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
 	@Override
 	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
-		return null;
+		throw new DMLCompressionException("Does not make sense to call this");
+	}
+
+	@Override
+	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
+		throw new DMLCompressionException("Does not make sense to call this");
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
+		throw new DMLCompressionException("Does not make sense to call this");
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
+		throw new DMLCompressionException("Does not make sense to call this");
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+		throw new DMLCompressionException("Does not make sense to call this");
 	}
 }

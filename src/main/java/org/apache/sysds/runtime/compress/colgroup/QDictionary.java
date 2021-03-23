@@ -468,4 +468,10 @@ public class QDictionary extends ADictionary {
 		}
 		return nnz;
 	}
+
+
+	@Override
+	public void addToEntry(Dictionary d, int fr, int to, int nCol){
+		throw new NotImplementedException("Not implemented yet");	
+	}
 }

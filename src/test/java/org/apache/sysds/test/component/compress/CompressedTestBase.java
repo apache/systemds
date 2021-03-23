@@ -35,6 +35,7 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
@@ -115,7 +116,7 @@ public abstract class CompressedTestBase extends TestBase {
 		// .setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true),
 
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
+		.setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.SDC, CompressionType.DDC)).setInvestigateEstimate(true),
@@ -586,7 +587,9 @@ public abstract class CompressedTestBase extends TestBase {
 			MatrixBlock ret1 = right.aggregateBinaryOperations(left, right, new MatrixBlock(), abopSingle);
 
 			// vector-matrix compressed
-			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, 1)
+			CompressionSettings cs = new CompressionSettingsBuilder()
+				.setValidCompressions(EnumSet.of(CompressionType.DDC)).create();
+			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, cs)
 				.getLeft() : matrix;
 			assertFalse("Failed to compress other matrix",
 				compressMatrix && !(compMatrix instanceof CompressedMatrixBlock));

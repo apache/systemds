@@ -19,14 +19,16 @@
 
 package org.apache.sysds.runtime.compress.cocode;
 
-import java.util.Arrays;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public abstract class AColumnGroupPartitioner {
+
+	protected static final Log LOG = LogFactory.getLog(AColumnGroupPartitioner.class.getName());
 
 	protected CompressedSizeEstimator _est;
 	protected CompressionSettings _cs;
@@ -40,17 +42,47 @@ public abstract class AColumnGroupPartitioner {
 
 	public abstract CompressedSizeInfo partitionColumns(CompressedSizeInfo colInfos);
 
-	protected CompressedSizeInfoColGroup join(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs) {
-		// TODO optimzie so that we do not allocate all these small int arrays.
-		// Note this is usually 1 - 2% of the compression time, so this optimization would only benefit
-		// the compression time if there is a large number of columns, and even then it would most likely
-		// only benefit the amount of memory used slightly.
-		int[] lhsCols = lhs.getColumns();
-		int[] rhsCols = rhs.getColumns();
-		int[] joined = new int[lhsCols.length + rhsCols.length];
-		System.arraycopy(lhsCols, 0, joined, 0, lhsCols.length);
-		System.arraycopy(rhsCols, 0, joined, lhsCols.length, rhsCols.length);
-		Arrays.sort(joined);
+	protected CompressedSizeInfoColGroup join(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs, boolean analyze){
+		return analyze ? joinWithAnalysis(lhs, rhs): joinWithoutAnalysis(lhs,rhs);
+	}
+
+	protected CompressedSizeInfoColGroup joinWithAnalysis(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs) {
+		int[] joined = join(lhs.getColumns(), rhs.getColumns());
 		return _est.estimateCompressedColGroupSize(joined);
+	}
+
+	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs){
+		int[] joined = join(lhs.getColumns(), rhs.getColumns());
+		int numVals =  lhs.getNumVals() + rhs.getNumVals();
+		return new CompressedSizeInfoColGroup(joined, numVals, _numRows);
+	}
+
+	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g){
+		if(g.getBestCompressionType() == null)
+			return _est.estimateCompressedColGroupSize(g.getColumns());
+		else 
+			return g;
+	}
+
+	private int[] join(int[] lhs, int[] rhs){
+		int[] joined = new int[lhs.length + rhs.length];
+		int lp = 0;
+		int rp = 0;
+		int i = 0;
+		for(; i < joined.length && lp < lhs.length && rp < rhs.length; i++){
+			if(lhs[lp] < rhs[rp]){
+				joined[i] = lhs[lp++];
+			}else{
+				joined[i] = rhs[rp++];
+			}
+		}
+
+		while(lp < lhs.length){
+			joined[i++] = lhs[lp++];
+		}
+		while(rp < rhs.length){
+			joined[i++] = rhs[rp++];
+		}
+		return joined;
 	}
 }

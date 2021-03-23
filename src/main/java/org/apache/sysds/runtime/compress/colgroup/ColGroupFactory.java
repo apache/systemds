@@ -241,10 +241,16 @@ public class ColGroupFactory {
 	public static AColGroup compress(int[] colIndexes, int rlen, ABitmap ubm, CompressionType compType,
 		CompressionSettings cs, MatrixBlock rawMatrixBlock) {
 
+		final IntArrayList[] of = ubm.getOffsetList();
+
+		if(of.length == 0)
+			return new ColGroupEmpty(colIndexes, rlen);
+		else if(of.length == 1 && of[0].size() == rlen)
+			return new ColGroupConst(colIndexes, rlen, ADictionary.getDictionary(ubm));
+		
 		if(LOG.isTraceEnabled())
 			LOG.trace("compressing to: " + compType);
-		if(ubm.getOffsetList().length == 0)
-			return new ColGroupEmpty(colIndexes, rlen);
+
 		switch(compType) {
 			case DDC:
 				return compressDDC(colIndexes, rlen, ubm, cs);
@@ -353,11 +359,7 @@ public class ColGroupFactory {
 	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
 
 		boolean _zeros = ubm.getNumOffsets() < (long) rlen;
-		ADictionary dict;
-		if(ubm instanceof BitmapLossy)
-			dict = new QDictionary((BitmapLossy) ubm).makeDoubleDictionary();
-		else
-			dict = new Dictionary(((Bitmap) ubm).getValues());
+		ADictionary dict = ADictionary.getDictionary(ubm);
 		double[] values = dict.getValues();
 		if(_zeros) {
 			double[] appendedZero = new double[values.length + colIndexes.length];

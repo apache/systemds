@@ -348,11 +348,7 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	}
 
 	public Pair<int[], double[]> preaggValues(int numVals, MatrixBlock b, double[] dictVals, int cl, int cu, int cut) {
-		return b.isInSparseFormat() ? preaggValuesFromSparse(numVals,
-			b.getSparseBlock(),
-			dictVals,
-			cl,
-			cu,
+		return b.isInSparseFormat() ? preaggValuesFromSparse(numVals, b.getSparseBlock(), dictVals, cl, cu,
 			cut) : preaggValuesFromDense(numVals, b.getDenseBlockValues(), dictVals, cl, cu, cut);
 	}
 
@@ -873,10 +869,8 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	}
 
 	public IPreAggregate preCallAggregate(ColGroupValue lhs) {
-		// LOG.error(lhs.getClass().getSimpleName() + " in " +
-		// this.getClass().getSimpleName() + " "
-		// + Arrays.toString(lhs.getColIndices()) + " " +
-		// Arrays.toString(this.getColIndices()));
+		// LOG.error(lhs.getClass().getSimpleName() + " in " + this.getClass().getSimpleName() + " "
+		// + Arrays.toString(lhs.getColIndices()) + " " + Arrays.toString(this.getColIndices()));
 
 		if(lhs instanceof ColGroupDDC)
 			return preAggregateDDC((ColGroupDDC) lhs);
@@ -921,6 +915,45 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	public abstract IPreAggregate preAggregateRLE(ColGroupRLE lhs);
 
 	/**
+	 * Pre aggregate into a dictionary. It is assumed that "that" have more distinct values than, "this".
+	 * 
+	 * @param that the other column group whose indexes are used for aggregation.
+	 * @return A aggregate dictionary
+	 */
+	public Dictionary preAggregateThatIndexStructure(ColGroupValue that) {
+
+		Dictionary ret = new Dictionary(new double[that._colIndexes.length * this.getNumValues()]);
+
+		if(that instanceof ColGroupDDC)
+			return preAggregateThatDDCStructure((ColGroupDDC) that, ret);
+		else if(that instanceof ColGroupSDC)
+			return preAggregateThatSDCStructure((ColGroupSDC) that, ret);
+		else if(that instanceof ColGroupSDCZeros)
+			return preAggregateThatSDCZerosStructure((ColGroupSDCZeros) that, ret);
+		else if(that instanceof ColGroupSDCSingleZeros)
+			return preAggregateThatSDCSingleZerosStructure((ColGroupSDCSingleZeros) that, ret);
+		else if(that instanceof ColGroupConst)
+			return preAggregateThatConstStructure((ColGroupConst) that, ret);
+
+		throw new NotImplementedException("Not supported pre aggregate using index structure of :"
+			+ that.getClass().getSimpleName() + " in " + this.getClass().getSimpleName());
+	}
+
+	public abstract Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret);
+
+	public abstract Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret);
+
+	public abstract Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret);
+
+	public abstract Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret);
+
+	public Dictionary preAggregateThatConstStructure(ColGroupConst that, Dictionary ret) {
+		computeColSums(ret.getValues(), false);
+		LOG.error(Arrays.toString(ret.getValues()));
+		return ret;
+	}
+
+	/**
 	 * Multiply with a matrix on the left.
 	 * 
 	 * @param lhs     Left hand side ColGroupValue
@@ -929,6 +962,8 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	 * @param numCols The number of columns in the colGroups parent matrix.
 	 */
 	public void leftMultByAggregatedColGroup(ColGroupValue lhs, double[] result, final int numRows, final int numCols) {
+		if(this instanceof ColGroupEmpty || lhs instanceof ColGroupEmpty)
+			return;
 
 		final int nvL = lhs.getNumValues();
 		final int nvR = this.getNumValues();
@@ -942,33 +977,28 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 			for(int a = 0, off = 0; a < nvL; a++, off += nvL + 1)
 				leftMultDictEntry(agI[a], off, nvL, lCol, rCol, lhs, numCols, lhValues, rhValues, result);
 		}
-		else {
-			// LOG.error(lCol +" "+ nvL);
-			// LOG.error(rCol +" "+ nvR);
+		else if(lhs instanceof ColGroupConst || this instanceof ColGroupConst) {
 			IPreAggregate ag = preAggregate(lhs);
 			if(ag == null)
 				return;
 			else if(ag instanceof MapPreAggregate)
-				leftMultMapPreAggregate(nvL,
-					lCol,
-					rCol,
-					lhs,
-					numCols,
-					lhValues,
-					rhValues,
-					result,
+				leftMultMapPreAggregate(nvL, lCol, rCol, lhs, numCols, lhValues, rhValues, result,
 					(MapPreAggregate) ag);
 			else
-				leftMultArrayPreAggregate(nvL,
-					nvR,
-					lCol,
-					rCol,
-					lhs,
-					numCols,
-					lhValues,
-					rhValues,
-					result,
+				leftMultArrayPreAggregate(nvL, nvR, lCol, rCol, lhs, numCols, lhValues, rhValues, result,
 					((ArrPreAggregate) ag).getArr());
+		}
+		else {
+			if(nvR * rCol < nvL * lCol) {
+				Dictionary preAgg = lhs.preAggregateThatIndexStructure(this);
+				matrixMultDictionariesAndOutputToColIndexes(lhValues, preAgg.getValues(), lhs._colIndexes,
+					this._colIndexes, result, numCols);
+			}
+			else {
+				Dictionary preAgg = this.preAggregateThatIndexStructure(lhs);
+				matrixMultDictionariesAndOutputToColIndexes(preAgg.getValues(), rhValues, lhs._colIndexes,
+					this._colIndexes, result, numCols);
+			}
 		}
 	}
 
@@ -1027,13 +1057,36 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	}
 
 	@Override
-	public boolean containsValue(double pattern){
+	public boolean containsValue(double pattern) {
 		return _dict.containsValue(pattern);
 	}
 
 	@Override
-	public long getNumberNonZeros(){
-		int[] counts = getCounts();
-		return _dict.getNumberNonZeros(counts, _colIndexes.length);
+	public long getNumberNonZeros() {
+		if(_dict != null){
+			int[] counts = getCounts();
+			return _dict.getNumberNonZeros(counts, _colIndexes.length);
+		}
+		else{
+			return 0;
+		}
+	}
+
+	private static void matrixMultDictionariesAndOutputToColIndexes(double[] left, double[] right, int[] colsLeft,
+		int[] colsRight, double[] result, int outCols) {
+		final int rows = left.length / colsLeft.length;
+		for(int k = 0; k < rows; k++) {
+			final int offL = k * colsLeft.length;
+			final int offR = k * colsRight.length;
+			for(int i = 0; i < colsLeft.length; i++) {
+				final int offOut = colsLeft[i] * outCols;
+				final double vl = left[offL + i];
+				if(vl != 0)
+					for(int j = 0; j < colsRight.length; j++) {
+						final double vr = right[offR + j];
+						result[offOut + colsRight[j]] += vl * vr;
+					}
+			}
+		}
 	}
 }

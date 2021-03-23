@@ -134,12 +134,12 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static long objectArrayCost(long length) {
-		long size = 0;
+	public static double objectArrayCost(long length) {
+		double size = 0;
 		size += 8; // reference to array
 		size += 20; // header
 		size += 4; // padding before first reference
-		size += 8 * length; // references to all objects.
+		size += 8d * length; // references to all objects.
 		return size;
 	}
 

@@ -28,10 +28,14 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToInt implements IMapToData {
 
-	private int[] _data;
+	private final int[] _data;
 
 	public MapToInt(int size) {
 		_data = new int[size];
+	}
+
+	private MapToInt(int[] data) {
+		_data = data;
 	}
 
 	@Override
@@ -56,23 +60,35 @@ public class MapToInt implements IMapToData {
 	}
 
 	@Override
+	public long getExactSizeOnDisk() {
+		return 4 + _data.length * 4;
+	}
+
+	@Override
 	public void set(int n, int v) {
 		_data[n] = v;
 	}
 
 	@Override
+	public int size() {
+		return _data.length;
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeInt(_data.length);
 		for(int i = 0; i < _data.length; i++)
 			out.writeInt(_data[i]);
 	}
 
-	@Override
-	public MapToInt readFields(DataInput in) throws IOException {
-		for(int i = 0; i < _data.length; i++)
-			_data[i] = in.readInt();
-		return this;
+	public static MapToInt readFields(DataInput in) throws IOException {
+		final int length = in.readInt();
+		final int[] data = new int[length];
+		for(int i = 0; i < length; i++)
+			data[i] = in.readInt();
+		return new MapToInt(data);
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

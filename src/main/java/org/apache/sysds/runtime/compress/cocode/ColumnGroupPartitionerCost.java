@@ -19,11 +19,14 @@
 
 package org.apache.sysds.runtime.compress.cocode;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -44,11 +47,11 @@ public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
 	 */
 	private final int largestDistinct;
 
+	private final static int toSmallForAnalysis = 64;
+
 	protected ColumnGroupPartitionerCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
 		super(sizeEstimator, cs, numRows);
-
-		largestDistinct = Math.min(10000, Math.max(256, (int) (_numRows * 0.01)));
-		
+		largestDistinct = Math.min(4096, Math.max(256, (int) (_numRows * 0.01)));
 	}
 
 	@Override
@@ -61,8 +64,13 @@ public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
 
 		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(CompressedSizeInfoColGroup::getNumVals);
 		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.length, comp);
+		List<CompressedSizeInfoColGroup> c = new ArrayList<>();
 		for(CompressedSizeInfoColGroup g : currentGroups) {
-			que.add(g);
+			if(g.getBestCompressionType() == CompressionType.CONST){
+				c.add(g);
+			}
+			else
+				que.add(g);
 		}
 
 		boolean finished = false;
@@ -71,10 +79,20 @@ public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
 				CompressedSizeInfoColGroup l = que.poll();
 				if(que.peek() != null) {
 					CompressedSizeInfoColGroup r = que.poll();
-					int szl = l.getNumVals();
-					int szr = r.getNumVals();
-					if(szl * szr < largestDistinct)
-						que.add(join(l, r));
+					int worstCaseJoinedSize = l.getNumVals() * r.getNumVals();
+					if(worstCaseJoinedSize < toSmallForAnalysis)
+						que.add(joinWithoutAnalysis(l, r));
+					else if(worstCaseJoinedSize < largestDistinct){
+
+						CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+						if(g.getNumVals() < largestDistinct)
+							que.add(joinWithAnalysis(l, r));
+						else{
+							finished = true;
+							que.add(l);
+							que.add(r);
+						}
+					}
 					else {
 						finished = true;
 						que.add(l);
@@ -89,13 +107,12 @@ public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
 			else
 				finished = true;
 		}
-		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[que.size()];
+		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[que.size() + c.size()];
 		int i = 0;
-		for(CompressedSizeInfoColGroup g : que) {
+		for(CompressedSizeInfoColGroup g : que)
 			ret[i++] = g;
-		}
-		// LOG.error(Arrays.toString(ret));
+		for(CompressedSizeInfoColGroup g : c)
+			ret[i++] = g;
 		return ret;
 	}
-
 }

@@ -1165,4 +1165,24 @@ public class ColGroupRLE extends ColGroupOffset {
 		}
 		return ag;
 	}
+
+	@Override
+	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret){
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret){
+		throw new NotImplementedException();
+	}
+	
+	@Override
+	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret){
+		throw new NotImplementedException();
+	}
+	
+	@Override
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+		throw new NotImplementedException();
+	}
 }

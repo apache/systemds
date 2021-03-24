@@ -136,7 +136,7 @@ public class ScalarPropagationTest extends AutomatedTestBase
 			assertEquals(String.valueOf(expectedPrivacyLevel), actualPrivacyValue);
 		} else {
 			MetaDataAll meta = getMetaData("scalar", "out/");
-			assertFalse( "Metadata found for output scalar with privacy constraint set, but input privacy level is none", meta.mtdExists() && meta.getPrivacy() != null );
+			assertFalse( "Metadata found for output scalar with privacy constraint set, but input privacy level is none", meta.mtdExists() && meta.getPrivacy().getPrivacyLevel() != PrivacyLevel.None );
 		}
 	}
 

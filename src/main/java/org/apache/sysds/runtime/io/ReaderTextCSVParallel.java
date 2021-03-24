@@ -78,6 +78,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 	{
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+//		job.set("textinputformat.record.delimiter", _props.getDelim());
 		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		

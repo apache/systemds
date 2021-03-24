@@ -1092,13 +1092,8 @@ public class DataExpression extends DataIdentifier
 					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
 				}
 				else {
-					if ( (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier))
-					{
-						removeVarParam(DELIM_DELIMITER);
-						addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
-					} else
-						if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
-						&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
+					if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
+					&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
 					{
 						raiseValidateError("For delimited file '" + getVarParam(DELIM_DELIMITER) 
 								+  "' must be a string value ", conditional);

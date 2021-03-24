@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
@@ -127,10 +128,9 @@ public class MetaDataAll extends DataIdentifier {
 			}
 
 			parseMetaDataParam(key, val);
-
-			if(_format == null)
-				setFormatTypeString(null);
 		}
+		if(_format == null)
+			setFormatTypeString(null);
 	}
 
 	private void parseMetaDataParam(Object key, Object val)
@@ -168,8 +168,8 @@ public class MetaDataAll extends DataIdentifier {
 
 	public void setFormatTypeString(String format) {
 		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;
-		if( Types.FileFormat.isDelimitedFormat(this._formatTypeString) )
-			this.setFileFormat(Types.FileFormat.safeValueOf(_formatTypeString));
+		if(_formatTypeString != null && EnumUtils.isValidEnum(Types.FileFormat.class, _formatTypeString.toUpperCase()))
+			setFileFormat(Types.FileFormat.safeValueOf(_formatTypeString));
 	}
 
 	@SuppressWarnings("unchecked")

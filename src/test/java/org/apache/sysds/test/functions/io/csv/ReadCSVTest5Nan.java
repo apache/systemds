@@ -74,7 +74,7 @@ public class ReadCSVTest5Nan extends ReadCSVTest4Nan {
 			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput};
 
 			output = runTest(true, false, null, -1).toString();
-			String expected = "NaN 8,000 NaN NaN";
+			String expected = "NaN 8.000 NaN NaN";
 			assertTrue("\nout: " + output + "\n expected: " + expected, output.contains(expected));
 
 		}

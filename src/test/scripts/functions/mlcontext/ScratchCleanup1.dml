@@ -23,7 +23,9 @@ X = rand(rows=$rows, cols=$cols);
 
 #force export of X via remote parfor
 parfor(i in 1:ncol(X), opt=CONSTRAINED, mode=REMOTE_SPARK) {
-   print(sum(X[,i]));
+  x = sum(X[,i]);
+  if( x < 0 )
+    print(x)
 }
 
 write(X, "out/X", format="binary");

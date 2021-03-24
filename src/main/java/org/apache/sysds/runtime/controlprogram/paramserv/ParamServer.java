@@ -230,8 +230,8 @@ public abstract class ParamServer
 				}
 				case ASP: {
 					updateGlobalModel(gradients);
-					// This if works similarly to the one for BSP, but divides the sync couter through the number of workers,
-					// creating "Pseudo Epochs"
+					// This works similarly to the one for BSP, but divides the sync counter by
+					// the number of workers, creating "Pseudo Epochs"
 					if (_numBatchesPerEpoch != -1 &&
 						((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
 						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0))) {

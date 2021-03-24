@@ -153,14 +153,14 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 	 * @param dir directory of variable
 	 */
 	private static void exceptionExpected(String variable, String dir){
-		boolean JSONExceptionThrown = false;
+		String actualPrivacyValue = null;
 		try{
-			readDMLMetaDataPrivacyValue(variable, dir, DataExpression.PRIVACY);
+			actualPrivacyValue = readDMLMetaDataPrivacyValue(variable, dir, DataExpression.PRIVACY);
 		} catch (Exception e){
 			fail("Exception occured, but JSONException was expected. The exception thrown is: " + e.getMessage());
 			e.printStackTrace();
 		}
-		assert(JSONExceptionThrown);
+		assert((PrivacyLevel.None.name().equals(actualPrivacyValue)));
 	}
 
 	@Test

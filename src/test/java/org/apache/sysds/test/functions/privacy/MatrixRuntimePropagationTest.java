@@ -107,7 +107,6 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase
 			// or that privacy level is set to none 
 			// because no privacy metadata should be written to c
 			// except if the privacy written is set to private
-			boolean JSONExceptionThrown = false;
 			String actualPrivacyValue = null;
 			try{
 				actualPrivacyValue = readDMLMetaDataPrivacyValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
@@ -115,7 +114,7 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase
 				fail("Exception occured, but JSONException was expected. The exception thrown is: " + e.getMessage());
 				e.printStackTrace();
 			}
-			assert(JSONExceptionThrown || (PrivacyLevel.None.name().equals(actualPrivacyValue)));
+			assert((PrivacyLevel.None.name().equals(actualPrivacyValue)));
 		}
 	}
 }

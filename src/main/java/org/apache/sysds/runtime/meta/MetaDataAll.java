@@ -62,6 +62,7 @@ public class MetaDataAll extends DataIdentifier {
 
 	public MetaDataAll(String mtdFileName, boolean conditional, boolean parseMeta) {
 		_metaObj = readMetadataFile(mtdFileName, conditional);
+		setPrivacy(PrivacyConstraint.PrivacyLevel.None);
 		if(parseMeta)
 			parseMetaDataParams();
 	}

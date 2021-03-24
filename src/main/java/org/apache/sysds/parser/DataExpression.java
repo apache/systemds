@@ -965,7 +965,7 @@ public class DataExpression extends DataIdentifier
 			
 			// check if file is matrix market format
 			if (formatTypeString == null && shouldReadMTD){
-				if ( checkHasMatrixMarketFormat(inputFileName, mtdFileName, conditional) ) {
+				if ( MetaDataAll.checkHasMatrixMarketFormat(inputFileName, mtdFileName, conditional) ) {
 					formatTypeString = FileFormat.MM.toString();
 					addVarParam(FORMAT_TYPE, new StringIdentifier(formatTypeString, this));
 					configObj.setFormatTypeString(formatTypeString);
@@ -976,7 +976,7 @@ public class DataExpression extends DataIdentifier
 
 			// check if file is delimited format
 			if (formatTypeString == null && shouldReadMTD ) {
-				formatTypeString = checkHasDelimitedFormat(inputFileName, conditional);
+				formatTypeString = MetaDataAll.checkHasDelimitedFormat(inputFileName, conditional);
 				if (formatTypeString != null) {
 					addVarParam(FORMAT_TYPE, new StringIdentifier(formatTypeString, this));
 					configObj.setFormatTypeString(formatTypeString);
@@ -2298,42 +2298,31 @@ public class DataExpression extends DataIdentifier
 		return result;
 	}
 	
-	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional) 
-	{
-		// Check the MTD file exists. if there is an MTD file, return false.
-		MetaDataAll mtdObject = new MetaDataAll(mtdFileName, conditional, false);
-		if (mtdObject.mtdExists())
-			return false;
-		
-		if( HDFSTool.existsFileOnHDFS(inputFileName) 
-			&& !HDFSTool.isDirectory(inputFileName)  )
-		{
-			Path path = new Path(inputFileName);
-			try( BufferedReader in = new BufferedReader(new InputStreamReader(
-				IOUtilFunctions.getFileSystem(path).open(path))))
-			{
-				String headerLine = new String("");
-				if (in.ready())
-					headerLine = in.readLine();
-				return (headerLine !=null && headerLine.startsWith("%%"));
-			}
-			catch(Exception ex) {
-				throw new LanguageException("Failed to read matrix market header.", ex);
-			}
-		}
-		return false;
-	}
-	
-	public String checkHasDelimitedFormat(String filename, boolean conditional) {
-		// if the MTD file exists, check the format is not binary
-		MetaDataAll mtdObject = new MetaDataAll(filename + ".mtd", conditional, true);
-		if (mtdObject.mtdExists())
-			if( FileFormat.isDelimitedFormat(mtdObject.getFormatTypeString()) )
-				return mtdObject.getFormatTypeString();
-		return null;
-		// The file format must be specified either in .mtd file or in read() statement
-		// Therefore, one need not actually read the data to infer the format.
-	}
+//	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional)
+//	{
+//		// Check the MTD file exists. if there is an MTD file, return false.
+//		MetaDataAll mtdObject = new MetaDataAll(mtdFileName, conditional, false);
+//		if (mtdObject.mtdExists())
+//			return false;
+//
+//		if( HDFSTool.existsFileOnHDFS(inputFileName)
+//			&& !HDFSTool.isDirectory(inputFileName)  )
+//		{
+//			Path path = new Path(inputFileName);
+//			try( BufferedReader in = new BufferedReader(new InputStreamReader(
+//				IOUtilFunctions.getFileSystem(path).open(path))))
+//			{
+//				String headerLine = new String("");
+//				if (in.ready())
+//					headerLine = in.readLine();
+//				return (headerLine !=null && headerLine.startsWith("%%"));
+//			}
+//			catch(Exception ex) {
+//				throw new LanguageException("Failed to read matrix market header.", ex);
+//			}
+//		}
+//		return false;
+//	}
 	
 	public boolean isCSVReadWithUnknownSize() {
 		Expression format = getVarParam(FORMAT_TYPE);

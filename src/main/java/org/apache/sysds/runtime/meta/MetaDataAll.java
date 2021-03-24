@@ -34,6 +34,7 @@ import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.DoubleIdentifier;
 import org.apache.sysds.parser.Expression;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.parser.StringIdentifier;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -41,6 +42,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 public class MetaDataAll extends DataIdentifier {
@@ -144,6 +146,28 @@ public class MetaDataAll extends DataIdentifier {
 			case DataExpression.DELIM_DELIMITER: setDelim(val.toString()); break;
 			case DataExpression.SCHEMAPARAM: setSchema(val.toString()); break;
 		}
+	}
+
+	public boolean mtdExists() { return _metaObj != null && !_metaObj.isEmpty(); }
+
+	public String getFormatTypeString() { return _formatTypeString; }
+
+	public String getFineGrainedPrivacy() { return _fineGrainedPrivacy; }
+
+	public String getDelim() { return _delim; }
+
+	public String getSchema() { return _schema; }
+
+	public void setFineGrainedPrivacy(String fineGrainedPrivacy) { this._fineGrainedPrivacy = fineGrainedPrivacy; }
+
+	public void setSchema(String schema) { this._schema = schema; }
+
+	public void setDelim(String delim) { this._delim = delim; }
+
+	public void setFormatTypeString(String format) {
+		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;
+		if( Types.FileFormat.isDelimitedFormat(this._formatTypeString) )
+			this.setFileFormat(Types.FileFormat.safeValueOf(_formatTypeString));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -251,41 +275,6 @@ public class MetaDataAll extends DataIdentifier {
 		return varParams;
 	}
 
-	public boolean mtdExists() { return _metaObj != null; }
-
-	public String getFormatTypeString() {
-		return _formatTypeString;
-	}
-
-	public String getFineGrainedPrivacy() {
-		return _fineGrainedPrivacy;
-	}
-
-	public String getDelim() {
-		return _delim;
-	}
-	public String getSchema() {
-		return _schema;
-	}
-
-	public void setFineGrainedPrivacy(String fineGrainedPrivacy) {
-		this._fineGrainedPrivacy = fineGrainedPrivacy;
-	}
-
-	public void setSchema(String schema) {
-		this._schema = schema;
-	}
-
-	public void setDelim(String delim) {
-		this._delim = delim;
-	}
-
-	public void setFormatTypeString(String format) {
-		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;
-		if( Types.FileFormat.isDelimitedFormat(this._formatTypeString) )
-			this.setFileFormat(Types.FileFormat.safeValueOf(_formatTypeString));
-	}
-
 	public void addVarParam(String name, Expression value, HashMap<String, Expression> varParams) {
 		if (DMLScript.VALIDATOR_IGNORE_ISSUES && (value == null)) {
 			return;
@@ -299,5 +288,47 @@ public class MetaDataAll extends DataIdentifier {
 		if (getEndLine() == 0) setEndLine(value.getEndLine());
 		if (getEndColumn() == 0) setEndColumn(value.getEndColumn());
 		if (getText() == null) setText(value.getText());
+	}
+
+	public static String checkHasDelimitedFormat(String filename, boolean conditional) {
+		// if the MTD file exists, check the format is not binary
+		MetaDataAll mtdObject = new MetaDataAll(filename + ".mtd", conditional, false);
+		if (mtdObject.mtdExists()) {
+			try {
+				mtdObject.setFormatTypeString((String) mtdObject._metaObj.get(DataExpression.FORMAT_TYPE));
+				if(Types.FileFormat.isDelimitedFormat(mtdObject.getFormatTypeString()))
+					return mtdObject.getFormatTypeString();
+			}
+			catch(JSONException e) {
+				e.printStackTrace();
+			}
+		}
+		return null;
+	}
+
+	public static boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional)
+	{
+		// Check the MTD file exists. if there is an MTD file, return false.
+		MetaDataAll mtdObject = new MetaDataAll(mtdFileName, conditional, false);
+		if (mtdObject.mtdExists())
+			return false;
+
+		if( HDFSTool.existsFileOnHDFS(inputFileName)
+			&& !HDFSTool.isDirectory(inputFileName)  )
+		{
+			Path path = new Path(inputFileName);
+			try( BufferedReader in = new BufferedReader(new InputStreamReader(
+				IOUtilFunctions.getFileSystem(path).open(path))))
+			{
+				String headerLine = new String("");
+				if (in.ready())
+					headerLine = in.readLine();
+				return (headerLine !=null && headerLine.startsWith("%%"));
+			}
+			catch(Exception ex) {
+				throw new LanguageException("Failed to read matrix market header.", ex);
+			}
+		}
+		return false;
 	}
 }

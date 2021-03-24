@@ -1,0 +1,385 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Generate the logical pipelines for data cleaning
+
+source("scripts/pipelines/scripts/utils.dml") as utils;
+source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
+source("scripts/pipelines/scripts/gridsearchMLR.dml") as gs;
+
+# read the inputs
+F = read($1, data_type="frame", format="csv", header=FALSE, 
+  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+metaInfo = read($2, data_type="frame", format="csv", header=FALSE);
+primitives = read($3, data_type = "frame", format="csv", header= TRUE)
+param = read($4, data_type = "frame", format="csv", header= TRUE)
+sample = $5
+topK = $6
+resources = $7
+crossValidations = $8
+weightedAccuracy = $9 # accuracy flag
+
+
+if(nrow(metaInfo) < 2)
+  stop("incomplete meta info")
+
+ # Do the initial cleaning
+ 
+ 
+getSchema = metaInfo[1, 2:ncol(metaInfo)]
+getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
+  
+# 1. dropInvalid function will remove the values which are not the part 
+# of the column data type  
+
+X = dropInvalidType(F, getSchema)
+  # X = F
+
+# 2. encode the categorical data
+if(sum(getMask) > 0)
+{
+  # always recode the label
+  index = utils::vectorToCsv(getMask)
+  jspecR = "{ids:true, recode:["+index+"]}"
+  [eX, X_meta] = transformencode(target=X, spec=jspecR);
+  # change the schema to reflect the encoded values
+  getSchema = map(getSchema, "x->x.replace(\"STRING\", \"INT64\")")
+  getSchema = map(getSchema, "x->x.replace(\"BOOLEAN\", \"INT64\")")
+    
+} 
+# if no categorical value exist then just cast the frame into matrix
+else
+  eX = as.matrix(X)
+
+# 3. extract the class label  
+eY = eX[, ncol(eX)]
+eX = eX[, 1:ncol(eX) - 1]
+   
+
+getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
+getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
+
+
+
+# get the logical seed
+lgSeed = logical::generateLogicalSeed(eX, eY, getMask)
+allLgs = logical::transformLogical(lgSeed)
+
+
+# 4. perform the sampling  
+[eX, eY] = utils::doSample(eX, eY, sample)
+
+# 5. get train test and validation set with balanced class distribution
+[X_train, y_train, X_test, y_test] = splitBalanced(eX, eY, 0.7, FALSE)
+
+# 6. find the best hyper parameters for classification algorithm
+# for now only find the best values for intercept and maximum outer iteration
+params = list("reg", "maxi");
+paramRanges = list(10^seq(0,-10), seq(10,100, 10));
+
+ 
+dX_train = utils::dummycoding(replace(target = rbind(X_train, X_test), pattern = NaN, replacement=0), getMask)
+dX_test = dX_train[nrow(y_train)+1:nrow(dX_train),] 
+dX_train = dX_train[1:nrow(y_train),] 
+
+# [opt, loss] = gs::gridSearchMLR(dX_train, y_train, dX_test, y_test, 
+  # "multiLogReg", "lossFunc", params, paramRanges, FALSE);
+opt = matrix("0 100", 1, 2)
+
+# 7. get the cross validated accuracy on dirty dataset (only on training set)
+d_accuracy = classifyDirty(X_train, y_train, opt, getMask, weightedAccuracy, crossValidations)
+# print("dirty accuracy is "+d_accuracy)
+# # [eX, eY] = prioritise(eX, eY, getMask)
+
+
+[pip, hp, acc] = bandit(X_train=X_train, Y_train=y_train,  mask=getMask, MLhp=opt,
+  schema=getSchema, lp=allLgs, primitives=primitives, param=param, k=topK, testAccuracy=d_accuracy,
+  isWeighted=weightedAccuracy, R=resources, cv=crossValidations, verbose=TRUE);
+
+
+if(as.scalar((is.na(acc[1,1]))) == 1 | as.scalar(acc[1,1]) < d_accuracy)
+  stop("warning: no best pipeline found")
+  
+# pip = frame(["mice", "scale", "SMOTE", "dummycoding"], rows=1, cols=4)
+# hp = matrix("6.000 1.000 0.704 1.000 0.000 1.000 2.000 6.000 0.000 1.000 0.000 0.000 0.000 0.000 5.000 149.000 1.000 1.000 1.000 2.000 4.000 1.000 0.000 0.000 2.000 0.000 0.000 0.000 0.000 0.000
+            # 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000", rows=1, cols=54)
+
+# acc = as.matrix(63)
+  
+print("best pipelines")
+print(toString(pip))
+
+print("best hyperparam")
+print(toString(hp))
+
+print("best accuracy")
+print(toString(acc))
+
+
+clean_accuracy = testBestPipeline(pip=pip[1,], hp=hp[1,], X_train=X_train, y_train=y_train,
+  X_test=X_test, y_test=y_test, cmask=getMask, MLhp=opt, valAcc=as.scalar(acc[1,1]), dirAcc=d_accuracy,
+  isWeighted=weightedAccuracy)
+
+
+# # # dataPath = $10
+# # # # write the preprocessing
+# # # trainset = cbind(X_train, y_train)
+# # # testset = cbind(X_test, y_test)
+# # # write(trainset, dataPath+"/train.csv" , format="csv", sep=",")
+# # # write(testset, dataPath+"/test.csv", format="csv", sep=",")
+# # # write(opt, dataPath+"/mlHp.csv", format="csv", sep=",")
+# # # write(allLgs, $11, format="csv")
+
+
+result = d_accuracy < clean_accuracy  
+print("reult satisfied ------------"+result)
+write(result, $10, format="text")
+
+
+output = $11
+if(result) {
+  write(pip, output+"pip.csv", format="csv")
+  write(hp, output+"hp.csv", format="csv")
+  write(acc, output+"acc.csv", format="csv")
+}
+
+
+
+
+
+
+####################################################################
+# Function for classifying the dirty dataset, makes a call to crossV()
+# Inputs: takes the input dataset X, Y and the value of k validation, mask of the 
+# dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# via grid-search and a boolean value of (un)weighted accuracy.
+# Output: It return a matrix having the accuracy of each fold.
+####################################################################
+classifyDirty = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Double] opt, 
+  Matrix[Double] mask, Boolean isWeighted = TRUE, Integer cv)
+  return (Double accuracy)
+{
+  # # classify without cleaning fill with default values 1
+  Xtrain = replace(target = Xtrain, pattern = NaN, replacement=0)
+  dX_train = utils::dummycoding(Xtrain, mask)
+  # print("rows in data ")
+  # print(nrow(dX_train))
+  # print("column in data")
+  # print(ncol(dX_train))
+  accuracy = crossV(dX_train, ytrain, cv, mask, opt, isWeighted)
+  accuracy = mean(accuracy)
+  print("cross validated dirty accuracy "+accuracy)
+}
+
+
+######################################################################
+# # Function for cross validation using hold out method
+# # Inputs: The input dataset X, Y and the value of k validation, mask of the 
+# # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# # via grid-search and a boolean value of (un)weighted accuracy.
+# # Output: It return a matrix having the accuracy of each fold.
+######################################################################
+
+crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] mask,
+  Matrix[Double] MLhp, Boolean isWeighted) 
+return (Matrix[Double] accuracyMatrix)
+{
+
+  accuracyMatrix = matrix(0, k, 1)
+
+  dataList = list()
+  testL = list()
+  data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+  classes = table(data[, 1], 1)
+  ins_per_fold = classes/k
+  start_fold = matrix(1, rows=nrow(ins_per_fold), cols=1)
+  fold_idxes = cbind(start_fold, ins_per_fold)
+
+  start_i = 0; end_i = 0; idx_fold = 1;;
+  for(i in 1:k)
+  {
+    fold_i = matrix(0, 0, ncol(data))
+    start=0; end=0; 
+    for(j in 1:nrow(classes))
+    {
+      idx = as.scalar(classes[j, 1])
+      start = end + 1;
+      end = end + idx
+      class_j =  data[start:end, ]
+
+
+      start_i = as.scalar(fold_idxes[j, 1]);
+      end_i = as.scalar(fold_idxes[j, 2])
+
+      fold_i = rbind(fold_i, class_j[start_i:end_i, ])
+    }
+
+    dataList = append(dataList, fold_i)
+    fold_idxes[, 1] = fold_idxes[, 2] + 1
+    fold_idxes[, 2] += ins_per_fold
+    while(FALSE){}
+  }
+
+  for(i in seq(1,k))
+  {
+    [trainList, hold_out] = remove(dataList, i)
+    trainset = rbind(trainList)
+    testset = as.matrix(hold_out)
+    trainX = trainset[, 2:ncol(trainset)]
+    trainy = trainset[, 1]
+    testX = testset[, 2:ncol(testset)]
+    testy = testset[, 1]
+    beta = multiLogReg(X=trainX, Y=trainy, icpt=1, reg=as.scalar(MLhp[1,1]), tol= 1e-9, 
+    maxi=as.scalar(MLhp[1,2]), maxii= 50, verbose=FALSE);
+    [prob, yhat, a] = multiLogRegPredict(testX, beta, testy, FALSE)
+    accuracy = getAccuracy(testy, yhat, isWeighted)
+    accuracyMatrix[i] = accuracy
+  }
+
+}
+
+######################################################################
+# # Function for cross validation using hold out method
+# # Inputs: The input dataset X, Y and the value of k validation, mask of the 
+# # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# # via grid-search and a boolean value of (un)weighted accuracy.
+# # Output: It return a matrix having the accuracy of each fold.
+######################################################################
+
+compare = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] mask,
+  Matrix[Double] MLhp, Boolean isWeighted) 
+return (Matrix[Double] accuracyMatrix)
+{
+
+  accuracyMatrix = matrix(0, k, 1)
+
+  dataList = list()
+  testL = list()
+  data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+  classes = table(data[, 1], 1)
+  ins_per_fold = classes/k
+  start_fold = matrix(1, rows=nrow(ins_per_fold), cols=1)
+  fold_idxes = cbind(start_fold, ins_per_fold)
+
+  start_i = 0; end_i = 0; idx_fold = 1;;
+  for(i in 1:k)
+  {
+    fold_i = matrix(0, 0, ncol(data))
+    start=0; end=0; 
+    for(j in 1:nrow(classes))
+    {
+      idx = as.scalar(classes[j, 1])
+      start = end + 1;
+      end = end + idx
+      class_j =  data[start:end, ]
+
+
+      start_i = as.scalar(fold_idxes[j, 1]);
+      end_i = as.scalar(fold_idxes[j, 2])
+
+      fold_i = rbind(fold_i, class_j[start_i:end_i, ])
+    }
+
+    dataList = append(dataList, fold_i)
+    fold_idxes[, 1] = fold_idxes[, 2] + 1
+    fold_idxes[, 2] += ins_per_fold
+    while(FALSE){}
+  }
+
+  for(i in seq(1,k))
+  {
+    [trainList, hold_out] = remove(dataList, i)
+    trainset = rbind(trainList)
+    testset = as.matrix(hold_out)
+    trainX = trainset[, 2:ncol(trainset)]
+    trainy = trainset[, 1]
+    testX = testset[, 2:ncol(testset)]
+    testy = testset[, 1]
+    beta = multiLogReg(X=trainX, Y=trainy, icpt=1, reg=as.scalar(MLhp[1,1]), tol= 1e-9, 
+    maxi=as.scalar(MLhp[1,2]), maxii= 50, verbose=FALSE);
+    [prob, yhat, a] = multiLogRegPredict(testX, beta, testy, FALSE)
+    accuracy = getAccuracy(testy, yhat, isWeighted)
+    accuracyMatrix[i] = accuracy
+  }
+
+}
+
+lossFunc = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
+return (Matrix[Double] loss) {
+  [prob, yhat, acc] = multiLogRegPredict(X=X, B=B, Y=y,  verbose=FALSE)
+  loss = as.matrix(1 - (acc/100))
+  # [confusionCount_c, confusionAVG_c] = confusionMatrix(P=yhat, Y=y)
+}
+
+
+
+testBestPipeline = function(Frame[Unknown] pip, Matrix[Double] hp, Matrix[Double] X_train, Matrix[Double] y_train, 
+  Matrix[Double] X_test, Matrix[Double] y_test, Matrix[Double] cmask, Matrix[Double] MLhp, 
+  Double valAcc, Double dirAcc, Boolean isWeighted)
+  return (Double result) {
+  print("hp "+toString(hp))
+  ls = list();
+  i = 1; k = 1
+  trRow=nrow(X_train)
+  # take the oversampling out from the test processing
+  pip1 = as.frame("")
+  # construct the parameter list for best hyper-parameters
+  while(k <= ncol(pip))
+  {
+    end = as.integer(i+as.integer(as.scalar(hp[1,i])))
+    mat = hp[1, i+1:end]
+    i = end + 1
+    if(as.scalar(pip[1,k]) != "SMOTE") {
+      pip1 = cbind(pip1, pip[1,k] )
+      ls = append(ls, mat)
+    }
+    k = k + 1
+  }
+
+  # clean using best pipeline and train model
+  [X_train, Y_train] = executePipeline(pip1[, 2:ncol(pip1)], rbind(X_train,X_test), rbind(y_train,y_test), cmask, ls, 1, FALSE)
+  X_train_clean = X_train[1:trRow, ]
+  y_train_clean = Y_train[1:trRow, ]
+  X_test_clean = X_train[trRow+1:nrow(X_train), ]
+  y_test_clean = Y_train[trRow+1:nrow(X_train), ]
+
+  # classify after cleaning  
+  betas = multiLogReg(X=X_train_clean, Y=y_train_clean, icpt=1,
+    reg=as.scalar(MLhp[1,1]), tol= 1e-9, maxi=as.scalar(MLhp[1,2]), 
+    maxii= 50, verbose=FALSE);
+    
+  [c_prob, c_yhat, c_accuracy] = multiLogRegPredict(X_test_clean, betas, y_test_clean, FALSE)
+  c_accuracy = getAccuracy(y_test_clean, c_yhat, isWeighted)
+  [confusionCount_c, confusionAVG_c] = confusionMatrix(P=c_yhat, Y=y_test_clean)
+  
+  
+  print("Actual Records \n"+toString(cbind(X_test, y_test)))
+  print("Clean Records \n"+toString(cbind(X_test_clean, y_test_clean)))
+  print("predictions Records \n"+toString(cbind(X_test_clean, c_yhat)))
+  print("accuracy of dirty data  "+dirAcc)
+  print("accuracy of val data  "+valAcc)
+  print("accuracy of test accuracy "+c_accuracy)
+  print("clean confusion matrix  \n"+toString(confusionCount_c))
+  
+  result = c_accuracy
+}
+
+
+

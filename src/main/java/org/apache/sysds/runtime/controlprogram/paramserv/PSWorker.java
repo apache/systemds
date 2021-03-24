@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.paramserv;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import org.apache.sysds.common.Types.DataType;
@@ -29,6 +30,7 @@ import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
@@ -39,6 +41,11 @@ public abstract class PSWorker implements Serializable
 {
 	private static final long serialVersionUID = -3510485051178200118L;
 
+	// thread pool for asynchronous accrue gradients on epoch scheduling
+	// Note: we use a non-static variable to obtain the live maintenance thread pool
+	// which is important in scenarios w/ multiple scripts in a single JVM (e.g., tests)
+	protected ExecutorService _tpool = LazyWriteBuffer.getUtilThreadPool();
+	
 	protected int _workerID;
 	protected int _epochs;
 	protected long _batchSize;

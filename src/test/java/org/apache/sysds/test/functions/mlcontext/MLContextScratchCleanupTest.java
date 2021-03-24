@@ -28,13 +28,14 @@ import org.junit.After;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.api.mlcontext.MLContext;
 import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.api.mlcontext.Script;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
-
+@net.jcip.annotations.NotThreadSafe
 public class MLContextScratchCleanupTest extends AutomatedTestBase 
 {
 	private final static String TEST_DIR = "functions/mlcontext";
@@ -88,10 +89,11 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 		//create mlcontext
 		SparkSession spark = createSystemDSSparkSession("MLContextScratchCleanupTest", "local");
 		MLContext ml = new MLContext(spark);
-		ml.setExplain(true);
-
+		
 		String dml1 = baseDirectory + File.separator + "ScratchCleanup1.dml";
 		String dml2 = baseDirectory + File.separator + (wRead?"ScratchCleanup2b.dml":"ScratchCleanup2.dml");
+		boolean broadcastOld = ParForProgramBlock.ALLOW_BROADCAST_INPUTS;
+		ParForProgramBlock.ALLOW_BROADCAST_INPUTS = false;
 		
 		try
 		{
@@ -110,6 +112,7 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 		}
 		finally {
 			DMLScript.setGlobalExecMode(oldplatform);
+			ParForProgramBlock.ALLOW_BROADCAST_INPUTS = broadcastOld;
 			
 			// stop underlying spark context to allow single jvm tests (otherwise the
 			// next test that tries to create a SparkContext would fail)

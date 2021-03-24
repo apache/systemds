@@ -332,7 +332,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
 			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq,
-				getEpochs(), getBatchSize(), workerECs.get(i), ps, workerNum==1))
+				getEpochs(), getBatchSize(), workerECs.get(i), ps))
 			.collect(Collectors.toList());
 
 		// Do data partition

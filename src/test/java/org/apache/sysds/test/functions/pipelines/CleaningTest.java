@@ -30,19 +30,19 @@ import org.junit.Test;
 public class CleaningTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "mainScript";
 	private final static String TEST_NAME2 = "compareAccuracy";
-
-	protected static final String SCRIPT_DIR = "./scripts/pipelines/";
 	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTest.class.getSimpleName() + "/";
 
+//	org/apache/sysds/test/functions/pipelines/CleaningTest.java
 
-	protected static final String DATA_DIR = SCRIPT_DIR+"/data/";
+	protected static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
+	protected static final String DATA_DIR = RESOURCE+"data/";
 
 	private final static String DIRTY = DATA_DIR+ "dirty.csv";
 	private final static String CLEAN = DATA_DIR+ "clean.csv";
-	private final static String META = SCRIPT_DIR+ "meta/meta_census.csv";
-	private final static String OUTPUT = SCRIPT_DIR+ "intermediates/";
+	private final static String META = RESOURCE+ "meta/meta_census.csv";
+	private final static String OUTPUT = RESOURCE+"intermediates/";
 
-	protected static final String PARAM_DIR = SCRIPT_DIR + "/properties/";
+	protected static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
 	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
 
@@ -68,7 +68,8 @@ public class CleaningTest extends AutomatedTestBase {
 	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
 		boolean weightedAccuracy, Types.ExecMode et) {
 
-		String HOME = SCRIPT_DIR+"scripts/" ;
+		setOutputBuffering(true);
+		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
@@ -89,8 +90,8 @@ public class CleaningTest extends AutomatedTestBase {
 	}
 
 	private void runCleanAndCompareTest( Types.ExecMode et) {
-
-		String HOME = SCRIPT_DIR+"scripts/" ;
+		setOutputBuffering(true);
+		String HOME = SCRIPT_DIR+"functions/pipelines/";
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME2));

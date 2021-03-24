@@ -21,7 +21,7 @@
 
 # DML script that tests read csv
 
-A = read($1, format="csv", header=TRUE);
+A = read($1, format="csv", header=TRUE, sep=";");
 x = sum(A);
 write(x, $2);
 

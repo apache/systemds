@@ -65,14 +65,13 @@ public class MetaDataAll extends DataIdentifier {
 
 	public JSONObject readMetadataFile(String filename, boolean conditional)
 	{
-		JSONObject retVal = null;
+		JSONObject retVal = new JSONObject();
 		boolean exists = HDFSTool.existsFileOnHDFS(filename);
 		boolean isDir = HDFSTool.isDirectory(filename);
 
 		// CASE: filename is a directory -- process as a directory
 		if( exists && isDir )
 		{
-			retVal = new JSONObject();
 			for(FileStatus stat : HDFSTool.getDirectoryListing(filename)) {
 				Path childPath = stat.getPath(); // gives directory name
 				if( !childPath.getName().startsWith("part") )

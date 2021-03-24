@@ -136,6 +136,7 @@ public enum Builtins {
 	IMPUTE_BY_MODE("imputeByMode", true),
 	IMG_CROP("img_crop", true),
 	IMPUTE_FD("imputeByFD", true),
+	IMPUTE_MVD("imputeByMVD", true),
 	INTERQUANTILE("interQuantile", false),
 	INTERSECT("intersect", true),
 	INVERSE("inv", "inverse", false),

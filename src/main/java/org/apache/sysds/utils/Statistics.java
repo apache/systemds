@@ -511,7 +511,6 @@ public class Statistics
 		nativeConv2dTime = 0;
 		nativeConv2dBwdFilterTime = 0;
 		nativeConv2dBwdDataTime = 0;
-		LibMatrixDNN.resetStatistics();
 		federatedReadCount.reset();
 		federatedPutCount.reset();
 		federatedGetCount.reset();

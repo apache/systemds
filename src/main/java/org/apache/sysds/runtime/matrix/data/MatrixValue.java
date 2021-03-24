@@ -96,7 +96,22 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract void reset(int rl, int cl, boolean sp, long nnzs);
 	public abstract void reset(int rl, int cl, double v);
 
+	/**
+	 * Copy this MatrixValue into that MatrixValue.
+	 * 
+	 * If the MatrixValue is a MatrixBlock evaluate the sparsity of the original matrix,
+	 * and copy into either a sparse or a dense matrix.
+	 * 
+	 * @param that object to copy the values into.
+	 */
 	public abstract void copy(MatrixValue that);
+
+	/**
+	 * Copy this MatrixValue into that MatrixValue. But select sparse destination block depending on boolean parameter.
+	 * 
+	 * @param that object to copy the values into.
+	 * @param sp boolean specifying if output should be forced sparse or dense. (only applicable if the 'that' is a MatrixBlock)
+	 */
 	public abstract void copy(MatrixValue that, boolean sp);
 	
 	public abstract MatrixValue scalarOperations(ScalarOperator op, MatrixValue result);

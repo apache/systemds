@@ -274,7 +274,7 @@ public class LibMatrixAgg
 			pool.shutdown();
 			//aggregate partial results
 			if( !(uaop.indexFn instanceof ReduceCol) ) {
-				out.copy(((PartialAggTask)tasks.get(0)).getResult()); //for init
+				out.copy(((PartialAggTask)tasks.get(0)).getResult(), false); //for init
 				for( int i=1; i<tasks.size(); i++ )
 					aggregateFinalResult(uaop.aggOp, out, ((PartialAggTask)tasks.get(i)).getResult());
 			}
@@ -468,7 +468,7 @@ public class LibMatrixAgg
 			List<Future<MatrixBlock>> rtasks = pool.invokeAll(tasks);	
 			pool.shutdown();
 			//aggregate partial results and error handling
-			ret.copy(rtasks.get(0).get()); //for init
+			ret.copy(rtasks.get(0).get(), false); //for init
 			for( int i=1; i<rtasks.size(); i++ )
 				aggregateFinalResult(op.aggOp, ret, rtasks.get(i).get());
 		}
@@ -672,6 +672,14 @@ public class LibMatrixAgg
 		//is not equals to the partial aggregate operator
 		if( aop.increOp.fn instanceof Mean ) {
 			laop = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), aop.correction);
+		}
+
+		if( out.isInSparseFormat() != partout.isInSparseFormat() ){
+			if(partout.isInSparseFormat())
+				partout.sparseToDense();
+
+			if(out.isInSparseFormat())
+				out.sparseToDense();
 		}
 
 		//incremental aggregation of final results

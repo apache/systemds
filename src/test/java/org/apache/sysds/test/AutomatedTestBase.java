@@ -958,7 +958,7 @@ public abstract class AutomatedTestBase {
 
 	public static String readDMLMetaDataPrivacyValue(String fileName, String outputDir, String key) {
 		MetaDataAll meta = getMetaData(fileName, outputDir);
-		return key.equals(DataExpression.FINE_GRAINED_PRIVACY) ? meta.getFineGrainedPrivacy() : meta.getPrivacy().toString();
+		return key.equals(DataExpression.FINE_GRAINED_PRIVACY) ? meta.getFineGrainedPrivacy() : meta.getPrivacy().getPrivacyLevel().name();
 	}
 
 	/**

@@ -26,7 +26,8 @@ options(digits=22)
 
 library(Matrix);
 
-A = read.csv(args[1]);
+A = read.csv(args[1], header=TRUE, sep=",");
+A = data.matrix(A)
 x = sum(A);
 write(x, args[2]);
 

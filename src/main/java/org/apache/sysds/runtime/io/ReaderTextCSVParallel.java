@@ -335,7 +335,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 				RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
 				LongWritable key = new LongWritable();
 				Text value = new Text();
-				
+
 				// skip the header line
 				if (_isFirstSplit && _hasHeader) {
 					reader.next(key, value);

@@ -19,8 +19,6 @@
 
 package org.apache.sysds.parser;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1094,7 +1092,12 @@ public class DataExpression extends DataIdentifier
 					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
 				}
 				else {
-					if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
+					if ( (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier))
+					{
+						removeVarParam(DELIM_DELIMITER);
+						addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
+					} else
+						if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
 						&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
 					{
 						raiseValidateError("For delimited file '" + getVarParam(DELIM_DELIMITER) 
@@ -2297,32 +2300,6 @@ public class DataExpression extends DataIdentifier
 		result.addVariable(((DataIdentifier)this.getOutput()).getName(), (DataIdentifier)this.getOutput());
 		return result;
 	}
-	
-//	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional)
-//	{
-//		// Check the MTD file exists. if there is an MTD file, return false.
-//		MetaDataAll mtdObject = new MetaDataAll(mtdFileName, conditional, false);
-//		if (mtdObject.mtdExists())
-//			return false;
-//
-//		if( HDFSTool.existsFileOnHDFS(inputFileName)
-//			&& !HDFSTool.isDirectory(inputFileName)  )
-//		{
-//			Path path = new Path(inputFileName);
-//			try( BufferedReader in = new BufferedReader(new InputStreamReader(
-//				IOUtilFunctions.getFileSystem(path).open(path))))
-//			{
-//				String headerLine = new String("");
-//				if (in.ready())
-//					headerLine = in.readLine();
-//				return (headerLine !=null && headerLine.startsWith("%%"));
-//			}
-//			catch(Exception ex) {
-//				throw new LanguageException("Failed to read matrix market header.", ex);
-//			}
-//		}
-//		return false;
-//	}
 	
 	public boolean isCSVReadWithUnknownSize() {
 		Expression format = getVarParam(FORMAT_TYPE);

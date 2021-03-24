@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.meta;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
@@ -89,7 +90,7 @@ public class MetaDataAll extends DataIdentifier {
 						retVal.put(key, val);
 					}
 				}
-				catch(Exception e){
+				catch( IOException e){
 					raiseValidateError("for MTD file in directory, error parting part of MTD file with path " + childPath.toString() + ": " + e.getMessage(), conditional);
 				}
 			}

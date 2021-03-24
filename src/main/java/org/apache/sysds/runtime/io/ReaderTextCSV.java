@@ -58,7 +58,7 @@ public class ReaderTextCSV extends MatrixReader
 			ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 		
 		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		

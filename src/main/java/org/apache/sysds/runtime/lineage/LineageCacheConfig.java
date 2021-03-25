@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 
 import java.util.Comparator;
 
@@ -188,6 +189,7 @@ public class LineageCacheConfig
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		boolean insttype = inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
+			|| inst instanceof GPUInstruction
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))

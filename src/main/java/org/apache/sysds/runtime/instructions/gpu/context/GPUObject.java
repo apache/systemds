@@ -102,6 +102,11 @@ public class GPUObject {
 	 */
 	final ShadowBuffer shadowBuffer;
 	
+	/**
+	 * whether cached in lineage cache
+	 */
+	private boolean isLineageCached = false;
+	
 	// ----------------------------------------------------------------------
 	// Methods used to access, set and check jcudaDenseMatrixPtr
 	
@@ -432,12 +437,28 @@ public class GPUObject {
 	/**
 	 * Initializes this GPUObject with a {@link MatrixObject} instance which will contain metadata about the enclosing matrix block
 	 *
-	 * @param mat2 the matrix block that owns this {@link GPUObject}
+	 * @param mat2 the matrix object that owns this {@link GPUObject}
 	 */
 	GPUObject(GPUContext gCtx, MatrixObject mat2) {
 		gpuContext = gCtx;
 		this.mat = mat2;
 		this.shadowBuffer = new ShadowBuffer(this);
+	}
+
+	public GPUObject(GPUContext gCtx, GPUObject that, MatrixObject mat) {
+		dirty = that.dirty;
+		readLocks.reset();
+		writeLock = false;
+		timestamp = new AtomicLong(that.timestamp.get());
+		isSparse = that.isSparse;
+		isLineageCached = that.isLineageCached;
+		if (isDensePointerNull())
+			setDensePointer(that.getDensePointer());
+		if (getJcudaSparseMatrixPtr() != null)
+			setSparseMatrixCudaPointer(that.getSparseMatrixCudaPointer());
+		gpuContext = gCtx;
+		this.mat = mat;
+		shadowBuffer = new ShadowBuffer(this);
 	}
 
 	public boolean isSparse() {
@@ -959,6 +980,8 @@ public class GPUObject {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : clearData on " + this + ", GPUContext=" + getGPUContext());
 		}
+		if (isLineageCached)
+			return;
 		if (!isDensePointerNull()) {
 			getGPUContext().cudaFreeHelper(opcode, getDensePointer(), eager);
 		}
@@ -988,6 +1011,10 @@ public class GPUObject {
 	 */
 	public boolean isDirty() {
 		return dirty;
+	}
+	
+	public void setIsLinCached(boolean val) {
+		isLineageCached = val;
 	}
 
 	@Override

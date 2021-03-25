@@ -23,28 +23,28 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.lineage.Lineage;
-import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import jcuda.runtime.cudaError;
 
-public class LineageTraceGPUTest extends AutomatedTestBase{
+public class GPUFullReuseTest extends AutomatedTestBase{
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "LineageTraceGPU1"; 
-	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceGPUTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME1 = "FullReuseGPU1"; 
+	protected String TEST_CLASS_DIR = TEST_DIR + GPUFullReuseTest.class.getSimpleName() + "/";
 	
-	protected static final int numRecords = 10;
-	protected static final int numFeatures = 5;
-	
+	@BeforeClass
+	public static void checkGPU() {
+		// Skip all the tests if no GPU is available
+		Assume.assumeTrue(TestUtils.isGPUAvailable() == cudaError.cudaSuccess);
+	}
 	
 	@Override
 	public void setUp() {
@@ -53,40 +53,42 @@ public class LineageTraceGPUTest extends AutomatedTestBase{
 	}
 	
 	@Test
-	public void simpleHLM_gpu() {              //hyper-parameter tuning over LM (simple)
+	public void ReuseSingleInst() {           //reuse ba+*
 		testLineageTraceExec(TEST_NAME1);
 	}
 	
 	private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
-		
-		int gpuStatus = TestUtils.isGPUAvailable(); 
-		if (gpuStatus == cudaError.cudaSuccess)
-			AutomatedTestBase.TEST_GPU = true;  //adds '-gpu'
 		getAndLoadTestConfiguration(testname);
+
 		List<String> proArgs = new ArrayList<>();
-		
 		proArgs.add("-stats");
-		proArgs.add("-lineage");
 		proArgs.add("-args");
 		proArgs.add(output("R"));
-		proArgs.add(String.valueOf(numRecords));
-		proArgs.add(String.valueOf(numFeatures));
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		fullDMLScriptName = getScript();
+		
+		//run the test
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+		HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("R");
+		
+		AutomatedTestBase.TEST_GPU = true;  //adds '-gpu'
+		proArgs.add("-stats");
+		proArgs.add("-lineage");
+		proArgs.add("reuse_full");
+		proArgs.add("-args");
+		proArgs.add(output("R"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
 		
 		Lineage.resetInternalState();
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-		
-		//get lineage and generate program
-		String Rtrace = readDMLLineageFromHDFS("R");
 		AutomatedTestBase.TEST_GPU = false;
-		//NOTE: the generated program is CP-only.
-		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
-		
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-		MatrixBlock tmp = ((MatrixObject)ret).acquireReadAndRelease();
-		TestUtils.compareMatrices(dmlfile, tmp, 1e-6);
+		HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLMatrixFromOutputDir("R");
+
+		//compare results 
+		TestUtils.compareMatrices(R_orig, R_reused, 1e-6, "Origin", "Reused");
 	}
 }
+

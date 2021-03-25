@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -39,6 +40,7 @@ public class LineageCacheEntry {
 	protected LineageItem _origItem;
 	private String _outfile = null;
 	protected double score;
+	protected GPUObject _gpuPointer;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
 		_key = key;
@@ -49,6 +51,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		_nextEntry = null;
 		_origItem = null;
+		_outfile = null;
+		_gpuPointer = null;
 	}
 	
 	protected synchronized void setCacheStatus(LineageCacheStatus st) {
@@ -97,6 +101,10 @@ public class LineageCacheEntry {
 	
 	public boolean isMatrixValue() {
 		return _dt.isMatrix();
+	}
+
+	public boolean isScalarValue() {
+		return _dt.isScalar();
 	}
 	
 	public synchronized void setValue(MatrixBlock val, long computetime) {

@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -62,8 +62,8 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 
 	public void federatedLmPipeline(ExecMode execMode, boolean contSplits, String TEST_NAME) {
 		ExecMode oldExec = setExecMode(execMode);
-		boolean oldSort = EncoderRecode.SORT_RECODE_MAP;
-		EncoderRecode.SORT_RECODE_MAP = true;
+		boolean oldSort = ColumnEncoderRecode.SORT_RECODE_MAP;
+		ColumnEncoderRecode.SORT_RECODE_MAP = true;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -139,7 +139,7 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 		}
 		finally {
 			resetExecMode(oldExec);
-			EncoderRecode.SORT_RECODE_MAP = oldSort;
+			ColumnEncoderRecode.SORT_RECODE_MAP = oldSort;
 		}
 	}
 }

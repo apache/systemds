@@ -52,17 +52,20 @@ import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
-import org.apache.sysds.runtime.instructions.cp.*;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
+import org.apache.sysds.runtime.util.EMAUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.runtime.util.EMAUtils;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
 public class FrameBlock implements CacheBlock, Externalizable  {
@@ -609,6 +612,17 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	 */
 	public Iterator<String[]> getStringRowIterator(int[] cols) {
 		return new StringRowIterator(0, _numRows, cols);
+	}
+
+	/**
+	 * Get a row iterator over the frame where all selected fields are encoded as strings independent of their value
+	 * types.
+	 *
+	 * @param colID column selection, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int colID) {
+		return new StringRowIterator(0, _numRows, new int[] {colID});
 	}
 
 	/**
@@ -1237,7 +1251,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-				String[] tmp = EncoderRecode.splitRecodeMapEntry(val.toString());
+				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
 				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}

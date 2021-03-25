@@ -29,16 +29,17 @@ import java.util.List;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.transform.encode.Encoder;
-import org.apache.sysds.runtime.transform.encode.EncoderComposite;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class EncoderSerializationTest extends AutomatedTestBase
+public class ColumnEncoderSerializationTest extends AutomatedTestBase
 {
 	private final static int rows = 2791;
 	private final static int cols = 8;
@@ -53,7 +54,9 @@ public class EncoderSerializationTest extends AutomatedTestBase
 
 	public enum TransformType {
 		RECODE,
-		DUMMY
+		DUMMY,
+		IMPUTE,
+		OMIT
 	}
 
 	@Override
@@ -72,6 +75,20 @@ public class EncoderSerializationTest extends AutomatedTestBase
 
 	@Test
 	public void testComposite4() { runTransformSerTest(TransformType.DUMMY, schemaMixed); }
+
+	@Test
+	public void testComposite5() { runTransformSerTest(TransformType.IMPUTE, schemaMixed); }
+
+	@Test
+	public void testComposite6() { runTransformSerTest(TransformType.IMPUTE, schemaStrings); }
+
+	@Test
+	public void testComposite7() { runTransformSerTest(TransformType.OMIT, schemaMixed); }
+
+	@Test
+	public void testComposite8() { runTransformSerTest(TransformType.OMIT, schemaStrings); }
+
+
 
 
 	private void runTransformSerTest(TransformType type, Types.ValueType[] schema) {
@@ -95,29 +112,40 @@ public class EncoderSerializationTest extends AutomatedTestBase
 			spec = "{\n \"ids\": true\n, \"dummycode\":[ 2, 7, 8, 1 ]\n\n}";
 		else if(type == TransformType.RECODE)
 			spec = "{\n \"ids\": true\n, \"recode\":[ 2, 7, 1, 8 ]\n\n}";
-
+		else if(type == TransformType.IMPUTE)
+			spec = "{\n \"ids\": true\n, \"impute\":[ { \"id\": 6, \"method\": \"constant\", \"value\": \"1\" }, " +
+					"{ \"id\": 7, \"method\": \"global_mode\" }, { \"id\": 9, \"method\": \"global_mean\" } ]\n\n}";
+		else if (type == TransformType.OMIT)
+			spec = "{ \"ids\": true, \"omit\": [ 1,2,4,5,6,7,8,9 ], \"recode\": [ 2, 7 ] }";
 
 		frame.setSchema(schema);
 		String[] cnames = frame.getColumnNames();
 
-		Encoder encoderIn = EncoderFactory.createEncoder(spec, cnames, frame.getNumColumns(), null);
-		EncoderComposite encoderOut;
+		MultiColumnEncoder encoderIn = EncoderFactory.createEncoder(spec, cnames, frame.getNumColumns(), null);
+		MultiColumnEncoder encoderOut;
 
 		// serialization and deserialization
-		encoderOut = (EncoderComposite) serializeDeserialize(encoderIn);
+		encoderOut = serializeDeserialize(encoderIn);
 		// compare
-		Assert.assertArrayEquals(encoderIn.getColList(), encoderOut.getColList());
-		Assert.assertEquals(encoderIn.getNumCols(), encoderOut.getNumCols());
+		assert encoderOut != null;
+		Assert.assertArrayEquals(encoderIn.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID),
+				encoderOut.getFromAllIntArray(ColumnEncoderComposite.class, ColumnEncoder::getColID));
 
-		List<Encoder> eListIn = ((EncoderComposite) encoderIn).getEncoders();
-		List<Encoder> eListOut = encoderOut.getEncoders();
-		for(int i = 0; i < eListIn.size();  i++) {
-			Assert.assertArrayEquals(eListIn.get(i).getColList(), eListOut.get(i).getColList());
-			Assert.assertEquals(eListIn.get(i).getNumCols(), eListOut.get(i).getNumCols());
+		int numIn = encoderIn.getColumnEncoders().size();
+		int numOut = encoderOut.getColumnEncoders().size();
+		Assert.assertEquals(numIn, numOut);
+		List<Class<? extends ColumnEncoder>> typesIn = encoderIn.getEncoderTypes();
+		List<Class<? extends ColumnEncoder>> typesOut = encoderOut.getEncoderTypes();
+		Assert.assertArrayEquals(typesIn.toArray(), typesOut.toArray());
+
+		for(Class<? extends ColumnEncoder> classtype: typesIn){
+			Assert.assertArrayEquals(encoderIn.getFromAllIntArray(classtype, ColumnEncoder::getColID), encoderOut.getFromAllIntArray(classtype, ColumnEncoder::getColID));
 		}
+
+
 	}
 
-	private static Encoder serializeDeserialize(Encoder encoderIn) {
+	private static MultiColumnEncoder serializeDeserialize(MultiColumnEncoder encoderIn) {
 		try {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			ObjectOutputStream oos = new ObjectOutputStream(bos);
@@ -127,9 +155,7 @@ public class EncoderSerializationTest extends AutomatedTestBase
 
 			ByteArrayInputStream bis = new ByteArrayInputStream(encoderBytes);
 			ObjectInput in = new ObjectInputStream(bis);
-			Encoder encoderOut = (Encoder) in.readObject();
-
-			return encoderOut;
+			return (MultiColumnEncoder) in.readObject();
 		}
 		catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();

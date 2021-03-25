@@ -41,7 +41,7 @@ import org.apache.sysds.utils.GPUStatistics;
 public class AggregateBinaryGPUInstruction extends GPUInstruction implements LineageTraceable {
 	private CPOperand _input1 = null;
 	private CPOperand _input2 = null;
-	private CPOperand _output = null;
+	public CPOperand _output = null;
 	private boolean _isLeftTransposed;
 	private boolean _isRightTransposed;
 

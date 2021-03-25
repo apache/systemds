@@ -253,6 +253,12 @@ public class GPUContext {
 		getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(ret);
 		return ret;
 	}
+	
+	public GPUObject shallowCopyGPUObject(GPUObject source, MatrixObject mo) {
+		GPUObject ret = new GPUObject(this, source, mo);
+		getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(ret);
+		return ret;
+	}
 
 	/**
 	 * Gets the device properties for the active GPU (set with cudaSetDevice()).

@@ -46,6 +46,9 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
+import org.apache.sysds.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -91,7 +94,9 @@ public class LineageCache
 			ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
 			ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null; 
 				
-			LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue():cfinst.getLineageItem(ec).getValue();
+			LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
+					: (cfinst != null) ? cfinst.getLineageItem(ec).getValue() 
+					: ((LineageTraceable)inst).getLineageItem(ec).getValue();  //GPU instruction
 			List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liList = new ArrayList<>();
@@ -127,8 +132,10 @@ public class LineageCache
 					if(e == null && isMarkedForCaching(inst, ec)) {
 						if (cinst != null)
 							putIntern(item.getKey(), cinst.output.getDataType(), null, null,  0);
-						else
+						else if (cfinst != null)
 							putIntern(item.getKey(), cfinst.output.getDataType(), null, null,  0);
+						else if (inst instanceof AggregateBinaryGPUInstruction)
+							putIntern(item.getKey(), ((AggregateBinaryGPUInstruction)inst)._output.getDataType(), null, null,  0);
 						//FIXME: different o/p datatypes for MultiReturnBuiltins.
 					}
 				}
@@ -145,13 +152,19 @@ public class LineageCache
 							getOutput(entry.getKey().getOpcode().charAt(entry.getKey().getOpcode().length()-1)-'0').getName(); 
 					else if (inst instanceof ComputationCPInstruction)
 						outName = cinst.output.getName();
-					else
+					else if (inst instanceof ComputationFEDInstruction)
 						outName = cfinst.output.getName();
+					else if (inst instanceof AggregateBinaryGPUInstruction)
+						outName = ((AggregateBinaryGPUInstruction) inst)._output.getName();
 					
-					if (e.isMatrixValue())
+					if (e.isMatrixValue() && e._gpuPointer == null)
 						ec.setMatrixOutput(outName, e.getMBValue());
-					else
+					else if (e.isScalarValue())
 						ec.setScalarOutput(outName, e.getSOValue());
+					else //TODO handle locks on gpu objects
+						ec.getMatrixObject(outName).setGPUObject(ec.getGPUContext(0), 
+								ec.getGPUContext(0).shallowCopyGPUObject(e._gpuPointer, ec.getMatrixObject(outName)));
+
 					reuse = true;
 
 					if (DMLScript.STATISTICS) //increment saved time
@@ -393,6 +406,7 @@ public class LineageCache
 		if (LineageCacheConfig.isReusable(inst, ec) ) {
 			//if (!isMarkedForCaching(inst, ec)) return;
 			List<Pair<LineageItem, Data>> liData = null;
+			GPUObject liGpuObj = null;
 			LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liData = new ArrayList<>();
@@ -404,11 +418,21 @@ public class LineageCache
 					liData.add(Pair.of(li, value));
 				}
 			}
+			else if (inst instanceof AggregateBinaryGPUInstruction)
+				liGpuObj = ec.getMatrixObject(((AggregateBinaryGPUInstruction) inst)._output).getGPUObject(ec.getGPUContext(0));
 			else
 				liData = inst instanceof ComputationCPInstruction ? 
 						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output))) :
 						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
 			synchronized( _cache ) {
+				if (liGpuObj != null) {
+					LineageCacheEntry centry = _cache.get(instLI);
+					liGpuObj.setIsLinCached(true);
+					centry._gpuPointer = liGpuObj;
+					centry._computeTime = computetime;
+					centry._status = LineageCacheStatus.CACHED;
+					return;
+				}
 				for (Pair<LineageItem, Data> entry : liData) {
 					LineageItem item = entry.getKey();
 					Data data = entry.getValue();
@@ -638,6 +662,9 @@ public class LineageCache
 	
 	private static boolean isMarkedForCaching (Instruction inst, ExecutionContext ec) {
 		if (!LineageCacheConfig.getCompAssRW())
+			return true;
+		
+		if (inst instanceof GPUInstruction)
 			return true;
 
 		CPOperand output = inst instanceof ComputationCPInstruction ? 

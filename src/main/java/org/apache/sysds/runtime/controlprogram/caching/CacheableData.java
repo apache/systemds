@@ -437,6 +437,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");
 	}
 	
+	public synchronized void removeGPUObject(GPUContext gCtx) {
+		_gpuObjects.remove(gCtx);
+	}
+	
 	// *********************************************
 	// ***                                       ***
 	// ***    HIGH-LEVEL METHODS THAT SPECIFY    ***

@@ -450,6 +450,7 @@ public class GPUMemoryManager {
 		if(LOG.isDebugEnabled())
 			LOG.debug("Removing the GPU object: " + gpuObj);
 		matrixMemoryManager.gpuObjects.remove(gpuObj);
+		gpuObj.mat.removeGPUObject(gpuObj.getGPUContext());
 	}
 
 	

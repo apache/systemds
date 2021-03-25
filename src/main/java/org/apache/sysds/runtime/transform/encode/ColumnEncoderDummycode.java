@@ -60,7 +60,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
 		// Out Matrix should already be correct size!
 		// append dummy coded or unchanged values to output
-		final int clen = in.getNumColumns();
 		for(int i = 0; i < in.getNumRows(); i++) {
 			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
 			// applied in a previous encoder

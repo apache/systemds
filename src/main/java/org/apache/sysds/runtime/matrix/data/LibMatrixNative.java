@@ -84,7 +84,7 @@ public class LibMatrixNative
 			&& m1.getDenseBlock().isContiguous() && m2.getDenseBlock().isContiguous() //contiguous but not allocated
 			&& 8L * ret.getLength() < Integer.MAX_VALUE;
 
-		if( NativeHelper.isNativeLibraryLoaded() &&  isValidForNative ) 
+		if( NativeHelper.isNativeLibraryLoaded() && isValidForNative ) 
 		{
 			ret.sparse = false;
 			ret.allocateDenseBlock();
@@ -116,12 +116,11 @@ public class LibMatrixNative
 			//else record failure and fallback to java
 			Statistics.incrementNativeFailuresCounter();
 			LOG.warn("matrixMult: Native mat mult failed. Falling back to java version ("
-				+ "loaded=" + NativeHelper.isNativeLibraryLoaded() 
-				+ ", sparse=" + (m1.isInSparseFormat() | m2.isInSparseFormat()) + ")");	
+				+ "loaded=" + NativeHelper.isNativeLibraryLoaded()
+				+ ", sparse=" + (m1.isInSparseFormat() | m2.isInSparseFormat()) + ")");
 		}
-
-		if(isValidForNative)
-			LOG.debug("Was valid for native MM but native lib was not loaded");
+		else if(isValidForNative)
+			LOG.warn("Was valid for native MM but native lib was not loaded");
 		
 		if (k == 1)
 			LibMatrixMult.matrixMult(m1, m2, ret, !examSparsity);

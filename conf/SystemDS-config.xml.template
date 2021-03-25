@@ -37,7 +37,7 @@
     <sysds.cp.parallel.io>true</sysds.cp.parallel.io>
     
     <!-- enables compressed linear algebra, experimental feature -->
-    <sysds.compressed.linalg>auto</sysds.compressed.linalg>
+    <sysds.compressed.linalg>false</sysds.compressed.linalg>
     
     <!-- enables operator fusion via code generation, experimental feature -->
     <sysds.codegen.enabled>false</sysds.codegen.enabled>

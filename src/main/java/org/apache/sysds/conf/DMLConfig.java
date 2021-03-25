@@ -132,7 +132,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_COCODE,      "COST");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");
 		_defaultVals.put(CODEGEN,                "false" );
-		_defaultVals.put(CODEGEN_API,		     GeneratorAPI.JAVA.name() );
+		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
 		_defaultVals.put(CODEGEN_OPTIMIZER,      PlanSelector.FUSE_COST_BASED_V2.name() );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );

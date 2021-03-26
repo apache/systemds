@@ -42,8 +42,7 @@ public abstract class SpoofOperator implements Serializable
 	protected static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
 	protected static final long PAR_MINFLOP_THRESHOLD = 2L*1024*1024; //MIN 2 MFLOP
 
-	protected long _row_off = 0;
-	protected long _col_off = 0;
+	protected long _grix_off = 0;
 
 	public abstract MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out);
 
@@ -321,11 +320,8 @@ public abstract class SpoofOperator implements Serializable
 		}
 	}
 
-	public void setOffset(boolean row, long offset) {
-		if(row)
-			_row_off = offset;
-		else
-			_col_off = offset;
+	public void setGrixOffset(long grixOffset) {
+		_grix_off = grixOffset;
 	}
 
 }

@@ -280,34 +280,6 @@ public class FederationMap {
 		return ret.toArray(new Future[0]);
 	}
 
-	private FederatedRequest[] rewriteFedReqWithOffset(FederatedRequest[] fr, FederatedRange fedRange) {
-		for(int counter = 0; counter < fr.length; counter++) {
-			// NOTE: only needed for federated spoof instructions yet
-			//   when using a sequence with row paritioned federated data
-			if(fr[counter].getType() == RequestType.EXEC_INST && fr[counter].getNumParams() > 0 && ((String)fr[counter].getParam(0)).contains("CP" + Lop.OPERAND_DELIMITOR + "spoof")) {
-				FederatedRequest tmpFr = fr[counter].deepClone();
-				Object frParam = tmpFr.getParam(0);
-				if(frParam instanceof String) {
-					String[] parts = ((String)frParam).split(Lop.OPERAND_DELIMITOR, -1);
-					long[] beginDims = fedRange.getBeginDims();
-					if(parts[parts.length - 1].startsWith("grixOff")) {
-						// update offset suffix
-						parts[parts.length - 1] = "grixOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[0]);
-						frParam = String.join(Lop.OPERAND_DELIMITOR, parts);
-					}
-					else {
-						// append offset suffix
-						frParam += Lop.OPERAND_DELIMITOR + "grixOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[0]);
-					}
-					tmpFr.setParam(0, frParam);
-				}
-				fr[counter] = tmpFr;
-			}
-		}
-
-		return Arrays.copyOf(fr, fr.length);
-	}
-
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {
 		if(!isInitialized())
 			throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");

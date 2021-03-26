@@ -105,6 +105,10 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 			// (wrong grix inside genexec call of fed worker)
 			// {7, 1000, 1, 1, true},
 
+			// not working because of fused sequence operation
+			//	(wrong grix inside genexec call of fed worker)
+			// {7, 1000, 1, 1, true},
+
 			// not creating a FedSpoof instruction
 			// {8, 1002, 24, 1, true},
 			// {8, 1002, 24, 1, false},

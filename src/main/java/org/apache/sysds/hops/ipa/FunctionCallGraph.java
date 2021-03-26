@@ -32,9 +32,11 @@ import java.util.stream.Collectors;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
@@ -409,56 +411,88 @@ public class FunctionCallGraph
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 
 				return false; //nothing to do
 
-			//function ops can only occur as root nodes of the dag
 			ret = HopRewriteUtils.containsSecondOrderBuiltin(hopsDAG);
+			Hop.resetVisitStatus(hopsDAG);
 			for( Hop h : hopsDAG ) {
+				//function ops can only occur as root nodes of the dag
 				if( h instanceof FunctionOp ) {
-					FunctionOp fop = (FunctionOp) h;
-					String lfkey = fop.getFunctionKey();
-					//keep all function operators
-					if( !_fCalls.containsKey(lfkey) ) {
-						_fCalls.put(lfkey, new ArrayList<>());
-						_fCallsSB.put(lfkey, new ArrayList<>());
-					}
-					_fCalls.get(lfkey).add(fop);
-					_fCallsSB.get(lfkey).add(sb);
-					
-					//prevent redundant call edges
-					if( lfset.contains(lfkey) || fop.getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
-						continue;
-					
-					if( !_fGraph.containsKey(lfkey) )
-						_fGraph.put(lfkey, new HashSet<String>());
-					
-					//recursively construct function call dag
-					if( !fstack.contains(lfkey) ) {
-						fstack.push(lfkey);
-						_fGraph.get(fkey).add(lfkey);
-						
-						FunctionStatementBlock fsb = sb.getDMLProg()
-							.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
-						FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
-						for( StatementBlock csb : fs.getBody() )
-							ret |= rConstructFunctionCallGraph(lfkey, csb, fstack, new HashSet<String>());
-						fstack.pop();
-					}
-					//recursive function call
-					else {
-						_fGraph.get(fkey).add(lfkey);
-						_fRecursive.add(lfkey);
-					
-						//mark indirectly recursive functions as recursive
-						int ix = fstack.indexOf(lfkey);
-						for( int i=ix+1; i<fstack.size(); i++ )
-							_fRecursive.add(fstack.get(i));
-					}
-					
-					//mark as visited for current function call context
-					lfset.add( lfkey );
+					ret |= addFunctionOpToGraph((FunctionOp) h, fkey, sb, fstack, lfset);
 				}
+				
+				//recursive processing for paramserv functions
+				rConstructFunctionCallGraph(h, fkey, sb, fstack, lfset);
 			}
 		}
 		
+		return ret;
+	}
+	
+	private boolean rConstructFunctionCallGraph(Hop hop, String fkey, StatementBlock sb, Stack<String> fstack, HashSet<String> lfset) {
+		boolean ret = false;
+		if( hop.isVisited() )
+			return ret;
+		
+		//recursively process all child nodes
+		for( Hop h : hop.getInput() )
+			rConstructFunctionCallGraph(h, fkey, sb, fstack, lfset);
+		
+		if( HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.PARAMSERV)
+			&& HopRewriteUtils.knownParamservFunctions(hop))
+		{
+			ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) hop;
+			List<FunctionOp> fps = pop.getParamservPseudoFunctionCalls();
+			//include artificial function ops into functional call graph
+			for( FunctionOp fop : fps )
+				ret |= addFunctionOpToGraph(fop, fkey, sb, fstack, lfset);
+		}
+		
+		hop.setVisited();
+		return ret;
+	}
+	
+	private boolean addFunctionOpToGraph(FunctionOp fop, String fkey, StatementBlock sb, Stack<String> fstack, HashSet<String> lfset) {
+		boolean ret = false;
+		String lfkey = fop.getFunctionKey();
+		//keep all function operators
+		if( !_fCalls.containsKey(lfkey) ) {
+			_fCalls.put(lfkey, new ArrayList<>());
+			_fCallsSB.put(lfkey, new ArrayList<>());
+		}
+		_fCalls.get(lfkey).add(fop);
+		_fCallsSB.get(lfkey).add(sb);
+		
+		//prevent redundant call edges
+		if( lfset.contains(lfkey) || fop.getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
+			return ret;
+		
+		if( !_fGraph.containsKey(lfkey) )
+			_fGraph.put(lfkey, new HashSet<String>());
+		
+		//recursively construct function call dag
+		if( !fstack.contains(lfkey) ) {
+			fstack.push(lfkey);
+			_fGraph.get(fkey).add(lfkey);
+			System.out.println(fkey+" -> "+lfkey);
+			FunctionStatementBlock fsb = sb.getDMLProg()
+				.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
+			FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
+			for( StatementBlock csb : fs.getBody() )
+				ret |= rConstructFunctionCallGraph(lfkey, csb, fstack, new HashSet<String>());
+			fstack.pop();
+		}
+		//recursive function call
+		else {
+			_fGraph.get(fkey).add(lfkey);
+			_fRecursive.add(lfkey);
+		
+			//mark indirectly recursive functions as recursive
+			int ix = fstack.indexOf(lfkey);
+			for( int i=ix+1; i<fstack.size(); i++ )
+				_fRecursive.add(fstack.get(i));
+		}
+		
+		//mark as visited for current function call context
+		lfset.add( lfkey );
 		return ret;
 	}
 

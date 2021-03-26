@@ -112,7 +112,8 @@ public abstract class ParamServer
 		String[] cfn = DMLProgram.splitFunctionKey(aggFunc);
 		String ns = cfn[0];
 		String fname = cfn[1];
-		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, false);
+		boolean opt = !ec.getProgram().containsFunctionProgramBlock(ns, fname, false);
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, opt);
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -130,7 +131,7 @@ public abstract class ParamServer
 			.toArray(CPOperand[]::new);
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(ns, fname, false, boundInputs,
+		_inst = new FunctionCallCPInstruction(ns, fname, opt, boundInputs,
 			func.getInputParamNames(), outputNames, "aggregate function");
 	}
 
@@ -138,7 +139,8 @@ public abstract class ParamServer
 		String[] cfn = DMLProgram.splitFunctionKey(valFunc);
 		String ns = cfn[0];
 		String fname = cfn[1];
-		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, false);
+		boolean opt = !ec.getProgram().containsFunctionProgramBlock(ns, fname, false);
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, opt);
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -157,7 +159,7 @@ public abstract class ParamServer
 			.toArray(CPOperand[]::new);
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_valInst = new FunctionCallCPInstruction(ns, fname, false, boundInputs,
+		_valInst = new FunctionCallCPInstruction(ns, fname, opt, boundInputs,
 			func.getInputParamNames(), outputNames, "validate function");
 
 		// write validation data to execution context. hyper params are already in ec

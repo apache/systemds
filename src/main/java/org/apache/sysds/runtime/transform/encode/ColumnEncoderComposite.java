@@ -138,7 +138,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			}
 		}
 		catch(Exception ex) {
-			LOG.error("Failed to transform-apply frame with \n" + this);
+			LOG.error("Failed to transform-apply matrix with \n" + this);
 			throw ex;
 		}
 		return in;

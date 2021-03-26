@@ -161,11 +161,13 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
+		// FrameBlock is column Major and MatrixBlock row Major this results in cache inefficiencies :(
 		for(int i = 0; i < in.getNumRows(); i++) {
 			Object okey = in.get(i, _colID - 1);
 			String key = (okey != null) ? okey.toString() : null;
 			long code = lookupRCDMap(key);
-			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
+			// NNZ in matrix block do not need updating since set value is never 0
+			out.getDenseBlock().set(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}

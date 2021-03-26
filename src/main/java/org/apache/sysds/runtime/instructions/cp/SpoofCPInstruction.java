@@ -20,13 +20,11 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;

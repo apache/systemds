@@ -32,28 +32,28 @@ else {
 }
 
 if(test_num == 1) {
-  # X = matrix(seq(1,4000000), rows=2000, cols=2000);
+  # X ... 2000x2000 matrix
   Y= matrix(2, rows=2000, cols=1);
 
   lamda = sum(Y);
   Z = round(abs(X + lamda)) + 5;
 }
 else if(test_num == 2) {
-  # X = matrix( 1, rows=10, cols=10);
+  # X ... 10x10 matrix
   Z = 1/(1+exp(-X));
 }
 else if(test_num == 3) {
-  # X = matrix("1 2 3 4 5 6 7 8 9", rows=3, cols=3);
+  # X ... 4x4 matrix
   Z = 10 + floor(round(abs(7 + (1 / exp(X)))));
 }
 else if(test_num == 4) {
-  # X = matrix("1 2 3 4 5 6 7 8 9", rows=3, cols=3);
+  # X ... 4x4 matrix
   w = matrix(3, rows=4, cols=4);
   v = matrix(5, rows=4, cols=4);
   Z = 10 + floor(round(abs((X + w) * v)));
 }
 else if(test_num == 5) {
-  # X = matrix("1 2 3 4 5 6 7 8 9", rows=3, cols=3);
+  # X ... 4x4 matrix
   w = matrix("1 2 3 4", rows=4, cols=1);
   v = matrix("4 4 4 4", rows=4, cols=1);
 
@@ -62,32 +62,57 @@ else if(test_num == 5) {
   Z = G + Y;
 }
 else if(test_num == 6) {
-  # X = matrix("1 2 3", rows=3, cols=1);
+  # X ... 4x1 vector
   y = matrix("1 1 1 1", rows=4, cols=1);
   v = matrix("3 3 3 3", rows=4, cols=1);
 
   Z = as.matrix(sum(X * y * v));
 }
 else if(test_num == 7) {
-  # X = seq(7, 1007);
+  # X ... 1000x1 vector
   Y = seq(6, 1006);
 
   U = X + Y - 7 + abs(X);
   Z = t(U) %*% U;
 }
 else if(test_num == 8) {
-  # X = matrix(1, rows=1002, cols=23);
+  # X ... 1002x24 matrix
   Y = seq(1, 1002);
-  X[100:900,] = matrix(0, rows=801, cols=23);
+  X[100:900,] = matrix(0, rows=801, cols=24);
 
   Z = X * ((X + 7.7) * Y);
 }
 else if(test_num == 9) {
-  # X = matrix(seq(7, 1006), 500, 2);
+  # X ... 500x2 matrix
   Y = matrix(seq(6, 1005), 500, 2);
 
   U = X + 7 * Y;
   Z = as.matrix(sum(U^2))
+}
+else if(test_num == 10) {
+  # X ... 500x2 matrix
+
+  Y = (0 / (X - 500))+1;
+  Z = replace(target=Y, pattern=0/0, replacement=7);
+}
+else if(test_num == 11) {
+  # X ... 1100x2000 matrix
+  Y = seq(1, 2000);
+
+  Z = -2 * X + t(Y);
+}
+else if(test_num == 12) {
+  # X ... 2x500 matrix
+  Y = matrix(seq(6, 1005), 2, 500);
+
+  U = X + 7 * Y;
+  Z = as.matrix(sum(U^2))
+}
+else if(test_num == 13) {
+  # X ... 2x4 matrix
+  w = matrix(seq(1,8), rows=2, cols=4);
+  v = matrix(5, rows=2, cols=4);
+  Z = 10 + floor(round(abs((X + w) * v)));
 }
 
 write(Z, $out_Z);

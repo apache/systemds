@@ -74,22 +74,35 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 		// cols must be even for col partitioned X
 		return Arrays.asList(new Object[][] {
 			// {test_num, rows, cols, sparsity, row_partitioned}
+
+			// row partitioned
 			{1, 2000, 2000, 1, true},
 			{2, 10, 10, 1, true},
 			{3, 4, 4, 1, true},
 			{4, 4, 4, 1, true},
 			{5, 4, 4, 1, true},
 			{6, 4, 1, 1, true},
-
 			{7, 1000, 1, 1, true},
 			{9, 500, 2, 1, true},
+			{10, 500, 2, 1, true},
+			{11, 1100, 2000, 1, true},
+			{12, 2, 500, 1, true},
+			{13, 2, 4, 1, true},
 
-			// {8, 1002, 23, 1, true},
+			// column partitioned
+			{1, 2000, 2000, 1, false},
+			{2, 10, 10, 1, false},
+			{3, 4, 4, 1, false},
+			{4, 4, 4, 1, false},
+			{5, 4, 4, 1, false},
+			{9, 500, 2, 1, false},
+			{10, 500, 2, 1, false},
+			{11, 1100, 2000, 1, false},
+			{12, 2, 500, 1, false},
 
-			// {1, 2000, 2000, 1, false},
-			// {2, 10, 10, 1, false},
-			// {3, 4, 4, 1, false},
-			// {4, 4, 4, 1, false}
+			// not creating a FedSpoof instruction
+			// {8, 1002, 24, 1, true},
+			// {8, 1002, 24, 1, false},
 		});
 	}
 

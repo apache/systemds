@@ -126,20 +126,7 @@ public abstract class MLContextTestBase extends AutomatedTestBase {
 		return new ImmutablePair<>(res, buff.toString());
 	}
 
-
-	public static Pair<MLResults, String> executeAndCaptureStdOut(MLContext ml, Script script){
-		ByteArrayOutputStream buff = new ByteArrayOutputStream();
-		PrintStream ps = new PrintStream(buff);
-		PrintStream old = System.out;
-		System.setOut(ps);
-		MLResults res = safeExecute(buff, script, null);
-		System.out.flush();
-		System.setOut(old);
-
-		return new ImmutablePair<>(res, buff.toString());
-	}
-
-	public static Pair<MLResults, String> executeAndCaptureStdOut(MLContext ml, Script script, ScriptExecutor sce){
+	public static Pair<MLResults, String> executeAndCaptureStdOut(Script script, ScriptExecutor sce){
 		ByteArrayOutputStream buff = new ByteArrayOutputStream();
 		PrintStream ps = new PrintStream(buff);
 		PrintStream old = System.out;

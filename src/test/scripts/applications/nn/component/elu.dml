@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/elu.dml") as elu
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+elu = function() {
+  /*
+   * Test for ELU function.
+   */
+  print("Testing ELU function.")
+
+  X = matrix("0.3923 -0.2236 -0.3195 -1.2050  1.0445 -0.6332  0.5731  0.5409 -0.3919 -1.0427", rows = 10, cols = 1)
+
+  print(" - Testing forward")
+  out = elu::forward(X, 1)
+  out_ref = matrix("0.3923 -0.2003 -0.2735 -0.7003  1.0445 -0.4691  0.5731  0.5409 -0.3242 -0.6475", rows = 10, cols = 1)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+          as.scalar(out_ref[i,j]), 1e-3, 1e-3)
+    }
+  }
+
+  print(" - Testing backward")
+  out = elu::backward(X, X, 1)
+  out_ref = matrix("0.3923 -0.1788 -0.2321 -0.3611  1.0445 -0.3362  0.5731  0.5409 -0.2648 -0.3676", rows = 10, cols = 1)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+          as.scalar(out_ref[i,j]), 1e-3, 1e-3)
+    }
+  }
+}
+
+
+elu()

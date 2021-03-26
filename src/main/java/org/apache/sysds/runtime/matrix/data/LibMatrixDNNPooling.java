@@ -436,9 +436,9 @@ public class LibMatrixDNNPooling {
 				for(int n = _rl; n < _ru; n++){
 					// each row correspond to a single batch element.
 					// here we allocate the sparse row.
+					if( sblock.isEmpty(n) ) continue;
 					out.allocate(n, P*Q*C);
 					SparseRow elm = out.get(n);
-					if( sblock.isEmpty(n) ) continue;
 					int apos = sblock.pos(n);
 					int alen = sblock.size(n);
 					int[] aix = sblock.indexes(n);
@@ -582,7 +582,7 @@ public class LibMatrixDNNPooling {
 					
 					//step 2: perform maxpooling backward
 					if(output.isInSparseFormat())
-						maxpoolingBackwardSparse(maxIx, n*CHW, n, c, C, Q, PQ, CPQ);
+						maxpoolingBackwardSparse(maxIx, c*HW, n, c, C, Q, PQ, CPQ);
 					else
 						maxpoolingBackwardDense(maxIx, n*CHW + c*HW, n, c, C, Q, PQ, CPQ);
 					

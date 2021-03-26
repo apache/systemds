@@ -19,15 +19,8 @@
 #
 #-------------------------------------------------------------
 
-/*
- * Script to run tests.
- */
 source("src/test/scripts/applications/nn/grad_check.dml") as grad_check
-source("src/test/scripts/applications/nn/test.dml") as test
 
-print("")
-print("Starting grad checks.")
-print("---")
 
 # Loss & loss-related functions
 grad_check::cross_entropy_loss()
@@ -37,7 +30,6 @@ grad_check::l1_reg()
 grad_check::l2_loss()
 grad_check::l2_reg()
 grad_check::log_loss()
-print("")
 
 # Core layers
 grad_check::affine()
@@ -68,55 +60,3 @@ grad_check::sigmoid()
 grad_check::softmax()
 grad_check::softmax2d()
 grad_check::tanh()
-print("")
-
-# Example model
-# NOTE: This could result in a false-negative in which the test fails
-# due to a kink being crossed in the ReLU nonlinearity.  This occurs
-# when the tests, f(x-h) and f(x+h), end up on opposite sides of the
-# zero threshold of max(0, fx).  Although we have stabilized it, we
-# will still remove it here to avoid false failures during automated
-# testing. In the future, we can explicitly check for this scenario
-# and rerun the test automatically.  For manual testing, simply
-# rerun the tests.
-#grad_check::two_layer_affine_l2_net()
-print("")
-
-print("---")
-print("Grad checks complete -- look for any ERRORs or WARNINGs.")
-print("If any tests involving ReLUs failed, try a few times " +
-      "to ensure that they were not false negatives due to " +
-      "kinks being crossed.")
-print("")
-
-print("")
-print("Starting other tests.")
-print("---")
-
-test::batch_norm1d()
-test::batch_norm2d()
-test::conv2d()
-test::conv2d_depthwise()
-test::conv2d_transpose()
-test::conv2d_transpose_depthwise()
-test::cross_entropy_loss()
-test::cross_entropy_loss2d()
-test::elu()
-test::im2col()
-test::max_pool2d()
-test::padding()
-test::tanh()
-test::threshold()
-test::transpose_NCHW_to_CNHW()
-test::top_k_row()
-test::top_k()
-test::top_k2d()
-test::softmax2d()
-test::compare_tanh_builtin_forward_with_old()
-test::compare_tanh_builtin_backward_with_old()
-
-print("---")
-print("Other tests complete -- look for any ERRORs or WARNINGs.")
-print("")
-print("")
-

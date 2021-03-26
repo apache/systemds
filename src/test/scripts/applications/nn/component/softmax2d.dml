@@ -1,0 +1,83 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/softmax2d.dml") as softmax2d
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+softmax2d = function() {
+  /*
+   * Test for 2D softmax function.
+   */
+  print("Testing the 2D softmax function.")
+
+  N = 2  # num example
+  C = 3  # num class
+  Hin = 3  # example height
+  Win = 3  # example width
+  X = matrix("10.0  10.0  0.0
+              10.0  0.0   0.0
+              10.0  0.0   0.0
+              0.0   10.0  0.0
+              0.0   10.0  0.0
+              0.0   10.0  0.0
+              0.0   0.0   10.0
+              0.0   0.0   10.0
+              0.0   0.0   10.0
+              10.0  10.0  0.0
+              10.0  0.0   0.0
+              10.0  0.0   0.0
+              0.0   10.0  0.0
+              0.0   10.0  0.0
+              0.0   10.0  0.0
+              0.0   0.0   10.0
+              0.0   0.0   10.0
+              0.0   0.0   10.0", rows=N, cols=C*Hin*Win)
+
+  probs_expected = matrix("9.99909163e-01   4.99988675e-01   4.53958055e-05
+                          9.99909163e-01   4.53958055e-05   4.53958055e-05
+                          9.99909163e-01   4.53958055e-05   4.53958055e-05
+                          4.53958055e-05   4.99988675e-01   4.53958055e-05
+                          4.53958055e-05   9.99909163e-01   4.53958055e-05
+                          4.53958055e-05   9.99909163e-01   4.53958055e-05
+                          4.53958055e-05   2.26994507e-05   9.99909163e-01
+                          4.53958055e-05   4.53958055e-05   9.99909163e-01
+                          4.53958055e-05   4.53958055e-05   9.99909163e-01
+                          9.99909163e-01   4.99988675e-01   4.53958055e-05
+                          9.99909163e-01   4.53958055e-05   4.53958055e-05
+                          9.99909163e-01   4.53958055e-05   4.53958055e-05
+                          4.53958055e-05   4.99988675e-01   4.53958055e-05
+                          4.53958055e-05   9.99909163e-01   4.53958055e-05
+                          4.53958055e-05   9.99909163e-01   4.53958055e-05
+                          4.53958055e-05   2.26994507e-05   9.99909163e-01
+                          4.53958055e-05   4.53958055e-05   9.99909163e-01
+                          4.53958055e-05   4.53958055e-05   9.99909163e-01", rows=N, cols=C*Hin*Win)
+  probs = softmax2d::forward(X, C)
+
+  # Equivalency check
+  for (i in 1:nrow(probs)) {
+    for (j in 1:ncol(probs)) {
+      rel_error = test_util::check_rel_error(as.scalar(probs[i,j]), as.scalar(probs_expected[i,j]),
+                                             1e-5, 1e-6)
+    }
+  }
+}
+
+softmax2d()

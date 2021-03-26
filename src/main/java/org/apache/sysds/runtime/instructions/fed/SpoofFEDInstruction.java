@@ -151,7 +151,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		FederatedRequest[] frAll = ArrayUtils.addAll(ArrayUtils.addAll(frBroadcast.toArray(new FederatedRequest[0]), frCompute, frGet), frCleanup.toArray(new FederatedRequest[0]));
 		Future<FederatedResponse>[] response = fedMap.executeMultipleSlices(
-			getTID(), true, true, frBroadcastSliced.toArray(new FederatedRequest[0][]),
+			getTID(), true, frBroadcastSliced.toArray(new FederatedRequest[0][]),
 			frAll);
 
 		// full aggregation

@@ -214,13 +214,8 @@ public class FederationMap {
 		return ret.toArray(new Future[0]);
 	}
 
-	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait,
-		FederatedRequest[][] frSlices, FederatedRequest... fr) {
-			return executeMultipleSlices(tid, wait, false, frSlices, fr);
-	}
-
 	@SuppressWarnings("unchecked")
-	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait, boolean offset,
+	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait,
 		FederatedRequest[][] frSlices, FederatedRequest[] fr) {
 		// executes step1[] - ... - stepM[] - stepM+1 - ... stepN (only first step federated-data-specific)
 		FederatedRequest[] allSlices = Arrays.stream(frSlices).flatMap(Stream::of).toArray(FederatedRequest[]::new);
@@ -229,7 +224,7 @@ public class FederationMap {
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
 		{
-			FederatedRequest[] fedReq = offset ? rewriteFedReqWithOffset(fr, e.getKey()) : fr;
+			FederatedRequest[] fedReq = fr;
 			for(FederatedRequest[] slice : frSlices) {
 				fedReq = addAll(slice[pos], fedReq);
 			}
@@ -242,34 +237,6 @@ public class FederationMap {
 		if(wait)
 			FederationUtils.waitFor(ret);
 		return ret.toArray(new Future[0]);
-	}
-
-	private FederatedRequest[] rewriteFedReqWithOffset(FederatedRequest[] fr, FederatedRange fedRange) {
-		for(int counter = 0; counter < fr.length; counter++) {
-			// NOTE: only needed for federated spoof instructions yet
-			//   when using a sequence with row paritioned federated data
-			if(fr[counter].getType() == RequestType.EXEC_INST && fr[counter].getNumParams() > 0 && ((String)fr[counter].getParam(0)).contains("CP" + Lop.OPERAND_DELIMITOR + "spoof")) {
-				FederatedRequest tmpFr = fr[counter].deepClone();
-				Object frParam = tmpFr.getParam(0);
-				if(frParam instanceof String) {
-					String[] parts = ((String)frParam).split(Lop.OPERAND_DELIMITOR, -1);
-					long[] beginDims = fedRange.getBeginDims();
-					if(parts[parts.length - 1].startsWith("grixOff")) {
-						// update offset suffix
-						parts[parts.length - 1] = "grixOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[0]);
-						frParam = String.join(Lop.OPERAND_DELIMITOR, parts);
-					}
-					else {
-						// append offset suffix
-						frParam += Lop.OPERAND_DELIMITOR + "grixOff" + Lop.LITERAL_PREFIX + Long.toString(beginDims[0]);
-					}
-					tmpFr.setParam(0, frParam);
-				}
-				fr[counter] = tmpFr;
-			}
-		}
-
-		return Arrays.copyOf(fr, fr.length);
 	}
 
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {

@@ -548,12 +548,6 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = new MatrixBlock(K, C*R*S, false).allocateBlock();
-				if(params.enableNative ){
-					if(matBlock.isInSparseFormat())
-						matBlock.sparseToDense();
-					if(dout.isInSparseFormat())
-						dout.sparseToDense();
-				}
 				if(params.enableNative && !matBlock.isInSparseFormat() && !dout.isInSparseFormat())
 					LibMatrixNative.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
 				else
@@ -568,12 +562,6 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				outputBlock = new MatrixBlock(N, C * H * W, false).allocateBlock();
-				if(params.enableNative ){
-					if(matBlock.isInSparseFormat())
-						matBlock.sparseToDense();
-					if(dout.isInSparseFormat())
-						dout.sparseToDense();
-				}
 				if(params.enableNative && !isFilterSparse(matBlock) && !dout.isInSparseFormat())
 					LibMatrixNative.conv2dBackwardData(matBlock, dout, outputBlock, params);
 				else

@@ -48,7 +48,7 @@ public class NNMaxPool2dComponentTest extends BaseTest {
 	@Parameterized.Parameter(1)
 	public int w;
 
-	final static String[] argNames =  new String[] {"$h", "$w"};
+	final static String[] argNames = new String[] {"$h", "$w"};
 
 	@Test
 	public void max_pool2d_padh_padw() {

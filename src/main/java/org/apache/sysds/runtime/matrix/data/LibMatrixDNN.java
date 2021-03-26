@@ -178,6 +178,9 @@ public class LibMatrixDNN {
 			fillIndexesArray(params); 
 		}
 		else {
+			if(!params.input2.isInSparseFormat())
+				params.input1.sparseToDense();
+
 			if( !(params.input1.isInSparseFormat() && !params.input2.isInSparseFormat()) )
 				fillIndexesArray(params); //not needed for sparse-dense	 
 		}

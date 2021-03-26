@@ -76,7 +76,9 @@ max_pool2d_pad = function(Integer h, Integer w) {
                                           Hf, Wf, stride, stride, padh, padw)
   dX_builtin = max_pool2d_builtin::backward(dout, Hout_builtin, Wout_builtin, X, C, Hin, Win,
                                             Hf, Wf, stride, stride, padh, padw)
-
+  print(toString(dX))
+  print(toString(dX_simple))
+  print(toString(dX_builtin))
   # Equivalency check
   dX = matrix(dX, rows=1, cols=N*C*Hin*Win)
   dX_simple = matrix(dX_simple, rows=1, cols=N*C*Hin*Win)

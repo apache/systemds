@@ -98,10 +98,6 @@ public class FederatedRequest implements Serializable {
 		return _data.get(i);
 	}
 
-	public void setParam(int i, Object obj) {
-		_data.set(i, obj);
-	}
-
 	public FederatedRequest appendParam(Object obj) {
 		_data.add(obj);
 		return this;

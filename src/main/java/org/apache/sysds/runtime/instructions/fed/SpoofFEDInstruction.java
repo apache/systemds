@@ -19,9 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
+import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -42,18 +43,14 @@ import java.util.concurrent.Future;
 
 public class SpoofFEDInstruction extends FEDInstruction
 {
-	private final Class<?> _class;
-	private final byte[] _class_bytes;
 	private final SpoofOperator _op;
 	private final CPOperand[] _inputs;
 	private final CPOperand _output;
 
-	private SpoofFEDInstruction(SpoofOperator op, Class<?> cla, byte[] class_bytes, CPOperand[] in,
+	private SpoofFEDInstruction(SpoofOperator op, CPOperand[] in,
 			CPOperand out, String opcode, String inst_str)
 	{
 		super(FEDInstruction.FEDType.SpoofFused, opcode, inst_str);
-		_class = cla;
-		_class_bytes = class_bytes;
 		_op = op;
 		_inputs = in;
 		_output = out;
@@ -66,7 +63,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 		CPOperand[] inputCpo = new CPOperand[parts.length - 3 - 2];
 		Class<?> cla = CodegenUtils.getClass(parts[2]);
 		SpoofOperator op = CodegenUtils.createInstance(cla);
-		byte[] classBytes = CodegenUtils.getClassData(parts[2]);
 		String opcode = parts[0] + op.getSpoofType();
 
 		for(int counter = 3; counter < parts.length - 2; counter++) {
@@ -74,7 +70,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 		}
 		CPOperand out = new CPOperand(parts[parts.length - 2]);
 
-		return new SpoofFEDInstruction(op, cla, classBytes, inputCpo, out, opcode, str);
+		return new SpoofFEDInstruction(op, inputCpo, out, opcode, str);
 	}
 
 	@Override
@@ -114,7 +110,9 @@ public class SpoofFEDInstruction extends FEDInstruction
 		frIds[index++] = fedMap.getID(); // insert federation map id at the beginning
 		for(MatrixObject mo : inMo) {
 			if((fedMo.isFederated(FType.ROW) && mo.getNumRows() > 1 && (mo.getNumColumns() == 1 || mo.getNumColumns() == fedMap.getSize()))
-				|| (fedMo.isFederated(FType.COL) && (mo.getNumRows() == 1 || mo.getNumRows() == fedMap.getSize()) && mo.getNumColumns() > 1)) {
+				|| (fedMo.isFederated(FType.ROW) && mo.getNumColumns() > 1 && mo.getNumRows() == fedMap.getSize())
+				|| (fedMo.isFederated(FType.COL) && (mo.getNumRows() == 1 || mo.getNumRows() == fedMap.getSize()) && mo.getNumColumns() > 1)
+				|| (fedMo.isFederated(FType.COL) && mo.getNumRows() > 1 && mo.getNumColumns() == fedMap.getSize())) {
 				FederatedRequest[] tmpFr = fedMap.broadcastSliced(mo, false);
 				frIds[index++] = tmpFr[0].getID();
 				frBroadcastSliced.add(tmpFr);
@@ -156,18 +154,40 @@ public class SpoofFEDInstruction extends FEDInstruction
 			getTID(), true, true, frBroadcastSliced.toArray(new FederatedRequest[0][]),
 			frAll);
 
-		if(_output.isScalar() && ((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM) {
-			//aggregate partial results from federated responses
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-			ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
+		// full aggregation
+		if(((SpoofCellwise)_op).getCellType() == SpoofCellwise.CellType.FULL_AGG) {
+			if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM
+				|| ((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM_SQ) {
+				//aggregate partial results from federated responses as sum
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+				ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
+			}
+			else if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.MIN) {
+				//aggregate partial results from federated responses as min
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin");
+				ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
+			}
+			else if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.MAX) {
+				//aggregate partial results from federated responses as max
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax");
+				ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
+			}
+			else {
+				throw new DMLRuntimeException("Aggregation type for federated spoof instructions not supported yet.");
+			}
 		}
-		else if(fedMo.isFederated(FType.ROW)) {
-			// bind partial results from federated responses
-			ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
-		}
-		else if(fedMo.isFederated(FType.COL)) {
-			// bind partial results from federated responses
-			ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
+		else if(((SpoofCellwise)_op).getCellType() == SpoofCellwise.CellType.NO_AGG) {
+			if(fedMo.isFederated(FType.ROW)) {
+				// bind partial results from federated responses
+				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+			}
+			else if(fedMo.isFederated(FType.COL)) {
+				// bind partial results from federated responses
+				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
+			}
+			else {
+				throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+			}
 		}
 	}
 

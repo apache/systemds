@@ -154,7 +154,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		final int n = a.getNumColumns();
 
 		// row offset for federated spoof operations
-		rix += _row_off;
+		rix += _grix_off;
 
 		//sparse safe check
 		boolean sparseSafe = isSparseSafe() || (b.length == 0
@@ -230,7 +230,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			throw new RuntimeException("Invalid input arguments.");
 
 		// row offset for federated spoof operations
-		rix += _row_off;
+		rix += _grix_off;
 
 		//input preparation
 		MatrixBlock a = inputs.get(0);

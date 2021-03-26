@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageCodegenItem;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -68,16 +69,16 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		SpoofOperator op = CodegenUtils.createInstance(cla);
 		String opcode =  parts[0] + op.getSpoofType();
 
-		if(parts[parts.length - 2].startsWith("RowOff") && parts[parts.length - 1].startsWith("ColOff")) {
-			long rowOff = 0, colOff = 0;
-			rowOff = Long.parseLong(parts[parts.length - 2].split(Lop.LITERAL_PREFIX)[1]);
-			colOff = Long.parseLong(parts[parts.length - 1].split(Lop.LITERAL_PREFIX)[1]);
-			parts = Arrays.copyOfRange(parts, 0, parts.length - 2);
-			// str = "CP" + Lop.OPERAND_DELIMITOR + String.join(Lop.OPERAND_DELIMITOR, parts);
-			op.setOffset(true, rowOff);
-			op.setOffset(false, colOff);
+		// NOTE: only the case if this instruction gets called on the federated site
+		//   these offsets denote the offset of the actual matrix partition inside the
+		//   whole federated matrix
+		if(parts[parts.length - 1].startsWith("grixOff")) {
+			long grixOff = 0;
+			grixOff = Long.parseLong(parts[parts.length - 1].split(Lop.LITERAL_PREFIX)[1]);
+			parts = Arrays.copyOfRange(parts, 0, parts.length - 1);
+			// setting the global row index offset inside the operator instance
+			op.setGrixOffset(grixOff);
 		}
-
 
 		for( int i=3; i<parts.length-2; i++ )
 			inlist.add(new CPOperand(parts[i]));
@@ -142,11 +143,15 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 
 	public boolean isFederated(ExecutionContext ec)
 	{
+		boolean retVal = false;
 		for(CPOperand input : _in) {
 			Data data = ec.getVariable(input);
-			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
-				return true;
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+				if(retVal)
+					throw new DMLRuntimeException("Only one federated input supported yet.");
+				retVal = true;
+			}
 		}
-		return false;
+		return retVal;
 	}
 }

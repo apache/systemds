@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import org.apache.sysds.runtime.instructions.spark.SpoofSPInstruction;
+import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -58,6 +58,7 @@ import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantilePickSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.SpoofSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 
@@ -209,7 +210,7 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof SpoofCPInstruction) {
 			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
-			if(instruction.isFederated(ec))
+			if(instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class && instruction.isFederated(ec))
 				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
 		}
 
@@ -305,7 +306,7 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof SpoofSPInstruction) {
 			SpoofSPInstruction instruction = (SpoofSPInstruction) inst;
-			if(instruction.isFederated(ec)) {
+			if(instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class && instruction.isFederated(ec)) {
 				fedinst = SpoofFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}

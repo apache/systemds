@@ -101,6 +101,10 @@ public class SpoofSPInstruction extends SPInstruction {
 		return new SpoofSPInstruction(cls, classBytes, inlist.toArray(new CPOperand[0]), out, opcode, str);
 	}
 
+	public Class<?> getOperatorClass() {
+		return _class;
+	}
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
@@ -677,12 +681,16 @@ public class SpoofSPInstruction extends SPInstruction {
 
 	public boolean isFederated(ExecutionContext ec)
 	{
+		boolean retVal = false;
 		for(CPOperand input : _in) {
 			Data data = ec.getVariable(input);
-			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
-				return true;
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+				if(retVal)
+					throw new DMLRuntimeException("Only one federated input supported yet.");
+				retVal = true;
+			}
 		}
-		return false;
+		return retVal;
 	}
 
 }

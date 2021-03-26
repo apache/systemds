@@ -76,7 +76,8 @@ public abstract class PSWorker implements Serializable
 		String[] cfn = DMLProgram.splitFunctionKey(updFunc);
 		String ns = cfn[0];
 		String fname = cfn[1];
-		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, false);
+		boolean opt = !ec.getProgram().containsFunctionProgramBlock(ns, fname, false);
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, opt);
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 		CPOperand[] boundInputs = inputs.stream()
@@ -84,7 +85,7 @@ public abstract class PSWorker implements Serializable
 			.toArray(CPOperand[]::new);
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(ns, fname, false, boundInputs,
+		_inst = new FunctionCallCPInstruction(ns, fname, opt, boundInputs,
 			func.getInputParamNames(), outputNames, "update function");
 
 		// Check the inputs of the update function

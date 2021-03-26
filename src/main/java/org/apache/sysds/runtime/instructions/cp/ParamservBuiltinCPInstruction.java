@@ -90,7 +90,7 @@ import org.apache.sysds.utils.Statistics;
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
 	
-	private static final int DEFAULT_BATCH_SIZE = 64;
+	public static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
 	private static final PSRuntimeBalancing DEFAULT_RUNTIME_BALANCING = PSRuntimeBalancing.NONE;

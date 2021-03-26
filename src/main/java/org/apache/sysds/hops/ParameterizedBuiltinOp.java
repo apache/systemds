@@ -19,10 +19,14 @@
 
 package org.apache.sysds.hops;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.AggOp;
@@ -33,6 +37,7 @@ import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.FunctionOp.FunctionType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.GroupedAggregate;
@@ -40,7 +45,9 @@ import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.ParameterizedBuiltin;
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -966,6 +973,38 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		return (   targetHop instanceof ReorgOp 
 			&& ((ReorgOp)targetHop).getOp()==ReOrgOp.DIAG 
 			&& targetHop.getInput().get(0).getDim2() == 1 ); 
+	}
+	
+	public List<FunctionOp> getParamservPseudoFunctionCalls() {
+		try {
+			String supd[] = DMLProgram.splitFunctionKey(((LiteralOp)getParameterHop("upd")).getStringValue());
+			String sagg[] = DMLProgram.splitFunctionKey(((LiteralOp)getParameterHop("agg")).getStringValue());
+			String sval[] = getParameterHop("val") == null ? null :
+				DMLProgram.splitFunctionKey(((LiteralOp)getParameterHop("val")).getStringValue());
+			Hop model = getParameterHop("model");
+			Hop hyp = getParameterHop("hyperparams");
+			Hop batch = ObjectUtils.defaultIfNull(getParameterHop("batchsize"),
+				new LiteralOp(ParamservBuiltinCPInstruction.DEFAULT_BATCH_SIZE));
+			Hop X = HopRewriteUtils.createIndexingOp(getParameterHop("features"), batch);
+			Hop y = HopRewriteUtils.createIndexingOp(getParameterHop("labels"), batch);
+			FunctionOp fupd = new FunctionOp(FunctionType.DML, supd[0], supd[1],
+				new String[] {"model","hyperparams","features","labels"}, Arrays.asList(model, hyp, X, y),
+				new String[] {"gradients"}, false, true); //pseudo fcall
+			FunctionOp fagg = new FunctionOp(FunctionType.DML, sagg[0], sagg[1],
+				new String[] {"model","hyperparams","gradients"}, Arrays.asList(model, hyp, fupd),
+				new String[] {"model"}, false, true); //pseudo fcall
+			FunctionOp fval = sval == null ? null : new FunctionOp(FunctionType.DML, sval[0], sval[1],
+				new String[] {"model","hyperparams","valfeatures","vallabels"}, Arrays.asList(model,
+					hyp, getParameterHop("val_features"), getParameterHop("val_labels")),
+				new String[] {"loss","accuracy"}, false, true); //pseudo fcall
+			return (sval == null) ? 
+				Arrays.asList(fupd, fagg) : Arrays.asList(fupd, fagg, fval);
+		}
+		catch(Exception ex) {
+			// silent error handling for robustness (e.g., wrong parameters)
+			// later handled consistenty by the runtime instruction
+			return Collections.emptyList();
+		}
 	}
 
 	/**

@@ -255,7 +255,8 @@ public class ParamservUtils {
 		// 1. Recompile the internal program blocks 
 		recompileProgramBlocks(k, prog.getProgramBlocks(), forceExecTypeCP);
 		// 2. Recompile the imported function blocks
-		prog.getFunctionProgramBlocks(false)
+		boolean opt = prog.getFunctionProgramBlocks(false).isEmpty();
+		prog.getFunctionProgramBlocks(opt)
 			.forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks(), forceExecTypeCP));
 
 		// 3. Copy all functions 
@@ -273,11 +274,12 @@ public class ParamservUtils {
 	
 	private static Program copyProgramFunctions(Program prog) {
 		Program newProg = new Program(prog.getDMLProg());
-		for( Entry<String, FunctionProgramBlock> e : prog.getFunctionProgramBlocks(false).entrySet() ) {
+		boolean opt = prog.getFunctionProgramBlocks(false).isEmpty();
+		for( Entry<String, FunctionProgramBlock> e : prog.getFunctionProgramBlocks(opt).entrySet() ) {
 			String[] parts = DMLProgram.splitFunctionKey(e.getKey());
 			FunctionProgramBlock fpb = ProgramConverter
 				.createDeepCopyFunctionProgramBlock(e.getValue(), new HashSet<>(), new HashSet<>());
-			newProg.addFunctionProgramBlock(parts[0], parts[1], fpb, false);
+			newProg.addFunctionProgramBlock(parts[0], parts[1], fpb, opt);
 		}
 		return newProg;
 	}

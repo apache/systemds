@@ -58,11 +58,14 @@ public class IPAPassInlineFunctions extends IPAPass
 		//NOTE: we inline single-statement-block (i.e., last-level block) functions
 		//that do not contain other functions, and either are small or called once
 		
+		boolean ret = false; //rebuild fgraph
 		for( String fkey : fgraph.getReachableFunctions() ) {
 			FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fkey);
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			if( fstmt.getBody().size() == 1 
-				&& HopRewriteUtils.isLastLevelStatementBlock(fstmt.getBody().get(0)) 
+			if( fgraph.getFunctionCalls(fkey)==null )
+				ret = true; //inlining might have remove paramserv-fcalls
+			else if( fstmt.getBody().size() == 1 
+				&& HopRewriteUtils.isLastLevelStatementBlock(fstmt.getBody().get(0))
 				&& !containsFunctionOp(fstmt.getBody().get(0).getHops())
 				&& (fgraph.getFunctionCalls(fkey).size() == 1
 					|| countOperators(fstmt.getBody().get(0).getHops()) 
@@ -81,9 +84,10 @@ public class IPAPassInlineFunctions extends IPAPass
 					if( LOG.isDebugEnabled() )
 						LOG.debug("-- inline '"+fkey+"' at line "+op.getBeginLine());
 					
-					//step 0: robustness for special cases
+					//step 0: robustness for special cases (named args, paramserv)
 					if( op.getInput().size() != fstmt.getInputParams().size()
-						|| op.getOutputVariableNames().length != fstmt.getOutputParams().size() ) {
+						|| op.getOutputVariableNames().length != fstmt.getOutputParams().size()
+						|| op.isPseudoFunctionCall() ) {
 						removedAll = false;
 						continue;
 					}
@@ -130,10 +134,12 @@ public class IPAPassInlineFunctions extends IPAPass
 					for( String fkeyTrans : fkeysTrans )
 						if( !fgraph.isReachableFunction(fkeyTrans, true) )
 							fgraph.removeFunctionCalls(fkeyTrans);
+					ret = true; //rebuild fgraph in next iteration
 				}
 			}
 		}
-		return false;
+		
+		return ret;
 	}
 	
 	private static boolean containsFunctionOp(ArrayList<Hop> hops) {

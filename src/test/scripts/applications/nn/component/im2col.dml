@@ -1,0 +1,65 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("scripts/nn/util.dml") as util
+
+
+im2col = function() {
+  /*
+   * Test for the `im2col` and `col2im` functions.
+   */
+  print("Testing the im2col and col2im functions.")
+
+	# Generate data
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 2
+  pad = (Hin * stride - Hin + Hf - stride) / 2
+  Hout = as.integer(floor((Hin + 2*pad - Hf)/stride + 1))
+  Wout = as.integer(floor((Win + 2*pad - Wf)/stride + 1))
+  x = rand(rows=C, cols=Hin*Win)
+
+  # pad
+  x_pad = util::pad_image(x, Hin, Win, pad, pad, 0)
+
+  # im2col
+  x_cols = util::im2col(x_pad, Hin+2*pad, Win+2*pad, Hf, Wf, stride, stride)
+
+  if (ncol(x_cols) != Hout*Wout) {
+    print("ERROR: im2col does not yield the correct output size: "
+          + ncol(x_cols)+" (actual) vs. "+Hout*Wout+" (correct).")
+  }
+
+  # col2im
+  x_pad2 = util::col2im(x_cols, C, Hin+2*pad, Win+2*pad, Hf, Wf, stride, stride, "none")
+
+  # Equivalency check
+  equivalent = test_util::all_equal(x_pad, x_pad2)
+  if (!equivalent) {
+    print("ERROR: im2col and then col2im does not yield the original image.")
+  }
+}
+
+im2col()

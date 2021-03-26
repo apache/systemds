@@ -100,7 +100,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testBasicExecuteEvalTest() {
 		LOG.debug("MLContextTest - basic eval test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval-test.dml");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("10"));
 	}
 
@@ -117,7 +117,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - eval builtin test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval3-builtin-test.dml");
 		ml.setExplain(true);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("TRUE"));
 		ml.setExplain(false);
 	}
@@ -127,7 +127,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - eval builtin test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval4-nested_builtin-test.dml");
 		ml.setExplain(true);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("TRUE"));
 		ml.setExplain(false);
 	}
@@ -137,7 +137,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - create DML script based on string and execute");
 		String testString = "Create DML script based on string and execute";
 		Script script = dml("print('" + testString + "');");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains(testString));
 	}
 
@@ -145,7 +145,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testCreateDMLScriptBasedOnFileAndExecute() {
 		LOG.debug("MLContextTest - create DML script based on file and execute");
 		Script script = dmlFromFile(baseDirectory + File.separator + "hello-world.dml");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("hello world"));
 	}
 
@@ -155,7 +155,7 @@ public class MLContextTest extends MLContextTestBase {
 		File file = new File(baseDirectory + File.separator + "hello-world.dml");
 		try(InputStream is = new FileInputStream(file)) {
 			Script script = dmlFromInputStream(is);
-			String out = executeAndCaptureStdOut(ml, script).getRight();
+			String out = executeAndCaptureStdOut( script).getRight();
 			assertTrue(out.contains("hello world"));
 		}
 	}
@@ -165,7 +165,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - create DML script based on local file and execute");
 		File file = new File(baseDirectory + File.separator + "hello-world.dml");
 		Script script = dmlFromLocalFile(file);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("hello world"));
 	}
 
@@ -195,7 +195,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - execute DML script");
 		String testString = "hello dml world!";
 		Script script = new Script("print('" + testString + "');");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains(testString));
 	}
 
@@ -205,7 +205,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "x = $X; y = $Y; print('x + y = ' + (x + y));";
 		Script script = dml(s).in("$X", 3).in("$Y", 4);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("x + y = 7"));
 	}
 
@@ -220,7 +220,7 @@ public class MLContextTest extends MLContextTestBase {
 		JavaRDD<String> javaRDD = sc.parallelize(list);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", javaRDD);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -237,7 +237,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 3, 3);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", javaRDD, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 15.0"));
 	}
 
@@ -252,7 +252,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = M + $X; print('sum: ' + sum(M));";
 		Script script = dml(s).in("M", javaRDD).in("$X", 1);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 14.0"));
 	}
 
@@ -275,7 +275,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = M + $X; print('sum: ' + sum(M));";
 		Script script = dml(s).in(inputs);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 108.0"));
 	}
 
@@ -290,7 +290,7 @@ public class MLContextTest extends MLContextTestBase {
 			protected void showExplanation() {
 			}
 		};
-		String out = executeAndCaptureStdOut(ml, script, scriptExecutor).getRight();
+		String out = executeAndCaptureStdOut(script, scriptExecutor).getRight();
 		assertTrue(out.contains(testString));
 	}
 
@@ -306,7 +306,7 @@ public class MLContextTest extends MLContextTestBase {
 		RDD<String> rdd = JavaRDD.toRDD(javaRDD);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", rdd);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 18.0"));
 	}
 
@@ -325,7 +325,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 3, 3);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", rdd, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 10.0"));
 	}
 
@@ -350,7 +350,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_DOUBLES);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 450.0"));
 	}
 
@@ -376,7 +376,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_DOUBLES_WITH_INDEX);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -402,7 +402,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_DOUBLES_WITH_INDEX);
 
 		Script script = dml("print('M[1,1]: ' + as.scalar(M[1,1]));").in("M", dataFrame, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("M[1,1]: 1.0"));
 	}
 
@@ -426,7 +426,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_VECTOR_WITH_INDEX);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -450,7 +450,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_VECTOR_WITH_INDEX);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -473,7 +473,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_VECTOR);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -496,7 +496,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_VECTOR);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -570,7 +570,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = read($Min); print('sum: ' + sum(M));";
 		String csvFile = baseDirectory + File.separator + "1234.csv";
-		String out = executeAndCaptureStdOut(ml, dml(s).in("$Min", csvFile)).getRight();
+		String out = executeAndCaptureStdOut( dml(s).in("$Min", csvFile)).getRight();
 		assertTrue(out.contains("sum: 10.0"));
 
 	}
@@ -581,7 +581,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = read($Min); print('sum: ' + sum(M));";
 		String csvFile = baseDirectory + File.separator + "1234.csv";
-		String out = executeAndCaptureStdOut(ml, dml(s).in("$Min", csvFile)).getRight();
+		String out = executeAndCaptureStdOut( dml(s).in("$Min", csvFile)).getRight();
 		assertTrue(out.contains("sum: 10.0"));
 	}
 
@@ -592,7 +592,7 @@ public class MLContextTest extends MLContextTestBase {
 		double[][] matrix = new double[][] {{10.0, 20.0}, {30.0, 40.0}};
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", matrix);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 100.0"));
 	}
 
@@ -601,7 +601,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - add scalar integer inputs DML");
 		String s = "total = in1 + in2; print('total: ' + total);";
 		Script script = dml(s).in("in1", 1).in("in2", 2);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("total: 3"));
 	}
 
@@ -626,7 +626,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = M + $X; print('sum: ' + sum(M));";
 		Script script = dml(s).in(scalaMap);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 108.0"));
 	}
 
@@ -680,7 +680,7 @@ public class MLContextTest extends MLContextTestBase {
 		String s = "M = read($Min, data_type='frame', format='csv'); print(toString(M));";
 		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
 		Script script = dml(s).in("$Min", csvFile);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("one"));
 	}
 
@@ -906,7 +906,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "x = $X; if (x == TRUE) { print('yes'); }";
 		Script script = dml(s).in("$X", true);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("yes"));
 	}
 
@@ -1049,7 +1049,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(3, 3, 9);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", javaRDD, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -1083,7 +1083,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(3, 3, 9);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", rdd, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 18.0"));
 	}
 
@@ -1108,7 +1108,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(3, 3, 9);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 450.0"));
 	}
 
@@ -1137,7 +1137,7 @@ public class MLContextTest extends MLContextTestBase {
 		Seq seq = JavaConversions.asScalaBuffer(tupleList).toSeq();
 
 		Script script = dml("print('sums: ' + sum(m1) + ' ' + sum(m2));").in(seq);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sums: 10.0 26.0"));
 		executeAndCaptureStdOut(script);
 	}
@@ -1170,7 +1170,7 @@ public class MLContextTest extends MLContextTestBase {
 		Seq seq = JavaConversions.asScalaBuffer(tupleList).toSeq();
 
 		Script script = dml("print('sums: ' + sum(m1) + ' ' + sum(m2));").in(seq);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sums: 10.0 26.0"));
 	}
 
@@ -1180,7 +1180,7 @@ public class MLContextTest extends MLContextTestBase {
 		String csv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/functions/mlcontext/1234.csv";
 		URL url = new URL(csv);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 10.0"));
 	}
 
@@ -1191,7 +1191,7 @@ public class MLContextTest extends MLContextTestBase {
 		URL url = new URL(ijv);
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 2, 2);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url, mm);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 10.0"));
 	}
 
@@ -1214,7 +1214,7 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 27.0"));
 	}
 
@@ -1238,7 +1238,7 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 27.0"));
 	}
 
@@ -1260,7 +1260,7 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -1281,7 +1281,7 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("sum: 45.0"));
 	}
 
@@ -1290,7 +1290,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - display boolean DML");
 		String s = "print(b);";
 		Script script = dml(s).in("b", true);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("TRUE"));
 	}
 
@@ -1299,7 +1299,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - display boolean 'not' DML");
 		String s = "print(!b);";
 		Script script = dml(s).in("b", true);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("FALSE"));
 	}
 
@@ -1308,7 +1308,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - display integer add DML");
 		String s = "print(i+j);";
 		Script script = dml(s).in("i", 5).in("j", 6);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("11"));
 	}
 
@@ -1317,7 +1317,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - display string concatenation DML");
 		String s = "print(str1+str2);";
 		Script script = dml(s).in("str1", "hello").in("str2", "goodbye");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("hellogoodbye"));
 	}
 
@@ -1326,7 +1326,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - display double add DML");
 		String s = "print(i+j);";
 		Script script = dml(s).in("i", 5.1).in("j", 6.2);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("11.3"));
 	}
 
@@ -1334,7 +1334,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingStringSubstitution() {
 		LOG.debug("MLContextTest - print formatting string substitution");
 		Script script = dml("print('hello %s', 'world');");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("hello world"));
 	}
 
@@ -1342,7 +1342,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingStringSubstitutions() {
 		LOG.debug("MLContextTest - print formatting string substitutions");
 		Script script = dml("print('%s %s', 'hello', 'world');");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("hello world"));
 	}
 
@@ -1350,7 +1350,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingStringSubstitutionAlignment() {
 		LOG.debug("MLContextTest - print formatting string substitution alignment");
 		Script script = dml("print(\"'%10s' '%-10s'\", \"hello\", \"world\");");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("'     hello' 'world     '"));
 	}
 
@@ -1358,7 +1358,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingStringSubstitutionVariables() {
 		LOG.debug("MLContextTest - print formatting string substitution variables");
 		Script script = dml("a='hello'; b='world'; print('%s %s', a, b);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("hello world"));
 	}
 
@@ -1366,7 +1366,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingIntegerSubstitution() {
 		LOG.debug("MLContextTest - print formatting integer substitution");
 		Script script = dml("print('int %d', 42);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("int 42"));
 	}
 
@@ -1374,7 +1374,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingIntegerSubstitutions() {
 		LOG.debug("MLContextTest - print formatting integer substitutions");
 		Script script = dml("print('%d %d', 42, 43);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("42 43"));
 	}
 
@@ -1382,7 +1382,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingIntegerSubstitutionAlignment() {
 		LOG.debug("MLContextTest - print formatting integer substitution alignment");
 		Script script = dml("print(\"'%10d' '%-10d'\", 42, 43);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("'        42' '43        '"));
 	}
 
@@ -1390,7 +1390,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingIntegerSubstitutionVariables() {
 		LOG.debug("MLContextTest - print formatting integer substitution variables");
 		Script script = dml("a=42; b=43; print('%d %d', a, b);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("42 43"));
 	}
 
@@ -1398,7 +1398,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingDoubleSubstitution() {
 		LOG.debug("MLContextTest - print formatting double substitution");
 		Script script = dml("print('double %f', 42.0);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("double 42.000000"));
 	}
 
@@ -1406,7 +1406,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingDoubleSubstitutions() {
 		LOG.debug("MLContextTest - print formatting double substitutions");
 		Script script = dml("print('%f %f', 42.42, 43.43);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("42.420000 43.430000"));
 	}
 
@@ -1414,7 +1414,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingDoubleSubstitutionAlignment() {
 		LOG.debug("MLContextTest - print formatting double substitution alignment");
 		Script script = dml("print(\"'%10.2f' '%-10.2f'\", 42.53, 43.54);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("'     42.53' '43.54     '"));
 	}
 
@@ -1422,7 +1422,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingDoubleSubstitutionVariables() {
 		LOG.debug("MLContextTest - print formatting double substitution variables");
 		Script script = dml("a=12.34; b=56.78; print('%f %f', a, b);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("12.340000 56.780000"));
 	}
 
@@ -1430,7 +1430,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingBooleanSubstitution() {
 		LOG.debug("MLContextTest - print formatting boolean substitution");
 		Script script = dml("print('boolean %b', TRUE);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("boolean true"));
 	}
 
@@ -1438,7 +1438,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingBooleanSubstitutions() {
 		LOG.debug("MLContextTest - print formatting boolean substitutions");
 		Script script = dml("print('%b %b', TRUE, FALSE);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("true false"));
 	}
 
@@ -1446,7 +1446,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingBooleanSubstitutionAlignment() {
 		LOG.debug("MLContextTest - print formatting boolean substitution alignment");
 		Script script = dml("print(\"'%10b' '%-10b'\", TRUE, FALSE);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("'      true' 'false     '"));
 	}
 
@@ -1454,7 +1454,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingBooleanSubstitutionVariables() {
 		LOG.debug("MLContextTest - print formatting boolean substitution variables");
 		Script script = dml("a=TRUE; b=FALSE; print('%b %b', a, b);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("true false"));
 	}
 
@@ -1462,7 +1462,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testPrintFormattingMultipleTypes() {
 		LOG.debug("MLContextTest - print formatting multiple types");
 		Script script = dml("a='hello'; b=3; c=4.5; d=TRUE; print('%s %d %f %b', a, b, c, d);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("hello 3 4.500000 true"));
 	}
 
@@ -1471,7 +1471,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - print formatting multiple expressions");
 		Script script = dml(
 			"a='hello'; b='goodbye'; c=4; d=3; e=3.0; f=5.0; g=FALSE; print('%s %d %f %b', (a+b), (c-d), (e*f), !g);");
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("hellogoodbye 1 15.000000 true"));
 	}
 
@@ -1480,7 +1480,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - print formatting for loop");
 		Script script = dml("for (i in 1:3) { print('int value %d', i); }");
 		// check that one of the lines is returned
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("int value 3"));
 	}
 
@@ -1489,7 +1489,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - print formatting parfor loop");
 		Script script = dml("parfor (i in 1:3) { print('int value %d', i); }");
 		// check that one of the lines is returned
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("int value 3"));
 	}
 
@@ -1498,7 +1498,7 @@ public class MLContextTest extends MLContextTestBase {
 		LOG.debug("MLContextTest - print formatting for loop multiply");
 		Script script = dml("a = 5.0; for (i in 1:3) { print('%d %f', i, a * i); }");
 		// check that one of the lines is returned
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("3 15.000000"));
 	}
 	
@@ -1528,7 +1528,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "print('x + y = ' + (x + y));";
 		Script script = dml(s).in("x", 3L).in("y", 4L);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("x + y = 7"));
 	}
 
@@ -1538,7 +1538,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "print('x + y = ' + (x + y));";
 		Script script = dml(s).in("x", 3F).in("y", 4F);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("x + y = 7.0"));
 	}
 
@@ -1548,7 +1548,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "hello=function(){print('no return value')}\nhello();";
 		Script script = dml(s);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("no return value"));
 	}
 
@@ -1558,7 +1558,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "hello=function(){\nwhile(FALSE){};\nprint('no return value, force function call');\n}\nhello();";
 		Script script = dml(s);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("no return value, force function call"));
 	}
 
@@ -1568,7 +1568,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "hello=function()return(string s){s='return value'}\na=hello();\nprint(a);";
 		Script script = dml(s);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("return value"));
 	}
 
@@ -1578,7 +1578,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "hello=function()return(string s1,string s2){s1='return'; s2='values'}\n[a,b]=hello();\nprint(a+' '+b);";
 		Script script = dml(s);
-		String out = executeAndCaptureStdOut(ml, script).getRight();
+		String out = executeAndCaptureStdOut( script).getRight();
 		assertTrue(out.contains("return values"));
 	}
 

@@ -1,0 +1,109 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/batch_norm2d.dml") as batch_norm2d
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+print("Testing the 2D (spatial) batch normalization function.")
+
+# Generate data
+N = 2  # Number of examples
+C = 3  # num channels
+Hin = 4  # input height
+Win = 5  # input width
+mode = 'train'  # execution mode
+mu = 0.9  # momentum of moving averages
+eps = 1e-5  # smoothing term
+X = matrix("70  29 23 55 72
+            42  98 68 48 39
+            34  73 44  6 40
+            74  18 18 53 53
+
+            63  85 72 61 72
+            32  36 23 29 63
+             9  43 43 49 43
+            31  43 89 94 50
+
+            62  12 32 41 87
+            25  48 99 52 61
+            12  83 60 55 34
+            30  42 68 88 51
+
+
+            67  59 62 67 84
+             8  76 24 19 57
+            10  89 63 72  2
+            59  56 16 15 70
+
+            32  69 55 39 93
+            84  36  4 30 40
+            70 100 36 76 59
+            69  15 40 24 34
+
+            51  67 11 13 32
+            66  85 55 85 38
+            32  35 17 83 34
+            55  58 52  0 99", rows=N, cols=C*Hin*Win)
+
+# Create layer
+[gamma, beta, ema_mean, ema_var] = batch_norm2d::init(C)
+
+# Forward
+[out, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
+      batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
+
+# Equivalency check
+target = matrix("0.86215019 -0.76679718 -1.00517964  0.26619387  0.94161105
+                -0.25030172  1.97460198  0.78268933 -0.01191914 -0.36949289
+                -0.56814504  0.98134136 -0.17084086 -1.68059683 -0.32976246
+                 1.02107191 -1.20383179 -1.20383179  0.18673301  0.18673301
+
+                 0.50426388  1.41921711  0.87856293  0.42108631  0.87856293
+                -0.78498828 -0.61863315 -1.15928721 -0.90975463  0.50426388
+                -1.74153018 -0.32751167 -0.32751167 -0.07797909 -0.32751167
+                -0.82657707 -0.32751167  1.58557224  1.79351616 -0.0363903
+
+                 0.4607178  -1.49978399 -0.71558321 -0.36269283  1.44096887
+                -0.99005347 -0.08822262  1.91148913  0.06861746  0.42150795
+                -1.49978399  1.28412855  0.38229787  0.18624771 -0.63716316
+                -0.79400325 -0.32348287  0.69597805  1.48017895  0.0294075
+
+
+                 0.74295878  0.42511559  0.54430676  0.74295878  1.41837597
+                -1.60113597  1.10053277 -0.96544927 -1.16410136  0.34565473
+                -1.52167511  1.61702824  0.5840373   0.94161105 -1.83951855
+                 0.42511559  0.30592418 -1.28329265 -1.32302308  0.86215019
+
+                -0.78498828  0.75379658  0.17155361 -0.4938668   1.75192738
+                 1.37762833 -0.61863315 -1.9494741  -0.86816585 -0.45227802
+                 0.79538536  2.04304862 -0.61863315  1.04491806  0.33790874
+                 0.75379658 -1.49199748 -0.45227802 -1.11769855 -0.70181072
+
+                 0.0294075   0.65676796 -1.53899395 -1.46057391 -0.71558321
+                 0.61755812  1.36254871  0.18624771  1.36254871 -0.48032296
+                -0.71558321 -0.59795308 -1.30373383  1.28412855 -0.63716316
+                 0.18624771  0.30387771  0.06861746 -1.97030437  1.91148913",
+                rows=1, cols=N*C*Hin*Win)
+out = matrix(out, rows=1, cols=N*C*Hin*Win)
+for (i in 1:length(out)) {
+  rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
+                                         as.scalar(target[1,i]), 1e-3, 1e-4)
+}

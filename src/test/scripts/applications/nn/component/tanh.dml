@@ -1,0 +1,106 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/tanh.dml") as tanh
+source("scripts/nn/layers/sigmoid.dml") as sigmoid
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+
+tanh = function() {
+  /*
+   * Test for the `tanh` forward function.
+   */
+  print("Testing the tanh forward function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  X = rand(rows=N, cols=C, pdf="normal")
+
+  out = tanh::forward(X)
+  out_ref = (exp(X) - exp(-X)) / (exp(X) + exp(-X))
+
+  # Equivalency check
+  for (i in 1:nrow(out)) {
+    for (j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]),
+                                             1e-10, 1e-12)
+    }
+  }
+}
+
+
+compare_tanh_builtin_forward_with_old = function() {
+  /*
+   * Test for the `tanh` forward function.
+   */
+  print("Testing the tanh forward function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  X = rand(rows=N, cols=C, pdf="normal")
+
+  out = tanh::forward(X)
+
+  sigma2X = sigmoid::forward(2*X)
+  out_ref = 2*sigma2X - 1
+
+  # Equivalency check
+  for (i in 1:nrow(out)) {
+    for (j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]),
+                                             1e-10, 1e-12)
+    }
+  }
+}
+
+
+compare_tanh_builtin_backward_with_old = function() {
+  /*
+   * Test for the `tanh` backward function.
+   */
+  print("Testing the tanh backward function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  X = rand(rows=N, cols=C, pdf="normal")
+  dout = rand(rows=N, cols=C, pdf="normal")
+
+  sigma2X = sigmoid::forward(2*X)
+  out = 2*sigma2X - 1
+  out_ref = (1-out^2) * dout
+
+  out = tanh::backward(dout, X)
+
+  # Equivalency check
+  for (i in 1:nrow(out)) {
+    for (j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]), as.scalar(out_ref[i,j]),
+                                             1e-10, 1e-12)
+    }
+  }
+}
+
+tanh()
+compare_tanh_builtin_forward_with_old()
+compare_tanh_builtin_backward_with_old()

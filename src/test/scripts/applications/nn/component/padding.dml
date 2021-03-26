@@ -1,0 +1,65 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("scripts/nn/util.dml") as util
+
+
+padding = function() {
+  /*
+   * Test for the `pad_image` and `unpad_image` functions.
+   */
+  print("Testing the padding and unpadding functions.")
+
+  # Generate data
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  pad = 3  # padding
+  x = rand(rows=C, cols=Hin*Win)
+
+  # Pad image
+  x_pad = util::pad_image(x, Hin, Win, pad, pad, 0)
+
+  # Check for padded rows & columns
+  for (c in 1:C) {
+    x_pad_slice = matrix(x_pad[c,], rows=Hin+2*pad, cols=Win+2*pad)
+    for (i in 1:pad) {
+      rowsum = sum(x_pad_slice[i,])
+      colsum = sum(x_pad_slice[,i])
+      if (rowsum != 0)
+        print("ERROR: Padding was not applied to row " + i + ".")
+      if (colsum != 0)
+        print("ERROR: Padding was not applied to column " + i + ".")
+    }
+  }
+
+  # Unpad image
+  x1 = util::unpad_image(x_pad, Hin, Win, pad, pad)
+
+  # Equivalency check
+  equivalent = test_util::all_equal(x, x1)
+  if (!equivalent) {
+    print("ERROR: Padding and then unpadding does not yield the original image.")
+  }
+}
+
+padding()

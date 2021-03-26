@@ -1,0 +1,83 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+source("scripts/nn/layers/conv2d_transpose.dml") as conv2d_transpose
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+conv2d_transpose = function() {
+  /*
+   * Test for the 2D transpose convolution function.
+   */
+  print("Testing the 2D transpose convolution function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  Hin = 2  # input height
+  Win = 2  # input width
+  F = 2  # num filters
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 1
+  pad = 0
+  out_pad = 0  # padding added to output
+  X = matrix(seq(1,N*C*Hin*Win), rows=N, cols=C*Hin*Win) / (N*C*Hin*Win) * 2 - 1  # normalized
+
+  # Create layer
+  W = matrix(seq(1,C*F*Hf*Wf), rows=C, cols=F*Hf*Wf) / (C*F*Hf*Wf) * 2 - 1  # normalized
+  b = matrix(seq(1,F), rows=F, cols=1) / F^2  # non-zero & non-one
+
+  # Forward
+  [out, Hout, Wout] = conv2d_transpose::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride,
+                                                pad, pad, out_pad, out_pad)
+
+  # Equivalency check
+  target = matrix("1.21296299  2.03703713  1.91666663  1.02777779
+                   1.83333337  3.18518519  2.98148131  1.52777767
+                   1.5         2.57407403  2.37037039  1.24999988
+                   0.78703707  1.25925922  1.17592585  0.69444442
+
+                   0.87962961  1.20370364  1.08333337  0.77777773
+                   1.08333337  1.60185182  1.39814818  0.94444442
+                   0.75        0.99074072  0.78703701  0.66666657
+                   0.62037039  0.75925928  0.67592591  0.6111111
+
+
+                   0.32407406  0.37037039  0.47222221  0.36111113
+                   0.38888881  0.51851851  0.75925928  0.52777779
+                   0.72222215  1.24074078  1.48148155  0.91666669
+                   0.56481475  0.92592585  1.06481469  0.69444442
+
+                   0.99074078  1.53703713  1.63888896  1.11111116
+                   1.63888884  2.93518519  3.17592597  1.94444442
+                   1.97222221  3.65740728  3.89814806  2.33333325
+                   1.39814818  2.42592597  2.56481481  1.61111116", rows=N, cols=F*Hout*Wout)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                             as.scalar(target[i,j]), 1e-3, 1e-4)
+    }
+  }
+}
+
+conv2d_transpose()

@@ -1,0 +1,84 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/conv2d_transpose_depthwise.dml") as conv2d_transpose_depthwise
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+
+conv2d_transpose_depthwise = function() {
+  /*
+   * Test for the 2D depthwise transpose convolution function.
+   */
+  print("Testing the 2D depthwise transpose convolution function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 4  # num channels
+  Hin = 2  # input height
+  Win = 2  # input width
+  M = 2  # depth of each filter
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 1
+  pad = 0
+  out_pad = 0  # padding added to output
+  X = matrix(seq(1,N*C*Hin*Win), rows=N, cols=C*Hin*Win) / (N*C*Hin*Win) * 2 - 1  # normalized
+
+  # Create layer
+  W = matrix(seq(1,C/M*M*Hf*Wf), rows=C/M, cols=M*Hf*Wf) / (C/M*M*Hf*Wf) * 2 - 1  # normalized
+  b = matrix(seq(1,C/M), rows=C/M, cols=1) / (C/M)^2  # non-zero & non-one
+
+  # Forward
+  [out, Hout, Wout] = conv2d_transpose_depthwise::forward(X, W, b, C, Hin, Win, M, Hf, Wf,
+                                                          stride, stride, pad, pad,
+                                                          out_pad, out_pad)
+
+  # Equivalency check
+  target = matrix("1.44097221  2.45486116  2.28125     1.1875
+                   2.1875      3.80555558  3.48611116  1.72916663
+                   1.6875      2.84722233  2.52777767  1.27083325
+                   0.80902779  1.24652779  1.10069442  0.625
+
+                   0.37152776  0.24652773  0.18402778  0.35416669
+                   0.21527778 -0.02777781 -0.12500003  0.22916666
+                   0.04861115 -0.31944442 -0.41666669  0.10416666
+                   0.32291669  0.20486113  0.1701389   0.375
+
+
+                   0.05208334 -0.21180555 -0.16319445  0.02083334
+                  -0.25694442 -0.8611111  -0.7361111  -0.27083331
+                  -0.09027778 -0.4861111  -0.3611111  -0.0625
+                   0.08680556 -0.08680557 -0.01041669  0.125
+
+                   0.98263896  1.57986116  1.73958337  1.1875
+                   1.77083337  3.30555558  3.65277791  2.22916675
+                   2.27083325  4.34722233  4.69444466  2.77083349
+                   1.60069442  2.87152767  3.05902767  1.875     ", rows=N, cols=C/M*Hout*Wout)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                             as.scalar(target[i,j]), 1e-3, 1e-4)
+    }
+  }
+}
+
+conv2d_transpose_depthwise()

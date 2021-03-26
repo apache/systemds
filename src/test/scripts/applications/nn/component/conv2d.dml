@@ -1,0 +1,67 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/conv2d.dml") as conv2d
+source("src/test/scripts/applications/nn/conv2d_simple.dml") as conv2d_simple
+source("scripts/nn/layers/conv2d_builtin.dml") as conv2d_builtin
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+conv2d = function() {
+  /*
+   * Test for the 2D convolution functions.
+   */
+  print("Testing the 2D convolution functions.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  F = 2  # num filters
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 1
+  pad = 1
+  X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
+
+  # Create layer
+  [W, b] = conv2d::init(F, C, Hf, Wf, -1)
+
+  # Forward
+  [out, Hout, Wout] = conv2d::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = conv2d_simple::forward(X, W, b, C, Hin, Win, Hf, Wf,
+                                                                  stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = conv2d_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+
+  # Equivalency check
+  out = matrix(out, rows=1, cols=N*F*Hout*Wout)
+  out_simple = matrix(out_simple, rows=1, cols=N*F*Hout*Wout)
+  out_builtin = matrix(out_builtin, rows=1, cols=N*F*Hout*Wout)
+  for (i in 1:length(out)) {
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
+                                           as.scalar(out_simple[1,i]), 1e-10, 1e-12)
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
+                                           as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+  }
+}
+
+conv2d()

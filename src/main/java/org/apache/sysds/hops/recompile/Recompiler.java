@@ -1418,12 +1418,13 @@ public class Recompiler
 		else if(HopRewriteUtils.isUnary(hop, OpOp1.CAST_AS_MATRIX)
 			&& hop.getInput(0) instanceof IndexingOp && hop.getInput(0).getDataType().isList()
 			&& HopRewriteUtils.isData(hop.getInput(0).getInput(0), OpOpData.TRANSIENTREAD) ) {
-			ListObject list = (ListObject) vars.get(hop.getInput(0).getInput(0).getName());
+			Data ldat = vars.get(hop.getInput(0).getInput(0).getName()); //list, or matrix during IPA
 			Hop rix = hop.getInput(0);
-			if( list != null
+			if( ldat != null && ldat instanceof ListObject
 				&& rix.getInput(1) instanceof LiteralOp
 				&& rix.getInput(2) instanceof LiteralOp
 				&& HopRewriteUtils.isEqualValue(rix.getInput(1), rix.getInput(2))) {
+				ListObject list = (ListObject) ldat;
 				MatrixObject mo = (MatrixObject) ((rix.getInput(1).getValueType() == ValueType.STRING) ? 
 					list.getData(((LiteralOp)rix.getInput(1)).getStringValue()) :
 					list.getData((int)HopRewriteUtils.getIntValueSafe(rix.getInput(1))-1));

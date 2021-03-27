@@ -799,26 +799,24 @@ public class LibMatrixDNNPooling {
 		int end_index_w = params.end_indexes_w[q];
 		
 		int maxIndex = -1; 
-		double maxVal = -Double.MAX_VALUE;
+		double maxVal = performReluBackward ? 0 : Double.NEGATIVE_INFINITY;
 		
 		// Note: We do not treat pad as zero and hence we don't do:  
 		// maxVal = 0 
 		// if start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W
 		
 		// Find maxIndex
-		double currDoutVal = performReluBackward ? 0 : Double.NEGATIVE_INFINITY;
 		for (int h = start_index_h; h < end_index_h; h++) {
 			for (int w = start_index_w; w < end_index_w; w++) {
 				final int idx = inputOffset +  h*params.W + w;
-				currDoutVal = inputArray[idx];
-				currDoutVal = performReluBackward && currDoutVal < 0 ? 0 : currDoutVal;
+				final double currDoutVal = inputArray[idx];
 				if(maxVal < currDoutVal) {
 					maxIndex = idx;
 					maxVal = currDoutVal;
 				}
 			}
 		}
-		return currDoutVal == 0 && performReluBackward ? -1 : maxIndex;
+		return maxVal == 0 && performReluBackward ? -1 : maxIndex;
 	}
 
 	/**

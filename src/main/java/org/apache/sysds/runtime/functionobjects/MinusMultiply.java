@@ -39,6 +39,10 @@ public class MinusMultiply extends TernaryValueFunction implements ValueFunction
 	private MinusMultiply(double cnt) {
 		_cnt = cnt;
 	}
+	
+	public double getConstant() {
+		return _cnt;
+	}
 
 	public static MinusMultiply getFnObject() {
 		if ( singleObj == null )

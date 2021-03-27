@@ -45,6 +45,10 @@ public class PlusMultiply extends TernaryValueFunction implements ValueFunctionW
 			singleObj = new PlusMultiply();
 		return singleObj;
 	}
+
+	public double getConstant() {
+		return _cnt;
+	}
 	
 	@Override
 	public double execute(double in1, double in2, double in3) {

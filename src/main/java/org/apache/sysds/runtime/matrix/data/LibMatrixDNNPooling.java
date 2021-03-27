@@ -806,7 +806,7 @@ public class LibMatrixDNNPooling {
 		// if start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W
 		
 		// Find maxIndex
-		double currDoutVal = 0;
+		double currDoutVal = performReluBackward ? 0 : Double.NEGATIVE_INFINITY;
 		for (int h = start_index_h; h < end_index_h; h++) {
 			for (int w = start_index_w; w < end_index_w; w++) {
 				final int idx = inputOffset +  h*params.W + w;
@@ -818,7 +818,7 @@ public class LibMatrixDNNPooling {
 				}
 			}
 		}
-		return currDoutVal == 0 ? -1 : maxIndex;
+		return currDoutVal == 0 && performReluBackward ? -1 : maxIndex;
 	}
 
 	/**
@@ -832,8 +832,7 @@ public class LibMatrixDNNPooling {
 		// sort based on the i array.
 		sort(i,v, size);
 		for(int x = 0; x < size; x++){
-			if(i[x] >= 0)
-				row.append(i[x], v[x]);
+			row.append(i[x], v[x]);
 		}
 	}
 

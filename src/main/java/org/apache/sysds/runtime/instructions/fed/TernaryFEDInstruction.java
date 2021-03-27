@@ -22,8 +22,6 @@ package org.apache.sysds.runtime.instructions.fed;
 import java.util.Objects;
 
 import com.sun.tools.javac.util.List;
-import org.antlr.v4.codegen.model.chunk.RetValueRef;
-import org.apache.sysds.lops.Federated;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -31,7 +29,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
@@ -50,7 +47,8 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		return new TernaryFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, str);
 	}
 
-	@Override public void processInstruction(ExecutionContext ec) {
+	@Override
+	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = input1.isMatrix() ? ec.getMatrixObject(input1.getName()) : null;
 		MatrixObject mo2 = input2.isMatrix() ? ec.getMatrixObject(input2.getName()) : null;
 		MatrixObject mo3 = input3 != null && input3.isMatrix() ? ec.getMatrixObject(input3.getName()) : null;
@@ -78,10 +76,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, new CPOperand[] {in}, new long[] {mo1.getFedMapping().getID()});
 		mo1.getFedMapping().execute(getTID(), true, fr1);
 
-		//derive new fed mapping for output
-		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo1.getDataCharacteristics());
-		out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
+		setOutputFedMapping(ec, mo1, fr1.getID());
 	}
 
 	private void process2MatrixScalarInput(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, CPOperand in1, CPOperand in2) {

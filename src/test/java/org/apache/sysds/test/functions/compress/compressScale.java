@@ -73,10 +73,11 @@ public class compressScale extends AutomatedTestBase {
 	// compressTest(10, 200000, 0.2, ExecType.CP, 0, 5, 1, 0);
 	// }
 
-	public void compressTest(int cols, int rows, double sparsity, LopProperties.ExecType instType, int min, int max,
-		int scale, int center) {
+	public void compressTest(int cols, int rows, double sparsity, LopProperties.ExecType instType,
+		int min, int max, int scale, int center) {
 
 		Types.ExecMode platformOld = setExecMode(instType);
+		setOutputBuffering(true); //otherwise test fails in local
 		try {
 
 			fullDMLScriptName = SCRIPT_DIR + "/" + getTestDir() + getTestName() + ".dml";

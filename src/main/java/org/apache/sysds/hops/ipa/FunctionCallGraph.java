@@ -472,7 +472,6 @@ public class FunctionCallGraph
 		if( !fstack.contains(lfkey) ) {
 			fstack.push(lfkey);
 			_fGraph.get(fkey).add(lfkey);
-			System.out.println(fkey+" -> "+lfkey);
 			FunctionStatementBlock fsb = sb.getDMLProg()
 				.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
 			FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);

@@ -20,16 +20,23 @@
 #-------------------------------------------------------------
 
 if ($rP) {
-    A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+ A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
         ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
     		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+
+ B = federated(addresses=list($in_Y1, $in_Y2, $in_Y3, $in_Y4),
+        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+
 } else {
-    A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
-            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+  A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+             ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+              	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+  B = federated(addresses=list($in_Y1, $in_Y2, $in_Y3, $in_Y4),
+             ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+             	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
-c1 = ifelse(A>0, A + matrix(1, $rows, $cols), A*2);
-c2 = ifelse(A-3>0, A + matrix(1, $rows, $cols), 3);
-c3 = ifelse(1, matrix(1, $rows, $cols), 3);
-s = c1 + c2 + c3;
+c1 = ifelse(A-3>0, B, A*2);
+c2 = ifelse(A-3>0, B, matrix(1, $rows, $cols));
+s = c1 + c2;
 write(s, $out_S);

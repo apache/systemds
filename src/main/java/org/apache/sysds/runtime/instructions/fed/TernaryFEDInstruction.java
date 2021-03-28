@@ -101,14 +101,13 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
 		// 2 aligned inputs
 		if(fr1 == null) {
-			fr3 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
-			mo1.getFedMapping().execute(getTID(), true, fr2, fr3);
+			mo1.getFedMapping().execute(getTID(), true, fr2);
 		} else {
-			fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID());
+			fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
 			mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 		}
 
-		setOutputFedMapping(ec, mo1, fr3.getID());
+		setOutputFedMapping(ec, mo1, fr2.getID());
 	}
 
 	private void processMatrixInput(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
@@ -117,7 +116,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		RetAlignedValues retAlignedValues = getAlignedInputs(ec, mo1, mo2, mo3);
 
 		FederatedRequest[] fr2;
-		FederatedRequest fr3;
+		FederatedRequest fr3, fr4;
 
 		// all 3 inputs fed aligned on the one worker
 		if(retAlignedValues._allAligned) {
@@ -128,7 +127,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		// 2 fed aligned inputs
 		else if(retAlignedValues._twoAligned) {
 			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, retAlignedValues._vars);
-			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), retAlignedValues._fr[0].getID());
+			fr4 = mo1.getFedMapping().cleanup(getTID(), retAlignedValues._fr[0].getID());
 			mo1.getFedMapping().execute(getTID(), true, retAlignedValues._fr, fr3, fr4);
 		}
 		// 1 fed input or not aligned
@@ -152,7 +151,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 					mo1.getFedMapping().getID()};
 
 			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, vars);
-			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2[0].getID());
+			fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2[0].getID());
 			mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
 		}
 

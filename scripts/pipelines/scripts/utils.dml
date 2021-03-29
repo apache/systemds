@@ -114,11 +114,11 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio)
   }
 }
 
-#######################################################################
-# Wrapper of transformencode OHE call, to call inside eval as a function
-# Inputs: The input dataset X, and  mask of the columns
-# Output: OHEd matrix X
-#######################################################################
+# #######################################################################
+# # Wrapper of transformencode OHE call, to call inside eval as a function
+# # Inputs: The input dataset X, and  mask of the columns
+# # Output: OHEd matrix X
+# #######################################################################
 
 dummycoding = function(Matrix[Double] X, Matrix[Double] mask)
 return (Matrix[Double] dX_train) {
@@ -132,6 +132,26 @@ return (Matrix[Double] dX_train) {
 
 }
 
+# # function to classify the data using cross validation
+# fclassify = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, Matrix[Double] MLhp,
+  # Double testAccuracy, Boolean isWeighted, Integer cv=3)
+  # return (Double accuracy)
+# {
+ 
+  # if(max(Y) == min(Y)) {
+    # print("Y contains only one class")
+    # accuracy = as.double(0)
+  # }
+  # else { 
+    # print("STARTING "+cv+" CROSS VALIDATIONS")
+    # # do the k = 3 cross validations
+    # accuracyMatrix = crossV(X, Y, cv, mask, MLhp, isWeighted)
+    # accuracyMatrix = removeEmpty(target=accuracyMatrix, margin="rows")
+    # acc = colMeans(accuracyMatrix)
+    # accuracy = as.scalar(acc[1,1])
+    # print("validation accuracy "+accuracy)
+  # }
+# }
 
 
 
@@ -155,13 +175,13 @@ return (Matrix[Double] dX_train) {
 # }
 
 
-# # ######################################################################
-# # # # Function for cross validation using hold out method
-# # # # Inputs: The input dataset X, Y and the value of k validation, mask of the 
-# # # # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
-# # # # via gridsearch and a boolean value of (un)weighted accuracy.
-# # # # Output: It return a matrix having the accuracy of each fold.
-# # ######################################################################
+# # # ######################################################################
+# # # # # Function for cross validation using hold out method
+# # # # # Inputs: The input dataset X, Y and the value of k validation, mask of the 
+# # # # # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# # # # # via gridsearch and a boolean value of (un)weighted accuracy.
+# # # # # Output: It return a matrix having the accuracy of each fold.
+# # # ######################################################################
 
 # crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] mask,
   # Matrix[Double] MLhp, Boolean isWeighted) 
@@ -190,7 +210,6 @@ return (Matrix[Double] dX_train) {
       # end = end + idx
       # class_j =  data[start:end, ]
 
-
       # start_i = as.scalar(fold_idxes[j, 1]);
       # end_i = as.scalar(fold_idxes[j, 2])
 
@@ -218,8 +237,117 @@ return (Matrix[Double] dX_train) {
     # accuracy = getAccuracy(testy, yhat, isWeighted)
     # accuracyMatrix[i] = accuracy
   # }
-
 # }
 
 
+######################################################################
+# # Function for cross validation using hold out method
+# # Inputs: The input dataset X, Y and the value of k validation, mask of the 
+# # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# # via grid-search and a boolean value of (un)weighted accuracy.
+# # Output: It return a matrix having the accuracy of each fold.
+######################################################################
 
+compareValue = function(Matrix[double] dirtyX, Matrix[double] cleanX,  Matrix[Double] fixedX, Matrix[Double] mask) 
+return (Double precision)
+{
+  dirtyX = replace(target= dirtyX, pattern=NaN, replacement=0)
+  cleanX = replace(target= cleanX, pattern=NaN, replacement=0)
+  fixedX = replace(target= fixedX, pattern=NaN, replacement=0)
+  correctionsRequired = dirtyX != cleanX
+  correctionsMade = (dirtyX != fixedX)
+  allCorrections_ = sum(correctionsMade)
+  match = (abs(cleanX - fixedX) < 0.1)  * correctionsRequired
+  precision = max(0.001, sum(match) / allCorrections_)
+  print("---------------------------------true positives are "+toString(precision))
+}
+
+# constraints over hyper parameters
+verifyHp = function(Integer index, Frame[Unknown] pip, Double minVal, Double maxVal, Integer paraNo)
+return (Double minVal, Double maxVal) {
+  op = as.scalar(pip[1,index])
+  # 1. if next op is pca then current op should not leave NaNs in data
+  # 2. if next op is mice then current op should not replace NaNs with zeros
+  
+  if((op == "outlierBySd" | op == "outlierByIQR") & index < ncol(pip) & paraNo == 2)
+  {
+    nextOp = as.scalar(pip[1, index + 1])
+    if(nextOp == "pca" | nextOp == "abstain" | nextOp == "SMOTE")
+    {
+      maxVal = 1.0
+    }
+    if(nextOp == "mice")
+    {
+      minVal = 2.0
+    }
+  }
+
+}
+
+
+#####################################
+# The function will check if the pipeline have zero hyper-parameters
+# then it should not use more resource iterations and should be executed once
+######################################
+isResourceOptimal = function(List[Unknown] param, Boolean verbose)
+return(Boolean validForResources) 
+{
+  validForResources = FALSE
+
+  count = 0
+  for(i in 1:length(param))
+  {
+    hp = as.matrix(param[i])
+    if(ncol(hp) > 4)
+      count += 1
+  }
+  validForResources = count > 0
+}
+
+
+###############################################################################################
+# The function will collect the features like statistics and pipelines and accuracy 
+# so that they could be used for training a model and predicting pipelines without enumeration
+###############################################################################################
+gatherStats = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, String target)
+return (Matrix[Double] features)
+{
+
+  features = matrix(0, rows = 1, cols= 14)
+  features[1, 1]=  sum(is.na(X)) # number of missing values
+  X = replace(target= X, pattern = NaN, replacement = 0)
+  num = removeEmpty(target=X, margin="cols", select=(mask == 0))
+  # get the stats
+  features[1, 2] =  min(num) # minimum value
+  features[1, 3] = max(num)
+  features[1, 4] = mean(colMins(num)) # average minimum value
+  features[1, 5] = mean(colMaxs(num)) # average maximum value
+  features[1, 6] = sum(mask) # number of categorical features
+  features[1, 7] = sum(mask == 0) # number of numerical features
+  features[1, 8] = mean(num) # mean value
+  colSd = colSds(num)
+  count3sdplus = sum(num > (colMeans(num) + 3*colSd )) 
+  count3sdminus = sum(num < (colMeans(num) - 3*colSd )) 
+  outliers = count3sdplus + count3sdminus
+  features[1, 9] = outliers
+  # OHE features 
+  OHE = sum(colMaxs(X) * mask)
+  features[1, 10] = OHE
+  if(target != "compare")
+  {
+    ctab = table(Y, 1)
+    features[1, 11] = nrow(ctab) # number of classes
+    minCat = min(ctab) / nrow(ctab)
+    maxCat = max(ctab) / nrow(ctab)
+    # class imabalance 1=YES, 0=NO
+    features[1, 12]= ifelse((maxCat - minCat) > 0.3, 1, 0)
+  }
+  else 
+  {
+    features[1, 11] = 0
+    features[1, 12] = 0
+  }
+  features[1, 13] = nrow(X)
+  features[1, 14] = ncol(X)
+  
+}

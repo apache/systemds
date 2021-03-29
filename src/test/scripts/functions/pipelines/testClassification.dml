@@ -1,0 +1,202 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Generate the logical pipelines for data cleaning
+
+source("scripts/pipelines/scripts/utils.dml") as utils;
+source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
+source("scripts/pipelines/scripts/gridsearchMLR.dml") as gs;
+
+# read the inputs
+F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
+  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+
+metaInfo = read($metaData, data_type="frame", format="csv", header=FALSE);
+primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
+param = read($parameters, data_type = "frame", format="csv", header= TRUE)
+sample = $sampleSize
+topK = $topk
+resources = $rv
+crossValidations = $cv
+weightedAccuracy = $weighted # accuracy flag
+targetApplicaton = $target # accuracy flag
+
+
+
+if(nrow(metaInfo) < 2)
+  stop("incomplete meta info")
+
+ # Do the initial cleaning
+ 
+ 
+getSchema = metaInfo[1, 2:ncol(metaInfo)]
+getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
+getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
+  
+# 1. dropInvalid function will remove the values which are not the part 
+# of the column data type  
+
+X = dropInvalidType(F, getSchema)
+
+# 2. encode the categorical data
+if(sum(getMask) > 0)
+{
+  # always recode the label
+  index = utils::vectorToCsv(getMask)
+  jspecR = "{ids:true, recode:["+index+"]}"
+  [eX, X_meta] = transformencode(target=X, spec=jspecR);
+  # change the schema to reflect the encoded values
+  getSchema = map(getSchema, "x->x.replace(\"STRING\", \"INT64\")")
+  getSchema = map(getSchema, "x->x.replace(\"BOOLEAN\", \"INT64\")")
+
+} 
+# if no categorical value exist then just cast the frame into matrix
+else
+  eX = as.matrix(X)
+  
+# 3. extract the class label  
+eY = eX[, ncol(eX)]
+eX = eX[, 1:ncol(eX) - 1]
+
+getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
+getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
+getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
+
+
+# get the logical seed
+lgSeed = logical::generateLogicalSeed(eX, eY, getMask, targetApplicaton)
+allLgs = logical::transformLogical(lgSeed)
+
+
+d_accuracy = 0
+# 4. perform the sampling
+
+[eX, eY] = utils::doSample(eX, eY, sample)
+
+# 5. get train test and validation set with balanced class distribution
+[X_train, y_train, X_test, y_test] = splitBalanced(X=eX, Y=eY, splitRatio=0.7, verbose=FALSE)
+
+# 6. find the best hyper parameters for classification algorithm
+# for now only find the best values for intercept and maximum outer iteration
+params = list("reg", "maxi");
+paramRanges = list(10^seq(0,-10), seq(10,100, 10));
+# if(sum(getMask) > 0)
+# {
+  # dX_train = utils::dummycoding(replace(target = rbind(X_train, X_test), pattern = NaN, replacement=0), getMask)
+  # dX_test = dX_train[nrow(y_train)+1:nrow(dX_train),] 
+  # dX_train = dX_train[1:nrow(y_train),] 
+  # [opt, loss] = gs::gridSearchMLR(dX_train, y_train, dX_test, y_test, 
+  # "multiLogReg", "lossFunc", params, paramRanges, FALSE);
+#  }
+# else  
+  # [opt, loss] = gs::gridSearchMLR(X_train, y_train, X_test, y_test, 
+    # "multiLogReg", "lossFunc", params, paramRanges, FALSE);
+# hardcoded hyper-params for multilogReg
+opt = matrix("0 100", 1, 2)
+
+# 7. get the cross validated accuracy on dirty dataset (only on training set)
+d_accuracy = classifyDirty(X_train, y_train, opt, getMask, weightedAccuracy, crossValidations)
+# print("dirty accuracy is "+d_accuracy)
+ # [eX, eY] = prioritise(eX, eY, getMask)
+ 
+FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
+FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
+FD = FD > 0
+
+metaList = list(mask=getMask, schema=getSchema, fd=FD)
+targetClassification = list(target=targetApplicaton, cv=crossValidations, wAccuracy=weightedAccuracy, 
+  dirAcc = d_accuracy, mlHp = opt, cleanData = as.matrix(0))
+
+# # initialize output variables
+pip = as.frame("NULL"); hp = matrix(0,0,0); acc = matrix(0,0,0); features = as.frame("NULL")
+
+[pip, hp, acc, features] = bandit(X_train=eX, Y_train=eY,  metaList=metaList, targetList=targetClassification, lp=allLgs[1],
+  primitives=primitives, param=param, k=topK, R=resources, verbose=TRUE);
+
+output = $output
+write(features, output+"/features.csv", format="csv")
+
+
+if(as.scalar((is.na(acc[1,1]))) == 1 | as.scalar(acc[1,1]) < d_accuracy)
+  stop("warning: no best pipeline found")
+  
+
+print("best pipelines")
+print(toString(pip))
+
+print("best hyperparam")
+print(toString(hp))
+
+print("best accuracy")
+print(toString(acc))
+
+
+clean_accuracy = as.scalar(acc[1,1])
+
+
+result = d_accuracy < clean_accuracy  
+print("result satisfied ------------"+result)
+
+accuracies = cbind(as.matrix(d_accuracy), as.matrix(clean_accuracy))
+
+
+write(pip, output+"/pipelines.csv", format="csv")
+write(hp, output+"/hyperparams.csv", format="csv")
+write(acc, output+"/accuracies.csv", format="csv")
+write(accuracies , output+"/BestAccuracy.csv", format="csv")
+write(result , $O)
+
+
+
+
+####################################################################
+# Function for classifying the dirty dataset, makes a call to crossV()
+# Inputs: takes the input dataset X, Y and the value of k validation, mask of the 
+# dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# via grid-search and a boolean value of (un)weighted accuracy.
+# Output: It return a matrix having the accuracy of each fold.
+####################################################################
+classifyDirty = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Double] opt, 
+  Matrix[Double] mask, Boolean isWeighted = TRUE, Integer cv)
+  return (Double accuracy)
+{
+  # # classify without cleaning fill with default values 1
+  Xtrain = replace(target = Xtrain, pattern = NaN, replacement=0)
+  if(sum(mask) > 0)
+    Xtrain = utils::dummycoding(Xtrain, mask)
+  # print("rows in data ")
+  # print(nrow(dX_train))
+  # print("column in data")
+  # print(ncol(dX_train))
+  accuracy = crossV(Xtrain, ytrain, cv, mask, opt, isWeighted)
+  accuracy = mean(accuracy)
+  print("cross validated dirty accuracy "+accuracy)
+}
+
+
+
+
+lossFunc = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
+return (Matrix[Double] loss) {
+  [prob, yhat, acc] = multiLogRegPredict(X=X, B=B, Y=y,  verbose=FALSE)
+  loss = as.matrix(1 - (acc/100))
+  # [confusionCount_c, confusionAVG_c] = confusionMatrix(P=yhat, Y=y)
+}
+

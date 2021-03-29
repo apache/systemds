@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask,
-  List[Unknown] hyperParameters, Integer resource_index, Boolean verbose)
+  Matrix[Double] FD, Matrix[Double] hyperParameters, Integer flagsCount, Boolean verbose)
   return (Matrix[Double] X, Matrix[Double] Y)
 {
 
@@ -30,16 +30,13 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[D
     print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
     print("pipeline in execution "+toString(pipeline))
     print("pipeline hps "+toString(hyperParameters))
-    print("index "+toString(resource_index))
     while(FALSE){}
   }
   for(i in 1:ncol(pipeline)) {
-
     op = as.scalar(pipeline[1,i])
-    [hp, withClass, dataFlag] = matrixToList(X, Y, mask, as.matrix(hyperParameters[i]), resource_index, op)
+    [hp, withClass, dataFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
     Xclone = X
     X = eval(op, hp)
-    while(FALSE){}
     # dataFlag 0 = only on numeric, 1 = on whole data
     X = confirmData(X, Xclone, mask, dataFlag)
     if(withClass)
@@ -50,21 +47,21 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[D
 
     X = confirmMeta(X, mask)
   }
-  print("END OF PIPELINE"+toString(pipeline))
-  while(FALSE){}
 }
 
 # This function will convert the matrix row-vector into list
-matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask, Matrix[Double] p, Integer resource_index, String op)
+matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask, Matrix[Double] FD,
+  Matrix[Double] p, Integer flagsCount, String op)
   return (List[Unknown] l, Boolean hasY, Integer dataFlag)
 {
-
+  NUM_META_FLAGS = flagsCount;
   hasY = FALSE
 
   dataFlag = as.integer(as.scalar(p[1, ncol(p)]))
   hasVerbose = as.scalar(p[1, ncol(p) - 1])
   yFlag = as.scalar(p[1, ncol(p) - 2])
-  maskFlag = as.integer(as.scalar(p[1, ncol(p)-3]))
+  fDFlag = as.integer(as.scalar(p[1, ncol(p)-3]))
+  maskFlag = as.integer(as.scalar(p[1, ncol(p)-4]))
   
   ######################################################
   # CHECK FOR DATA FLAG
@@ -90,6 +87,13 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
     hasY = TRUE
   }
   ######################################################
+  # CHECK FOR FD APPEND FLAG
+  if(fDFlag == 1)
+  {
+    l = append(l, FD)
+  }
+  
+  ######################################################
   # CHECK FOR MASK APPEND FLAG
   if(maskFlag == 1)
   {
@@ -97,20 +101,22 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
   }
   #####################################################
   # POPULATE HYPER PARAM
-  if(ncol(p) > 4) {
-    if(op == "pca") {
-      ratio = as.scalar(p[resource_index,1])
-      p[resource_index, 1] = as.integer(ncol(X) - ratio)
-    }
-    for(i in 1:ncol(p)-4)
-      l = append(l, as.scalar(p[resource_index,i]))
+  # get the number of hyper-parameters and loop till that
+  no_of_hyperparam = as.scalar(p[1,1])
+  if(no_of_hyperparam > 0) {
+    # if(op == "pca") {
+      # # convert the number parameters to a ration related to OHE columns
+      # ratio = as.scalar(p[resource_index,1])
+      # p[resource_index, 1] = as.integer(ncol(X) - ratio)
+    # }
+    for(i in 1:no_of_hyperparam)
+      l = append(l, as.scalar(p[1,(i+1)]))
   }
   ######################################################
   # CHECK FOR VERBOSE FLAG
   if(hasVerbose == 1)
     l = append(l, FALSE)
-   # print("+++++++++++HP++++++++++++++")
-   # print(toString(l, rows=2))
+
 }
 
 confirmMeta = function(Matrix[Double] X, Matrix[Double] mask)
@@ -188,6 +194,7 @@ return (Matrix[Double] X)
     # print("recreated data \n"+toString(X, rows = 20))
 }
 
+
 #######################################################################
 # Wrapper of transformencode OHE call, to call inside eval as a function
 # Inputs: The input dataset X, and  mask of the columns
@@ -205,3 +212,5 @@ return (Matrix[Double] dX_train) {
   [dX_train, dM] = transformencode(target=as.frame(X), spec=jspecDC);
 
 }
+
+

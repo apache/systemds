@@ -27,10 +27,9 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class CleaningTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "mainScript";
-	private final static String TEST_NAME2 = "compareAccuracy";
-	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTest.class.getSimpleName() + "/";
+public class CleaningTestCompare extends AutomatedTestBase {
+	private final static String TEST_NAME1 = "testCompare";
+	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTestCompare.class.getSimpleName() + "/";
 
 	protected static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
 	protected static final String DATA_DIR = RESOURCE+"data/";
@@ -47,59 +46,29 @@ public class CleaningTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 	}
 
-
-	@Ignore
-	public void testCP1() {
-		runFindPipelineTest(1.0, 5,10, 2,
-			true, Types.ExecMode.SINGLE_NODE);
-	}
 
 	@Test
-	public void testCP2() {
-		runCleanAndCompareTest( Types.ExecMode.SINGLE_NODE);
+	public void testCP1() {
+		runFindPipelineTest(0.5, 5,10, 2,
+			true, "compare", Types.ExecMode.SINGLE_NODE);
 	}
 
 	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
-		boolean weightedAccuracy, Types.ExecMode et) {
+		boolean weightedAccuracy, String target, Types.ExecMode et) {
 
-		setOutputBuffering(true);
+		//		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-
-			programArgs = new String[] {"-stats", "-exec", "singlenode", "-args", DIRTY, META, PRIMITIVES,
-				PARAM, String.valueOf(sample), String.valueOf(topk), String.valueOf(resources),
-				String.valueOf(crossfold), String.valueOf(weightedAccuracy), output("O"), OUTPUT };
-
-			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-
-			//expected loss smaller than default invocation
-			Assert.assertTrue(TestUtils.readDMLBoolean(output("O")));
-		}
-		finally {
-			resetExecMode(modeOld);
-		}
-	}
-
-	private void runCleanAndCompareTest( Types.ExecMode et) {
-		setOutputBuffering(true);
-		String HOME = SCRIPT_DIR+"functions/pipelines/";
-		Types.ExecMode modeOld = setExecMode(et);
-		try {
-			loadTestConfiguration(getTestConfiguration(TEST_NAME2));
-			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
-
-			programArgs = new String[] {"-stats", "-exec",
-				"singlenode", "-args", DIRTY, CLEAN, META, OUTPUT, output("O")};
+			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY, "metaData="+META,
+				"primitives="+PRIMITIVES, "parameters="+PARAM,  "topk="+String.valueOf(topk), "rv="+String.valueOf(resources),
+				"output="+OUTPUT, "target="+target, "cleanData="+CLEAN, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-
-			//expected loss smaller than default invocation
 			Assert.assertTrue(TestUtils.readDMLBoolean(output("O")));
 		}
 		finally {

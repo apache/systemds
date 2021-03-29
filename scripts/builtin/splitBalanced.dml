@@ -63,6 +63,7 @@ return (Matrix[Double] X_train, Matrix[Double] y_train, Matrix[Double] X_test,
     print("train ratio \n"+toString(classes_ratio_train))
     print("test ratio \n"+toString(classes_ratio_test))
   }
+
   for(i in 1:nrow(classes))
   {
     end_class = end_class + as.scalar(classes[i])

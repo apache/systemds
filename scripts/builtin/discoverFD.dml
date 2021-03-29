@@ -41,6 +41,7 @@
 m_discoverFD = function(Matrix[Double] X, Matrix[Double] Mask, Double threshold)
   return(Matrix[Double] FD)
 {
+  
   if( threshold < 0 | threshold > 1 )
     stop("Stopping due to invalid input, threshold required in interval [0, 1] found "+threshold)
 

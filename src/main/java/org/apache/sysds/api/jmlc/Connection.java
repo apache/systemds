@@ -32,7 +32,6 @@ import java.util.Map;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.runtime.meta.MetaDataAll;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
@@ -503,11 +502,11 @@ public class Connection implements Closeable
 		throws IOException
 	{
 		try {
-			//parse json meta data 
-			JSONObject jmtd = new JSONObject(meta);
-			int rows = jmtd.getInt(DataExpression.READROWPARAM);
-			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
-			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			//parse meta data
+			MetaDataAll mtd = new MetaDataAll(meta);
+			int rows = (int) mtd.getDim1();
+			int cols = (int) mtd.getDim2();
+			String format = mtd.getFormatTypeString();
 			
 			//parse the input matrix
 			return convertToMatrix(input, rows, cols, format);
@@ -742,11 +741,11 @@ public class Connection implements Closeable
 		throws IOException
 	{
 		try {
-			//parse json meta data 
-			JSONObject jmtd = new JSONObject(meta);
-			int rows = jmtd.getInt(DataExpression.READROWPARAM);
-			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
-			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			//parse meta data
+			MetaDataAll mtd = new MetaDataAll(meta);
+			int rows = (int) mtd.getDim1();
+			int cols = (int) mtd.getDim2();
+			String format = mtd.getFormatTypeString();
 			
 			//parse the input frame
 			return convertToFrame(input, rows, cols, format);

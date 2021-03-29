@@ -41,6 +41,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.io.IOUtilFunctions.CountRowsTask;
@@ -78,7 +79,8 @@ public class ReaderTextCSVParallel extends MatrixReader
 	{
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-//		job.set("textinputformat.record.delimiter", _props.getDelim());
+		_props.setDelim(job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
+			DataExpression.DEFAULT_DELIM_DELIMITER)));
 		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
@@ -133,6 +135,9 @@ public class ReaderTextCSVParallel extends MatrixReader
 	{
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
+		delim = job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
+			DataExpression.DEFAULT_DELIM_DELIMITER));
+
 		informat.configure(job);
 
 		ExecutorService pool = CommonThreadPool.get(_numThreads);

@@ -39,8 +39,10 @@ import org.apache.sysds.parser.Expression;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.parser.StringIdentifier;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONArray;
@@ -53,12 +55,35 @@ public class MetaDataAll extends DataIdentifier {
 
 	protected String _formatTypeString;
 	protected String _fineGrainedPrivacy;
-	protected String _delim;
 	protected String _schema;
-
+	protected String _delim = DataExpression.DEFAULT_DELIM_DELIMITER;
+	protected boolean _hasHeader = false;
+	protected boolean _sparseDelim = DataExpression.DEFAULT_DELIM_SPARSE;
 
 	public MetaDataAll() {
 		// do nothing
+	}
+
+	public MetaDataAll(String meta) {
+		try {
+			_metaObj = new JSONObject(meta);
+		}
+		catch(JSONException e) {
+			e.printStackTrace();
+		}
+		setPrivacy(PrivacyConstraint.PrivacyLevel.None);
+		parseMetaDataParams();
+	}
+
+	public MetaDataAll(BufferedReader br) {
+		try {
+			_metaObj = JSONHelper.parse(br);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+		}
+		setPrivacy(PrivacyConstraint.PrivacyLevel.None);
+		parseMetaDataParams();
 	}
 
 	public MetaDataAll(String mtdFileName, boolean conditional, boolean parseMeta) {
@@ -147,10 +172,16 @@ public class MetaDataAll extends DataIdentifier {
 			case DataExpression.FINE_GRAINED_PRIVACY:  setFineGrainedPrivacy(val.toString()); break;
 			case DataExpression.DELIM_DELIMITER: setDelim(val.toString()); break;
 			case DataExpression.SCHEMAPARAM: setSchema(val.toString()); break;
+			case DataExpression.DELIM_HAS_HEADER_ROW: setHasHeader(true);
+			case DataExpression.DELIM_SPARSE: setSparseDelim((boolean) val);
 		}
 	}
 
 	public boolean mtdExists() { return _metaObj != null && !_metaObj.isEmpty(); }
+
+	public CacheableData<?> parseAndSetPrivacyConstraint(CacheableData<?> cd) throws JSONException {
+		return (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, _metaObj);
+	}
 
 	public String getFormatTypeString() { return _formatTypeString; }
 
@@ -160,11 +191,19 @@ public class MetaDataAll extends DataIdentifier {
 
 	public String getSchema() { return _schema; }
 
-	public void setFineGrainedPrivacy(String fineGrainedPrivacy) { this._fineGrainedPrivacy = fineGrainedPrivacy; }
+	public boolean getHasHeader() { return _hasHeader; }
 
-	public void setSchema(String schema) { this._schema = schema; }
+	public boolean getSparseDelim() { return _sparseDelim; }
 
-	public void setDelim(String delim) { this._delim = delim; }
+	public void setSparseDelim(boolean sparseDelim) { _sparseDelim = sparseDelim; }
+
+	public void setHasHeader(boolean hasHeader) { _hasHeader = hasHeader; }
+
+	public void setFineGrainedPrivacy(String fineGrainedPrivacy) { _fineGrainedPrivacy = fineGrainedPrivacy; }
+
+	public void setSchema(String schema) { _schema = schema; }
+
+	public void setDelim(String delim) { _delim = delim; }
 
 	public void setFormatTypeString(String format) {
 		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;

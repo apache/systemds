@@ -35,6 +35,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -63,8 +64,11 @@ public class ReaderTextCSV extends MatrixReader
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//check existence and non-empty file
-		checkValidInputFile(fs, path); 
-	
+		checkValidInputFile(fs, path);
+
+		_props.setDelim(job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
+			DataExpression.DEFAULT_DELIM_DELIMITER)));
+
 		//core read 
 		ret = readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen, 
 			_props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue(), _props.getNAStrings() );
@@ -108,7 +112,7 @@ public class ReaderTextCSV extends MatrixReader
 		}
 		else
 			files.add(path);
-		
+
 		//determine matrix size via additional pass if required
 		if ( dest == null ) {
 			dest = computeCSVSize(files, job, fs, hasHeader, delim, fill, fillValue);

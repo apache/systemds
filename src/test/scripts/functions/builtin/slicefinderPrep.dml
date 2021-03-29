@@ -31,10 +31,24 @@ jspec= "{ ids:true, recode:[1,2,3,6],bin:["
 [X,M] = transformencode(target=F, spec=jspec);
 X = X[,2:ncol(X)]
 
+if( $2 == "oe" ) {
+  m = nrow(X)
+  n = ncol(X)
+  fdom = colMaxs(X);
+  foffb = t(cumsum(t(fdom))) - fdom;
+  foffe = t(cumsum(t(fdom)))
+  rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
+  cix = matrix(X + foffb, m*n, 1);
+  X2 = table(rix, cix); #one-hot encoded
+}
+else {
+  X2 = X;
+}
+
 # learn model
-B = lm(X=X, y=y, verbose=FALSE);
-yhat = X %*% B;
+B = lm(X=X2, y=y, verbose=FALSE);
+yhat = X2 %*% B;
 e = (y-yhat)^2;
 
-write(X, $2)
-write(e, $3)
+write(X, $3)
+write(e, $4)

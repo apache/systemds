@@ -27,10 +27,10 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class CleaningTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "mainScript";
+public class CleaningTestClassification extends AutomatedTestBase {
+	private final static String TEST_NAME1 = "testClassification";
 	private final static String TEST_NAME2 = "compareAccuracy";
-	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTestClassification.class.getSimpleName() + "/";
 
 	protected static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
 	protected static final String DATA_DIR = RESOURCE+"data/";
@@ -51,10 +51,10 @@ public class CleaningTest extends AutomatedTestBase {
 	}
 
 
-	@Ignore
+	@Test
 	public void testCP1() {
-		runFindPipelineTest(1.0, 5,10, 2,
-			true, Types.ExecMode.SINGLE_NODE);
+		runFindPipelineTest(0.5, 5,10, 2,
+			true, "classification", Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
@@ -63,7 +63,7 @@ public class CleaningTest extends AutomatedTestBase {
 	}
 
 	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
-		boolean weightedAccuracy, Types.ExecMode et) {
+		boolean weightedAccuracy, String target, Types.ExecMode et) {
 
 		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
@@ -71,10 +71,11 @@ public class CleaningTest extends AutomatedTestBase {
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-
-			programArgs = new String[] {"-stats", "-exec", "singlenode", "-args", DIRTY, META, PRIMITIVES,
-				PARAM, String.valueOf(sample), String.valueOf(topk), String.valueOf(resources),
-				String.valueOf(crossfold), String.valueOf(weightedAccuracy), output("O"), OUTPUT };
+			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY, "metaData="+META,
+				"primitives="+PRIMITIVES, "parameters="+PARAM, "sampleSize="+String.valueOf(sample),
+				"topk="+String.valueOf(topk), "rv="+String.valueOf(resources), "cv="+String.valueOf(crossfold),
+				"weighted="+ String.valueOf(weightedAccuracy), "output="+OUTPUT, "target="+target, "cleanData="+CLEAN,
+				"O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

@@ -23,11 +23,10 @@
 source("scripts/pipelines/scripts/utils.dml") as utils;
 
 # incomplete implementation of automatic logical pipelines
-generateLogicalSeed = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask)
+generateLogicalSeed = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, String target)
 return(Frame[String] logical){
   
-  # detection = 
-  logical = as.frame("")
+  logical = frame(data=["NULL"], rows=1, cols=1, schema=["STRING"])
   no_of_mv = sum(is.na(X))
   X = replace(target= X, pattern = NaN, replacement = 0)
   
@@ -42,10 +41,13 @@ return(Frame[String] logical){
   count3sdplus = sum(X > (colMean + 3*colSd )) 
   count3sdminus = sum(X < (colMean - 3*colSd )) 
   outliers = count3sdplus + count3sdminus
-  ctab = table(Y, 1)
-  minCatPer = min(ctab) / nrow(ctab)
-  maxCat = max(ctab) / nrow(ctab)
-  
+  minCat = 0.0 # initialize variables
+  maxCat = 0.0
+  if(target != "compare") {
+    ctab = table(Y, 1)
+    minCat = min(ctab)
+    maxCat = max(ctab)
+  }
   mv_to_data_ratio = no_of_mv/(nrow(X) * ncol(X))
   out_to_data_ratio = outliers/ (nrow(X) * ncol(X))
   
@@ -53,17 +55,22 @@ return(Frame[String] logical){
     logical = cbind(logical, as.frame("MVI"))
   if(out_to_data_ratio > 0.1)
     logical = cbind(logical, as.frame("OTLR"))
-  if(maxVal - minVal > 1000)
-    logical = cbind(logical, as.frame("SCALE"))
-  if((maxCat - minCatPer) > 0.3)
-    logical = cbind(logical, as.frame("CI"))
-  if(sum(mask) > 0) {
-    logical = cbind(logical, as.frame("DUMMY"))
-    if(sum(distinctCategories) > 5*ncol(X))
-      logical = cbind(logical, as.frame("DIM"))
-  
-  logical = logical[, 2:ncol(logical)]
+  if(target != "compare") {
+    if(maxVal - minVal > 1000 )
+      logical = cbind(logical, as.frame("SCALE"))
+    if((maxCat - minCat) > (minCat/2))
+      logical = cbind(logical, as.frame("CI"))
+    if(sum(mask) > 0) {
+      logical = cbind(logical, as.frame("DUMMY"))
+      if(sum(distinctCategories) > 5*ncol(X))
+        logical = cbind(logical, as.frame("DIM"))
+    }
   }
+   
+  if(ncol(logical) == 1)
+    logical = frame(["OTLR", "MVI"], rows=1, cols=2, schema=["STRING", "STRING"])
+  else
+    logical = logical[, 2:ncol(logical)]
 }
 
 
@@ -73,26 +80,28 @@ return(Frame[Unknown] transformLogical) {
   transformLogical = frame(0, rows=3, cols= ncol(seed)+2)
  
   # case 1: MVI and OTLR
-  if(as.scalar(seed[1,1]) == "MVI" & as.scalar(seed[1,2]) == "OTLR")
+  if(ncol(seed) > 1)
   {
-   # t1: swap MV and OTLR 
-    transformLogical[2,1] = seed[1,2]
-    transformLogical[2,2] = seed[1,1]
-    transformLogical[2, 3:ncol(seed)] = seed[1,3:ncol(seed)]
+    if(as.scalar(seed[1,1]) == "MVI" & as.scalar(seed[1,2]) == "OTLR") {
+      # t1: swap MV and OTLR 
+      transformLogical[2,1] = seed[1,2]
+      transformLogical[2,2] = seed[1,1]
+      transformLogical[2, 3:ncol(seed)] = seed[1,3:ncol(seed)]
   
-    # t2: if the sequence is MVI, OTLR then introduce an MVI after to avoid nulls
-
-    transformLogical[3,1:2] = seed[1,1:2]
-    transformLogical[3,3] = seed[1,1]
-    transformLogical[3, 4:ncol(seed)] = seed[1,3:ncol(seed)]
-  }
-  # case 2: OTLR
-  else if(as.scalar(seed[1, 1]) == "OTLR")
-  {
-    # if first operation is OTLR then add a MVI to fill in MVs introduced by OTLR
-    transformLogical[2,1] = seed[1, 1]
-    transformLogical[2,2] = "MVI"
-    transformLogical[2, 3:ncol(seed)] = seed[1,2:ncol(seed)]
+    
+      # t2: if the sequence is MVI, OTLR then introduce an MVI after to avoid null
+      transformLogical[3,1:2] = seed[1,1:2]
+      transformLogical[3,3] = seed[1,1]
+      transformLogical[3, 4:ncol(seed)] = seed[1,3:ncol(seed)]
+    }
+    # case 2: OTLR
+    else if(as.scalar(seed[1, 1]) == "OTLR" & as.scalar(seed[1, 2]) != "MVI" )
+    {
+      # if first operation is OTLR then add a MVI to fill in MVs introduced by OTLR
+      transformLogical[2,1] = seed[1, 1]
+      transformLogical[2,2] = "MVI"
+      transformLogical[2, 3:ncol(seed)] = seed[1,2:ncol(seed)]
+    }
   }
   transformLogical[1, 1:ncol(seed)] = seed
   transformLogical = map(transformLogical, "var -> var.replace(\"0\", \"\")")

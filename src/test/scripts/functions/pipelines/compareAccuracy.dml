@@ -49,11 +49,12 @@ O = read($2, data_type="frame", format="csv", header=FALSE,
 
 metaInfo = read($3, data_type="frame", format="csv", header=FALSE);  
 input = $4
-pip = read(input+"pip.csv", data_type="frame", format="csv", header=FALSE);
-hp = read(input+"hp.csv", data_type="matrix", format="csv", header=FALSE);
+pip = read(input+"pipelines.csv", data_type="frame", format="csv", header=FALSE);
+hp = read(input+"hyperparams.csv", data_type="matrix", format="csv", header=FALSE);
 
 getSchema = metaInfo[1, 2:ncol(metaInfo)]
 getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
+getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
 
 # # 1. dropInvalid function will remove the values which are not the part 
 # # of the column data type  
@@ -80,32 +81,54 @@ eX = eX[, 1:ncol(eX) - 1]
 # strip the mask of class label
 getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
 getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
-
+getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
 
 # construct hyper-parameters
 ls = list();
 i = 1; k = 1
 
-# take the oversampling out from the test processing
-pip1 = as.frame("")
+FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
+FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
+FD = FD > 0
 # construct the parameter list for best hyper-parameters if the oversampling technique is part of 
 # pipeline then take it out because oversampling is not applied on test dataset
 # this condition is unnecessary here in this case because the input dataset is balanced and 
 # instead of diving the dataset into train/test I am doing cross validations
-while(k <= ncol(pip))
-{
-  end = as.integer(i+as.integer(as.scalar(hp[1,i])))
-  mat = hp[1, i+1:end]
-  i = end + 1
-  if(as.scalar(pip[1,k]) != "SMOTE") {
-    pip1 = cbind(pip1, pip[1,k] )
-    ls = append(ls, mat)
-  }
-  k = k + 1
-}
+
+print("hp matrix")
+no_of_param = as.scalar(hp[1, 1]) + 1
+hp_width= hp[1, 2:no_of_param]
+hp_matrix = matrix(hp_width, rows=ncol(pip), cols=ncol(hp_width)/ncol(pip))
+index = 1
+# for(i in 1:ncol(pip))
+# {
+  # no_of_param = as.scalar(hp[1, index])
+  # hp_matrix[i, 1:no_of_param] = hp[1, 2:no_of_param+1]
+  # index = index + no_of_param + 2
+# }
+
+
+
+print(toString(hp_matrix))
+
+# while(k <= ncol(pip))
+# {
+  # end = as.integer(i+as.integer(as.scalar(hp[1,i]))) 
+  # mat = hp[1, i+1:end]
+  # i = end + 1
+  # if(as.scalar(pip[1,k]) != "SMOTE") {
+    # pip1 = cbind(pip1, pip[1,k] )
+    # ls = append(ls, mat)
+  # }
+  # k = k + 1
+# }
+
+
+print("ncol in X "+ncol(eX))
+print("ncol in mask "+ncol(getMask))
 
 # # clean using best pipeline 
-[cX , cY] = executePipeline(pip1[, 2:ncol(pip1)], eX, eY, getMask, ls, 1, FALSE)
+[cX , cY] = executePipeline(pip[1], eX, eY, getMask, FD, hp_matrix, 5, FALSE)
 
 if(sum(getMask) > 0)
 {

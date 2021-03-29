@@ -79,8 +79,8 @@ public class ReaderTextCSVParallel extends MatrixReader
 	{
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		_props.setDelim(job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
-			DataExpression.DEFAULT_DELIM_DELIMITER)));
+//		_props.setDelim(job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
+//			DataExpression.DEFAULT_DELIM_DELIMITER)));
 		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
@@ -135,8 +135,8 @@ public class ReaderTextCSVParallel extends MatrixReader
 	{
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
-		delim = job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
-			DataExpression.DEFAULT_DELIM_DELIMITER));
+//		delim = job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
+//			DataExpression.DEFAULT_DELIM_DELIMITER));
 
 		informat.configure(job);
 

@@ -66,8 +66,8 @@ public class ReaderTextCSV extends MatrixReader
 		//check existence and non-empty file
 		checkValidInputFile(fs, path);
 
-		_props.setDelim(job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
-			DataExpression.DEFAULT_DELIM_DELIMITER)));
+//		_props.setDelim(job.get("mapreduce.csvinput.delimiter", job.get("mapreduce.csvinput.separator",
+//			DataExpression.DEFAULT_DELIM_DELIMITER)));
 
 		//core read 
 		ret = readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen, 

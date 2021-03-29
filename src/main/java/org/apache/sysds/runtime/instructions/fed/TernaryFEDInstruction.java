@@ -22,12 +22,15 @@ package org.apache.sysds.runtime.instructions.fed;
 import java.util.Objects;
 
 import com.sun.tools.javac.util.List;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
 public class TernaryFEDInstruction extends ComputationFEDInstruction {
@@ -63,12 +66,24 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 			processMatrixScalarInput(ec, mo1, in);
 		}
 		else {
-			if(mo1 != null && mo2 != null)
+			if(mo1 != null && mo2 != null) {
+				if(input3 != null && !input3.isLiteral())
+					instString = InstructionUtils.replaceOperand(instString, 4,
+						InstructionUtils.createLiteralOperand(ec.getScalarInput(input3).getStringValue(), Types.ValueType.FP64));
 				process2MatrixScalarInput(ec, mo1, mo2, input1, input2);
-			else if(mo2 != null && mo3 != null)
+			}
+			else if(mo2 != null && mo3 != null) {
+				if(!input1.isLiteral())
+					instString = InstructionUtils.replaceOperand(instString, 2,
+						InstructionUtils.createLiteralOperand(ec.getScalarInput(input1).getStringValue(), Types.ValueType.FP64));
 				process2MatrixScalarInput(ec, mo2, mo3, input2, input3);
-			else if(mo1 != null && mo3 != null)
+			}
+			else if(mo1 != null && mo3 != null) {
+				if(!input2.isLiteral())
+					instString = InstructionUtils.replaceOperand(instString, 3,
+						InstructionUtils.createLiteralOperand(ec.getScalarInput(input2).getStringValue(), Types.ValueType.FP64));
 				process2MatrixScalarInput(ec, mo1, mo3, input1, input3);
+			}
 		}
 	}
 
@@ -82,6 +97,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 	private void process2MatrixScalarInput(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, CPOperand in1, CPOperand in2) {
 		FederatedRequest[] fr1 = null;
 		CPOperand[] varOldIn;
+		boolean cleanupIn = true;
 		long[] varNewIn;
 		varOldIn = new CPOperand[] {in1, in2};
 		if(mo1.isFederated()) {
@@ -92,9 +108,10 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 				varNewIn = new long[]{mo1.getFedMapping().getID(), fr1[0].getID()};
 			}
 		} else {
-			fr1 = mo2.getFedMapping().broadcastSliced(mo1, false);
-			mo1 = mo2;
-			varNewIn = new long[]{mo1.getFedMapping().getID(), fr1[0].getID()};
+			cleanupIn = false;
+			mo1 = ec.getMatrixObject(in2);
+			fr1 = mo1.getFedMapping().broadcastSliced(ec.getMatrixObject(in1), false);
+			varNewIn = new long[]{fr1[0].getID(), mo1.getFedMapping().getID()};
 		}
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, varOldIn, varNewIn);
 		FederatedRequest fr3;
@@ -103,10 +120,12 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		if(fr1 == null) {
 			mo1.getFedMapping().execute(getTID(), true, fr2);
 		} else {
-			fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-			mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+			if(cleanupIn) {
+				fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+			} else
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 		}
-
 		setOutputFedMapping(ec, mo1, fr2.getID());
 	}
 

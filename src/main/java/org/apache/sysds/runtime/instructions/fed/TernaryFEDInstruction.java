@@ -23,14 +23,12 @@ import java.util.Objects;
 
 import com.sun.tools.javac.util.List;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
 public class TernaryFEDInstruction extends ComputationFEDInstruction {

@@ -25,10 +25,13 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 	protected UnaryMatrixFEDInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
@@ -43,7 +46,18 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 	public static UnaryMatrixFEDInstruction parseInstruction(String str) {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		String opcode = parseUnaryInstruction(str, in, out);
+
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode;
+		opcode = parts[0];
+		if( opcode.equalsIgnoreCase("exp") && parts.length == 5) {
+			in.split(parts[1]);
+			out.split(parts[2]);
+			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
+			return new UnaryMatrixFEDInstruction(new UnaryOperator(func,
+				Integer.parseInt(parts[3]),Boolean.parseBoolean(parts[4])), in, out, opcode, str);
+		}
+		opcode = parseUnaryInstruction(str, in, out);
 		return new UnaryMatrixFEDInstruction(InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
 	}
 	

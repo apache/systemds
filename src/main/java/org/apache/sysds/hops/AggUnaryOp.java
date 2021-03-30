@@ -209,9 +209,7 @@ public class AggUnaryOp extends MultiThreadedHop
 					}
 				}
 			}
-			else {
-				throw new HopsException("ExecType " + et + " not recognized in " + this.toString() );
-			}
+			else throw new HopsException("ExecType " + et + " not recognized in " + this.toString() );
 		} 
 		catch (Exception e) {
 			throw new HopsException(this.printErrorLocation() + "In AggUnary Hop, error constructing Lops " , e);

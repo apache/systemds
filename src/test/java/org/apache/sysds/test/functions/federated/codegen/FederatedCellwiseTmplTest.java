@@ -87,6 +87,7 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 			{11, 1100, 2000, 1, true},
 			{12, 2, 500, 1, true},
 			{13, 2, 4, 1, true},
+			{14, 1100, 200, 1, true},
 
 			// column partitioned
 			{1, 2000, 2000, 1, false},
@@ -98,6 +99,7 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 			{10, 500, 2, 1, false},
 			{11, 1100, 2000, 1, false},
 			{12, 2, 500, 1, false},
+			{14, 1100, 200, 1, false},
 
 			// not working because of fused sequence operation
 			//	(wrong grix inside genexec call of fed worker)

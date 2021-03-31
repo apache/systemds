@@ -114,5 +114,10 @@ else if(test_num == 13) {
   v = matrix(5, rows=2, cols=4);
   Z = 10 + floor(round(abs((X + w) * v)));
 }
+else if(test_num == 14) {
+  # X ... 1100x200 matrix
+
+  Z = colMins(2 * log(X));
+}
 
 write(Z, $out_Z);

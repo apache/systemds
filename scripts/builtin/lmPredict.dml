@@ -27,8 +27,7 @@ m_lmPredict = function(Matrix[Double] X, Matrix[Double] B,
   yhat = X %*% B[1:ncol(X)] + matrix(1,nrow(X),1) %*% intercept;
 
   if( verbose ) {
-    y_residual = yhat - ytest;
-    y_residual = -y_residual;
+    y_residual =  ytest - yhat;
     avg_res = sum(y_residual) / nrow(ytest);
     ss_res = sum(y_residual^2);
     ss_avg_res = ss_res - nrow(ytest) * avg_res^2;

@@ -139,8 +139,7 @@ m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double r
 	  ss_tot = sum (y ^ 2);
 	  ss_avg_tot = ss_tot - n * avg_tot ^ 2;
 	  var_tot = ss_avg_tot / (n - 1);
-	  y_residual = (X %*% beta) - y;
-	  y_residual = - y_residual;
+	  y_residual = y - X %*% beta;
 	  avg_res = sum (y_residual) / n;
 	  ss_res = sum (y_residual ^ 2);
 	  ss_avg_res = ss_res - n * avg_res ^ 2;

@@ -134,8 +134,7 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 			
 			// check correct federated operations
 			Assert.assertTrue(Statistics.getCPHeavyHitterCount("fed_mmchain")>10);
-			System.out.println(Statistics.getCPHeavyHitterCount("fed_ba+*"));
-			Assert.assertTrue(Statistics.getCPHeavyHitterCount("fed_ba+*")==5);
+			Assert.assertTrue(Statistics.getCPHeavyHitterCount("fed_ba+*")==3);
 		}
 		finally {
 			resetExecMode(oldExec);

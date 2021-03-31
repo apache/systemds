@@ -683,11 +683,9 @@ public class SpoofSPInstruction extends SPInstruction {
 		for(CPOperand input : _in) {
 			Data data = ec.getVariable(input);
 			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
-				if(retVal)
-					throw new DMLRuntimeException("Only one federated input supported yet.");
-				retVal = true;
+				return true;
 			}
 		}
-		return retVal;
+		return false;
 	}
 }

@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageCodegenItem;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -135,11 +134,9 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		for(CPOperand input : _in) {
 			Data data = ec.getVariable(input);
 			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
-				if(retVal)
-					throw new DMLRuntimeException("Only one federated input supported yet.");
-				retVal = true;
+				return true;
 			}
 		}
-		return retVal;
+		return false;
 	}
 }

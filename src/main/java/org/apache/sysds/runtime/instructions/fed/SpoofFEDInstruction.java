@@ -24,10 +24,10 @@ import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
-import org.apache.sysds.runtime.codegen.SpoofRowwise;
-import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
+import org.apache.sysds.runtime.codegen.SpoofRowwise;
+import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -60,6 +60,12 @@ public class SpoofFEDInstruction extends FEDInstruction
 		_op = op;
 		_inputs = in;
 		_output = out;
+	}
+	
+	public enum SpoofType {
+		CELLWISE,
+		ROWWISE,
+		UNKNOWN
 	}
 
 	public static SpoofFEDInstruction parseInstruction(String str)

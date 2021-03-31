@@ -19,7 +19,9 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
-import org.apache.sysds.api.DMLScript;
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -30,9 +32,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.Arrays;
-import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -68,23 +67,48 @@ public class FederatedCtableTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedCtableSinglenode() {
-		federatedCtable(Types.ExecMode.SINGLE_NODE);
+		runCtable(Types.ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
 	public void federatedCtableFedOutputSinglenode() {
-		federatedCtableFedOutput();
+		runCtable(Types.ExecMode.SINGLE_NODE, true);
 	}
 
-	public void federatedCtable(Types.ExecMode execMode) {
+	public void runCtable(Types.ExecMode execMode, boolean fedOutput) {
+		String TEST_NAME = fedOutput ? TEST_NAME2 : TEST_NAME1;
 		Types.ExecMode platformOld = setExecMode(execMode);
 
-		getAndLoadTestConfiguration(TEST_NAME1);
+		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		// write input data
-		int r = rows / 4;
+		// empty script name because we don't execute any script, just start the worker
+		fullDMLScriptName = "";
+		int port1 = getRandomAvailablePort();
+		int port2 = getRandomAvailablePort();
+		int port3 = getRandomAvailablePort();
+		int port4 = getRandomAvailablePort();
+		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
+		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
+		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
+		Thread t4 = startLocalFedWorkerThread(port4);
 
+		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+		loadTestConfiguration(config);
+
+		if(fedOutput)
+			runFedCtable(HOME, TEST_NAME, port1, port2, port3, port4);
+		else
+			runNonFedCtable(HOME, TEST_NAME, port1, port2, port3, port4);
+
+		checkResults();
+
+		TestUtils.shutdownThreads(t1, t2, t3, t4);
+		resetExecMode(platformOld);
+	}
+
+	private void runNonFedCtable(String HOME, String TEST_NAME, int port1, int port2, int port3, int port4) {
+		int r = rows / 4;
 		double[][] X1 = TestUtils.floor(getRandomMatrix(r, 1, 1, maxVal1, 1, 3));
 		double[][] X2 = TestUtils.floor(getRandomMatrix(r, 1, 1, maxVal1, 1, 7));
 		double[][] X3 = TestUtils.floor(getRandomMatrix(r, 1, 1, maxVal1, 1, 8));
@@ -101,26 +125,15 @@ public class FederatedCtableTest extends AutomatedTestBase {
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		int port3 = getRandomAvailablePort();
-		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
-		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
-		Thread t4 = startLocalFedWorkerThread(port4);
-
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME1);
-		loadTestConfiguration(config);
 
 		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + TEST_NAME1 + "Reference.dml";
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
 			input("Y"), expected("F")};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
-		fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
@@ -128,27 +141,9 @@ public class FederatedCtableTest extends AutomatedTestBase {
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "in_Y=" + input("Y"),
 			"rows=" + rows, "cols=" + 1, "out=" + output("F")};
 		runTest(true, false, null, -1);
-
-		compareResults();
-
-		TestUtils.shutdownThreads(t1, t2, t3, t4);
-
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("Y")));
-		resetExecMode(platformOld);
 	}
 
-	private void federatedCtableFedOutput() {
-		Types.ExecMode platformOld = rtplatform;
-
-		if(rtplatform == Types.ExecMode.SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-		getAndLoadTestConfiguration(TEST_NAME2);
-		String HOME = SCRIPT_DIR + TEST_DIR;
-
-		double[][] e = getRandomMatrix(1,1,1,3,1,3);
-		writeInputMatrixWithMTD("e", e, true);
-
+	private void runFedCtable(String HOME, String TEST_NAME, int port1, int port2, int port3, int port4) {
 		int r = rows / 4;
 		int c = cols;
 
@@ -162,21 +157,6 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X2", X2, false, mc);
 		writeInputMatrixWithMTD("X3", X3, false, mc);
 		writeInputMatrixWithMTD("X4", X4, false, mc);
-
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		int port3 = getRandomAvailablePort();
-		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
-		Thread t3 = startLocalFedWorkerThread(port3);
-		Thread t4 = startLocalFedWorkerThread(port4);
-
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME2);
-		loadTestConfiguration(config);
-
 
 		//execute main test
 		fullDMLScriptName = HOME + TEST_NAME2 + "Reference.dml";
@@ -194,12 +174,8 @@ public class FederatedCtableTest extends AutomatedTestBase {
 			"rows=" + rows, "cols=" + cols, "out=" + output("F")
 		};
 		runTest(true, false, null, -1);
-
-		compareResults();
-
-		TestUtils.shutdownThreads(t1, t2, t3, t4);
-		resetExecMode(platformOld);
 	}
+
 	void checkResults() {
 		// compare via files
 		compareResults(1e-9);

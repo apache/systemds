@@ -229,7 +229,7 @@ public class FEDInstructionUtils {
 			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
 			Class<?> scla = instruction.getOperatorClass().getSuperclass();
 			if(    (scla == SpoofCellwise.class && instruction.isFederated(ec))
-				|| (scla == SpoofRowwise.class&& instruction.isFederated(ec, FType.ROW))) {
+				|| (scla == SpoofRowwise.class && instruction.isFederated(ec, FType.ROW))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
 			}
 		}

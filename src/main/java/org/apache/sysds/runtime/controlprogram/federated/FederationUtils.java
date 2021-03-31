@@ -101,6 +101,17 @@ public class FederationUtils {
 		return fr;
 	}
 
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn) {
+		String linst = InstructionUtils.replaceOperand(inst, 0, ExecType.CP.name());
+		linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR+outputId+Lop.DATATYPE_PREFIX);
+		for(int i=0; i<varOldIn.length; i++)
+			if( varOldIn[i] != null ) {
+				linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldIn[i].getName()+Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR+(varNewIn[i])+Lop.DATATYPE_PREFIX);
+				linst = linst.replace("="+varOldIn[i].getName(), "="+(varNewIn[i])); //parameterized
+			}
+		return new FederatedRequest(RequestType.EXEC_INST, outputId, linst);
+	}
+
 	public static MatrixBlock aggAdd(Future<FederatedResponse>[] ffr) {
 		try {
 			SimpleOperator op = new SimpleOperator(Plus.getPlusFnObject());

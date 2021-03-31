@@ -60,7 +60,8 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 		return Arrays.asList(
 			new Object[][] {
 //				{100, 4, false},
-				{100, 4, true},
+//				{100, 4, true},
+				{8, 1, true},
 			});
 	}
 

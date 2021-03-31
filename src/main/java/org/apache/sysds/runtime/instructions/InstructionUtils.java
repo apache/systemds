@@ -1000,7 +1000,11 @@ public class InstructionUtils
 	public static String createLiteralOperand(String val, ValueType vt) {
 		return InstructionUtils.concatOperandParts(val, DataType.SCALAR.name(), vt.name(), "true");
 	}
-	
+
+	public static String createOperand(CPOperand operand) {
+		return InstructionUtils.concatOperandParts(operand.getName(), operand.getDataType().name(), operand.getValueType().name());
+	}
+
 	public static String replaceOperand(String instStr, int operand, String newValue) {
 		//split instruction and check for correctness
 		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);

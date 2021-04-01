@@ -44,7 +44,7 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
       for (y in 1:out_h) {
         m = matrix(1, rows=3, cols=1)
         m[1, 1] = x - 1
-        m[1, 2] = y - 1
+        m[2, 1] = y - 1
         coords = round(T_inv %*% m) + 1
         src_x = as.scalar(coords[1, 1])
         src_y = as.scalar(coords[2, 1])

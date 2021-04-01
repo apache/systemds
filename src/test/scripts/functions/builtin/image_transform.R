@@ -32,9 +32,14 @@ image_transform = function(img_in,  out_w,  out_h,  a, b, c, d, e, f) {
   else {
     orig_w = ncol(img_in)
     orig_h = nrow(img_in)
-    T.inv = matrix(c(e / divisor, -b / divisor, (b * f - c * e) / divisor,
-                     -d / divisor, a / divisor, (c * d - a * f) / divisor,
-                     0, 0, 1), nrow=3, ncol=3)
+    T.inv = matrix(0, nrow=3, ncol=3)
+    T.inv[1, 1] = e / divisor
+    T.inv[1, 2] = -b / divisor
+    T.inv[1, 3] = (b * f - c * e) / divisor
+    T.inv[2, 1] = -d / divisor
+    T.inv[2, 2] = a / divisor
+    T.inv[2, 3] = (c * d - a * f) / divisor
+    T.inv[3, 3] = 1
 
     img_out = matrix(0, nrow=out_h, ncol=out_w)
     for (x in 1:out_w) {

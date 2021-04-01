@@ -38,13 +38,13 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 	private final static int cols = 512;
 	private final static double spSparse = 0.1;
 	private final static double spDense = 0.9;
-	// rotate 45 degrees around the center
-	private final static double a = 1 / Math.sqrt(2);
-	private final static double b = -1 / Math.sqrt(2);
-	private final static double c = cols / 2;
-	private final static double d = 1 / Math.sqrt(2);
-	private final static double e = 1 / Math.sqrt(2);
-	private final static double f = rows / 2 * (1 - Math.sqrt(2));
+	// rotate 30 degrees around the center
+	private final static double a = Math.sqrt(3) / 2;
+	private final static double b = -1 / 2;
+	private final static double c = cols / 4 * (3 - Math.sqrt(3));
+	private final static double d = 1 / 2;
+	private final static double e = Math.sqrt(3) / 2;
+	private final static double f = rows / 4 * (1 - Math.sqrt(3));
 
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
@@ -77,11 +77,11 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
-				"height=" + rows, "out_w=" + cols, "out_h=" + rows,
+				"height=" + rows, "out_w=" + cols, "out_h=" + (rows * 1.2),
 				"a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f};
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + cols + " " + rows + " " + cols + " " + rows + " " + a + " " + b + " " + c + " " + d + " " + e + " " + f;
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + cols + " " + rows + " " + cols + " " + (rows * 1.2) + " " + a + " " + b + " " + c + " " + d + " " + e + " " + f;
 
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);

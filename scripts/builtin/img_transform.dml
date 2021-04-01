@@ -32,11 +32,11 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
     orig_h = nrow(img_in)
     T_inv = matrix(0, rows=3, cols=3)
     T_inv[1, 1] = e / divisor
-    T_inv[2, 1] = -b / divisor
-    T_inv[3, 1] = (b * f - c * e) / divisor
-    T_inv[1, 2] = -d / divisor
+    T_inv[1, 2] = -b / divisor
+    T_inv[1, 3] = (b * f - c * e) / divisor
+    T_inv[2, 1] = -d / divisor
     T_inv[2, 2] = a / divisor
-    T_inv[3, 2] = (c * d - a * f) / divisor
+    T_inv[2, 3] = (c * d - a * f) / divisor
     T_inv[3, 3] = 1
 
     img_out = matrix(0, rows=out_h, cols=out_w)

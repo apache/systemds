@@ -29,12 +29,15 @@ import org.junit.Assert;
 
 public class RewriteCTableToRExpandTest extends AutomatedTestBase 
 {
-	private static final String TEST_NAME1 = "RewriteCTableToRExpandLeftPos";
-	private static final String TEST_NAME2 = "RewriteCTableToRExpandRightPos"; 
-	private static final String TEST_NAME3 = "RewriteCTableToRExpandLeftNeg"; 
-	private static final String TEST_NAME4 = "RewriteCTableToRExpandRightNeg"; 
-	private static final String TEST_NAME5 = "RewriteCTableToRExpandLeftUnknownPos";
-	private static final String TEST_NAME6 = "RewriteCTableToRExpandRightUnknownPos";
+	private static final String[] TEST_NAMES = new String[] {
+		"RewriteCTableToRExpandLeftPos",
+		"RewriteCTableToRExpandRightPos",
+		"RewriteCTableToRExpandLeftNeg",
+		"RewriteCTableToRExpandRightNeg",
+		"RewriteCTableToRExpandLeftUnknownPos",
+		"RewriteCTableToRExpandRightUnknownPos",
+		"RewriteCTableToRExpandRightVarMax"
+	};
 	
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteCTableToRExpandTest.class.getSimpleName() + "/";
@@ -50,86 +53,108 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
+		for(int i=0; i<TEST_NAMES.length; i++)
+			addTestConfiguration( TEST_NAMES[i],
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAMES[i], new String[] { "R" }) );
 	}
 
 	@Test
 	public void testRewriteCTableRExpandLeftPositiveDenseCrop()  {
-		testRewriteCTableRExpand( TEST_NAME1, CropType.CROP );
+		testRewriteCTableRExpand( 1, CropType.CROP );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandLeftPositiveDensePad()  {
-		testRewriteCTableRExpand( TEST_NAME1, CropType.PAD );
+		testRewriteCTableRExpand( 1, CropType.PAD );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandRightPositiveDenseCrop()  {
-		testRewriteCTableRExpand( TEST_NAME2, CropType.CROP );
+		testRewriteCTableRExpand( 2, CropType.CROP );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandRightPositiveDensePad()  {
-		testRewriteCTableRExpand( TEST_NAME2, CropType.PAD );
+		testRewriteCTableRExpand( 2, CropType.PAD );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandLeftNegativeDenseCrop()  {
-		testRewriteCTableRExpand( TEST_NAME3, CropType.CROP );
+		testRewriteCTableRExpand( 3, CropType.CROP );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandLeftNegativeDensePad()  {
-		testRewriteCTableRExpand( TEST_NAME3, CropType.PAD );
+		testRewriteCTableRExpand( 3, CropType.PAD );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandRightNegativeDenseCrop()  {
-		testRewriteCTableRExpand( TEST_NAME4, CropType.CROP );
+		testRewriteCTableRExpand( 4, CropType.CROP );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandRightNegativeDensePad()  {
-		testRewriteCTableRExpand( TEST_NAME4, CropType.PAD );
+		testRewriteCTableRExpand( 4, CropType.PAD );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandLeftUnknownDenseCrop()  {
-		testRewriteCTableRExpand( TEST_NAME5, CropType.CROP );
+		testRewriteCTableRExpand( 5, CropType.CROP );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandLeftUnknownDensePad()  {
-		testRewriteCTableRExpand( TEST_NAME5, CropType.PAD );
+		testRewriteCTableRExpand( 5, CropType.PAD );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandRightUnknownDenseCrop()  {
-		testRewriteCTableRExpand( TEST_NAME6, CropType.CROP );
+		testRewriteCTableRExpand( 6, CropType.CROP );
 	}
 	
 	@Test
 	public void testRewriteCTableRExpandRightUnknownDensePad()  {
-		testRewriteCTableRExpand( TEST_NAME6, CropType.PAD );
+		testRewriteCTableRExpand( 6, CropType.PAD );
 	}
 	
-	private void testRewriteCTableRExpand( String testname, CropType type )
-	{	
+	@Test
+	public void testRewriteCTableRExpandVarMaxCropCP()  {
+		testRewriteCTableRExpand( 7, CropType.CROP, ExecMode.HYBRID );
+	}
+	
+	@Test
+	public void testRewriteCTableRExpandVarMaxPadCP()  {
+		testRewriteCTableRExpand( 7, CropType.PAD, ExecMode.HYBRID );
+	}
+	
+	@Test
+	public void testRewriteCTableRExpandVarMaxCropSP()  {
+		testRewriteCTableRExpand( 7, CropType.CROP, ExecMode.SPARK );
+	}
+	
+	@Test
+	public void testRewriteCTableRExpandVarMaxPadSP()  {
+		testRewriteCTableRExpand( 7, CropType.PAD, ExecMode.SPARK );
+	}
+	
+	private void testRewriteCTableRExpand( int test, CropType type ) {
+		testRewriteCTableRExpand(test, type, ExecMode.HYBRID);
+	}
+	
+	private void testRewriteCTableRExpand(int test, CropType type, ExecMode mode)
+	{
+		String testname = TEST_NAMES[test-1];
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
 
 		int outDim = maxVal + ((type==CropType.CROP) ? -7 : 7);
-		boolean unknownTests = ( testname.equals(TEST_NAME5) || testname.equals(TEST_NAME6) );
-			
+		boolean unknownTests = (test >= 5);
 		
 		ExecMode platformOld = rtplatform;
-		if( unknownTests )
-			rtplatform = ExecMode.SINGLE_NODE;
+		if( unknownTests & test != 7 )
+			mode = ExecMode.SINGLE_NODE;
+		setExecMode(mode);
 		
 		try 
 		{
@@ -148,21 +173,19 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//compare output meta data
-			boolean left = (testname.equals(TEST_NAME1) || testname.equals(TEST_NAME3) 
-				|| testname.equals(TEST_NAME5) || testname.equals(TEST_NAME6));
-			boolean pos = (testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2));
+			boolean left = (test == 1 || test == 3 || test == 5 || test == 6 || test == 7);
+			boolean pos = (test == 1 || test == 2);
 			int rrows = (left && pos) ? rows : outDim;
 			int rcols = (!left && pos) ? rows : outDim;
 			if( !unknownTests )
 				checkDMLMetaDataFile("R", new MatrixCharacteristics(rrows, rcols, 1, 1));
 			
 			//check for applied rewrite
-			Assert.assertEquals(Boolean.valueOf(testname.equals(TEST_NAME1) 
-				|| testname.equals(TEST_NAME2) || unknownTests),
+			Assert.assertEquals(Boolean.valueOf(test==1 || test==2 || unknownTests),
 				Boolean.valueOf(heavyHittersContainsSubString("rexpand")));
 		}
 		finally {
-			rtplatform = platformOld;
+			resetExecMode(platformOld);
 		}
 	}
 }

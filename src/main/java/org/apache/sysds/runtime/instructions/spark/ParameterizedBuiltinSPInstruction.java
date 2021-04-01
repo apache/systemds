@@ -402,8 +402,12 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// get input rdd handle
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(rddInVar);
 			DataCharacteristics mcIn = sec.getDataCharacteristics(rddInVar);
-			double maxVal = Double.parseDouble(params.get("max"));
-			long lmaxVal = UtilFunctions.toLong(maxVal);
+			
+			// parse untyped parameters, w/ robust handling for 'max'
+			String maxValName = params.get("max");
+			long lmaxVal = maxValName.startsWith(Lop.SCALAR_VAR_NAME_PREFIX) ?
+				ec.getScalarInput(maxValName, ValueType.FP64, false).getLongValue() :
+				UtilFunctions.toLong(Double.parseDouble(maxValName));
 			boolean dirRows = params.get("dir").equals("rows");
 			boolean cast = Boolean.parseBoolean(params.get("cast"));
 			boolean ignore = Boolean.parseBoolean(params.get("ignore"));
@@ -420,7 +424,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// execute rexpand rows/cols operation (no shuffle required because outputs are
 			// block-aligned with the input, i.e., one input block generates n output blocks)
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = in
-				.flatMapToPair(new RDDRExpandFunction(maxVal, dirRows, cast, ignore, blen));
+				.flatMapToPair(new RDDRExpandFunction(lmaxVal, dirRows, cast, ignore, blen));
 
 			// store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -655,13 +659,13 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> {
 		private static final long serialVersionUID = -6153643261956222601L;
 
-		private final double _maxVal;
+		private final long _maxVal;
 		private final boolean _dirRows;
 		private final boolean _cast;
 		private final boolean _ignore;
 		private final long _blen;
 
-		public RDDRExpandFunction(double maxVal, boolean dirRows, boolean cast, boolean ignore, long blen) {
+		public RDDRExpandFunction(long maxVal, boolean dirRows, boolean cast, boolean ignore, long blen) {
 			_maxVal = maxVal;
 			_dirRows = dirRows;
 			_cast = cast;

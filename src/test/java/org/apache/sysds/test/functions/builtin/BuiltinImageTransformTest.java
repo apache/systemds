@@ -38,12 +38,13 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 	private final static int cols = 512;
 	private final static double spSparse = 0.1;
 	private final static double spDense = 0.9;
-	private final static double a = 0.5;
-	private final static double b = 0;
-	private final static double c = 0;
-	private final static double d = 0;
-	private final static double e = 0.5;
-	private final static double f = 0;
+	// rotate 45 degrees around the center
+	private final static double a = 1 / Math.sqrt(2);
+	private final static double b = -1 / Math.sqrt(2);
+	private final static double c = cols / 2;
+	private final static double d = 1 / Math.sqrt(2);
+	private final static double e = 1 / Math.sqrt(2);
+	private final static double f = rows / 2 * (1 - Math.sqrt(2));
 
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));

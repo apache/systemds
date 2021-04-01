@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-input = read($in_file);
+input = read($in_file)
 width = ifdef($width, 512)
 height = ifdef($height, 512)
 out_w = ifdef($out_w, 512)
@@ -33,6 +33,5 @@ f = ifdef($f, 0)
 
 input = matrix(input, rows=height, cols=width)
 
-#transformed = img_transform(input, out_w, out_h, a, b, c, d, e, f);
-transformed = img_crop(input, out_w, out_h, 0, 0)
-write(transformed, $out_file);
+transformed = img_transform(input, out_w, out_h, a, b, c, d, e, f)
+write(transformed, $out_file)

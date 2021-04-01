@@ -24,12 +24,6 @@ options(digits=22)
 library("Matrix")
 
 image_transform = function(img_in,  out_w,  out_h,  a, b, c, d, e, f) {
-  print(a)
-  print(b)
-  print(c)
-  print(d)
-  print(e)
-  print(f)
   divisor = a * e - b * d
   if(divisor == 0) {
     print("Inverse matrix does not exist! Returning input.")
@@ -42,7 +36,7 @@ image_transform = function(img_in,  out_w,  out_h,  a, b, c, d, e, f) {
                      -d / divisor, a / divisor, (c * d - a * f) / divisor,
                      0, 0, 1), nrow=3, ncol=3)
 
-    img_out = matrix(nrow=out_h, ncol=out_w)
+    img_out = matrix(0, nrow=out_h, ncol=out_w)
     for (x in 1:out_w) {
       for (y in 1:out_h) {
         coords = T.inv %*% matrix(c(x - 1, y - 1, 1), nrow=3)
@@ -61,5 +55,5 @@ image_transform = function(img_in,  out_w,  out_h,  a, b, c, d, e, f) {
 input = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 input = matrix(input, as.integer(args[3]), as.integer(args[4]))
 
-transformed = image_transform(input, as.integer(args[5]), as.integer(args[6]), as.integer(args[7]), as.integer(args[8]), as.integer(args[9]), as.integer(args[10]), as.integer(args[11]), as.integer(args[12]));
+transformed = image_transform(input, as.integer(args[5]), as.integer(args[6]), as.double(args[7]), as.double(args[8]), as.double(args[9]), as.double(args[10]), as.double(args[11]), as.double(args[12]));
 writeMM(as(transformed, "CsparseMatrix"), paste(args[2], "B", sep=""))

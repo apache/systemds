@@ -49,7 +49,6 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 	
 	public static boolean isValidOpcode(String opcode) {
 		return !LibCommonsMath.isSupportedUnaryOperation(opcode);
-//			&& !opcode.startsWith("ucum"); //ucumk+ ucum* ucumk+* ucummin ucummax
 	}
 
 	public static UnaryMatrixFEDInstruction parseInstruction(String str) {
@@ -113,14 +112,17 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		if(Arrays.asList("ucumk+", "ucum*").contains(getOpcode())) {
 			tmpVar =  getSumOrProdVariable(ec, mo1, tmp, getOpcode().equals("ucumk+"));
 			aggPartialResults(out, tmpVar);
+			ec.removeVariable(String.valueOf(tmpVar._id));
 		}
 		else if(Arrays.asList("ucummin", "ucummax").contains(getOpcode())) {
 			tmpVar = getMinOrMaxVariable(ec, mo1, tmp, getOpcode().equals("ucummin"));
 			aggPartialResults(out, tmpVar);
+			ec.removeVariable(String.valueOf(tmpVar._id));
 		} else {
-			// B11 = B11 + B12 ⊙ a
-			MatrixBlock a = getSumprodVariable(ec, mo1, tmp);
-			aggSumprod(ec, mo1, out, a);
+			MatrixBlock scalingValues = computeScalingValues(ec, mo1, tmp);
+			NewVariable[] ternaryVars = getTernaryVars(ec, mo1, scalingValues);
+			setScalingValues(ec, mo1, out,ternaryVars);
+			aggSumprod(out);
 		}
 	}
 
@@ -136,64 +138,6 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		out.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 
 		out.setFedMapping(out.getFedMapping().copyWithNewID(fr2.getID()));
-	}
-
-	private void aggSumprod(ExecutionContext ec, MatrixObject mo1, MatrixObject out, MatrixBlock a) {
-		MatrixBlock values = rightIndex(mo1);
-		MatrixBlock agg = values.slice(0, values.getNumRows()-1,1, 1).binaryOperationsInPlace(InstructionUtils.parseBinaryOperator("*"), a);
-		agg = agg.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator("+"), values.slice(0,values.getNumRows()-1,0,0));
-	}
-
-	private MatrixBlock rightIndex(MatrixObject mo1) {
-		long varID = FederationUtils.getNextFedDataID();
-		CPOperand operand = new CPOperand(String.valueOf(varID), ValueType.FP64, DataType.MATRIX);
-
-		String indexingInstString = constructRightIndexString(1, 1, 1, 2, operand);
-
-		FederatedRequest fr1 = FederationUtils.callInstruction(indexingInstString, operand,
-			new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
-		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
-		Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
-
-		MatrixBlock ret = new MatrixBlock(tmp.length, 2, 0.0);
-		for(int i = 0; i < tmp.length; i++) {
-			try {
-				ret.copy(i, i, 0, 1, ((MatrixBlock) tmp[i].get().getData()[0]), true);
-			}
-			catch(Exception e) {
-				throw new DMLRuntimeException("Federated Get data failed with exception on UnaryMatrixFEDInstruction", e);
-			}
-		}
-
-//		outSliced.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
-
-//		return new NewVariable(varID, outSliced);
-
-		return ret;
-	}
-
-	private String constructRightIndexString(long rl, long ru, long cl, long cu, CPOperand operand) {
-		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
-		parts[1] = "rightIndex";
-		return InstructionUtils.concatOperands(parts[0], parts[1], parts[2],
-			InstructionUtils.createLiteralOperand(String.valueOf(rl), ValueType.INT64),
-			InstructionUtils.createLiteralOperand(String.valueOf(ru), ValueType.INT64),
-			InstructionUtils.createLiteralOperand(String.valueOf(cl), ValueType.INT64),
-			InstructionUtils.createLiteralOperand(String.valueOf(cu), ValueType.INT64),
-			InstructionUtils.createOperand(operand));
-	}
-
-	private void modifyInstString(CPOperand operand) {
-		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
-		String opcode = getOpcode();
-
-		parts[1] = opcode.equalsIgnoreCase("ucumk+") ? "+" :
-			opcode.equalsIgnoreCase("ucum*") ? "*" :
-				opcode.equalsIgnoreCase("ucummin") ? "min" : "max";
-		instString = InstructionUtils.concatOperands(parts[0], parts[1], parts[3], InstructionUtils.createOperand(operand), parts[3]);
-
-		if(Arrays.asList("min", "max").contains(parts[1]))
-			instString = InstructionUtils.concatOperands(instString, "16");
 	}
 
 	private NewVariable getMinOrMaxVariable(ExecutionContext ec, MatrixObject mo1, Future<FederatedResponse>[] tmp, boolean isMin) {
@@ -264,11 +208,8 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		return new NewVariable(varID, moTmp);
 	}
 
-	private MatrixBlock getSumprodVariable(ExecutionContext ec, MatrixObject mo1, Future<FederatedResponse>[] tmp) {
-		MatrixBlock prod = getProd(mo1);
-		int size = (int)mo1.getNumRows();
-		MatrixBlock res = new MatrixBlock(size, 1, 0.0);
-
+	private MatrixBlock getScalars(MatrixObject mo1, Future<FederatedResponse>[] tmp) {
+		MatrixBlock prod = getProdMatrix(mo1);
 		for(int i = 0; i < tmp.length; i++)
 			try {
 				MatrixBlock curr = ((MatrixBlock) tmp[i].get().getData()[0]);
@@ -280,25 +221,11 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 
 		// aggregate sumprod to get scalars
 		UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"));
-		MatrixBlock scalars = prod.unaryOperations(uop, new MatrixBlock());
-
-//		// create a for res = B11 + B12 * a
-//		for(int i = 0; i < scalars.getNumRows() - 1; i++) {
-//			size = (int) (mo1.getNumRows() - mo1.getFedMapping().getFederatedRanges()[i].getEndDims()[0]);
-//			int from = (int) mo1.getFedMapping().getFederatedRanges()[i+1].getBeginDims()[0];
-//			int to = (int) mo1.getFedMapping().getFederatedRanges()[tmp.length-1].getEndDims()[0]-1;
-//			res.copy(from, to,0, 0, new MatrixBlock(size, 1, scalars.getValue(i, 0)), true);
-//		}
-//
-//		// add it to the list of variables
-//		MatrixObject moTmp = ExecutionContext.createMatrixObject(res);
-//		long varID = FederationUtils.getNextFedDataID();
-//		ec.setVariable(String.valueOf(varID), moTmp);
-		return scalars;
+		return prod.unaryOperations(uop, new MatrixBlock());
 	}
 
-	private MatrixBlock getProd(MatrixObject mo1) {
-		String tmpInstString = instString.replace("ucumk+*", "ucumk+");
+	private MatrixBlock getProdMatrix(MatrixObject mo1) {
+		String tmpInstString = instString.replace("ucumk+*", "ucum*");
 
 		FederatedRequest fr1 = FederationUtils.callInstruction(tmpInstString, output,
 			new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
@@ -319,6 +246,90 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		return ret;
 	}
 
+	private NewVariable[] getTernaryVars(ExecutionContext ec, MatrixObject mo1, MatrixBlock scalingValues) {
+		MatrixBlock condition = new MatrixBlock((int) mo1.getNumRows(), (int) mo1.getNumColumns(), 1.0);
+		MatrixBlock mb2 = new MatrixBlock((int) mo1.getNumRows(), (int) mo1.getNumColumns(), 0.0);
+
+		int step;
+		for(int i = 0; i < scalingValues.getNumRows()-1; i++) {
+			step = (int) mo1.getFedMapping().getFederatedRanges()[i+1].getBeginDims()[0];
+			condition.setValue(step, 0, 0.0);
+			mb2.setValue(step, 0, scalingValues.getValue(i, 0));
+		}
+
+		MatrixObject cond = ExecutionContext.createMatrixObject(condition);
+		long condID = FederationUtils.getNextFedDataID();
+		ec.setVariable(String.valueOf(condID), cond);
+
+		MatrixObject mo2 = ExecutionContext.createMatrixObject(mb2);
+		long varID2 = FederationUtils.getNextFedDataID();
+		ec.setVariable(String.valueOf(varID2), mo2);
+
+		return new NewVariable[] {new NewVariable(condID, cond), new NewVariable(varID2, mo2)};
+	}
+
+	private void setScalingValues(ExecutionContext ec, MatrixObject mo1, MatrixObject out, NewVariable[] ternaryVars) {
+		CPOperand opCond = new CPOperand(String.valueOf(ternaryVars[0]._id), ValueType.FP64, DataType.MATRIX);
+		CPOperand op2 = new CPOperand(String.valueOf(ternaryVars[1]._id), ValueType.FP64, DataType.MATRIX);
+
+		String ternaryInstString = constructTernaryString(opCond, op2);
+		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(ternaryVars[0]._mo, false);
+		FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(ternaryVars[1]._mo, false);
+		FederatedRequest fr3 = FederationUtils.callInstruction(ternaryInstString, output,
+			new CPOperand[] {input1, opCond, op2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr2[0].getID()});
+		mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+
+		out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr3.getID()));
+
+		ec.removeVariable(opCond.getName());
+		ec.removeVariable(op2.getName());
+	}
+
+	private void aggSumprod(MatrixObject out) {
+		instString = setOutputVarInInstString(output);
+
+		FederatedRequest fr4 = FederationUtils.callInstruction(instString, output, out.getFedMapping().getID(),
+			new CPOperand[] {output}, new long[] {out.getFedMapping().getID()});
+		out.getFedMapping().execute(getTID(), true, fr4);
+
+		out.getDataCharacteristics().set(out.getNumRows(), 1L, (int) out.getBlocksize());
+		out.setFedMapping(out.getFedMapping().copyWithNewID(fr4.getID()));
+
+		// modify fed ranges since output is always nx1
+		for(int i = 0; i < out.getFedMapping().getFederatedRanges().length; i++)
+			out.getFedMapping().getFederatedRanges()[i].setEndDim(1, 1);
+	}
+
+	private MatrixBlock computeScalingValues(ExecutionContext ec, MatrixObject mo1, Future<FederatedResponse>[] ffr) {
+		MatrixBlock a = getScalars(mo1, ffr);
+
+		// rightIndex to get first rows
+		long varID = FederationUtils.getNextFedDataID();
+		CPOperand operand = new CPOperand(String.valueOf(varID), ValueType.FP64, DataType.MATRIX);
+		String indexingInstString = constructRightIndexString(1, 1, 1, 2, operand);
+		FederatedRequest fr1 = FederationUtils.callInstruction(indexingInstString, operand,
+			new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
+		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
+		Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+
+		// compute  B11 = B11 + B12 ⊙ a
+		MatrixBlock values = new MatrixBlock(tmp.length, 2, 0.0);
+		for(int i = 1; i < tmp.length; i++) {
+			try {
+				values.copy(i-1, i-1, 0, 1, ((MatrixBlock) tmp[i].get().getData()[0]), true);
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException("Federated Get data failed with exception on UnaryMatrixFEDInstruction", e);
+			}
+		}
+
+		ec.removeVariable(operand.getName());
+
+		MatrixBlock agg = values.slice(0, values.getNumRows()-1,1, 1)
+			.binaryOperations(InstructionUtils.parseBinaryOperator("*"), a, new MatrixBlock());
+		return agg.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator("+"), values.slice(0,values.getNumRows()-1,0,0));
+	}
+
 	private static final class NewVariable {
 		public long _id;
 		public MatrixObject _mo;
@@ -334,5 +345,42 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		out.getDataCharacteristics().set(fedMapObj.getDataCharacteristics());
 		out.setFedMapping(fedMapObj.getFedMapping().copyWithNewID(fedOutputID));
 		return out;
+	}
+
+	private String constructTernaryString(CPOperand op1, CPOperand op2) {
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+		parts[1] = "ifelse";
+		return InstructionUtils.concatOperands(parts[0], parts[1],
+			InstructionUtils.createOperand(op1), parts[2], InstructionUtils.createOperand(op2), parts[3]);
+	}
+
+	private String setOutputVarInInstString(CPOperand operand) {
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+		parts[2] = InstructionUtils.createOperand(operand);
+		return InstructionUtils.concatOperands(parts);
+	}
+
+	private String constructRightIndexString(long rl, long ru, long cl, long cu, CPOperand operand) {
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+		parts[1] = "rightIndex";
+		return InstructionUtils.concatOperands(parts[0], parts[1], parts[2],
+			InstructionUtils.createLiteralOperand(String.valueOf(rl), ValueType.INT64),
+			InstructionUtils.createLiteralOperand(String.valueOf(ru), ValueType.INT64),
+			InstructionUtils.createLiteralOperand(String.valueOf(cl), ValueType.INT64),
+			InstructionUtils.createLiteralOperand(String.valueOf(cu), ValueType.INT64),
+			InstructionUtils.createOperand(operand));
+	}
+
+	private void modifyInstString(CPOperand operand) {
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+		String opcode = getOpcode();
+
+		parts[1] = opcode.equalsIgnoreCase("ucumk+") ? "+" :
+			opcode.equalsIgnoreCase("ucum*") ? "*" :
+				opcode.equalsIgnoreCase("ucummin") ? "min" : "max";
+		instString = InstructionUtils.concatOperands(parts[0], parts[1], parts[3], InstructionUtils.createOperand(operand), parts[3]);
+
+		if(Arrays.asList("min", "max").contains(parts[1]))
+			instString = InstructionUtils.concatOperands(instString, "16");
 	}
 }

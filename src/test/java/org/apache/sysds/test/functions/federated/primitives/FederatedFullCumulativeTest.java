@@ -31,7 +31,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -60,7 +59,6 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
 			new Object[][] {
-				{24, 4, true},
 				{24, 4, false},
 //				{24, 24, false},
 //				{1000, 4, false},
@@ -102,10 +100,6 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	public void testSumprodDenseMatrixCP() {
 		runCumOperationTest(OpType.SUMPROD, ExecType.CP);
 	}
-
-	@Test
-	@Ignore
-	public void testSumDenseMatrixSP() { runCumOperationTest(OpType.SUM, ExecType.SPARK); }
 
 	private void runCumOperationTest(OpType type, ExecType instType) {
 		ExecMode platformOld = rtplatform;

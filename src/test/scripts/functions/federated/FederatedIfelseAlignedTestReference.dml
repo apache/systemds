@@ -19,24 +19,17 @@
 #
 #-------------------------------------------------------------
 
-m_lmPredict = function(Matrix[Double] X, Matrix[Double] B, 
-  Matrix[Double] ytest = matrix(0,1,1), Integer icpt = 0, Boolean verbose = FALSE) 
-  return (Matrix[Double] yhat)
-{
-  intercept = ifelse(icpt==0, matrix(0,1,ncol(B)), B[nrow(B),]);
-  yhat = X %*% B[1:ncol(X)] + matrix(1,nrow(X),1) %*% intercept;
 
-  if( verbose ) {
-    y_residual =  ytest - yhat;
-    avg_res = sum(y_residual) / nrow(ytest);
-    ss_res = sum(y_residual^2);
-    ss_avg_res = ss_res - nrow(ytest) * avg_res^2;
-    R2 = 1 - ss_res / (sum(ytest^2) - nrow(ytest) * (sum(ytest)/nrow(ytest))^2);
-    print("\nAccuracy:" +
-          "\n--sum(ytest) = " + sum(ytest) +
-          "\n--sum(yhat) = " + sum(yhat) +
-          "\n--AVG_RES_Y: " + avg_res +
-          "\n--SS_AVG_RES_Y: " + ss_avg_res +
-          "\n--R2: " + R2 );
-  }
+if($10) {
+  A = rbind(read($1), read($2), read($3), read($4));
+  B = rbind(read($5), read($6), read($7), read($8));
 }
+else {
+  A = cbind(read($1), read($2), read($3), read($4));
+  B = cbind(read($5), read($6), read($7), read($8));
+}
+
+c1 = ifelse(A-3>0, B, A*2);
+c2 = ifelse(A-3>0, B, matrix(1, nrow(A), ncol(A)));
+s = c1 + c2;
+write(s, $9);

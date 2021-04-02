@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinC
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
@@ -172,6 +173,14 @@ public class FEDInstructionUtils {
 				&& (minst.input1.isMatrix() || minst.input1.isFrame())
 				&& ec.getCacheableData(minst.input1).isFederated()) {
 				fedinst = IndexingFEDInstruction.parseInstruction(minst.getInstructionString());
+			}
+		}
+		else if(inst instanceof TernaryCPInstruction) {
+			TernaryCPInstruction tinst = (TernaryCPInstruction) inst;
+			if((tinst.input1.isMatrix() && ec.getCacheableData(tinst.input1).isFederated())
+				|| (tinst.input2.isMatrix() && ec.getCacheableData(tinst.input2).isFederated())
+				|| (tinst.input3.isMatrix() && ec.getCacheableData(tinst.input3).isFederated())) {
+				fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
 			}
 		}
 		else if(inst instanceof VariableCPInstruction ){

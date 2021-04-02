@@ -40,6 +40,7 @@ public abstract class FEDInstruction extends Instruction {
 		Reorg,
 		Reshape,
 		MatrixIndexing,
+    	Ternary,
 		Quaternary,
 		QSort,
 		QPick,

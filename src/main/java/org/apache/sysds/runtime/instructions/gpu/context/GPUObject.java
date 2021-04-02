@@ -992,8 +992,7 @@ public class GPUObject {
 		shadowBuffer.clearShadowPointer();
 		jcudaSparseMatrixPtr = null;
 		resetReadWriteLock();
-		if(mat.getGPUObject(getGPUContext()) == this)
-			getGPUContext().getMemoryManager().removeGPUObject(this);
+		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 
 	/**

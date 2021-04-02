@@ -43,6 +43,7 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	private final static String TEST_NAME2 = "FederatedCumprodTest";
 	private final static String TEST_NAME3 = "FederatedCummaxTest";
 	private final static String TEST_NAME4 = "FederatedCumminTest";
+	private final static String TEST_NAME5 = "FederatedCumsumprodTest";
 
 	private final static String TEST_DIR = "functions/federated/cumulative/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedFullCumulativeTest.class.getSimpleName() + "/";
@@ -59,14 +60,16 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
 			new Object[][] {
-//				{100, 4, false},
-//				{100, 4, true},
-				{8, 1, true},
+				{24, 4, true},
+				{24, 4, false},
+//				{24, 24, false},
+//				{1000, 4, false},
+//				{1000, 4, true},
 			});
 	}
 
 	private enum OpType {
-		SUM, PROD, MAX, MIN
+		SUM, PROD, SUMPROD, MAX, MIN
 	}
 
 	@Override
@@ -76,12 +79,11 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"S"}));
 	}
 
 	@Test
-	public void testSumDenseMatrixCP() {
-		runCumOperationTest(OpType.SUM, ExecType.CP);
-	}
+	public void testSumDenseMatrixCP() { runCumOperationTest(OpType.SUM, ExecType.CP); }
 
 	@Test
 	public void testProdDenseMatrixCP() { runCumOperationTest(OpType.PROD, ExecType.CP); }
@@ -94,6 +96,11 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	@Test
 	public void testMinDenseMatrixCP() {
 		runCumOperationTest(OpType.MIN, ExecType.CP);
+	}
+
+	@Test
+	public void testSumprodDenseMatrixCP() {
+		runCumOperationTest(OpType.SUMPROD, ExecType.CP);
 	}
 
 	@Test
@@ -123,6 +130,9 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 				break;
 			case MIN:
 				TEST_NAME = TEST_NAME4;
+				break;
+			case SUMPROD:
+				TEST_NAME = TEST_NAME5;
 				break;
 		}
 
@@ -181,7 +191,7 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-6);
 
 		switch(type) {
 			case SUM:
@@ -195,6 +205,9 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 				break;
 			case MIN:
 				Assert.assertTrue(heavyHittersContainsString("fed_ucummin"));
+				break;
+			case SUMPROD:
+				Assert.assertTrue(heavyHittersContainsString("ucumk+*"));
 				break;
 		}
 

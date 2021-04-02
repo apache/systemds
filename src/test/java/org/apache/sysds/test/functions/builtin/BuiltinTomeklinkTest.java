@@ -37,7 +37,7 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 
 	private final static double eps = 1e-3;
 	private final static int rows = 53;
-  private final static int cols = 6;
+	private final static int cols = 6;
 
 	@Override
 	public void setUp() {
@@ -49,7 +49,7 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 		runTomeklinkTest(ExecType.CP);
 	}
 
-  @Test
+	@Test
 	public void testTomeklinkSP() {
 		runTomeklinkTest(ExecType.SPARK);
 	}
@@ -66,16 +66,16 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-args", input("A"), input("B"), output("C")};
 
-      fullRScriptName = HOME + TEST_NAME + ".R";
+			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			//generate actual dataset
-      double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.7, 1);
+			double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.7, 1);
 			writeInputMatrixWithMTD("A", A, true);
 
-      double[][] B = getRandomMatrix(rows, 1, 0, 1, 0.5, 1);
-      B = TestUtils.round(B);
-      writeInputMatrixWithMTD("B", B, true);
+			double[][] B = getRandomMatrix(rows, 1, 0, 1, 0.5, 1);
+			B = TestUtils.round(B);
+			writeInputMatrixWithMTD("B", B, true);
 
 			runTest(true, false, null, -1);
 			runRScript(true);

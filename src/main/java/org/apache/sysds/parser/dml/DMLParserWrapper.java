@@ -24,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
@@ -187,19 +188,20 @@ public class DMLParserWrapper extends ParserWrapper
 		if (atLeastOneWarning) {
 			LOG.warn(CustomErrorListener.generateParseIssuesMessage(dmlScript, parseIssues));
 		}
-		dmlPgm = createDMLProgram(ast, sourceNamespace);
+		dmlPgm = createDMLProgram(ast, validator, sourceNamespace);
 		
 		return dmlPgm;
 	}
 	
-	private static DMLProgram createDMLProgram(ProgramrootContext ast, String sourceNamespace)
+	private static DMLProgram createDMLProgram(ProgramrootContext ast,
+		DmlSyntacticValidator validator, String sourceNamespace)
 	{
 		DMLProgram dmlPgm = new DMLProgram();
-		String namespace = (sourceNamespace != null && sourceNamespace.length() > 0)
-			? sourceNamespace : DMLProgram.DEFAULT_NAMESPACE;
+		String namespace = (sourceNamespace != null && sourceNamespace.length() > 0) ?
+			sourceNamespace : DMLProgram.DEFAULT_NAMESPACE;
 		dmlPgm.getNamespaces().put(namespace, new FunctionDictionary<>());
 
-		// add all functions from the main script file
+		// add all functions from the parsed script file
 		for(FunctionStatementContext fn : ast.functionBlocks) {
 			FunctionStatementBlock functionStmtBlk = new FunctionStatementBlock();
 			functionStmtBlk.addStatement(fn.info.stmt);
@@ -211,6 +213,13 @@ public class DMLParserWrapper extends ParserWrapper
 				return null;
 			}
 		}
+		
+		// add all builtin functions collected while parsing script file
+		FunctionDictionary<FunctionStatementBlock> fbuiltins = validator.getParsedBuiltinFunctions();
+		if( !fbuiltins.getFunctions().isEmpty() )
+			dmlPgm.createNamespace(DMLProgram.BUILTIN_NAMESPACE);
+		for( Entry<String, FunctionStatementBlock> e : fbuiltins.getFunctions().entrySet() )
+			dmlPgm.addFunctionStatementBlock(DMLProgram.BUILTIN_NAMESPACE, e.getKey(), e.getValue());
 
 		// add statements from main script file, as well as 
 		// functions from imports and dml-bodied builtin functions

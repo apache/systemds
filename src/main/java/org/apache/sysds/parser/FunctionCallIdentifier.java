@@ -97,7 +97,11 @@ public class FunctionCallIdentifier extends DataIdentifier
 			raiseValidateError("namespace " + _namespace + " is not defined ", conditional);
 		}
 		FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
-		if (fblock == null && !Builtins.contains(_name, true, false) ){
+		if( fblock ==  null ) { //handle private builtin function
+			fblock = dmlp.getFunctionStatementBlock(DMLProgram.BUILTIN_NAMESPACE, _name);
+			_namespace = DMLProgram.BUILTIN_NAMESPACE;
+		}
+		if (fblock == null && !Builtins.contains(_name, true, false)){
 			raiseValidateError("function " + _name + " is undefined in namespace " + _namespace, conditional);
 		}
 		
@@ -128,11 +132,10 @@ public class FunctionCallIdentifier extends DataIdentifier
 		}
 		
 		// Step 5: replace dml-bodied builtin function calls after type inference
-		if( Builtins.contains(_name, true, false)
-			&& _namespace.equals(DMLProgram.DEFAULT_NAMESPACE) ) {
+		if( Builtins.contains(_name, true, false) && fblock == null ) {
 			DataType dt = _paramExprs.get(0).getExpr().getOutput().getDataType();
 			_name = Builtins.getInternalFName(_name, dt);
-			_namespace = DMLProgram.DEFAULT_NAMESPACE;
+			_namespace = DMLProgram.BUILTIN_NAMESPACE;
 			fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
 			if( fblock == null ) {
 				raiseValidateError("Builtin function '"+_name+ "': script loaded "
@@ -212,5 +215,3 @@ public class FunctionCallIdentifier extends DataIdentifier
 		return true;
 	}
 }
-
-

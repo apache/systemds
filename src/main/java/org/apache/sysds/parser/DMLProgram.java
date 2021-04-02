@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.controlprogram.Program;
 public class DMLProgram 
 {
 	public static final String DEFAULT_NAMESPACE = ".defaultNS";
+	public static final String BUILTIN_NAMESPACE = ".builtinNS";
 	public static final String INTERNAL_NAMESPACE = "_internal"; // used for multi-return builtin functions
 	
 	private ArrayList<StatementBlock> _blocks;
@@ -42,7 +43,7 @@ public class DMLProgram
 	
 	public DMLProgram(String namespace) {
 		this();
-		_namespaces.put(namespace, new FunctionDictionary<>());
+		createNamespace(namespace);
 	}
 	
 	public Map<String,FunctionDictionary<FunctionStatementBlock>> getNamespaces(){
@@ -55,6 +56,19 @@ public class DMLProgram
 	
 	public int getNumStatementBlocks(){
 		return _blocks.size();
+	}
+	
+	public static boolean isInternalNamespace(String namespace) {
+		return DEFAULT_NAMESPACE.equals(namespace)
+			|| BUILTIN_NAMESPACE.equals(namespace)
+			|| INTERNAL_NAMESPACE.equals(namespace);
+	}
+	
+	public FunctionDictionary<FunctionStatementBlock> createNamespace(String namespace) {
+		// create on demand, necessary to avoid overwriting existing functions
+		if( !_namespaces.containsKey(namespace) )
+			_namespaces.put(namespace, new FunctionDictionary<>());
+		return _namespaces.get(namespace);
 	}
 
 	/**
@@ -120,6 +134,14 @@ public class DMLProgram
 	
 	public FunctionDictionary<FunctionStatementBlock> getDefaultFunctionDictionary() {
 		return _namespaces.get(DEFAULT_NAMESPACE);
+	}
+	
+	public FunctionDictionary<FunctionStatementBlock> getBuiltinFunctionDictionary() {
+		return _namespaces.get(BUILTIN_NAMESPACE);
+	}
+	
+	public FunctionDictionary<FunctionStatementBlock> getFunctionDictionary(String namespace) {
+		return _namespaces.get(namespace);
 	}
 	
 	public void addFunctionStatementBlock(String fname, FunctionStatementBlock fsb) {

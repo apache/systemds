@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.functionobjects.IntegerDivide;
 import org.apache.sysds.runtime.functionobjects.LessThan;
 import org.apache.sysds.runtime.functionobjects.LessThanEquals;
 import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Minus1Multiply;
 import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.MinusNz;
 import org.apache.sysds.runtime.functionobjects.Modulus;
@@ -68,7 +69,7 @@ public class BinaryOperator  extends Operator implements Serializable
 			|| p instanceof BitwShiftL || p instanceof BitwShiftR);
 		fn = p;
 		commutative = p instanceof Plus || p instanceof Multiply 
-			|| p instanceof And || p instanceof Or || p instanceof Xor;
+			|| p instanceof And || p instanceof Or || p instanceof Xor || p instanceof Minus1Multiply;
 	}
 	
 	public void setNumThreads(int k) {

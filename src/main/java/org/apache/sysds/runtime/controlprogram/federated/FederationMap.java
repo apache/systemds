@@ -212,6 +212,26 @@ public class FederationMap {
 		return ret.toArray(new Future[0]);
 	}
 
+	@SuppressWarnings("unchecked")
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
+		// executes step1[] - step 2 - ... step4 (only first step federated-data-specific)
+		setThreadID(tid, frSlices1, fr);
+		setThreadID(tid, frSlices2, fr);
+		List<Future<FederatedResponse>> ret = new ArrayList<>();
+		int pos = 0;
+		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+			FederatedRequest[] newFr = (frSlices1!=null) ?
+				((frSlices2!=null)? (addAll(frSlices2[pos], addAll(frSlices1[pos++], fr))) : addAll(frSlices1[pos++], fr)) : fr;
+			ret.add(e.getValue().executeFederatedOperation(newFr));
+		}
+
+		// prepare results (future federated responses), with optional wait to ensure the
+		// order of requests without data dependencies (e.g., cleanup RPCs)
+		if( wait )
+			FederationUtils.waitFor(ret);
+		return ret.toArray(new Future[0]);
+	}
+	
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {
 		if(!isInitialized())
 			throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");

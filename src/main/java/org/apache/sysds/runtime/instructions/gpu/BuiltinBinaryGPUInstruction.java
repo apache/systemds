@@ -19,35 +19,24 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction implements LineageTraceable {
+public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
 	@SuppressWarnings("unused")
 	private int _arity;
 
-	CPOperand output;
-	CPOperand input1, input2;
-
 	protected BuiltinBinaryGPUInstruction(Operator op, CPOperand input1, CPOperand input2, CPOperand output,
 			String opcode, String istr, int _arity) {
-		super(op, opcode, istr);
+		super(op, input1, input2, output, opcode, istr);
 		this._arity = _arity;
-		this.output = output;
-		this.input1 = input1;
-		this.input2 = input2;
 	}
 
 	public static BuiltinBinaryGPUInstruction parseInstruction(String str) {
@@ -86,12 +75,6 @@ public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction impleme
 		else
 			throw new DMLRuntimeException(
 				"GPU : Unsupported GPU builtin operations on a matrix and a scalar:" + opcode);
-	}
-
-	@Override
-	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-		return Pair.of(output.getName(), new LineageItem(getOpcode(),
-			LineageItemUtils.getLineage(ec, input1, input2)));
 	}
 
 }

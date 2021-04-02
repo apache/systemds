@@ -39,34 +39,36 @@ public class ScalarMatrixBuiltinGPUInstruction extends BuiltinBinaryGPUInstructi
 		_gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
 	}
 
-  @Override
-  public void processInstruction(ExecutionContext ec) {
-    GPUStatistics.incrementNoOfExecutedGPUInst();
+	@Override
+	public void processInstruction(ExecutionContext ec) {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 
-    String opcode = getOpcode();
-    CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
-	CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
-	MatrixObject in1 = getMatrixInputForGPUInstruction(ec, mat.getName());
-	ScalarObject constant = ec.getScalarInput(scalar);
-    
-    if(opcode.equals("max")) {
-    	ec.setMetaData(output.getName(), in1.getNumRows(), in1.getNumColumns());
-    	double constVal = constant.getDoubleValue();
-    	if(constVal == 0)
-    		LibMatrixCuDNN.relu(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, output.getName());
-    	else
-    		LibMatrixCUDA.matrixScalarOp(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, output.getName(), false, 
-    				InstructionUtils.parseScalarBinaryOperator(opcode, false, constVal));
-    } else if(opcode.equals("min")) {
-    	ec.setMetaData(output.getName(), in1.getNumRows(), in1.getNumColumns());
-    	double constVal = constant.getDoubleValue();
-    	LibMatrixCUDA.matrixScalarOp(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, output.getName(), false, 
-    				InstructionUtils.parseScalarBinaryOperator(opcode, false, constVal));
-    } else {
-      throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
-    }
-    ec.releaseMatrixInputForGPUInstruction(mat.getName());
-    ec.releaseMatrixOutputForGPUInstruction(output.getName());
-  }
+		String opcode = getOpcode();
+		CPOperand mat = (_input1.getDataType() == DataType.MATRIX) ? _input1 : _input2;
+		CPOperand scalar = (_input1.getDataType() == DataType.MATRIX) ? _input2 : _input1;
+		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, mat.getName());
+		ScalarObject constant = ec.getScalarInput(scalar);
+
+		if (opcode.equals("max")) {
+			ec.setMetaData(_output.getName(), in1.getNumRows(), in1.getNumColumns());
+			double constVal = constant.getDoubleValue();
+			if (constVal == 0)
+				LibMatrixCuDNN.relu(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, _output.getName());
+			else
+				LibMatrixCUDA.matrixScalarOp(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, 
+					_output.getName(), false, InstructionUtils.parseScalarBinaryOperator(opcode, false, constVal));
+		}
+		else if (opcode.equals("min")) {
+			ec.setMetaData(_output.getName(), in1.getNumRows(), in1.getNumColumns());
+			double constVal = constant.getDoubleValue();
+			LibMatrixCUDA.matrixScalarOp(ec, ec.getGPUContext(0), getExtendedOpcode(), in1,
+				_output.getName(), false, InstructionUtils.parseScalarBinaryOperator(opcode, false, constVal));
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
+		}
+		ec.releaseMatrixInputForGPUInstruction(mat.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
 
 }

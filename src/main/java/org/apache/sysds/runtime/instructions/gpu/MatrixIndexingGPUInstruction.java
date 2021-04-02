@@ -20,12 +20,15 @@ package org.apache.sysds.runtime.instructions.gpu;
 
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.RightIndex;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
@@ -34,33 +37,25 @@ import org.apache.sysds.utils.GPUStatistics;
 
 public class MatrixIndexingGPUInstruction extends GPUInstruction {
 	CPOperand rowLower, rowUpper, colLower, colUpper;
-	CPOperand input1;
-	CPOperand input2;
-	CPOperand output;
 
 	private MatrixIndexingGPUInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
 			CPOperand cu, CPOperand out, String opcode, String istr) {
-		super(null, opcode, istr);
+		super(null, in, null, out, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.MatrixIndexing;
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
 		colUpper = cu;
-		input1 = in;
-		output = out;
 	}
 
 	private MatrixIndexingGPUInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
 			CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
-		super(op, opcode, istr);
+		super(op, lhsInput, rhsInput, out, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.MatrixIndexing;
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
 		colUpper = cu;
-		input1 = lhsInput;
-		input2 = rhsInput;
-		output = out;
 	}
 
 	public static MatrixIndexingGPUInstruction parseInstruction ( String str ) {
@@ -123,10 +118,10 @@ public class MatrixIndexingGPUInstruction extends GPUInstruction {
 		
 		IndexRange ixrange = getIndexRange(ec);
 		if ( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
-			MatrixObject mat1 = getMatrixInputForGPUInstruction(ec, input1.getName());
-			LibMatrixCUDA.sliceOperations(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, ixrange, output.getName());
-			ec.releaseMatrixInputForGPUInstruction(input1.getName());
-			ec.releaseMatrixOutputForGPUInstruction(output.getName());
+			MatrixObject mat1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
+			LibMatrixCUDA.sliceOperations(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, ixrange, _output.getName());
+			ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+			ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
@@ -139,5 +134,11 @@ public class MatrixIndexingGPUInstruction extends GPUInstruction {
 			(int)(ec.getScalarInput(rowUpper).getLongValue()-1),
 			(int)(ec.getScalarInput(colLower).getLongValue()-1),
 			(int)(ec.getScalarInput(colUpper).getLongValue()-1));
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(_output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, _input1,rowLower,rowUpper,colLower,colUpper)));
 	}
 }

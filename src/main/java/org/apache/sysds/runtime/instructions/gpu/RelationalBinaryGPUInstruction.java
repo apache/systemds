@@ -27,17 +27,10 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public abstract class RelationalBinaryGPUInstruction extends GPUInstruction {
 
-	protected CPOperand _input1;
-	protected CPOperand _input2;
-	protected CPOperand _output;
-
 	protected RelationalBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(op, opcode, istr);
+		super(op, in1, in2, out, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.RelationalBinary;
-		_input1 = in1;
-		_input2 = in2;
-		_output = out;
 	}
 
 	public static RelationalBinaryGPUInstruction parseInstruction ( String str ) {

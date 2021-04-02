@@ -20,10 +20,12 @@
 #-------------------------------------------------------------
 X = rand(rows=1000, cols=100, sparsity=1, seed=42);
 y = rand(rows=100, cols=100, sparsity=1, seed=42);
+R = matrix(0, rows=1, cols=100);
+
 for (i in 1:10) {
   tmp = X %*% y;
+  R[1,i] = sum(tmp);
 }
-R = tmp;
 
 write(R, $1, format="text");
 

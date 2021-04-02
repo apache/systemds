@@ -159,6 +159,10 @@ public class GPUObject {
 			jcudaSparseMatrixPtr = null;
 		}
 	}
+	
+	public void setDirty(boolean flag) {
+		dirty = flag;
+	}
 	// ----------------------------------------------------------------------
 
 
@@ -452,9 +456,9 @@ public class GPUObject {
 		timestamp = new AtomicLong(that.timestamp.get());
 		isSparse = that.isSparse;
 		isLineageCached = that.isLineageCached;
-		if (isDensePointerNull())
+		if (!that.isDensePointerNull())
 			setDensePointer(that.getDensePointer());
-		if (getJcudaSparseMatrixPtr() != null)
+		if (that.getJcudaSparseMatrixPtr() != null)
 			setSparseMatrixCudaPointer(that.getSparseMatrixCudaPointer());
 		gpuContext = gCtx;
 		this.mat = mat;
@@ -992,8 +996,7 @@ public class GPUObject {
 		shadowBuffer.clearShadowPointer();
 		jcudaSparseMatrixPtr = null;
 		resetReadWriteLock();
-		if(mat.getGPUObject(getGPUContext()) == this)
-			getGPUContext().getMemoryManager().removeGPUObject(this);
+		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 
 	/**

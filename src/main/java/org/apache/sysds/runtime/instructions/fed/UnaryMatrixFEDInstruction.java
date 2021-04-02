@@ -58,6 +58,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode;
 		opcode = parts[0];
+
 		if( (opcode.equalsIgnoreCase("exp") || opcode.startsWith("ucum")) && parts.length == 5) {
 			in.split(parts[1]);
 			out.split(parts[2]);

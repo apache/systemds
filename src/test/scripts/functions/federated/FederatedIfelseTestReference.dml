@@ -19,36 +19,13 @@
 #
 #-------------------------------------------------------------
 
-FXY = read($1, data_type="frame", format="csv", header=TRUE);
 
-F = FXY[,1:ncol(FXY)-1];
-y = as.matrix(FXY[,ncol(FXY)]);
+if($6) { A = rbind(read($1), read($2), read($3), read($4)); }
+else { A = cbind(read($1), read($2), read($3), read($4)); }
 
-# data preparation
-jspec= "{ ids:true, recode:[1,2,3,6],bin:[" 
-      +"{id:4, method:equi-width, numbins:14},"
-      +"{id:5, method:equi-width, numbins:12}]}"
-[X,M] = transformencode(target=F, spec=jspec);
-X = X[,2:ncol(X)]
-
-if( $2 == "oe" ) {
-  m = nrow(X)
-  n = ncol(X)
-  fdom = colMaxs(X);
-  foffb = t(cumsum(t(fdom))) - fdom;
-  foffe = t(cumsum(t(fdom)))
-  rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
-  cix = matrix(X + foffb, m*n, 1);
-  X2 = table(rix, cix); #one-hot encoded
-}
-else {
-  X2 = X;
-}
-
-# learn model
-B = lm(X=X2, y=y, verbose=FALSE);
-yhat = X2 %*% B;
-e = (y-yhat)^2;
-
-write(X, $3)
-write(e, $4)
+c1 = ifelse(A>0, A + matrix(1, nrow(A), ncol(A)), A*2);
+c2 = ifelse(A-3>0, A + matrix(1, nrow(A), ncol(A)), 3);
+c3 = ifelse(1, matrix(1, nrow(A), ncol(A)), 3);
+s = c2 + c3;
+s = s + 10*c1;
+write(s, $5);

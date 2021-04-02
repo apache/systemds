@@ -231,7 +231,7 @@ public class FederationMap {
 			FederationUtils.waitFor(ret);
 		return ret.toArray(new Future[0]);
 	}
-
+  
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {
 		if(!isInitialized())
 			throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");

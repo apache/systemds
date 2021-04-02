@@ -58,6 +58,12 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
 				mo1.getFedMapping().execute(getTID(), true, fr2);
 			}
+			else if ( !mo1.isFederated() ){
+				FederatedRequest[] fr1 = mo2.getFedMapping().broadcastSliced(mo1, false);
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
+					new long[]{fr1[0].getID(), mo2.getFedMapping().getID()});
+				mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
+			}
 			else {
 				throw new DMLRuntimeException("Matrix-matrix binary operations with a "
 					+ "federated right input are only supported for special cases yet.");
@@ -103,10 +109,22 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			}
 		}
 
-		// derive new fed mapping for output
-		MatrixObject out = ec.getMatrixObject(output);
+		if ( mo1.isFederated() )
+			setOutputFedMapping(mo1, fr2.getID(), ec);
+		else if ( mo2.isFederated() )
+			setOutputFedMapping(mo2, fr2.getID(), ec);
+		else throw new DMLRuntimeException("Input is not federated, so the output FedMapping cannot be set!");
+	}
 
-		out.getDataCharacteristics().set(mo1.getDataCharacteristics());
-		out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID()));
+	/**
+	 * Set data characteristics and fed mapping for output.
+	 * @param moFederated federated matrix object from which data characteristics and fed mapping are derived
+	 * @param outputFedmappingID ID for the fed mapping of output
+	 * @param ec execution context
+	 */
+	private void setOutputFedMapping(MatrixObject moFederated, long outputFedmappingID, ExecutionContext ec){
+		MatrixObject out = ec.getMatrixObject(output);
+		out.getDataCharacteristics().set(moFederated.getDataCharacteristics());
+		out.setFedMapping(moFederated.getFedMapping().copyWithNewID(outputFedmappingID));
 	}
 }

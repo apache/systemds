@@ -254,6 +254,15 @@ public class GPUContext {
 		return ret;
 	}
 	
+	/**
+	 * Shallow copy the given source {@link GPUObject} to a new {@link GPUObject} and 
+	 * assign that to the given {@link MatrixObject}.
+	 * This copy doesn't memcopy the device memory.
+	 * 
+	 * @param source a {@link GPUObject} which is the source of the copy
+	 * @param mo a {@link MatrixObject} to associate with the new {@link GPUObject}
+	 * @return a new {@link GPUObject} instance
+	 */
 	public GPUObject shallowCopyGPUObject(GPUObject source, MatrixObject mo) {
 		GPUObject ret = new GPUObject(this, source, mo);
 		getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(ret);

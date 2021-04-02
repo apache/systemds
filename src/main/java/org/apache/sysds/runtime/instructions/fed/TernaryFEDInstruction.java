@@ -176,7 +176,14 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		setOutputFedMapping(ec, mo1, fr3.getID());
 	}
 
-	// check aligned matrices and return vars
+	/**
+	 * Check alignment of matrices and return aligned federated data.
+	 * @param ec execution context
+	 * @param mo1 first input matrix
+	 * @param mo2 second input matrix
+	 * @param mo3 third input matrix
+	 * @return aligned federated data
+	 */
 	private RetAlignedValues getAlignedInputs(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
 		long[] vars = new long[0];
 		FederatedRequest[] fr = new FederatedRequest[0];

@@ -196,6 +196,7 @@ public enum Builtins {
 	PROD("prod", false),
 	QR("qr", false, ReturnType.MULTI_RETURN),
 	QUANTILE("quantile", false),
+	RANDOM_FOREST("randomForest", true),
 	RANGE("range", false),
 	RBIND("rbind", false),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),

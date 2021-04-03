@@ -19,6 +19,15 @@
 #
 #-------------------------------------------------------------
 
+# This builtin function imlements SliceLine, a linear-algebra-based
+# ML model debugging technique for finding the top-k data slices where
+# a trained models performs significantly worse than on the overall 
+# dataset. For a detailed description and experimental results, see:
+#
+#  Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast,
+#  Linear-Algebra-based Slice Finding for ML Model Debugging.
+#  In: SIGMOD 2021.
+
 #-------------------------------------------------------------
 # X         Input matrix (integer encoded [1..v])
 # e         error vector (classification accuracy, l2 norm, etc)

@@ -21,6 +21,5 @@
 
 if($6) { A = rbind(read($1), read($2), read($3), read($4)); }
 else { A = cbind(read($1), read($2), read($3), read($4)); }
-A = round(A);
 s = cumsumprod(A[,1:2]);
 write(s, $5);

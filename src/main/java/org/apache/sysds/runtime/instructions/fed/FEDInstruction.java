@@ -35,16 +35,17 @@ public abstract class FEDInstruction extends Instruction {
 		CumulativeAggregate,
 		Init,
 		MultiReturnParameterizedBuiltin,
-		ParameterizedBuiltin,
-		Tsmm,
 		MMChain,
-		Reorg,
-		Reshape,
 		MatrixIndexing,
-    	Ternary,
+		Ternary,
+		ParameterizedBuiltin,
 		Quaternary,
 		QSort,
 		QPick,
+		Reorg,
+		Reshape,
+		SpoofFused,
+		Tsmm,
 		Unary
 	}
 

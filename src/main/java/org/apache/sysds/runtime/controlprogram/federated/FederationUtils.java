@@ -66,20 +66,7 @@ public class FederationUtils {
 	}
 
 	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {
-		//TODO better and safe replacement of operand names --> instruction utils
-		long id = getNextFedDataID();
-		String linst = inst.replace(ExecType.SPARK.name(), ExecType.CP.name());
-		linst = linst.replace(
-			Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX,
-			Lop.OPERAND_DELIMITOR+String.valueOf(id)+Lop.DATATYPE_PREFIX);
-		for(int i=0; i<varOldIn.length; i++)
-			if( varOldIn[i] != null ) {
-				linst = linst.replace(
-					Lop.OPERAND_DELIMITOR+varOldIn[i].getName()+Lop.DATATYPE_PREFIX,
-					Lop.OPERAND_DELIMITOR+String.valueOf(varNewIn[i])+Lop.DATATYPE_PREFIX);
-				linst = linst.replace("="+varOldIn[i].getName(), "="+String.valueOf(varNewIn[i])); //parameterized
-			}
-		return new FederatedRequest(RequestType.EXEC_INST, id, linst);
+		return callInstruction(inst, varOldOut, getNextFedDataID(), varOldIn, varNewIn);
 	}
 
 	public static FederatedRequest[] callInstruction(String[] inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {

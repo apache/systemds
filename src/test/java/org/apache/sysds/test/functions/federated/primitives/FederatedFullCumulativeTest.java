@@ -22,7 +22,6 @@ package org.apache.sysds.test.functions.federated.primitives;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -59,6 +58,7 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
 			new Object[][] {
+				{8, 4, true},
 				{24, 4, false},
 //				{24, 24, false},
 //				{1000, 4, false},
@@ -102,14 +102,7 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	}
 
 	private void runCumOperationTest(OpType type, ExecType instType) {
-		ExecMode platformOld = rtplatform;
-		if(instType == ExecType.SPARK)
-			rtplatform = ExecMode.SPARK;
-		else
-			rtplatform = ExecMode.HYBRID;
-
-		if(rtplatform == ExecMode.SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		ExecMode platformOld = setExecMode(instType);
 
 		String TEST_NAME = null;
 		switch(type) {

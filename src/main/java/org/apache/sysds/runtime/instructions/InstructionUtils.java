@@ -1052,4 +1052,14 @@ public class InstructionUtils
 			sb.append(inputs[i]);
 		return sb.toString();
 	}
+
+	public static String constructTernaryString(String instString, CPOperand op1, CPOperand op2, CPOperand op3, CPOperand out) {
+		return concatOperands(constructBinaryInstString(instString, "ifelse", op1, op2, op3), createOperand(out));
+	}
+
+	public static String constructBinaryInstString(String instString, String opcode, CPOperand op1, CPOperand op2, CPOperand out) {
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+		parts[1] = opcode;
+		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(op2), createOperand(out));
+	}
 }

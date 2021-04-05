@@ -32,6 +32,7 @@ public abstract class FEDInstruction extends Instruction {
 		AggregateTernary,
 		Append,
 		Binary,
+		CumulativeAggregate,
 		Init,
 		MultiReturnParameterizedBuiltin,
 		MMChain,

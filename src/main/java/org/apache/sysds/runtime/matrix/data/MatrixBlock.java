@@ -1466,9 +1466,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * only done if 'awareDestNZ=true', 
 	 * 
 	 * @param rl row lower index, 0-based
-	 * @param ru row upper index, 0-based
+	 * @param ru row upper index, 0-based, inclusive
 	 * @param cl column lower index, 0-based
-	 * @param cu column upper index, 0-based
+	 * @param cu column upper index, 0-based, inclusive
 	 * @param src matrix block
 	 * @param awareDestNZ
 	 *           true, forces (1) to remove existing non-zeros in the index range of the 

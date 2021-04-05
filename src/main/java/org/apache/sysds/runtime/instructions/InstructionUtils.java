@@ -1000,7 +1000,11 @@ public class InstructionUtils
 	public static String createLiteralOperand(String val, ValueType vt) {
 		return InstructionUtils.concatOperandParts(val, DataType.SCALAR.name(), vt.name(), "true");
 	}
-	
+
+	public static String createOperand(CPOperand operand) {
+		return InstructionUtils.concatOperandParts(operand.getName(), operand.getDataType().name(), operand.getValueType().name());
+	}
+
 	public static String replaceOperand(String instStr, int operand, String newValue) {
 		//split instruction and check for correctness
 		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);
@@ -1047,5 +1051,15 @@ public class InstructionUtils
 		for( int i=0; i<inputs.length; i++ )
 			sb.append(inputs[i]);
 		return sb.toString();
+	}
+
+	public static String constructTernaryString(String instString, CPOperand op1, CPOperand op2, CPOperand op3, CPOperand out) {
+		return concatOperands(constructBinaryInstString(instString, "ifelse", op1, op2, op3), createOperand(out));
+	}
+
+	public static String constructBinaryInstString(String instString, String opcode, CPOperand op1, CPOperand op2, CPOperand out) {
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+		parts[1] = opcode;
+		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(op2), createOperand(out));
 	}
 }

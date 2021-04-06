@@ -436,8 +436,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			
 		case CopyVariable:
 			// Value types are not given here
-			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.UNKNOWN);
-			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN);
+			boolean withTypes = parts[1].split(VALUETYPE_PREFIX).length > 2 && parts[2].split(VALUETYPE_PREFIX).length > 2;
+			in1 = withTypes ? new CPOperand(parts[1]) : new CPOperand(parts[1], ValueType.UNKNOWN, DataType.UNKNOWN);
+			in2 = withTypes ? new CPOperand(parts[2]) : new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN);
 			break;
 			
 		case MoveVariable:
@@ -905,7 +906,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context
 	 */
 	private void processCopyInstruction(ExecutionContext ec) {
-		// get source variable 
+		// get source variable
 		Data dd = ec.getVariable(getInput1().getName());
 		
 		if ( dd == null )

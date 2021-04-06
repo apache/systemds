@@ -172,8 +172,7 @@ public class FEDInstructionUtils {
 		else if(inst instanceof IndexingCPInstruction) {
 			// matrix and frame indexing
 			IndexingCPInstruction minst = (IndexingCPInstruction) inst;
-			if(inst.getOpcode().equalsIgnoreCase("rightIndex")
-				&& (minst.input1.isMatrix() || minst.input1.isFrame())
+			if((minst.input1.isMatrix() || minst.input1.isFrame())
 				&& ec.getCacheableData(minst.input1).isFederated()) {
 				fedinst = IndexingFEDInstruction.parseInstruction(minst.getInstructionString());
 			}

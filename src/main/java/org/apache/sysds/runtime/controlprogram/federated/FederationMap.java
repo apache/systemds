@@ -172,6 +172,22 @@ public class FederationMap {
 		return ret;
 	}
 
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, int[][] ix) {
+		if( _type == FType.FULL )
+			return new FederatedRequest[]{broadcast(data)};
+
+		// prepare broadcast id and pin input
+		long id = FederationUtils.getNextFedDataID();
+		CacheBlock cb = data.acquireReadAndRelease();
+
+		// multi-threaded block slicing and federation request creation
+		FederatedRequest[] ret = new FederatedRequest[ix.length];
+		Arrays.setAll(ret,
+			i -> new FederatedRequest(RequestType.PUT_VAR, id,
+				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+		return ret;
+	}
+
 	public boolean isAligned(FederationMap that, boolean transposed) {
 		// determines if the two federated data are aligned row/column partitions
 		// at the same federated site (which allows for purely federated operation)

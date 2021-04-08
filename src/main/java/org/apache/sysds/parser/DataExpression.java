@@ -1086,9 +1086,9 @@ public class DataExpression extends DataIdentifier
 						}
 					}
 				}
-				
+
 				// DEFAULT for "sep" : ","
-				if (getVarParam(DELIM_DELIMITER) == null || getVarParam(DELIM_DELIMITER).getText().equals(";")) {
+				if (getVarParam(DELIM_DELIMITER) == null || getVarParam(DELIM_DELIMITER).equals(";")) {
 					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
 				}
 				else {

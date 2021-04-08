@@ -59,8 +59,6 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 	@Parameterized.Parameter(2)
 	public int cols;
 	@Parameterized.Parameter(3)
-	public double sparsity;
-	@Parameterized.Parameter(4)
 	public boolean row_partitioned;
 
 	@Override
@@ -73,41 +71,41 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 		// rows must be even for row partitioned X
 		// cols must be even for col partitioned X
 		return Arrays.asList(new Object[][] {
-			// {test_num, rows, cols, sparsity, row_partitioned}
+			// {test_num, rows, cols, row_partitioned}
 
 			// row partitioned
-			{1, 2000, 2000, 1, true},
-			{2, 10, 10, 1, true},
-			{3, 4, 4, 1, true},
-			{4, 4, 4, 1, true},
-			{5, 4, 4, 1, true},
-			{6, 4, 1, 1, true},
-			{9, 500, 2, 1, true},
-			{10, 500, 2, 1, true},
-			{11, 1100, 2000, 1, true},
-			{12, 2, 500, 1, true},
-			{13, 2, 4, 1, true},
-			{14, 1100, 200, 1, true},
+			{1, 2000, 2000, true},
+			{2, 10, 10, true},
+			{3, 4, 4, true},
+			{4, 4, 4, true},
+			{5, 4, 4, true},
+			{6, 4, 1, true},
+			{9, 500, 2, true},
+			{10, 500, 2, true},
+			{11, 1100, 2000, true},
+			{12, 2, 500, true},
+			{13, 2, 4, true},
+			{14, 1100, 200, true},
 
 			// column partitioned
-			{1, 2000, 2000, 1, false},
-			{2, 10, 10, 1, false},
-			{3, 4, 4, 1, false},
-			{4, 4, 4, 1, false},
-			{5, 4, 4, 1, false},
-			{9, 500, 2, 1, false},
-			{10, 500, 2, 1, false},
-			{11, 1100, 2000, 1, false},
-			{12, 2, 500, 1, false},
-			{14, 1100, 200, 1, false},
+			{1, 2000, 2000, false},
+			{2, 10, 10, false},
+			{3, 4, 4, false},
+			{4, 4, 4, false},
+			{5, 4, 4, false},
+			{9, 500, 2, false},
+			{10, 500, 2, false},
+			{11, 1100, 2000, false},
+			{12, 2, 500, false},
+			{14, 1100, 200, false},
 
 			// not working because of fused sequence operation
-			// (wrong grix inside genexec call of fed worker)
-			// {7, 1000, 1, 1, true},
+			//	(wrong grix inside genexec call of fed worker)
+			// {7, 1000, 1, true},
 
 			// not creating a FedSpoof instruction
-			// {8, 1002, 24, 1, true},
-			// {8, 1002, 24, 1, false},
+			// {8, 1002, 24, true},
+			// {8, 1002, 24, false},
 		});
 	}
 
@@ -147,8 +145,8 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 3);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, sparsity, 7);
+		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 3);
+		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 7);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));

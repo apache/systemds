@@ -72,6 +72,7 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 
 			{1, 6, 4},
 			{2, 6, 2},
+			{3, 6, 4},
 			{4, 6, 4},
 			{10, 150, 10},
 			{15, 150, 10},
@@ -82,9 +83,6 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 			{40, 300, 20},
 			{45, 1500, 100},
 			{50, 376, 4},
-
-			// not working
-			// {3, 6, 4},
 		});
 	}
 
@@ -93,14 +91,19 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
+	// @Test
+	// public void federatedCodegenRowwiseSingleNode() {
+	// 	testFederatedCodegenRowwise(ExecMode.SINGLE_NODE);
+	// }
+	// 
+	// @Test
+	// public void federatedCodegenRowwiseSpark() {
+	// 	testFederatedCodegenRowwise(ExecMode.SPARK);
+	// }
+	
 	@Test
-	public void federatedCodegenRowwiseSingleNode() {
-		testFederatedCodegenRowwise(ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void federatedCodegenRowwiseSpark() {
-		testFederatedCodegenRowwise(ExecMode.SPARK);
+	public void federatedCodegenCellwiseHybrid() {
+		testFederatedCodegenRowwise(ExecMode.HYBRID);
 	}
 
 	private void testFederatedCodegenRowwise(ExecMode exec_mode) {

@@ -75,13 +75,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 			inputCpo[counter - 3] = new CPOperand(parts[counter]);
 		CPOperand out = new CPOperand(parts[parts.length - 2]);
 
-		SpoofType spoofType = SpoofType.UNKNOWN;
-		if(op.getClass().getSuperclass() == SpoofCellwise.class)
-			spoofType = SpoofType.CELLWISE;
-		else if(op.getClass().getSuperclass() == SpoofRowwise.class)
-			spoofType = SpoofType.ROWWISE;
-
-		return new SpoofFEDInstruction(op, inputCpo, out, opcode, str, spoofType);
+		return new SpoofFEDInstruction(op, inputCpo, out, opcode, str);
 	}
 
 	@Override
@@ -161,7 +155,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 			setOutputCellwise(ec, response, fedMap);
 		else if(_op.getClass().getSuperclass() == SpoofRowwise.class)
 			setOutputRowwise(ec, response, fedMap);
-
 		else if(_op.getClass().getSuperclass() == SpoofMultiAggregate.class)
 			setOutputMultiAgg(ec, response, fedMap);
 		else

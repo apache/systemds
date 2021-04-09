@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public final class IndexingFEDInstruction extends UnaryFEDInstruction {
@@ -162,11 +163,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			long[] newIx = new long[]{rsn, ren, csn, cen};
 
 			// change 4 indices in instString
-			instStrings[i] = instString;
-			String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
-			for(int j = 3; j < 7; j++)
-				instParts[j] = InstructionUtils.createLiteralOperand(String.valueOf(newIx[j-3]+1), ValueType.INT64);
-			instStrings[i] = String.join(Lop.OPERAND_DELIMITOR, instParts);
+			instStrings[i] = modifyIndices(newIx, 3, 7);
 			
 			if(input1.isFrame()) {
 				//modify frame schema
@@ -221,7 +218,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		FederatedRange[] ranges = new FederatedRange[fedMap.getSize()];
 
 		// replace old reshape values for each worker
-		int i = 0, prev = 0;
+		int i = 0, prev = 0, from = fedMap.getSize();
 		for(FederatedRange range : fedMap.getMap().keySet()) {
 			long rs = range.getBeginDims()[0], re = range.getEndDims()[0],
 				cs = range.getBeginDims()[1], ce = range.getEndDims()[1];
@@ -230,55 +227,49 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			long csn = (ixrange.colStart >= cs) ? (ixrange.colStart - cs) : 0;
 			long cen = (ixrange.colEnd >= cs && ixrange.colEnd < ce) ? (ixrange.colEnd - cs) : (ce - cs - 1);
 
-			int[] newIx = new int[]{(int) rsn, (int) ren, (int) csn, (int) cen};
+			long[] newIx = new long[]{(int) rsn, (int) ren, (int) csn, (int) cen};
 
-			if(in1.isFederated(FederationMap.FType.ROW)) {
-				if((prev + ren - rsn) < in2.getNumRows() && ixrange.rowStart <= re) {
-					sliceIxs[i] = new int[] { prev, (int) (prev + ren - rsn), 0, (int) in2.getNumColumns()-1};
-					prev += ren - rsn + 1;
+			// find ranges where to apply  leftIndex
+			long to;
+			if(in1.isFederated(FederationMap.FType.ROW) && (to = (prev + ren - rsn)) >= 0 &&
+					to < in2.getNumRows() && ixrange.rowStart <= re) {
+					sliceIxs[i] = new int[] { prev, (int) to, 0, (int) in2.getNumColumns()-1};
+					prev = (int) (to + 1);
 
-					// change 4 indices in instString
-					instStrings[i] = instString;
-					String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
-					for(int j = 4; j < 8; j++)
-						instParts[j] = InstructionUtils.createLiteralOperand(String.valueOf(newIx[j-4]+1), ValueType.INT64);
-					instStrings[i] = String.join(Lop.OPERAND_DELIMITOR, instParts);
-
+					instStrings[i] = modifyIndices(newIx, 4, 8);
 					ranges[i] = range;
-				}
-			} else {
-				if((prev + cen - csn) < in2.getNumColumns() && ixrange.colStart <= ce) {
-					sliceIxs[i] = new int[] {0, (int) in2.getNumRows() - 1, prev, (int) (prev + cen - csn)};
-					prev += cen - csn + 1;
+					from = Math.min(i, from);
+			} else if(in1.isFederated(FederationMap.FType.COL) && (to = (prev + cen - csn)) >= 0 &&
+					to < in2.getNumColumns() && ixrange.colStart <= ce) {
+					sliceIxs[i] = new int[] {0, (int) in2.getNumRows() - 1, prev, (int) to};
+					prev = (int) (to + 1);
 
-					// change 4 indices in instString
-					instStrings[i] = instString;
-					String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
-					for(int j = 4; j < 8; j++)
-						instParts[j] = InstructionUtils.createLiteralOperand(String.valueOf(newIx[j-4]+1), ValueType.INT64);
-					instStrings[i] = String.join(Lop.OPERAND_DELIMITOR, instParts);
-
+					instStrings[i] = modifyIndices(newIx, 4, 8);
 					ranges[i] = range;
-				}
-			}
+					from = Math.min(i, from);
+			} else
+				instStrings[i] = createCopyInstString();
+
 			i++;
-//			// change 4 indices in instString
-//			instStrings[i] = instString;
-//			String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
-//			for(int j = 4; j < 8; j++)
-//				instParts[j] = InstructionUtils.createLiteralOperand(String.valueOf(newIx[j-4]+1), ValueType.INT64);
-//			instStrings[i++] = String.join(Lop.OPERAND_DELIMITOR, instParts);
 		}
 
 		sliceIxs = Arrays.stream(sliceIxs).filter(Objects::nonNull).toArray(int[][] :: new);
-		instStrings = Arrays.stream(instStrings).filter(Objects::nonNull).toArray(String[] :: new);
 
 		FederatedRequest[] fr1 = fedMap.broadcastSliced(in2, input2.isFrame(), sliceIxs);
 		FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, new CPOperand[]{input1, input2},
 			new long[]{fedMap.getID(), fr1[0].getID()});
 		FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
+
 		//execute federated instruction and cleanup intermediates
-		fedMap.execute(getTID(), true, ranges, fr2, fr1, fr3);
+		if(sliceIxs.length == fedMap.getSize())
+			fedMap.execute(getTID(), true, fr2, fr1, fr3);
+		else {
+			// get index of cpvar request
+			for(i = 0; i < fr2.length; i++)
+				if(i < from || i >= from + sliceIxs.length)
+					break;
+			fedMap.execute(getTID(), true, ranges, (fr2[i]), Arrays.copyOfRange(fr2, from, from + sliceIxs.length), fr1, fr3);
+		}
 
 		if(input1.isFrame()) {
 			FrameObject out = ec.getFrameObject(output);
@@ -290,5 +281,18 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			out.getDataCharacteristics().set(in1.getDataCharacteristics());;
 			out.setFedMapping(fedMap.copyWithNewID(fr2[0].getID()));
 		}
+	}
+
+	private String modifyIndices(long[] newIx, int from, int to) {
+		// change 4 indices in instString
+		String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
+		for(int j = from; j < to; j++)
+			instParts[j] = InstructionUtils.createLiteralOperand(String.valueOf(newIx[j-from]+1), ValueType.INT64);
+		return String.join(Lop.OPERAND_DELIMITOR, instParts);
+	}
+
+	private String createCopyInstString() {
+		String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
+		return VariableCPInstruction.prepareCopyInstruction(instParts[2], instParts[8]).toString();
 	}
 }

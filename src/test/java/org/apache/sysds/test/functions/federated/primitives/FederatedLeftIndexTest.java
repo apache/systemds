@@ -73,8 +73,10 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		return Arrays.asList(new Object[][] {
 			{8, 2, 8, 1, 1, 8, 1, 1, true},
 			{24, 12, 20, 8, 3, 22, 1, 8, true},
+			{24, 12, 10, 8, 7, 16, 1, 8, true},
 			{24, 12, 20, 11, 3, 22, 1, 11, false},
-//			{24, 12, 20, 8, 3, 22, 1, 8, false}, //FIXME
+			{24, 12, 20, 8, 3, 22, 1, 8, false},
+			{24, 12, 20, 8, 3, 22, 5, 12, false},
 		});
 	}
 
@@ -163,7 +165,7 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"),
+		programArgs = new String[] {"-explain", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
 			input("Y"), String.valueOf(from), String.valueOf(to),
 			String.valueOf(from2), String.valueOf(to2),
 			Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};

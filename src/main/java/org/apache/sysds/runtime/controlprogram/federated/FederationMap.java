@@ -231,18 +231,19 @@ public class FederationMap {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRange[] fedRange, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRange[] fedRange1, FederatedRequest elseFr, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
 		// executes step1[] - step 2 - ... step4 (only first step federated-data-specific)
 		setThreadID(tid, frSlices1, fr);
 		setThreadID(tid, frSlices2, fr);
 		List<Future<FederatedResponse>> ret = new ArrayList<>();
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-			if(Arrays.asList(fedRange).contains(e.getKey())) {
+			if(Arrays.asList(fedRange1).contains(e.getKey())) {
 				FederatedRequest[] newFr = (frSlices1 != null) ? ((frSlices2 != null) ? (addAll(frSlices2[pos],
 					addAll(frSlices1[pos++], fr))) : addAll(frSlices1[pos++], fr)) : fr;
 				ret.add(e.getValue().executeFederatedOperation(newFr));
 			}
+			else ret.add(e.getValue().executeFederatedOperation(elseFr));
 		}
 
 		// prepare results (future federated responses), with optional wait to ensure the
@@ -254,9 +255,9 @@ public class FederationMap {
 
 	@SuppressWarnings("unchecked")
 	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
-		return execute(tid, wait, (FederatedRange[]) _fedMap.keySet().toArray(), frSlices1, frSlices2, fr);
+		return execute(tid, wait, Arrays.stream(_fedMap.keySet().toArray()).toArray(FederatedRange[]::new), null, frSlices1, frSlices2, fr);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait,
 		FederatedRequest[][] frSlices, FederatedRequest[] fr) {

@@ -682,9 +682,8 @@ public class SpoofSPInstruction extends SPInstruction {
 	public boolean isFederated(ExecutionContext ec) {
 		for(CPOperand input : _in) {
 			Data data = ec.getVariable(input);
-			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
 				return true;
-			}
 		}
 		return false;
 	}

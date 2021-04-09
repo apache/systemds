@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -172,7 +173,7 @@ public class FederationMap {
 		return ret;
 	}
 
-	public FederatedRequest[] broadcastSliced(CacheableData<?> data, int[][] ix) {
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean isFrame, int[][] ix) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
 
@@ -184,7 +185,7 @@ public class FederationMap {
 		FederatedRequest[] ret = new FederatedRequest[ix.length];
 		Arrays.setAll(ret,
 			i -> new FederatedRequest(RequestType.PUT_VAR, id,
-				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
 		return ret;
 	}
 
@@ -230,16 +231,18 @@ public class FederationMap {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRange[] fedRange, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
 		// executes step1[] - step 2 - ... step4 (only first step federated-data-specific)
 		setThreadID(tid, frSlices1, fr);
 		setThreadID(tid, frSlices2, fr);
 		List<Future<FederatedResponse>> ret = new ArrayList<>();
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-			FederatedRequest[] newFr = (frSlices1!=null) ?
-				((frSlices2!=null)? (addAll(frSlices2[pos], addAll(frSlices1[pos++], fr))) : addAll(frSlices1[pos++], fr)) : fr;
-			ret.add(e.getValue().executeFederatedOperation(newFr));
+			if(Arrays.asList(fedRange).contains(e.getKey())) {
+				FederatedRequest[] newFr = (frSlices1 != null) ? ((frSlices2 != null) ? (addAll(frSlices2[pos],
+					addAll(frSlices1[pos++], fr))) : addAll(frSlices1[pos++], fr)) : fr;
+				ret.add(e.getValue().executeFederatedOperation(newFr));
+			}
 		}
 
 		// prepare results (future federated responses), with optional wait to ensure the
@@ -247,6 +250,11 @@ public class FederationMap {
 		if( wait )
 			FederationUtils.waitFor(ret);
 		return ret.toArray(new Future[0]);
+	}
+
+	@SuppressWarnings("unchecked")
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
+		return execute(tid, wait, (FederatedRange[]) _fedMap.keySet().toArray(), frSlices1, frSlices2, fr);
 	}
 	
 	@SuppressWarnings("unchecked")

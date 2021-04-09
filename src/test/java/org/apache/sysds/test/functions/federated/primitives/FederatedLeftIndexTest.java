@@ -22,8 +22,6 @@ package org.apache.sysds.test.functions.federated.primitives;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -73,7 +71,10 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
+			{8, 2, 8, 1, 1, 8, 1, 1, true},
 			{24, 12, 20, 8, 3, 22, 1, 8, true},
+			{24, 12, 20, 11, 3, 22, 1, 11, false},
+//			{24, 12, 20, 8, 3, 22, 1, 8, false}, //FIXME
 		});
 	}
 
@@ -131,23 +132,10 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X3", X3, false, mc);
 		writeInputMatrixWithMTD("X4", X4, false, mc);
 
-		int r2 = rows2;
-		int c2 = cols2 / 4;
-		if(rowPartitioned) {
-			r2 = rows2 / 4;
-			c2 = cols2;
-		}
+		double[][] Y = getRandomMatrix(rows2, cols2, 1, 5, 1, 3);
 
-		double[][] Y1 = getRandomMatrix(r2, c2, 1, 5, 1, 3);
-		double[][] Y2 = getRandomMatrix(r2, c2,1, 5, 1, 7);
-		double[][] Y3 = getRandomMatrix(r2, c2,1, 5, 1, 8);
-		double[][] Y4 = getRandomMatrix(r2, c2,1, 5, 1, 9);
-
-		MatrixCharacteristics mc2 = new MatrixCharacteristics(r2, c2, blocksize, r2 * c2);
-		writeInputMatrixWithMTD("Y1", Y1, false, mc2);
-		writeInputMatrixWithMTD("Y2", Y2, false, mc2);
-		writeInputMatrixWithMTD("Y3", Y3, false, mc2);
-		writeInputMatrixWithMTD("Y4", Y4, false, mc2);
+		MatrixCharacteristics mc2 = new MatrixCharacteristics(rows2, cols2, blocksize, rows2 * cols2);
+		writeInputMatrixWithMTD("Y", Y, false, mc2);
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
@@ -159,15 +147,6 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
 		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
 		Thread t4 = startLocalFedWorkerThread(port4);
-
-		int port5 = getRandomAvailablePort();
-		int port6 = getRandomAvailablePort();
-		int port7 = getRandomAvailablePort();
-		int port8 = getRandomAvailablePort();
-		Thread t5 = startLocalFedWorkerThread(port5, FED_WORKER_WAIT_S);
-		Thread t6 = startLocalFedWorkerThread(port6, FED_WORKER_WAIT_S);
-		Thread t7 = startLocalFedWorkerThread(port7, FED_WORKER_WAIT_S);
-		Thread t8 = startLocalFedWorkerThread(port8);
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -185,8 +164,8 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"),
-			input("Y1"), input("Y2"), input("Y3"), input("Y4"),
-			String.valueOf(from), String.valueOf(to), String.valueOf(from2), String.valueOf(to2),
+			input("Y"), String.valueOf(from), String.valueOf(to),
+			String.valueOf(from2), String.valueOf(to2),
 			Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
 		runTest(null);
 		// Run actual dml script with federated matrix
@@ -197,11 +176,8 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
-			"in_Y1=" + TestUtils.federatedAddress(port5, input("Y1")),
-			"in_Y2=" + TestUtils.federatedAddress(port6, input("Y2")),
-			"in_Y3=" + TestUtils.federatedAddress(port7, input("Y3")),
-			"in_Y4=" + TestUtils.federatedAddress(port8, input("Y4")),
-			"rows=" + rows1, "cols=" + cols1, "rows2=" + rows2, "cols2=" + cols2,
+			"in_Y=" + input("Y"), "rows=" + rows1, "cols=" + cols1,
+			"rows2=" + rows2, "cols2=" + cols2,
 			"from=" + from, "to=" + to,"from2=" + from2, "to2=" + to2,
 			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
@@ -217,11 +193,7 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("Y1")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("Y2")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("Y3")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("Y4")));
 
-		TestUtils.shutdownThreads(t1, t2, t3, t4, t5, t6, t7, t8);
+		TestUtils.shutdownThreads(t1, t2, t3, t4);
 	}
 }

@@ -19,20 +19,20 @@
 #
 #-------------------------------------------------------------
 
-from = $9;
-to = $10;
-from2 = $11;
-to2 = $12;
-if($11) {
+from = $6;
+to = $7;
+from2 = $8;
+to2 = $9;
+if($10) {
   A = rbind(read($1), read($2), read($3), read($4));
-  B = rbind(read($5), read($6), read($7), read($8));
 }
 else {
   A = cbind(read($1), read($2), read($3), read($4));
-  B = cbind(read($5), read($6), read($7), read($8));
 }
 
+B = read($5)
+
 A[from:to, from2:to2] = B;
-write(A, $13);
+write(A, $11);
 
 print(toString(A))

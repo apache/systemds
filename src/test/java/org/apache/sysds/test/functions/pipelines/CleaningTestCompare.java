@@ -51,11 +51,11 @@ public class CleaningTestCompare extends AutomatedTestBase {
 
 	@Test
 	public void testCP1() {
-		runFindPipelineTest(0.5, 5,10, 2,
+		runFindPipelineTest(5,10, 2,
 			true, "compare", Types.ExecMode.SINGLE_NODE);
 	}
 
-	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
+	private void runFindPipelineTest(int topk, int resources, int crossfold,
 		boolean weightedAccuracy, String target, Types.ExecMode et) {
 
 		setOutputBuffering(true);

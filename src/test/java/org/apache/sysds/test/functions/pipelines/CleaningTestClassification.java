@@ -51,9 +51,9 @@ public class CleaningTestClassification extends AutomatedTestBase {
 	}
 
 
-	@Test
+	@Ignore
 	public void testCP1() {
-		runFindPipelineTest(0.5, 5,10, 2,
+		runFindPipelineTest(0.1, 5,10, 2,
 			true, "classification", Types.ExecMode.SINGLE_NODE);
 	}
 

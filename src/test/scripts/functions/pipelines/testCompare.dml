@@ -40,8 +40,8 @@ cleanData = read($cleanData, data_type="frame", format="csv", header=TRUE,
   
 # take the sample of 500 rows to avoid java heap issue
 
-F = F[1:500,]
-cleanData = cleanData[1:500,]
+F = F[1:200,]
+cleanData = cleanData[1:200,]
   
 if(nrow(metaInfo) < 2)
   stop("incomplete meta info")
@@ -131,8 +131,8 @@ print("result satisfied ------------"+result)
 accuracies = cbind(as.matrix(expectedAccuracy), as.matrix(clean_accuracy))
 
 
-write(pip, output+"/pipelines.csv", format="csv")
-write(hp, output+"/hyperparams.csv", format="csv")
-write(acc, output+"/accuracies.csv", format="csv")
-write(accuracies , output+"/BestAccuracy.csv", format="csv")
+# write(pip, output+"/pipelines.csv", format="csv")
+# write(hp, output+"/hyperparams.csv", format="csv")
+# write(acc, output+"/accuracies.csv", format="csv")
+# write(accuracies , output+"/BestAccuracy.csv", format="csv")
 write(result , $O)

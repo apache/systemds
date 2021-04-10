@@ -248,6 +248,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 					ranges[i] = range;
 					from = Math.min(i, from);
 			} else
+				// TODO shallow copy, add more advanced update in place for federated
 				instStrings[i] = createCopyInstString();
 
 			i++;

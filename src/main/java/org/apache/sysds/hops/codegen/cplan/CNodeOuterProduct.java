@@ -48,7 +48,7 @@ public class CNodeOuterProduct extends CNodeTpl
 			+ "  protected double genexecCellwise(double a, double[] a1, int a1i, double[] a2, int a2i, SideInput[] b, double[] scalars, int m, int n, int len, int rix, int cix) { \n"
 			+ "%BODY_cellwise%"
 			+ "    return %OUT_cellwise%;\n"
-			+ "  }\n"			
+			+ "  }\n"
 			+ "}\n";
 	
 	private OutProdType _type = null;

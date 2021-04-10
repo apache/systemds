@@ -87,7 +87,7 @@ else if(test_num == 9) {
   Y = matrix(seq(6, 1005), 500, 2);
 
   U = X + 7 * Y;
-  Z = as.matrix(sum(U^2))
+  Z = as.matrix(sum(log(U)))
 }
 else if(test_num == 10) {
   # X ... 500x2 matrix
@@ -106,7 +106,7 @@ else if(test_num == 12) {
   Y = matrix(seq(6, 1005), 2, 500);
 
   U = X + 7 * Y;
-  Z = as.matrix(sum(U^2))
+  Z = as.matrix(sum(sqrt(U)))
 }
 else if(test_num == 13) {
   # X ... 2x4 matrix

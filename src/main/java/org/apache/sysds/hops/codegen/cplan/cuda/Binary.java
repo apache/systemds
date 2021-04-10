@@ -24,12 +24,12 @@ import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
-public class Binary extends CodeTemplate {
-	
+public class Binary extends CodeTemplate
+{
 	@Override
-	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector,
-							  boolean scalarInput) {
-
+	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs,
+		boolean scalarVector, boolean scalarInput, boolean vectorVector)
+	{
 		if(isSinglePrecision()) {
 			switch(type) {
 				case DOT_PRODUCT:

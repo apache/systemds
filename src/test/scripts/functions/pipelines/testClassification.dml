@@ -91,8 +91,9 @@ d_accuracy = 0
 [eX, eY] = utils::doSample(eX, eY, sample)
 
 # 5. get train test and validation set with balanced class distribution
-[X_train, y_train, X_test, y_test] = splitBalanced(X=eX, Y=eY, splitRatio=0.7, verbose=FALSE)
-
+# [X_train, y_train, X_test, y_test] = splitBalanced(X=eX, Y=eY, splitRatio=0.7, verbose=FALSE)
+X_train = eX
+y_train = eY
 # 6. find the best hyper parameters for classification algorithm
 # for now only find the best values for intercept and maximum outer iteration
 params = list("reg", "maxi");

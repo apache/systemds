@@ -24,6 +24,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CleaningTestClassification extends AutomatedTestBase {
@@ -64,7 +65,7 @@ public class CleaningTestClassification extends AutomatedTestBase {
 	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
 		boolean weightedAccuracy, String target, Types.ExecMode et) {
 
-//		setOutputBuffering(true);
+		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
@@ -87,7 +88,7 @@ public class CleaningTestClassification extends AutomatedTestBase {
 	}
 
 	private void runCleanAndCompareTest( Types.ExecMode et) {
-		setOutputBuffering(false);
+		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/";
 		Types.ExecMode modeOld = setExecMode(et);
 		try {

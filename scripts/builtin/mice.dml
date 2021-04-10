@@ -211,7 +211,8 @@ return (Matrix[Double] dist){
   {
     if(as.scalar(mask[,i]) == 1)
     {
-      dist[1, i] = countDistinct(X[, i])
+      distT = table(X[, i], 1)
+      dist[1, i] = sum(distT != 0)
     }
   }
 

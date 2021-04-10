@@ -49,7 +49,7 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 
 	private final static String OUTPUT_NAME = "Z";
-	private final static double TOLERANCE = 0;
+	private final static double TOLERANCE = 1e-8;
 	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
@@ -102,7 +102,7 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 			{14, 1100, 200, 1, false},
 
 			// not working because of fused sequence operation
-			//	(wrong grix inside genexec call of fed worker)
+			// (wrong grix inside genexec call of fed worker)
 			// {7, 1000, 1, 1, true},
 
 			// not creating a FedSpoof instruction
@@ -186,7 +186,7 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> refResults  = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
 		HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 		TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
-
+		
 		TestUtils.shutdownThreads(thread1, thread2);
 
 		// check for federated operations

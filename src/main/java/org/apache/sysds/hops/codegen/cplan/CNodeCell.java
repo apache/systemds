@@ -124,38 +124,22 @@ public class CNodeCell extends CNodeTpl
 
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false, api);
-		// ToDo: workaround to fix name clash of cell and row template
+		// TODO: workaround to fix name clash of cell and row template
 		if(api == GeneratorAPI.CUDA)
 			tmpDense = tmpDense.replace("a.vals(0)", "a");
 		_output.resetGenerated();
 		
-		String varName; 
-		if(getVarname() == null)
-//			tmp = tmp.replace("%TMP%", createVarname());
-			varName = createVarname();
-		else
-//			tmp = tmp.replace("%TMP%", getVarname());
-			varName = getVarname();
-		
-		if(api == GeneratorAPI.JAVA)
-			tmp = tmp.replace("%TMP%", varName);
-		else
-			tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", varName);
+		String varName = (getVarname() == null) ?
+			createVarname() : getVarname();
+		tmp = tmp.replace(api.isJava() ? 
+			"%TMP%" : "/*%TMP%*/SPOOF_OP_NAME", varName);
 		
 		if(tmpDense.contains("grix"))
 			tmp = tmp.replace("//%NEED_GRIX%", "\t\tuint32_t grix=_grix + rix;");
 		else
 			tmp = tmp.replace("//%NEED_GRIX%", "");
-		
-//		if(tmpDense.contains("rix"))
-//			tmp = tmp.replace("//%NEED_RIX%", "\t\tuint32_t rix = idx / A.cols();\n");
-//		else
-			tmp = tmp.replace("//%NEED_RIX%", "");
-		
-//		if(tmpDense.contains("cix"))
-//			tmp = tmp.replace("//%NEED_CIX%", "\t\tuint32_t cix = idx % A.cols();");
-//		else
-			tmp = tmp.replace("//%NEED_CIX%", "");
+		tmp = tmp.replace("//%NEED_RIX%", "");
+		tmp = tmp.replace("//%NEED_CIX%", "");
 		
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		

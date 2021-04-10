@@ -90,7 +90,7 @@ public abstract class CNode
 				return "a.cols()";
 			if(getVarname().startsWith("b"))
 				return getVarname()+".cols()";
-			else				
+			else
 				return getVarname()+".length";
 		}
 		else {

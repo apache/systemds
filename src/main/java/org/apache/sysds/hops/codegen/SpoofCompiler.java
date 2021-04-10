@@ -135,7 +135,10 @@ public class SpoofCompiler {
 	public enum GeneratorAPI {
 		AUTO,
 		JAVA,
-		CUDA
+		CUDA;
+		public boolean isJava() {
+			return this == JAVA;
+		}
 	}
 
 	public enum IntegrationType {

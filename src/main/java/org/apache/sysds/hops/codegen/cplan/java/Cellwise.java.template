@@ -25,11 +25,13 @@ import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
 import org.apache.commons.math3.util.FastMath;
 
-/* This is a SPOOF code generation template */
 public final class %TMP% extends SpoofCellwise {
-	public %TMP%() { super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP_NAME%); }
+  public %TMP%() {
+    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP_NAME%);
+  }
 
-	protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) {
-%BODY_dense%	return %OUT%;
-	}
-};
+  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) {
+%BODY_dense%
+    return %OUT%;
+  }
+}

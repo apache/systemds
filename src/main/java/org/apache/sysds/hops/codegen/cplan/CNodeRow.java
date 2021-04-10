@@ -96,14 +96,16 @@ public class CNodeRow extends CNodeTpl
 		String tmpSparse = _output.codegen(true, api) + getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
 		String varName = createVarname();
-		tmp = tmp.replace("//%TMP%", varName);
-		tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", varName);
-		tmp = tmp.replace("//%BODY_dense%", tmpDense);
-		tmp = tmp.replace("//%BODY_sparse%", tmpSparse);
+		tmp = tmp.replace(api.isJava()?"%TMP%":"//%TMP%", varName);
+		if( !api.isJava() )
+			tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", varName);
+		String prefix = api.isJava()? "" : "//";
+		tmp = tmp.replace(prefix+"%BODY_dense%", tmpDense);
+		tmp = tmp.replace(prefix+"%BODY_sparse%", tmpSparse);
 		
 		//replace outputs 
-		tmp = api == GeneratorAPI.JAVA ? tmp.replace("%OUT%", "c") :
-				tmp.replace("%OUT%", "c.vals(0)");
+		tmp = api.isJava() ? tmp.replace("%OUT%", "c") :
+			tmp.replace("%OUT%", "c.vals(0)");
 		tmp = tmp.replace("%POSOUT%", "0");
 		
 		//replace size information
@@ -132,14 +134,13 @@ public class CNodeRow extends CNodeTpl
 		switch( _type ) {
 			case NO_AGG:
 				if(api == GeneratorAPI.CUDA)
-					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName + ".vals(0)") .replaceAll("%LEN%", _output.getVarname()+".length");
+					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName + ".vals(0)").replaceAll("%LEN%", _output.getVarname()+".length");
 			case NO_AGG_B1:
 			case NO_AGG_CONST:
 				if(api == GeneratorAPI.JAVA)
-					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName) .replace("%LEN%", _output.getVarname()+".length");
+					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName).replace("%LEN%", _output.getVarname()+".length");
 				else
-//					return "";
-					return TEMPLATE_NOAGG_CONST_OUT_CUDA.replace("%IN%", varName + ".vals(0)") .replaceAll("%LEN%", _output.getVarname()+".length");
+					return TEMPLATE_NOAGG_CONST_OUT_CUDA.replace("%IN%", varName + ".vals(0)").replaceAll("%LEN%", _output.getVarname()+".length");
 			case FULL_AGG:
 				if(api == GeneratorAPI.JAVA)
 					return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
@@ -237,5 +238,4 @@ public class CNodeRow extends CNodeTpl
 	
 	private native int compile_nvrtc(long context, String name, String src, int type, long constDim2, int numVectors, 
 			boolean TB1);
-
 }

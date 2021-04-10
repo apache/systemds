@@ -27,10 +27,6 @@ if(row_part) {
 }
 else {
   X = cbind(read($in_X1), read($in_X2));
-
-  # TODO: remove as soon as jira ticket SYSTEMDS-2888 has been solved
-  # needed to seperate the cbind from the code generation
-  while(FALSE) {}
 }
 
 if(test_num == 1) {
@@ -89,11 +85,11 @@ else if(test_num == 9) {
   Y = matrix(seq(6, 1005), 500, 2);
 
   U = X + 7 * Y;
-  Z = as.matrix(sum(U^2))
+  Z = as.matrix(sum(log(U)))
 }
 else if(test_num == 10) {
+  while(FALSE){} #TODO
   # X ... 500x2 matrix
-
   Y = (0 / (X - 500))+1;
   Z = replace(target=Y, pattern=0/0, replacement=7);
 }
@@ -108,7 +104,7 @@ else if(test_num == 12) {
   Y = matrix(seq(6, 1005), 2, 500);
 
   U = X + 7 * Y;
-  Z = as.matrix(sum(U^2))
+  Z = as.matrix(sum(sqrt(U)))
 }
 else if(test_num == 13) {
   # X ... 2x4 matrix
@@ -117,8 +113,9 @@ else if(test_num == 13) {
   Z = 10 + floor(round(abs((X + w) * v)));
 }
 else if(test_num == 14) {
-  # X ... 1100x200 matrix
+  while(FALSE){} #TODO
 
+  # X ... 1100x200 matrix  
   Z = colMins(2 * log(X));
 }
 

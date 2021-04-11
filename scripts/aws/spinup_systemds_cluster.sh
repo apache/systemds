@@ -44,17 +44,18 @@ set_config "SPARK_NUM_EXECUTORS" $CORE_INSTANCES_COUNT
 set_config "SPARK_EXECUTOR_CORES" $SPARK_EXECUTOR_CORES
 set_config "SPARK_EXECUTOR_MEMORY" $SPARK_EXECUTOR_MEMORY
 set_config "SPARK_DRIVER_MEMORY" "1G"
+set_config "BUCKET" $BUCKET-$(((RANDOM % 999) + 1000))
 
 #Create systemDS bucket
-aws s3api create-bucket --bucket system-ds-bucket --region $REGION &> /dev/null
-aws s3api create-bucket --bucket system-ds-logs-bucket --region $REGION &> /dev/null
+aws s3api create-bucket --bucket $BUCKET --region $REGION &> /dev/null
+aws s3api create-bucket --bucket $BUCKET-logs --region $REGION &> /dev/null
 
 # Upload Jar and scripts to s3
-aws s3 sync $SYSTEMDS_TARGET_DIRECTORY s3://system-ds-bucket/ --exclude "*" --include "*.dml" --include "*config.xml" --include "*DS.jar*"
+aws s3 sync $SYSTEMDS_TARGET_DIRECTORY s3://$BUCKET --exclude "*" --include "*.dml" --include "*config.xml" --include "*DS.jar*"
 
 # Create keypair
 if [ ! -f ${KEYPAIR_NAME}.pem ]; then
-    aws ec2 create-key-pair --key-name $KEYPAIR_NAME --query "KeyMaterial" --output text > "$KEYPAIR_NAME.pem"
+    aws ec2 create-key-pair --key-name $KEYPAIR_NAME --region $REGION --query "KeyMaterial" --output text > "$KEYPAIR_NAME.pem"
     chmod 700 "${KEYPAIR_NAME}.pem"
     echo "${KEYPAIR_NAME}.pem private key created!"
 fi
@@ -67,7 +68,7 @@ CLUSTER_INFO=$(aws emr create-cluster \
  --service-role EMR_DefaultRole \
  --enable-debugging \
  --release-label $EMR_VERSION \
- --log-uri "s3n://system-ds-logs/" \
+ --log-uri "s3://$BUCKET-logs/" \
  --name "SystemDS cluster" \
  --instance-groups '[{"InstanceCount":'${MASTER_INSTANCES_COUNT}',
                         "InstanceGroupType":"MASTER",
@@ -102,6 +103,7 @@ aws emr wait cluster-running --cluster-id $CLUSTER_ID
 echo "Cluster info:"
 export CLUSTER_URL=$(aws emr describe-cluster --cluster-id $CLUSTER_ID | jq .Cluster.MasterPublicDnsName | tr -d '"')
 
-aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --command 'aws s3 cp s3://system-ds-bucket/target . --recursive --exclude "*" --include "*DS.jar*"'
+aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --region $REGION \
+    --command 'aws s3 cp s3://system-ds-bucket/target . --recursive --exclude "*" --include "*DS.jar*"'
 
 echo "Spinup finished."

@@ -24,6 +24,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, List[Unknown
   Frame[Unknown] lp, Frame[Unknown] primitives, Frame[Unknown] param,  Integer k = 3, Integer R=50, Boolean verbose = TRUE)
   return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams,  Matrix[Double] bestAccuracy, Frame[String] feaFrameOuter) 
 {
+  print("Starting optimizer")
   NUM_FEATURES = 14
   print("null in data "+sum(is.na(X_train)))
   bestPipeline = frame("", rows=1, cols=1)

@@ -42,7 +42,7 @@ class PythonAPIFileGenerator(object):
 
     init_path = os.path.join(os.path.dirname(os.path.dirname(
         __file__)), 'systemds', 'operator', 'algorithm', '__init__.py')
-    init_import = u"from .builtin.{function} import {function} \n"
+    init_import = u"from .builtin import {function} \n"
     init_all = u"__all__ = {functions} \n"
 
     def __init__(self, source_path: str, extension: str = 'py'):

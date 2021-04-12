@@ -153,8 +153,12 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 	public static void tearDownClass() {
 		// stop spark context to allow single jvm tests (otherwise the
 		// next test that tries to create a SparkContext would fail)
-		sc.stop();
-		sc = null;
-		conf = null;
+		try{
+			sc.stop();
+		}
+		finally{
+			sc = null;
+			conf = null;
+		}
 	}
 }

@@ -693,9 +693,8 @@ Vector<T>& vectPow2Write(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, ui
 template<typename T>
 T vectCountnnz(T* a, uint32_t ai, uint32_t len) {
 	SumOp<T> agg_op;
-	NotEqualOp<T> load_op;
-	T result = BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
-	return result;
+	NotZero<T> load_op;
+	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
 }
 
 template<typename T>

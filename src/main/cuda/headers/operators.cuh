@@ -107,6 +107,17 @@ struct NotEqualOp {
 };
 
 template<typename T>
+struct NotZero {
+	__device__  __forceinline__ T operator()(T a, T b) const {
+		return (a != 0) ? 1.0 : 0.0;
+	}
+	
+	__device__  __forceinline__ static T exec(T a, T b) {
+		return (a != 0) ? 1.0 : 0.0;
+	}
+};
+
+template<typename T>
 struct XorOp {
 	__device__  __forceinline__ static T exec(T a, T b) {
 		return (a != 0.0) != (b != 0.0) ? 1.0 : 0.0;

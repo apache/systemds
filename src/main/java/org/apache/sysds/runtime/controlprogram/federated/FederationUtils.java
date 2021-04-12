@@ -197,6 +197,22 @@ public class FederationUtils {
 		}
 	}
 
+	public static MatrixBlock aggProd(Future<FederatedResponse>[] ffr) {
+		try {
+			BinaryOperator bop = InstructionUtils.parseBinaryOperator("*");
+
+			MatrixBlock result = (MatrixBlock) ffr[0].get().getData()[0];;
+			for(int i=1; i < ffr.length; i++) {
+				MatrixBlock ret = (MatrixBlock) ffr[i].get().getData()[0];
+				result.binaryOperationsInPlace(bop, ret);
+			}
+			return result;
+		}
+		catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
 	public static MatrixBlock aggMinMaxIndex(Future<FederatedResponse>[] ffr, boolean isMin, FederationMap map) {
 		try {
 			MatrixBlock prev = (MatrixBlock) ffr[0].get().getData()[0];
@@ -404,7 +420,9 @@ public class FederationUtils {
 			return aggAdd(ffr);
 		else if( aop.aggOp.increOp.fn instanceof Mean )
 			return aggMean(ffr, map);
-		else if (aop.aggOp.increOp.fn instanceof Builtin) {
+		else if(aop.aggOp.increOp.fn instanceof Multiply) {
+			return aggProd(ffr);
+		} else if (aop.aggOp.increOp.fn instanceof Builtin) {
 			if ((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
 				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)) {
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
@@ -413,7 +431,7 @@ public class FederationUtils {
 			else if((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MININDEX)
 				|| (((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAXINDEX)) {
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MININDEX;
-				return aggMinMaxIndex(ffr,isMin, map);
+				return aggMinMaxIndex(ffr, isMin, map);
 			}
 			else throw new DMLRuntimeException("Unsupported aggregation operator: "
 					+ aop.aggOp.increOp.fn.getClass().getSimpleName());

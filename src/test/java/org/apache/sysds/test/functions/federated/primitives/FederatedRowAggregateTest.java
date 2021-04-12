@@ -42,6 +42,7 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 	private final static String TEST_NAME7 = "FederatedRowMaxTest";
 	private final static String TEST_NAME8 = "FederatedRowMinTest";
 	private final static String TEST_NAME9 = "FederatedRowVarTest";
+	private final static String TEST_NAME10 = "FederatedRowProdTest";
 
 	private final static String TEST_DIR = "functions/federated/aggregate/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRowAggregateTest.class.getSimpleName() + "/";
@@ -64,7 +65,7 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 	}
 
 	private enum OpType {
-		SUM, MEAN, MAX, MIN, VAR
+		SUM, MEAN, MAX, MIN, VAR, PROD
 	}
 
 	@Override
@@ -75,6 +76,7 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {"S"}));
 	}
 
 	@Test
@@ -102,6 +104,11 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 		runAggregateOperationTest(OpType.VAR, ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void testRowProdDenseMatrixCP() {
+		runAggregateOperationTest(OpType.PROD, ExecMode.SINGLE_NODE);
+	}
+
 	private void runAggregateOperationTest(OpType type, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
@@ -125,6 +132,9 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 				break;
 			case VAR:
 				TEST_NAME = TEST_NAME9;
+				break;
+			case PROD:
+				TEST_NAME = TEST_NAME10;
 				break;
 		}
 
@@ -207,6 +217,9 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 				break;
 			case VAR:
 				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("var")));
+				break;
+			case PROD:
+				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("*")));
 				break;
 		}
 

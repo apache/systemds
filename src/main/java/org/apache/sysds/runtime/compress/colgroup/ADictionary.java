@@ -250,4 +250,6 @@ public abstract class ADictionary {
 	public abstract ADictionary reExpandColumns(int max);
 
 	public abstract boolean containsValue(double pattern);
+
+	public abstract long getNumberNonZeros(int[] counts, int nCol);
 }

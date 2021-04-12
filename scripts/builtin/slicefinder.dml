@@ -19,6 +19,15 @@
 #
 #-------------------------------------------------------------
 
+# This builtin function imlements SliceLine, a linear-algebra-based
+# ML model debugging technique for finding the top-k data slices where
+# a trained models performs significantly worse than on the overall 
+# dataset. For a detailed description and experimental results, see:
+#
+#  Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast,
+#  Linear-Algebra-based Slice Finding for ML Model Debugging.
+#  In: SIGMOD 2021.
+
 #-------------------------------------------------------------
 # X         Input matrix (integer encoded [1..v])
 # e         error vector (classification accuracy, l2 norm, etc)
@@ -43,14 +52,14 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
     Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE)
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D)
 {
-	t1 = time();
-	
+  t1 = time();
+
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
   D = matrix(0, 0, 5); 
-  
+
   m = nrow(X);
   n = ncol(X);
-  
+
   # prepare offset vectors and one-hot encoded X
   fdom = colMaxs(X);
   foffb = t(cumsum(t(fdom))) - fdom;
@@ -96,30 +105,32 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
       print(" -- generated paired slice candidates: "+nrS+" -> "+nrow(S));
     }
 
-    # extract and evaluate candidate slices
-    if( tpEval ) { # task-parallel
-      # hybrid task-parallel w/ 1 matrix-matrix for blocks of 16 matrix-vector 
-      R = matrix(0, nrow(S), 4)
-      parfor( i in 1:ceil(nrow(S)/tpBlksz), check=0 ) {
-        beg = (i-1)*tpBlksz + 1; 
-        end = min(i*tpBlksz, nrow(R));
-        R[beg:end,] = evalSlice(X2, e, eAvg, t(S2[beg:end,]), level, alpha);
+    if( nrow(S) > 0 ) {
+      # extract and evaluate candidate slices
+      if( tpEval ) { # task-parallel
+        # hybrid task-parallel w/ 1 matrix-matrix for blocks of 16 matrix-vector 
+        R = matrix(0, nrow(S), 4)
+        parfor( i in 1:ceil(nrow(S)/tpBlksz), check=0 ) {
+          beg = (i-1)*tpBlksz + 1; 
+          end = min(i*tpBlksz, nrow(R));
+          R[beg:end,] = evalSlice(X2, e, eAvg, t(S2[beg:end,]), level, alpha);
+        }
       }
-    }
-    else { # data-parallel
-      R = evalSlice(X2, e, eAvg, t(S2), level, alpha);
-    }
-    
-    # maintain top-k after evaluation
-    [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
+      else { # data-parallel
+        R = evalSlice(X2, e, eAvg, t(S2), level, alpha);
+      }
 
-    if(verbose) {
-      [maxsc, minsc] = analyzeTopK(TKC);
-      valid = as.integer(sum(R[,2]>0 & R[,4]>=minSup));
-      print(" -- valid slices after eval: "+valid+"/"+nrow(S));
-      print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc);
-      print(" -- (time="+(time()-t1)+")")
-      D = rbind(D, t(as.matrix(list(level, nrow(S), valid, maxsc, minsc))));
+      # maintain top-k after evaluation
+      [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
+
+      if(verbose) {
+        [maxsc, minsc] = analyzeTopK(TKC);
+        valid = as.integer(sum(R[,2]>0 & R[,4]>=minSup));
+        print(" -- valid slices after eval: "+valid+"/"+nrow(S));
+        print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc);
+        print(" -- (time="+(time()-t1)+")")
+        D = rbind(D, t(as.matrix(list(level, nrow(S), valid, maxsc, minsc))));
+      }
     }
   }
 
@@ -171,7 +182,7 @@ scoreUB = function(Matrix[Double] ss, Matrix[Double] se, Matrix[Double] sm,
 {
   # Initial upper bound equation (with minSup and ss in pos/neg terms)
   # sc = alpha * ((se/minSup) / eAvg - 1) - (1-alpha) * (n/ss - 1);
-  
+
   # Since sc is either monotonically increasing or decreasing, we
   # probe interesting points of sc in the interval [minSup, ss],
   # and compute the maximum to serve as the upper bound 
@@ -229,14 +240,14 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R,
   # join compatible slices (without self)
   join = S %*% t(S) == (level-2)
   I = upper.tri(target=join, diag=FALSE, values=TRUE);
-  
+
   # pair construction
   nr = nrow(I); nc = ncol(I);
   rix = matrix(I * seq(1,nr), nr*nc, 1);
   cix = matrix(I * t(seq(1,nc)), nr*nc, 1);
   rix = removeEmpty(target=rix, margin="rows");
   cix = removeEmpty(target=cix, margin="rows");
-  
+
   P = matrix(0,0,ncol(S))
   if( sum(rix)!=0 ) {
     P1 = table(seq(1,nrow(rix)), rix, nrow(rix), nrow(S));
@@ -300,7 +311,7 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R,
 
     # apply all pruning 
     fall = (fSizes & fScores & fParents);
-    
+
     # deduplication of join outputs
     Dedup = removeEmpty(target=map, margin="rows", select=fall) != 0
     #P = (Dedup %*% P) != 0, replaced by below (easier sparsity propagation)

@@ -28,56 +28,54 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToBit implements IMapToData {
 
-    private BitSet _data;
+	private BitSet _data;
 
-    public MapToBit(int size){
-        _data = new BitSet(size);
-    }
+	public MapToBit(int size){
+		_data = new BitSet(size);
+	}
 
-    @Override
-    public int getIndex(int n) {
-        return _data.get(n)? 1: 0;
-    }
+	@Override
+	public int getIndex(int n) {
+		return _data.get(n)? 1: 0;
+	}
 
-    @Override
-    public void fill(int v) {
-        if(v == 1)
-            _data.flip(0, _data.length());
-    }
+	@Override
+	public void fill(int v) {
+		if(v == 1)
+			_data.flip(0, _data.length());
+	}
 
 	@Override
 	public long getInMemorySize() {
 		return getInMemorySize(_data.size());
 	}
 
-    public static long getInMemorySize(int dataLength){
-        long size = 16; // object header
+	public static long getInMemorySize(int dataLength){
+		long size = 16; // object header
 		size += MemoryEstimates.bitSetCost(dataLength);
 		return size;
-    }
+	}
 
-    @Override
-    public void set(int n, int v) {
-        _data.set(n, v == 1);
-    }
-    
-    @Override
+	@Override
+	public void set(int n, int v) {
+		_data.set(n, v == 1);
+	}
+	
+	@Override
 	public void write(DataOutput out) throws IOException {
-        long[] internals =  _data.toLongArray();
-        out.writeInt(internals.length);
-        for(int i = 0; i < internals.length; i++)
-            out.writeLong(internals[i]);
+		long[] internals =  _data.toLongArray();
+		out.writeInt(internals.length);
+		for(int i = 0; i < internals.length; i++)
+			out.writeLong(internals[i]);
 	}
 
 	@Override
 	public MapToBit readFields(DataInput in) throws IOException {
-        long[] internalLong = new long[in.readInt()];
-        for(int i = 0; i < internalLong.length; i++)
-            internalLong[i] = in.readLong();
-        
-        _data = BitSet.valueOf(internalLong);
-        return this;
+		long[] internalLong = new long[in.readInt()];
+		for(int i = 0; i < internalLong.length; i++)
+			internalLong[i] = in.readLong();
+		
+		_data = BitSet.valueOf(internalLong);
+		return this;
 	}
-
-
 }

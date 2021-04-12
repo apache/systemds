@@ -1,0 +1,7 @@
+idx,constrain.type,group.by,group.variable,group.option,variable1,relation1,variable2
+1,variableCompare,FALSE,,,yrs.since.phd,<,yrs.service
+2,instanceCompare,TRUE,rank,Prof,yrs.since.phd,><,salary
+3,valueCompare,FALSE,,,salary,=,78182
+4,variableCompare,TRUE,discipline,B,yrs.service,=,yrs.since.phd
+5,instanceCompare,TRUE,rank,Prof,yrs.since.phd,<>,yrs.service
+6,valueCompare,TRUE,discipline,B,salary,<,90000

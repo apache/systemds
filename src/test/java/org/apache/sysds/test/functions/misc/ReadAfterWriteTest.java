@@ -118,21 +118,18 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 			String filename = output(Integer.toString(suffix));
 			String filename2 = positive ? filename : filename+"_nonexisting";
 			
-		    String HOME = SCRIPT_DIR + TEST_DIR;
+			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", filename, filename2};
 			
 			//run tests
-	        runTest(true, !positive, LanguageException.class, -1);
+			runTest(true, !positive, LanguageException.class, -1);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
-		finally
-		{
-	        //cleanup
-	        TestUtils.clearDirectory(outputDir());
+		finally {
+			TestUtils.clearDirectory(outputDir());
 		}
 	}
 }

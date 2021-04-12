@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 
 import java.util.Comparator;
 
@@ -188,6 +189,7 @@ public class LineageCacheConfig
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		boolean insttype = inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
+			|| inst instanceof GPUInstruction
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
@@ -208,12 +210,20 @@ public class LineageCacheConfig
 			long c2 = ec.getMatrixObject(fedinst.input2).getNumColumns();
 			return(c1 == 1 || c2 == 1);
 		}
-		else { //CPInstruction
+		else if (inst instanceof ComputationCPInstruction) { //CPInstruction
 			ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
 			if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
 				return false;
 			long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
 			long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
+		else { //GPUInstruction
+			GPUInstruction gpuinst = (GPUInstruction)inst;
+			if( !gpuinst._input1.isMatrix() || !gpuinst._input2.isMatrix() )
+				return false;
+			long c1 = ec.getMatrixObject(gpuinst._input1).getNumColumns();
+			long c2 = ec.getMatrixObject(gpuinst._input2).getNumColumns();
 			return(c1 == 1 || c2 == 1);
 		}
 	}

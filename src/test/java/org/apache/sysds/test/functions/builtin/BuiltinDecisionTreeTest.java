@@ -73,8 +73,7 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 
 			HashMap<MatrixValue.CellIndex, Double> actual_M = readDMLMatrixFromOutputDir("M");
-			HashMap<MatrixValue.CellIndex, Double> expected_M = new HashMap<MatrixValue.CellIndex, Double>();
-
+			HashMap<MatrixValue.CellIndex, Double> expected_M = new HashMap<>();
 			expected_M.put(new MatrixValue.CellIndex(1, 1), 1.0);
 			expected_M.put(new MatrixValue.CellIndex(1, 3), 3.0);
 			expected_M.put(new MatrixValue.CellIndex(3, 1), 2.0);

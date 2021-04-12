@@ -38,7 +38,7 @@ import org.apache.sysds.utils.Statistics;
 
 public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
-	
+
 	// commands sent to and excuted by federated workers
 	public enum RequestType {
 		READ_VAR,  // create variable for local data, read on first access
@@ -48,27 +48,26 @@ public class FederatedRequest implements Serializable {
 		EXEC_UDF,  // execute arbitrary user-defined function
 		CLEAR,     // clear all variables and execution contexts (i.e., rmvar ALL)
 	}
-	
+
 	private RequestType _method;
 	private long _id;
 	private long _tid;
 	private List<Object> _data;
 	private boolean _checkPrivacy;
 	private List<Long> _checksums;
-	
-	
+
 	public FederatedRequest(RequestType method) {
 		this(method, FederationUtils.getNextFedDataID(), new ArrayList<>());
 	}
-	
+
 	public FederatedRequest(RequestType method, long id) {
 		this(method, id, new ArrayList<>());
 	}
-	
+
 	public FederatedRequest(RequestType method, long id, Object ... data) {
 		this(method, id, Arrays.asList(data));
 	}
-	
+
 	public FederatedRequest(RequestType method, long id, List<Object> data) {
 		Statistics.incFederated(method);
 		_method = method;
@@ -78,41 +77,41 @@ public class FederatedRequest implements Serializable {
 		if (DMLScript.LINEAGE && method == RequestType.PUT_VAR)
 			setChecksum();
 	}
-	
+
 	public RequestType getType() {
 		return _method;
 	}
-	
+
 	public long getID() {
 		return _id;
 	}
-	
+
 	public long getTID() {
 		return _tid;
 	}
-	
+
 	public void setTID(long tid) {
 		_tid = tid;
 	}
-	
+
 	public Object getParam(int i) {
 		return _data.get(i);
 	}
-	
+
 	public FederatedRequest appendParam(Object obj) {
 		_data.add(obj);
 		return this;
 	}
-	
+
 	public FederatedRequest appendParams(Object ... objs) {
 		_data.addAll(Arrays.asList(objs));
 		return this;
 	}
-	
+
 	public int getNumParams() {
 		return _data.size();
 	}
-	
+
 	public FederatedRequest deepClone() {
 		return new FederatedRequest(_method, _id, new ArrayList<>(_data));
 	}
@@ -128,7 +127,7 @@ public class FederatedRequest implements Serializable {
 	public boolean checkPrivacy(){
 		return _checkPrivacy;
 	}
-	
+
 	public void setChecksum() {
 		// Calculate Adler32 checksum. This is used as a leaf node of Lineage DAGs
 		// in the workers, and helps to uniquely identify a node (tracing PUT)
@@ -141,23 +140,23 @@ public class FederatedRequest implements Serializable {
 			throw new DMLException(e);
 		}
 	}
-	
+
 	public long getChecksum(int i) {
 		return _checksums.get(i);
 	}
-	
+
 	private void calcChecksum() throws IOException {
 		for (Object ob : _data) {
 			if (!(ob instanceof CacheBlock) && !(ob instanceof ScalarObject))
 				continue;
-			
+
 			Checksum checksum = new Adler32();
 			if (ob instanceof ScalarObject) {
 				byte bytes[] = ((ScalarObject)ob).getStringValue().getBytes();
 				checksum.update(bytes, 0, bytes.length);
 				_checksums.add(checksum.getValue());
 			}
-			
+
 			if (ob instanceof CacheBlock) {
 				try {
 					CacheBlock cb = (CacheBlock)ob;
@@ -174,7 +173,7 @@ public class FederatedRequest implements Serializable {
 			}
 		}
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("FederatedRequest[");
@@ -182,7 +181,8 @@ public class FederatedRequest implements Serializable {
 		sb.append(_id); sb.append(";");
 		sb.append("t"); sb.append(_tid); sb.append(";");
 		if( _method != RequestType.PUT_VAR )
-			sb.append(Arrays.toString(_data.toArray())); sb.append("]");
+			sb.append(Arrays.toString(_data.toArray()));
+		sb.append("]");
 		return sb.toString();
 	}
 }

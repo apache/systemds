@@ -19,13 +19,13 @@
 
 package org.apache.sysds.test.functions.transform;
 
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -50,9 +50,9 @@ public class TransformApplyEmptyRecodeMapTest extends AutomatedTestBase
 			FrameBlock meta = new FrameBlock(new ValueType[]{ValueType.STRING}, new String[]{"C1"});
 			
 			//execute transform apply
-			Encoder encoder = EncoderFactory.createEncoder(
+			MultiColumnEncoder encoder = EncoderFactory.createEncoder(
 				"{ids:true, recode:[1]}", data.getColumnNames(), meta.getSchema(), meta);
-			MatrixBlock out = encoder.apply(data, new MatrixBlock(rows, cols, true));
+			MatrixBlock out = encoder.apply(data);
 			
 			//check outputs
 			Assert.assertEquals(rows, out.getNumRows());

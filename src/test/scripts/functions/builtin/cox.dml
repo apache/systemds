@@ -1,0 +1,70 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+num_records = $n;
+lambda = $l;
+p_event = $p;
+# parameters related to the cox model
+num_features = $m;
+sparsity = $sp;
+p_censor = 1 - p_event; # prob. that record is censored
+n_seed = $sd;
+
+v = $v;
+# generate feature matrix
+X_t = rand (rows = num_records, cols = num_features, min = 1, max = 5, pdf = "uniform", sparsity = sparsity, seed = n_seed);
+# generate coefficients
+B = rand (rows = num_features, cols = 1, min = -1.0, max = 1.0, pdf = "uniform", sparsity = 1.0, seed = n_seed);
+
+# generate timestamps
+U = rand (rows = num_records, cols = 1, min = 0.000000001, max = 1, seed = n_seed);
+T_1 = (-log (U) / (lambda * exp (X_t %*% B)) ) ^ (1/v);
+
+Y = matrix (0, rows = num_records, cols = 2);
+event = floor (rand (rows = num_records, cols = 1, min = (1 - p_censor), max = (1 + p_event), seed = n_seed));
+n_time = sum (event);
+Y[,2] = event;
+
+# binning of event times
+min_T = min (T_1);
+max_T = max (T_1);
+# T_1 = T_1 - min_T;
+len = max_T - min_T;
+num_bins = len / n_time;
+T_1 = ceil (T_1 / num_bins);
+
+# print ("min(T) " + min(T) + " max(T) " + max(T));
+Y[,1] = T_1;
+
+X = cbind (Y, X_t);
+
+TE = matrix ("1 2", rows = 2, cols = 1);
+F = seq (1, num_features);
+R = matrix (0, rows = 1, cols = 1);
+
+[M, S, T, COV, RT, XO] = cox(X, TE, F, R, $alpha, $tol, $moi, $mii);
+
+write(M, $M);
+write(S, $S);
+write(T, $T);
+write(COV, $COV);
+write(RT, $RT);
+write(XO, $XO);

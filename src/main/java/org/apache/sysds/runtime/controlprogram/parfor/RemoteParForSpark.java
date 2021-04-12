@@ -19,12 +19,10 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,7 +30,6 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.parser.ParForStatementBlock;
 import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
@@ -70,7 +67,7 @@ public class RemoteParForSpark
 	private static final IDSequence _jobID = new IDSequence();
 	
 	public static RemoteParForJobReturn runJob(long pfid, String prog, HashMap<String, byte[]> clsMap, List<Task> tasks,
-		ExecutionContext ec, ArrayList<ResultVar> resultVars, boolean cpCaching, int numMappers, boolean topLevelPF)
+		ExecutionContext ec, Set<String> brVars, List<ResultVar> resultVars, boolean cpCaching, int numMappers, boolean topLevelPF)
 	{
 		String jobname = "ParFor-ESP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -89,9 +86,8 @@ public class RemoteParForSpark
 
 		// broadcast the inputs except the result variables
 		Map<String, Broadcast<CacheBlock>> brInputs = null;
-		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS) {
-			brInputs = broadcastInputs(sec, resultVars);
-		}
+		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS)
+			brInputs = broadcastInputs(sec, brVars);
 		
 		//prepare lineage
 		Map<String, String> serialLineage = DMLScript.LINEAGE ? ec.getLineage().serialize() : null;
@@ -124,15 +120,7 @@ public class RemoteParForSpark
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Map<String, Broadcast<CacheBlock>> broadcastInputs(SparkExecutionContext sec, ArrayList<ParForStatementBlock.ResultVar> resultVars) {
-		LocalVariableMap inputs = sec.getVariables();
-		// exclude the result variables
-		// TODO use optimizer-picked list of amenable objects (e.g., size constraints)
-		Set<String> retVars = resultVars.stream()
-			.map(v -> v._name).collect(Collectors.toSet());
-		Set<String> brVars = inputs.keySet().stream()
-			.filter(v -> !retVars.contains(v)).collect(Collectors.toSet());
-		
+	private static Map<String, Broadcast<CacheBlock>> broadcastInputs(SparkExecutionContext sec, Set<String> brVars) {
 		// construct broadcast objects
 		Map<String, Broadcast<CacheBlock>> result = new HashMap<>();
 		for (String key : brVars) {

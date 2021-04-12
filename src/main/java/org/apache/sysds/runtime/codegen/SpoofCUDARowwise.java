@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import java.util.ArrayList;
 
 public class SpoofCUDARowwise extends SpoofRowwise implements SpoofCUDAOperator {
+	private static final long serialVersionUID = 3080001135814944399L;
 	private static final Log LOG = LogFactory.getLog(SpoofCUDARowwise.class.getName());
 	private final int ID;
 	private final PrecisionProxy call;

@@ -76,8 +76,8 @@ public class MapToInt implements IMapToData {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-        sb.append("\nDataLength: " + this._data.length);
-        sb.append(Arrays.toString(this._data));
+		sb.append("\nDataLength: " + this._data.length);
+		sb.append(Arrays.toString(this._data));
 		return sb.toString();
 	}
 

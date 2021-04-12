@@ -28,81 +28,80 @@ import org.junit.Test;
 
 public class genOffsetOLETest {
 
-    @Test
-    public void testEmpty() {
-        int[] offsets = new int[0];
-        int len = 0;
-        ColGroupOLE.genOffsetBitmap(offsets, len);
-    }
+	@Test
+	public void testEmpty() {
+		int[] offsets = new int[0];
+		int len = 0;
+		ColGroupOLE.genOffsetBitmap(offsets, len);
+	}
 
-    @Test
-    public void testSingleElement_01() {
-        int[] offsets = new int[1];
-        int len = 1;
-        offsets[0] = 5;
-        char[] res = ColGroupOLE.genOffsetBitmap(offsets, len);
-        assertArrayEquals(new char[] {1, 5}, res);
-    }
+	@Test
+	public void testSingleElement_01() {
+		int[] offsets = new int[1];
+		int len = 1;
+		offsets[0] = 5;
+		char[] res = ColGroupOLE.genOffsetBitmap(offsets, len);
+		assertArrayEquals(new char[] {1, 5}, res);
+	}
 
-    @Test
-    public void testSingleElement_02() {
-        int[] offsets = new int[1];
-        int len = 1;
-        offsets[0] = 65535;
-        int[] res = conv(ColGroupOLE.genOffsetBitmap(offsets, len));
-        assertArrayEquals(new int[] {0, 1, 0}, res);
-    }
+	@Test
+	public void testSingleElement_02() {
+		int[] offsets = new int[1];
+		int len = 1;
+		offsets[0] = 65535;
+		int[] res = conv(ColGroupOLE.genOffsetBitmap(offsets, len));
+		assertArrayEquals(new int[] {0, 1, 0}, res);
+	}
 
-    @Test
-    public void testSingleElement_03() {
-        int[] offsets = new int[1];
-        int len = 1;
-        offsets[0] = 65536;
-        int[] res = conv(ColGroupOLE.genOffsetBitmap(offsets, len));
-        assertArrayEquals(new int[] {0, 1, 1}, res);
-    }
+	@Test
+	public void testSingleElement_03() {
+		int[] offsets = new int[1];
+		int len = 1;
+		offsets[0] = 65536;
+		int[] res = conv(ColGroupOLE.genOffsetBitmap(offsets, len));
+		assertArrayEquals(new int[] {0, 1, 1}, res);
+	}
 
-    @Test
-    public void testSingleElement_04() {
-        int[] offsets = new int[1];
-        int len = 1;
-        offsets[0] = 65534;
-        char[] res = ColGroupOLE.genOffsetBitmap(offsets, len);
-        assertArrayEquals(new char[] {1, 65534}, res);
-    }
+	@Test
+	public void testSingleElement_04() {
+		int[] offsets = new int[1];
+		int len = 1;
+		offsets[0] = 65534;
+		char[] res = ColGroupOLE.genOffsetBitmap(offsets, len);
+		assertArrayEquals(new char[] {1, 65534}, res);
+	}
 
-    @Test
-    public void testTwoElements_01() {
-        int[] offsets = new int[2];
-        int len = 2;
-        offsets[0] = 0;
-        offsets[1] = 65536;
-        int[] res = conv(ColGroupOLE.genOffsetBitmap(offsets, len));
-        assertArrayEquals(new int[] {1, 0, 1, 1}, res);
-    }
+	@Test
+	public void testTwoElements_01() {
+		int[] offsets = new int[2];
+		int len = 2;
+		offsets[0] = 0;
+		offsets[1] = 65536;
+		int[] res = conv(ColGroupOLE.genOffsetBitmap(offsets, len));
+		assertArrayEquals(new int[] {1, 0, 1, 1}, res);
+	}
 
-    @Test
-    public void testTwoElements_02() {
-        int[] offsets = new int[2];
-        int len = 2;
-        offsets[0] = 65536;
-        offsets[1] = 65536 + 1;
-        int[] res = conv(ColGroupOLE.genOffsetBitmap(offsets, len));
-        assertArrayEquals(new int[] {0, 2, 1, 2}, res);
-    }
+	@Test
+	public void testTwoElements_02() {
+		int[] offsets = new int[2];
+		int len = 2;
+		offsets[0] = 65536;
+		offsets[1] = 65536 + 1;
+		int[] res = conv(ColGroupOLE.genOffsetBitmap(offsets, len));
+		assertArrayEquals(new int[] {0, 2, 1, 2}, res);
+	}
 
-    @Test
-    public void encodeChar() {
-        char v = (char) (CompressionSettings.BITMAP_BLOCK_SZ % (CompressionSettings.BITMAP_BLOCK_SZ));
-        assertEquals(0, (int) v);
-    }
+	@Test
+	public void encodeChar() {
+		char v = (char) (CompressionSettings.BITMAP_BLOCK_SZ % (CompressionSettings.BITMAP_BLOCK_SZ));
+		assertEquals(0, (int) v);
+	}
 
-    private int[] conv(char[] i) {
-        int[] o = new int[i.length];
-        int k = 0;
-        for(char ii : i)
-            o[k++] = ii;
-        return o;
-    }
-
+	private static int[] conv(char[] i) {
+		int[] o = new int[i.length];
+		int k = 0;
+		for(char ii : i)
+			o[k++] = ii;
+		return o;
+	}
 }

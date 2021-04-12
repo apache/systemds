@@ -250,7 +250,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),fcall.getName());
 				if (fblock == null) {
-					if( Builtins.contains(fcall.getName(), true, false) )
+					if( Builtins.contains(fcall.getName(), true, false) 
+						|| DMLProgram.isInternalNamespace(fcall.getNamespace()))
 						return false;
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " 
 						+ fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
@@ -604,16 +605,17 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				di.setValueType(fexpr.getValueType());
 				tmp.add(new AssignmentStatement(di, fexpr, di));
 				//add hoisted dml-bodied builtin function to program (if not already loaded)
-				if( Builtins.contains(fexpr.getName(), true, false)
-					&& !prog.getDefaultFunctionDictionary().containsFunction(
-						Builtins.getInternalFName(fexpr.getName(), DataType.SCALAR))
-					&& !prog.getDefaultFunctionDictionary().containsFunction(
-						Builtins.getInternalFName(fexpr.getName(), DataType.MATRIX))) {
+				FunctionDictionary<FunctionStatementBlock> fdict = prog.getBuiltinFunctionDictionary();
+				if( Builtins.contains(fexpr.getName(), true, false) && (fdict == null ||
+					(!fdict.containsFunction(Builtins.getInternalFName(fexpr.getName(), DataType.SCALAR))
+					&& !fdict.containsFunction(Builtins.getInternalFName(fexpr.getName(), DataType.MATRIX)))) )
+				{
+					fdict = prog.createNamespace(DMLProgram.BUILTIN_NAMESPACE);
 					Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
-						.loadAndParseBuiltinFunction(fexpr.getName(), fexpr.getNamespace());
+						.loadAndParseBuiltinFunction(fexpr.getName(), DMLProgram.BUILTIN_NAMESPACE);
 					for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
-						if( !prog.getDefaultFunctionDictionary().containsFunction(fsb.getKey()) )
-							prog.getDefaultFunctionDictionary().addFunction(fsb.getKey(), fsb.getValue());
+						if( !fdict.containsFunction(fsb.getKey()) )
+							fdict.addFunction(fsb.getKey(), fsb.getValue());
 						fsb.getValue().setDMLProg(prog);
 					}
 				}

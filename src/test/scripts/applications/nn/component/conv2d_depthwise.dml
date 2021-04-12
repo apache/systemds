@@ -1,0 +1,94 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+source("scripts/nn/layers/conv2d_depthwise.dml") as conv2d_depthwise
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+conv2d_depthwise = function() {
+  /*
+   * Test for the 2D depthwise convolution function.
+   */
+  print("Testing the 2D depthwise convolution function.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 2  # num channels
+  Hin = 3  # input height
+  Win = 3  # input width
+  M = 2  # num filters per input channel (i.e. depth multiplier)
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 1
+  pad = 1
+  X = matrix(seq(1,N*C*Hin*Win), rows=N, cols=C*Hin*Win) / (N*C*Hin*Win) * 2 - 1  # normalized
+
+  # Create layer
+  W = matrix(seq(1,C*M*Hf*Wf), rows=C, cols=M*Hf*Wf) / (C*M*Hf*Wf) * 2 - 1  # normalized
+  b = matrix(seq(1,C*M), rows=C*M, cols=1) / (C*M)^2  # non-zero & non-one
+
+  # Forward
+  [out, Hout, Wout] = conv2d_depthwise::forward(X, W, b, Hin, Win, M, Hf, Wf, stride, stride,
+                                                pad, pad)
+
+  # Equivalency check
+  target = matrix("2.13040113  3.20447516  2.16743827
+                   3.30324078  4.94212961  3.30324078
+                   2.16743827  3.20447516  2.13040113
+
+                   0.52623457  0.85030866  0.67438275
+                   1.11574078  1.75462961  1.2824074
+                   0.89660496  1.35030866  0.97067899
+
+                  -0.30015433 -0.42052469 -0.15200615
+                  -0.15509261 -0.1828704   0.01157404
+                   0.07021603  0.07947529  0.1442901
+
+                  -0.90432101 -1.27469134 -0.64506173
+                  -0.8425926  -1.12037039 -0.50925928
+                  -0.20061731 -0.2746914  -0.01543214
+
+
+                  -0.31404325 -0.62885809 -0.49922845
+                  -0.86342597 -1.55787039 -1.19675934
+                  -0.94367278 -1.62885797 -1.20293212
+
+                   0.0817901   0.01697529  0.00771603
+                  -0.05092596 -0.2453704  -0.21759261
+                  -0.21450615 -0.48302469 -0.36265433
+
+                   1.25540125  1.74614203  1.1813271
+                   1.67824078  2.31712961  1.51157403
+                   0.95910496  1.24614203  0.81095684
+
+                   2.65123463  3.8919754   2.68827152
+                   3.99074078  5.87962961  3.99074078
+                   2.68827152  3.8919754   2.65123463", rows=N, cols=C*M*Hout*Wout)
+
+  for (i in 1:nrow(out)) {
+    for(j in 1:ncol(out)) {
+      rel_error = test_util::check_rel_error(as.scalar(out[i,j]),
+                                             as.scalar(target[i,j]), 1e-3, 1e-4)
+    }
+  }
+}
+
+conv2d_depthwise()

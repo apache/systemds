@@ -1466,9 +1466,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * only done if 'awareDestNZ=true', 
 	 * 
 	 * @param rl row lower index, 0-based
-	 * @param ru row upper index, 0-based
+	 * @param ru row upper index, 0-based, inclusive
 	 * @param cl column lower index, 0-based
-	 * @param cu column upper index, 0-based
+	 * @param cu column upper index, 0-based, inclusive
 	 * @param src matrix block
 	 * @param awareDestNZ
 	 *           true, forces (1) to remove existing non-zeros in the index range of the 
@@ -2424,6 +2424,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	////////
 	// Estimates size and sparsity
 
+	public static long getHeaderSize() {
+		// basic variables and references sizes
+		long size = 16; // header
+		size += 12; // 3 x ints (rlen, clen, ennz/row)
+		size += 1; // boolean (sparse)
+		size += 3; // padding
+		size += 8; // nonZeros
+		size += 2 * 8; // object references
+		return size;
+	}
+	
 	public long estimateSizeInMemory() {
 		return estimateSizeInMemory(rlen, clen, getSparsity());
 	}
@@ -2432,7 +2443,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//determine sparse/dense representation
 		boolean sparse = evalSparseFormatInMemory(nrows, ncols, (long)(sparsity*nrows*ncols));
-		
+
 		//estimate memory consumption for sparse/dense
 		if( sparse )
 			return estimateSizeSparseInMemory(nrows, ncols, sparsity);
@@ -2440,14 +2451,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return estimateSizeDenseInMemory(nrows, ncols);
 	}
 
-	public static long estimateSizeDenseInMemory(long nrows, long ncols)
-	{
-		// basic variables and references sizes
-		double size = 44;
-		
-		// core dense matrix block (double array)
-		size += 8d * nrows * ncols;
-		
+	public static long estimateSizeDenseInMemory(long nrows, long ncols) {
+		double size = getHeaderSize()
+			+ DenseBlockFactory.estimateSizeDenseInMemory(nrows, ncols);
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
@@ -2456,15 +2462,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return estimateSizeSparseInMemory(nrows, ncols, sparsity, DEFAULT_SPARSEBLOCK);
 	}
 	
-	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, SparseBlock.Type stype)
-	{
-		// basic variables and references sizes
-		double size = 44;
-		
-		// delegate memory estimate to individual sparse blocks
-		size += SparseBlockFactory.estimateSizeSparseInMemory(
-			stype, nrows, ncols, sparsity);
-		
+	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, SparseBlock.Type stype) {
+		double size = getHeaderSize() + ((sparsity == 0) ? 0 : //allocated on demand
+			SparseBlockFactory.estimateSizeSparseInMemory(stype, nrows, ncols, sparsity));
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
@@ -2619,7 +2619,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public long getInMemorySize() {
 		//in-memory size given by header if not allocated
 		if( !isAllocated() ) 
-			return 44;
+			return getHeaderSize();
 		//in-memory size of dense/sparse representation
 		return !sparse ? estimateSizeDenseInMemory(rlen, clen) :
 			estimateSizeSparseInMemory(rlen, clen, getSparsity(),
@@ -5374,7 +5374,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		double w = thatScalar;
 		
 		//sparse-unsafe ctable execution
-		//(because input values of 0 are invalid and have to result in errors) 		
+		//(because input values of 0 are invalid and have to result in errors)
 		//resultBlock guaranteed to be allocated for ctableexpand
 		//each row in resultBlock will be allocated and will contain exactly one value
 		int maxCol = 0;

@@ -56,11 +56,11 @@ public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-            // {2, 1000}, 
+			// {2, 1000}, 
 			{10, 100}, 
 			// {100, 10}, {1000, 1}, 
 			// {10, 2000}, {2000, 10}
-        });
+		});
 	}
 
 	@Test

@@ -449,6 +449,11 @@ public class GPUMemoryManager {
 	public void removeGPUObject(GPUObject gpuObj) {
 		if(LOG.isDebugEnabled())
 			LOG.debug("Removing the GPU object: " + gpuObj);
+		
+		// clear reference in MatrixObject if exists (could be a clone)
+		if(gpuObj.mat.getGPUObject(gpuObj.getGPUContext()) == gpuObj)
+			gpuObj.mat.removeGPUObject(gpuObj.getGPUContext());
+		
 		matrixMemoryManager.gpuObjects.remove(gpuObj);
 	}
 

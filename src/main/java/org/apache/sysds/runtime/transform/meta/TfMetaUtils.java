@@ -147,6 +147,25 @@ public class TfMetaUtils
 		return arr;
 	}
 
+	public static int parseJsonObjectID(JSONObject colspec, String[] colnames, int minCol, int maxCol, boolean ids) throws JSONException {
+		int ix;
+		if(ids) {
+			ix = colspec.getInt("id");
+			if(maxCol != -1 && ix >= maxCol)
+				ix = -1;
+			if(minCol != -1 && ix >= 0)
+				ix -= minCol - 1;
+		}
+		else {
+			ix = ArrayUtils.indexOf(colnames, colspec.get("name")) + 1;
+		}
+		if(ix > 0)
+			return ix;
+		else if(minCol == -1 && maxCol == -1)
+			throw new RuntimeException("Specified column '" + colspec.get(ids ? "id" : "name") + "' does not exist.");
+		return -1;
+	}
+
 	public static int[] parseJsonObjectIDList(JSONObject spec, String[] colnames, String group, int minCol, int maxCol)
 		throws JSONException {
 		List<Integer> colList = new ArrayList<>();
@@ -157,22 +176,9 @@ public class TfMetaUtils
 			JSONArray colspecs = (JSONArray) spec.get(group);
 			for(Object o : colspecs) {
 				JSONObject colspec = (JSONObject) o;
-				int ix;
-				if(ids) {
-					ix = colspec.getInt("id");
-					if(maxCol != -1 && ix >= maxCol)
-						ix = -1;
-					if(minCol != -1 && ix >= 0)
-						ix -= minCol - 1;
-				}
-				else {
-					ix = ArrayUtils.indexOf(colnames, colspec.get("name")) + 1;
-				}
-				if(ix > 0)
-					colList.add(ix);
-				else if(minCol == -1 && maxCol == -1)
-					throw new RuntimeException(
-						"Specified column '" + colspec.get(ids ? "id" : "name") + "' does not exist.");
+				int id = parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
+				if(id > 0)
+					colList.add(id);
 			}
 
 			// ensure ascending order of column IDs
@@ -181,6 +187,17 @@ public class TfMetaUtils
 
 		return arr;
 	}
+
+	/**
+	 * Get K value used for calculation during feature hashing from parsed specifications.
+	 * @param parsedSpec parsed specifications
+	 * @return K value
+	 * @throws JSONException if JSONException occurs
+	 */
+	public static long getK(JSONObject parsedSpec) throws JSONException {
+		return parsedSpec.getLong("K");
+	}
+
 
 	/**
 	 * Reads transform meta data from an HDFS file path and converts it into an in-memory
@@ -338,8 +355,8 @@ public class TfMetaUtils
 			if( map == null )
 				throw new IOException("Binning map for column '"+name+"' (id="+colID+") not existing.");
 			String[] fields = map.split(TfUtils.TXMTD_SEP);
-			double min = UtilFunctions.parseToDouble(fields[1], UtilFunctions.defaultNaString);
-			double binwidth = UtilFunctions.parseToDouble(fields[3], UtilFunctions.defaultNaString);
+			double min = Double.parseDouble(fields[1]);
+			double binwidth = Double.parseDouble(fields[3]);
 			int nbins = UtilFunctions.parseToInt(fields[4]);
 			//materialize bins to support equi-width/equi-height
 			for( int i=0; i<nbins; i++ ) { 

@@ -127,7 +127,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 	}
 
 	private static void initFrameData(FrameBlock frame, FrameBlock verificationFrame, String decapitalize) {
-		List<Integer> bins = new ArrayList<Integer>();
+		List<Integer> bins = new ArrayList<>();
 		String[] correctStrings = getCorrectData(numberDataPoints, bins);
 		String[] corruptedStrings;
 		if (corruptData) {
@@ -150,7 +150,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 
 		String[] allCountries = new String[] {"Austria", "Belarus", "Denmark", "Germany", "Italy", "Liechtenstein"};
 
-		List<String> chosenCountries = new ArrayList<String>();
+		List<String> chosenCountries = new ArrayList<>();
 		int remainingDataPoints = numberDataPoints;
 		bins.add(0);
 		for (int i = 0; i < allCountries.length-1; i++) {

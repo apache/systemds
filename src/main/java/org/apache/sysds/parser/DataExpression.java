@@ -1088,12 +1088,12 @@ public class DataExpression extends DataIdentifier
 				}
 
 				// DEFAULT for "sep" : ","
-				if (getVarParam(DELIM_DELIMITER) == null || getVarParam(DELIM_DELIMITER).equals(";")) {
+				if (getVarParam(DELIM_DELIMITER) == null) {
 					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
 				}
 				else {
 					if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
-					&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
+						&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
 					{
 						raiseValidateError("For delimited file '" + getVarParam(DELIM_DELIMITER) 
 								+  "' must be a string value ", conditional);

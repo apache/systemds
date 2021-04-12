@@ -256,7 +256,7 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			LongWritable key = new LongWritable();
 			Text value = new Text();
 			FastStringTokenizer st = new FastStringTokenizer(' ');
-//			_job.set("textinputformat.record.delimiter", );
+
 			RecordReader<LongWritable,Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
 			try {
 				//counting without locking as conflicts unlikely

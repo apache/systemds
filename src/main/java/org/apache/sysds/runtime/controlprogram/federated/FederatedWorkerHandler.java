@@ -230,7 +230,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// TODO send FileFormatProperties with request and use them for CSV, this is currently a workaround so reading
 		// of CSV files works
 		if(fmt == FileFormat.CSV)
-			cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim, mtd.getSparseDelim()));
+			cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, DataExpression.DEFAULT_DELIM_DELIMITER,
+				DataExpression.DEFAULT_DELIM_SPARSE));
 		cd.enableCleanup(false); // guard against deletion
 		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 

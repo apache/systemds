@@ -203,6 +203,32 @@ public class FederationUtils {
 		}
 	}
 
+	public static MatrixBlock aggProd(Future<FederatedResponse>[] ffr, FederationMap fedMap, AggregateUnaryOperator aop) {
+		try {
+			boolean rowFed = fedMap.getType() == FederationMap.FType.ROW;
+			MatrixBlock ret = rowFed ?
+				new MatrixBlock(ffr.length, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], ffr.length, 1.0);
+			MatrixBlock res = rowFed ?
+				new MatrixBlock(1, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], 1, 1.0);
+
+			for(int i = 0; i < ffr.length; i++) {
+				MatrixBlock tmp = (MatrixBlock) ffr[i].get().getData()[0];
+				if(rowFed)
+					ret.copy(i, i, 0, ret.getNumColumns()-1, tmp, true);
+				else
+					ret.copy(0, ret.getNumRows()-1, i, i, tmp, true);
+			}
+
+			LibMatrixAgg.aggregateUnaryMatrix(ret, res, aop);
+			return res;
+		}
+		catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
 	public static MatrixBlock aggMinMaxIndex(Future<FederatedResponse>[] ffr, boolean isMin, FederationMap map) {
 		try {
 			MatrixBlock prev = (MatrixBlock) ffr[0].get().getData()[0];
@@ -410,6 +436,8 @@ public class FederationUtils {
 			return aggAdd(ffr);
 		else if( aop.aggOp.increOp.fn instanceof Mean )
 			return aggMean(ffr, map);
+		else if(aop.aggOp.increOp.fn instanceof Multiply)
+			return aggProd(ffr, map, aop);
 		else if (aop.aggOp.increOp.fn instanceof Builtin) {
 			if ((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
 				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)) {
@@ -419,7 +447,7 @@ public class FederationUtils {
 			else if((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MININDEX)
 				|| (((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAXINDEX)) {
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MININDEX;
-				return aggMinMaxIndex(ffr,isMin, map);
+				return aggMinMaxIndex(ffr, isMin, map);
 			}
 			else throw new DMLRuntimeException("Unsupported aggregation operator: "
 					+ aop.aggOp.increOp.fn.getClass().getSimpleName());

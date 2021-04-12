@@ -19,6 +19,7 @@
 #
 #-------------------------------------------------------------
 
+
 if ($rP) {
     A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
         ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
@@ -29,6 +30,5 @@ if ($rP) {
             	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
 
-s = sum(A);
-
+s = colProds(A);
 write(s, $out_S);

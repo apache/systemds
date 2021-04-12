@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
+import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -228,7 +229,8 @@ public class FEDInstructionUtils {
 		else if(inst instanceof SpoofCPInstruction) {
 			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
 			Class<?> scla = instruction.getOperatorClass().getSuperclass();
-			if(    (scla == SpoofCellwise.class && instruction.isFederated(ec))
+			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class)
+					&& instruction.isFederated(ec))
 				|| (scla == SpoofRowwise.class && instruction.isFederated(ec, FType.ROW))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
 			}
@@ -337,7 +339,8 @@ public class FEDInstructionUtils {
 		else if(inst instanceof SpoofSPInstruction) {
 			SpoofSPInstruction instruction = (SpoofSPInstruction) inst;
 			Class<?> scla = instruction.getOperatorClass().getSuperclass();
-			if(    (scla == SpoofCellwise.class && instruction.isFederated(ec))
+			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class)
+					&& instruction.isFederated(ec))
 				|| (scla == SpoofRowwise.class && instruction.isFederated(ec, FType.ROW))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(inst.getInstructionString());
 			}

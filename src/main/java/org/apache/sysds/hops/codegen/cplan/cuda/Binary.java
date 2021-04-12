@@ -30,6 +30,19 @@ public class Binary extends CodeTemplate
 	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs,
 		boolean scalarVector, boolean scalarInput, boolean vectorVector)
 	{
+		if(type == CNodeBinary.BinType.VECT_CBIND) {
+			if(scalarInput)
+				return "\t\tVector<T>& %TMP% = vectCbindWrite(%IN1%, %IN2%, this);\n";
+			else if (!vectorVector)
+				return sparseLhs ? 
+					"\t\tVector<T>& %TMP% = vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%, this);\n" :
+					"\t\tVector<T>& %TMP% = vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%, this);\n";
+			else //vect/vect
+				return sparseLhs ?
+					"\t\tVector<T>& %TMP% = vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN1%, %LEN2%, this);\n" :
+					"\t\tVector<T>& %TMP% = vectCbindWrite(%IN1%, %IN2%, %POS1%, %POS2%, %LEN1%, %LEN2%, this);\n";
+		}
+		
 		if(isSinglePrecision()) {
 			switch(type) {
 				case DOT_PRODUCT:
@@ -84,15 +97,7 @@ public class Binary extends CodeTemplate
 					else
 						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				}
-
-				case VECT_CBIND:
-					if(scalarInput)
-						return "		Vector<T>& %TMP% = vectCbindWrite(%IN1%, %IN2%, this);\n";
-					else
-//						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
-						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		Vector<T>& %TMP% = vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%, this);\n";
-
-					//vector-vector operations
+				//vector-vector operations
 				case VECT_MULT:
 				case VECT_DIV:
 				case VECT_MINUS:
@@ -222,16 +227,8 @@ public class Binary extends CodeTemplate
 //						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vect" + vectName + "Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 						return sparseLhs ? "		Vector<T>& %TMP% = vect" + vectName + "Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%, this);\n" : "		Vector<T>& %TMP% = vect" + vectName + "Write(%IN1%, %IN2%, static_cast<uint32_t>(%POS1%), %LEN%, this);\n";
 				}
-
-				case VECT_CBIND:
-					if(scalarInput)
-						return "		Vector<T>& %TMP% = vectCbindWrite(%IN1%, %IN2%, this);\n";
-					else
-//						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
-//						return sparseLhs ? "	T[] %TMP% = vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		T* %TMP% = vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
-						return sparseLhs ? "	T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" : "		Vector<T>& %TMP% = vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%, this);\n";
 					
-					//vector-vector operations
+				//vector-vector operations
 				case VECT_MULT:
 				case VECT_DIV:
 				case VECT_MINUS:

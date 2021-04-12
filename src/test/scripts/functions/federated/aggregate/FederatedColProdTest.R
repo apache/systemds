@@ -18,17 +18,15 @@
 # under the License.
 #
 #-------------------------------------------------------------
+args<-commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+library("matrixStats")
 
-if ($rP) {
-    A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
-    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
-} else {
-    A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
-            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
-}
-
-s = sum(A);
-
-write(s, $out_S);
+X1 = as.matrix(readMM(paste(args[1], "X1.mtx", sep="")));
+X2 = as.matrix(readMM(paste(args[1], "X2.mtx", sep="")));
+X3 = as.matrix(readMM(paste(args[1], "X3.mtx", sep="")));
+X4 = as.matrix(readMM(paste(args[1], "X4.mtx", sep="")));
+X = rbind(X1, X2, X3, X4)
+R = colProds(X)
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep=""));

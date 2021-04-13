@@ -92,7 +92,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 
-	private static final double eps = Math.pow(10, -10);
+	private static double eps = Math.pow(10, -10);
 	
 	@Override
 	public void setUp() {
@@ -813,6 +813,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			runRScript(true);
 			
+			if(testname.equals(TEST_NAME38) && TEST_GPU)
+				eps = Math.pow(10, -7);
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
@@ -823,9 +825,9 @@ public class RowAggTmplTest extends AutomatedTestBase
 			
 			//ensure full aggregates for certain patterns
 			if( testname.equals(TEST_NAME15) )
-				Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
+				Assert.assertFalse(heavyHittersContainsSubString("uark+"));
 			if( testname.equals(TEST_NAME17) )
-				Assert.assertTrue(!heavyHittersContainsSubString(RightIndex.OPCODE));
+				Assert.assertFalse(heavyHittersContainsSubString(RightIndex.OPCODE));
 			if( testname.equals(TEST_NAME28) || testname.equals(TEST_NAME45) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("sp_spoofRA", 2));
@@ -833,14 +835,14 @@ public class RowAggTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString(RightIndex.OPCODE));
 			if( testname.equals(TEST_NAME31) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2));
+				Assert.assertFalse(heavyHittersContainsSubString("spoofRA", 2));
 			if( testname.equals(TEST_NAME35) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("cbind"));
 			if( testname.equals(TEST_NAME36) )
-				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
+				Assert.assertFalse(heavyHittersContainsSubString("xor"));
 			if( testname.equals(TEST_NAME41) )
-				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
+				Assert.assertFalse(heavyHittersContainsSubString("seq"));
 			if( testname.equals(TEST_NAME42) )
 				Assert.assertTrue(!heavyHittersContainsSubString("min","nmin") 
 					&& !heavyHittersContainsSubString("spoof", 2));

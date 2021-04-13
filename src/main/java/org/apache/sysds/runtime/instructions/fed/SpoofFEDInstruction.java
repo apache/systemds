@@ -173,18 +173,19 @@ public class SpoofFEDInstruction extends FEDInstruction
 	private void setOutputCellwise(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
 	{
 		FType fedType = fedMap.getType();
+		SpoofCellwise.AggOp aggOp = ((SpoofCellwise)_op).getAggOp();
 		if(((SpoofCellwise)_op).getCellType() == SpoofCellwise.CellType.FULL_AGG) { // full aggregation
 			AggregateUnaryOperator aop = null;
-			if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM
-				|| ((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM_SQ) {
+			if(aggOp == SpoofCellwise.AggOp.SUM
+				|| aggOp == SpoofCellwise.AggOp.SUM_SQ) {
 				// aggregate partial results from federated responses as sum
 				aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 			}
-			else if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.MIN) {
+			else if(aggOp == SpoofCellwise.AggOp.MIN) {
 				// aggregate partial results from federated responses as min
 				aop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin");
 			}
-			else if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.MAX) {
+			else if(aggOp == SpoofCellwise.AggOp.MAX) {
 				// aggregate partial results from federated responses as max
 				aop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax");
 			}
@@ -200,14 +201,14 @@ public class SpoofFEDInstruction extends FEDInstruction
 			}
 			else if(fedType == FType.COL) {
 				AggregateUnaryOperator aop = null;
-				if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM
-				|| ((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM_SQ) {
+				if(aggOp == SpoofCellwise.AggOp.SUM
+				|| aggOp == SpoofCellwise.AggOp.SUM_SQ) {
 					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+");
 				}
-				else if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.MIN) {
+				else if(aggOp == SpoofCellwise.AggOp.MIN) {
 					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin");
 				}
-				else if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.MAX) {
+				else if(aggOp == SpoofCellwise.AggOp.MAX) {
 					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax");
 				}
 				else {
@@ -222,14 +223,14 @@ public class SpoofFEDInstruction extends FEDInstruction
 		else if(((SpoofCellwise)_op).getCellType() == SpoofCellwise.CellType.COL_AGG) { // col aggregation
 			if(fedType == FType.ROW) {
 				AggregateUnaryOperator aop = null;
-				if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM
-					|| ((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.SUM_SQ) {
+				if(aggOp == SpoofCellwise.AggOp.SUM
+					|| aggOp == SpoofCellwise.AggOp.SUM_SQ) {
 					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+");
 				}
-				else if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.MIN) {
+				else if(aggOp == SpoofCellwise.AggOp.MIN) {
 					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin");
 				}
-				else if(((SpoofCellwise)_op).getAggOp() == SpoofCellwise.AggOp.MAX) {
+				else if(aggOp == SpoofCellwise.AggOp.MAX) {
 					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax");
 				}
 				else {
@@ -265,29 +266,30 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 	private void setOutputRowwise(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
 	{
-		if(((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.FULL_AGG) { // full aggregation
+		SpoofRowwise.RowType rowType = ((SpoofRowwise)_op).getRowType();
+		if(rowType == SpoofRowwise.RowType.FULL_AGG) { // full aggregation
 			// aggregate partial results from federated responses as sum
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 			ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
 		}
-		else if(((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.ROW_AGG) { // row aggregation
+		else if(rowType == SpoofRowwise.RowType.ROW_AGG) { // row aggregation
 			// aggregate partial results from federated responses as rowSum
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+");
 			ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 		}
-		else if(((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.COL_AGG
-		|| ((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.COL_AGG_T
-		|| ((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.COL_AGG_B1
-		|| ((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.COL_AGG_B1_T
-		|| ((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.COL_AGG_B1R
-		|| ((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.COL_AGG_CONST) { // col aggregation
+		else if(rowType == SpoofRowwise.RowType.COL_AGG
+		|| rowType == SpoofRowwise.RowType.COL_AGG_T
+		|| rowType == SpoofRowwise.RowType.COL_AGG_B1
+		|| rowType == SpoofRowwise.RowType.COL_AGG_B1_T
+		|| rowType == SpoofRowwise.RowType.COL_AGG_B1R
+		|| rowType == SpoofRowwise.RowType.COL_AGG_CONST) { // col aggregation
 			// aggregate partial results from federated responses as colSum
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+");
 			ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 		}
-		else if(((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.NO_AGG
-			|| ((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.NO_AGG_B1
-			|| ((SpoofRowwise)_op).getRowType() == SpoofRowwise.RowType.NO_AGG_CONST) { // no aggregation
+		else if(rowType == SpoofRowwise.RowType.NO_AGG
+			|| rowType == SpoofRowwise.RowType.NO_AGG_B1
+			|| rowType == SpoofRowwise.RowType.NO_AGG_CONST) { // no aggregation
 			if(fedMap.getType() == FType.ROW) {
 				// bind partial results from federated responses
 				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));

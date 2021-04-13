@@ -243,10 +243,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 				else {
 					throw new DMLRuntimeException("Aggregation type for federated spoof instructions not supported yet.");
 				}
-				else {
-					throw new DMLRuntimeException("Aggregation operation not supported yet.");
-				}
-				ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
 			else if(cellType == CellType.COL_AGG) { // col aggregation
 				if(fedType == FType.ROW) {
@@ -268,7 +264,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 				else {
 					throw new DMLRuntimeException("Aggregation type for federated spoof instructions not supported yet.");
 				}
-				ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
 			else if(cellType == CellType.NO_AGG) { // no aggregation
 				if(fedType == FType.ROW) //rbind

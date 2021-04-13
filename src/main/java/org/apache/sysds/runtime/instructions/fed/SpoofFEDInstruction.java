@@ -159,7 +159,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 		else if(_op.getClass().getSuperclass() == SpoofMultiAggregate.class)
 			setOutputMultiAgg(ec, response, fedMap);
 		else
-			throw new DMLRuntimeException("Federated code generation only supported for cellwise and rowwise templates.");
+			throw new DMLRuntimeException("Federated code generation only supported for cellwise, rowwise, and multiaggregate templates.");
 	}
 
 	private static boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum) {

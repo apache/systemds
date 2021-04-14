@@ -156,7 +156,7 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 		ExecMode platformOld = setExecMode(mode);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		String data = HOME + "/data/Salaries.csv";
+		String data = DATASET_DIR+ "Salaries.csv";
 		
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

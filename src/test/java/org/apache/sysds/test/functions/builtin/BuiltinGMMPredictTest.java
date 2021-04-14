@@ -37,7 +37,7 @@ public class BuiltinGMMPredictTest extends AutomatedTestBase {
 	private final static double tol = 1e-3;
 	private final static double tol2 = 1e-5;
 
-	private final static String DATASET = SCRIPT_DIR + "functions/transform/input/iris/iris.csv";
+	private final static String DATASET = DATASET_DIR+"iris/iris.csv";
 
 	@Override
 	public void setUp() {

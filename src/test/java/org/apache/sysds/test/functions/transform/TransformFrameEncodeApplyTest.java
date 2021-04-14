@@ -387,8 +387,8 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-nvargs", 
-				"DATA=" + HOME + "input/" + DATASET,
-				"TFSPEC=" + HOME + "input/" + SPEC,
+				"DATA=" + DATASET_DIR + DATASET,
+				"TFSPEC=" + DATASET_DIR + SPEC,
 				"TFDATA1=" + output("tfout1"),
 				"TFDATA2=" + output("tfout2"),
 				"OFMT=" + ofmt };

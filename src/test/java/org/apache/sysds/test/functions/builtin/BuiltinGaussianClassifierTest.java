@@ -35,7 +35,7 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinGaussianClassifierTest.class.getSimpleName() + "/";
 
-	private final static String DATASET = SCRIPT_DIR + "functions/transform/input/iris/iris.csv";
+	private final static String DATASET = DATASET_DIR + "iris/iris.csv";
 
 
 	@Override

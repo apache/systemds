@@ -85,14 +85,14 @@ public class TransformCSVFrameEncodeDecodeTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-explain","-args", 
-				HOME + "input/" + DATASET, output("R") };
+				DATASET_DIR + DATASET, output("R") };
 			
 			runTest(true, false, null, -1); 
 			
 			//read input/output and compare
 			FrameReader reader1 = FrameReaderFactory.createFrameReader(FileFormat.CSV, 
 					new FileFormatPropertiesCSV(false, ",", false));
-			FrameBlock fb1 = reader1.readFrameFromHDFS(HOME + "input/" + DATASET, -1L, -1L);
+			FrameBlock fb1 = reader1.readFrameFromHDFS(DATASET_DIR + DATASET, -1L, -1L);
 			FrameReader reader2 = FrameReaderFactory.createFrameReader(FileFormat.CSV);
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
 			String[][] R1 = DataConverter.convertToStringFrame(fb1);

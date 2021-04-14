@@ -36,7 +36,7 @@ public class LineageTraceFrameTest extends LineageBase {
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME = "LineageTraceFrame";
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceFrameTest.class.getSimpleName() + "/";
-	private final static String DATASET = SCRIPT_DIR +"functions/transform/input/EEG.csv";
+	private final static String DATASET = DATASET_DIR +"EEG.csv";
 	private final static int TEST_VARIANTS = 5;
 	
 	@Override

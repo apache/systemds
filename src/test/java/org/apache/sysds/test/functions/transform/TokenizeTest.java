@@ -192,7 +192,7 @@ public class TokenizeTest extends AutomatedTestBase  {
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + test_name + ".dml";
             programArgs = new String[]{"-stats","-args",
-                    HOME + "input/" + DATASET, HOME + test_name + ".json", output("R") };
+                    DATASET_DIR + DATASET, HOME + test_name + ".json", output("R") };
 
             runTest(true, false, null, -1);
 //          TODO add assertion tests

@@ -18,7 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
-F1 = read("src/test/scripts/functions/builtin/data/Salaries_testDenialConstraints.csv", data_type="frame", format="csv");
-F2 = read("src/test/scripts/functions/builtin/data/DenialConstraints.csv", data_type="frame", format="csv");
+F1 = read($input, data_type="frame", format="csv");
+F2 = read($dc, data_type="frame", format="csv");
 output1 = denialConstraints(F1, F2);
 write(output1, $M);

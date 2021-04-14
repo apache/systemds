@@ -39,7 +39,7 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeApplySubsetTest.class.getSimpleName() + "/";
 	
 	//dataset and transform tasks without missing values
-	private final static String DATASET1 	= "homes3/homes.csv";
+	private final static String DATASET1 	= DATASET_DIR +"homes3/homes.csv";
 	
 	@Override
 	public void setUp()  {
@@ -131,8 +131,7 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "recompile_hops", "-args", 
-				HOME + "input/" + DATASET1, output("R") };
+			programArgs = new String[]{"-explain", "recompile_hops", "-args", DATASET1, output("R") };
 	
 			runTest(true, false, null, -1); 
 			

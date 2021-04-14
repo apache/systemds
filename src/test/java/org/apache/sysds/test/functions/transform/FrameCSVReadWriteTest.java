@@ -39,7 +39,7 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameCSVReadWriteTest.class.getSimpleName() + "/";
 	
 	//dataset and transform tasks without missing values
-	private final static String DATASET 	= "csv_mix/quotes1.csv";
+	private final static String DATASET 	= DATASET_DIR + "csv_mix/quotes1.csv";
 	
 	@Override
 	public void setUp()  {
@@ -82,15 +82,14 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain","-args", 
-				HOME + "input/" + DATASET, output("R") };
+			programArgs = new String[]{"-explain","-args", DATASET, output("R") };
 	
 			runTest(true, false, null, -1); 
 			
 			//read input/output and compare
 			FrameReader reader1 = FrameReaderFactory.createFrameReader(FileFormat.CSV, 
 					new FileFormatPropertiesCSV(false, ",", false));
-			FrameBlock fb1 = reader1.readFrameFromHDFS(HOME + "input/" + DATASET, -1L, -1L);
+			FrameBlock fb1 = reader1.readFrameFromHDFS( DATASET, -1L, -1L);
 			FrameReader reader2 = FrameReaderFactory.createFrameReader(FileFormat.CSV);
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
 			String[][] R1 = DataConverter.convertToStringFrame(fb1);

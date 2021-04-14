@@ -24,6 +24,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkException;
 import org.apache.spark.api.java.JavaRDD;
@@ -36,15 +38,17 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtilsExt;
-import org.apache.sysds.test.AutomatedTestBase;
 
 public class RDDConverterUtilsExtTest extends AutomatedTestBase {
+
+	protected static final Log LOG = LogFactory.getLog(RDDConverterUtilsExtTest.class.getName());
 
 	private static SparkConf conf;
 	private static JavaSparkContext sc;
@@ -155,6 +159,11 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 		// next test that tries to create a SparkContext would fail)
 		try{
 			sc.stop();
+		}
+		catch(Exception e){
+			// Since it does not matter if the Spark context is closed properly if only executing component tests
+			// we simply write a warning. This is because our GitHub Actions tests fail sometimes with the spark context.
+			LOG.warn(e);
 		}
 		finally{
 			sc = null;

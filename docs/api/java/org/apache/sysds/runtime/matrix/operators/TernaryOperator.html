@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10};
+var methods = {"i0":10,"i1":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -169,7 +169,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/TernaryOperator.html#TernaryOperator-org.apache.sysds.runtime.functionobjects.TernaryValueFunction-">TernaryOperator</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/TernaryValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">TernaryValueFunction</a>&nbsp;p)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/TernaryOperator.html#TernaryOperator-org.apache.sysds.runtime.functionobjects.TernaryValueFunction-int-">TernaryOperator</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/TernaryValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">TernaryValueFunction</a>&nbsp;p,
+               int&nbsp;numThreads)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -187,6 +188,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/TernaryOperator.html#getNumThreads--">getNumThreads</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/TernaryOperator.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
@@ -229,13 +234,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="TernaryOperator-org.apache.sysds.runtime.functionobjects.TernaryValueFunction-">
+<a name="TernaryOperator-org.apache.sysds.runtime.functionobjects.TernaryValueFunction-int-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>TernaryOperator</h4>
-<pre>public&nbsp;TernaryOperator(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/TernaryValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">TernaryValueFunction</a>&nbsp;p)</pre>
+<pre>public&nbsp;TernaryOperator(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/TernaryValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">TernaryValueFunction</a>&nbsp;p,
+                       int&nbsp;numThreads)</pre>
 </li>
 </ul>
 </li>
@@ -246,6 +252,15 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a name="getNumThreads--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNumThreads</h4>
+<pre>public&nbsp;int&nbsp;getNumThreads()</pre>
+</li>
+</ul>
 <a name="toString--">
 <!--   -->
 </a>
@@ -328,6 +343,6 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

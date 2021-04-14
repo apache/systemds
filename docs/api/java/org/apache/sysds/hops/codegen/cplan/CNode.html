@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":6,"i25":10,"i26":10};
+var methods = {"i0":6,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":6,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":6,"i27":10,"i28":10,"i29":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -152,7 +152,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>abstract <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#codegen-boolean-">codegen</a></span>(boolean&nbsp;sparse)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#codegen-boolean-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">codegen</a></span>(boolean&nbsp;sparse,
+       <a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -196,65 +197,77 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getVectorLength--">getVectorLength</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getVarname-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">getVarname</a></span>(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</code>&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getVectorLength-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">getVectorLength</a></span>(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</code>&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#hashCode--">hashCode</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isGenerated--">isGenerated</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isLiteral--">isLiteral</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>abstract boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isSupported-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">isSupported</a></span>(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</code>&nbsp;</td>
+</tr>
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isVisited--">isVisited</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetGenerated--">resetGenerated</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetHash--">resetHash</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetVisitStatus--">resetVisitStatus</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setDataType-org.apache.sysds.common.Types.DataType-">setDataType</a></span>(<a href="../../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt)</code>&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setLiteral-boolean-">setLiteral</a></span>(boolean&nbsp;literal)</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setNumCols-long-">setNumCols</a></span>(long&nbsp;cols)</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setNumRows-long-">setNumRows</a></span>(long&nbsp;rows)</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setOutput-org.apache.sysds.hops.codegen.cplan.CNode-">setOutput</a></span>(<a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html" title="class in org.apache.sysds.hops.codegen.cplan">CNode</a>&nbsp;output)</code>&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setOutputDims--">setOutputDims</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i27" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setVarName-java.lang.String-">setVarName</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+</tr>
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setVisited--">setVisited</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setVisited-boolean-">setVisited</a></span>(boolean&nbsp;flag)</code>&nbsp;</td>
 </tr>
@@ -351,13 +364,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getVarname()</pre>
 </li>
 </ul>
-<a name="getVectorLength--">
+<a name="getVarname-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getVarname</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getVarname(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</pre>
+</li>
+</ul>
+<a name="getVectorLength-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getVectorLength</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getVectorLength()</pre>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getVectorLength(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</pre>
 </li>
 </ul>
 <a name="getClassname--">
@@ -504,13 +526,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;void&nbsp;resetVisitStatus()</pre>
 </li>
 </ul>
-<a name="codegen-boolean-">
+<a name="codegen-boolean-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>codegen</h4>
-<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;codegen(boolean&nbsp;sparse)</pre>
+<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;codegen(boolean&nbsp;sparse,
+                               <a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</pre>
 </li>
 </ul>
 <a name="setOutputDims--">
@@ -538,7 +561,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <a name="equals-java.lang.Object-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>equals</h4>
 <pre>public&nbsp;boolean&nbsp;equals(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;that)</pre>
@@ -546,6 +569,24 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
 </dl>
+</li>
+</ul>
+<a name="isSupported-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isSupported</h4>
+<pre>public abstract&nbsp;boolean&nbsp;isSupported(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</pre>
+</li>
+</ul>
+<a name="setVarName-java.lang.String-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>setVarName</h4>
+<pre>public&nbsp;void&nbsp;setVarName(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</pre>
 </li>
 </ul>
 </li>
@@ -617,6 +658,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

@@ -143,4 +143,13 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 				return true;
 		return false;
 	}
+	
+	public boolean isFederated(ExecutionContext ec, FType type) {
+		for(CPOperand input : _in) {
+			Data data = ec.getVariable(input);
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated(type))
+				return true;
+		}
+		return false;
+	}
 }

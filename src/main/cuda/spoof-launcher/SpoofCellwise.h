@@ -133,7 +133,7 @@ struct SpoofCellwiseNoAgg {
 		
 		// num ctas
 		// ToDo: adaptive VT
-		const uint32_t VT = 4;
+		const uint32_t VT = 1;
 		uint32_t NB = std::ceil((N + NT * VT - 1) / (NT * VT));
 		if(sparse_input)
 			NB = input.front().rows;

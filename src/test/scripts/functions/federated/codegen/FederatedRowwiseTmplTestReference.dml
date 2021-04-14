@@ -20,8 +20,14 @@
 #-------------------------------------------------------------
 
 test_num = $in_test_num;
+row_part = $in_rp;
 
-X = rbind(read($in_X1), read($in_X2));
+if(row_part) {
+  X = rbind(read($in_X1), read($in_X2));
+}
+else {
+  X = cbind(read($in_X1), read($in_X2));
+}
 
 if(test_num == 1) {
   # X ... 6x4 matrix

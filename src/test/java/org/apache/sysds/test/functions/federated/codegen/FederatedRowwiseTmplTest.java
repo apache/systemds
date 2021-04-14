@@ -58,6 +58,8 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 	public int rows;
 	@Parameterized.Parameter(2)
 	public int cols;
+	@Parameterized.Parameter(3)
+	public boolean row_partitioned;
 
 	@Override
 	public void setUp() {
@@ -68,21 +70,31 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 	public static Collection<Object[]> data() {
 		// rows must be even
 		return Arrays.asList(new Object[][] {
-			// {test_num, rows, cols}
+			// {test_num, rows, cols, row_paritioned}
 
-			{1, 6, 4},
-			{2, 6, 2},
-			{3, 6, 4},
-			{4, 6, 4},
-			{10, 150, 10},
-			{15, 150, 10},
-			{20, 1500, 8},
-			{21, 1500, 8},
-			{25, 600, 10},
-			{31, 150, 10},
-			{40, 300, 20},
-			{45, 1500, 100},
-			{50, 376, 4},
+			// row partitioned
+			{1, 6, 4, true},
+			{2, 6, 2, true},
+			{3, 6, 4, true},
+			{4, 6, 4, true},
+			{10, 150, 10, true},
+			{15, 150, 10, true},
+			{20, 1500, 8, true},
+			{21, 1500, 8, true},
+			{25, 600, 10, true},
+			{31, 150, 10, true},
+			{40, 300, 20, true},
+			{45, 1500, 100, true},
+			{50, 376, 4, true},
+			
+			// col partitioned (should not create a federated spoof instruction)
+			// column partitioned federated data is not supported within federated rowwise templates
+			{1, 6, 4, false},
+			{3, 6, 4, false},
+			{15, 150, 10, false},
+			{25, 600, 10, false},
+			{31, 150, 10, false},
+			{50, 376, 4, false},
 		});
 	}
 
@@ -91,15 +103,15 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
-	// @Test
-	// public void federatedCodegenRowwiseSingleNode() {
-	// 	testFederatedCodegenRowwise(ExecMode.SINGLE_NODE);
-	// }
-	// 
-	// @Test
-	// public void federatedCodegenRowwiseSpark() {
-	// 	testFederatedCodegenRowwise(ExecMode.SPARK);
-	// }
+	@Test
+	public void federatedCodegenRowwiseSingleNode() {
+		testFederatedCodegenRowwise(ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void federatedCodegenRowwiseSpark() {
+		testFederatedCodegenRowwise(ExecMode.SPARK);
+	}
 	
 	@Test
 	public void federatedCodegenCellwiseHybrid() {
@@ -113,8 +125,12 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		int fed_rows = rows / 2;
+		int fed_rows = rows;
 		int fed_cols = cols;
+		if(row_partitioned)
+			fed_rows /= 2;
+		else
+			fed_cols /= 2;
 
 		// generate dataset
 		// matrix handled by two federated workers
@@ -137,6 +153,7 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-stats", "-nvargs",
 			"in_X1=" + input("X1"), "in_X2=" + input("X2"),
+			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
 			"in_test_num=" + Integer.toString(test_num),
 			"out_Z=" + expected(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
@@ -146,6 +163,7 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 		programArgs = new String[] {"-stats", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
 			"in_test_num=" + Integer.toString(test_num),
 			"rows=" + rows, "cols=" + cols,
 			"out_Z=" + output(OUTPUT_NAME)};
@@ -159,7 +177,8 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 		TestUtils.shutdownThreads(thread1, thread2);
 
 		// check for federated operations
-		Assert.assertTrue(heavyHittersContainsSubString("fed_spoofRA"));
+		if(row_partitioned)
+			Assert.assertTrue(heavyHittersContainsSubString("fed_spoofRA"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

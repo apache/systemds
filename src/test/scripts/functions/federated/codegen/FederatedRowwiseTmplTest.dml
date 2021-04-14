@@ -20,9 +20,16 @@
 #-------------------------------------------------------------
 
 test_num = $in_test_num;
+row_part = $in_rp;
 
-X = federated(addresses=list($in_X1, $in_X2),
-  ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)));
+if(row_part) {
+  X = federated(addresses=list($in_X1, $in_X2),
+    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)));
+}
+else {
+  X = federated(addresses=list($in_X1, $in_X2),
+    ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)));
+}
 
 if(test_num == 1) {
   # X ... 6x4 matrix

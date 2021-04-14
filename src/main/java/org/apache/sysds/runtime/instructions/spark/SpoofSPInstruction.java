@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -683,6 +684,15 @@ public class SpoofSPInstruction extends SPInstruction {
 		for(CPOperand input : _in) {
 			Data data = ec.getVariable(input);
 			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+				return true;
+		}
+		return false;
+	}
+	
+	public boolean isFederated(ExecutionContext ec, FType type) {
+		for(CPOperand input : _in) {
+			Data data = ec.getVariable(input);
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated(type))
 				return true;
 		}
 		return false;

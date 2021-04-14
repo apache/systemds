@@ -222,8 +222,9 @@ public class FEDInstructionUtils {
 		else if(inst instanceof SpoofCPInstruction) {
 			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
 			if((instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class
-					|| instruction.getOperatorClass().getSuperclass() == SpoofRowwise.class)
-				&& instruction.isFederated(ec)) {
+					&& instruction.isFederated(ec))
+				|| (instruction.getOperatorClass().getSuperclass() == SpoofRowwise.class
+					&& instruction.isFederated(ec, FType.ROW))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
 			}
 		}
@@ -329,8 +330,9 @@ public class FEDInstructionUtils {
 		else if(inst instanceof SpoofSPInstruction) {
 			SpoofSPInstruction instruction = (SpoofSPInstruction) inst;
 			if((instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class
-					|| instruction.getOperatorClass().getSuperclass() == SpoofRowwise.class)
-				&& instruction.isFederated(ec)) {
+					&& instruction.isFederated(ec))
+				|| (instruction.getOperatorClass().getSuperclass() == SpoofRowwise.class
+					&& instruction.isFederated(ec, FType.ROW))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}

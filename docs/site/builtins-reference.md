@@ -1,6 +1,7 @@
 ---
 layout: site
-title: Builtin Reference---
+title: Builtin Functions Reference
+---
 <!--
 {% comment %}
 Licensed to the Apache Software Foundation (ASF) under one or more

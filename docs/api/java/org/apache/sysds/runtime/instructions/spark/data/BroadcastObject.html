@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -156,31 +156,27 @@ extends <a href="../../../../../../../org/apache/sysds/runtime/instructions/spar
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#getNonPartitionedBroadcast--">getNonPartitionedBroadcast</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#getNonPartitionedBroadcastSize--">getNonPartitionedBroadcastSize</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/PartitionedBroadcast.html" title="class in org.apache.sysds.runtime.instructions.spark.data">PartitionedBroadcast</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#getPartitionedBroadcast--">getPartitionedBroadcast</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#getPartitionedBroadcastSize--">getPartitionedBroadcastSize</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#getSize--">getSize</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#isNonPartitionedBroadcastValid--">isNonPartitionedBroadcastValid</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#isPartitionedBroadcastValid--">isPartitionedBroadcastValid</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#setNonPartitionedBroadcast-org.apache.spark.broadcast.Broadcast-long-">setNonPartitionedBroadcast</a></span>(org.apache.spark.broadcast.Broadcast&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html" title="type parameter in BroadcastObject">T</a>&gt;&nbsp;bvar,
                           long&nbsp;size)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html#setPartitionedBroadcast-org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast-long-">setPartitionedBroadcast</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/PartitionedBroadcast.html" title="class in org.apache.sysds.runtime.instructions.spark.data">PartitionedBroadcast</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html" title="type parameter in BroadcastObject">T</a>&gt;&nbsp;bvar,
                        long&nbsp;size)</code>&nbsp;</td>
@@ -269,22 +265,13 @@ extends <a href="../../../../../../../org/apache/sysds/runtime/instructions/spar
 <pre>public&nbsp;org.apache.spark.broadcast.Broadcast&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html" title="type parameter in BroadcastObject">T</a>&gt;&nbsp;getNonPartitionedBroadcast()</pre>
 </li>
 </ul>
-<a name="getPartitionedBroadcastSize--">
+<a name="getSize--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getPartitionedBroadcastSize</h4>
-<pre>public&nbsp;long&nbsp;getPartitionedBroadcastSize()</pre>
-</li>
-</ul>
-<a name="getNonPartitionedBroadcastSize--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getNonPartitionedBroadcastSize</h4>
-<pre>public&nbsp;long&nbsp;getNonPartitionedBroadcastSize()</pre>
+<h4>getSize</h4>
+<pre>public&nbsp;long&nbsp;getSize()</pre>
 </li>
 </ul>
 <a name="isPartitionedBroadcastValid--">
@@ -374,6 +361,6 @@ extends <a href="../../../../../../../org/apache/sysds/runtime/instructions/spar
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

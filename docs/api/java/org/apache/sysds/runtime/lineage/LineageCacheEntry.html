@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -175,15 +175,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheEntry.html#isNullVal--">isNullVal</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheEntry.html#isScalarValue--">isScalarValue</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheEntry.html#setValue-org.apache.sysds.runtime.matrix.data.MatrixBlock-">setValue</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;val)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheEntry.html#setValue-org.apache.sysds.runtime.matrix.data.MatrixBlock-long-">setValue</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;val,
         long&nbsp;computetime)</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheEntry.html#setValue-org.apache.sysds.runtime.instructions.cp.ScalarObject-long-">setValue</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&nbsp;val,
         long&nbsp;computetime)</code>&nbsp;</td>
@@ -285,6 +289,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;boolean&nbsp;isMatrixValue()</pre>
 </li>
 </ul>
+<a name="isScalarValue--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isScalarValue</h4>
+<pre>public&nbsp;boolean&nbsp;isScalarValue()</pre>
+</li>
+</ul>
 <a name="setValue-org.apache.sysds.runtime.matrix.data.MatrixBlock-long-">
 <!--   -->
 </a>
@@ -383,6 +396,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

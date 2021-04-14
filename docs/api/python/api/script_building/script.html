@@ -92,11 +92,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../onnx_systemds/onnx_systemds.html">QuickStart Onnx</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../onnx_systemds/onnx_systemds_design.html">Design</a></li>
-</ul>
 <p class="caption"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../operator/algorithms.html">Algorithms</a></li>
@@ -104,11 +99,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../matrix/matrix.html">Matrix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../matrix/federated.html">Federated</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../operator/operation_node.html">Operation Node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/convert.html">Convert</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/onnx_helper.html">Onnx Helper</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/operator_gen.html">Operator Gen</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/render.html">Render</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/util.html">Util</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Internals API</span></p>
 <ul class="current">
@@ -232,12 +222,24 @@ get the results.</p>
 
 <dl class="py method">
 <dt id="systemds.script_building.script.DMLScript.execute">
-<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lineage</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; Union<span class="p">[</span>py4j.java_gateway.JavaObject<span class="p">, </span>Tuple<span class="p">[</span>py4j.java_gateway.JavaObject<span class="p">, </span>str<span class="p">]</span><span class="p">]</span><a class="headerlink" href="#systemds.script_building.script.DMLScript.execute" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; py4j.java_gateway.JavaObject<a class="headerlink" href="#systemds.script_building.script.DMLScript.execute" title="Permalink to this definition">¶</a></dt>
 <dd><p>If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
 script, then execute our script and return the resultVariables</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>resultVariables of our execution</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.script_building.script.DMLScript.execute_with_lineage">
+<code class="sig-name descname">execute_with_lineage</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>py4j.java_gateway.JavaObject<span class="p">, </span>str<span class="p">]</span><a class="headerlink" href="#systemds.script_building.script.DMLScript.execute_with_lineage" title="Permalink to this definition">¶</a></dt>
+<dd><p>If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
+script, then execute our script and return the resultVariables</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>resultVariables of our execution and the string lineage trace</p>
 </dd>
 </dl>
 </dd></dl>

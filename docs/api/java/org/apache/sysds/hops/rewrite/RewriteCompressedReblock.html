@@ -116,12 +116,11 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">RewriteCompressedReblock</span>
 extends <a href="../../../../../org/apache/sysds/hops/rewrite/StatementBlockRewriteRule.html" title="class in org.apache.sysds.hops.rewrite">StatementBlockRewriteRule</a></pre>
-<div class="block">Rule: CompressedReblock: If config compressed.linalg is enabled, we
- inject compression directions after pread of matrices w/ both dims &gt; 1
- (i.e., multi-column matrices). In case of 'auto' compression, we apply
- compression if the datasize is known to exceed aggregate cluster memory,
- the matrix is used in loops, and all operations are supported over 
- compressed matrices.</div>
+<div class="block">Rule: Compressed Re block if config compressed.linalg is enabled, we inject compression directions after read of
+ matrices if number of rows is above 1000 and cols at least 1.
+ 
+ In case of 'auto' compression, we apply compression if the data size is known to exceed aggregate cluster memory, the
+ matrix is used in loops, and all operations are supported over compressed matrices.</div>
 </li>
 </ul>
 </div>
@@ -357,6 +356,6 @@ extends <a href="../../../../../org/apache/sysds/hops/rewrite/StatementBlockRewr
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

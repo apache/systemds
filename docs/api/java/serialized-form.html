@@ -257,6 +257,66 @@
 </li>
 </ul>
 </li>
+<li class="blockList"><a name="org.apache.sysds.runtime.codegen.SpoofCUDACellwise">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/codegen/SpoofCUDACellwise.html" title="class in org.apache.sysds.runtime.codegen">org.apache.sysds.runtime.codegen.SpoofCUDACellwise</a> extends <a href="org/apache/sysds/runtime/codegen/SpoofCellwise.html" title="class in org.apache.sysds.runtime.codegen">SpoofCellwise</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-5255791443086948200L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>ID</h4>
+<pre>int ID</pre>
+</li>
+<li class="blockList">
+<h4>call</h4>
+<pre><a href="org/apache/sysds/runtime/codegen/SpoofCUDAOperator.PrecisionProxy.html" title="class in org.apache.sysds.runtime.codegen">SpoofCUDAOperator.PrecisionProxy</a> call</pre>
+</li>
+<li class="blockList">
+<h4>ptr</h4>
+<pre>jcuda.Pointer ptr</pre>
+</li>
+<li class="blockListLast">
+<h4>fallback_java_op</h4>
+<pre><a href="org/apache/sysds/runtime/codegen/SpoofCellwise.html" title="class in org.apache.sysds.runtime.codegen">SpoofCellwise</a> fallback_java_op</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.codegen.SpoofCUDARowwise">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/codegen/SpoofCUDARowwise.html" title="class in org.apache.sysds.runtime.codegen">org.apache.sysds.runtime.codegen.SpoofCUDARowwise</a> extends <a href="org/apache/sysds/runtime/codegen/SpoofRowwise.html" title="class in org.apache.sysds.runtime.codegen">SpoofRowwise</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>3080001135814944399L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>ID</h4>
+<pre>int ID</pre>
+</li>
+<li class="blockList">
+<h4>call</h4>
+<pre><a href="org/apache/sysds/runtime/codegen/SpoofCUDAOperator.PrecisionProxy.html" title="class in org.apache.sysds.runtime.codegen">SpoofCUDAOperator.PrecisionProxy</a> call</pre>
+</li>
+<li class="blockListLast">
+<h4>ptr</h4>
+<pre>jcuda.Pointer ptr</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.codegen.SpoofMultiAggregate">
 <!--   -->
 </a>
@@ -347,44 +407,10 @@
 <li class="blockList">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress</h2>
 <ul class="blockList">
-<li class="blockList"><a name="org.apache.sysds.runtime.compress.AbstractCompressedMatrixBlock">
-<!--   -->
-</a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/AbstractCompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">org.apache.sysds.runtime.compress.AbstractCompressedMatrixBlock</a> extends <a href="org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a> implements Serializable</h3>
-<ul class="blockList">
-<li class="blockList">
-<h3>Serialization Methods</h3>
-<ul class="blockList">
-<li class="blockList">
-<h4>readExternal</h4>
-<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;is)
-                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
-<div class="block">Redirects the default java serialization via externalizable to our default 
- hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
-</dl>
-</li>
-<li class="blockListLast">
-<h4>writeExternal</h4>
-<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;os)
-                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
-<div class="block">Redirects the default java serialization via externalizable to our default 
- hadoop writable serialization for efficient broadcast/rdd serialization.</div>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
-</dl>
-</li>
-</ul>
-</li>
-</ul>
-</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.compress.CompressedMatrixBlock">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">org.apache.sysds.runtime.compress.CompressedMatrixBlock</a> extends <a href="org/apache/sysds/runtime/compress/AbstractCompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">AbstractCompressedMatrixBlock</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">org.apache.sysds.runtime.compress.CompressedMatrixBlock</a> extends <a href="org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>7319372019143154058L</dd>
@@ -424,10 +450,10 @@
 <li class="blockList">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup</h2>
 <ul class="blockList">
-<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroup">
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.AColGroup">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroup</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroup</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>2439785418908671481L</dd>
@@ -478,46 +504,26 @@
 <dt>serialVersionUID:</dt>
 <dd>-3204391646123465004L</dd>
 </dl>
-</li>
-<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupDDC1">
-<!--   -->
-</a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDDC1.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupDDC1</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a> implements Serializable</h3>
-<dl class="nameValue">
-<dt>serialVersionUID:</dt>
-<dd>5204955589230760157L</dd>
-</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockListLast">
 <h4>_data</h4>
-<pre>byte[] _data</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/IMapToData.html" title="interface in org.apache.sysds.runtime.compress.colgroup.mapping">IMapToData</a> _data</pre>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupDDC2">
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDDC2.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupDDC2</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
-<dd>-3995768285207071013L</dd>
+<dd>3204391661346504L</dd>
 </dl>
-<ul class="blockList">
-<li class="blockList">
-<h3>Serialized Fields</h3>
-<ul class="blockList">
-<li class="blockListLast">
-<h4>_data</h4>
-<pre>char[] _data</pre>
-</li>
-</ul>
-</li>
-</ul>
 </li>
 <li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupOffset">
 <!--   -->
@@ -563,10 +569,104 @@
 <dd>7450232907594748177L</dd>
 </dl>
 </li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupSDC">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDC</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-12043916423465004L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_indexes</h4>
+<pre>int[] _indexes</pre>
+<div class="block">Sparse row indexes for the data</div>
+</li>
+<li class="blockListLast">
+<h4>_data</h4>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/IMapToData.html" title="interface in org.apache.sysds.runtime.compress.colgroup.mapping">IMapToData</a> _data</pre>
+<div class="block">Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.</div>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-32043916423465004L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>_indexes</h4>
+<pre>int[] _indexes</pre>
+<div class="block">Sparse row indexes for the data</div>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-32043916423425004L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>_indexes</h4>
+<pre>int[] _indexes</pre>
+<div class="block">Sparse row indexes for the data</div>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDCZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-32143916423465004L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_indexes</h4>
+<pre>int[] _indexes</pre>
+<div class="block">Sparse row indexes for the data</div>
+</li>
+<li class="blockListLast">
+<h4>_data</h4>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/IMapToData.html" title="interface in org.apache.sysds.runtime.compress.colgroup.mapping">IMapToData</a> _data</pre>
+<div class="block">Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.</div>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>4870546053280378891L</dd>
@@ -588,7 +688,7 @@
 <li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupValue">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupValue</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupValue</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>3786247536054353658L</dd>
@@ -745,9 +845,13 @@
 <h4>_bcHandle</h4>
 <pre><a href="org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html" title="class in org.apache.sysds.runtime.instructions.spark.data">BroadcastObject</a>&lt;<a href="org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html" title="type parameter in BroadcastObject">T</a> extends <a href="org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&gt; _bcHandle</pre>
 </li>
-<li class="blockListLast">
+<li class="blockList">
 <h4>_gpuObjects</h4>
 <pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">K</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">V</a>&gt; _gpuObjects</pre>
+</li>
+<li class="blockListLast">
+<h4>_lineage</h4>
+<pre><a href="org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a> _lineage</pre>
 </li>
 </ul>
 </li>
@@ -863,9 +967,13 @@
 <h4>_data</h4>
 <pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; _data</pre>
 </li>
-<li class="blockListLast">
+<li class="blockList">
 <h4>_checkPrivacy</h4>
 <pre>boolean _checkPrivacy</pre>
+</li>
+<li class="blockListLast">
+<h4>_checksums</h4>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; _checksums</pre>
 </li>
 </ul>
 </li>
@@ -933,6 +1041,58 @@
 <li class="blockList">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.paramserv</h2>
 <ul class="blockList">
+<li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/paramserv/FederatedPSControlThread.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv">org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread</a> extends <a href="org/apache/sysds/runtime/controlprogram/paramserv/PSWorker.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv">PSWorker</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>6846648059569648791L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_featuresData</h4>
+<pre><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a> _featuresData</pre>
+</li>
+<li class="blockList">
+<h4>_labelsData</h4>
+<pre><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a> _labelsData</pre>
+</li>
+<li class="blockList">
+<h4>_modelVarID</h4>
+<pre>long _modelVarID</pre>
+</li>
+<li class="blockList">
+<h4>_runtimeBalancing</h4>
+<pre><a href="org/apache/sysds/parser/Statement.PSRuntimeBalancing.html" title="enum in org.apache.sysds.parser">Statement.PSRuntimeBalancing</a> _runtimeBalancing</pre>
+</li>
+<li class="blockList">
+<h4>_numBatchesPerEpoch</h4>
+<pre>int _numBatchesPerEpoch</pre>
+</li>
+<li class="blockList">
+<h4>_possibleBatchesPerLocalEpoch</h4>
+<pre>int _possibleBatchesPerLocalEpoch</pre>
+</li>
+<li class="blockList">
+<h4>_weighting</h4>
+<pre>boolean _weighting</pre>
+</li>
+<li class="blockList">
+<h4>_weightingFactor</h4>
+<pre>double _weightingFactor</pre>
+</li>
+<li class="blockListLast">
+<h4>_cycleStartAt0</h4>
+<pre>boolean _cycleStartAt0</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker">
 <!--   -->
 </a>
@@ -954,6 +1114,10 @@
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
+<li class="blockList">
+<h4>_tpool</h4>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ExecutorService</a> _tpool</pre>
+</li>
 <li class="blockList">
 <h4>_workerID</h4>
 <pre>int _workerID</pre>
@@ -2689,7 +2853,7 @@
 <h3>Class <a href="org/apache/sysds/runtime/functionobjects/ParameterizedBuiltin.html" title="class in org.apache.sysds.runtime.functionobjects">org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin</a> extends <a href="org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
-<dd>-5966242955816522697L</dd>
+<dd>-7987603644903675052L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
@@ -3044,27 +3208,31 @@
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_data</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; _data</pre>
-</li>
-<li class="blockList">
-<h4>_dataState</h4>
-<pre>boolean[] _dataState</pre>
-</li>
-<li class="blockList">
-<h4>_names</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; _names</pre>
-</li>
-<li class="blockList">
-<h4>_nCacheable</h4>
-<pre>int _nCacheable</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
+                         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ClassNotFoundException.html?is-external=true" title="class or interface in java.lang">ClassNotFoundException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ClassNotFoundException.html?is-external=true" title="class or interface in java.lang">ClassNotFoundException</a></code></dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_lineage</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; _lineage</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -3146,7 +3314,7 @@
 </li>
 <li class="blockListLast">
 <h4>_encoder</h4>
-<pre><a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> _encoder</pre>
+<pre><a href="org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a> _encoder</pre>
 </li>
 </ul>
 </li>
@@ -3175,6 +3343,74 @@
 <li class="blockListLast">
 <h4>_decoder</h4>
 <pre><a href="org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a> _decoder</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.DiagMatrix">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/fed/ReorgFEDInstruction.DiagMatrix.html" title="class in org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.DiagMatrix</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-3466926635958851402L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_outputID</h4>
+<pre>long _outputID</pre>
+</li>
+<li class="blockList">
+<h4>_r_op</h4>
+<pre><a href="org/apache/sysds/runtime/matrix/operators/ReorgOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ReorgOperator</a> _r_op</pre>
+</li>
+<li class="blockList">
+<h4>_len</h4>
+<pre>int _len</pre>
+</li>
+<li class="blockList">
+<h4>_slice</h4>
+<pre>int[] _slice</pre>
+</li>
+<li class="blockListLast">
+<h4>_rowFed</h4>
+<pre>boolean _rowFed</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.Rdiag">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/fed/ReorgFEDInstruction.Rdiag.html" title="class in org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.Rdiag</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-3466926635958851402L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_outputID</h4>
+<pre>long _outputID</pre>
+</li>
+<li class="blockList">
+<h4>_r_op</h4>
+<pre><a href="org/apache/sysds/runtime/matrix/operators/ReorgOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ReorgOperator</a> _r_op</pre>
+</li>
+<li class="blockList">
+<h4>_slice</h4>
+<pre>int[] _slice</pre>
+</li>
+<li class="blockListLast">
+<h4>_rowFed</h4>
+<pre>boolean _rowFed</pre>
 </li>
 </ul>
 </li>
@@ -3397,6 +3633,15 @@
 <dd>-5222678882354280164L</dd>
 </dl>
 </li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.spark.DeCompressionSPInstruction.DeCompressionFunction">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/spark/DeCompressionSPInstruction.DeCompressionFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark.DeCompressionSPInstruction.DeCompressionFunction</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-6528833083609413922L</dd>
+</dl>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeBuild2Function">
 <!--   -->
 </a>
@@ -3430,8 +3675,8 @@
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockListLast">
-<h4>_raEncoder</h4>
-<pre><a href="org/apache/sysds/runtime/transform/encode/EncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderRecode</a> _raEncoder</pre>
+<h4>_encoder</h4>
+<pre><a href="org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a> _encoder</pre>
 </li>
 </ul>
 </li>
@@ -3469,6 +3714,10 @@
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
+<li class="blockList">
+<h4>_encoder</h4>
+<pre><a href="org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a> _encoder</pre>
+</li>
 <li class="blockListLast">
 <h4>_accMax</h4>
 <pre>org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator _accMax</pre>
@@ -3659,7 +3908,7 @@
 <ul class="blockList">
 <li class="blockList">
 <h4>_maxVal</h4>
-<pre>double _maxVal</pre>
+<pre>long _maxVal</pre>
 </li>
 <li class="blockList">
 <h4>_dirRows</h4>
@@ -3676,6 +3925,26 @@
 <li class="blockListLast">
 <h4>_blen</h4>
 <pre>long _blen</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction.RDDTokenizeFunction">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.RDDTokenizeFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction.RDDTokenizeFunction</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-8788298032616522019L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>_tokenizer</h4>
+<pre><a href="org/apache/sysds/runtime/transform/tokenize/Tokenizer.html" title="class in org.apache.sysds.runtime.transform.tokenize">Tokenizer</a> _tokenizer</pre>
 </li>
 </ul>
 </li>
@@ -5519,9 +5788,17 @@
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockListLast">
+<li class="blockList">
 <h4>fn</h4>
 <pre><a href="org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a> fn</pre>
+</li>
+<li class="blockList">
+<h4>commutative</h4>
+<pre>boolean commutative</pre>
+</li>
+<li class="blockListLast">
+<h4>_k</h4>
+<pre>int _k</pre>
 </li>
 </ul>
 </li>
@@ -5731,8 +6008,8 @@
 <pre>double _constant</pre>
 </li>
 <li class="blockListLast">
-<h4>k</h4>
-<pre>int k</pre>
+<h4>_k</h4>
+<pre>int _k</pre>
 </li>
 </ul>
 </li>
@@ -5770,9 +6047,13 @@
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockListLast">
+<li class="blockList">
 <h4>fn</h4>
 <pre><a href="org/apache/sysds/runtime/functionobjects/TernaryValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">TernaryValueFunction</a> fn</pre>
+</li>
+<li class="blockListLast">
+<h4>_k</h4>
+<pre>int _k</pre>
 </li>
 </ul>
 </li>
@@ -5823,9 +6104,13 @@
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockListLast">
+<li class="blockList">
 <h4>_blocksize</h4>
 <pre>int _blocksize</pre>
+</li>
+<li class="blockListLast">
+<h4>_noEmptyBlocks</h4>
+<pre>boolean _noEmptyBlocks</pre>
 </li>
 </ul>
 </li>
@@ -5948,29 +6233,9 @@
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockList">
-<h4>_headerLine</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> _headerLine</pre>
-</li>
-<li class="blockList">
-<h4>_hasHeader</h4>
-<pre>boolean _hasHeader</pre>
-</li>
-<li class="blockList">
-<h4>_delim</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html?is-external=true" title="class or interface in java.util.regex">Pattern</a> _delim</pre>
-</li>
-<li class="blockList">
-<h4>_delimString</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> _delimString</pre>
-</li>
-<li class="blockList">
+<li class="blockListLast">
 <h4>_NAstrings</h4>
 <pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[] _NAstrings</pre>
-</li>
-<li class="blockListLast">
-<h4>_numInputCols</h4>
-<pre>int _numInputCols</pre>
 </li>
 </ul>
 </li>
@@ -5991,19 +6256,29 @@
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_schema</h4>
-<pre><a href="org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[] _schema</pre>
-</li>
-<li class="blockList">
-<h4>_colList</h4>
-<pre>int[] _colList</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_colnames</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[] _colnames</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;os)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -6019,11 +6294,25 @@
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
+</li>
 <li class="blockListLast">
-<h4>_decoders</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; _decoders</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -6039,15 +6328,25 @@
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_clPos</h4>
-<pre>int[] _clPos</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_cuPos</h4>
-<pre>int[] _cuPos</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;os)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -6063,15 +6362,25 @@
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_dcCols</h4>
-<pre>int[] _dcCols</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_srcCols</h4>
-<pre>int[] _srcCols</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;os)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -6087,15 +6396,25 @@
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_rcMaps</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">K</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">V</a>&gt;[] _rcMaps</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_onOut</h4>
-<pre>boolean _onOut</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -6106,121 +6425,247 @@
 <li class="blockList">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.encode</h2>
 <ul class="blockList">
-<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.Encoder">
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.ColumnEncoder">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.Encoder</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoder</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>2299156350718979064L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_clen</h4>
-<pre>int _clen</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd deserialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_colList</h4>
-<pre>int[] _colList</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;os)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.EncoderBin">
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.ColumnEncoderBin">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderBin.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderBin</a> extends <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderBin.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoderBin</a> extends <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>1917445005206076078L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_numBins</h4>
-<pre>int[] _numBins</pre>
-</li>
-<li class="blockList">
-<h4>_binMins</h4>
-<pre>double[][] _binMins</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_binMaxs</h4>
-<pre>double[][] _binMaxs</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.EncoderComposite">
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderComposite.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderComposite</a> extends <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderComposite.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite</a> extends <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>-8473768154646831882L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_encoders</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; _encoders</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_meta</h4>
-<pre><a href="org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a> _meta</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.EncoderDummycode">
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.ColumnEncoderDummycode">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderDummycode.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderDummycode</a> extends <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoderDummycode</a> extends <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>5832130477659116489L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_domainSizes</h4>
-<pre>int[] _domainSizes</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_dummycodedLength</h4>
-<pre>long _dummycodedLength</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.EncoderFeatureHash">
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.ColumnEncoderFeatureHash">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderFeatureHash.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderFeatureHash</a> extends <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderFeatureHash.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoderFeatureHash</a> extends <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>7435806042138687342L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
+</li>
 <li class="blockListLast">
-<h4>_K</h4>
-<pre>long _K</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.ColumnEncoderPassThrough">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderPassThrough.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoderPassThrough</a> extends <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-8473768154646831882L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialization Methods</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd deserialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
+</li>
+<li class="blockListLast">
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;os)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode</a> extends <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>8213163881283341874L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialization Methods</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
+</li>
+<li class="blockListLast">
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -6229,42 +6674,32 @@
 <li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.EncoderMVImpute">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderMVImpute</a> extends <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderMVImpute</a> extends <a href="org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>9057868620144662194L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_mvMethodList</h4>
-<pre><a href="org/apache/sysds/runtime/transform/encode/EncoderMVImpute.MVMethod.html" title="enum in org.apache.sysds.runtime.transform.encode">EncoderMVImpute.MVMethod</a>[] _mvMethodList</pre>
-</li>
-<li class="blockList">
-<h4>_meanFn</h4>
-<pre><a href="org/apache/sysds/runtime/functionobjects/Mean.html" title="class in org.apache.sysds.runtime.functionobjects">Mean</a> _meanFn</pre>
-</li>
-<li class="blockList">
-<h4>_meanList</h4>
-<pre><a href="org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>[] _meanList</pre>
-</li>
-<li class="blockList">
-<h4>_countList</h4>
-<pre>long[] _countList</pre>
-</li>
-<li class="blockList">
-<h4>_replacementList</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[] _replacementList</pre>
-</li>
-<li class="blockList">
-<h4>_rcList</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; _rcList</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_hist</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">K</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">V</a>&gt; _hist</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -6273,55 +6708,102 @@
 <li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.EncoderOmit">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderOmit.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderOmit</a> extends <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderOmit.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderOmit</a> extends <a href="org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>1978852120416654195L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_federated</h4>
-<pre>boolean _federated</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_rmRows</h4>
-<pre>boolean[] _rmRows</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.EncoderPassThrough">
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.LegacyEncoder">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderPassThrough.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderPassThrough</a> extends <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.LegacyEncoder</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
-<dd>-8473768154646831882L</dd>
-</dl>
-</li>
-<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.EncoderRecode">
-<!--   -->
-</a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/encode/EncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.EncoderRecode</a> extends <a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> implements Serializable</h3>
-<dl class="nameValue">
-<dt>serialVersionUID:</dt>
-<dd>8213163881283341874L</dd>
+<dd>2299156350718979064L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
-<h3>Serialized Fields</h3>
+<h3>Serialization Methods</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>_rcdMaps</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">K</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">V</a>&gt; _rcdMaps</pre>
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd deserialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
 </li>
 <li class="blockListLast">
-<h4>_rcdMapsPart</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">K</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">V</a>&gt; _rcdMapsPart</pre>
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;os)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.encode.MultiColumnEncoder">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.MultiColumnEncoder</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialization Methods</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
+                         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ClassNotFoundException.html?is-external=true" title="class or interface in java.lang">ClassNotFoundException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ClassNotFoundException.html?is-external=true" title="class or interface in java.lang">ClassNotFoundException</a></code></dd>
+</dl>
+</li>
+<li class="blockListLast">
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -6351,6 +6833,179 @@
 <li class="blockListLast">
 <h4>_rmRows</h4>
 <pre>long _rmRows</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList">
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize</h2>
+<ul class="blockList">
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.tokenize.Tokenizer">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/Tokenizer.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.Tokenizer</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>7155673772374114577L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>tokenizerPre</h4>
+<pre><a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPre.html" title="interface in org.apache.sysds.runtime.transform.tokenize">TokenizerPre</a> tokenizerPre</pre>
+</li>
+<li class="blockListLast">
+<h4>tokenizerPost</h4>
+<pre><a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPost.html" title="interface in org.apache.sysds.runtime.transform.tokenize">TokenizerPost</a> tokenizerPost</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.tokenize.TokenizerPostCount">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPostCount.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPostCount</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>6382000606237705019L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>params</h4>
+<pre>org.apache.sysds.runtime.transform.tokenize.TokenizerPostCount.Params params</pre>
+</li>
+<li class="blockList">
+<h4>numIdCols</h4>
+<pre>int numIdCols</pre>
+</li>
+<li class="blockList">
+<h4>maxTokens</h4>
+<pre>int maxTokens</pre>
+</li>
+<li class="blockListLast">
+<h4>wideFormat</h4>
+<pre>boolean wideFormat</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.tokenize.TokenizerPostHash">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPostHash.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPostHash</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>4763889041868044668L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>params</h4>
+<pre>org.apache.sysds.runtime.transform.tokenize.TokenizerPostHash.Params params</pre>
+</li>
+<li class="blockList">
+<h4>numIdCols</h4>
+<pre>int numIdCols</pre>
+</li>
+<li class="blockList">
+<h4>maxTokens</h4>
+<pre>int maxTokens</pre>
+</li>
+<li class="blockListLast">
+<h4>wideFormat</h4>
+<pre>boolean wideFormat</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.tokenize.TokenizerPostPosition">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPostPosition.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPostPosition</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>3563407270742660830L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>numIdCols</h4>
+<pre>int numIdCols</pre>
+</li>
+<li class="blockList">
+<h4>maxTokens</h4>
+<pre>int maxTokens</pre>
+</li>
+<li class="blockListLast">
+<h4>wideFormat</h4>
+<pre>boolean wideFormat</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.tokenize.TokenizerPreNgram">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPreNgram.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPreNgram</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-6297904316677723802L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>tokenizerPreWhitespaceSplit</h4>
+<pre><a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPreWhitespaceSplit.html" title="class in org.apache.sysds.runtime.transform.tokenize">TokenizerPreWhitespaceSplit</a> tokenizerPreWhitespaceSplit</pre>
+</li>
+<li class="blockListLast">
+<h4>params</h4>
+<pre>org.apache.sysds.runtime.transform.tokenize.TokenizerPreNgram.Params params</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.transform.tokenize.TokenizerPreWhitespaceSplit">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPreWhitespaceSplit.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPreWhitespaceSplit</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>539127244034913364L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>params</h4>
+<pre>org.apache.sysds.runtime.transform.tokenize.TokenizerPreWhitespaceSplit.Params params</pre>
+</li>
+<li class="blockList">
+<h4>idCols</h4>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">E</a>&gt; idCols</pre>
+</li>
+<li class="blockListLast">
+<h4>tokenizeCol</h4>
+<pre>int tokenizeCol</pre>
 </li>
 </ul>
 </li>
@@ -6472,6 +7127,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

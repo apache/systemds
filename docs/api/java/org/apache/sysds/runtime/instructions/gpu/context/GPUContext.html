@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -269,6 +269,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </td>
 </tr>
 <tr id="i23" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUContext.html#shallowCopyGPUObject-org.apache.sysds.runtime.instructions.gpu.context.GPUObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">shallowCopyGPUObject</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a>&nbsp;source,
+                    <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code>
+<div class="block">Shallow copy the given source <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> to a new <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> and 
+ assign that to the given <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching"><code>MatrixObject</code></a>.</div>
+</td>
+</tr>
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUContext.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
@@ -430,6 +438,26 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>mo</code> - a <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching"><code>MatrixObject</code></a> that represents a matrix</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a new <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> instance</dd>
+</dl>
+</li>
+</ul>
+<a name="shallowCopyGPUObject-org.apache.sysds.runtime.instructions.gpu.context.GPUObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>shallowCopyGPUObject</h4>
+<pre>public&nbsp;<a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a>&nbsp;shallowCopyGPUObject(<a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a>&nbsp;source,
+                                      <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</pre>
+<div class="block">Shallow copy the given source <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> to a new <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> and 
+ assign that to the given <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching"><code>MatrixObject</code></a>.
+ This copy doesn't memcopy the device memory.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>source</code> - a <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> which is the source of the copy</dd>
+<dd><code>mo</code> - a <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching"><code>MatrixObject</code></a> to associate with the new <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a new <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> instance</dd>
 </dl>
@@ -690,6 +718,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

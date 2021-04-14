@@ -76,13 +76,13 @@ var activeTableTab = "activeTableTab";
 <li>Summary:&nbsp;</li>
 <li><a href="#nested.classes.inherited.from.class.org.apache.sysds.runtime.instructions.fed.FEDInstruction">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#fields.inherited.from.class.org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction">Field</a>&nbsp;|&nbsp;</li>
-<li>Constr&nbsp;|&nbsp;</li>
+<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li>Constr&nbsp;|&nbsp;</li>
+<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -128,7 +128,7 @@ var activeTableTab = "activeTableTab";
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
-<dd><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AggregateBinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">AggregateBinaryFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">AppendFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/BinaryMatrixMatrixFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryMatrixMatrixFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/BinaryMatrixScalarFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryMatrixScalarFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/TsmmFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">TsmmFEDInstruction</a></dd>
+<dd><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AggregateBinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">AggregateBinaryFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">AppendFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/BinaryMatrixMatrixFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryMatrixMatrixFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/BinaryMatrixScalarFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryMatrixScalarFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/CovarianceFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">CovarianceFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/QuantilePickFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">QuantilePickFEDInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/TsmmFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">TsmmFEDInstruction</a></dd>
 </dl>
 <hr>
 <br>
@@ -182,6 +182,30 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Com
 <h3>Fields inherited from class&nbsp;org.apache.sysds.runtime.instructions.<a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></h3>
 <code><a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#DATATYPE_PREFIX">DATATYPE_PREFIX</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#FEDERATED_INST_PREFIX">FEDERATED_INST_PREFIX</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#GPU_INST_PREFIX">GPU_INST_PREFIX</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#INSTRUCTION_DELIM">INSTRUCTION_DELIM</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#LITERAL_PREFIX">LITERAL_PREFIX</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#OPERAND_DELIM">OPERAND_DELIM</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#SP_INST_PREFIX">SP_INST_PREFIX</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#VALUETYPE_PREFIX">VALUETYPE_PREFIX</a></code></li>
 </ul>
+</li>
+</ul>
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="constructor.summary">
+<!--   -->
+</a>
+<h3>Constructor Summary</h3>
+<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Constructor Summary table, listing constructors, and an explanation">
+<caption><span>Constructors</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/BinaryFEDInstruction.html#BinaryFEDInstruction-org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType-org.apache.sysds.runtime.matrix.operators.Operator-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-java.lang.String-java.lang.String-">BinaryFEDInstruction</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a>&nbsp;type,
+                    <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
+                    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;in1,
+                    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;in2,
+                    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;in3,
+                    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;out,
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;istr)</code>&nbsp;</td>
+</tr>
+</table>
 </li>
 </ul>
 <!-- ========== METHOD SUMMARY =========== -->
@@ -244,6 +268,30 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Com
 <div class="details">
 <ul class="blockList">
 <li class="blockList">
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="constructor.detail">
+<!--   -->
+</a>
+<h3>Constructor Detail</h3>
+<a name="BinaryFEDInstruction-org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType-org.apache.sysds.runtime.matrix.operators.Operator-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-java.lang.String-java.lang.String-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>BinaryFEDInstruction</h4>
+<pre>public&nbsp;BinaryFEDInstruction(<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a>&nbsp;type,
+                            <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
+                            <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;in1,
+                            <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;in2,
+                            <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;in3,
+                            <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;out,
+                            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
+                            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;istr)</pre>
+</li>
+</ul>
+</li>
+</ul>
 <!-- ============ METHOD DETAIL ========== -->
 <ul class="blockList">
 <li class="blockList"><a name="method.detail">
@@ -314,13 +362,13 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Com
 <li>Summary:&nbsp;</li>
 <li><a href="#nested.classes.inherited.from.class.org.apache.sysds.runtime.instructions.fed.FEDInstruction">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#fields.inherited.from.class.org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction">Field</a>&nbsp;|&nbsp;</li>
-<li>Constr&nbsp;|&nbsp;</li>
+<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li>Constr&nbsp;|&nbsp;</li>
+<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -328,6 +376,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Com
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

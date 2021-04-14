@@ -195,13 +195,18 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#transposeInput">transposeInput</a></span></code>
-<div class="block">Transpose input matrix, to optimize performance, this reallocate the matrix to a more cache conscious allocation
- for iteration in columns.</div>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#transposed">transposed</a></span></code>
+<div class="block">Transpose input matrix, to optimize access when extracting bitmaps.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#transposeInput">transposeInput</a></span></code>
+<div class="block">Boolean specifying which transpose setting is used, can be auto, true or false</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#validCompressions">validCompressions</a></span></code>
 <div class="block">Valid Compressions List, containing the ColGroup CompressionTypes that are allowed to be used for the compression
  Default is to always allow for Uncompromisable ColGroup.</div>
@@ -255,7 +260,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>BITMAP_BLOCK_SZ</h4>
 <pre>public static final&nbsp;int BITMAP_BLOCK_SZ</pre>
-<div class="block">Size of the blocks used in a blocked bitmap representation. Note it is one more than Character.MAX_VALUE.</div>
+<div class="block">Size of the blocks used in a blocked bitmap representation. Note it is exactly Character.MAX_VALUE. This is not
+ Character max value + 1 because it breaks the offsets in cases with fully dense values.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../constant-values.html#org.apache.sysds.runtime.compress.CompressionSettings.BITMAP_BLOCK_SZ">Constant Field Values</a></dd>
@@ -301,9 +307,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>transposeInput</h4>
-<pre>public final&nbsp;boolean transposeInput</pre>
-<div class="block">Transpose input matrix, to optimize performance, this reallocate the matrix to a more cache conscious allocation
- for iteration in columns.</div>
+<pre>public final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> transposeInput</pre>
+<div class="block">Boolean specifying which transpose setting is used, can be auto, true or false</div>
+</li>
+</ul>
+<a name="transposed">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>transposed</h4>
+<pre>public&nbsp;boolean transposed</pre>
+<div class="block">Transpose input matrix, to optimize access when extracting bitmaps. This setting is changed inside the script
+ based on the transposeInput setting.</div>
 </li>
 </ul>
 <a name="skipList">
@@ -373,7 +389,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockListLast">
 <li class="blockList">
 <h4>validCompressions</h4>
-<pre>public final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&gt; validCompressions</pre>
+<pre>public final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt; validCompressions</pre>
 <div class="block">Valid Compressions List, containing the ColGroup CompressionTypes that are allowed to be used for the compression
  Default is to always allow for Uncompromisable ColGroup.</div>
 </li>
@@ -468,6 +484,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

@@ -164,10 +164,12 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/SpoofFused.html#SpoofFused-java.util.ArrayList-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.Class-int-org.apache.sysds.lops.LopProperties.ExecType-">SpoofFused</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/SpoofFused.html#SpoofFused-java.util.ArrayList-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.Class-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-java.lang.String-int-org.apache.sysds.lops.LopProperties.ExecType-">SpoofFused</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
           <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;?&gt;&nbsp;cla,
+          <a href="../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api,
+          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;genVarName,
           int&nbsp;k,
           <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;etype)</code>&nbsp;</td>
 </tr>
@@ -301,7 +303,7 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="SpoofFused-java.util.ArrayList-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.Class-int-org.apache.sysds.lops.LopProperties.ExecType-">
+<a name="SpoofFused-java.util.ArrayList-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.Class-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-java.lang.String-int-org.apache.sysds.lops.LopProperties.ExecType-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -311,6 +313,8 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
                   <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                   <a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;?&gt;&nbsp;cla,
+                  <a href="../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;genVarName,
                   int&nbsp;k,
                   <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;etype)</pre>
 </li>
@@ -618,6 +622,6 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

@@ -151,14 +151,18 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.io">org.apache.sysds.runtime.io</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.meta">org.apache.sysds.runtime.meta</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.meta">org.apache.sysds.runtime.meta</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -248,17 +252,22 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><span class="typeNameLabel">OptimizerUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSize-org.apache.sysds.runtime.meta.DataCharacteristics-">estimateSize</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">OptimizerUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/OptimizerUtils.html#estimatePartitionedSizeExactSparsity-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">estimatePartitionedSizeExactSparsity</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc,
+                                    boolean&nbsp;outputEmptyBlocks)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><span class="typeNameLabel">OptimizerUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSizeExactSparsity-org.apache.sysds.runtime.meta.DataCharacteristics-">estimateSizeExactSparsity</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">OptimizerUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSize-org.apache.sysds.runtime.meta.DataCharacteristics-">estimateSize</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><span class="typeNameLabel">OptimizerUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSizeExactSparsity-org.apache.sysds.runtime.meta.DataCharacteristics-">estimateSizeExactSparsity</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><span class="typeNameLabel">OptimizerUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/OptimizerUtils.html#getSparsity-org.apache.sysds.runtime.meta.DataCharacteristics-">getSparsity</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">OptimizerUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/OptimizerUtils.html#isIndexingRangeBlockAligned-org.apache.sysds.runtime.util.IndexRange-org.apache.sysds.runtime.meta.DataCharacteristics-">isIndexingRangeBlockAligned</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
                            <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc)</code>
@@ -266,11 +275,11 @@
  global aggregation of blocks.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">OptimizerUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/OptimizerUtils.html#isValidCPDimensions-org.apache.sysds.runtime.meta.DataCharacteristics-">isValidCPDimensions</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">MemoTable.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/MemoTable.html#memoizeStatistics-long-org.apache.sysds.runtime.meta.DataCharacteristics-">memoizeStatistics</a></span>(long&nbsp;hopID,
                  <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
@@ -494,6 +503,10 @@
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CacheableData.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getDataCharacteristics--">getDataCharacteristics</a></span>()</code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#getDataCharacteristics--">getDataCharacteristics</a></span>()</code>&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
@@ -578,6 +591,19 @@
 <!--   -->
 </a>
 <h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a> in <a href="../../../../../../org/apache/sysds/runtime/data/package-summary.html">org.apache.sysds.runtime.data</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/data/package-summary.html">org.apache.sysds.runtime.data</a> that return <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
+<td class="colLast"><span class="typeNameLabel">TensorBlock.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getDataCharacteristics--">getDataCharacteristics</a></span>()</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
 <caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/data/package-summary.html">org.apache.sysds.runtime.data</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
@@ -1029,10 +1055,15 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static int</code></td>
+<td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#getNumPreferredPartitions-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">getNumPreferredPartitions</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc,
+                         boolean&nbsp;outputEmptyBlocks)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static int</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#getNumPreferredPartitions-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.spark.api.java.JavaPairRDD-">getNumPreferredPartitions</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc,
                          org.apache.spark.api.java.JavaPairRDD&lt;?,?&gt;&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#libsvmToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-java.lang.String-java.lang.String-java.lang.String-org.apache.sysds.runtime.meta.DataCharacteristics-">libsvmToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;pathIn,
@@ -1043,17 +1074,22 @@
  and labels, and saves these to the specified output files.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/FrameRDDConverterUtils.html#matrixBlockToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-">matrixBlockToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                         org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;input,
                         <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/FrameRDDConverterUtils.html#matrixBlockToBinaryBlockLongIndex-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-">matrixBlockToBinaryBlockLongIndex</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                                  org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;input,
                                  <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dcIn)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#postprocessUltraSparseOutput-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.meta.DataCharacteristics-">postprocessUltraSparseOutput</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo,
+                            <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
@@ -1091,6 +1127,29 @@
 </tbody>
 </table>
 </li>
+<li class="blockList"><a name="org.apache.sysds.runtime.io">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a> in <a href="../../../../../../org/apache/sysds/runtime/io/package-summary.html">org.apache.sysds.runtime.io</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/io/package-summary.html">org.apache.sysds.runtime.io</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ReaderWriterFederated.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/io/ReaderWriterFederated.html#read-java.lang.String-org.apache.sysds.runtime.meta.DataCharacteristics-">read</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;file,
+    <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc)</code>
+<div class="block">Read a federated map from disk, It is not initialized before it is used in:
+ 
+ org.apache.sysds.runtime.instructions.fed.InitFEDInstruction</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.matrix.data">
 <!--   -->
 </a>
@@ -1103,6 +1162,10 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
+<td class="colLast"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getDataCharacteristics--">getDataCharacteristics</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html#getDataCharacteristics--">getDataCharacteristics</a></span>()</code>&nbsp;</td>
 </tr>
@@ -1267,29 +1330,33 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
-<td class="colLast"><span class="typeNameLabel">DataCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html#setNonZeros-long-">setNonZeros</a></span>(long&nbsp;nnz)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">DataCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html#setNoEmptyBlocks-boolean-">setNoEmptyBlocks</a></span>(boolean&nbsp;flag)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
+<td class="colLast"><span class="typeNameLabel">DataCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html#setNonZeros-long-">setNonZeros</a></span>(long&nbsp;nnz)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">TensorCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/TensorCharacteristics.html#setNonZeros-long-">setNonZeros</a></span>(long&nbsp;nnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/MatrixCharacteristics.html#setNonZeros-long-">setNonZeros</a></span>(long&nbsp;nnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">DataCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html#setNonZerosBound-long-">setNonZerosBound</a></span>(long&nbsp;nnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/MatrixCharacteristics.html#setNonZerosBound-long-">setNonZerosBound</a></span>(long&nbsp;nnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">DataCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html#setRows-long-">setRows</a></span>(long&nbsp;rlen)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/MatrixCharacteristics.html#setRows-long-">setRows</a></span>(long&nbsp;rlen)</code>&nbsp;</td>
 </tr>
@@ -1332,6 +1399,13 @@
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/MatrixCharacteristics.html#set-org.apache.sysds.runtime.meta.DataCharacteristics-">set</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;that)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><span class="typeNameLabel">MetaDataUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/MetaDataUtils.html#updateAppendDataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">updateAppendDataCharacteristics</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc1,
+                               <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc2,
+                               <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut,
+                               boolean&nbsp;cbind)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -1537,6 +1611,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

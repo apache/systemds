@@ -123,7 +123,16 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractCompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/AbstractCompressedMatrixBlock.html#aggregateBinaryOperations-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-">aggregateBinaryOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;m1Index,
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#aggregateBinaryOperations-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-boolean-boolean-">aggregateBinaryOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
+                         <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
+                         <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
+                         <a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op,
+                         boolean&nbsp;transposeLeft,
+                         boolean&nbsp;transposeRight)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#aggregateBinaryOperations-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-">aggregateBinaryOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;m1Index,
                          <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1Value,
                          <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;m2Index,
                          <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2Value,
@@ -276,6 +285,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

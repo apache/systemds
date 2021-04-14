@@ -132,10 +132,6 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/AbstractCompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">AbstractCompressedMatrixBlock</a></span></code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a></span></code>&nbsp;</td>
 </tr>
 </tbody>
@@ -149,7 +145,7 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractCompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/AbstractCompressedMatrixBlock.html#slice-int-int-int-int-boolean-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#slice-int-int-int-int-boolean-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
      int&nbsp;ru,
      int&nbsp;cl,
      int&nbsp;cu,
@@ -195,11 +191,19 @@
 <td class="colLast"><span class="typeNameLabel">CacheBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlockFactory.html#newInstance-int-">newInstance</a></span>(int&nbsp;code)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
+<td class="colLast"><span class="typeNameLabel">UnifiedMemoryManager.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/UnifiedMemoryManager.html#pin-java.lang.String-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-boolean-">pin</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;key,
+   <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;block,
+   boolean&nbsp;dirty)</code>
+<div class="block">Pins a cache block into operation memory.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">LazyWriteBuffer.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/LazyWriteBuffer.html#readBlock-java.lang.String-boolean-">readBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
          boolean&nbsp;matrix)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#slice-int-int-int-int-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
      int&nbsp;ru,
@@ -232,16 +236,28 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">CacheableData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isBelowCachingThreshold-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">isBelowCachingThreshold</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">ByteBuffer.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/ByteBuffer.html#isValidCapacity-long-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">isValidCapacity</a></span>(long&nbsp;size,
                <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;cb)</code>
 <div class="block">Determines if byte buffer can hold the given size given this specific cache block.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#merge-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-boolean-">merge</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;that,
      boolean&nbsp;appendOnly)</code>
 <div class="block">Merge the given block into the current block.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
+<td class="colLast"><span class="typeNameLabel">UnifiedMemoryManager.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/UnifiedMemoryManager.html#pin-java.lang.String-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-boolean-">pin</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;key,
+   <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;block,
+   boolean&nbsp;dirty)</code>
+<div class="block">Pins a cache block into operation memory.</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -259,6 +275,13 @@
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">UnifiedMemoryManager.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/UnifiedMemoryManager.html#unpin-java.lang.String-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">unpin</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;key,
+     <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;block)</code>
+<div class="block">Unpins (releases) a cache block from operation memory.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><span class="typeNameLabel">LazyWriteBuffer.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/LazyWriteBuffer.html#writeBlock-java.lang.String-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">writeBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
           <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;cb)</code>&nbsp;</td>
@@ -485,7 +508,10 @@
             int&nbsp;blen,
             int&nbsp;iix,
             int&nbsp;jix,
-            <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</code>&nbsp;</td>
+            <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</code>
+<div class="block">Slice used in broadcasting matrix blocks for spark, since this slice up a given matrix
+ into blocks.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
@@ -607,6 +633,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

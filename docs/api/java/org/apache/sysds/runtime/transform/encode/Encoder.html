@@ -18,8 +18,8 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":10,"i4":10,"i5":6,"i6":10,"i7":10,"i8":10,"i9":6,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -49,8 +49,8 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li>Prev&nbsp;Class</li>
-<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderBin.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderFactory.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/transform/encode/Encoder.html" target="_top">Frames</a></li>
@@ -93,39 +93,24 @@ var activeTableTab = "activeTableTab";
 <!-- ======== START OF CLASS DATA ======== -->
 <div class="header">
 <div class="subTitle">org.apache.sysds.runtime.transform.encode</div>
-<h2 title="Class Encoder" class="title">Class Encoder</h2>
+<h2 title="Interface Encoder" class="title">Interface Encoder</h2>
 </div>
 <div class="contentContainer">
-<ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
-<li>
-<ul class="inheritance">
-<li>org.apache.sysds.runtime.transform.encode.Encoder</li>
-</ul>
-</li>
-</ul>
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
 <dl>
-<dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
+<dt>All Superinterfaces:</dt>
+<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
 </dl>
 <dl>
-<dt>Direct Known Subclasses:</dt>
-<dd><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderBin.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderBin</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderComposite.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderComposite</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderDummycode.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderDummycode</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderFeatureHash.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderFeatureHash</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderMVImpute</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderOmit</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderPassThrough.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderPassThrough</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderRecode</a></dd>
+<dt>All Known Implementing Classes:</dt>
+<dd><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderBin.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderBin</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderComposite.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderComposite</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderDummycode</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderFeatureHash.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderFeatureHash</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderPassThrough.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderPassThrough</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderRecode</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></dd>
 </dl>
 <hr>
 <br>
-<pre>public abstract class <span class="typeNameLabel">Encoder</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
-implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></pre>
-<div class="block">Base class for all transform encoders providing both a row and block
- interface for decoding frames to matrices.</div>
-<dl>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../../../serialized-form.html#org.apache.sysds.runtime.transform.encode.Encoder">Serialized Form</a></dd>
-</dl>
+<pre>public interface <span class="typeNameLabel">Encoder</span>
+extends <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></pre>
 </li>
 </ul>
 </div>
@@ -139,114 +124,64 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">apply</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-     <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code>
-<div class="block">Encode input data blockwise according to existing transform meta
- data (transform apply).</div>
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">apply</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+     <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
+     int&nbsp;outputCol)</code>
+<div class="block">Apply the generated metadata to the FrameBlock and saved the result in out.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
+<td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#build-org.apache.sysds.runtime.matrix.data.FrameBlock-">build</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code>
 <div class="block">Build the transform meta data for the given block input.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#encode-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">encode</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-      <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code>
-<div class="block">Block encode: build and apply (transform encode).</div>
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#buildPartial-org.apache.sysds.runtime.matrix.data.FrameBlock-">buildPartial</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code>
+<div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>int[]</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getColList--">getColList</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getColMapping-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">getColMapping</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta,
-             <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code>
-<div class="block">Obtain the column mapping of encoded frames based on the passed
- meta data frame.</div>
-</td>
-</tr>
-<tr id="i5" class="rowColor">
-<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">getMetaData</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code>
 <div class="block">Construct a frame block out of the transform meta data.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getNumCols--">getNumCols</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i7" class="rowColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initColList-int:A-">initColList</a></span>(int[]&nbsp;colList)</code>&nbsp;</td>
-</tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initColList-org.apache.wink.json4j.JSONArray-">initColList</a></span>(org.apache.wink.json4j.JSONArray&nbsp;attrs)</code>&nbsp;</td>
-</tr>
-<tr id="i9" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">initMetaData</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code>
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable--">isApplicable</a></span>()</code>
-<div class="block">Indicates if this encoder is applicable, i.e, if there is at 
- least one column to encode.</div>
-</td>
-</tr>
-<tr id="i11" class="rowColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable-int-">isApplicable</a></span>(int&nbsp;colID)</code>
-<div class="block">Indicates if this encoder is applicable for the given column ID,
- i.e., if it is subject to this transformation.</div>
-</td>
-</tr>
-<tr id="i12" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
-       int&nbsp;row,
-       int&nbsp;col)</code>
-<div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#prepareBuildPartial--">prepareBuildPartial</a></span>()</code>
+<div class="block">Allocates internal data structures for partial build.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#setColList-int:A-">setColList</a></span>(int[]&nbsp;colList)</code>&nbsp;</td>
-</tr>
-<tr id="i14" class="altColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>
-<div class="block">Returns a new Encoder that only handles a sub range of columns.</div>
-</td>
-</tr>
-<tr id="i15" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#updateIndexRanges-long:A-long:A-">updateIndexRanges</a></span>(long[]&nbsp;beginDims,
-                 long[]&nbsp;endDims)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#updateIndexRanges-long:A-long:A-int-">updateIndexRanges</a></span>(long[]&nbsp;beginDims,
+                 long[]&nbsp;endDims,
+                 int&nbsp;offset)</code>
 <div class="block">Update index-ranges to after encoding.</div>
 </td>
 </tr>
 </table>
 <ul class="blockList">
-<li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
+<li class="blockList"><a name="methods.inherited.from.class.java.io.Externalizable">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<h3>Methods inherited from interface&nbsp;java.io.<a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></h3>
+<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#readExternal-java.io.ObjectInput-" title="class or interface in java.io">readExternal</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#writeExternal-java.io.ObjectOutput-" title="class or interface in java.io">writeExternal</a></code></li>
 </ul>
 </li>
 </ul>
@@ -262,184 +197,37 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="getColList--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getColList</h4>
-<pre>public&nbsp;int[]&nbsp;getColList()</pre>
-</li>
-</ul>
-<a name="setColList-int:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>setColList</h4>
-<pre>public&nbsp;void&nbsp;setColList(int[]&nbsp;colList)</pre>
-</li>
-</ul>
-<a name="getNumCols--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getNumCols</h4>
-<pre>public&nbsp;int&nbsp;getNumCols()</pre>
-</li>
-</ul>
-<a name="initColList-org.apache.wink.json4j.JSONArray-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>initColList</h4>
-<pre>public&nbsp;int&nbsp;initColList(org.apache.wink.json4j.JSONArray&nbsp;attrs)</pre>
-</li>
-</ul>
-<a name="initColList-int:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>initColList</h4>
-<pre>public&nbsp;int&nbsp;initColList(int[]&nbsp;colList)</pre>
-</li>
-</ul>
-<a name="isApplicable--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>isApplicable</h4>
-<pre>public&nbsp;boolean&nbsp;isApplicable()</pre>
-<div class="block">Indicates if this encoder is applicable, i.e, if there is at 
- least one column to encode.</div>
-<dl>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>true if at least one column to encode</dd>
-</dl>
-</li>
-</ul>
-<a name="isApplicable-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>isApplicable</h4>
-<pre>public&nbsp;int&nbsp;isApplicable(int&nbsp;colID)</pre>
-<div class="block">Indicates if this encoder is applicable for the given column ID,
- i.e., if it is subject to this transformation.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>colID</code> - column ID</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>true if encoder is applicable for given column</dd>
-</dl>
-</li>
-</ul>
-<a name="encode-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>encode</h4>
-<pre>public abstract&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;encode(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</pre>
-<div class="block">Block encode: build and apply (transform encode).</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>in</code> - input frame block</dd>
-<dd><code>out</code> - output matrix block</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>output matrix block</dd>
-</dl>
-</li>
-</ul>
 <a name="build-org.apache.sysds.runtime.matrix.data.FrameBlock-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>build</h4>
-<pre>public abstract&nbsp;void&nbsp;build(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
-<div class="block">Build the transform meta data for the given block input. This call modifies
- and keeps meta data as encoder state.</div>
+<pre>void&nbsp;build(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
+<div class="block">Build the transform meta data for the given block input. This call modifies and keeps meta data as encoder state.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 </dl>
 </li>
 </ul>
-<a name="apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
+<a name="apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>apply</h4>
-<pre>public abstract&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;apply(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-                                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</pre>
-<div class="block">Encode input data blockwise according to existing transform meta
- data (transform apply).</div>
+<pre><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;apply(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
+                  int&nbsp;outputCol)</pre>
+<div class="block">Apply the generated metadata to the FrameBlock and saved the result in out.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 <dd><code>out</code> - output matrix block</dd>
+<dd><code>outputCol</code> - is a offset in the output matrix. column in FrameBlock + outputCol = column in out</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>output matrix block</dd>
-</dl>
-</li>
-</ul>
-<a name="subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>subRangeEncoder</h4>
-<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;subRangeEncoder(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</pre>
-<div class="block">Returns a new Encoder that only handles a sub range of columns.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>ixRange</code> - the range (1-based, begin inclusive, end exclusive)</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>an encoder of the same type, just for the sub-range</dd>
-</dl>
-</li>
-</ul>
-<a name="mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>mergeAt</h4>
-<pre>public&nbsp;void&nbsp;mergeAt(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
-                    int&nbsp;row,
-                    int&nbsp;col)</pre>
-<div class="block">Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
- <code>Encoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with every
- other <code>Encoder</code>.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>other</code> - the encoder that should be merged in</dd>
-<dd><code>row</code> - the row where it should be placed (1-based)</dd>
-<dd><code>col</code> - the col where it should be placed (1-based)</dd>
-</dl>
-</li>
-</ul>
-<a name="updateIndexRanges-long:A-long:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>updateIndexRanges</h4>
-<pre>public&nbsp;void&nbsp;updateIndexRanges(long[]&nbsp;beginDims,
-                              long[]&nbsp;endDims)</pre>
-<div class="block">Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>beginDims</code> - begin dimensions of range</dd>
-<dd><code>endDims</code> - end dimensions of range</dd>
 </dl>
 </li>
 </ul>
@@ -449,7 +237,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>getMetaData</h4>
-<pre>public abstract&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;getMetaData(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</pre>
+<pre><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;getMetaData(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</pre>
 <div class="block">Construct a frame block out of the transform meta data.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -465,7 +253,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>initMetaData</h4>
-<pre>public abstract&nbsp;void&nbsp;initMetaData(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
+<pre>void&nbsp;initMetaData(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -473,22 +261,45 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </dl>
 </li>
 </ul>
-<a name="getColMapping-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
+<a name="prepareBuildPartial--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>prepareBuildPartial</h4>
+<pre>void&nbsp;prepareBuildPartial()</pre>
+<div class="block">Allocates internal data structures for partial build.</div>
+</li>
+</ul>
+<a name="buildPartial-org.apache.sysds.runtime.matrix.data.FrameBlock-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>buildPartial</h4>
+<pre>void&nbsp;buildPartial(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
+<div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>in</code> - input frame block</dd>
+</dl>
+</li>
+</ul>
+<a name="updateIndexRanges-long:A-long:A-int-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>getColMapping</h4>
-<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getColMapping(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta,
-                                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</pre>
-<div class="block">Obtain the column mapping of encoded frames based on the passed
- meta data frame.</div>
+<h4>updateIndexRanges</h4>
+<pre>void&nbsp;updateIndexRanges(long[]&nbsp;beginDims,
+                       long[]&nbsp;endDims,
+                       int&nbsp;offset)</pre>
+<div class="block">Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>meta</code> - meta data frame block</dd>
-<dd><code>out</code> - output matrix</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>matrix with column mapping (one row per attribute)</dd>
+<dd><code>beginDims</code> - begin dimensions of range</dd>
+<dd><code>endDims</code> - end dimensions of range</dd>
+<dd><code>offset</code> - is applied to begin and endDims</dd>
 </dl>
 </li>
 </ul>
@@ -520,8 +331,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </div>
 <div class="subNav">
 <ul class="navList">
-<li>Prev&nbsp;Class</li>
-<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderBin.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderFactory.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/transform/encode/Encoder.html" target="_top">Frames</a></li>
@@ -561,6 +372,6 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

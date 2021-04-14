@@ -36,7 +36,7 @@
     
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Convert" href="../onnx_systemds/convert.html" />
+    <link rel="next" title="Dag" href="../script_building/dag.html" />
     <link rel="prev" title="Federated" href="../matrix/federated.html" /> 
 </head>
 
@@ -92,11 +92,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../onnx_systemds/onnx_systemds.html">QuickStart Onnx</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../onnx_systemds/onnx_systemds_design.html">Design</a></li>
-</ul>
 <p class="caption"><span class="caption-text">API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
@@ -104,11 +99,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../matrix/matrix.html">Matrix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../matrix/federated.html">Federated</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Operation Node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/convert.html">Convert</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/onnx_helper.html">Onnx Helper</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/operator_gen.html">Operator Gen</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/render.html">Render</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/util.html">Util</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Internals API</span></p>
 <ul>
@@ -266,6 +256,14 @@ Default is None, and means every multi output is a matrix.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt id="systemds.operator.OperationNode.cbind">
+<code class="sig-name descname">cbind</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cbind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Column-wise matrix concatenation, by concatenating the second matrix as additional columns to the first matrix. 
+:param: The other matrix to bind to the right hand side.
+:return: The OperationNode containing the concatenated matrices.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="systemds.operator.OperationNode.cholesky">
 <code class="sig-name descname">cholesky</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">safe</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cholesky" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the Cholesky decomposition of a symmetric, positive definite matrix</p>
@@ -402,6 +400,14 @@ all operations are only building the DAG without actually executing (lazy evalua
 <dd><p>Prints the given Operation Node.
 There is no return on calling.
 To get the returned string look at the stdout of SystemDSContext.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.rbind">
+<code class="sig-name descname">rbind</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.rbind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Row-wise matrix concatenation, by concatenating the second matrix as additional rows to the first matrix. 
+:param: The other matrix to bind to the right hand side
+:return: The OperationNode containing the concatenated matrices.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -549,7 +555,7 @@ There is no return on write.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../onnx_systemds/convert.html" class="btn btn-neutral float-right" title="Convert" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../script_building/dag.html" class="btn btn-neutral float-right" title="Dag" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="../matrix/federated.html" class="btn btn-neutral float-left" title="Federated" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

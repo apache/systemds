@@ -91,38 +91,50 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.codegen">org.apache.sysds.runtime.codegen</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.caching">org.apache.sysds.runtime.controlprogram.caching</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.context">org.apache.sysds.runtime.controlprogram.context</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.paramserv">org.apache.sysds.runtime.controlprogram.paramserv</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.paramserv.dp">org.apache.sysds.runtime.controlprogram.paramserv.dp</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.parfor">org.apache.sysds.runtime.controlprogram.parfor</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.parfor.opt">org.apache.sysds.runtime.controlprogram.parfor.opt</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.gpu.context">org.apache.sysds.runtime.instructions.gpu.context</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark.utils">org.apache.sysds.runtime.instructions.spark.utils</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.lineage">org.apache.sysds.runtime.lineage</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -361,6 +373,121 @@
 </tbody>
 </table>
 </li>
+<li class="blockList"><a name="org.apache.sysds.runtime.codegen">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a> in <a href="../../../../../../../org/apache/sysds/runtime/codegen/package-summary.html">org.apache.sysds.runtime.codegen</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/codegen/package-summary.html">org.apache.sysds.runtime.codegen</a> that return <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDACellwise.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDACellwise.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-java.lang.String-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;outputName)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDAOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-java.lang.String-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;outputName)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDARowwise.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDARowwise.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-java.lang.String-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;outputName)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/codegen/package-summary.html">org.apache.sysds.runtime.codegen</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>default long[]</code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDAOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.html#prepareOutputPointers-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-boolean-">prepareOutputPointers</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+                     <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;output,
+                     boolean&nbsp;sparseOut)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Method parameters in <a href="../../../../../../../org/apache/sysds/runtime/codegen/package-summary.html">org.apache.sysds.runtime.codegen</a> with type arguments of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDACellwise.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDACellwise.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDAOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDARowwise.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDARowwise.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDACellwise.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDACellwise.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-java.lang.String-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;outputName)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDAOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-java.lang.String-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;outputName)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDARowwise.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDARowwise.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-java.util.ArrayList-java.lang.String-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;outputName)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofRowwise.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofRowwise.html#hasMatrixObjectSideInput-java.util.ArrayList-">hasMatrixObjectSideInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default long[]</code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDAOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.html#prepareInputPointers-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-int-">prepareInputPointers</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+                    int&nbsp;offset)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>default long[]</code></td>
+<td class="colLast"><span class="typeNameLabel">SpoofCUDAOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.html#prepareSideInputPointers-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.ArrayList-int-boolean-">prepareSideInputPointers</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+                        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;inputs,
+                        int&nbsp;offset,
+                        boolean&nbsp;tB1)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.caching">
 <!--   -->
 </a>
@@ -455,6 +582,14 @@
 <td class="colLast"><span class="typeNameLabel">SparkExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/SparkExecutionContext.html#getBroadcastForMatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">getBroadcastForMatrixObject</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getGPUDensePointerAddress-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">getGPUDensePointerAddress</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;obj)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getGPUSparsePointerAddress-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">getGPUSparsePointerAddress</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;obj)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>org.apache.spark.api.java.JavaPairRDD&lt;?,?&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/SparkExecutionContext.html#getRDDHandleForMatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.common.Types.FileFormat-">getRDDHandleForMatrixObject</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo,
                            <a href="../../../../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt)</code>&nbsp;</td>
@@ -519,10 +654,23 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/LocalParamServer.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv">LocalParamServer</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LocalParamServer.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/LocalParamServer.html#create-org.apache.sysds.runtime.instructions.cp.ListObject-java.lang.String-org.apache.sysds.parser.Statement.PSUpdateType-org.apache.sysds.parser.Statement.PSFrequency-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-int-java.lang.String-int-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">create</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;model,
+      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;aggFunc,
+      <a href="../../../../../../../org/apache/sysds/parser/Statement.PSUpdateType.html" title="enum in org.apache.sysds.parser">Statement.PSUpdateType</a>&nbsp;updateType,
+      <a href="../../../../../../../org/apache/sysds/parser/Statement.PSFrequency.html" title="enum in org.apache.sysds.parser">Statement.PSFrequency</a>&nbsp;freq,
+      <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+      int&nbsp;workerNum,
+      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;valFunc,
+      int&nbsp;numBatchesPerEpoch,
+      <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;valFeatures,
+      <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;valLabels)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ParamservUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/ParamservUtils.html#createShallowCopy-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">createShallowCopy</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,scala.Tuple2&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">ParamservUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/ParamservUtils.html#doPartitionOnSpark-org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.parser.Statement.PSScheme-int-">doPartitionOnSpark</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/SparkExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">SparkExecutionContext</a>&nbsp;sec,
                   <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features,
@@ -530,15 +678,15 @@
                   <a href="../../../../../../../org/apache/sysds/parser/Statement.PSScheme.html" title="enum in org.apache.sysds.parser">Statement.PSScheme</a>&nbsp;scheme,
                   int&nbsp;workerNum)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">PSWorker.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/PSWorker.html#setFeatures-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">setFeatures</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">PSWorker.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/PSWorker.html#setLabels-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">setLabels</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;labels)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ParamservUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/ParamservUtils.html#sliceMatrix-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-long-long-">sliceMatrix</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo,
            long&nbsp;rl,
@@ -562,11 +710,69 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">DataPartitionFederatedScheme.Result.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html#Z:Z_pFeatures">_pFeatures</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">DataPartitionFederatedScheme.Result.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html#Z:Z_pLabels">_pLabels</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">DataPartitionLocalScheme.Result.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionLocalScheme.Result.html#pFeatures">pFeatures</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">DataPartitionLocalScheme.Result.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionLocalScheme.Result.html#pLabels">pLabels</a></span></code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/package-summary.html">org.apache.sysds.runtime.controlprogram.paramserv.dp</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.Result</a></code></td>
+<td class="colLast"><span class="typeNameLabel">FederatedDataPartitioner.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/FederatedDataPartitioner.html#doPartitioning-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">doPartitioning</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features,
+              <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;labels)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.Result</a></code></td>
+<td class="colLast"><span class="typeNameLabel">SubsampleToMinFederatedScheme.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/SubsampleToMinFederatedScheme.html#partition-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-int-">partition</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features,
+         <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;labels,
+         int&nbsp;seed)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.Result</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ReplicateToMaxFederatedScheme.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/ReplicateToMaxFederatedScheme.html#partition-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-int-">partition</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features,
+         <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;labels,
+         int&nbsp;seed)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.Result</a></code></td>
+<td class="colLast"><span class="typeNameLabel">DataPartitionFederatedScheme.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.html#partition-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-int-">partition</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features,
+         <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;labels,
+         int&nbsp;seed)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.Result</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BalanceToAvgFederatedScheme.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/BalanceToAvgFederatedScheme.html#partition-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-int-">partition</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features,
+         <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;labels,
+         int&nbsp;seed)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.Result</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ShuffleFederatedScheme.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/ShuffleFederatedScheme.html#partition-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-int-">partition</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features,
+         <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;labels,
+         int&nbsp;seed)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.Result</a></code></td>
+<td class="colLast"><span class="typeNameLabel">KeepDataOnWorkerFederatedScheme.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/KeepDataOnWorkerFederatedScheme.html#partition-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-int-">partition</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;features,
+         <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;labels,
+         int&nbsp;seed)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -583,6 +789,20 @@
 <tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionLocalScheme.Result.html#Result-java.util.List-java.util.List-">Result</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;pFeatures,
       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;pLabels)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html#Result-java.util.List-java.util.List-int-org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme.BalanceMetrics-java.util.List-">Result</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;pFeatures,
+      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;pLabels,
+      int&nbsp;workerNum,
+      <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.BalanceMetrics.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.BalanceMetrics</a>&nbsp;balanceMetrics,
+      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html?is-external=true" title="class or interface in java.lang">Double</a>&gt;&nbsp;weightingFactors)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.Result.html#Result-java.util.List-java.util.List-int-org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme.BalanceMetrics-java.util.List-">Result</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;pFeatures,
+      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&gt;&nbsp;pLabels,
+      int&nbsp;workerNum,
+      <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/paramserv/dp/DataPartitionFederatedScheme.BalanceMetrics.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DataPartitionFederatedScheme.BalanceMetrics</a>&nbsp;balanceMetrics,
+      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html?is-external=true" title="class or interface in java.lang">Double</a>&gt;&nbsp;weightingFactors)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -824,14 +1044,14 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><span class="typeNameLabel">MultiReturnParameterizedBuiltinFEDInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.html#encodeFederatedFrames-org.apache.sysds.runtime.controlprogram.federated.FederationMap-org.apache.sysds.runtime.transform.encode.Encoder-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">encodeFederatedFrames</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;fedMapping,
-                     <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;globalEncoder,
+<td class="colLast"><span class="typeNameLabel">MultiReturnParameterizedBuiltinFEDInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.html#encodeFederatedFrames-org.apache.sysds.runtime.controlprogram.federated.FederationMap-org.apache.sysds.runtime.transform.encode.MultiColumnEncoder-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">encodeFederatedFrames</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;fedMapping,
+                     <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&nbsp;globalencoder,
                      <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;transformedMat)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">InitFEDInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/InitFEDInstruction.html#federateMatrix-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-java.util.List-">federateMatrix</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;output,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;workers)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">UnaryMatrixFEDInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/UnaryMatrixFEDInstruction.html#processCumulativeInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">processCumulativeInstruction</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+                            <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo1)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -852,6 +1072,69 @@
 <td class="colLast"><span class="typeNameLabel">GPUContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUContext.html#createGPUObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">createGPUObject</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code>
 <div class="block">Instantiates a new <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> initialized with the given <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching"><code>MatrixObject</code></a>.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">GPUContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUContext.html#shallowCopyGPUObject-org.apache.sysds.runtime.instructions.gpu.context.GPUObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">shallowCopyGPUObject</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a>&nbsp;source,
+                    <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code>
+<div class="block">Shallow copy the given source <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> to a new <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> and 
+ assign that to the given <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching"><code>MatrixObject</code></a>.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
+<caption><span>Constructors in <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/package-summary.html">org.apache.sysds.runtime.instructions.gpu.context</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html#GPUObject-org.apache.sysds.runtime.instructions.gpu.context.GPUContext-org.apache.sysds.runtime.instructions.gpu.context.GPUObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">GPUObject</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
+         <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a>&nbsp;that,
+         <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mat)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.spark.utils">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a> in <a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/package-summary.html">org.apache.sysds.runtime.instructions.spark.utils</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/package-summary.html">org.apache.sysds.runtime.instructions.spark.utils</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#getNonZeros-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">getNonZeros</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#postprocessUltraSparseOutput-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.meta.DataCharacteristics-">postprocessUltraSparseOutput</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo,
+                            <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.lineage">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a> in <a href="../../../../../../../org/apache/sysds/runtime/lineage/package-summary.html">org.apache.sysds.runtime.lineage</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/lineage/package-summary.html">org.apache.sysds.runtime.lineage</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LineageItemUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/lineage/LineageItemUtils.html#setUDFResponse-org.apache.sysds.runtime.controlprogram.federated.FederatedUDF-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">setUDFResponse</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a>&nbsp;udf,
+              <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -1633,6 +1916,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

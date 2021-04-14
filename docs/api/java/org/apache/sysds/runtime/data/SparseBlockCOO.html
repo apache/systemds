@@ -267,9 +267,9 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/SparseBlock.html" 
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/SparseBlockCOO.html#estimateMemory-long-long-double-">estimateMemory</a></span>(long&nbsp;nrows,
-              long&nbsp;ncols,
-              double&nbsp;sparsity)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/SparseBlockCOO.html#estimateSizeInMemory-long-long-double-">estimateSizeInMemory</a></span>(long&nbsp;nrows,
+                    long&nbsp;ncols,
+                    double&nbsp;sparsity)</code>
 <div class="block">Get the estimated in-memory size of the sparse block in COO 
  with the given dimensions w/o accounting for overallocation.</div>
 </td>
@@ -601,15 +601,15 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/SparseBlock.html" 
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="estimateMemory-long-long-double-">
+<a name="estimateSizeInMemory-long-long-double-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>estimateMemory</h4>
-<pre>public static&nbsp;long&nbsp;estimateMemory(long&nbsp;nrows,
-                                  long&nbsp;ncols,
-                                  double&nbsp;sparsity)</pre>
+<h4>estimateSizeInMemory</h4>
+<pre>public static&nbsp;long&nbsp;estimateSizeInMemory(long&nbsp;nrows,
+                                        long&nbsp;ncols,
+                                        double&nbsp;sparsity)</pre>
 <div class="block">Get the estimated in-memory size of the sparse block in COO 
  with the given dimensions w/o accounting for overallocation.</div>
 <dl>
@@ -1544,6 +1544,6 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/SparseBlock.html" 
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

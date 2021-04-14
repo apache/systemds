@@ -6,6 +6,8 @@ org.apache.sysds.conf
 org.apache.sysds.hops
 org.apache.sysds.hops.codegen
 org.apache.sysds.hops.codegen.cplan
+org.apache.sysds.hops.codegen.cplan.cuda
+org.apache.sysds.hops.codegen.cplan.java
 org.apache.sysds.hops.codegen.opt
 org.apache.sysds.hops.codegen.template
 org.apache.sysds.hops.cost
@@ -22,9 +24,13 @@ org.apache.sysds.runtime.codegen
 org.apache.sysds.runtime.compress
 org.apache.sysds.runtime.compress.cocode
 org.apache.sysds.runtime.compress.colgroup
+org.apache.sysds.runtime.compress.colgroup.mapping
+org.apache.sysds.runtime.compress.colgroup.pre
+org.apache.sysds.runtime.compress.colgroup.tree
 org.apache.sysds.runtime.compress.estim
 org.apache.sysds.runtime.compress.estim.sample
 org.apache.sysds.runtime.compress.lib
+org.apache.sysds.runtime.compress.readers
 org.apache.sysds.runtime.compress.utils
 org.apache.sysds.runtime.controlprogram
 org.apache.sysds.runtime.controlprogram.caching
@@ -61,5 +67,6 @@ org.apache.sysds.runtime.transform
 org.apache.sysds.runtime.transform.decode
 org.apache.sysds.runtime.transform.encode
 org.apache.sysds.runtime.transform.meta
+org.apache.sysds.runtime.transform.tokenize
 org.apache.sysds.runtime.util
 org.apache.sysds.utils

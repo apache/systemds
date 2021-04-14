@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10};
+var methods = {"i0":10,"i1":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -203,6 +203,12 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Inde
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/FrameIndexingCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
+<div class="block">Obtain lineage trace of an instruction with a single output.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/FrameIndexingCPInstruction.html#processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">processInstruction</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
 <div class="block">This method should be used to execute the instruction.</div>
@@ -221,7 +227,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Inde
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.instructions.cp.<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ComputationCPInstruction</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getInputs--">getInputs</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getOutput--">getOutput</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getOutputVariableName--">getOutputVariableName</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getInputs--">getInputs</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getOutput--">getOutput</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getOutputVariableName--">getOutputVariableName</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.instructions.cp.CPInstruction">
@@ -268,7 +274,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Inde
 <a name="processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>processInstruction</h4>
 <pre>public&nbsp;void&nbsp;processInstruction(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
@@ -279,6 +285,27 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Inde
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.html#processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">processInstruction</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">CPInstruction</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ec</code> - execution context</dd>
+</dl>
+</li>
+</ul>
+<a name="getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getLineageItem</h4>
+<pre>public&nbsp;org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;&nbsp;getLineageItem(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">LineageTraceable</a></code></span></div>
+<div class="block">Obtain lineage trace of an instruction with a single output.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html" title="interface in org.apache.sysds.runtime.lineage">LineageTraceable</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ComputationCPInstruction</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ec</code> - execution context w/ live variables</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>pair of (output variable name, output lineage item)</dd>
 </dl>
 </li>
 </ul>
@@ -351,6 +378,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Inde
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

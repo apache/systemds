@@ -109,9 +109,8 @@
 <tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/rewrite/RewriteCompressedReblock.html" title="class in org.apache.sysds.hops.rewrite">RewriteCompressedReblock</a></span></code>
-<div class="block">Rule: CompressedReblock: If config compressed.linalg is enabled, we
- inject compression directions after pread of matrices w/ both dims &gt; 1
- (i.e., multi-column matrices).</div>
+<div class="block">Rule: Compressed Re block if config compressed.linalg is enabled, we inject compression directions after read of
+ matrices if number of rows is above 1000 and cols at least 1.</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -159,19 +158,26 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/rewrite/RewriteRemoveForLoopEmptySequence.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveForLoopEmptySequence</a></span></code>
+<div class="block">Rule: Simplify program structure by removing (par)for statements iterating over
+ an empty sequence, i.e., (par)for-loops without a single iteration.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/rewrite/RewriteRemoveUnnecessaryBranches.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveUnnecessaryBranches</a></span></code>
 <div class="block">Rule: Simplify program structure by pulling if or else statement body out
  (removing the if statement block ifself) in order to allow intra-procedure
  analysis to propagate exact statistics.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/rewrite/RewriteSplitDagDataDependentOperators.html" title="class in org.apache.sysds.hops.rewrite">RewriteSplitDagDataDependentOperators</a></span></code>
 <div class="block">Rule: Split Hop DAG after specific data-dependent operators.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/rewrite/RewriteSplitDagUnknownCSVRead.html" title="class in org.apache.sysds.hops.rewrite">RewriteSplitDagUnknownCSVRead</a></span></code>
 <div class="block">Rule: Split Hop DAG after CSV reads with unknown size.</div>
@@ -271,6 +277,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

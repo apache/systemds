@@ -41,7 +41,7 @@ It can be beneficial to enter these into your `~/.profile` or `~/.bashrc` for li
 (but remember to change `$(pwd` to the full folder path)
 or your environment variables in windows to enable reuse between terminals and restarts.
 
-```bash 
+```bash
 echo 'export SYSTEMDS_ROOT='$(pwd) >> ~/.bashrc
 echo 'export PATH=$SYSTEMDS_ROOT/bin:$PATH' >> ~/.bashrc
 ```
@@ -65,9 +65,8 @@ rm hello.dml
 ## Running a real first example
 
 To see SystemDS in action a simple example using the `Univar-stats.dml`
-script can be executed. This example is taken from the
-[SystemML documentation](http://apache.github.io/systemml/standalone-guide).
-The relevant commands to run this example with SystemDS will be listed here.
+script can be executed.
+The relevant commands to run this example with SystemDS is described in the DML Language reference guide at [link](dml-language-reference.html).
 See their documentation for further details.  
 
 ### Example preparations
@@ -93,7 +92,7 @@ bin/systemds Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv 
 ## Using Intel MKL native instructions
 
 To use the MKL acceleration download and install the latest supported MKL library (<=2019.5) from [1],
-set the environment variables with the MKL-provided script `. /opt/intel/bin/compilervars.sh intel64` (note the dot and 
+set the environment variables with the MKL-provided script `. /opt/intel/bin/compilervars.sh intel64` (note the dot and
 the default install location) and set the option `sysds.native.blas` in `SystemDS-config.xml` to mkl.
 
 [1]: https://software.intel.com/mkl "Intel Math Kernel Library"

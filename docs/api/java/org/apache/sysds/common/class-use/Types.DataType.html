@@ -450,7 +450,7 @@ the order they are declared.</div>
          <a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;inp3)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/TernaryOp.html#TernaryOp-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.OpOp3-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-">TernaryOp</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;l,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/TernaryOp.html#TernaryOp-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.OpOp3-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-org.apache.sysds.hops.Hop-">TernaryOp</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;l,
          <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
          <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
          <a href="../../../../../org/apache/sysds/common/Types.OpOp3.html" title="enum in org.apache.sysds.common">Types.OpOp3</a>&nbsp;o,
@@ -458,7 +458,8 @@ the order they are declared.</div>
          <a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;inp2,
          <a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;inp3,
          <a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;inp4,
-         <a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;inp5)</code>&nbsp;</td>
+         <a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;inp5,
+         <a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;inp6)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/UnaryOp.html#UnaryOp-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.OpOp1-org.apache.sysds.hops.Hop-">UnaryOp</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;l,
@@ -481,10 +482,12 @@ the order they are declared.</div>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/codegen/SpoofFusedOp.html#SpoofFusedOp-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.Class-boolean-org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType-">SpoofFusedOp</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/codegen/SpoofFusedOp.html#SpoofFusedOp-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.Class-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-java.lang.String-boolean-org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType-">SpoofFusedOp</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
             <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
             <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;?&gt;&nbsp;cla,
+            <a href="../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api,
+            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;genVarName,
             boolean&nbsp;dist,
             <a href="../../../../../org/apache/sysds/hops/codegen/SpoofFusedOp.SpoofOutputDimsType.html" title="enum in org.apache.sysds.hops.codegen">SpoofFusedOp.SpoofOutputDimsType</a>&nbsp;type)</code>&nbsp;</td>
 </tr>
@@ -743,6 +746,15 @@ the order they are declared.</div>
 </td>
 </tr>
 <tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Binary.html#Binary-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-">Binary</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+      <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
+      <a href="../../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op,
+      <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
+      <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+      <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
+      int&nbsp;k)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/BinaryM.html#BinaryM-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-boolean-">BinaryM</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
        <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
        <a href="../../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op,
@@ -753,7 +765,7 @@ the order they are declared.</div>
 <div class="block">Constructor to perform a binary operation.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/BinaryScalar.html#BinaryScalar-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-">BinaryScalar</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
             <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
             <a href="../../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op,
@@ -762,7 +774,7 @@ the order they are declared.</div>
 <div class="block">Constructor to perform a scalar operation</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/BinaryUAggChain.html#BinaryUAggChain-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.common.Types.AggOp-org.apache.sysds.common.Types.Direction-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">BinaryUAggChain</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                <a href="../../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;bop,
                <a href="../../../../../org/apache/sysds/common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;uaop,
@@ -773,7 +785,7 @@ the order they are declared.</div>
 <div class="block">Constructor to setup a map mult chain without weights</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CentralMoment.html#CentralMoment-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">CentralMoment</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
              <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
              <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -781,14 +793,14 @@ the order they are declared.</div>
              <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
              <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CentralMoment.html#CentralMoment-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">CentralMoment</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
              <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
              <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
              <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
              <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Checkpoint.html#Checkpoint-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.String-">Checkpoint</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -797,13 +809,13 @@ the order they are declared.</div>
  that Spark libraries are always available.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Compression.html#Compression-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">Compression</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
            <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
            <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
            <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CoVariance.html#CoVariance-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">CoVariance</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -811,42 +823,43 @@ the order they are declared.</div>
           <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CoVariance.html#CoVariance-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">CoVariance</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
           <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CoVariance.html#CoVariance-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">CoVariance</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
           <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CSVReBlock.html#CSVReBlock-org.apache.sysds.lops.Lop-int-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">CSVReBlock</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           int&nbsp;blen,
           <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Ctable.html#Ctable-org.apache.sysds.lops.Lop:A-org.apache.sysds.lops.Ctable.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-org.apache.sysds.lops.LopProperties.ExecType-">Ctable</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputLops,
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Ctable.html#Ctable-org.apache.sysds.lops.Lop:A-org.apache.sysds.lops.Ctable.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">Ctable</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputLops,
       <a href="../../../../../org/apache/sysds/lops/Ctable.OperationTypes.html" title="enum in org.apache.sysds.lops">Ctable.OperationTypes</a>&nbsp;op,
       <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
       <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
       boolean&nbsp;ignoreZeros,
+      boolean&nbsp;outputEmptyBlocks,
       <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Ctable.html#Ctable-org.apache.sysds.lops.Lop:A-org.apache.sysds.lops.Ctable.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">Ctable</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputLops,
       <a href="../../../../../org/apache/sysds/lops/Ctable.OperationTypes.html" title="enum in org.apache.sysds.lops">Ctable.OperationTypes</a>&nbsp;op,
       <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
       <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
       <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CumulativeOffsetBinary.html#CumulativeOffsetBinary-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-double-boolean-org.apache.sysds.common.Types.AggOp-org.apache.sysds.lops.LopProperties.ExecType-">CumulativeOffsetBinary</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;data,
                       <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;offsets,
                       <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -856,7 +869,7 @@ the order they are declared.</div>
                       <a href="../../../../../org/apache/sysds/common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;op,
                       <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CumulativeOffsetBinary.html#CumulativeOffsetBinary-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.AggOp-org.apache.sysds.lops.LopProperties.ExecType-">CumulativeOffsetBinary</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;data,
                       <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;offsets,
                       <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -864,14 +877,14 @@ the order they are declared.</div>
                       <a href="../../../../../org/apache/sysds/common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;op,
                       <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CumulativePartialAggregate.html#CumulativePartialAggregate-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.AggOp-org.apache.sysds.lops.LopProperties.ExecType-">CumulativePartialAggregate</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
                           <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                           <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                           <a href="../../../../../org/apache/sysds/common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;op,
                           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Data.html#Data-org.apache.sysds.common.Types.OpOpData-org.apache.sysds.lops.Lop-java.util.HashMap-java.lang.String-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.FileFormat-">Data</a></span>(<a href="../../../../../org/apache/sysds/common/Types.OpOpData.html" title="enum in org.apache.sysds.common">Types.OpOpData</a>&nbsp;op,
     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
@@ -884,7 +897,7 @@ the order they are declared.</div>
  In case of write: <code>input</code> must be provided.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/DataGen.html#DataGen-org.apache.sysds.common.Types.OpOpDG-org.apache.sysds.parser.DataIdentifier-java.util.HashMap-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">DataGen</a></span>(<a href="../../../../../org/apache/sysds/common/Types.OpOpDG.html" title="enum in org.apache.sysds.common">Types.OpOpDG</a>&nbsp;op,
        <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html" title="class in org.apache.sysds.parser">DataIdentifier</a>&nbsp;id,
        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
@@ -894,6 +907,12 @@ the order they are declared.</div>
        <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>
 <div class="block">Creates a new Rand-LOP.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/DeCompression.html#DeCompression-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">DeCompression</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
+             <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
+             <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+             <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/DnnTransform.html#DnnTransform-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOpDnn-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-">DnnTransform</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
@@ -1044,6 +1063,16 @@ the order they are declared.</div>
          int&nbsp;k)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MatMultCP.html#MatMultCP-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-boolean-boolean-">MatMultCP</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+         <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
+         <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
+         <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+         <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
+         int&nbsp;k,
+         boolean&nbsp;isLeftTransposed,
+         boolean&nbsp;isRightTransposed)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MMCJ.html#MMCJ-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-org.apache.sysds.hops.AggBinaryOp.SparkAggType-org.apache.sysds.lops.LopProperties.ExecType-">MMCJ</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
     <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1052,7 +1081,7 @@ the order they are declared.</div>
     <a href="../../../../../org/apache/sysds/hops/AggBinaryOp.SparkAggType.html" title="enum in org.apache.sysds.hops">AggBinaryOp.SparkAggType</a>&nbsp;aggtype,
     <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MMCJ.html#MMCJ-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.MMCJ.MMCJType-org.apache.sysds.lops.LopProperties.ExecType-">MMCJ</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
     <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1062,7 +1091,7 @@ the order they are declared.</div>
 <div class="block">Constructor to perform a cross product operation.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MMRJ.html#MMRJ-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">MMRJ</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
     <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1071,14 +1100,14 @@ the order they are declared.</div>
 <div class="block">Constructor to perform a cross product operation.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MMTSJ.html#MMTSJ-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-org.apache.sysds.lops.MMTSJ.MMTSJType-">MMTSJ</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
      <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
      <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
      <a href="../../../../../org/apache/sysds/lops/MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a>&nbsp;type)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MMTSJ.html#MMTSJ-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-org.apache.sysds.lops.MMTSJ.MMTSJType-boolean-">MMTSJ</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
      <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1086,7 +1115,7 @@ the order they are declared.</div>
      <a href="../../../../../org/apache/sysds/lops/MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a>&nbsp;type,
      boolean&nbsp;multiPass)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MMTSJ.html#MMTSJ-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-org.apache.sysds.lops.MMTSJ.MMTSJType-boolean-int-">MMTSJ</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
      <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1095,7 +1124,7 @@ the order they are declared.</div>
      boolean&nbsp;multiPass,
      int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MMZip.html#MMZip-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-org.apache.sysds.lops.LopProperties.ExecType-">MMZip</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
      <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1103,21 +1132,21 @@ the order they are declared.</div>
      boolean&nbsp;tRewrite,
      <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Nary.html#Nary-org.apache.sysds.common.Types.OpOpN-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.Lop:A-org.apache.sysds.lops.LopProperties.ExecType-">Nary</a></span>(<a href="../../../../../org/apache/sysds/common/Types.OpOpN.html" title="enum in org.apache.sysds.common">Types.OpOpN</a>&nbsp;operationType,
     <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
     <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputLops,
     <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/ParameterizedBuiltin.html#ParameterizedBuiltin-java.util.HashMap-org.apache.sysds.common.Types.ParamBuiltinOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">ParameterizedBuiltin</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
                     <a href="../../../../../org/apache/sysds/common/Types.ParamBuiltinOp.html" title="enum in org.apache.sysds.common">Types.ParamBuiltinOp</a>&nbsp;op,
                     <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                     <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                     <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/ParameterizedBuiltin.html#ParameterizedBuiltin-java.util.HashMap-org.apache.sysds.common.Types.ParamBuiltinOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-boolean-">ParameterizedBuiltin</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
                     <a href="../../../../../org/apache/sysds/common/Types.ParamBuiltinOp.html" title="enum in org.apache.sysds.common">Types.ParamBuiltinOp</a>&nbsp;op,
                     <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1125,7 +1154,7 @@ the order they are declared.</div>
                     <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
                     boolean&nbsp;bRmEmptyBC)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/ParameterizedBuiltin.html#ParameterizedBuiltin-java.util.HashMap-org.apache.sysds.common.Types.ParamBuiltinOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-">ParameterizedBuiltin</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
                     <a href="../../../../../org/apache/sysds/common/Types.ParamBuiltinOp.html" title="enum in org.apache.sysds.common">Types.ParamBuiltinOp</a>&nbsp;op,
                     <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1133,7 +1162,7 @@ the order they are declared.</div>
                     <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
                     int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/PartialAggregate.html#PartialAggregate-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.AggOp-org.apache.sysds.common.Types.Direction-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.hops.AggBinaryOp.SparkAggType-org.apache.sysds.lops.LopProperties.ExecType-">PartialAggregate</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
                 <a href="../../../../../org/apache/sysds/common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;op,
                 <a href="../../../../../org/apache/sysds/common/Types.Direction.html" title="enum in org.apache.sysds.common">Types.Direction</a>&nbsp;direct,
@@ -1142,7 +1171,7 @@ the order they are declared.</div>
                 <a href="../../../../../org/apache/sysds/hops/AggBinaryOp.SparkAggType.html" title="enum in org.apache.sysds.hops">AggBinaryOp.SparkAggType</a>&nbsp;aggtype,
                 <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/PartialAggregate.html#PartialAggregate-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.AggOp-org.apache.sysds.common.Types.Direction-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-">PartialAggregate</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
                 <a href="../../../../../org/apache/sysds/common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;op,
                 <a href="../../../../../org/apache/sysds/common/Types.Direction.html" title="enum in org.apache.sysds.common">Types.Direction</a>&nbsp;direct,
@@ -1151,7 +1180,7 @@ the order they are declared.</div>
                 <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
                 int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/PickByCount.html#PickByCount-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.PickByCount.OperationTypes-org.apache.sysds.lops.LopProperties.ExecType-">PickByCount</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
            <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
            <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1159,7 +1188,7 @@ the order they are declared.</div>
            <a href="../../../../../org/apache/sysds/lops/PickByCount.OperationTypes.html" title="enum in org.apache.sysds.lops">PickByCount.OperationTypes</a>&nbsp;op,
            <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/PickByCount.html#PickByCount-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.PickByCount.OperationTypes-org.apache.sysds.lops.LopProperties.ExecType-boolean-">PickByCount</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
            <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
            <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1168,13 +1197,13 @@ the order they are declared.</div>
            <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
            boolean&nbsp;inMemoryInput)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/PMapMult.html#PMapMult-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-">PMapMult</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
         <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
         <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
         <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/PMMJ.html#PMMJ-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">PMMJ</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;pminput,
     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rightinput,
     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;nrow,
@@ -1186,7 +1215,7 @@ the order they are declared.</div>
 <div class="block">Constructor to setup a Permutation Matrix Multiplication</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/ReBlock.html#ReBlock-org.apache.sysds.lops.Lop-int-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-org.apache.sysds.lops.LopProperties.ExecType-">ReBlock</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
        int&nbsp;blen,
        <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1194,7 +1223,7 @@ the order they are declared.</div>
        boolean&nbsp;outputEmptyBlocks,
        <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/RightIndex.html#RightIndex-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.hops.AggBinaryOp.SparkAggType-org.apache.sysds.lops.LopProperties.ExecType-">RightIndex</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowL,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowU,
@@ -1207,7 +1236,7 @@ the order they are declared.</div>
           <a href="../../../../../org/apache/sysds/hops/AggBinaryOp.SparkAggType.html" title="enum in org.apache.sysds.hops">AggBinaryOp.SparkAggType</a>&nbsp;aggtype,
           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/RightIndex.html#RightIndex-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">RightIndex</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowL,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowU,
@@ -1219,7 +1248,7 @@ the order they are declared.</div>
           <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/RightIndex.html#RightIndex-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-boolean-">RightIndex</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowL,
           <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowU,
@@ -1232,7 +1261,7 @@ the order they are declared.</div>
           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
           boolean&nbsp;forleft)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/SortKeys.html#SortKeys-org.apache.sysds.lops.Lop-boolean-org.apache.sysds.lops.SortKeys.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">SortKeys</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
         boolean&nbsp;desc,
         <a href="../../../../../org/apache/sysds/lops/SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
@@ -1240,7 +1269,7 @@ the order they are declared.</div>
         <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
         <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/SortKeys.html#SortKeys-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.SortKeys.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">SortKeys</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
         <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
         <a href="../../../../../org/apache/sysds/lops/SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
@@ -1248,36 +1277,39 @@ the order they are declared.</div>
         <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
         <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/SortKeys.html#SortKeys-org.apache.sysds.lops.Lop-org.apache.sysds.lops.SortKeys.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">SortKeys</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
         <a href="../../../../../org/apache/sysds/lops/SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
         <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
         <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
         <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/SpoofFused.html#SpoofFused-java.util.ArrayList-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.Class-int-org.apache.sysds.lops.LopProperties.ExecType-">SpoofFused</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/SpoofFused.html#SpoofFused-java.util.ArrayList-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-java.lang.Class-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-java.lang.String-int-org.apache.sysds.lops.LopProperties.ExecType-">SpoofFused</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
           <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;?&gt;&nbsp;cla,
+          <a href="../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api,
+          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;genVarName,
           int&nbsp;k,
           <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;etype)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Sql.html#Sql-java.util.HashMap-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-">Sql</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
    <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
    <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Ternary.html#Ternary-org.apache.sysds.common.Types.OpOp3-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">Ternary</a></span>(<a href="../../../../../org/apache/sysds/common/Types.OpOp3.html" title="enum in org.apache.sysds.common">Types.OpOp3</a>&nbsp;op,
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Ternary.html#Ternary-org.apache.sysds.common.Types.OpOp3-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-">Ternary</a></span>(<a href="../../../../../org/apache/sysds/common/Types.OpOp3.html" title="enum in org.apache.sysds.common">Types.OpOp3</a>&nbsp;op,
        <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
        <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
        <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
        <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
        <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-       <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
+       <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
+       int&nbsp;numThreads)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/TernaryAggregate.html#TernaryAggregate-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.AggOp-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.common.Types.Direction-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-">TernaryAggregate</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                 <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                 <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1289,7 +1321,7 @@ the order they are declared.</div>
                 <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
                 int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Transform.html#Transform-org.apache.sysds.lops.Lop:A-org.apache.sysds.common.Types.ReOrgOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-org.apache.sysds.lops.LopProperties.ExecType-">Transform</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputs,
          <a href="../../../../../org/apache/sysds/common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1297,7 +1329,7 @@ the order they are declared.</div>
          boolean&nbsp;outputEmptyBlock,
          <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Transform.html#Transform-org.apache.sysds.lops.Lop:A-org.apache.sysds.common.Types.ReOrgOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-boolean-">Transform</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputs,
          <a href="../../../../../org/apache/sysds/common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1305,7 +1337,7 @@ the order they are declared.</div>
          <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
          boolean&nbsp;bSortIndInMem)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Transform.html#Transform-org.apache.sysds.lops.Lop:A-org.apache.sysds.common.Types.ReOrgOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-boolean-int-">Transform</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputs,
          <a href="../../../../../org/apache/sysds/common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1314,7 +1346,7 @@ the order they are declared.</div>
          boolean&nbsp;bSortIndInMem,
          int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Transform.html#Transform-org.apache.sysds.lops.Lop:A-org.apache.sysds.common.Types.ReOrgOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-">Transform</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputs,
          <a href="../../../../../org/apache/sysds/common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1322,14 +1354,14 @@ the order they are declared.</div>
          <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
          int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Transform.html#Transform-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.ReOrgOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">Transform</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
          <a href="../../../../../org/apache/sysds/common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
          <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
          <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Transform.html#Transform-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.ReOrgOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-boolean-">Transform</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
          <a href="../../../../../org/apache/sysds/common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1337,7 +1369,7 @@ the order they are declared.</div>
          <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
          boolean&nbsp;bSortIndInMem)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Transform.html#Transform-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.ReOrgOp-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-">Transform</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
          <a href="../../../../../org/apache/sysds/common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1345,7 +1377,7 @@ the order they are declared.</div>
          <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
          int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/UAggOuterChain.html#UAggOuterChain-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.AggOp-org.apache.sysds.common.Types.Direction-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">UAggOuterChain</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
               <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
               <a href="../../../../../org/apache/sysds/common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;uaop,
@@ -1357,7 +1389,7 @@ the order they are declared.</div>
 <div class="block">Constructor to setup a unaryagg outer chain</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Unary.html#Unary-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOp1-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">Unary</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
      <a href="../../../../../org/apache/sysds/common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
@@ -1367,7 +1399,7 @@ the order they are declared.</div>
 <div class="block">Constructor to perform a unary operation with 2 inputs</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Unary.html#Unary-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOp1-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-boolean-">Unary</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../../../../org/apache/sysds/common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
      <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1378,13 +1410,13 @@ the order they are declared.</div>
 <div class="block">Constructor to perform a unary operation with 1 input.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/UnaryCP.html#UnaryCP-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOp1-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-">UnaryCP</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
        <a href="../../../../../org/apache/sysds/common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
        <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
        <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/UnaryCP.html#UnaryCP-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.OpOp1-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">UnaryCP</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
        <a href="../../../../../org/apache/sysds/common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
        <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1393,7 +1425,7 @@ the order they are declared.</div>
 <div class="block">Constructor to perform a scalar operation</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedCrossEntropy.html#WeightedCrossEntropy-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType-org.apache.sysds.lops.LopProperties.ExecType-">WeightedCrossEntropy</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1403,7 +1435,7 @@ the order they are declared.</div>
                     <a href="../../../../../org/apache/sysds/lops/WeightedCrossEntropy.WCeMMType.html" title="enum in org.apache.sysds.lops">WeightedCrossEntropy.WCeMMType</a>&nbsp;wt,
                     <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedCrossEntropyR.html#WeightedCrossEntropyR-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">WeightedCrossEntropyR</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                      <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                      <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1415,7 +1447,7 @@ the order they are declared.</div>
                      boolean&nbsp;cacheV,
                      <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedDivMM.html#WeightedDivMM-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedDivMM.WDivMMType-org.apache.sysds.lops.LopProperties.ExecType-">WeightedDivMM</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
              <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
              <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1425,7 +1457,7 @@ the order they are declared.</div>
              <a href="../../../../../org/apache/sysds/lops/WeightedDivMM.WDivMMType.html" title="enum in org.apache.sysds.lops">WeightedDivMM.WDivMMType</a>&nbsp;wt,
              <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedDivMMR.html#WeightedDivMMR-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedDivMM.WDivMMType-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">WeightedDivMMR</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
               <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
               <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1437,7 +1469,7 @@ the order they are declared.</div>
               boolean&nbsp;cacheV,
               <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedSigmoid.html#WeightedSigmoid-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedSigmoid.WSigmoidType-org.apache.sysds.lops.LopProperties.ExecType-">WeightedSigmoid</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1446,7 +1478,7 @@ the order they are declared.</div>
                <a href="../../../../../org/apache/sysds/lops/WeightedSigmoid.WSigmoidType.html" title="enum in org.apache.sysds.lops">WeightedSigmoid.WSigmoidType</a>&nbsp;wt,
                <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedSigmoidR.html#WeightedSigmoidR-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedSigmoid.WSigmoidType-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">WeightedSigmoidR</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                 <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                 <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1457,7 +1489,7 @@ the order they are declared.</div>
                 boolean&nbsp;cacheV,
                 <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedSquaredLoss.html#WeightedSquaredLoss-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedSquaredLoss.WeightsType-org.apache.sysds.lops.LopProperties.ExecType-">WeightedSquaredLoss</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                    <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                    <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1467,7 +1499,7 @@ the order they are declared.</div>
                    <a href="../../../../../org/apache/sysds/lops/WeightedSquaredLoss.WeightsType.html" title="enum in org.apache.sysds.lops">WeightedSquaredLoss.WeightsType</a>&nbsp;wt,
                    <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedSquaredLossR.html#WeightedSquaredLossR-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedSquaredLoss.WeightsType-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">WeightedSquaredLossR</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                     <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1479,7 +1511,7 @@ the order they are declared.</div>
                     boolean&nbsp;cacheV,
                     <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedUnaryMM.html#WeightedUnaryMM-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedUnaryMM.WUMMType-org.apache.sysds.common.Types.OpOp1-org.apache.sysds.lops.LopProperties.ExecType-">WeightedUnaryMM</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1489,7 +1521,7 @@ the order they are declared.</div>
                <a href="../../../../../org/apache/sysds/common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
                <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/WeightedUnaryMMR.html#WeightedUnaryMMR-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.WeightedUnaryMM.WUMMType-org.apache.sysds.common.Types.OpOp1-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">WeightedUnaryMMR</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                 <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                 <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1590,6 +1622,19 @@ the order they are declared.</div>
 <!--   -->
 </a>
 <h3>Uses of <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a> in <a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> that return <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a></code></td>
+<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#getDataType--">getDataType</a></span>()</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
 <caption><span>Constructors in <a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> with parameters of type <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
@@ -1600,6 +1645,12 @@ the order they are declared.</div>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#FederatedData-org.apache.sysds.common.Types.DataType-java.net.InetSocketAddress-java.lang.String-">FederatedData</a></span>(<a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dataType,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;address,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filepath)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#FederatedData-org.apache.sysds.common.Types.DataType-java.net.InetSocketAddress-java.lang.String-long-">FederatedData</a></span>(<a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dataType,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;address,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filepath,
+             long&nbsp;varID)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -1835,6 +1886,6 @@ the order they are declared.</div>
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

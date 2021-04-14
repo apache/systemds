@@ -190,7 +190,9 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/data/Weighted
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/WeightedPair.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-">copy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/WeightedPair.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-">copy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that)</code>
+<div class="block">Copy this MatrixValue into that MatrixValue.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
@@ -329,9 +331,16 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/data/Weighted
 <li class="blockList">
 <h4>copy</h4>
 <pre>public&nbsp;void&nbsp;copy(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-">MatrixValue</a></code></span></div>
+<div class="block">Copy this MatrixValue into that MatrixValue.
+ 
+ If the MatrixValue is a MatrixBlock evaluate the sparsity of the original matrix,
+ and copy into either a sparse or a dense matrix.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/WeightedCell.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-">copy</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/WeightedCell.html" title="class in org.apache.sysds.runtime.matrix.data">WeightedCell</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>that</code> - object to copy the values into.</dd>
 </dl>
 </li>
 </ul>
@@ -463,6 +472,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/data/Weighted
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

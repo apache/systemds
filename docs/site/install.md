@@ -29,7 +29,7 @@ This guide helps in the install and setup of SystemDS from source code.
 
 ## Windows
 
-[Developer Guide](https://github.com/apache/systemds/blob/master/dev/docs/windows-source-installation.md)
+[Developer Guide](windows-source-installation)
 
 ---
 
@@ -148,4 +148,3 @@ But successive compiles should become faster.
 
 Now everything is setup and ready to go!
 To execute dml scripts look at [Execute SystemDS](run)
-

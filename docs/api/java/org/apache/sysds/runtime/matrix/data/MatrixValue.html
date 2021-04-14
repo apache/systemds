@@ -214,12 +214,16 @@ implements org.apache.hadoop.io.WritableComparable</pre>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-">copy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-">copy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that)</code>
+<div class="block">Copy this MatrixValue into that MatrixValue.</div>
+</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-boolean-">copy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that,
-    boolean&nbsp;sp)</code>&nbsp;</td>
+    boolean&nbsp;sp)</code>
+<div class="block">Copy this MatrixValue into that MatrixValue.</div>
+</td>
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
@@ -362,7 +366,9 @@ implements org.apache.hadoop.io.WritableComparable</pre>
      int&nbsp;colCut,
      int&nbsp;blen,
      int&nbsp;boundaryRlen,
-     int&nbsp;boundaryClen)</code>&nbsp;</td>
+     int&nbsp;boundaryClen)</code>
+<div class="block">Slice out up to 4 matrixBlocks that are separated by the row and col Cuts.</div>
+</td>
 </tr>
 <tr id="i30" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></td>
@@ -563,6 +569,14 @@ implements org.apache.hadoop.io.WritableComparable</pre>
 <li class="blockList">
 <h4>copy</h4>
 <pre>public abstract&nbsp;void&nbsp;copy(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that)</pre>
+<div class="block">Copy this MatrixValue into that MatrixValue.
+ 
+ If the MatrixValue is a MatrixBlock evaluate the sparsity of the original matrix,
+ and copy into either a sparse or a dense matrix.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>that</code> - object to copy the values into.</dd>
+</dl>
 </li>
 </ul>
 <a name="copy-org.apache.sysds.runtime.matrix.data.MatrixValue-boolean-">
@@ -573,6 +587,12 @@ implements org.apache.hadoop.io.WritableComparable</pre>
 <h4>copy</h4>
 <pre>public abstract&nbsp;void&nbsp;copy(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that,
                           boolean&nbsp;sp)</pre>
+<div class="block">Copy this MatrixValue into that MatrixValue. But select sparse destination block depending on boolean parameter.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>that</code> - object to copy the values into.</dd>
+<dd><code>sp</code> - boolean specifying if output should be forced sparse or dense. (only applicable if the 'that' is a MatrixBlock)</dd>
+</dl>
 </li>
 </ul>
 <a name="scalarOperations-org.apache.sysds.runtime.matrix.operators.ScalarOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-">
@@ -768,6 +788,21 @@ implements org.apache.hadoop.io.WritableComparable</pre>
                            int&nbsp;blen,
                            int&nbsp;boundaryRlen,
                            int&nbsp;boundaryClen)</pre>
+<div class="block">Slice out up to 4 matrixBlocks that are separated by the row and col Cuts.
+ 
+ This is used in the context of spark execution to distributed sliced out matrix blocks of correct block size.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>outlist</code> - The output matrix blocks that is extracted from the matrix</dd>
+<dd><code>range</code> - An index range containing overlapping information.</dd>
+<dd><code>rowCut</code> - The row to cut and split the matrix.</dd>
+<dd><code>colCut</code> - The column to cut ans split the matrix.</dd>
+<dd><code>blen</code> - The Block size of the output matrices.</dd>
+<dd><code>boundaryRlen</code> - The row length of the edge case matrix block, used for the final blocks
+                     that does not have enough rows to construct a full block.</dd>
+<dd><code>boundaryClen</code> - The col length of the edge case matrix block, used for the final blocks
+                     that does not have enough cols to construct a full block.</dd>
+</dl>
 </li>
 </ul>
 <a name="replaceOperations-org.apache.sysds.runtime.matrix.data.MatrixValue-double-double-">
@@ -864,6 +899,6 @@ implements org.apache.hadoop.io.WritableComparable</pre>
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

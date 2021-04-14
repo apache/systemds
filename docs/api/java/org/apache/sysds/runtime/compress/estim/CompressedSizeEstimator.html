@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":6};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":6,"i4":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -148,7 +148,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/estim/EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html#estimateCompressedColGroupSize-org.apache.sysds.runtime.compress.utils.ABitmap-">estimateCompressedColGroupSize</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a>&nbsp;ubm)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html#estimateCompressedColGroupSize-org.apache.sysds.runtime.compress.utils.ABitmap-int:A-">estimateCompressedColGroupSize</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a>&nbsp;ubm,
+                              int[]&nbsp;colIndexes)</code>
 <div class="block">Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap.</div>
 </td>
 </tr>
@@ -157,6 +158,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html#estimateCompressedColGroupSize-int:A-">estimateCompressedColGroupSize</a></span>(int[]&nbsp;colIndexes)</code>
 <div class="block">Abstract method for extracting Compressed Size Info of specified columns, together in a single ColGroup</div>
 </td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html#getSample--">getSample</a></span>()</code>&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -226,22 +231,33 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="estimateCompressedColGroupSize-org.apache.sysds.runtime.compress.utils.ABitmap-">
+<a name="estimateCompressedColGroupSize-org.apache.sysds.runtime.compress.utils.ABitmap-int:A-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>estimateCompressedColGroupSize</h4>
-<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/estim/EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;estimateCompressedColGroupSize(<a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a>&nbsp;ubm)</pre>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/estim/EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;estimateCompressedColGroupSize(<a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a>&nbsp;ubm,
+                                                        int[]&nbsp;colIndexes)</pre>
 <div class="block">Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap. Note this
  method works both for the sample based estimator and the exact estimator, since the bitmap, can be extracted from
  a sample or from the entire dataset.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>ubm</code> - the UncompressedBitmap, either extracted from a sample or from the entier dataset</dd>
+<dd><code>ubm</code> - The UncompressedBitmap, either extracted from a sample or from the entier dataset</dd>
+<dd><code>colIndexes</code> - The columns that is compressed together.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The size factors estimated from the Bit Map.</dd>
 </dl>
+</li>
+</ul>
+<a name="getSample--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getSample</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getSample()</pre>
 </li>
 </ul>
 </li>
@@ -313,6 +329,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

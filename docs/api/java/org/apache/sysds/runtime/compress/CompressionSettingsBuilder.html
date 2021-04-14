@@ -149,7 +149,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#addValidCompression-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-">addValidCompression</a></span>(<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&nbsp;cp)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#addValidCompression-org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType-">addValidCompression</a></span>(<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;cp)</code>
 <div class="block">Add a single valid compression type to the EnumSet of valid compressions.</div>
 </td>
 </tr>
@@ -227,13 +227,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setTransposeInput-boolean-">setTransposeInput</a></span>(boolean&nbsp;transposeInput)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setTransposeInput-java.lang.String-">setTransposeInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;transposeInput)</code>
 <div class="block">Specify if the input matrix should be transposed before compression.</div>
 </td>
 </tr>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setValidCompressions-java.util.EnumSet-">setValidCompressions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&gt;&nbsp;validCompressions)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setValidCompressions-java.util.EnumSet-">setValidCompressions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;&nbsp;validCompressions)</code>
 <div class="block">Set the valid compression strategies used for the compression.</div>
 </td>
 </tr>
@@ -357,18 +357,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="setTransposeInput-boolean-">
+<a name="setTransposeInput-java.lang.String-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>setTransposeInput</h4>
-<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a>&nbsp;setTransposeInput(boolean&nbsp;transposeInput)</pre>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a>&nbsp;setTransposeInput(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;transposeInput)</pre>
 <div class="block">Specify if the input matrix should be transposed before compression. This improves cache efficiency while
  compression the input matrix</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>transposeInput</code> - boolean specifying if the input should be transposed before compression</dd>
+<dd><code>transposeInput</code> - string specifying if the input should be transposed before compression, should be one of
+                       "auto", "true" or "false"</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The CompressionSettingsBuilder</dd>
 </dl>
@@ -429,7 +430,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>setValidCompressions</h4>
-<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a>&nbsp;setValidCompressions(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&gt;&nbsp;validCompressions)</pre>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a>&nbsp;setValidCompressions(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;&nbsp;validCompressions)</pre>
 <div class="block">Set the valid compression strategies used for the compression.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -439,13 +440,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="addValidCompression-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-">
+<a name="addValidCompression-org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>addValidCompression</h4>
-<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a>&nbsp;addValidCompression(<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&nbsp;cp)</pre>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a>&nbsp;addValidCompression(<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;cp)</pre>
 <div class="block">Add a single valid compression type to the EnumSet of valid compressions.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -586,6 +587,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

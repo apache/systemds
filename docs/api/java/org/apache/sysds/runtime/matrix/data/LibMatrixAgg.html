@@ -326,7 +326,9 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                          <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;aggVal,
                                          <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateOperator</a>&nbsp;aop)</pre>
 <div class="block">Core incremental matrix aggregate (ak+) as used for uack+ and acrk+.
- Embedded correction values.</div>
+ Embedded correction values.
+ 
+ DOES NOT EVALUATE SPARSITY SINCE IT IS USED IN INCREMENTAL AGGREGATION</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - matrix block</dd>
@@ -594,6 +596,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

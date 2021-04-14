@@ -156,7 +156,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/RuntimeExce
 </tr>
 <tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedWorkerHandlerException.html#FederatedWorkerHandlerException-java.lang.String-java.lang.Throwable-">FederatedWorkerHandlerException</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;msg,
-                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>&nbsp;t)</code>&nbsp;</td>
+                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>&nbsp;t)</code>
+<div class="block">Create new instance of FederatedWorkerHandlerException with a message
+ and a throwable representing the original cause of the exception.</div>
+</td>
 </tr>
 </table>
 </li>
@@ -217,6 +220,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/RuntimeExce
 <h4>FederatedWorkerHandlerException</h4>
 <pre>public&nbsp;FederatedWorkerHandlerException(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;msg,
                                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>&nbsp;t)</pre>
+<div class="block">Create new instance of FederatedWorkerHandlerException with a message
+ and a throwable representing the original cause of the exception.
+ This constructor should not be used unless the throwable @param t
+ does not expose any private data in any use case.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>msg</code> - message describing the exception</dd>
+<dd><code>t</code> - throwable representing the original cause of the exception</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -288,6 +300,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/RuntimeExce
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

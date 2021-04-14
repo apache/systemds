@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":9,"i7":9,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":9,"i7":9,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10,"i75":10,"i76":10,"i77":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -233,82 +233,90 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </td>
 </tr>
 <tr id="i17" class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getGPUDensePointerAddress-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">getGPUDensePointerAddress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;obj)</code>&nbsp;</td>
+</tr>
+<tr id="i18" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/context/CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getGPUSparsePointerAddress-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">getGPUSparsePointerAddress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;obj)</code>&nbsp;</td>
+</tr>
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/lineage/Lineage.html" title="class in org.apache.sysds.runtime.lineage">Lineage</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getLineage--">getLineage</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getLineageItem-org.apache.sysds.runtime.instructions.cp.CPOperand-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;input)</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getListObject-org.apache.sysds.runtime.instructions.cp.CPOperand-">getListObject</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;input)</code>&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getListObject-java.lang.String-">getListObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getMatrixInput-java.lang.String-">getMatrixInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName)</code>
 <div class="block">Pins a matrix variable into memory and returns the internal matrix block.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getMatrixInputForGPUInstruction-java.lang.String-java.lang.String-">getMatrixInputForGPUInstruction</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
                                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode)</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getMatrixInputs-org.apache.sysds.runtime.instructions.cp.CPOperand:A-">getMatrixInputs</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>[]&nbsp;inputs)</code>&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getMatrixInputs-org.apache.sysds.runtime.instructions.cp.CPOperand:A-boolean-">getMatrixInputs</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>[]&nbsp;inputs,
                boolean&nbsp;includeList)</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getMatrixObject-org.apache.sysds.runtime.instructions.cp.CPOperand-">getMatrixObject</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;input)</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getMatrixObject-java.lang.String-">getMatrixObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varname)</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getMetaData-java.lang.String-">getMetaData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varname)</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getNumGPUContexts--">getNumGPUContexts</a></span>()</code>
 <div class="block">Gets the number of GPUContexts</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getOrCreateLineageItem-org.apache.sysds.runtime.instructions.cp.CPOperand-">getOrCreateLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;input)</code>&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/Program.html" title="class in org.apache.sysds.runtime.controlprogram">Program</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getProgram--">getProgram</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getScalarInput-org.apache.sysds.runtime.instructions.cp.CPOperand-">getScalarInput</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;input)</code>&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getScalarInput-java.lang.String-org.apache.sysds.common.Types.ValueType-boolean-">getScalarInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
               <a href="../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
               boolean&nbsp;isLiteral)</code>&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getScalarInputs-org.apache.sysds.runtime.instructions.cp.CPOperand:A-">getScalarInputs</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>[]&nbsp;inputs)</code>&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getSparseMatrixOutputForGPUInstruction-java.lang.String-long-long-long-">getSparseMatrixOutputForGPUInstruction</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
                                       long&nbsp;numRows,
@@ -317,57 +325,57 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Allocates a sparse matrix in CSR format on the GPU.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/data/TensorBlock.html" title="class in org.apache.sysds.runtime.data">TensorBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getTensorInput-java.lang.String-">getTensorInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName)</code>
 <div class="block">Pins a matrix variable into memory and returns the internal matrix block.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/TensorObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">TensorObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getTensorObject-java.lang.String-">getTensorObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varname)</code>&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getTID--">getTID</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getVariable-org.apache.sysds.runtime.instructions.cp.CPOperand-">getVariable</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;operand)</code>&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getVariable-java.lang.String-">getVariable</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getVariables--">getVariables</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getVarList--">getVarList</a></span>()</code>
 <div class="block">NOTE: No order guaranteed, so keep same list for pin and unpin.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getVarListPartitioned--">getVarListPartitioned</a></span>()</code>
 <div class="block">NOTE: No order guaranteed, so keep same list for pin and unpin.</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#isAutoCreateVars--">isAutoCreateVars</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#isFrameObject-java.lang.String-">isFrameObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varname)</code>&nbsp;</td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#isMatrixObject-java.lang.String-">isMatrixObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varname)</code>&nbsp;</td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>boolean[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#pinVariables-java.util.List-">pinVariables</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;varList)</code>
 <div class="block">Pin a given list of variables i.e., set the "clean up" state in
@@ -376,132 +384,138 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  deleted (through rmvar instructions).</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseCacheableData-java.lang.String-">releaseCacheableData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varname)</code>&nbsp;</td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseFrameInput-java.lang.String-">releaseFrameInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName)</code>
 <div class="block">Unpins a currently pinned frame variable.</div>
 </td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseMatrixInput-java.lang.String...-">releaseMatrixInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>...&nbsp;varNames)</code>&nbsp;</td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseMatrixInput-java.lang.String-">releaseMatrixInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName)</code>
 <div class="block">Unpins a currently pinned matrix variable and update fine-grained statistics.</div>
 </td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseMatrixInputForGPUInstruction-java.lang.String-">releaseMatrixInputForGPUInstruction</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName)</code>&nbsp;</td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i54" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseMatrixInputs-org.apache.sysds.runtime.instructions.cp.CPOperand:A-">releaseMatrixInputs</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>[]&nbsp;inputs)</code>&nbsp;</td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseMatrixInputs-org.apache.sysds.runtime.instructions.cp.CPOperand:A-boolean-">releaseMatrixInputs</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>[]&nbsp;inputs,
                    boolean&nbsp;includeList)</code>&nbsp;</td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseMatrixOutputForGPUInstruction-java.lang.String-">releaseMatrixOutputForGPUInstruction</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName)</code>&nbsp;</td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i57" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseTensorInput-java.lang.String...-">releaseTensorInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>...&nbsp;varNames)</code>&nbsp;</td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i58" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#releaseTensorInput-java.lang.String-">releaseTensorInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName)</code>&nbsp;</td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#removeVariable-java.lang.String-">removeVariable</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setAutoCreateVars-boolean-">setAutoCreateVars</a></span>(boolean&nbsp;flag)</code>&nbsp;</td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setFrameOutput-java.lang.String-org.apache.sysds.runtime.matrix.data.FrameBlock-">setFrameOutput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;outputData)</code>&nbsp;</td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setGPUContexts-java.util.List-">setGPUContexts</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&gt;&nbsp;gpuContexts)</code>
 <div class="block">Sets the list of GPUContexts</div>
 </td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setLineage-org.apache.sysds.runtime.lineage.Lineage-">setLineage</a></span>(<a href="../../../../../../org/apache/sysds/runtime/lineage/Lineage.html" title="class in org.apache.sysds.runtime.lineage">Lineage</a>&nbsp;lineage)</code>&nbsp;</td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setMatrixOutput-java.lang.String-org.apache.sysds.runtime.matrix.data.MatrixBlock-">setMatrixOutput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;outputData)</code>&nbsp;</td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setMatrixOutput-java.lang.String-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType-">setMatrixOutput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;outputData,
                <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.UpdateType.html" title="enum in org.apache.sysds.runtime.controlprogram.caching">MatrixObject.UpdateType</a>&nbsp;flag)</code>&nbsp;</td>
 </tr>
-<tr id="i64" class="altColor">
+<tr id="i66" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setMatrixOutputAndLineage-java.lang.String-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.lineage.LineageItem-">setMatrixOutputAndLineage</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
+                         <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;outputData,
+                         <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code>&nbsp;</td>
+</tr>
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setMetaData-java.lang.String-long-long-">setMetaData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
            long&nbsp;nrows,
            long&nbsp;ncols)</code>&nbsp;</td>
 </tr>
-<tr id="i65" class="rowColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setMetaData-java.lang.String-org.apache.sysds.runtime.meta.MetaData-">setMetaData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
            <a href="../../../../../../org/apache/sysds/runtime/meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a>&nbsp;md)</code>&nbsp;</td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setProgram-org.apache.sysds.runtime.controlprogram.Program-">setProgram</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/Program.html" title="class in org.apache.sysds.runtime.controlprogram">Program</a>&nbsp;prog)</code>&nbsp;</td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setScalarOutput-java.lang.String-org.apache.sysds.runtime.instructions.cp.ScalarObject-">setScalarOutput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
                <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&nbsp;so)</code>&nbsp;</td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setTensorOutput-java.lang.String-org.apache.sysds.runtime.data.TensorBlock-">setTensorOutput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
                <a href="../../../../../../org/apache/sysds/runtime/data/TensorBlock.html" title="class in org.apache.sysds.runtime.data">TensorBlock</a>&nbsp;outputData)</code>&nbsp;</td>
 </tr>
-<tr id="i69" class="rowColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setTID-long-">setTID</a></span>(long&nbsp;tid)</code>&nbsp;</td>
 </tr>
-<tr id="i70" class="altColor">
+<tr id="i73" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setVariable-java.lang.String-org.apache.sysds.runtime.instructions.cp.Data-">setVariable</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
            <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;val)</code>&nbsp;</td>
 </tr>
-<tr id="i71" class="rowColor">
+<tr id="i74" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setVariables-org.apache.sysds.runtime.controlprogram.LocalVariableMap-">setVariables</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;vars)</code>&nbsp;</td>
 </tr>
-<tr id="i72" class="altColor">
+<tr id="i75" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i73" class="rowColor">
+<tr id="i76" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#traceLineage-org.apache.sysds.runtime.instructions.Instruction-">traceLineage</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&nbsp;inst)</code>&nbsp;</td>
 </tr>
-<tr id="i74" class="altColor">
+<tr id="i77" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#unpinVariables-java.util.List-boolean:A-">unpinVariables</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;varList,
               boolean[]&nbsp;varsState)</code>
@@ -975,6 +989,24 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
+<a name="getGPUDensePointerAddress-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getGPUDensePointerAddress</h4>
+<pre>public&nbsp;long&nbsp;getGPUDensePointerAddress(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;obj)</pre>
+</li>
+</ul>
+<a name="getGPUSparsePointerAddress-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getGPUSparsePointerAddress</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/context/CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a>&nbsp;getGPUSparsePointerAddress(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;obj)</pre>
+</li>
+</ul>
 <a name="getMatrixInputForGPUInstruction-java.lang.String-java.lang.String-">
 <!--   -->
 </a>
@@ -1130,6 +1162,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>setMatrixOutput</h4>
 <pre>public&nbsp;void&nbsp;setMatrixOutput(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
                             <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;outputData)</pre>
+</li>
+</ul>
+<a name="setMatrixOutputAndLineage-java.lang.String-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.lineage.LineageItem-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setMatrixOutputAndLineage</h4>
+<pre>public&nbsp;void&nbsp;setMatrixOutputAndLineage(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varName,
+                                      <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;outputData,
+                                      <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</pre>
 </li>
 </ul>
 <a name="setMatrixOutput-java.lang.String-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType-">
@@ -1442,6 +1485,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

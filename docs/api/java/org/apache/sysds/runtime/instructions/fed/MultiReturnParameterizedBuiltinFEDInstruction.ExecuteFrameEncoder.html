@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10};
+var methods = {"i0":10,"i1":10,"i2":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -114,7 +114,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
+<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a>, <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html" title="interface in org.apache.sysds.runtime.lineage">LineageTraceable</a></dd>
 </dl>
 <dl>
 <dt>Enclosing class:</dt>
@@ -146,9 +146,9 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/feder
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html#ExecuteFrameEncoder-long-long-org.apache.sysds.runtime.transform.encode.Encoder-">ExecuteFrameEncoder</a></span>(long&nbsp;input,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html#ExecuteFrameEncoder-long-long-org.apache.sysds.runtime.transform.encode.MultiColumnEncoder-">ExecuteFrameEncoder</a></span>(long&nbsp;input,
                    long&nbsp;output,
-                   <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;encoder)</code>&nbsp;</td>
+                   <a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&nbsp;encoder)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -174,6 +174,16 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/feder
  looked up by specified input IDs and passed in the same order.</div>
 </td>
 </tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
+<div class="block">Obtain lineage trace of an instruction with a single output.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html#getOutputIds--">getOutputIds</a></span>()</code>&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.controlprogram.federated.FederatedUDF">
@@ -189,6 +199,13 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/feder
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
 <code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
 </ul>
+<ul class="blockList">
+<li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.lineage.LineageTraceable">
+<!--   -->
+</a>
+<h3>Methods inherited from interface&nbsp;org.apache.sysds.runtime.lineage.<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html" title="interface in org.apache.sysds.runtime.lineage">LineageTraceable</a></h3>
+<code><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html#getLineageItems-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItems</a>, <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html#hasSingleLineage--">hasSingleLineage</a></code></li>
+</ul>
 </li>
 </ul>
 </li>
@@ -203,7 +220,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/feder
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="ExecuteFrameEncoder-long-long-org.apache.sysds.runtime.transform.encode.Encoder-">
+<a name="ExecuteFrameEncoder-long-long-org.apache.sysds.runtime.transform.encode.MultiColumnEncoder-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -211,7 +228,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/feder
 <h4>ExecuteFrameEncoder</h4>
 <pre>public&nbsp;ExecuteFrameEncoder(long&nbsp;input,
                            long&nbsp;output,
-                           <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;encoder)</pre>
+                           <a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&nbsp;encoder)</pre>
 </li>
 </ul>
 </li>
@@ -225,7 +242,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/feder
 <a name="execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>execute</h4>
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&nbsp;execute(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
@@ -245,6 +262,36 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/feder
 <dd><code>data</code> - one or many data objects</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>federated response, with none or many output objects</dd>
+</dl>
+</li>
+</ul>
+<a name="getOutputIds--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOutputIds</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;getOutputIds()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html#getOutputIds--">getOutputIds</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getLineageItem</h4>
+<pre>public&nbsp;org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;&nbsp;getLineageItem(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">LineageTraceable</a></code></span></div>
+<div class="block">Obtain lineage trace of an instruction with a single output.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ec</code> - execution context w/ live variables</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>pair of (output variable name, output lineage item)</dd>
 </dl>
 </li>
 </ul>
@@ -317,6 +364,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/feder
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

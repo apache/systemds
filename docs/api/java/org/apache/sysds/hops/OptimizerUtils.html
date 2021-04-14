@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9,"i39":9,"i40":9,"i41":9,"i42":9,"i43":9,"i44":9,"i45":9,"i46":9,"i47":9,"i48":9,"i49":9,"i50":9,"i51":9,"i52":9,"i53":9,"i54":9,"i55":9,"i56":9,"i57":9,"i58":9,"i59":9,"i60":9,"i61":9,"i62":9,"i63":9,"i64":9,"i65":9,"i66":9,"i67":9,"i68":9,"i69":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9,"i39":9,"i40":9,"i41":9,"i42":9,"i43":9,"i44":9,"i45":9,"i46":9,"i47":9,"i48":9,"i49":9,"i50":9,"i51":9,"i52":9,"i53":9,"i54":9,"i55":9,"i56":9,"i57":9,"i58":9,"i59":9,"i60":9,"i61":9,"i62":9,"i63":9,"i64":9,"i65":9,"i66":9,"i67":9,"i68":9,"i69":9,"i70":9,"i71":9,"i72":9,"i73":9,"i74":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -197,31 +197,45 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_FOR_LOOP_REMOVAL">ALLOW_FOR_LOOP_REMOVAL</a></span></code>
+<div class="block">Enables the removal of (par)for-loops when from, to, and increment are constants
+ (original literals or results of constant folding) and lead to an empty sequence,
+ i.e., (par)for-loops without a single iteration.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_INTER_PROCEDURAL_ANALYSIS">ALLOW_INTER_PROCEDURAL_ANALYSIS</a></span></code>
 <div class="block">Enables interprocedural analysis between main script and functions as well as functions
  and other functions.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_LOOP_UPDATE_IN_PLACE">ALLOW_LOOP_UPDATE_IN_PLACE</a></span></code>
 <div class="block">Enables a specific rewrite that enables update in place for loop variables that are
  only read/updated via cp leftindexing.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_OPERATOR_FUSION">ALLOW_OPERATOR_FUSION</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_RAND_JOB_RECOMPILE">ALLOW_RAND_JOB_RECOMPILE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_RUNTIME_PIGGYBACKING">ALLOW_RUNTIME_PIGGYBACKING</a></span></code>
 <div class="block">Enables parfor runtime piggybacking of MR jobs into the packed jobs for
  scan sharing.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND">ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND</a></span></code>
+<div class="block">This variable allows for insertion of Compress and decompress in the dml script from the user.</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -409,6 +423,18 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimatePartitionedSizeExactSparsity-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">estimatePartitionedSizeExactSparsity</a></span>(<a href="../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc,
+                                    boolean&nbsp;outputEmptyBlocks)</code>&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimatePartitionedSizeExactSparsity-org.apache.sysds.hops.Hop-">estimatePartitionedSizeExactSparsity</a></span>(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop)</code>
+<div class="block">Estimates the footprint (in bytes) for a partitioned in-memory representation of a
+ matrix with the hops dimensions and number of non-zeros nnz.</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimatePartitionedSizeExactSparsity-long-long-long-double-">estimatePartitionedSizeExactSparsity</a></span>(long&nbsp;rlen,
                                     long&nbsp;clen,
                                     long&nbsp;blen,
@@ -417,7 +443,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  matrix with dimensions=(nrows,ncols) and sparsity=sp.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimatePartitionedSizeExactSparsity-long-long-long-double-boolean-">estimatePartitionedSizeExactSparsity</a></span>(long&nbsp;rlen,
+                                    long&nbsp;clen,
+                                    long&nbsp;blen,
+                                    double&nbsp;sp,
+                                    boolean&nbsp;outputEmptyBlocks)</code>&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimatePartitionedSizeExactSparsity-long-long-long-long-">estimatePartitionedSizeExactSparsity</a></span>(long&nbsp;rlen,
                                     long&nbsp;clen,
@@ -427,11 +461,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  matrix with dimensions=(nrows,ncols) and number of non-zeros nnz.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimatePartitionedSizeExactSparsity-long-long-long-long-boolean-">estimatePartitionedSizeExactSparsity</a></span>(long&nbsp;rlen,
+                                    long&nbsp;clen,
+                                    long&nbsp;blen,
+                                    long&nbsp;nnz,
+                                    boolean&nbsp;outputEmptyBlocks)</code>&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSize-org.apache.sysds.runtime.meta.DataCharacteristics-">estimateSize</a></span>(<a href="../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSize-long-long-">estimateSize</a></span>(long&nbsp;nrows,
             long&nbsp;ncols)</code>
@@ -439,16 +481,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  when the optimization type is ROBUST.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSizeEmptyBlock-long-long-">estimateSizeEmptyBlock</a></span>(long&nbsp;nrows,
                       long&nbsp;ncols)</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSizeExactSparsity-org.apache.sysds.runtime.meta.DataCharacteristics-">estimateSizeExactSparsity</a></span>(<a href="../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSizeExactSparsity-long-long-double-">estimateSizeExactSparsity</a></span>(long&nbsp;nrows,
                          long&nbsp;ncols,
@@ -457,7 +499,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  matrix with dimensions=(nrows,ncols) and sparsity=sp.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSizeExactSparsity-long-long-long-">estimateSizeExactSparsity</a></span>(long&nbsp;nrows,
                          long&nbsp;ncols,
@@ -466,20 +508,20 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  matrix with dimensions=(nrows,ncols) and and number of non-zeros nnz.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSizeTextOutput-int:A-long-org.apache.sysds.common.Types.FileFormat-">estimateSizeTextOutput</a></span>(int[]&nbsp;dims,
                       long&nbsp;nnz,
                       <a href="../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt)</code>&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#estimateSizeTextOutput-long-long-long-org.apache.sysds.common.Types.FileFormat-">estimateSizeTextOutput</a></span>(long&nbsp;rows,
                       long&nbsp;cols,
                       long&nbsp;nnz,
                       <a href="../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt)</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#exceedsCachingThreshold-long-double-">exceedsCachingThreshold</a></span>(long&nbsp;dim2,
                        double&nbsp;outMem)</code>
@@ -487,7 +529,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  caching, i.e., the matrix should be cached.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getBinaryOpSparsity-double-double-org.apache.sysds.common.Types.OpOp2-boolean-">getBinaryOpSparsity</a></span>(double&nbsp;sp1,
                    double&nbsp;sp2,
@@ -496,33 +538,33 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Estimates the result sparsity for matrix-matrix binary operations (A op B)</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getBinaryOpSparsityConditionalSparseSafe-double-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.hops.LiteralOp-">getBinaryOpSparsityConditionalSparseSafe</a></span>(double&nbsp;sp1,
                                         <a href="../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op,
                                         <a href="../../../../org/apache/sysds/hops/LiteralOp.html" title="class in org.apache.sysds.hops">LiteralOp</a>&nbsp;lit)</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getConstrainedNumThreads-int-">getConstrainedNumThreads</a></span>(int&nbsp;maxNumThreads)</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../org/apache/sysds/common/Types.ExecMode.html" title="enum in org.apache.sysds.common">Types.ExecMode</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getDefaultExecutionMode--">getDefaultExecutionMode</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getDefaultFrameSize--">getDefaultFrameSize</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>static org.apache.log4j.Level</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getDefaultLogLevel--">getDefaultLogLevel</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getDefaultSize--">getDefaultSize</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getLeftIndexingSparsity-long-long-long-long-long-long-">getLeftIndexingSparsity</a></span>(long&nbsp;rlen1,
                        long&nbsp;clen1,
@@ -531,13 +573,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                        long&nbsp;clen2,
                        long&nbsp;nnz2)</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getLocalMemBudget--">getLocalMemBudget</a></span>()</code>
 <div class="block">Returns memory budget (according to util factor) in bytes</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getMatMultNnz-double-double-long-long-long-boolean-">getMatMultNnz</a></span>(double&nbsp;sp1,
              double&nbsp;sp2,
@@ -546,7 +588,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
              long&nbsp;n,
              boolean&nbsp;worstcase)</code>&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getMatMultSparsity-double-double-long-long-long-boolean-">getMatMultSparsity</a></span>(double&nbsp;sp1,
                   double&nbsp;sp2,
@@ -557,38 +599,38 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Estimates the result sparsity for Matrix Multiplication A %*% B.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getNnz-long-long-double-">getNnz</a></span>(long&nbsp;dim1,
       long&nbsp;dim2,
       double&nbsp;sp)</code>&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getNumIterations-org.apache.sysds.runtime.controlprogram.ForProgramBlock-org.apache.sysds.runtime.controlprogram.LocalVariableMap-long-">getNumIterations</a></span>(<a href="../../../../org/apache/sysds/runtime/controlprogram/ForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ForProgramBlock</a>&nbsp;fpb,
                 <a href="../../../../org/apache/sysds/runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;vars,
                 long&nbsp;defaultValue)</code>&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getNumIterations-org.apache.sysds.runtime.controlprogram.ForProgramBlock-long-">getNumIterations</a></span>(<a href="../../../../org/apache/sysds/runtime/controlprogram/ForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ForProgramBlock</a>&nbsp;fpb,
                 long&nbsp;defaultValue)</code>&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getNumMappers--">getNumMappers</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getNumReducers-boolean-">getNumReducers</a></span>(boolean&nbsp;configOnly)</code>
 <div class="block">Returns the number of reducers that potentially run in parallel.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../org/apache/sysds/hops/OptimizerUtils.OptimizationLevel.html" title="enum in org.apache.sysds.hops">OptimizerUtils.OptimizationLevel</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getOptLevel--">getOptLevel</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getOuterNonZeros-long-long-long-long-org.apache.sysds.common.Types.OpOp2-">getOuterNonZeros</a></span>(long&nbsp;n1,
                 long&nbsp;n2,
@@ -596,65 +638,69 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                 long&nbsp;nnz2,
                 <a href="../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getParallelBinaryReadParallelism--">getParallelBinaryReadParallelism</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getParallelBinaryWriteParallelism--">getParallelBinaryWriteParallelism</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getParallelTextReadParallelism--">getParallelTextReadParallelism</a></span>()</code>
 <div class="block">Returns the degree of parallelism used for parallel text read.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getParallelTextWriteParallelism--">getParallelTextWriteParallelism</a></span>()</code>
 <div class="block">Returns the degree of parallelism used for parallel text write.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getSparsity-org.apache.sysds.runtime.meta.DataCharacteristics-">getSparsity</a></span>(<a href="../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i47" class="rowColor">
+<td class="colFirst"><code>static double</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getSparsity-org.apache.sysds.hops.Hop-">getSparsity</a></span>(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop)</code>&nbsp;</td>
+</tr>
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getSparsity-long:A-long-">getSparsity</a></span>(long[]&nbsp;dims,
            long&nbsp;nnz)</code>&nbsp;</td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getSparsity-long-long-long-">getSparsity</a></span>(long&nbsp;dim1,
            long&nbsp;dim2,
            long&nbsp;nnz)</code>&nbsp;</td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getTotalMemEstimate-org.apache.sysds.hops.Hop:A-org.apache.sysds.hops.Hop-">getTotalMemEstimate</a></span>(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>[]&nbsp;in,
                    <a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;out)</code>&nbsp;</td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getTotalMemEstimate-org.apache.sysds.hops.Hop:A-org.apache.sysds.hops.Hop-boolean-">getTotalMemEstimate</a></span>(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>[]&nbsp;in,
                    <a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;out,
                    boolean&nbsp;denseOut)</code>&nbsp;</td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#getUniqueTempFileName--">getUniqueTempFileName</a></span>()</code>
 <div class="block">Wrapper over internal filename construction for external usage.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isBinaryOpConditionalSparseSafe-org.apache.sysds.common.Types.OpOp2-">isBinaryOpConditionalSparseSafe</a></span>(<a href="../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op)</code>
 <div class="block">Determines if a given binary op is potentially conditional sparse safe.</div>
 </td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i54" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isBinaryOpConditionalSparseSafeExact-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.hops.LiteralOp-">isBinaryOpConditionalSparseSafeExact</a></span>(<a href="../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op,
                                     <a href="../../../../org/apache/sysds/hops/LiteralOp.html" title="class in org.apache.sysds.hops">LiteralOp</a>&nbsp;lit)</code>
@@ -662,16 +708,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  sparsity which is exactly the same as its matrix input sparsity.</div>
 </td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isBinaryOpSparsityConditionalSparseSafe-org.apache.sysds.common.Types.OpOp2-org.apache.sysds.hops.LiteralOp-">isBinaryOpSparsityConditionalSparseSafe</a></span>(<a href="../../../../org/apache/sysds/common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op,
                                        <a href="../../../../org/apache/sysds/hops/LiteralOp.html" title="class in org.apache.sysds.hops">LiteralOp</a>&nbsp;lit)</code>&nbsp;</td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isHybridExecutionMode--">isHybridExecutionMode</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i57" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isIndexingRangeBlockAligned-org.apache.sysds.runtime.util.IndexRange-org.apache.sysds.runtime.meta.DataCharacteristics-">isIndexingRangeBlockAligned</a></span>(<a href="../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
                            <a href="../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc)</code>
@@ -679,7 +725,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  global aggregation of blocks.</div>
 </td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i58" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isIndexingRangeBlockAligned-long-long-long-long-long-">isIndexingRangeBlockAligned</a></span>(long&nbsp;rl,
                            long&nbsp;ru,
@@ -690,38 +736,38 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  global aggregation of blocks.</div>
 </td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isMaxLocalParallelism-int-">isMaxLocalParallelism</a></span>(int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isMemoryBasedOptLevel--">isMemoryBasedOptLevel</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isOptLevel-org.apache.sysds.hops.OptimizerUtils.OptimizationLevel-">isOptLevel</a></span>(<a href="../../../../org/apache/sysds/hops/OptimizerUtils.OptimizationLevel.html" title="enum in org.apache.sysds.hops">OptimizerUtils.OptimizationLevel</a>&nbsp;level)</code>&nbsp;</td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isSparkExecutionMode--">isSparkExecutionMode</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isTopLevelParFor--">isTopLevelParFor</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isValidCPDimensions-org.apache.sysds.runtime.meta.DataCharacteristics-">isValidCPDimensions</a></span>(<a href="../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc)</code>&nbsp;</td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isValidCPDimensions-long-long-">isValidCPDimensions</a></span>(long&nbsp;rows,
                    long&nbsp;cols)</code>
 <div class="block">Returns false if dimensions known to be invalid; other true</div>
 </td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isValidCPDimensions-org.apache.sysds.common.Types.ValueType:A-java.lang.String:A-">isValidCPDimensions</a></span>(<a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;names)</code>
@@ -729,7 +775,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  Length to be &gt; 0, and length of both to be equal.</div>
 </td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#isValidCPMatrixSize-long-long-double-">isValidCPMatrixSize</a></span>(long&nbsp;rows,
                    long&nbsp;cols,
@@ -737,39 +783,39 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Determines if valid matrix size to be represented in CP data structures.</div>
 </td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#resetDefaultSize--">resetDefaultSize</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i64" class="altColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#resetStaticCompilerFlags--">resetStaticCompilerFlags</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i65" class="rowColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#rEvalSimpleDoubleExpression-org.apache.sysds.hops.Hop-java.util.HashMap-">rEvalSimpleDoubleExpression</a></span>(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
                            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html?is-external=true" title="class or interface in java.lang">Double</a>&gt;&nbsp;valMemo)</code>&nbsp;</td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#rEvalSimpleDoubleExpression-org.apache.sysds.hops.Hop-java.util.HashMap-org.apache.sysds.runtime.controlprogram.LocalVariableMap-">rEvalSimpleDoubleExpression</a></span>(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
                            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html?is-external=true" title="class or interface in java.lang">Double</a>&gt;&nbsp;valMemo,
                            <a href="../../../../org/apache/sysds/runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;vars)</code>&nbsp;</td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#rEvalSimpleLongExpression-org.apache.sysds.hops.Hop-java.util.HashMap-">rEvalSimpleLongExpression</a></span>(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;valMemo)</code>
 <div class="block">Function to evaluate simple size expressions over literals and now/ncol.</div>
 </td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i73" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#rEvalSimpleLongExpression-org.apache.sysds.hops.Hop-java.util.HashMap-org.apache.sysds.runtime.controlprogram.LocalVariableMap-">rEvalSimpleLongExpression</a></span>(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;valMemo,
                          <a href="../../../../org/apache/sysds/runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;vars)</code>&nbsp;</td>
 </tr>
-<tr id="i69" class="rowColor">
+<tr id="i74" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#toMB-double-">toMB</a></span>(double&nbsp;inB)</code>&nbsp;</td>
 </tr>
@@ -1008,6 +1054,18 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  results of constant folding).</div>
 </li>
 </ul>
+<a name="ALLOW_FOR_LOOP_REMOVAL">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ALLOW_FOR_LOOP_REMOVAL</h4>
+<pre>public static&nbsp;boolean ALLOW_FOR_LOOP_REMOVAL</pre>
+<div class="block">Enables the removal of (par)for-loops when from, to, and increment are constants
+ (original literals or results of constant folding) and lead to an empty sequence,
+ i.e., (par)for-loops without a single iteration.</div>
+</li>
+</ul>
 <a name="ALLOW_AUTO_VECTORIZATION">
 <!--   -->
 </a>
@@ -1162,7 +1220,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <a name="ALLOW_COMBINE_FILE_INPUT_FORMAT">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>ALLOW_COMBINE_FILE_INPUT_FORMAT</h4>
 <pre>public static final&nbsp;boolean ALLOW_COMBINE_FILE_INPUT_FORMAT</pre>
@@ -1173,6 +1231,21 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../constant-values.html#org.apache.sysds.hops.OptimizerUtils.ALLOW_COMBINE_FILE_INPUT_FORMAT">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND</h4>
+<pre>public static final&nbsp;boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND</pre>
+<div class="block">This variable allows for insertion of Compress and decompress in the dml script from the user.
+ This is added because we want to have a way to test, and verify the correct placement of compress and decompress commands.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.hops.OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>
@@ -1555,6 +1628,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
+<a name="estimatePartitionedSizeExactSparsity-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimatePartitionedSizeExactSparsity</h4>
+<pre>public static&nbsp;long&nbsp;estimatePartitionedSizeExactSparsity(<a href="../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc,
+                                                        boolean&nbsp;outputEmptyBlocks)</pre>
+</li>
+</ul>
 <a name="estimatePartitionedSizeExactSparsity-long-long-long-long-">
 <!--   -->
 </a>
@@ -1575,6 +1658,36 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dd><code>nnz</code> - number of non-zeros</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>memory estimate</dd>
+</dl>
+</li>
+</ul>
+<a name="estimatePartitionedSizeExactSparsity-long-long-long-long-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimatePartitionedSizeExactSparsity</h4>
+<pre>public static&nbsp;long&nbsp;estimatePartitionedSizeExactSparsity(long&nbsp;rlen,
+                                                        long&nbsp;clen,
+                                                        long&nbsp;blen,
+                                                        long&nbsp;nnz,
+                                                        boolean&nbsp;outputEmptyBlocks)</pre>
+</li>
+</ul>
+<a name="estimatePartitionedSizeExactSparsity-org.apache.sysds.hops.Hop-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimatePartitionedSizeExactSparsity</h4>
+<pre>public static&nbsp;long&nbsp;estimatePartitionedSizeExactSparsity(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop)</pre>
+<div class="block">Estimates the footprint (in bytes) for a partitioned in-memory representation of a
+ matrix with the hops dimensions and number of non-zeros nnz.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>hop</code> - The hop to extract dimensions and nnz from</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the memory estimate</dd>
 </dl>
 </li>
 </ul>
@@ -1599,6 +1712,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>memory estimate</dd>
 </dl>
+</li>
+</ul>
+<a name="estimatePartitionedSizeExactSparsity-long-long-long-double-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimatePartitionedSizeExactSparsity</h4>
+<pre>public static&nbsp;long&nbsp;estimatePartitionedSizeExactSparsity(long&nbsp;rlen,
+                                                        long&nbsp;clen,
+                                                        long&nbsp;blen,
+                                                        double&nbsp;sp,
+                                                        boolean&nbsp;outputEmptyBlocks)</pre>
 </li>
 </ul>
 <a name="estimateSize-long-long-">
@@ -2021,6 +2147,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                  long&nbsp;nnz)</pre>
 </li>
 </ul>
+<a name="getSparsity-org.apache.sysds.hops.Hop-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getSparsity</h4>
+<pre>public static&nbsp;double&nbsp;getSparsity(<a href="../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop)</pre>
+</li>
+</ul>
 <a name="getSparsity-long:A-long-">
 <!--   -->
 </a>
@@ -2183,6 +2318,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

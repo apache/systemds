@@ -46,6 +46,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+
+@net.jcip.annotations.NotThreadSafe
 public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 
 	protected static final Log LOG = LogFactory.getLog(RDDConverterUtilsExtTest.class.getName());

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html" title="class in org.apache.sysds.runtime.compress"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li>Next&nbsp;Class</li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../index.html?org/apache/sysds/runtime/compress/CompressionStatistics.html" target="_top">Frames</a></li>
@@ -131,21 +131,25 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#estimatedSizeColGroups">estimatedSizeColGroups</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#denseSize">denseSize</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#estimatedSizeColGroups">estimatedSizeColGroups</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#estimatedSizeCols">estimatedSizeCols</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#originalSize">originalSize</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#ratio">ratio</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#size">size</a></span></code>&nbsp;</td>
 </tr>
@@ -182,7 +186,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>,int[]&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.ColGroupType</a>,int[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#getColGroups--">getColGroups</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -198,20 +202,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#getLastTimePhase--">getLastTimePhase</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html?is-external=true" title="class or interface in java.lang">Double</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#getTimeArrayList--">getTimeArrayList</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#setColGroupsCounts-java.util.List-">setColGroupsCounts</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a>&gt;&nbsp;colGroups)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#setColGroupsCounts-java.util.List-">setColGroupsCounts</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
 <div class="block">Set array of counts regarding col group types.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#setNextTimePhase-double-">setNextTimePhase</a></span>(double&nbsp;time)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
@@ -253,6 +253,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>originalSize</h4>
 <pre>public&nbsp;long originalSize</pre>
+</li>
+</ul>
+<a name="denseSize">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>denseSize</h4>
+<pre>public&nbsp;long denseSize</pre>
 </li>
 </ul>
 <a name="estimatedSizeColGroups">
@@ -331,8 +340,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>setColGroupsCounts</h4>
-<pre>public&nbsp;void&nbsp;setColGroupsCounts(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a>&gt;&nbsp;colGroups)</pre>
-<div class="block">Set array of counts regarding col group types. 
+<pre>public&nbsp;void&nbsp;setColGroupsCounts(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</pre>
+<div class="block">Set array of counts regarding col group types.
  
  The position corresponds with the enum ordinal.</div>
 <dl>
@@ -347,16 +356,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getColGroups</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>,int[]&gt;&nbsp;getColGroups()</pre>
-</li>
-</ul>
-<a name="getTimeArrayList--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getTimeArrayList</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html?is-external=true" title="class or interface in java.lang">Double</a>&gt;&nbsp;getTimeArrayList()</pre>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.ColGroupType</a>,int[]&gt;&nbsp;getColGroups()</pre>
 </li>
 </ul>
 <a name="getGroupsTypesString--">
@@ -419,7 +419,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html" title="class in org.apache.sysds.runtime.compress"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li>Next&nbsp;Class</li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../index.html?org/apache/sysds/runtime/compress/CompressionStatistics.html" target="_top">Frames</a></li>
@@ -459,6 +459,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

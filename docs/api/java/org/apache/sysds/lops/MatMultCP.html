@@ -187,6 +187,16 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
          <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
          int&nbsp;k)</code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/MatMultCP.html#MatMultCP-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-boolean-boolean-">MatMultCP</a></span>(<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+         <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
+         <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
+         <a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+         <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
+         int&nbsp;k,
+         boolean&nbsp;isLeftTransposed,
+         boolean&nbsp;isRightTransposed)</code>&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -275,6 +285,21 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
 <a name="MatMultCP-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-boolean-boolean-">
 <!--   -->
 </a>
+<ul class="blockList">
+<li class="blockList">
+<h4>MatMultCP</h4>
+<pre>public&nbsp;MatMultCP(<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+                 <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
+                 <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
+                 <a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+                 <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
+                 boolean&nbsp;isLeftTransposed,
+                 boolean&nbsp;isRightTransposed)</pre>
+</li>
+</ul>
+<a name="MatMultCP-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-int-boolean-boolean-">
+<!--   -->
+</a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>MatMultCP</h4>
@@ -283,6 +308,7 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
                  <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                  <a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                  <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
+                 int&nbsp;k,
                  boolean&nbsp;isLeftTransposed,
                  boolean&nbsp;isRightTransposed)</pre>
 </li>
@@ -402,6 +428,6 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10};
+var methods = {"i0":10,"i1":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -210,6 +210,10 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Appe
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListAppendRemoveCPInstruction.html#getOutput2--">getOutput2</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListAppendRemoveCPInstruction.html#processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">processInstruction</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
 <div class="block">This method should be used to execute the instruction.</div>
@@ -221,7 +225,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Appe
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.instructions.cp.<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/AppendCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">AppendCPInstruction</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/AppendCPInstruction.html#parseInstruction-java.lang.String-">parseInstruction</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/AppendCPInstruction.html#getAppendType--">getAppendType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/AppendCPInstruction.html#parseInstruction-java.lang.String-">parseInstruction</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction">
@@ -282,7 +286,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Appe
 <a name="processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>processInstruction</h4>
 <pre>public&nbsp;void&nbsp;processInstruction(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
@@ -294,6 +298,15 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Appe
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ec</code> - execution context</dd>
 </dl>
+</li>
+</ul>
+<a name="getOutput2--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getOutput2</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;getOutput2()</pre>
 </li>
 </ul>
 </li>
@@ -365,6 +378,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Appe
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

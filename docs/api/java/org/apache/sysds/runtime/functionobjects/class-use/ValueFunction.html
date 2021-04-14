@@ -137,25 +137,63 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#applyBinaryRowOp-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOp</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#applyBinaryRowOp-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-boolean-">applyBinaryRowOp</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
                 double[]&nbsp;v,
                 boolean&nbsp;sparseSafe,
-                int[]&nbsp;colIndexes)</code>&nbsp;</td>
+                boolean&nbsp;left)</code>
+<div class="block">Apply the binary row-wise operator to the dictionary, and copy it appropriately if needed.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#applyBinaryRowOp-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-boolean-">applyBinaryRowOp</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                double[]&nbsp;v,
+                boolean&nbsp;sparseSafe,
+                int[]&nbsp;colIndexes,
+                boolean&nbsp;left)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#applyBinaryRowOpLeft-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOpLeft</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                    double[]&nbsp;v,
+                    boolean&nbsp;sparseSafe,
+                    int[]&nbsp;colIndexes)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></code></td>
-<td class="colLast"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#applyBinaryRowOp-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOp</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
-                double[]&nbsp;v,
-                boolean&nbsp;sparseSafe,
-                int[]&nbsp;colIndexes)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#applyBinaryRowOpLeft-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOpLeft</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                    double[]&nbsp;v,
+                    boolean&nbsp;sparseSafe,
+                    int[]&nbsp;colIndexes)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">QDictionary</a></code></td>
-<td class="colLast"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html#applyBinaryRowOp-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOp</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
-                double[]&nbsp;v,
-                boolean&nbsp;sparseSafe,
-                int[]&nbsp;colIndexes)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html#applyBinaryRowOpLeft-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOpLeft</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                    double[]&nbsp;v,
+                    boolean&nbsp;sparseSafe,
+                    int[]&nbsp;colIndexes)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#applyBinaryRowOpRight-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOpRight</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                     double[]&nbsp;v,
+                     boolean&nbsp;sparseSafe,
+                     int[]&nbsp;colIndexes)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#applyBinaryRowOpRight-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOpRight</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                     double[]&nbsp;v,
+                     boolean&nbsp;sparseSafe,
+                     int[]&nbsp;colIndexes)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">QDictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html#applyBinaryRowOpRight-org.apache.sysds.runtime.functionobjects.ValueFunction-double:A-boolean-int:A-">applyBinaryRowOpRight</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                     double[]&nbsp;v,
+                     boolean&nbsp;sparseSafe,
+                     int[]&nbsp;colIndexes)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -367,8 +405,8 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
-<td class="colLast"><span class="typeNameLabel">Builtin.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.html#isBuiltinCode-org.apache.sysds.runtime.functionobjects.ValueFunction-org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode-">isBuiltinCode</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
-             <a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.BuiltinCode.html" title="enum in org.apache.sysds.runtime.functionobjects">Builtin.BuiltinCode</a>&nbsp;code)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">Builtin.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.html#isBuiltinCode-org.apache.sysds.runtime.functionobjects.ValueFunction-org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode...-">isBuiltinCode</a></span>(<a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+             <a href="../../../../../../org/apache/sysds/runtime/functionobjects/Builtin.BuiltinCode.html" title="enum in org.apache.sysds.runtime.functionobjects">Builtin.BuiltinCode</a>...&nbsp;codes)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -573,6 +611,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

@@ -124,7 +124,7 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractCompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/compress/AbstractCompressedMatrixBlock.html#append-org.apache.sysds.runtime.matrix.data.MatrixValue-java.util.ArrayList-int-boolean-boolean-int-">append</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;v2,
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#append-org.apache.sysds.runtime.matrix.data.MatrixValue-java.util.ArrayList-int-boolean-boolean-int-">append</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;v2,
       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
       int&nbsp;blen,
       boolean&nbsp;cbind,
@@ -133,7 +133,7 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractCompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/compress/AbstractCompressedMatrixBlock.html#slice-java.util.ArrayList-org.apache.sysds.runtime.util.IndexRange-int-int-int-int-int-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#slice-java.util.ArrayList-org.apache.sysds.runtime.util.IndexRange-int-int-int-int-int-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
      <a href="../../../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
      int&nbsp;rowCut,
      int&nbsp;colCut,
@@ -263,6 +263,12 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">OperationsOnMatrixValues.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.util.IndexRange-int-">performSlice</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
+            <a href="../../../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
+            int&nbsp;blen)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixReorg.html#reshape-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-boolean-">reshape</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
        <a href="../../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
@@ -301,11 +307,10 @@
             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><span class="typeNameLabel">OperationsOnMatrixValues.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.util.IndexRange-int-java.util.ArrayList-">performSlice</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">OperationsOnMatrixValues.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.util.IndexRange-int-">performSlice</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
             <a href="../../../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
-            int&nbsp;blen,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist)</code>&nbsp;</td>
+            int&nbsp;blen)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;</code></td>
@@ -424,19 +429,12 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><span class="typeNameLabel">OperationsOnMatrixValues.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.util.IndexRange-int-java.util.ArrayList-">performSlice</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
-            <a href="../../../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
-            int&nbsp;blen,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixReorg.html#rev-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-long-int-java.util.ArrayList-">rev</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
    long&nbsp;rlen,
    int&nbsp;blen,
    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;out)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixReorg.html#rexpand-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-double-boolean-boolean-boolean-long-java.util.ArrayList-">rexpand</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;data,
        double&nbsp;max,
@@ -448,7 +446,7 @@
 <div class="block">MR/Spark rexpand operation (single input, multiple outputs incl empty blocks)</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixReorg.html#rmempty-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-boolean-long-long-java.util.ArrayList-">rmempty</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;data,
        <a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;offset,
@@ -460,7 +458,7 @@
  there are different CP and MR interfaces.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixValue.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#slice-java.util.ArrayList-org.apache.sysds.runtime.util.IndexRange-int-int-int-int-int-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
      <a href="../../../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -468,9 +466,11 @@
      int&nbsp;colCut,
      int&nbsp;blen,
      int&nbsp;boundaryRlen,
-     int&nbsp;boundaryClen)</code>&nbsp;</td>
+     int&nbsp;boundaryClen)</code>
+<div class="block">Slice out up to 4 matrixBlocks that are separated by the row and col Cuts.</div>
+</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixCell.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixCell.html#slice-java.util.ArrayList-org.apache.sysds.runtime.util.IndexRange-int-int-int-int-int-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
      <a href="../../../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -480,7 +480,7 @@
      int&nbsp;boundaryRlen,
      int&nbsp;boundaryClen)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html#slice-java.util.ArrayList-org.apache.sysds.runtime.util.IndexRange-int-int-int-int-int-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
      <a href="../../../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -490,7 +490,7 @@
      int&nbsp;boundaryRlen,
      int&nbsp;boundaryClen)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">CM_N_COVCell.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/matrix/data/CM_N_COVCell.html#slice-java.util.ArrayList-org.apache.sysds.runtime.util.IndexRange-int-int-int-int-int-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
      <a href="../../../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -574,6 +574,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

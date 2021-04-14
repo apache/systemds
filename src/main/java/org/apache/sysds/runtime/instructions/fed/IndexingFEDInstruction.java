@@ -232,22 +232,24 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			// find ranges where to apply  leftIndex
 			long to;
 			if(in1.isFederated(FederationMap.FType.ROW) && (to = (prev + ren - rsn)) >= 0 &&
-					to < in2.getNumRows() && ixrange.rowStart <= re) {
-					sliceIxs[i] = new int[] { prev, (int) to, 0, (int) in2.getNumColumns()-1};
-					prev = (int) (to + 1);
+				to < in2.getNumRows() && ixrange.rowStart <= re) {
+				sliceIxs[i] = new int[] { prev, (int) to, 0, (int) in2.getNumColumns()-1};
+				prev = (int) (to + 1);
 
-					instStrings[i] = modifyIndices(newIx, 4, 8);
-					ranges[i] = range;
-					from = Math.min(i, from);
-			} else if(in1.isFederated(FederationMap.FType.COL) && (to = (prev + cen - csn)) >= 0 &&
-					to < in2.getNumColumns() && ixrange.colStart <= ce) {
-					sliceIxs[i] = new int[] {0, (int) in2.getNumRows() - 1, prev, (int) to};
-					prev = (int) (to + 1);
+				instStrings[i] = modifyIndices(newIx, 4, 8);
+				ranges[i] = range;
+				from = Math.min(i, from);
+			}
+			else if(in1.isFederated(FederationMap.FType.COL) && (to = (prev + cen - csn)) >= 0 &&
+				to < in2.getNumColumns() && ixrange.colStart <= ce) {
+				sliceIxs[i] = new int[] {0, (int) in2.getNumRows() - 1, prev, (int) to};
+				prev = (int) (to + 1);
 
-					instStrings[i] = modifyIndices(newIx, 4, 8);
-					ranges[i] = range;
-					from = Math.min(i, from);
-			} else
+				instStrings[i] = modifyIndices(newIx, 4, 8);
+				ranges[i] = range;
+				from = Math.min(i, from);
+			}
+			else
 				// TODO shallow copy, add more advanced update in place for federated
 				instStrings[i] = createCopyInstString();
 

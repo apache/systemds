@@ -128,6 +128,7 @@ public abstract class AutomatedTestBase {
 	 * Script source directory for .dml and .r files only (TEST_DATA_DIR for generated test data artifacts).
 	 */
 	protected static final String SCRIPT_DIR = "./src/test/scripts/";
+	protected static final String DATASET_DIR = "./src/test/resources/datasets/";
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";
 	protected static final String EXPECTED_DIR = "expected/";

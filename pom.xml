@@ -361,6 +361,44 @@
 			</plugin>
 
 			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<id>generate-python-package-1of2-pre-setup</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>python</executable>
+							<workingDirectory>src/main/python</workingDirectory>
+							<arguments>
+								<argument>pre_setup.py</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>generate-python-package-2of2-setup</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>python</executable>
+							<workingDirectory>src/main/python</workingDirectory>
+							<arguments>
+								<argument>setup.py</argument>
+								<argument>sdist</argument>
+								<argument>--dist-dir=../../../target</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.5</version>

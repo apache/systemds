@@ -42,7 +42,8 @@ struct SpoofCellwiseOp {
 		uint32_t _grix;
 
 	SpoofCellwiseOp(Matrix<T>* _A, Matrix<T>* _B, Matrix<T>* _C, T* scalars, uint32_t grix) :
-			n(_A->cols), scalars(scalars), _grix(grix) {
+		n(_A->cols), scalars(scalars), _grix(grix)
+	{
 		A.init(_A);
 		c.init(_C);
 		alen = A.row_len(grix);

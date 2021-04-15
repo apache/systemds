@@ -191,7 +191,7 @@ public class Unary extends CodeTemplate {
 				case MULT2:
 					return "	T %TMP% = %IN1% + %IN1%;\n";
 				case ABS:
-					return "	T %TMP% = fabs(%IN1%);\n";
+					return "\t\tT %TMP% = fabs(%IN1%);\n";
 				case SIN:
 					return "	T %TMP% = sin(%IN1%);\n";
 				case COS:
@@ -217,7 +217,7 @@ public class Unary extends CodeTemplate {
 				case LOG:
 					return "		T %TMP% = log(%IN1%);\n";
 				case ROUND:
-					return "	T %TMP% = round(%IN1%);\n";
+					return "\t\tT %TMP% = round(%IN1%);\n";
 				case CEIL:
 					return "	T %TMP% = ceil(%IN1%);\n";
 				case FLOOR:

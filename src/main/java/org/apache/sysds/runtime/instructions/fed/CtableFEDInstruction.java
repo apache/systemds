@@ -103,11 +103,6 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			reversed = true;
 		}
 
-		if(mo2.getNumColumns() != 1 && mo1.getNumColumns() != 1)
-			throw new DMLRuntimeException("Federated ctable: Input vectors should be nx1, but are " +
-				mo1.getNumRows() + "x" + mo1.getNumColumns() + " and " +
-				mo2.getNumRows() + "x" + mo2.getNumColumns() + ".");
-
 		// get new output dims
 		Long[] dims1 = getOutputDimension(mo1, input1, _outDim1, mo1.getFedMapping().getFederatedRanges());
 		Long[] dims2 = getOutputDimension(mo2, input2, _outDim2, mo1.getFedMapping().getFederatedRanges());

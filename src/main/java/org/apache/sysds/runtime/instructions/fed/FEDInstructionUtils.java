@@ -224,7 +224,7 @@ public class FEDInstructionUtils {
 			if(inst.getOpcode().equalsIgnoreCase("ctable")
 				&& ( ec.getCacheableData(cinst.input1).isFederated(FType.ROW)
 				|| (cinst.input2.isMatrix() && ec.getCacheableData(cinst.input2).isFederated(FType.ROW))
-				|| (cinst.input3.isMatrix() && ec.getCacheableData(cinst.input3).isFederated(FType.ROW)))) {
+				|| (cinst.input3.isMatrix() && ec.getCacheableData(cinst.input3).isFederated(FType.ROW))))
 				fedinst = CtableFEDInstruction.parseInstruction(cinst.getInstructionString());
 		}
 		else if(inst instanceof SpoofCPInstruction) {

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -73,8 +74,6 @@ public class FederatedCtableTest extends AutomatedTestBase {
 
 			{1000, 14, 4, 7, true, true}, {1000, 14, 4, 7, true, false},
 			{1000, 14, 4, 7, false, true}, {1000, 14, 4, 7, false, false}
-
-
 		});
 	}
 
@@ -85,10 +84,10 @@ public class FederatedCtableTest extends AutomatedTestBase {
 	public void federatedCtableFedOutputSinglenode() { runCtable(Types.ExecMode.SINGLE_NODE, true, false); }
 
 	@Test
-	public void federatedCtableInvalidInputSinglenode() { runCtable(Types.ExecMode.SINGLE_NODE, true, true); }
+	public void federatedCtableMatrixInputSinglenode() { runCtable(Types.ExecMode.SINGLE_NODE, false, true); }
 
 
-	public void runCtable(Types.ExecMode execMode, boolean fedOutput, boolean invalidInput) {
+	public void runCtable(Types.ExecMode execMode, boolean fedOutput, boolean matrixInput) {
 		String TEST_NAME = fedOutput ? TEST_NAME2 : TEST_NAME1;
 		Types.ExecMode platformOld = setExecMode(execMode);
 
@@ -110,19 +109,18 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		loadTestConfiguration(config);
 
 		if(fedOutput)
-			runFedCtable(HOME, TEST_NAME, invalidInput, port1, port2, port3, port4);
-		else {
-			cols = invalidInput ? cols : 1;
-			runNonFedCtable(HOME, TEST_NAME, invalidInput, port1, port2, port3, port4);
-		}
+			runFedCtable(HOME, TEST_NAME, port1, port2, port3, port4);
+		else
+			runNonFedCtable(HOME, TEST_NAME, matrixInput, port1, port2, port3, port4);
 		checkResults();
 
 		TestUtils.shutdownThreads(t1, t2, t3, t4);
 		resetExecMode(platformOld);
 	}
 
-	private void runNonFedCtable(String HOME, String TEST_NAME, boolean invalidInput, int port1, int port2, int port3, int port4) {
+	private void runNonFedCtable(String HOME, String TEST_NAME, boolean matrixInput, int port1, int port2, int port3, int port4) {
 		int r = rows / 4;
+		cols  = matrixInput ? cols : 1;
 		double[][] X1 = TestUtils.floor(getRandomMatrix(r, cols, 1, maxVal1, 1, 3));
 		double[][] X2 = TestUtils.floor(getRandomMatrix(r, cols, 1, maxVal1, 1, 7));
 		double[][] X3 = TestUtils.floor(getRandomMatrix(r, cols, 1, maxVal1, 1, 8));
@@ -144,7 +142,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
 			input("Y"), Boolean.toString(reversedInputs).toUpperCase(), Boolean.toString(weighted).toUpperCase(),expected("F")};
-		runTest(true, invalidInput, null, -1);
+		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -155,10 +153,10 @@ public class FederatedCtableTest extends AutomatedTestBase {
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "in_Y=" + input("Y"),
 			"rows=" + rows, "cols=" + cols, "revIn=" + Boolean.toString(reversedInputs).toUpperCase(),
 			"weighted=" + Boolean.toString(weighted).toUpperCase(), "out=" + output("F")};
-		runTest(true, invalidInput, null, -1);
+		runTest(true, false, null, -1);
 	}
 
-	private void runFedCtable(String HOME, String TEST_NAME,  boolean invalidInput, int port1, int port2, int port3, int port4) {
+	private void runFedCtable(String HOME, String TEST_NAME, int port1, int port2, int port3, int port4) {
 		int r = rows / 4;
 		int c = cols;
 
@@ -178,7 +176,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		programArgs = new String[]{"-stats", "100", "-args",
 			input("X1"), input("X2"), input("X3"), input("X4"), Boolean.toString(reversedInputs).toUpperCase(),
 			Boolean.toString(weighted).toUpperCase(), expected("F")};
-		runTest(true, invalidInput, null, -1);
+		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
@@ -190,7 +188,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 			"rows=" + rows, "cols=" + cols, "revIn=" + Boolean.toString(reversedInputs).toUpperCase(),
 			"weighted=" + Boolean.toString(weighted).toUpperCase(), "out=" + output("F")
 		};
-		runTest(true, invalidInput, null, -1);
+		runTest(true, false, null, -1);
 	}
 
 	void checkResults() {

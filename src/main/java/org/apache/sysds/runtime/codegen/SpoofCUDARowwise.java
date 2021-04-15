@@ -23,11 +23,11 @@ import jcuda.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 
 import java.util.ArrayList;
@@ -37,55 +37,40 @@ public class SpoofCUDARowwise extends SpoofRowwise implements SpoofCUDAOperator 
 	private static final Log LOG = LogFactory.getLog(SpoofCUDARowwise.class.getName());
 	private final int ID;
 	private final PrecisionProxy call;
-	private Pointer ptr;
+	private final long ctx;
 	
 	public SpoofCUDARowwise(RowType type,  long constDim2, boolean tB1, int reqVectMem, int id,
-		PrecisionProxy ep) {
+		PrecisionProxy ep)
+	{
 		super(type, constDim2, tB1, reqVectMem);
 		ID = id;
 		call = ep;
-		ptr = null;
+		ctx = SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA);
 	}
 	
 	@Override public String getName() {
 		return getSpoofType();
 	}
-	
-	@Override public void setScalarPtr(Pointer _ptr) {
-		ptr = _ptr;
-	}
-	
-	@Override public Pointer getScalarPtr() {
-		return ptr;
-	}
-	
-	@Override public void releaseScalarGPUMemory(ExecutionContext ec) {
-		if(ptr != null) {
-			ec.getGPUContext(0).cudaFreeHelper(getSpoofType(), ptr, DMLScript.EAGER_CUDA_FREE);
-			ptr = null;
-		}
-	}
-	
+
 	@Override
 	public ScalarObject execute(ExecutionContext ec, ArrayList<MatrixObject> inputs,
-		ArrayList<ScalarObject> scalarObjects) {
+		ArrayList<ScalarObject> scalarObjects)
+	{
 		double[] result = new double[1];
-		Pointer ptr = ec.getGPUContext(0).allocate(getName(), LibMatrixCUDA.sizeOfDataType);
-		long[] out = {1,1,1, 0, 0, GPUObject.getPointerAddress(ptr)};
-		int offset = 1;
-		if(call.exec(ec, this, ID, prepareInputPointers(ec, inputs, offset), prepareSideInputPointers(ec, inputs, offset, _tB1),
-				out, scalarObjects, 0) != 0) {
-			LOG.error("SpoofCUDA " + getSpoofType() + " operator failed to execute. Trying Java fallback.\n");
-			// ToDo: java fallback
-		}
-		LibMatrixCUDA.cudaSupportFunctions.deviceToHost(ec.getGPUContext(0), ptr, result, getName(), false);
+		Pointer[] ptr = new Pointer[1];
+		packDataForTransfer(ec, inputs, scalarObjects, null, 1, ID, 0,_tB1, ptr);
+		if(call.exec(this) != 0)
+			LOG.error("SpoofCUDA " + getSpoofType() + " operator " + ID + " failed to execute!\n");
+
+		LibMatrixCUDA.cudaSupportFunctions.deviceToHost(ec.getGPUContext(0), ptr[0], result, getName(), false);
+		ec.getGPUContext(0).cudaFreeHelper(getSpoofType(), ptr[0], DMLScript.EAGER_CUDA_FREE);
 		return new DoubleObject(result[0]);
 	}
 	
 	@Override
 	public MatrixObject execute(ExecutionContext ec, ArrayList<MatrixObject> inputs,
-		ArrayList<ScalarObject> scalarObjects, String outputName) {
-		
+		ArrayList<ScalarObject> scalarObjects, String outputName)
+	{
 		int m = (int) inputs.get(0).getNumRows();
 		int n = (int) inputs.get(0).getNumColumns();
 		final int n2 = _type.isConstDim2(_constDim2) ? (int)_constDim2 : _type.isRowTypeB1() ||
@@ -93,13 +78,12 @@ public class SpoofCUDARowwise extends SpoofRowwise implements SpoofCUDAOperator 
 		OutputDimensions out_dims = new OutputDimensions(m, n, n2);
 		ec.setMetaData(outputName, out_dims.rows, out_dims.cols);
 		MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(outputName, out_dims.rows, out_dims.cols).getKey();
-		
-		int offset = 1;
-		if(call.exec(ec,this, ID, prepareInputPointers(ec, inputs, offset), prepareSideInputPointers(ec, inputs, 
-				offset, _tB1), prepareOutputPointers(ec, out_obj, false), scalarObjects, 0) != 0) {
-			LOG.error("SpoofCUDA " + getSpoofType() + " operator failed to execute. Trying Java fallback.\n");
-			// ToDo: java fallback
-		}
+
+		packDataForTransfer(ec, inputs, scalarObjects, out_obj, 1, ID, 0,_tB1, null);
+
+		if(call.exec(this) != 0)
+			LOG.error("SpoofCUDA " + getSpoofType() + " operator " + ID + " failed to execute!\n");
+
 		return out_obj;
 	}
 	
@@ -110,15 +94,11 @@ public class SpoofCUDARowwise extends SpoofRowwise implements SpoofCUDAOperator 
 	// unused
 	@Override protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c,
 		int ci, int alen, int n, long grix, int rix) { }
-	
-	public int execute_sp(long ctx, long[] meta, long[] in, long[] sides, long[] out, long scalars) {
-		return execute_f(ctx, meta, in, sides, out, scalars);
-	}
-	
-	public int execute_dp(long ctx, long[] meta, long[] in, long[] sides, long[] out, long scalars) {
-		return execute_d(ctx, meta, in, sides, out, scalars);
-	}
-	
-	public static native int execute_f(long ctx, long[] meta, long[] in, long[] sides, long[] out, long scalars);
-	public static native int execute_d(long ctx, long[] meta, long[] in, long[] sides, long[] out, long scalars);
+
+	public int execute_dp(long ctx) { return execute_d(ctx); }
+	public int execute_sp(long ctx) { return execute_d(ctx); }
+	public long getContext() { return ctx; }
+
+	public static native int execute_d(long ctx);
+	public static native int execute_s(long ctx);
 }

@@ -26,19 +26,19 @@ using int32_t = int;
 
 template <typename T>
 struct Matrix {
-	int32_t nnz;
+	uint64_t nnz;
 	uint32_t rows;
 	uint32_t cols;
-	
 	uint32_t* row_ptr;
 	uint32_t* col_idx;
 	T* data;
 	
 	typedef T value_type;
 	
-	explicit Matrix(size_t* jvals) : nnz(jvals[0]), rows(jvals[1]), cols(jvals[2]),
-			row_ptr(reinterpret_cast<uint32_t*>(jvals[3])),
-			col_idx(reinterpret_cast<uint32_t*>((jvals[4]))), data(reinterpret_cast<T*>(jvals[5])) {}
+	explicit Matrix(uint8_t* jvals) : nnz(*reinterpret_cast<uint32_t*>(&jvals[0])),
+		rows(*reinterpret_cast<uint32_t*>(&jvals[8])), cols(*reinterpret_cast<uint32_t*>(&jvals[12])),
+			row_ptr(reinterpret_cast<uint32_t*>(jvals[16])), col_idx(reinterpret_cast<uint32_t*>((jvals[24]))),
+				data(static_cast<T*>(jvals[32])) {}
 };
 
 #ifdef __CUDACC__
@@ -72,7 +72,7 @@ public:
 	
 	__device__ void init(Matrix<T>* mat) { _mat = mat; }
 	
-	__device__ uint32_t& nnz() { return _mat->nnz; }
+	__device__ uint32_t& nnz() { return return _mat->row_ptr == nullptr ? _mat->rows * _mat->cols : _mat->nnz; }
 	__device__ uint32_t cols() { return _mat->cols; }
 	__device__ uint32_t rows() { return _mat->rows; }
 	
@@ -133,7 +133,7 @@ private:
 	
 	//ToDo sparse accessors
 	__device__ uint32_t len_sparse() {
-		return _mat->nnz;
+		return _mat->row_ptr[_mat->rows];
 	}
 	
 	__device__ uint32_t pos_sparse(uint32_t rix) {
@@ -227,34 +227,6 @@ public:
 	}
 };
 
-template <typename T, int NUM_B>
-struct SpoofOp {
-	MatrixAccessor<T> a;
-	MatrixAccessor<T> b[NUM_B];
-	MatrixAccessor<T> c;
-	T* scalars;
-	uint32_t grix;
-	T* avals;
-	uint32_t* aix;
-	uint32_t alen;
-	
-	SpoofOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
-			scalars(scalars), grix(grix), avals(A->data), aix(A->col_idx) {
-		a.init(A);
-		c.init(C);
-		alen = a.row_len(grix);
-
-		if(B)
-			for(auto i = 0; i < NUM_B; ++i)
-				b[i].init(&(B[i]));
-	}
-	
-//	__device__ Vector<T>& getTempStorage(uint32_t len) {
-//		Vector<T>& vec = temp_rb.next();
-//		tvec.length = len;
-//		return vec;
-//	}
-};
 #endif // __CUDACC_RTC__
 
 #endif //SYSTEMDS_MATRIX_H

@@ -156,10 +156,12 @@ public class CNodeCell extends CNodeTpl
 		if(tmpDense.contains("grix"))
 			tmp = tmp.replace("//%NEED_GRIX%", "\t\tuint32_t grix=_grix + rix;");
 		else
-			tmp = tmp.replace("//%NEED_GRIX%", "");
-		tmp = tmp.replace("//%NEED_RIX%", "");
-		tmp = tmp.replace("//%NEED_CIX%", "");
-		
+			tmp = tmp.replace("//%NEED_GRIX%\n", "");
+
+		// remove empty lines
+//		if(!api.isJava())
+//			tmpDense = tmpDense.replaceAll("(?m)^[ \t]*\r?\n", "");
+
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
 		//Return last TMP. Square it for CUDA+SUM_SQ
@@ -171,10 +173,7 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replace("%AGG_OP_NAME%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
 		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
-		
-		// maybe empty lines
-		//tmp = tmp.replaceAll("(?m)^[ \t]*\r?\n", "");
-		
+
 		if(api == GeneratorAPI.CUDA) {
 			// ToDo: initial_value is misused to pass VT (values per thread) to no_agg operator
 			String agg_op = "IdentityOp";

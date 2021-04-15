@@ -77,10 +77,15 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
 	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_d"));
 	ctx->reduction_kernels_d.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::MAX), func));
 	
+	CHECK_CUDART(cudaMallocHost(reinterpret_cast<void**>(&(ctx->staging_buffer)), ctx->default_mem_size));
+	CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&(ctx->device_buffer)), ctx->default_mem_size));
+	ctx->current_mem_size = ctx->default_mem_size;
 	return reinterpret_cast<size_t>(ctx);
 }
 
 void SpoofCUDAContext::destroy_cuda(SpoofCUDAContext *ctx, [[maybe_unused]] uint32_t device_id) {
+	cudaFreeHost(ctx->staging_buffer);
+	cudaFree(ctx->device_buffer);
 	delete ctx;
 	// cuda device is handled by jCuda atm
 	//cudaDeviceReset();
@@ -116,15 +121,25 @@ size_t SpoofCUDAContext::compile(std::unique_ptr<SpoofOperator> op, const std::s
 
 template<typename T>
 CUfunction SpoofCUDAContext::getReductionKernel(const std::pair<SpoofOperator::AggType, SpoofOperator::AggOp> &key) {
-	return nullptr;
+	return nullptr; // generic case never used
 }
+
 template<>
 CUfunction SpoofCUDAContext::getReductionKernel<float>(const std::pair<SpoofOperator::AggType,
 		SpoofOperator::AggOp> &key) {
 	return reduction_kernels_f[key];
 }
+
 template<>
 CUfunction SpoofCUDAContext::getReductionKernel<double>(const std::pair<SpoofOperator::AggType,
 		SpoofOperator::AggOp> &key) {
 	return reduction_kernels_d[key];
+}
+
+void SpoofCUDAContext::resize_staging_buffer(size_t size) {
+	cudaFreeHost(staging_buffer);
+	cudaFree(device_buffer);
+	CHECK_CUDART(cudaMallocHost(reinterpret_cast<void**>(&(staging_buffer)), size));
+	CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&(device_buffer)), size));
+	current_mem_size = size;
 }

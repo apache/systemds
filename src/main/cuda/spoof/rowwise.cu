@@ -55,6 +55,8 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 
 	__device__  __forceinline__ void exec_dense(uint32_t ai, uint32_t ci, uint32_t rix) {
 //%BODY_dense%
+		if (debug_row() && debug_thread())
+			printf("c[0]=%4.3f\n", c.vals(0)[0]);
 	}
 
 	__device__  __forceinline__ void exec_sparse(uint32_t ai, uint32_t ci, uint32_t rix) {

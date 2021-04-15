@@ -64,7 +64,7 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 					.set("spark.driver.bindAddress", "127.0.0.1")
 					.set("SPARK_MASTER_PORT", "0")
 					.set("SPARK_WORKER_PORT", "0");
-					
+
 		if (sc == null)
 			sc = new JavaSparkContext(conf);
 	}

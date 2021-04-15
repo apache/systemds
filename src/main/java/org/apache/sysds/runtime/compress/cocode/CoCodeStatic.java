@@ -17,28 +17,25 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.readers;
+package org.apache.sysds.runtime.compress.cocode;
 
-import org.apache.sysds.runtime.compress.utils.DblArray;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 
-public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumnSelection {
-	private DenseBlock _data;
+/**
+ * Column group co coding with static distribution heuristic.
+ * 
+ */
+public class CoCodeStatic extends AColumnCoCoder {
 
-
-	public ReaderColumnSelectionDenseMultiBlockTransposed(MatrixBlock data, int[] colIndices) {
-		super(colIndices.clone(), data.getNumColumns() );
-		_data = data.getDenseBlock();
+	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
+		super(sizeEstimator, cs, numRows);
 	}
 
-	protected DblArray getNextRow() {
-		if(_lastRow == _numRows - 1)
-			return null;
-		_lastRow++;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data.get(_colIndexes[i],_lastRow);
-		}
-		return reusableReturn;
+	@Override
+	public CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
+		return colInfos;
 	}
+
 }

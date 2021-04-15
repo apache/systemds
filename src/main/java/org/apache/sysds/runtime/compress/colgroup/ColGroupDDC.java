@@ -24,9 +24,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
@@ -44,17 +43,17 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public class ColGroupDDC extends ColGroupValue {
 	private static final long serialVersionUID = -3204391646123465004L;
 
-	protected IMapToData _data;
+	protected AMapToData _data;
 
-	protected ColGroupDDC() {
-		super();
+	protected ColGroupDDC(int numRows) {
+		super(numRows);
 	}
 
 	// protected ColGroupDDC(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
 	// super(colIndices, numRows, ubm, cs);
 	// }
 
-	protected ColGroupDDC(int[] colIndices, int numRows, ADictionary dict, IMapToData data, int[] cachedCounts) {
+	protected ColGroupDDC(int[] colIndices, int numRows, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_zeros = false;
 		_data = data;

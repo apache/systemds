@@ -53,8 +53,7 @@ public class BitmapEncoder {
 	 * @return uncompressed bitmap representation of the columns
 	 */
 	public static Bitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, boolean transposed) {
-		// note: no sparse column selection reader because low potential
-		// single column selection
+
 		Bitmap res = null;
 		if(colIndices.length == 1) {
 			res = extractBitmap(colIndices[0], rawBlock, transposed);
@@ -249,15 +248,21 @@ public class BitmapEncoder {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
 		int numVals = distinctVals.size();
-		double[] values = new double[numVals];
-		IntArrayList[] offsetsLists = new IntArrayList[numVals];
-		int bitmapIx = 0;
-		for(DIListEntry val : distinctVals.extractValues()) {
-			values[bitmapIx] = val.key;
-			offsetsLists[bitmapIx++] = val.value;
-		}
+		if(numVals > 0){
 
-		return new Bitmap(1, offsetsLists, values, numRows);
+			double[] values = new double[numVals];
+			IntArrayList[] offsetsLists = new IntArrayList[numVals];
+			int bitmapIx = 0;
+			for(DIListEntry val : distinctVals.extractValues()) {
+				values[bitmapIx] = val.key;
+				offsetsLists[bitmapIx++] = val.value;
+			}
+	
+			return new Bitmap(1, offsetsLists, values, numRows);
+		}
+		else{
+			return new Bitmap(1, null, null, numRows);
+		}
 	}
 
 }

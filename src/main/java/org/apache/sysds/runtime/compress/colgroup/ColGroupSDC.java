@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -57,14 +57,18 @@ public class ColGroupSDC extends ColGroupValue {
 	/**
 	 * Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.
 	 */
-	protected IMapToData _data;
+	protected AMapToData _data;
 
-	// Helper Constructors
-	protected ColGroupSDC() {
-		super();
+		/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupSDC(int numRows) {
+		super(numRows);
 	}
 
-	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, IMapToData data,
+	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_indexes = OffsetFactory.create(indexes, numRows);
@@ -72,7 +76,7 @@ public class ColGroupSDC extends ColGroupValue {
 		_zeros = false;
 	}
 
-	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, IMapToData data,
+	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_indexes = offsets;
@@ -343,7 +347,7 @@ public class ColGroupSDC extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, _dict.size(), isLossy());
+		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getNumValues(), isLossy());
 		size += _indexes.getInMemorySize();
 		size += _data.getInMemorySize();
 		return size;

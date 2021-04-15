@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class CompressedSizeEstimatorFactory {
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorFactory.class.getName());
 
-	private static final int minimumSampleSize = 2000;
+	public static final int minimumSampleSize = 2000;
 
 	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
 
@@ -50,7 +50,7 @@ public class CompressedSizeEstimatorFactory {
 			est = new CompressedSizeEstimatorSample(shallowCopy, compSettings, sampleRows, compSettings.transposed);
 		}
 
-		LOG.debug(est);
+		LOG.debug("Estimating using: " + est);
 		return est;
 	}
 }

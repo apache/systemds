@@ -70,16 +70,18 @@ public abstract class ReaderColumnSelection {
 			throw new DMLCompressionException("Column selection reader should not be done on single column groups");
 		int[] in = colIndices.clone();
 
-		if(rawBlock.isInSparseFormat() && transposed)
+		if(rawBlock.isInSparseFormat() && transposed && rawBlock.getSparseBlock() != null)
 			return new ReaderColumnSelectionSparseTransposed(rawBlock, in);
-		else if(rawBlock.isInSparseFormat())
+		else if(rawBlock.isInSparseFormat() && rawBlock.getSparseBlock() != null)
 			return new ReaderColumnSelectionSparse(rawBlock, in);
-		else if(rawBlock.getDenseBlock().numBlocks() > 1)
+		else if(rawBlock.getDenseBlock() != null && rawBlock.getDenseBlock().numBlocks() > 1)
 			return transposed ? new ReaderColumnSelectionDenseMultiBlockTransposed(rawBlock,
 				in) : new ReaderColumnSelectionDenseMultiBlock(rawBlock, in);
-		else
+		else if(rawBlock.getDenseBlock() != null)
 			return transposed ? new ReaderColumnSelectionDenseSingleBlockTransposed(rawBlock,
 				in) : new ReaderColumnSelectionDenseSingleBlock(rawBlock, in);
+		else
+			throw new DMLCompressionException("Input Block was null");
 
 	}
 

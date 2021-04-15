@@ -39,4 +39,16 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 		return new CompressedSizeInfoColGroup(estimateCompressedColGroupSize(entireBitMap, colIndexes),
 			_compSettings.validCompressions);
 	}
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" transposed: ");
+		sb.append(_transposed);
+		sb.append(" cols: ");
+		sb.append(_numCols);
+		sb.append(" rows: ");
+		sb.append(_numRows);
+		return sb.toString();
+	}
 }

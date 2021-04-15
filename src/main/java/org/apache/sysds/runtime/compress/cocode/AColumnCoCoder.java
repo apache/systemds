@@ -26,33 +26,40 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
-public abstract class AColumnGroupPartitioner {
+public abstract class AColumnCoCoder {
 
-	protected static final Log LOG = LogFactory.getLog(AColumnGroupPartitioner.class.getName());
+	protected static final Log LOG = LogFactory.getLog(AColumnCoCoder.class.getName());
 
 	protected CompressedSizeEstimator _est;
 	protected CompressionSettings _cs;
 	protected int _numRows;
 
-	protected AColumnGroupPartitioner(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
+	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
 		_est = sizeEstimator;
 		_cs = cs;
 		_numRows = numRows;
 	}
 
-	public abstract CompressedSizeInfo partitionColumns(CompressedSizeInfo colInfos);
+	/**
+	 * Cocode columns into groups.
+	 * 
+	 * @param colInfos The current individually sampled and evaluated column groups
+	 * @param k The parallelization available to the underlying implementation.
+	 * @return CoCoded column groups.
+	 */
+	public abstract CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k);
 
 	protected CompressedSizeInfoColGroup join(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs, boolean analyze){
 		return analyze ? joinWithAnalysis(lhs, rhs): joinWithoutAnalysis(lhs,rhs);
 	}
 
 	protected CompressedSizeInfoColGroup joinWithAnalysis(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs) {
-		int[] joined = join(lhs.getColumns(), rhs.getColumns());
+		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
 		return _est.estimateCompressedColGroupSize(joined);
 	}
 
 	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs){
-		int[] joined = join(lhs.getColumns(), rhs.getColumns());
+		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
 		int numVals =  lhs.getNumVals() + rhs.getNumVals();
 		return new CompressedSizeInfoColGroup(joined, numVals, _numRows);
 	}
@@ -62,27 +69,5 @@ public abstract class AColumnGroupPartitioner {
 			return _est.estimateCompressedColGroupSize(g.getColumns());
 		else 
 			return g;
-	}
-
-	private int[] join(int[] lhs, int[] rhs){
-		int[] joined = new int[lhs.length + rhs.length];
-		int lp = 0;
-		int rp = 0;
-		int i = 0;
-		for(; i < joined.length && lp < lhs.length && rp < rhs.length; i++){
-			if(lhs[lp] < rhs[rp]){
-				joined[i] = lhs[lp++];
-			}else{
-				joined[i] = rhs[rp++];
-			}
-		}
-
-		while(lp < lhs.length){
-			joined[i++] = lhs[lp++];
-		}
-		while(rp < rhs.length){
-			joined[i++] = rhs[rp++];
-		}
-		return joined;
 	}
 }

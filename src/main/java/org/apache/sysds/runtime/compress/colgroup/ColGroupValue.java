@@ -67,12 +67,23 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 		}
 	};
 
+	final protected int _numRows;
+	/**
+	 * ColGroup Implementation Contains zero row. Note this is not if it contains a zero value. If false then the stored
+	 * values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
+	 */
+	protected boolean _zeros = false;
+
+	/** boolean specifying if the column group is encoded lossy */
+	protected boolean _lossy = false;
+
 	/** Distinct value tuples associated with individual bitmaps. */
 	protected ADictionary _dict;
 	protected int[] counts;
 
-	protected ColGroupValue() {
+	protected ColGroupValue(int numRows) {
 		super();
+		_numRows = numRows;
 	}
 
 	/**
@@ -85,7 +96,8 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	 * @param cs         The Compression settings used for compression
 	 */
 	protected ColGroupValue(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
-		super(colIndices, numRows);
+		super(colIndices);
+		_numRows = numRows;
 
 		_zeros = ubm.getNumOffsets() < (long) numRows;
 		// sort values by frequency, if requested
@@ -104,7 +116,8 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	}
 
 	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
-		super(colIndices, numRows);
+		super(colIndices);
+		_numRows = numRows;
 		_dict = dict;
 		counts = cachedCounts;
 	}
@@ -525,8 +538,7 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s%5d ", "Columns:", _colIndexes.length));
-		sb.append(Arrays.toString(_colIndexes));
+		sb.append("Is Lossy: " + _lossy + " num Rows: " + getNumRows() + " contain zero row:" + _zeros);
 		if(_dict != null) {
 			sb.append(String.format("\n%15s%5d ", "Values:", _dict.getValues().length));
 			_dict.getString(sb, _colIndexes.length);
@@ -541,14 +553,10 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		_numRows = in.readInt();
-		int numCols = in.readInt();
+		super.readFields(in);
+
 		_zeros = in.readBoolean();
 		_lossy = in.readBoolean();
-		// read col indices
-		_colIndexes = new int[numCols];
-		for(int i = 0; i < numCols; i++)
-			_colIndexes[i] = in.readInt();
 
 		if(in.readBoolean())
 			_dict = ADictionary.read(in, _lossy);
@@ -556,14 +564,10 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeInt(_numRows);
-		out.writeInt(getNumCols());
+		super.write(out);
+		
 		out.writeBoolean(_zeros);
 		out.writeBoolean(_lossy);
-
-		// write col indices
-		for(int i = 0; i < _colIndexes.length; i++)
-			out.writeInt(_colIndexes[i]);
 
 		if(_dict != null) {
 			out.writeBoolean(true);
@@ -575,13 +579,9 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		long ret = 0; // header
-		ret += 4; // num rows int
-		ret += 4; // num cols int
+		long ret = super.getExactSizeOnDisk(); 
 		ret += 1; // zeros boolean
 		ret += 1; // lossy boolean
-		// col indices
-		ret += 4 * _colIndexes.length;
 		// distinct values (groups of values)
 		ret += 1; // Dict exists boolean
 		if(_dict != null)
@@ -1088,5 +1088,15 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 					}
 			}
 		}
+	}
+
+	@Override
+	public int getNumRows(){
+		return _numRows;
+	}
+
+	@Override 
+	public boolean isDense() {
+		return !_zeros;
 	}
 }

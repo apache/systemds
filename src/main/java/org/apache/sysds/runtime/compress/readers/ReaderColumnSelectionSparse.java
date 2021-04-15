@@ -59,8 +59,7 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
 		boolean zeroResult = true;
 
-		if(a != null && !a.isEmpty(_lastRow)) {
-
+		if(!a.isEmpty(_lastRow)) {
 			int apos = a.pos(_lastRow);
 			int alen = a.size(_lastRow) + apos;
 			int[] aix = a.indexes(_lastRow);

@@ -42,8 +42,13 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public class ColGroupOLE extends ColGroupOffset {
 	private static final long serialVersionUID = -9157676271360528008L;
 
-	protected ColGroupOLE() {
-		super();
+		/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupOLE(int numRows) {
+		super(numRows);
 	}
 
 	/**
@@ -348,13 +353,7 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public long estimateInMemorySize() {
-		// Note 0 is because the size can be calculated based on the given values,
-		// And because the fourth argument is only needed in estimation, not when an OLE ColGroup is created.
-		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(),
-			_dict.size(),
-			(_data == null) ? 0 : _data.length,
-			_numRows,
-			isLossy());
+		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(), getNumValues(), _data.length, _numRows, isLossy());
 	}
 
 	@Override
@@ -1105,10 +1104,9 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int retSize = NVR * NVL;
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		IPreAggregate ag = PreAggregateFactory.ag(retSize);
-		
-		
+
 		final int defL = NVL - 1;
-		
+
 		for(int kr = 0; kr < NVR; kr++) {
 			AIterator lIt = lhs._indexes.getIterator();
 			final int bOffR = this._ptr[kr];
@@ -1154,7 +1152,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				for(int j = 1; lIt.hasNext() && j <= sLenR; j++) {
 					final int row = offR + this._data[bOffR + bixR + j];
 					lIt.skipTo(row);
-					if( lIt.value() == row)
+					if(lIt.value() == row)
 						ag.increment(lhs.getIndex(lIt.getDataIndexAndIncrement()) + krOff);
 				}
 			}
@@ -1208,24 +1206,23 @@ public class ColGroupOLE extends ColGroupOffset {
 			+ this.getClass().getSimpleName());
 	}
 
-
 	@Override
-	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret){
+	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret){
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		throw new NotImplementedException();
 	}
 }

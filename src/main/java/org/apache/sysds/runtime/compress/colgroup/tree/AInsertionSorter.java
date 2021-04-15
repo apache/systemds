@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.tree;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
@@ -40,7 +40,7 @@ public abstract class AInsertionSorter {
 	protected static final Log LOG = LogFactory.getLog(AInsertionSorter.class.getName());
 
 	protected final int[] _indexes;
-	protected final IMapToData _labels;
+	protected final AMapToData _labels;
 
 	protected final int _numLabels;
 	protected final int _knownMax;
@@ -86,7 +86,7 @@ public abstract class AInsertionSorter {
 
 	public abstract int[] getIndexes();
 
-	public abstract IMapToData getData();
+	public abstract AMapToData getData();
 
 	protected void set(int index, int value, int label) {
 		_indexes[index] = value;

@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class MapToInt implements IMapToData {
+public class MapToInt extends AMapToData {
 
 	private final int[] _data;
 
@@ -54,7 +54,7 @@ public class MapToInt implements IMapToData {
 	}
 
 	public static long getInMemorySize(int dataLength) {
-		long size = 16; // object header
+		long size = 16 + 8; // object header + object reference
 		size += MemoryEstimates.intArrayCost(dataLength);
 		return size;
 	}
@@ -88,13 +88,4 @@ public class MapToInt implements IMapToData {
 			data[i] = in.readInt();
 		return new MapToInt(data);
 	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("\nDataLength: " + this._data.length);
-		sb.append(Arrays.toString(this._data));
-		return sb.toString();
-	}
-
 }

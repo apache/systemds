@@ -17,26 +17,22 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.cocode;
+package org.apache.sysds.test.component.compress.colgroup;
 
-import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-/**
- * Column group partitioning with static distribution heuristic.
- * 
- * TODO: Fix the joining!
- */
-public class ColumnGroupPartitionerStatic extends AColumnGroupPartitioner {
+public class JolEstimateSDCTest extends JolEstimateOLETest {
 
-	protected ColumnGroupPartitionerStatic(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
-		super(sizeEstimator, cs, numRows);
+	// Just use the same test cases as OLE.
+	// This is fine because SDC exhibit the same characteristics as OLE.
+
+	public JolEstimateSDCTest(MatrixBlock mb) {
+		super(mb);
 	}
 
 	@Override
-	public CompressedSizeInfo partitionColumns(CompressedSizeInfo colInfos) {
-		return colInfos;
+	public CompressionType getCT() {
+		return sdc;
 	}
-
 }

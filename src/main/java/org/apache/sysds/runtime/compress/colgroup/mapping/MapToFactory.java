@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.IOException;
 
 public class MapToFactory {
-	public static IMapToData create(int size, int numTuples) {
+	public static AMapToData create(int size, int numTuples) {
 		if(numTuples <= 1)
 			return new MapToBit(size);
 		else if(numTuples <= 256)
@@ -45,7 +45,7 @@ public class MapToFactory {
 			return MapToInt.getInMemorySize(size);
 	}
 
-	public static IMapToData readIn(DataInput in, int numTuples) throws IOException {
+	public static AMapToData readIn(DataInput in, int numTuples) throws IOException {
 		if(numTuples <= 1)
 			return MapToBit.readFields(in);
 		else if(numTuples <= 255)

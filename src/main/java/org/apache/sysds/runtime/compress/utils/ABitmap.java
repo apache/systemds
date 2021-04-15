@@ -99,6 +99,8 @@ public abstract class ABitmap {
 		return _numZeros;
 	}
 
+	public abstract int getNumNonZerosInOffset(int idx);
+
 	public abstract BitmapType getType();
 
 	@Override

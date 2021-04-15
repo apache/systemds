@@ -52,9 +52,13 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	 */
 	protected AOffset _indexes;
 
-	// Helper Constructors
-	protected ColGroupSDCSingle() {
-		super();
+	/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupSDCSingle(int numRows) {
+		super(numRows);
 	}
 
 	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, int[] indexes, int[] cachedCounts) {
@@ -321,7 +325,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, _dict.size(),  isLossy());
+		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getNumValues(),  isLossy());
 		size += _indexes.getInMemorySize();
 		return size;
 	}

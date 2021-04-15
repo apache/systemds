@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class MapToChar implements IMapToData {
+public class MapToChar extends AMapToData {
 
 	private final char[] _data;
 
@@ -54,7 +54,7 @@ public class MapToChar implements IMapToData {
 	}
 
 	public static long getInMemorySize(int dataLength) {
-		long size = 16; // object header
+		long size = 16 + 8; // object header + object reference
 		size += MemoryEstimates.charArrayCost(dataLength);
 		return size;
 	}
@@ -87,18 +87,6 @@ public class MapToChar implements IMapToData {
 		for(int i = 0; i < length; i++)
 			data[i] = in.readChar();
 		return new MapToChar(data);
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("[");
-		for(char c : _data) {
-			sb.append((int) c);
-			sb.append(", ");
-		}
-		sb.append("]");
-		return sb.toString();
 	}
 
 }

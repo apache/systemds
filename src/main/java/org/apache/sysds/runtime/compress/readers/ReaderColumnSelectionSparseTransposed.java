@@ -52,20 +52,19 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 		sparsePos = new int[colIndexes.length];
 
 		a = data.getSparseBlock();
-
-		if(data.getSparseBlock() != null)
-			for(int i = 0; i < colIndexes.length; i++) {
-				if(a.isEmpty(_colIndexes[i]))
-					// Use -1 to indicate that this column is done.
-					sparsePos[i] = -1;
-				else {
-					sparsePos[i] = a.pos(_colIndexes[i]);
-				}
-
+		for(int i = 0; i < colIndexes.length; i++) {
+			if(a.isEmpty(_colIndexes[i]))
+				// Use -1 to indicate that this column is done.
+				sparsePos[i] = -1;
+			else {
+				sparsePos[i] = a.pos(_colIndexes[i]);
 			}
+
+		}
 	}
 
 	protected DblArray getNextRow() {
+
 		if(_lastRow == _numRows - 1) {
 			return null;
 		}
@@ -75,8 +74,7 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 		for(int i = 0; i < _colIndexes.length; i++) {
 			int colidx = _colIndexes[i];
 			if(sparsePos[i] != -1) {
-				int apos = a.pos(colidx);
-				int alen = a.size(colidx) + apos;
+				final int alen = a.size(colidx) + a.pos(colidx);
 				int[] aix = a.indexes(colidx);
 				double[] avals = a.values(colidx);
 				while(sparsePos[i] < alen && aix[sparsePos[i]] < _lastRow) {
@@ -99,5 +97,6 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 		}
 
 		return zeroResult ? empty : reusableReturn;
+
 	}
 }

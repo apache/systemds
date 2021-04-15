@@ -21,14 +21,21 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * Offset list encoder interface.
  * 
  * It is assumed that the input is in sorted order, all values are positive and there are no duplicates.
  * 
- * The no duplicate is important since 0 values are exploited for different meanings.
+ * The no duplicate is important since 0 values are exploited to encode an offset of max representable value + 1. This
+ * gives the ability to encode data, where the offsets are greater than the available highest value that can be
+ * represented size.
  */
 public abstract class AOffset {
+
+	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
 	/**
 	 * Get an iterator of the offsets.
@@ -62,7 +69,6 @@ public abstract class AOffset {
 	 */
 	public abstract long getExactSizeOnDisk();
 
-
 	/**
 	 * Get the number of contained elements, This method iterate the entire offset list, so it is not constant lookup.
 	 * 
@@ -74,7 +80,11 @@ public abstract class AOffset {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		AIterator i = getIterator();
-		sb.append("[");
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" [");
+		if(i.hasNext())
+			sb.append(i.valueAndIncrement());
+
 		while(i.hasNext())
 			sb.append(", " + i.valueAndIncrement());
 		sb.append("]");

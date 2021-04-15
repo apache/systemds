@@ -52,9 +52,13 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	 */
 	protected AOffset _indexes;
 
-	// Helper Constructors
-	protected ColGroupSDCSingleZeros() {
-		super();
+	/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupSDCSingleZeros(int numRows) {
+		super(numRows);
 	}
 
 	protected ColGroupSDCSingleZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes,
@@ -275,7 +279,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, _dict.size(), isLossy());
+		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getNumValues(), isLossy());
 		size += _indexes.getInMemorySize();
 		return size;
 	}

@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.tree;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class Naive extends AInsertionSorter {
@@ -129,7 +129,7 @@ public class Naive extends AInsertionSorter {
 	}
 
 	@Override
-	public IMapToData getData() {
+	public AMapToData getData() {
 		return _labels;
 	}
 

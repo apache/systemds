@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class MapToByte implements IMapToData {
+public class MapToByte extends AMapToData {
 
 	private final byte[] _data;
 
@@ -54,7 +54,7 @@ public class MapToByte implements IMapToData {
 	}
 
 	public static long getInMemorySize(int dataLength) {
-		long size = 16; // object header
+		long size = 16 + 8; // object header + object reference
 		size += MemoryEstimates.byteArrayCost(dataLength);
 		return size;
 	}
@@ -87,17 +87,5 @@ public class MapToByte implements IMapToData {
 		for(int i = 0; i < length; i++)
 			data[i] = in.readByte();
 		return new MapToByte(data);
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("[");
-		for(byte c : _data) {
-			sb.append((int) c);
-			sb.append(", ");
-		}
-		sb.append("]");
-		return sb.toString();
 	}
 }

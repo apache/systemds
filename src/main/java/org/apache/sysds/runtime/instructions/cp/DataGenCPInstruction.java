@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.cp;
 import java.util.Arrays;
 import java.util.Random;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -353,14 +354,25 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				String[] data = frame_data.split(DataExpression.DELIM_NA_STRING_SEP);
-				if(data.length != schemaLength && data.length > 1)
+				int rowLength = data.length/lrows;
+				if(data.length != schemaLength && data.length > 1 && rowLength != schemaLength)
 					throw new DMLRuntimeException(
 						"data values should be equal to number of columns," + " or a single values for all columns");
 				out = new FrameBlock(vt);
 				FrameBlock outF = (FrameBlock) out;
-				if(data.length > 1) {
+				if(data.length > 1 && rowLength != schemaLength)  {
 					for(int i = 0; i < lrows; i++)
 						outF.appendRow(data);
+				}
+				else if(data.length > 1 && rowLength == schemaLength)
+				{
+					int beg = 0;
+					for(int i = 1; i <= lrows; i++) {
+						int end = lcols * i;
+						String[] data1 = ArrayUtils.subarray(data, beg, end);
+						beg = end;
+						outF.appendRow(data1);
+					}
 				}
 				else {
 					String[] data1 = new String[lcols];

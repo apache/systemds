@@ -28,11 +28,11 @@ import java.util.List;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlock.Type;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -67,17 +67,32 @@ public class ColGroupUncompressed extends AColGroup {
 	 * @param colIndicesList Indices (relative to the current block) of the columns that this column group represents.
 	 * @param rawBlock       The uncompressed block; uncompressed data must be present at the time that the constructor
 	 *                       is called
-	 * @param transposed     Says if the input matrix raw block have been transposed. This should not ever be true since
-	 *                       we still have the original matrixBlock in case of aborting the compression.
+	 * @param transposed     Says if the input matrix raw block have been transposed.
 	 */
 	public ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
-		super(colIndicesList, transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows());
+		super(colIndicesList);
+		final int _numRows =  transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+		if(colIndicesList.length == 1) {
+			final int col = colIndicesList[0];
+			if(transposed) {
+				_data = rawBlock.slice(col, col, 0, rawBlock.getNumColumns() - 1);
+				_data = LibMatrixReorg.transposeInPlace(_data, 1);
+			}
+			else
+				_data = rawBlock.slice(0, rawBlock.getNumRows() - 1, col, col);
+			
+			return;
+		}
 
-		// prepare meta data
-		int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+		if(rawBlock.isInSparseFormat() && transposed) {
+			_data = new MatrixBlock();
+			_data.setNumRows(_numRows);
+			_data.setNumColumns(colIndicesList.length);
+
+		}
 
 		// Create a matrix with just the requested rows of the original block
-		_data = new MatrixBlock(numRows, _colIndexes.length, rawBlock.isInSparseFormat());
+		_data = new MatrixBlock(_numRows, _colIndexes.length, rawBlock.isInSparseFormat());
 
 		// ensure sorted col indices
 		if(!SortUtils.isSorted(0, _colIndexes.length, _colIndexes))
@@ -94,7 +109,7 @@ public class ColGroupUncompressed extends AColGroup {
 		}
 
 		// dense implementation for dense and sparse matrices to avoid linear search
-		int m = numRows;
+		int m = _numRows;
 		int n = _colIndexes.length;
 		for(int i = 0; i < m; i++) {
 			for(int j = 0; j < n; j++) {
@@ -104,11 +119,6 @@ public class ColGroupUncompressed extends AColGroup {
 			}
 		}
 		_data.examSparsity();
-
-		// convert sparse MCSR to read-optimized CSR representation
-		if(_data.isInSparseFormat()) {
-			_data = new MatrixBlock(_data, Type.CSR, false);
-		}
 	}
 
 	/**
@@ -117,7 +127,8 @@ public class ColGroupUncompressed extends AColGroup {
 	 * @param groupsToDecompress compressed columns to subsume. Must contain at least one element.
 	 */
 	protected ColGroupUncompressed(List<AColGroup> groupsToDecompress) {
-		super(mergeColIndices(groupsToDecompress), groupsToDecompress.get(0)._numRows);
+		super(mergeColIndices(groupsToDecompress));
+		final int _numRows = groupsToDecompress.get(0).getNumRows();
 
 		// Invert the list of column indices
 		int maxColIndex = _colIndexes[_colIndexes.length - 1];
@@ -138,11 +149,10 @@ public class ColGroupUncompressed extends AColGroup {
 	 * Constructor for internal use. Used when a method needs to build an instance of this class from scratch.
 	 * 
 	 * @param colIndices column mapping for this column group
-	 * @param numRows    number of rows in the column, for passing to the superclass
 	 * @param data       matrix block
 	 */
-	protected ColGroupUncompressed(int[] colIndices, int numRows, MatrixBlock data) {
-		super(colIndices, numRows);
+	protected ColGroupUncompressed(int[] colIndices, MatrixBlock data) {
+		super(colIndices);
 		_data = data;
 	}
 
@@ -194,7 +204,7 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeUncompressed(_numRows, getNumCols(), _data.getSparsity());
+		return ColGroupSizes.estimateInMemorySizeUncompressed(_data.getNumRows(), getNumCols(), _data.getSparsity());
 	}
 
 	@Override
@@ -393,7 +403,7 @@ public class ColGroupUncompressed extends AColGroup {
 		// execute scalar operations
 		MatrixBlock retContent = _data.scalarOperations(op, new MatrixBlock());
 		// construct new uncompressed column group
-		return new ColGroupUncompressed(getColIndices(), _data.getNumRows(), retContent);
+		return new ColGroupUncompressed(getColIndices(), retContent);
 	}
 
 	@Override
@@ -436,7 +446,6 @@ public class ColGroupUncompressed extends AColGroup {
 		// read col contents (w/ meta data)
 		_data = new MatrixBlock();
 		_data.readFields(in);
-		_numRows = _data.getNumRows();
 
 		// read col indices
 		int numCols = _data.getNumColumns();
@@ -472,11 +481,19 @@ public class ColGroupUncompressed extends AColGroup {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append("\n");
-		sb.append(_data.getNumColumns() + " ");
-		sb.append(_data.getNumRows() + " ");
-		sb.append(_data.getNonZeros() + " ");
-		sb.append(_data.isInSparseFormat() + " ");
-		// sb.append(_data.toString());
+		sb.append(" numCols : " + _data.getNumColumns());
+		sb.append(" numRows : " + _data.getNumRows());
+		sb.append(" nonZeros: " + _data.getNonZeros());
+		sb.append(" Sparse  : " + _data.isInSparseFormat());
+		sb.append("\n");
+
+		if(!_data.isInSparseFormat() && _data.getNumRows() < 100000)
+			sb.append(Arrays.toString(_data.getDenseBlockValues()));
+		else if(_data.getNumRows() < 100)
+			sb.append(_data.toString());
+		else
+			sb.append(" dont print uncompressed matrix because it is to big.");
+
 		return sb.toString();
 	}
 
@@ -540,12 +557,22 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public boolean containsValue(double pattern){
+	public boolean containsValue(double pattern) {
 		return _data.containsValue(pattern);
 	}
 
 	@Override
-	public long getNumberNonZeros(){
+	public long getNumberNonZeros() {
 		return _data.getNonZeros();
+	}
+
+	@Override
+	public int getNumRows(){
+		return _data.getNumRows();
+	}
+
+	@Override 
+	public boolean isDense() {
+		return !_data.isInSparseFormat();
 	}
 }

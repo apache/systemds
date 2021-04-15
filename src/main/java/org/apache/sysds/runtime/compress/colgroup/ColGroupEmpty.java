@@ -33,9 +33,11 @@ public class ColGroupEmpty extends ColGroupValue {
 
 	/**
 	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
 	 */
-	protected ColGroupEmpty() {
-		super();
+	protected ColGroupEmpty(int numRows) {
+		super(numRows);
 	}
 
 	/**
@@ -98,7 +100,7 @@ public class ColGroupEmpty extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeCONST(getNumCols(), 0, isLossy());
+		return ColGroupSizes.estimateInMemorySizeEMPTY(getNumCols());
 	}
 
 	@Override
@@ -267,7 +269,7 @@ public class ColGroupEmpty extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		throw new DMLCompressionException("Does not make sense to call this");
 	}
 }

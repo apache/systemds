@@ -22,7 +22,7 @@ package org.apache.sysds.test.component.compress.insertionsorter;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.tree.AInsertionSorter;
 import org.apache.sysds.runtime.compress.colgroup.tree.MergeSort;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
@@ -89,7 +89,7 @@ public class MergeSortTest {
             e.printStackTrace();
         }
         int[] resIndexes = t.getIndexes();
-        IMapToData data = t.getData();
+        AMapToData data = t.getData();
         assertEquals(1, resIndexes[0]);
         assertEquals(0, data.getIndex(0));
         assertEquals(3, resIndexes[1]);
@@ -111,7 +111,7 @@ public class MergeSortTest {
             e.printStackTrace();
         }
         int[] resIndexes = t.getIndexes();
-        IMapToData data = t.getData();
+        AMapToData data = t.getData();
         assertArrayEquals(new int[] { 1, 2, 3, 4, 5 }, resIndexes);
         assertEquals(0, data.getIndex(0));
         assertEquals(1, data.getIndex(1));
@@ -130,7 +130,7 @@ public class MergeSortTest {
             e.printStackTrace();
         }
         int[] resIndexes = t.getIndexes();
-        IMapToData data = t.getData();
+        AMapToData data = t.getData();
         assertArrayEquals(new int[] { 0, 1, 3, 4, 5 }, resIndexes);
         assertEquals(1, data.getIndex(0));
         assertEquals(0, data.getIndex(1));

@@ -35,10 +35,11 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  * Column group partitioning by number of distinct items estimated. This allows us to join columns based on the worst
  * case estimate of the joined sizes. Then once we decide to join, if the worst case is okay, we then analyze the actual
  * cardinality of the join.
+ * 
+ * This method allows us to compress many more columns than the BinPacking
+ * 
  */
-public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
-
-	// private static final Log LOG = LogFactory.getLog(ColumnGroupPartitionerCost.class.getName());
+public class CoCodeCost extends AColumnCoCoder {
 
 	/**
 	 * This value specifies the maximum distinct count allowed int a coCoded group. Note that this value is the number
@@ -49,26 +50,26 @@ public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
 
 	private final static int toSmallForAnalysis = 64;
 
-	protected ColumnGroupPartitionerCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
+	protected CoCodeCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
 		super(sizeEstimator, cs, numRows);
 		largestDistinct = Math.min(4096, Math.max(256, (int) (_numRows * 0.01)));
 	}
 
 	@Override
-	public CompressedSizeInfo partitionColumns(CompressedSizeInfo colInfos) {
+	public CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 		colInfos.setInfo(join(colInfos.getInfo()));
 		return colInfos;
 	}
 
-	private CompressedSizeInfoColGroup[] join(CompressedSizeInfoColGroup[] currentGroups) {
+	private List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups) {
 
 		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(CompressedSizeInfoColGroup::getNumVals);
-		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.length, comp);
-		List<CompressedSizeInfoColGroup> c = new ArrayList<>();
+		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
+		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
+
 		for(CompressedSizeInfoColGroup g : currentGroups) {
-			if(g.getBestCompressionType() == CompressionType.CONST){
-				c.add(g);
-			}
+			if(g.getBestCompressionType() == CompressionType.CONST)
+				ret.add(g);
 			else
 				que.add(g);
 		}
@@ -107,12 +108,9 @@ public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
 			else
 				finished = true;
 		}
-		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[que.size() + c.size()];
-		int i = 0;
 		for(CompressedSizeInfoColGroup g : que)
-			ret[i++] = g;
-		for(CompressedSizeInfoColGroup g : c)
-			ret[i++] = g;
+			ret.add(g);
+
 		return ret;
 	}
 }

@@ -37,9 +37,11 @@ public class ColGroupConst extends ColGroupValue {
 
 	/**
 	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
 	 */
-	protected ColGroupConst() {
-		super();
+	protected ColGroupConst(int numRows) {
+		super(numRows);
 	}
 
 	public static ColGroupConst genColGroupConst(int numRows, int numCols, double value) {

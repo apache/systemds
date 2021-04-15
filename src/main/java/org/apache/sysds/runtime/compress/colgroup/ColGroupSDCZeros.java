@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -59,14 +59,18 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	/**
 	 * Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.
 	 */
-	protected IMapToData _data;
+	protected AMapToData _data;
 
-	// Helper Constructors
-	protected ColGroupSDCZeros() {
-		super();
+	/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupSDCZeros(int numRows) {
+		super(numRows);
 	}
 
-	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, IMapToData data,
+	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_indexes = OffsetFactory.create(indexes, numRows);
@@ -74,7 +78,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		_zeros = true;
 	}
 
-	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, IMapToData data,
+	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_indexes = offsets;
@@ -283,7 +287,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, _dict.size(), isLossy());
+		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getNumValues(), isLossy());
 		size += _indexes.getInMemorySize();
 		size += _data.getInMemorySize();
 		return size;
@@ -458,7 +462,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		final AIterator rIt = _indexes.getIterator();
 
 		while(lIt.hasNext() && rIt.hasNext())
-			if(lIt.value() == rIt.value()){
+			if(lIt.value() == rIt.value()) {
 				ag.increment(getIndex(rIt.getDataIndexAndIncrement()));
 				lIt.next();
 			}
@@ -542,7 +546,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
 		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;

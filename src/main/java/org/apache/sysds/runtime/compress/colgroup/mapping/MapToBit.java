@@ -26,7 +26,7 @@ import java.util.BitSet;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class MapToBit implements IMapToData {
+public class MapToBit extends AMapToData {
 
 	private final BitSet _data;
 
@@ -55,7 +55,7 @@ public class MapToBit implements IMapToData {
 	}
 
 	public static long getInMemorySize(int dataLength) {
-		long size = 16; // object header
+		long size = 16 + 8; // object header + object reference
 		size += MemoryEstimates.bitSetCost(dataLength);
 		return size;
 	}

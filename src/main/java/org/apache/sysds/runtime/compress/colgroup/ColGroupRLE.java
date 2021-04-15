@@ -40,8 +40,13 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public class ColGroupRLE extends ColGroupOffset {
 	private static final long serialVersionUID = 7450232907594748177L;
 
-	protected ColGroupRLE() {
-		super();
+	/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupRLE(int numRows) {
+		super(numRows);
 	}
 
 	/**
@@ -453,9 +458,7 @@ public class ColGroupRLE extends ColGroupOffset {
 				while(bix < blen) {
 					int lstart = _data[boff + bix];
 					int llen = _data[boff + bix + 1];
-					LinearAlgebraUtils.vectAdd(val,
-						c,
-						Math.max(rl, start + lstart),
+					LinearAlgebraUtils.vectAdd(val, c, Math.max(rl, start + lstart),
 						Math.min(start + lstart + llen, ru) - Math.max(rl, start + lstart));
 					if(start + lstart + llen >= ru)
 						break;
@@ -491,13 +494,8 @@ public class ColGroupRLE extends ColGroupOffset {
 			while(bix < blen) {
 				int lstart = _data[boff + bix];
 				int llen = _data[boff + bix + 1];
-				LinearAlgebraUtils.vectListAdd(preAggregatedB,
-					c,
-					Math.max(rl, start + lstart),
-					Math.min(start + lstart + llen, ru),
-					outputColumns,
-					thatNrColumns,
-					k);
+				LinearAlgebraUtils.vectListAdd(preAggregatedB, c, Math.max(rl, start + lstart),
+					Math.min(start + lstart + llen, ru), outputColumns, thatNrColumns, k);
 				if(start + lstart + llen >= ru)
 					break;
 				start += lstart + llen;
@@ -713,9 +711,9 @@ public class ColGroupRLE extends ColGroupOffset {
 						int llen = _data[boff + bix + 1];
 						int from = Math.max(bi, start + lstart);
 						int to = Math.min(start + lstart + llen, bimax);
-						for(int rix = from; rix < to; rix++) 
+						for(int rix = from; rix < to; rix++)
 							c[rix] += val;
-						
+
 						if(start + lstart + llen >= bimax)
 							break;
 						start += lstart + llen;
@@ -741,9 +739,9 @@ public class ColGroupRLE extends ColGroupOffset {
 					for(; bix < blen && curRunEnd < ru; bix += 2) {
 						curRunStartOff = curRunEnd + _data[boff + bix];
 						curRunEnd = curRunStartOff + _data[boff + bix + 1];
-						for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++) 
+						for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
 							c[rix] += val;
-						
+
 					}
 				}
 			}
@@ -770,7 +768,7 @@ public class ColGroupRLE extends ColGroupOffset {
 				curRunStartOff = curRunEnd + _data[boff + bix];
 				curRunEnd = curRunStartOff + _data[boff + bix + 1];
 				for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
-					c[rix] =  builtin.execute(c[rix], val);
+					c[rix] = builtin.execute(c[rix], val);
 			}
 		}
 	}
@@ -856,14 +854,12 @@ public class ColGroupRLE extends ColGroupOffset {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(String.format("\n%15s%5d ", "Data:", this._data.length));
-		int sumRuns = 0;
 		sb.append("{");
-		for(int i = 0; i < _data.length; i += 2) {
-			sb.append(((int) _data[i]) + "-" + ((int) _data[i + 1]) + ", ");
-			sumRuns += _data[i + 1];
+		sb.append(((int) _data[0]) + "-" + ((int) _data[1]));
+		for(int i = 2; i < _data.length; i += 2) {
+			sb.append(", " + ((int) _data[i]) + "-" + ((int) _data[i + 1]));
 		}
 		sb.append("}");
-		sb.append(sumRuns);
 
 		return sb.toString();
 	}
@@ -1167,22 +1163,22 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret){
+	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret){
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
 		throw new NotImplementedException();
 	}
-	
+
 	@Override
-	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
 		throw new NotImplementedException();
 	}
-	
+
 	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		throw new NotImplementedException();
 	}
 }

@@ -111,7 +111,7 @@ public class OffsetChar extends AOffset {
 	}
 
 	public static long getInMemorySize(int length) {
-		long size = 16 + 4; // object header plus int
+		long size = 16 + 4 + 8; // object header plus int plus reference
 		size += MemoryEstimates.charArrayCost(length);
 		return size;
 	}

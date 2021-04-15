@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.ColGroupType;
 
 public class CompressionStatistics {
 
@@ -36,7 +35,7 @@ public class CompressionStatistics {
 	public long estimatedSizeCols;
 	public long size;
 
-	private Map<ColGroupType, int[]> colGroupCounts;
+	private Map<String, int[]> colGroupCounts;
 
 	public CompressionStatistics() {
 	}
@@ -57,9 +56,9 @@ public class CompressionStatistics {
 	 * @param colGroups list of ColGroups used in compression.
 	 */
 	public void setColGroupsCounts(List<AColGroup> colGroups) {
-		HashMap<ColGroupType, int[]> ret = new HashMap<>();
+		HashMap<String, int[]> ret = new HashMap<>();
 		for(AColGroup c : colGroups) {
-			ColGroupType ct = c.getColGroupType();
+			String ct = c.getClass().getSimpleName();
 			int colCount = c.getNumCols();
 			int[] values;
 			if(ret.containsKey(ct)) {
@@ -75,14 +74,14 @@ public class CompressionStatistics {
 		this.colGroupCounts = ret;
 	}
 
-	public Map<ColGroupType, int[]> getColGroups() {
+	public Map<String, int[]> getColGroups() {
 		return colGroupCounts;
 	}
 
 	public String getGroupsTypesString() {
 		StringBuilder sb = new StringBuilder();
 
-		for(ColGroupType ctKey : colGroupCounts.keySet()) {
+		for(String ctKey : colGroupCounts.keySet()) {
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[0] + " ");
 		}
 		return sb.toString();
@@ -90,8 +89,7 @@ public class CompressionStatistics {
 
 	public String getGroupsSizesString() {
 		StringBuilder sb = new StringBuilder();
-		for(ColGroupType ctKey : colGroupCounts.keySet()) {
-
+		for(String ctKey : colGroupCounts.keySet()) {
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[1] + " ");
 		}
 		return sb.toString();

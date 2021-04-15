@@ -350,11 +350,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public long getExactSizeOnDisk() {
 		// header information
-		long ret = 20;
-		for(AColGroup grp : _colGroups) {
-			ret += 1; // type info
-			ret += grp.getExactSizeOnDisk();
-		}
+		long ret = 4+4+8+1;
+		ret += ColGroupIO.getExactSizeOnDisk(_colGroups);
 		return ret;
 	}
 
@@ -365,7 +362,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		clen = in.readInt();
 		nonZeros = in.readLong();
 		overlappingColGroups = in.readBoolean();
-		_colGroups = ColGroupIO.readGroups(in);
+		_colGroups = ColGroupIO.readGroups(in, rlen);
 	}
 
 	@Override

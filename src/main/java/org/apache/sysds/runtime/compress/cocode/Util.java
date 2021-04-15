@@ -17,24 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup.mapping;
+package org.apache.sysds.runtime.compress.cocode;
 
-import java.io.DataOutput;
-import java.io.IOException;
+public class Util {
+	public static int[] join(int[] lhs, int[] rhs) {
+		int[] joined = new int[lhs.length + rhs.length];
+		int lp = 0;
+		int rp = 0;
+		int i = 0;
+		for(; i < joined.length && lp < lhs.length && rp < rhs.length; i++) {
+			if(lhs[lp] < rhs[rp]) 
+				joined[i] = lhs[lp++];
+			else 
+				joined[i] = rhs[rp++];
+		}
 
-public interface IMapToData {
-	public int getIndex(int n);
-
-	public void set(int n, int v);
-
-	public void fill(int v);
-
-	public long getInMemorySize();
-
-	public long getExactSizeOnDisk();
-
-	public int size();
-
-	public void write(DataOutput out) throws IOException;
-
+		while(lp < lhs.length) 
+			joined[i++] = lhs[lp++];
+		
+		while(rp < rhs.length) 
+			joined[i++] = rhs[rp++];
+		
+		return joined;
+	}
 }

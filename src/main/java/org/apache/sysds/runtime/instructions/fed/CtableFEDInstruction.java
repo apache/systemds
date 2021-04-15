@@ -104,7 +104,9 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		}
 
 		if(mo2.getNumColumns() != 1 && mo1.getNumColumns() != 1)
-			throw new DMLRuntimeException("Federated ctable: Input vectors should be nx1.");
+			throw new DMLRuntimeException("Federated ctable: Input vectors should be nx1, but are " +
+				mo1.getNumRows() + "x" + mo1.getNumColumns() + " and " +
+				mo2.getNumRows() + "x" + mo2.getNumColumns() + ".");
 
 		// get new output dims
 		Long[] dims1 = getOutputDimension(mo1, input1, _outDim1, mo1.getFedMapping().getFederatedRanges());
@@ -132,9 +134,11 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		FederatedRequest fr2, fr3;
 		if(mo3 == null) {
 			if(!reversed)
-				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2},
+					new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});
 			else
-				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2}, new long[] {fr1[0].getID(), mo1.getFedMapping().getID()});
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2},
+					new long[] {fr1[0].getID(), mo1.getFedMapping().getID()});
 
 			fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
 			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
@@ -143,15 +147,18 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		} else {
 			FederatedRequest[] fr4 = mo1.getFedMapping().broadcastSliced(mo3, false);
 			if(!reversed && !reversedWeights)
-				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr4[0].getID()});
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
+					new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr4[0].getID()});
 			else if(reversed && !reversedWeights)
-				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), fr4[0].getID()});
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
+					new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), fr4[0].getID()});
 			else
-				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, new long[] {fr1[0].getID(), fr4[0].getID(), mo1.getFedMapping().getID()});
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
+					new long[] {fr1[0].getID(), fr4[0].getID(), mo1.getFedMapping().getID()});
 
 			fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
 			FederatedRequest fr5 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr4[0].getID());
-			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4[0], fr5);
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr4, fr2, fr3, fr5);
 		}
 
 		if(fedOutput && isFedOutput(ffr, dims1)) {

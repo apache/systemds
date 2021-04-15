@@ -27,12 +27,21 @@ m = nrow(X);
 n = ncol(X);
 
 # prepare offset vectors and one-hot encoded X
-fdom = colMaxs(X);
+maxs = colMaxs(X);
+rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1);
+cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m*n, 1);
 
-foffb = t(cumsum(t(fdom))) - fdom;
-foffe = t(cumsum(t(fdom)))
-rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
-cix = matrix(X + foffb, m*n, 1);
+W = rix + cix;
 
-X2 = table(rix, cix);
+if($revIn)
+  if($weighted)
+    X2 = table(cix, rix, W);
+  else
+    X2 = table(cix, rix);
+else
+  if($weighted)
+      X2 = table(rix, cix, W);
+    else
+      X2 = table(rix, cix);
+
 write(X2, $out);

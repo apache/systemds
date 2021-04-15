@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -993,13 +994,25 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			else {
 				String[] data = _data.split(DataExpression.DELIM_NA_STRING_SEP);
-				if(data.length != _schema.length && data.length > 1)
+				int rowLength = data.length/(int)_rlen;
+				if(data.length != _schema.length && data.length > 1 && rowLength != _schema.length)
 					throw new DMLRuntimeException("data values should be equal "
 						+ "to number of columns, or a single values for all columns");
-				if(data.length > 1) {
+				if(data.length > 1  && rowLength != _schema.length) {
 					out = new FrameBlock(_schema);
 					for(int i = 0; i < lrlen; i++)
 						out.appendRow(data);
+				}
+				else if(data.length > 1 && rowLength == _schema.length)
+				{
+					out = new FrameBlock(_schema);
+					int beg = 0;
+					for(int i = 1; i <= lrlen; i++) {
+						int end = (int)_clen * i;
+						String[] data1 = ArrayUtils.subarray(data, beg, end);
+						beg = end;
+						out.appendRow(data1);
+					}
 				}
 				else {
 					out = new FrameBlock(_schema);

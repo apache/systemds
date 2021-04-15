@@ -52,7 +52,8 @@ public class FrameConstructorTest extends AutomatedTestBase {
 		NAMED,
 		NO_SCHEMA,
 		RANDOM_DATA,
-		SINGLE_DATA
+		SINGLE_DATA,
+		MULTI_ROW_DATA
 	}
 
 	@Override
@@ -66,25 +67,25 @@ public class FrameConstructorTest extends AutomatedTestBase {
 	
 	@Test
 	public void testFrameNamedParam() {
-		FrameBlock exp = createExpectedFrame(schemaStrings1, false);
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"mixed");
 		runFrameTest(TestType.NAMED, exp, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testFrameNamedParamSP() {
-		FrameBlock exp = createExpectedFrame(schemaStrings1, false);
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"mixed");
 		runFrameTest(TestType.NAMED, exp, Types.ExecMode.SPARK);
 	}
 
 	@Test
 	public void testNoSchema() {
-		FrameBlock exp = createExpectedFrame(schemaStrings2, false);
+		FrameBlock exp = createExpectedFrame(schemaStrings2, rows,"mixed");
 		runFrameTest(TestType.NO_SCHEMA, exp, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testNoSchemaSP() {
-		FrameBlock exp = createExpectedFrame(schemaStrings2, false);
+		FrameBlock exp = createExpectedFrame(schemaStrings2, rows,"mixed");
 		runFrameTest(TestType.NO_SCHEMA, exp, Types.ExecMode.SPARK);
 	}
 
@@ -102,14 +103,26 @@ public class FrameConstructorTest extends AutomatedTestBase {
 
 	@Test
 	public void testSingleData() {
-		FrameBlock exp = createExpectedFrame(schemaStrings1, true);
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"constant");
 		runFrameTest(TestType.SINGLE_DATA, exp, Types.ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testSingleDataSP() {
-		FrameBlock exp = createExpectedFrame(schemaStrings1, true);
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"constant");
 		runFrameTest(TestType.SINGLE_DATA, exp, Types.ExecMode.SPARK);
+	}
+
+	@Test
+	public void testMultiRowData() {
+		FrameBlock exp = createExpectedFrame(schemaStrings1, 5,"multi-row");
+		runFrameTest(TestType.MULTI_ROW_DATA, exp, Types.ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testMultiRowDataSP() {
+		FrameBlock exp = createExpectedFrame(schemaStrings1, 5,"multi-row");
+		runFrameTest(TestType.MULTI_ROW_DATA, exp, Types.ExecMode.SPARK);
 	}
 
 	private void runFrameTest(TestType type, FrameBlock expectedOutput, Types.ExecMode et) {
@@ -144,11 +157,20 @@ public class FrameConstructorTest extends AutomatedTestBase {
 		}
 	}
 	
-	private static FrameBlock createExpectedFrame(ValueType[] schema, boolean constant) {
+	private static FrameBlock createExpectedFrame(ValueType[] schema, int rows, String type) {
 		FrameBlock exp = new FrameBlock(schema);
-		String[] out = constant ?
-			new String[]{"1", "1", "1", "1"} :
-			new String[]{"1", "abc", "2.5", "TRUE"};
+		String[] out = null;
+		if(type.equals("mixed"))
+			out = new String[]{"1", "abc", "2.5", "TRUE"};
+		else if(type.equals("constant"))
+			out = new String[]{"1", "1", "1", "1"};
+		else if (type.equals("multi-row")) //multi-row data
+			out = new String[]{"1", "abc", "2.5", "TRUE"};
+		else {
+			System.out.println("invalid test type");
+			System.exit(1);
+		}
+
 		for(int i=0; i<rows; i++)
 			exp.appendRow(out);
 		return exp;

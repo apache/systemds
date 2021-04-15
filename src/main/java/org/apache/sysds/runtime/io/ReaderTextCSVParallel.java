@@ -39,7 +39,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
@@ -122,9 +121,8 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 		FileInputFormat.addInputPath(_job, path);
 		TextInputFormat informat = new TextInputFormat();
-
 		informat.configure(_job);
-    
+
 		ExecutorService pool = CommonThreadPool.get(_numThreads);
 
 		try {

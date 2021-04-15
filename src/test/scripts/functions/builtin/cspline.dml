@@ -1,0 +1,48 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+X = read($1)
+Y = read($2)
+inp_x = as.double($3)
+y_output = $4
+mode = $5
+
+tolerance = ifdef($6, "-1.0")
+tolerance = as.double(tolerance)
+
+max_iter = ifdef($7, "-1")
+max_iter = as.integer(max_iter)
+
+
+if (mode == "CG")
+{
+  [result, K] = csplineCG(X=X, Y=Y, inp_x=inp_x, tol=tolerance, maxi=max_iter);
+}
+else if (mode == "DS")
+{
+  [result, K] = csplineDS(X=X, Y=Y, inp_x=inp_x);
+}
+else
+{
+  [result, K] = cspline(X=X, Y=Y, inp_x=inp_x, tol=tolerance, maxi=max_iter);
+}
+
+write(result, y_output);

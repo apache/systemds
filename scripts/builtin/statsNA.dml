@@ -43,7 +43,7 @@
 # ------------------------------------------------------------------------------
 
 m_statsNA = function(Matrix[Double] X, Integer bins = 4, Boolean verbose = TRUE)
-  return( Matrix[Double] stats) 
+  return(Matrix[Double] stats) 
 {
   longest_nan_gap = -1
   most_frequent_nan_gap = -1

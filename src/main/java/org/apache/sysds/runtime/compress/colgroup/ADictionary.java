@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -33,6 +32,8 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * group.
  */
 public abstract class ADictionary {
+
+	// private static final Log LOG = LogFactory.getLog(ADictionary.class.getName());
 
 	/**
 	 * Get all the values contained in the dictionary as a linearized double array.
@@ -53,10 +54,10 @@ public abstract class ADictionary {
 	 * Determines if the content has a zero tuple. meaning all values at a specific row are zero value. This is useful
 	 * information to find out if the dictionary is used in a dense context. To improve some specific operations.
 	 * 
-	 * @param ncol The number of columns in the dictionary.
+	 * @param nCol The number of columns in the dictionary.
 	 * @return The index at which the zero tuple is located.
 	 */
-	public abstract int hasZeroTuple(int ncol);
+	public abstract int hasZeroTuple(int nCol);
 
 	/**
 	 * Returns the memory usage of the dictionary.
@@ -74,6 +75,15 @@ public abstract class ADictionary {
 	 * @return The aggregated value as a double.
 	 */
 	public abstract double aggregate(double init, Builtin fn);
+
+	/**
+	 * Aggregate all entries in the rows.
+	 * 
+	 * @param fn The aggregate function
+	 * @param nCol The number of columns contained in the dictionary.
+	 * @return Aggregates for this dictionary tuples.
+	 */
+	public abstract double[] aggregateTuples(Builtin fn, int nCol);
 
 	/**
 	 * returns the count of values contained in the dictionary.
@@ -102,7 +112,19 @@ public abstract class ADictionary {
 	 */
 	public abstract ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols);
 
-	public abstract ADictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes);
+	public ADictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes,
+		boolean left) {
+		return (left) ? applyBinaryRowOpLeft(fn, v, sparseSafe, colIndexes) : applyBinaryRowOpRight(fn,
+			v,
+			sparseSafe,
+			colIndexes);
+	}
+
+	public abstract ADictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe,
+		int[] colIndexes);
+
+	public abstract ADictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe,
+		int[] colIndexes);
 
 	/**
 	 * Returns a deep clone of the dictionary.
@@ -122,12 +144,9 @@ public abstract class ADictionary {
 	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
 		int ncol = colIndexes.length;
 		int vlen = size() / ncol;
-		// double[] ret = init;
-		// System.out.println(c.length + " " + ncol);
 		for(int k = 0; k < vlen; k++)
 			for(int j = 0, valOff = k * ncol; j < ncol; j++)
 				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], getValue(valOff + j));
-		// return c;
 	}
 
 	/**
@@ -178,25 +197,59 @@ public abstract class ADictionary {
 	 * 
 	 * Note if the number of columns is one the actual dictionaries values are simply returned.
 	 * 
-	 * @param kplus     The function to apply to each value in the rows
+	 * @param square    If each entry should be squared.
 	 * @param nrColumns The number of columns in the ColGroup to know how to get the values from the dictionary.
 	 * @return a double array containing the row sums from this dictionary.
 	 */
-	protected abstract double[] sumAllRowsToDouble(KahanFunction kplus, int nrColumns);
+	protected abstract double[] sumAllRowsToDouble(boolean square, int nrColumns);
 
 	/**
 	 * Sum the values at a specific row.
 	 * 
 	 * @param k         The row index to sum
-	 * @param kplus     The operator to use
+	 * @param square    If each entry should be squared.
 	 * @param nrColumns The number of columns
 	 * @return The sum of the row.
 	 */
-	protected abstract double sumRow(int k, KahanFunction kplus, int nrColumns);
+	protected abstract double sumRow(int k, boolean square, int nrColumns);
 
-	protected abstract void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus);
+	protected abstract void colSum(double[] c, int[] counts, int[] colIndexes, boolean square);
 
-	protected abstract double sum(int[] counts, int ncol, KahanFunction kplus);
+	protected abstract double sum(int[] counts, int ncol);
+
+	protected abstract double sumsq(int[] counts, int ncol);
 
 	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
+
+	/**
+	 * This method adds the max and min values contained in the dictionary to corresponding cells in the ret variable.
+	 * 
+	 * One use case for this method is the squash operation, to go from an overlapping state to normal compression.
+	 * 
+	 * @param ret        The double array that contains all columns min and max.
+	 * @param colIndexes The column indexes contained in this dictionary.
+	 */
+	protected abstract void addMaxAndMin(double[] ret, int[] colIndexes);
+
+	/**
+	 * Modify the dictionary by removing columns not within the index range.
+	 * 
+	 * @param idxStart                The column index to start at.
+	 * @param idxEnd                  The column index to end at (not inclusive)
+	 * @param previousNumberOfColumns The number of columns contained in the dictionary.
+	 * @return A dictionary containing the sliced out columns values only.
+	 */
+	public abstract ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns);
+
+	/**
+	 * return a new Dictionary that have re expanded all values, based on the entries already contained.
+	 * 
+	 * @param max The number of output columns possible.
+	 * @return The re expanded Dictionary.
+	 */
+	public abstract ADictionary reExpandColumns(int max);
+
+	public abstract boolean containsValue(double pattern);
+
+	public abstract long getNumberNonZeros(int[] counts, int nCol);
 }

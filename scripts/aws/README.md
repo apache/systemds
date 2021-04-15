@@ -17,13 +17,113 @@ limitations under the License.
 {% endcomment %}
 -->
 
-Instructions:
+## Administrator setup
+
+
+### With [`Cloud Shell`](https://console.aws.amazon.com/cloudshell/home):
+
+Assumed variables,
+
+| Name | Value |
+| --- | --- |
+| `UserName` | `systemds-bot` |
+| `GroupName` | `systemds-group` |
+
+#### 1. Create a user and a group
+
+Create a user and a group, and join user to the created group.
+
+[`create-user`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/create-user.html)
+```sh
+[cloudshell-user@host ~]$ aws iam create-user --user-name systemds-bot
+{
+    "User": {
+        "Path": "/",
+        "UserName": "systemds-bot",
+        "UserId": "AIDAQSHHX7DDAODFXYZ3",
+        "Arn": "arn:aws:iam::12345:user/systemds-bot",
+        "CreateDate": "2021-04-10T20:36:59+00:00"
+    }
+}
+```
+
+[`create-group`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/create-group.html)
+
+```sh
+[cloudshell-user@host ~]$aws iam create-group --group-name systemds-group
+{
+    "Group": {
+        "Path": "/",
+        "GroupName": "systemds-group",
+        "GroupId": "AGPAQSHHX7DDB3XYZABCW",
+        "Arn": "arn:aws:iam::12345:group/systemds-group",
+        "CreateDate": "2021-04-10T20:41:58+00:00"
+    }
+}
+```
+
+#### 2. Attach roles to the group
+
+[`attach-group-policy`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/attach-group-policy.html)
+
+```sh
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole --group-name systemds-group
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role --group-name systemds-group
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AmazonElasticMapReduceFullAccess --group-name systemds-group
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser --group-name systemds-group
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/IAMUserSSHKeys --group-name systemds-group
+
+# Grant cloud shell access too.
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AWSCloudShellFullAccess --group-name systemds-group
+
+# To create EC2 keys
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess --group-name systemds-group
+```
+
+#### 3. Add user to the group
+
+```sh
+aws iam add-user-to-group --user-name systemds-bot --group-name systemds-group
+```
+
+#### 4. Create the login-profile with credentials
+
+```sh
+$ aws iam create-login-profile --generate-cli-skeleton > login-profile.json
+```
+
+`login-profile.json` contains
+
+```json
+{
+    "LoginProfile": {
+        "UserName": "",
+        "Password": "",
+        "PasswordResetRequired": false
+    }
+}
+```
+
+Create the credentials manually by editing `login-profile.json`.
+
+| Name | Value |
+| --- | --- |
+| `UserName` | `systemds-bot` |
+| `Password` | For example, `9U*tYP` |
+| `PasswordResetRequired` | `false` |
+
+Now, create the login profile.
+
+```sh
+aws iam create-login-profile --cli-input-json file://login-profile.json
+```
+
+---
+### With [`AWS CLI`](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html):
 
 1. Create aws account / use your existing aws account
 
-2. Install aws-cli on your system 
-
-(https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html)
+2. Install `aws-cli` specific to your Operating System.
 
 3. Create a user
     
@@ -44,6 +144,8 @@ Instructions:
          - IAMUserSSHKeys 
 
 4. Configure your aws-cli (https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html#cli-quick-configuration)
+
+## User Setup
 
 5. Spin up an EMR cluster with SystemDS
     

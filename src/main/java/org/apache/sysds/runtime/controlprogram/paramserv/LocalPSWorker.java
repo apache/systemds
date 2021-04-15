@@ -20,7 +20,10 @@
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -39,7 +42,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	protected LocalPSWorker() {}
 
-	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
+	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq,
+		int epochs, long batchSize, ExecutionContext ec, ParamServer ps)
+	{
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
 	}
 
@@ -79,26 +84,35 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		for (int i = 0; i < _epochs; i++) {
 			// Pull the global parameters from ps
 			ListObject params = pullModel();
-			ListObject accGradients = null;
-			
-			for (int j = 0; j < batchIter; j++) {
-				ListObject gradients = computeGradients(params, dataSize, batchIter, i, j);
+			Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
 
-				boolean localUpdate = j < batchIter - 1;
-				// Accumulate the intermediate gradients
-				accGradients = ParamservUtils.accrueGradients(accGradients, gradients, !localUpdate);
+			try {
+				for (int j = 0; j < batchIter; j++) {
+					ListObject gradients = computeGradients(params, dataSize, batchIter, i, j);
+	
+					boolean localUpdate = j < batchIter - 1;
+					
+					// Accumulate the intermediate gradients (async for overlap w/ model updates 
+					// and gradient computation, sequential over gradient matrices to avoid deadlocks)
+					ListObject accGradientsPrev = accGradients.get();
+					accGradients = _tpool.submit(() -> ParamservUtils.accrueGradients(
+						accGradientsPrev, gradients, false, !localUpdate));
+	
+					// Update the local model with gradients
+					if(localUpdate)
+						params = updateModel(params, gradients, i, j, batchIter);
+	
+					accNumBatches(1);
+				}
 
-				// Update the local model with gradients
-				if(localUpdate)
-					params = updateModel(params, gradients, i, j, batchIter);
-
-				accNumBatches(1);
+				// Push the gradients to ps
+				pushGradients(accGradients.get());
+				ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 			}
-
-			// Push the gradients to ps
-			pushGradients(accGradients);
-			ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
-
+			catch(ExecutionException | InterruptedException ex) {
+				throw new DMLRuntimeException(ex);
+			}
+			
 			accNumEpochs(1);
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));

@@ -80,7 +80,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), fr1.getID()});
-			if( mo2.getNumColumns() == 1 ) { //MV
+			if( mo2.getNumColumns() == 1 && mo2.getNumRows() != mo1.getNumColumns()) { //MV
 				FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 				FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
 				//execute federated operations and aggregate
@@ -107,6 +107,19 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID());
 			//execute federated operations and aggregate
 			Future<FederatedResponse>[] tmp = mo2.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+			MatrixBlock ret = FederationUtils.aggAdd(tmp);
+			ec.setMatrixOutput(output.getName(), ret);
+		}
+		//#3 col-federated matrix vector multiplication
+		else if (mo1.isFederated(FType.COL)) {// VM + MM
+			//construct commands: broadcast rhs, fed mv, retrieve results
+			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, true);
+			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), fr1[0].getID()});
+			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
+			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID());
+			//execute federated operations and aggregate
+			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
 			MatrixBlock ret = FederationUtils.aggAdd(tmp);
 			ec.setMatrixOutput(output.getName(), ret);
 		}

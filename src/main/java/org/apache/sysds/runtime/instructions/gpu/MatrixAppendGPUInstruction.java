@@ -37,16 +37,11 @@ import org.apache.sysds.utils.GPUStatistics;
  */
 public class MatrixAppendGPUInstruction extends GPUInstruction {
 
-	CPOperand output;
-	CPOperand input1, input2;
 	AppendCPInstruction.AppendType atype;
 
 	private MatrixAppendGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			AppendCPInstruction.AppendType type, String opcode, String istr) {
-		super(op, opcode, istr);
-		this.output = out;
-		this.input1 = in1;
-		this.input2 = in2;
+		super(op, in1, in2, out, opcode, istr);
 		this.atype = type;
 	}
 
@@ -75,16 +70,16 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		String opcode = getOpcode();
-		MatrixObject mat1 = getMatrixInputForGPUInstruction(ec, input1.getName());
-		MatrixObject mat2 = getMatrixInputForGPUInstruction(ec, input2.getName());
+		MatrixObject mat1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject mat2 = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		if(atype == AppendCPInstruction.AppendType.CBIND)
-			LibMatrixCUDA.cbind(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, output.getName());
+			LibMatrixCUDA.cbind(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, _output.getName());
 		else if (atype == AppendCPInstruction.AppendType.RBIND )
-			LibMatrixCUDA.rbind(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, output.getName());
+			LibMatrixCUDA.rbind(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, _output.getName());
 		else
 			throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
-		ec.releaseMatrixInputForGPUInstruction(input1.getName());
-		ec.releaseMatrixInputForGPUInstruction(input2.getName());
-		ec.releaseMatrixOutputForGPUInstruction(output.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 }

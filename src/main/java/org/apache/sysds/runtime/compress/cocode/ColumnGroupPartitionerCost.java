@@ -19,147 +19,83 @@
 
 package org.apache.sysds.runtime.compress.cocode;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map.Entry;
+import java.util.Comparator;
+import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.TreeMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.GroupableColInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 /**
- * Column group partitioning with static number distinct elements heuristic
+ * Column group partitioning by number of distinct items estimated. This allows us to join columns based on the worst
+ * case estimate of the joined sizes. Then once we decide to join, if the worst case is okay, we then analyze the actual
+ * cardinality of the join.
  */
-public class ColumnGroupPartitionerCost extends ColumnGroupPartitioner {
-	private static final Log LOG = LogFactory.getLog(ColumnGroupPartitionerCost.class.getName());
+public class ColumnGroupPartitionerCost extends AColumnGroupPartitioner {
+
+	// private static final Log LOG = LogFactory.getLog(ColumnGroupPartitionerCost.class.getName());
+
 	/**
 	 * This value specifies the maximum distinct count allowed int a coCoded group. Note that this value is the number
-	 * of distinct rows not the total number of values. That value can be calculated by multiplying with the number of
-	 * rows in the coCoded group.
+	 * of distinct tuples not the total number of values. That value can be calculated by multiplying the number of
+	 * tuples with columns in the coCoded group.
 	 */
-	private static final int largestDistinct = 256;
+	private final int largestDistinct;
+
+	protected ColumnGroupPartitionerCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
+		super(sizeEstimator, cs, numRows);
+
+		largestDistinct = Math.min(10000, Math.max(256, (int) (_numRows * 0.01)));
+		
+	}
 
 	@Override
-	public List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo,
-		CompressionSettings cs) {
-		if(groupCols.size() > 1000)
-			throw new DMLCompressionException("I think it is an invalid number of column groups.");
-			
-		TreeMap<Integer, Queue<Queue<Integer>>> distToColId = new TreeMap<>();
-		for(Entry<Integer, GroupableColInfo> ent : groupColsInfo.entrySet()) {
-			int distinct = (ent.getValue().nrDistinct > 1) ? ent.getValue().nrDistinct : 1;
-			if(distToColId.containsKey(distinct)) {
-				Queue<Integer> cocodeGroup = new LinkedList<>();
-				cocodeGroup.add(ent.getKey());
-				distToColId.get(distinct).add(cocodeGroup);
-			}
-			else {
-				Queue<Queue<Integer>> cocodeGroups = new LinkedList<>();
-				Queue<Integer> cocodeGroup = new LinkedList<>();
-				cocodeGroup.add(ent.getKey());
-				cocodeGroups.add(cocodeGroup);
-				distToColId.put(distinct, cocodeGroups);
-			}
+	public CompressedSizeInfo partitionColumns(CompressedSizeInfo colInfos) {
+		colInfos.setInfo(join(colInfos.getInfo()));
+		return colInfos;
+	}
+
+	private CompressedSizeInfoColGroup[] join(CompressedSizeInfoColGroup[] currentGroups) {
+
+		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(CompressedSizeInfoColGroup::getNumVals);
+		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.length, comp);
+		for(CompressedSizeInfoColGroup g : currentGroups) {
+			que.add(g);
 		}
 
-		boolean change = false;
-
-		while(distToColId.firstKey() < largestDistinct) {
-			Entry<Integer, Queue<Queue<Integer>>> elm = distToColId.pollFirstEntry();
-			if(elm.getValue().size() > 1) {
-				int distinctCombinations = elm.getKey() > 1 ? elm.getKey() : 2;
-				// Queue<Queue<Integer>> group = elm.getValue();
-				int sizeCombined = (int) (distinctCombinations * distinctCombinations);
-				if(sizeCombined < largestDistinct) {
-					Queue<Integer> cols = elm.getValue().poll();
-					cols.addAll(elm.getValue().poll());
-					if(distToColId.containsKey(sizeCombined)) {
-						Queue<Queue<Integer>> p = distToColId.get(sizeCombined);
-						p.add(cols);
-					}
+		boolean finished = false;
+		while(!finished) {
+			if(que.peek() != null) {
+				CompressedSizeInfoColGroup l = que.poll();
+				if(que.peek() != null) {
+					CompressedSizeInfoColGroup r = que.poll();
+					int szl = l.getNumVals();
+					int szr = r.getNumVals();
+					if(szl * szr < largestDistinct)
+						que.add(join(l, r));
 					else {
-						Queue<Queue<Integer>> n = new LinkedList<>();
-						n.add(cols);
-						distToColId.put(sizeCombined, n);
+						finished = true;
+						que.add(l);
+						que.add(r);
 					}
-
-					if(elm.getValue().size() > 0) {
-						distToColId.put(elm.getKey(), elm.getValue());
-					}
-
-					change = true;
 				}
 				else {
-					change = false;
-					distToColId.put(elm.getKey(), elm.getValue());
+					que.add(l);
+					finished = true;
 				}
 			}
-			else if(!distToColId.isEmpty()) {
-				Entry<Integer, Queue<Queue<Integer>>> elm2 = distToColId.pollFirstEntry();
-				int size1 = elm.getKey() > 1 ? elm.getKey() : 2;
-				int size2 = elm2.getKey() > 1 ? elm2.getKey() : 2;
-				int sizeCombined = (int) (size1 * size2 );
-				if(sizeCombined < largestDistinct) {
-					Queue<Integer> cols = elm.getValue().poll();
-					cols.addAll(elm2.getValue().poll());
-					if(distToColId.containsKey(sizeCombined)) {
-						distToColId.get(sizeCombined).add(cols);
-					}
-					else {
-						Queue<Queue<Integer>> n = new LinkedList<>();
-						n.add(cols);
-						distToColId.put(sizeCombined, n);
-					}
-
-					if(elm.getValue().size() > 0) {
-						distToColId.put(elm.getKey(), elm.getValue());
-					}
-
-					if(elm2.getValue().size() > 0) {
-						distToColId.put(elm2.getKey(), elm2.getValue());
-					}
-
-					change = true;
-				}
-				else {
-					change = false;
-					distToColId.put(elm.getKey(), elm.getValue());
-					distToColId.put(elm2.getKey(), elm2.getValue());
-				}
-			}
-			else {
-				distToColId.put(elm.getKey(), elm.getValue());
-				break;
-			}
-			if(!change)
-				break;
+			else
+				finished = true;
 		}
-		List<int[]> ret = new ArrayList<>();
-
-		for(Queue<Queue<Integer>> x : distToColId.values())
-			for(Queue<Integer> y : x) {
-				int[] g = new int[y.size()];
-				int idx = 0;
-				for(Integer id : y)
-					g[idx++] = id;
-				Arrays.sort(g);
-				ret.add(g);
-			}
-
-		if(LOG.isDebugEnabled()) {
-			StringBuilder sb = new StringBuilder();
-			for(int[] cg : ret)
-				sb.append(Arrays.toString(cg));
-
-			LOG.debug(sb.toString());
+		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[que.size()];
+		int i = 0;
+		for(CompressedSizeInfoColGroup g : que) {
+			ret[i++] = g;
 		}
+		// LOG.error(Arrays.toString(ret));
 		return ret;
 	}
+
 }

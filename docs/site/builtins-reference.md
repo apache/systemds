@@ -1,6 +1,6 @@
 ---
 layout: site
-title: Buildin Reference
+title: Builtin Functions Reference
 ---
 <!--
 {% comment %}
@@ -33,6 +33,7 @@ limitations under the License.
     * [`discoverFD`-Function](#discoverFD-function)
     * [`dist`-Function](#dist-function)
     * [`dmv`-Function](#dmv-function)
+    * [`ema`-Function](#ema-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -45,11 +46,13 @@ limitations under the License.
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
-    * [`lmpredict`-Function](#lmpredict-function)
+    * [`lmPredict`-Function](#lmPredict-function)
     * [`mice`-Function](#mice-function)
     * [`multiLogReg`-Function](#multiLogReg-function)
     * [`pnmf`-Function](#pnmf-function)
     * [`scale`-Function](#scale-function)
+    * [`sherlock`-Function](#sherlock-function)
+    * [`sherlockPredict`-Function](#sherlockPredict-function)
     * [`sigmoid`-Function](#sigmoid-function)
     * [`smote`-Function](#smote-function)
     * [`steplm`-Function](#steplm-function)
@@ -63,14 +66,14 @@ limitations under the License.
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`winsorize`-Function](#winsorize-function)
     * [`gmm`-Function](#gmm-function)
-    
+    * [`correctTypos`-Function](#correcttypos-function)
     
 # Introduction
 
 The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level functions
 to support all kinds of use cases.
 
-A builtin ir either implemented on a compiler level or as DML scripts that are loaded at compile time.
+A builtin is either implemented on a compiler level or as DML scripts that are loaded at compile time.
 
 # Built-In Construction Functions
 
@@ -183,7 +186,7 @@ y = toOneHot(X, numClasses)
 ## `cvlm`-Function
 
 The `cvlm`-function is used for cross-validation of the provided data model. This function follows a non-exhaustive
-cross validation method. It uses [`lm`](#lm-function) and [`lmpredict`](#lmpredict-function) functions to solve the linear
+cross validation method. It uses [`lm`](#lm-function) and [`lmPredict`](#lmPredict-function) functions to solve the linear
 regression and to predict the class of a feature vector with no intercept, shifting, and rescaling.
 
 ### Usage
@@ -425,7 +428,7 @@ Through multiple parallel brackets and consecutive trials it will return the hyp
 on a validation dataset. A set of hyper parameter combinations is drawn from uniform distributions with given ranges; Those
 make up the candidates for `hyperband`.
 Notes: 
-* `hyperband` is hard-coded for `lmCG`, and uses `lmpredict` for validation
+* `hyperband` is hard-coded for `lmCG`, and uses `lmPredict` for validation
 * `hyperband` is hard-coded to use the number of iterations as a resource 
 * `hyperband` can only optimize continuous hyperparameters
 
@@ -598,6 +601,42 @@ imputeByFD(X, sourceAttribute, targetAttribute, threshold)
 ```r
 X = matrix("1 1 1 2 4 5 5 3 3 NaN 4 5 4 1", rows=7, cols=2)
 imputeByFD(X = X, source = 1, target = 2, threshold = 0.6, verbose = FALSE)
+```
+
+
+## `imputeEMA`-Function
+
+The `imputeEMA`-function imputes values with exponential moving average (single, double or triple).
+
+### Usage
+
+```r
+ema(X, search_iterations, mode, freq, alpha, beta, gamma)
+```
+
+### Arguments
+
+| Name      | Type    | Default  | Description |
+| :-------- | :------ | -------- | :---------- |
+| X         | Frame[Double]  | --       | Frame that contains timeseries data that needs to be imputed |
+| search_iterations    | Integer | --       | Budget iterations for parameter optimisation, used if parameters weren't set |
+| mode    | String | --       | Type of EMA method. Either "single", "double" or "triple" |
+| freq | Double  | --       | Seasonality when using triple EMA. |
+| alpha | Double  | --       | alpha- value for EMA |
+| beta | Double  | --       | beta- value for EMA |
+| gamma | Double  | --       | gamma- value for EMA |
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Frame[Double] | Frame with EMA results |
+
+### Example
+
+```r
+X = read("fileA", data_type="frame")
+ema(X = X, search_iterations = 1, mode = "triple", freq = 4, alpha = 0.1, beta = 0.1, gamma = 0.1,)
 ```
 
 ## `KMeans`-Function
@@ -778,14 +817,14 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 lmCG(X = X, y = y, maxi = 10)
 ```
 
-## `lmpredict`-Function
+## `lmPredict`-Function
 
-The `lmpredict`-function predicts the class of a feature vector.
+The `lmPredict`-function predicts the class of a feature vector.
 
 ### Usage
 
 ```r
-lmpredict(X, w)
+lmPredict(X=X, B=w)
 ```
 
 ### Arguments
@@ -793,8 +832,11 @@ lmpredict(X, w)
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vector(s). |
-| w       | Matrix[Double] | required | 1-column matrix of weights. |
-| icpt    | Matrix[Double] | `0`      | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
+| B       | Matrix[Double] | required | 1-column matrix of weights. |
+| ytest   | Matrix[Double] | optional | Optional test labels, used only for verbose output. |
+| icpt    | Integer        | 0        | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
+| verbose | Boolean        | FALSE    | Print various statistics for evaluating accuracy. |
+
 
 ### Returns
 
@@ -808,7 +850,7 @@ lmpredict(X, w)
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
-yp = lmpredict(X, w)
+yp = lmPredict(X = X, B = w)
 ```
 
 ## `mice`-Function
@@ -951,6 +993,125 @@ X = rand(rows = 20, cols = 10)
 center=TRUE;
 scale=TRUE;
 Y= scale(X,center,scale)
+```
+
+## `sherlock`-Function
+
+Implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+
+[Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection." 
+Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining., 2019]
+### Usage
+
+```r
+sherlock(X_train, y_train)
+```
+
+### Arguments
+
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X_train | Matrix[Double] | required | Matrix of feature vectors. |
+| y_train | Matrix[Double] | required | Matrix Y of class labels of semantic data type. |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | weights (parameters) matrices for character distribtions |
+| Matrix[Double] | weights (parameters) matrices for word  embeddings |
+| Matrix[Double] | weights (parameters) matrices for paragraph vectors |
+| Matrix[Double] | weights (parameters) matrices for global statistics |
+| Matrix[Double] | weights (parameters) matrices for combining all featurs (final)|
+
+### Example
+
+```r
+# preprocessed training data taken from sherlock corpus
+processed_train_values = read("processed/X_train.csv")
+processed_train_labels = read("processed/y_train.csv")
+transform_spec = read("processed/transform_spec.json")
+[processed_train_labels, label_encoding] = sherlock::transform_encode_labels(processed_train_labels, transform_spec)
+write(label_encoding, "weights/label_encoding")
+
+[cW1,  cb1,
+ cW2,  cb2,
+ cW3,  cb3,
+ wW1,  wb1,
+ wW2,  wb2,
+ wW3,  wb3,
+ pW1,  pb1,
+ pW2,  pb2,
+ pW3,  pb3,
+ sW1,  sb1,
+ sW2,  sb2,
+ sW3,  sb3,
+ fW1,  fb1,
+ fW2,  fb2,
+ fW3,  fb3] = sherlock(processed_train_values, processed_train_labels)
+```
+
+## `sherlockPredict`-Function
+
+Implements prediction and evaluation phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+
+[Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection." 
+Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining., 2019]
+### Usage
+
+```r
+sherlockPredict(X, cW1, cb1, cW2, cb2, cW3, cb3, wW1, wb1, wW2, wb2, wW3, wb3,
+                   pW1, pb1, pW2, pb2, pW3, pb3, sW1, sb1, sW2, sb2, sW3, sb3,
+                   fW1, fb1, fW2, fb2, fW3, fb3)
+```
+### Arguments
+
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of values which are to be classified. |
+| cW      | Matrix[Double] | required | Weights (parameters) matrices for character distribtions. |
+| cb      | Matrix[Double] | required | Biases vectors for character distribtions. |
+| wW      | Matrix[Double] | required | Weights (parameters) matrices for word embeddings. |
+| wb      | Matrix[Double] | required | Biases vectors for word embeddings. |
+| pW      | Matrix[Double] | required | Weights (parameters) matrices for paragraph vectors. |
+| pb      | Matrix[Double] | required | Biases vectors for paragraph vectors. |
+| sW      | Matrix[Double] | required | Weights (parameters) matrices for global statistics. |
+| sb      | Matrix[Double] | required | Biases vectors for global statistics. |
+| fW      | Matrix[Double] | required | Weights (parameters) matrices combining all features (final). |
+| fb      | Matrix[Double] | required | Biases vectors combining all features (final). |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Class probabilities of shape (N, K). |
+### Example 
+
+```r
+# preprocessed validation data taken from sherlock corpus
+processed_val_values = read("processed/X_val.csv")
+processed_val_labels = read("processed/y_val.csv")
+transform_spec = read("processed/transform_spec.json")
+label_encoding = read("weights/label_encoding")
+processed_val_labels = sherlock::transform_apply_labels(processed_val_labels, label_encoding, transform_spec)
+
+probs = sherlockPredict(processed_val_values, cW1,  cb1,
+cW2,  cb2,
+cW3,  cb3,
+wW1,  wb1,
+wW2,  wb2,
+wW3,  wb3,
+pW1,  pb1,
+pW2,  pb2,
+pW3,  pb3, 
+sW1,  sb1,
+sW2,  sb2,
+sW3,  sb3,
+fW1,  fb1,
+fW2,  fb2,
+fW3,  fb3)
+
+[loss, accuracy] = sherlockPredict::eval(probs, processed_val_labels)
 ```
 
 ## `sigmoid`-Function
@@ -1430,4 +1591,36 @@ gmm(X=X, n_components = 3,  model = "VVV",  init_params = "random", iter = 100, 
 ```r
 X = read($1)
 [labels, df, bic] = gmm(X=X, n_components = 3,  model = "VVV",  init_params = "random", iter = 100, reg_covar = 0.000001, tol = 0.0001, verbose=TRUE)
+```
+
+## `correctTypos`-Function
+
+The `correctTypos` - function tries to correct typos in a given frame. This algorithm operates on the assumption that most strings are correct and simply swaps strings that do not occur often with similar strings that occur more often. If correct is set to FALSE only prints suggested corrections without effecting the frame.
+
+### Usage
+
+```r
+correctTypos(strings, frequency_threshold, distance_threshold, decapitalize, correct, is_verbose)
+```
+
+### Arguments
+
+| NAME    | TYPE           | DEFAULT  | Description |
+| :------ | :------------- | -------- | :---------- |
+| strings | String  |   ---  |    The nx1 input frame of corrupted strings |
+| frequency_threshold   |            Double   | 0.05 |    Strings that occur above this relative frequency level will not be corrected |
+| distance_threshold         |       Int   |    2   |     Max editing distance at which strings are considered similar |
+| decapitalize            |          Boolean  | TRUE  |   Decapitalize all strings before correction |
+| correct              |             Boolean  | TRUE |    Correct strings or only report potential errors |
+| is_verbose                    |    Boolean |  FALSE |   Print debug information |
+
+### Returns
+|   TYPE     |   Description|
+|  :------------- |  :---------- |
+|      String   |  Corrected nx1 output frame |
+
+### Example
+```r
+A = read(“file1”, data_type=”frame”, rows=2000, cols=1, format=”binary”)
+A_corrected = correctTypos(A, 0.02, 3, FALSE, TRUE)
 ```

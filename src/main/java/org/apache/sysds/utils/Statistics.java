@@ -38,13 +38,13 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
-import org.apache.sysds.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 
 /**
@@ -117,6 +117,8 @@ public class Statistics
 	private static final LongAdder sparkBroadcastCount = new LongAdder();
 
 	// Paramserv function stats (time is in milli sec)
+	private static final Timing psExecutionTimer = new Timing(false);
+	private static final LongAdder psExecutionTime = new LongAdder();
 	private static final LongAdder psNumWorkers = new LongAdder();
 	private static final LongAdder psSetupTime = new LongAdder();
 	private static final LongAdder psGradientComputeTime = new LongAdder();
@@ -125,6 +127,12 @@ public class Statistics
 	private static final LongAdder psModelBroadcastTime = new LongAdder();
 	private static final LongAdder psBatchIndexTime = new LongAdder();
 	private static final LongAdder psRpcRequestTime = new LongAdder();
+	private static final LongAdder psValidationTime = new LongAdder();
+	// Federated parameter server specifics (time is in milli sec)
+	private static final LongAdder fedPSDataPartitioningTime = new LongAdder();
+	private static final LongAdder fedPSWorkerComputingTime = new LongAdder();
+	private static final LongAdder fedPSGradientWeightingTime = new LongAdder();
+	private static final LongAdder fedPSCommunicationTime = new LongAdder();
 
 	//PARFOR optimization stats (low frequency updates)
 	private static long parforOptTime = 0; //in milli sec
@@ -502,12 +510,13 @@ public class Statistics
 		nativeConv2dTime = 0;
 		nativeConv2dBwdFilterTime = 0;
 		nativeConv2dBwdDataTime = 0;
-		LibMatrixDNN.resetStatistics();
 		federatedReadCount.reset();
 		federatedPutCount.reset();
 		federatedGetCount.reset();
 		federatedExecuteInstructionCount.reset();
 		federatedExecuteUDFCount.reset();
+
+		DMLCompressionStatistics.reset();
 	}
 
 	public static void resetJITCompileTime(){
@@ -562,6 +571,18 @@ public class Statistics
 		psNumWorkers.add(n);
 	}
 
+	public static Timing getPSExecutionTimer() {
+		return psExecutionTimer;
+	}
+
+	public static double getPSExecutionTime() {
+		return psExecutionTime.doubleValue();
+	}
+
+	public static void accPSExecutionTime(long n) {
+		psExecutionTime.add(n);
+	}
+
 	public static void accPSSetupTime(long t) {
 		psSetupTime.add(t);
 	}
@@ -589,6 +610,28 @@ public class Statistics
 	public static void accPSRpcRequestTime(long t) {
 		psRpcRequestTime.add(t);
 	}
+
+	public static double getPSValidationTime() {
+		return psValidationTime.doubleValue();
+	}
+
+	public static void accPSValidationTime(long t) {
+		psValidationTime.add(t);
+	}
+
+	public static void accFedPSDataPartitioningTime(long t) {
+		fedPSDataPartitioningTime.add(t);
+	}
+
+	public static void accFedPSWorkerComputing(long t) {
+		fedPSWorkerComputingTime.add(t);
+	}
+
+	public static void accFedPSGradientWeightingTime(long t) {
+		fedPSGradientWeightingTime.add(t);
+	}
+
+	public static void accFedPSCommunicationTime(long t) { fedPSCommunicationTime.add(t);}
 
 	public static String getCPHeavyHitterCode( Instruction inst )
 	{
@@ -758,13 +801,13 @@ public class Statistics
 				if(wrapIter == 0) {
 					// Display instruction count
 					sb.append(String.format(
-							" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
-							(i + 1), instStr, timeSString, count));
+						" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
+						(i + 1), instStr, timeSString, count));
 				}
 				else {
 					sb.append(String.format(
-							" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s",
-							"", instStr, "", ""));
+						" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s",
+						"", instStr, "", ""));
 				}
 				sb.append("\n");
 			}
@@ -795,8 +838,8 @@ public class Statistics
 
 		maxNameLength = Math.max(maxNameLength, "Object".length());
 		StringBuilder res = new StringBuilder();
-		res.append(String.format("  %-" + numPadLen + "s" + "  %-" + maxNameLength + "s" + "  %s\n",
-				"#", "Object", "Memory"));
+		res.append(String.format("  %-" + numPadLen + "s" + "  %-" 
+			+ maxNameLength + "s" + "  %s\n", "#", "Object", "Memory"));
 
 		for (int ix = 1; ix <= numHittersToDisplay; ix++) {
 			String objName = entries[ix-1].getKey();
@@ -831,8 +874,7 @@ public class Statistics
 	public static long getJITCompileTime(){
 		long ret = -1; //unsupported
 		CompilationMXBean cmx = ManagementFactory.getCompilationMXBean();
-		if( cmx.isCompilationTimeMonitoringSupported() )
-		{
+		if( cmx.isCompilationTimeMonitoringSupported() ) {
 			ret = cmx.getTotalCompilationTime();
 			ret += jitCompileTime; //add from remote processes
 		}
@@ -1011,14 +1053,26 @@ public class Statistics
 								sparkCollect.longValue()*1e-9));
 			}
 			if (psNumWorkers.longValue() > 0) {
+				sb.append(String.format("Paramserv total execution time:\t%.3f secs.\n", psExecutionTime.doubleValue() / 1000));
 				sb.append(String.format("Paramserv total num workers:\t%d.\n", psNumWorkers.longValue()));
 				sb.append(String.format("Paramserv setup time:\t\t%.3f secs.\n", psSetupTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv grad compute time:\t%.3f secs.\n", psGradientComputeTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv model update time:\t%.3f/%.3f secs.\n",
+
+				if(fedPSDataPartitioningTime.doubleValue() > 0) { 	//if data partitioning happens this is the federated case
+					sb.append(String.format("PS fed data partitioning time:\t%.3f secs.\n", fedPSDataPartitioningTime.doubleValue() / 1000));
+					sb.append(String.format("PS fed comm time (cum):\t\t%.3f secs.\n", fedPSCommunicationTime.doubleValue() / 1000));
+					sb.append(String.format("PS fed worker comp time (cum):\t%.3f secs.\n", fedPSWorkerComputingTime.doubleValue() / 1000));
+					sb.append(String.format("PS fed grad. weigh. time (cum):\t%.3f secs.\n", fedPSGradientWeightingTime.doubleValue() / 1000));
+					sb.append(String.format("PS fed global model agg time:\t%.3f secs.\n", psAggregationTime.doubleValue() / 1000));
+				}
+				else {
+					sb.append(String.format("Paramserv grad compute time:\t%.3f secs.\n", psGradientComputeTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv model update time:\t%.3f/%.3f secs.\n",
 						psLocalModelUpdateTime.doubleValue() / 1000, psAggregationTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv model broadcast time:\t%.3f secs.\n", psModelBroadcastTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv batch slice time:\t%.3f secs.\n", psBatchIndexTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv RPC request time:\t%.3f secs.\n", psRpcRequestTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv model broadcast time:\t%.3f secs.\n", psModelBroadcastTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv batch slice time:\t%.3f secs.\n", psBatchIndexTime.doubleValue() / 1000));
+					sb.append(String.format("Paramserv RPC request time:\t%.3f secs.\n", psRpcRequestTime.doubleValue() / 1000));
+				}
+				sb.append(String.format("Paramserv valdiation time:\t%.3f secs.\n", psValidationTime.doubleValue() / 1000));
 			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");

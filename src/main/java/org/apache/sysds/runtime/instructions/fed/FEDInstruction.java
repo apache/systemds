@@ -33,17 +33,21 @@ public abstract class FEDInstruction extends Instruction {
 		Append,
 		Binary,
 		Ctable,
+		CumulativeAggregate,
 		Init,
 		MultiReturnParameterizedBuiltin,
-		ParameterizedBuiltin,
-		Tsmm,
 		MMChain,
-		Reorg,
-		Reshape,
 		MatrixIndexing,
+		Ternary,
+		ParameterizedBuiltin,
 		Quaternary,
 		QSort,
-		QPick
+		QPick,
+		Reorg,
+		Reshape,
+		SpoofFused,
+		Tsmm,
+		Unary
 	}
 
 	protected final FEDType _fedType;

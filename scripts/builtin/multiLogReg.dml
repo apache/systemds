@@ -21,36 +21,35 @@
 
 # Solves Multinomial Logistic Regression using Trust Region method.
 # (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
+# The largest label represents the baseline category; if label -1 or 0 is present, then it is
+# the baseline label (and it is converted to the largest label).
 
 # INPUT PARAMETERS:
 # --------------------------------------------------------------------------------------------
+# NAME      TYPE        DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X         Matrix      ---       Location to read the matrix of feature vectors
+# Y         Matrix      ---       Location to read the matrix with category labels
+# icpt      Integer     0         Intercept presence, shifting and rescaling X columns: 0 = no intercept, no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# tol       Double      0.000001  tolerance ("epsilon")
+# reg       Double      0.0       regularization parameter (lambda = 1/C); intercept is not regularized
+# maxi      Integer     100       max. number of outer (Newton) iterations
+# maxii     Integer     0         max. number of inner (conjugate gradient) iterations, 0 = no max
+# verbose   Boolean     FALSE     flag specifying if logging information should be printed
+#
+# --------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# --------------------------------------------------------------------------------------------
 # NAME  TYPE    DEFAULT   MEANING
 # --------------------------------------------------------------------------------------------
-# X     String  ---       Location to read the matrix of feature vectors
-# Y     String  ---       Location to read the matrix with category labels
-# icpt  Int     0         Intercept presence, shifting and rescaling X columns:
-#                                 0 = no intercept, no shifting, no rescaling;
-#                                 1 = add intercept, but neither shift nor rescale X;
-#                                 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# reg   Double  0.0       regularization parameter (lambda = 1/C); intercept is not regularized
-# tol   Double  0.000001  tolerance ("epsilon")
-# maxi  Int     100       max. number of outer (Newton) iterations
-# maxii Int     0         max. number of inner (conjugate gradient) iterations, 0 = no max
-
-# --------------------------------------------------------------------------------------------
-# The largest label represents the baseline category; if label -1 or 0 is present, then it is
-# the baseline label (and it is converted to the largest label).
-#
-# NAME   TYPE     MEANING
-# -------------------------------------------------------------------------------------------
 # betas  Double   regression betas as output for prediction
 # -------------------------------------------------------------------------------------------
 
-m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, Double tol = 0.000001,
-  Double reg = 1.0, Integer maxi = 100, Integer maxii = 20, Boolean verbose = TRUE)
+m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2, 
+  Double tol=1e-6, Double reg=1.0, Int maxi=100, Int maxii=20, Boolean verbose=TRUE)
   return(Matrix[Double] betas)
 {
-
   eta0 = 0.0001;
   eta1 = 0.25;
   eta2 = 0.75;
@@ -61,6 +60,13 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, D
 
   N = nrow (X);
   D = ncol (X);
+
+  # Robustness for datasets with missing values (causing NaN gradients)
+  numNaNs = sum(isNaN(X))
+  if( numNaNs > 0 ) {
+    print("multiLogReg: matrix X contains "+numNaNs+" missing values, replacing with 0.")
+    X = replace(target=X, pattern=NaN, replacement=0);
+  }
 
   # Introduce the intercept, shift and rescale the columns of X if needed
   if (icpt == 1 | icpt == 2) { # add the intercept column
@@ -82,7 +88,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, D
     shift_X = - avg_X_cols * scale_X;
     shift_X [D, 1] = 0;
     rowSums_X_sq = (X ^ 2) %*% (scale_X ^ 2) + X %*% (2 * scale_X * shift_X) + sum (shift_X ^ 2);
-  } 
+  }
   else {
     scale_X = matrix (1, D, 1);
     shift_X = matrix (0, D, 1);
@@ -101,9 +107,9 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, D
 
   # Convert "Y" into indicator matrix:
   max_y = max (Y);
-  if (min (Y) <= 0) { 
+  if (min (Y) <= 0) {
     # Category labels "0", "-1" etc. are converted into the largest label
-    Y  = Y  + (- Y  + max_y + 1) * (Y <= 0);
+    Y = ifelse(Y <= 0, max_y + 1, Y);
     max_y = max_y + 1;
   }
   Y = table (seq (1, N, 1), Y, N, max_y);
@@ -192,7 +198,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, D
       }
       inneriter = inneriter + 1;
       innerconverge = innerconverge | (inneriter > maxii);
-    }  
+    }
     # END TRUST REGION SUB-PROBLEM
     # compute rho, update B, obtain delta
     gs = sum (S * Grad);
@@ -202,7 +208,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, D
       ssX_B_new = diag (scale_X) %*% B_new;
       ssX_B_new [D, ] = ssX_B_new [D, ] + t(shift_X) %*% B_new;
     } 
-    else 
+    else
       ssX_B_new = B_new;
 
     LT = cbind ((X %*% ssX_B_new), matrix (0, N, 1));
@@ -236,10 +242,12 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, D
 
     if(verbose) {
       if (is_trust_boundary_reached == 1)
-        print ("-- Outer Iteration " + iter + ": Had " + (inneriter - 1) + " CG iterations, trust bound REACHED");
-      else      print ("-- Outer Iteration " + iter + ": Had " + (inneriter - 1) + " CG iterations");
-        print ("   -- Obj.Reduction:  Actual = " + actred + ",  Predicted = " + qk + 
-         "  (A/P: " + (round (10000.0 * rho) / 10000.0) + "),  Trust Delta = " + delta);
+        print("-- Outer Iteration " + iter + ": Had "
+            + (inneriter - 1) + " CG iterations, trust bound REACHED");
+      else
+        print ("-- Outer Iteration " + iter + ": Had " + (inneriter - 1) + " CG iterations");
+      print ("   -- Obj.Reduction:  Actual = " + actred + ",  Predicted = " + qk + 
+             "  (A/P: " + (round (1e4 * rho) / 1e4) + "),  Trust Delta = " + delta);
     }
 
     if (is_rho_accepted) {
@@ -254,22 +262,21 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, D
       obj = obj_new;
       
       if(verbose)
-        print ("   -- New Objective = " + obj + ",  Beta Change Norm = " + snorm + ",  Gradient Norm = " + norm_Grad);
+        print("   -- New Objective = " + obj + ",  Beta Change Norm = "
+            + snorm + ",  Gradient Norm = " + norm_Grad);
     }
     iter = iter + 1;
     converge = ((norm_Grad < (tol * norm_Grad_initial)) | (iter > maxi) |
-      ((is_trust_boundary_reached == 0) & (abs (actred) < (abs (obj) + abs (obj_new)) * 0.00000000000001)));
+      ((is_trust_boundary_reached == 0) & (abs (actred) < (abs (obj) + abs (obj_new)) * 1e-14)));
     if (verbose & converge) 
       print ("Termination / Convergence condition satisfied.");
   }
 
   if (icpt == 2) {
-    B_out = diag (scale_X) %*% B;
-    B_out [D, ] = B_out [D, ] + t(shift_X) %*% B;
+    betas = diag (scale_X) %*% B;
+    betas[D,] = betas[D,] + t(shift_X) %*% B;
   }
   else {
-    B_out = B;
+    betas = B;
   }
-
-  betas = B_out
 }

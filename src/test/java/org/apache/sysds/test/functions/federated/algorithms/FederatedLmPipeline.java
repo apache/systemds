@@ -24,10 +24,12 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 @net.jcip.annotations.NotThreadSafe
@@ -70,8 +72,8 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 
 	public void federatedLmPipeline(ExecMode execMode, boolean contSplits, String TEST_NAME) {
 		ExecMode oldExec = setExecMode(execMode);
-		boolean oldSort = EncoderRecode.SORT_RECODE_MAP;
-		EncoderRecode.SORT_RECODE_MAP = true;
+		boolean oldSort = ColumnEncoderRecode.SORT_RECODE_MAP;
+		ColumnEncoderRecode.SORT_RECODE_MAP = true;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -110,7 +112,7 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
-
+			
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 			programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"), input("Y"),
@@ -119,7 +121,7 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + (cols + 1),
@@ -129,10 +131,14 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 			// compare via files
 			compareResults(1e-2);
 			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			
+			// check correct federated operations
+			Assert.assertTrue(Statistics.getCPHeavyHitterCount("fed_mmchain")>10);
+			Assert.assertTrue(Statistics.getCPHeavyHitterCount("fed_ba+*")==3);
 		}
 		finally {
 			resetExecMode(oldExec);
-			EncoderRecode.SORT_RECODE_MAP = oldSort;
+			ColumnEncoderRecode.SORT_RECODE_MAP = oldSort;
 		}
 	}
 }

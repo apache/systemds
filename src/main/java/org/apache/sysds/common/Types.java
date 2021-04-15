@@ -20,9 +20,9 @@
 package org.apache.sysds.common;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-
 
 public class Types
 {
@@ -174,14 +174,14 @@ public class Types
 		}
 	}
 	
+	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum AggOp {
-		SUM, SUM_SQ,
-		PROD, SUM_PROD,
-		MIN, MAX,
-		TRACE, MEAN, VAR,
-		MAXINDEX, MININDEX,
-		COUNT_DISTINCT,
-		COUNT_DISTINCT_APPROX;
+		SUM(0), SUM_SQ(1), MIN(2), MAX(3),
+		PROD(4), SUM_PROD(5),
+		TRACE(6), MEAN(7), VAR(8),
+		MAXINDEX(9), MININDEX(10),
+		COUNT_DISTINCT(11),
+		COUNT_DISTINCT_APPROX(12);
 		
 		@Override
 		public String toString() {
@@ -191,6 +191,27 @@ public class Types
 				case PROD:   return "*";
 				default:     return name().toLowerCase();
 			}
+		}
+		
+		private final int value;
+		private final static HashMap<Integer, AggOp> map = new HashMap<>();
+		
+		AggOp(int value) {
+			this.value = value;
+		}
+		
+		static {
+			for (AggOp aggOp : AggOp.values()) {
+				map.put(aggOp.value, aggOp);
+			}
+		}
+		
+		public static AggOp valueOf(int aggOp) {
+			return map.get(aggOp);
+		}
+		
+		public int getValue() {
+			return value;
 		}
 	}
 	
@@ -439,7 +460,7 @@ public class Types
 		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
 		LOWER_TRI, UPPER_TRI,
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
-		TOSTRING, LIST, PARAMSERV
+		TOKENIZE, TOSTRING, LIST, PARAMSERV
 	}
 	
 	public enum OpOpDnn {
@@ -500,7 +521,7 @@ public class Types
 		FEDERATED, // A federated matrix
 		PROTO;  // protocol buffer representation
 		
-		public boolean isIJVFormat() {
+		public boolean isIJV() {
 			return this == TEXT || this == MM;
 		}
 		

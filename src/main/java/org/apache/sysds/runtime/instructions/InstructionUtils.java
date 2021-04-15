@@ -376,7 +376,7 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
-		} 
+		}
 		else if (opcode.equalsIgnoreCase("uarimax") ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
@@ -384,7 +384,7 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("uarmin") ) {
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
-		} 
+		}
 		else if (opcode.equalsIgnoreCase("uarimin") ) {
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
@@ -398,6 +398,21 @@ public class InstructionUtils
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
 		
+		return aggun;
+	}
+
+	public static AggregateUnaryOperator parseAggregateUnaryRowIndexOperator(String opcode, int numOutputs, int numThreads) {
+		AggregateUnaryOperator aggun = null;
+		AggregateOperator agg = null;
+		if (opcode.equalsIgnoreCase("uarimax") )
+			agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"),
+				numOutputs == 1 ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.NONE);
+
+		else if (opcode.equalsIgnoreCase("uarimin") )
+			agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"),
+				numOutputs == 1 ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.NONE);
+
+		aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		return aggun;
 	}
 
@@ -580,8 +595,12 @@ public class InstructionUtils
 	}
 	
 	public static TernaryOperator parseTernaryOperator(String opcode) {
+		return parseTernaryOperator(opcode, 1);
+	}
+	
+	public static TernaryOperator parseTernaryOperator(String opcode, int numThreads) {
 		return new TernaryOperator(opcode.equals("+*") ? PlusMultiply.getFnObject() :
-			opcode.equals("-*") ? MinusMultiply.getFnObject() : IfElse.getFnObject());
+			opcode.equals("-*") ? MinusMultiply.getFnObject() : IfElse.getFnObject(), numThreads);
 	}
 	
 	/**
@@ -981,7 +1000,11 @@ public class InstructionUtils
 	public static String createLiteralOperand(String val, ValueType vt) {
 		return InstructionUtils.concatOperandParts(val, DataType.SCALAR.name(), vt.name(), "true");
 	}
-	
+
+	public static String createOperand(CPOperand operand) {
+		return InstructionUtils.concatOperandParts(operand.getName(), operand.getDataType().name(), operand.getValueType().name());
+	}
+
 	public static String replaceOperand(String instStr, int operand, String newValue) {
 		//split instruction and check for correctness
 		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);
@@ -1028,5 +1051,15 @@ public class InstructionUtils
 		for( int i=0; i<inputs.length; i++ )
 			sb.append(inputs[i]);
 		return sb.toString();
+	}
+
+	public static String constructTernaryString(String instString, CPOperand op1, CPOperand op2, CPOperand op3, CPOperand out) {
+		return concatOperands(constructBinaryInstString(instString, "ifelse", op1, op2, op3), createOperand(out));
+	}
+
+	public static String constructBinaryInstString(String instString, String opcode, CPOperand op1, CPOperand op2, CPOperand out) {
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+		parts[1] = opcode;
+		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(op2), createOperand(out));
 	}
 }

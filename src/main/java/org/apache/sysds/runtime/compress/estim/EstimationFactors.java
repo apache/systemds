@@ -33,12 +33,13 @@ public class EstimationFactors {
 
 	protected static final Log LOG = LogFactory.getLog(EstimationFactors.class.getName());
 
+	protected final int[] cols;
 	protected final int numCols; // Number of columns in the compressed group
-	// TODO Make a variable called numDistinct to use for DDC.
 	/** Number of distinct value tuples in the columns, not to be confused with number of distinct values */
-	protected final int numVals; // Number of unique values in the compressed group
+	protected final int numVals;
 	/** The number of offsets, to tuples of values in the column groups */
 	protected final int numOffs;
+	protected final int largestOff;
 	/** The Number of runs, of consecutive equal numbers, used primarily in RLE */
 	protected final int numRuns;
 	/** The Number of Values in the collection not Zero , Also refered to as singletons */
@@ -47,40 +48,42 @@ public class EstimationFactors {
 	protected final boolean containsZero;
 	protected final boolean lossy;
 
-	protected EstimationFactors(int numCols, int numVals, int numOffs, int numRuns, int numSingle, int numRows,
-		boolean containsZero, boolean lossy) {
-		this.numCols = numCols;
+	protected EstimationFactors(int[] cols, int numVals, int numOffs, int largestOffs, int numRuns, int numSingle,
+		int numRows, boolean containsZero, boolean lossy) {
+		this.cols = cols;
+		this.numCols = cols.length;
 		this.numVals = numVals;
 		this.numOffs = numOffs;
+		this.largestOff = largestOffs;
 		this.numRuns = numRuns;
 		this.numSingle = numSingle;
 		this.numRows = numRows;
 		this.containsZero = containsZero;
 		this.lossy = lossy;
-		LOG.debug(this);
 	}
 
 	protected static EstimationFactors computeSizeEstimationFactors(ABitmap ubm, boolean inclRLE, int numRows,
-		int numCols) {
-		
-		int numVals = (ubm != null) ? ubm.getNumValues(): 0;
-		boolean containsZero = (ubm != null) ? ubm.containsZero() : true;
+		int[] cols) {
+
+		int numVals = (ubm != null) ? ubm.getNumValues() : 0;
+		boolean containsZero = ubm.getNumOffsets() < numRows;
 
 		int numRuns = 0;
 		int numOffs = 0;
 		int numSingle = 0;
-
-		LOG.debug("NumCols :" + numCols);
+		int largestOffs = 0;
 
 		// compute size estimation factors
 		for(int i = 0; i < numVals; i++) {
 			int listSize = ubm.getNumOffsets(i);
 			numOffs += listSize;
+			if(listSize > largestOffs)
+				largestOffs = listSize;
 			numSingle += (listSize == 1) ? 1 : 0;
 			if(inclRLE) {
 				int[] list = ubm.getOffsetsList(i).extractValues();
 				int lastOff = -2;
-				numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ - 1);
+				numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ);
 				for(int j = 0; j < listSize; j++) {
 					if(list[j] != lastOff + 1) {
 						numRuns++;
@@ -90,8 +93,12 @@ public class EstimationFactors {
 			}
 		}
 
-		return new EstimationFactors(numCols, numVals * numCols, numOffs + numVals, numRuns, numSingle, numRows,
-			containsZero, ubm.getType() == BitmapType.Lossy);
+		int zerosOffs = numRows - numOffs;
+		if(zerosOffs > largestOffs)
+			largestOffs = zerosOffs;
+
+		return new EstimationFactors(cols, numVals, numOffs, largestOffs, numRuns, numSingle, numRows, containsZero,
+			ubm.getType() == BitmapType.Lossy);
 	}
 
 	@Override

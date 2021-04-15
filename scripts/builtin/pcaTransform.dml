@@ -40,12 +40,7 @@ m_pcaTransform = function(Matrix[Double] X, Matrix[Double] Clusters,
   return (Matrix[Double] Y) 
 {
 
-  if(nrow(Centering) > 0 & ncol(Centering) > 0){
-    X = X - Centering
-  }
-  if(nrow(ScaleFactor) > 0 & ncol(ScaleFactor) > 0){
-    X = X / ScaleFactor
-  }
+  X = scaleApply(X, Centering, ScaleFactor)
 
   Y = X %*% Clusters
 }

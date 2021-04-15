@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -114,12 +114,13 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
+<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
 </dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">ListObject</span>
-extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></pre>
+extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>
+implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></pre>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../../serialized-form.html#org.apache.sysds.runtime.instructions.cp.ListObject">Serialized Form</a></dd>
@@ -142,18 +143,21 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#ListObject-java.util.List-">ListObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&gt;&nbsp;data)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#ListObject--">ListObject</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#ListObject-java.util.List-">ListObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&gt;&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#ListObject-java.util.List-java.util.List-">ListObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&gt;&nbsp;data,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;names)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#ListObject-java.util.List-java.util.List-java.util.List-">ListObject</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&gt;&nbsp;data,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;names,
           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;&nbsp;lineage)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#ListObject-org.apache.sysds.runtime.instructions.cp.ListObject-">ListObject</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;that)</code>&nbsp;</td>
 </tr>
 </table>
@@ -247,56 +251,73 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#isNamedList--">isNamedList</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i18" class="altColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#remove-int-">remove</a></span>(int&nbsp;pos)</code>&nbsp;</td>
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#readExternal-java.io.ObjectInput-">readExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)</code>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
+</td>
 </tr>
 <tr id="i19" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#remove-int-">remove</a></span>(int&nbsp;pos)</code>
+<div class="block">Removes the element at the specified position from the list
+ and returns that element as the only element in a new ListObject.</div>
+</td>
+</tr>
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#set-int-org.apache.sysds.runtime.instructions.cp.Data-">set</a></span>(int&nbsp;ix,
    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;data)</code>&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#set-int-int-org.apache.sysds.runtime.instructions.cp.ListObject-">set</a></span>(int&nbsp;ix1,
    int&nbsp;ix2,
    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;data)</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#set-java.lang.String-org.apache.sysds.runtime.instructions.cp.Data-">set</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;data)</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#set-java.lang.String-java.lang.String-org.apache.sysds.runtime.instructions.cp.ListObject-">set</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name1,
    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name2,
    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;data)</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#setStatus-boolean:A-">setStatus</a></span>(boolean[]&nbsp;status)</code>&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#slice-int-">slice</a></span>(int&nbsp;ix)</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#slice-int-int-">slice</a></span>(int&nbsp;ix1,
      int&nbsp;ix2)</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#slice-java.lang.String-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#slice-java.lang.String-java.lang.String-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name1,
      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name2)</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#toString--">toString</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i30" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)</code>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd serialization.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -327,6 +348,15 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
+<a name="ListObject--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ListObject</h4>
+<pre>public&nbsp;ListObject()</pre>
+</li>
+</ul>
 <a name="ListObject-java.util.List-">
 <!--   -->
 </a>
@@ -626,6 +656,14 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data
 <li class="blockList">
 <h4>remove</h4>
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;remove(int&nbsp;pos)</pre>
+<div class="block">Removes the element at the specified position from the list
+ and returns that element as the only element in a new ListObject.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pos</code> - position of element in the list</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>new ListObject with the specified element</dd>
+</dl>
 </li>
 </ul>
 <a name="getDebugName--">
@@ -644,13 +682,55 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data
 <a name="toString--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>toString</h4>
 <pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="writeExternal-java.io.ObjectOutput-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#writeExternal-java.io.ObjectOutput-" title="class or interface in java.io">writeExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>out</code> - object output</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
+</li>
+</ul>
+<a name="readExternal-java.io.ObjectInput-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
+                         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ClassNotFoundException.html?is-external=true" title="class or interface in java.lang">ClassNotFoundException</a></pre>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#readExternal-java.io.ObjectInput-" title="class or interface in java.io">readExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>in</code> - object input</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ClassNotFoundException.html?is-external=true" title="class or interface in java.lang">ClassNotFoundException</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -723,6 +803,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

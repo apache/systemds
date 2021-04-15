@@ -31,9 +31,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
-	// reusable return
-	private DblArray reusableReturn;
-	private double[] reusableArr;
 
 	// an empty array to return if the entire row was 0.
 	private DblArray empty = new DblArray();
@@ -50,8 +47,6 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	 */
 	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes) {
 		super(colIndexes, data.getNumRows());
-		reusableArr = new double[colIndexes.length];
-		reusableReturn = new DblArray(reusableArr);
 		a = data.getSparseBlock();
 	}
 
@@ -72,20 +67,23 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 			double[] avals = a.values(_lastRow);
 			int skip = 0;
 			int j = apos;
-
+			while(j < alen && aix[j] < _colIndexes[0])
+				j++;
 			while(skip < _colIndexes.length && j < alen) {
 				if(_colIndexes[skip] == aix[j]) {
-					reusableArr[skip++] = avals[j++];
+					reusableArr[skip] = avals[j];
 					zeroResult = false;
+					skip ++;
+					j ++;
 				}
-				else if(_colIndexes[skip] > aix[j]) {
+				else if(_colIndexes[skip] > aix[j]) 
 					j++;
-				}
-				else {
+				else 
 					reusableArr[skip++] = 0;
-				}
-
 			}
+			if(!zeroResult)
+				while(skip < _colIndexes.length)
+					reusableArr[skip++] = 0;
 		}
 
 		return zeroResult ? empty : reusableReturn;

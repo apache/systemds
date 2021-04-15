@@ -31,8 +31,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 
-public class TransformFrameEncodeApplyTest extends AutomatedTestBase 
-{
+public class TransformFrameEncodeApplyTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "TransformFrameEncodeApply";
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeApplyTest.class.getSimpleName() + "/";
@@ -133,10 +132,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN, false);
 	}
 	
-//	@Test
-//	public void testHomesBinningIDsSparkCSV() {
-//		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN, false);
-//	}
+	@Test
+	public void testHomesBinningIDsSparkCSV() {
+		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN, false);
+	}
 	
 	@Test
 	public void testHomesBinningIDsHybridCSV() {
@@ -148,10 +147,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, false);
 	}
 
-//	@Test
-//	public void testHomesBinningDummyIDsSparkCSV() {
-//		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN_DUMMY, false);
-//	}
+	@Test
+	public void testHomesBinningDummyIDsSparkCSV() {
+		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN_DUMMY, false);
+	}
 	
 	@Test
 	public void testHomesBinningDummyIDsHybridCSV() {
@@ -238,10 +237,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN, true);
 	}
 	
-//	@Test
-//	public void testHomesBinningColnamesSparkCSV() {
-//		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN, true);
-//	}
+	@Test
+	public void testHomesBinningColnamesSparkCSV() {
+		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN, true);
+	}
 	
 	@Test
 	public void testHomesBinningColnamesHybridCSV() {
@@ -253,10 +252,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, true);
 	}
 	
-//	@Test
-//	public void testHomesBinningDummyColnamesSparkCSV() {
-//		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN_DUMMY, true);
-//	}
+	@Test
+	public void testHomesBinningDummyColnamesSparkCSV() {
+		runTransformTest(ExecMode.SPARK, "csv", TransformType.BIN_DUMMY, true);
+	}
 	
 	@Test
 	public void testHomesBinningDummyColnamesHybridCSV() {
@@ -357,8 +356,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.HYBRID, "csv", TransformType.HASH_RECODE, false);
 	}
 	
-	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames )
-	{
+	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames )	{
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -431,6 +429,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 							1:0, R1[i][10+j], 1e-8);
 					}
 				}
+			} else if (type == TransformType.IMPUTE){
+				// Column 8 had GLOBAL_MEAN applied
+				Assert.assertFalse(TestUtils.containsNan(R1, 8));
+				Assert.assertFalse(TestUtils.containsNan(R2, 8));
 			}
 		}
 		catch(Exception ex) {

@@ -246,6 +246,7 @@ if [ -z "$LOG4JPROP" ] ; then
   if [ -z "${LOG4JPROP}" ]; then
     LOG4JPROP=""
   else
+    SPARK_LOG4J_PATH="$LOG4JPROP"
     LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP"
   fi
 else
@@ -254,8 +255,10 @@ else
   if [ -z "${LOG4JPROP2}" ]; then
     LOG4JPROP=""
   else
-      LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP2"
+    SPARK_LOG4J_PATH="$LOG4JPROP2"
+    LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP2"
   fi
+
 fi
 
 if [[ "$*" == *-config* ]]; then
@@ -366,6 +369,9 @@ else
   export SPARK_MAJOR_VERSION=2
   CMD=" \
   spark-submit $SYSTEMDS_DISTRIBUTED_OPTS \
+  --conf spark.driver.extraJavaOptions=-Dlog4j.configuration=file:$SPARK_LOG4J_PATH \
+  --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:$SPARK_LOG4J_PATH \
+  --files $SPARK_LOG4J_PATH \
   $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
   $*"

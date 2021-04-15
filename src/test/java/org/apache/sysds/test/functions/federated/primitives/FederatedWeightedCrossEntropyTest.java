@@ -47,7 +47,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 
 	private final static String OUTPUT_NAME = "Z";
 	private final static double TOLERANCE = 1e-9;
-	private final static int blocksize = 1024;
+	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
 	public int rows;
@@ -124,8 +124,8 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 		double[][] U = getRandomMatrix(rows, rank, 0, 1, 1, 512);
 		double[][] V = getRandomMatrix(cols, rank, 0, 1, 1, 5040);
 
-		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
-		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols));
+		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
+		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 
 		writeInputMatrixWithMTD("U", U, true);
 		writeInputMatrixWithMTD("V", V, true);

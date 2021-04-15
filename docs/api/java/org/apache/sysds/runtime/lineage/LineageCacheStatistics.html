@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -150,89 +150,101 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayHits--">displayHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayComputeTime--">displayComputeTime</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayMultiLevelHits--">displayMultiLevelHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayFSTime--">displayFSTime</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayRewrites--">displayRewrites</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayHits--">displayHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayTime--">displayTime</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayMultiLevelHits--">displayMultiLevelHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayWtrites--">displayWtrites</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayRewrites--">displayRewrites</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#getInstHits--">getInstHits</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#displayWtrites--">displayWtrites</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#getMemDeletes--">getMemDeletes</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#getInstHits--">getInstHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#getMultiLevelFnHits--">getMultiLevelFnHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#getMemDeletes--">getMemDeletes</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#getMultiLevelSBHits--">getMultiLevelSBHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#getMultiLevelFnHits--">getMultiLevelFnHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementDelHits--">incrementDelHits</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#getMultiLevelSBHits--">getMultiLevelSBHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFSHits--">incrementFSHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementDelHits--">incrementDelHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFSReadTime-long-">incrementFSReadTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFSHits--">incrementFSHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFSWrites--">incrementFSWrites</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFSReadTime-long-">incrementFSReadTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFSWriteTime-long-">incrementFSWriteTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFSWrites--">incrementFSWrites</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFuncHits--">incrementFuncHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFSWriteTime-long-">incrementFSWriteTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i15" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementInstHits--">incrementInstHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementFuncHits--">incrementFuncHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i16" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementMemDeletes--">incrementMemDeletes</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementInstHits--">incrementInstHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i17" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementMemHits--">incrementMemHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementMemDeletes--">incrementMemDeletes</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i18" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementMemWrites--">incrementMemWrites</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementMemHits--">incrementMemHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i19" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementPRewrites--">incrementPRewrites</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementMemWrites--">incrementMemWrites</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i20" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementSBHits--">incrementSBHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementMissedComputeTime-long-">incrementMissedComputeTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i21" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementPRewrites--">incrementPRewrites</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i22" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementSavedComputeTime-long-">incrementSavedComputeTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
+</tr>
+<tr id="i23" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#incrementSBHits--">incrementSBHits</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageCacheStatistics.html#reset--">reset</a></span>()</code>&nbsp;</td>
 </tr>
@@ -410,6 +422,24 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public static&nbsp;void&nbsp;incrementFSWriteTime(long&nbsp;delta)</pre>
 </li>
 </ul>
+<a name="incrementSavedComputeTime-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>incrementSavedComputeTime</h4>
+<pre>public static&nbsp;void&nbsp;incrementSavedComputeTime(long&nbsp;delta)</pre>
+</li>
+</ul>
+<a name="incrementMissedComputeTime-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>incrementMissedComputeTime</h4>
+<pre>public static&nbsp;void&nbsp;incrementMissedComputeTime(long&nbsp;delta)</pre>
+</li>
+</ul>
 <a name="getMultiLevelFnHits--">
 <!--   -->
 </a>
@@ -464,13 +494,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;displayRewrites()</pre>
 </li>
 </ul>
-<a name="displayTime--">
+<a name="displayFSTime--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>displayFSTime</h4>
+<pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;displayFSTime()</pre>
+</li>
+</ul>
+<a name="displayComputeTime--">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>displayTime</h4>
-<pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;displayTime()</pre>
+<h4>displayComputeTime</h4>
+<pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;displayComputeTime()</pre>
 </li>
 </ul>
 </li>
@@ -542,6 +581,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

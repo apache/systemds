@@ -2026,15 +2026,22 @@ The following example uses <code>transformapply()</code> with the input matrix a
 
 ### Processing Frames
 
-The built-in function <code>map()</code> provides support for the lambda expressions.
-
-**Table F5**: Frame map built-in function
+**Table F5**: Frame processing built-in functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
-map() | It will execute the given lambda expression on a frame.| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and <br/>y is a String containing the lambda expression to be executed on frame X. | X = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> y = "lambda expression" <br/> Z = map(X, y) <br/> # Dimensions of Z = Dimensions of X; <br/> example: <br/> <code> Z = map(X, "x -> x.charAt(2)")     </code>
+map() | It will execute the given lambda expression on a frame.| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and <br/>y is a String containing the lambda expression to be executed on frame X. | [map](#map) 
+tokenize() | Transforms a frame to tokenized frame using specification. Tokenization is valid only for string columns. | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Outputs: &lt;matrix&gt;, &lt;frame&gt; | [tokenize](#tokenize)
 
-Example let X = 
+#### map
+
+The built-in function <code>map()</code> provides support for the lambda expressions.
+
+Simple example
+
+    X = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> y = "lambda expression" <br/> Z = map(X, y) <br/> # Dimensions of Z = Dimensions of X; <br/> example: <br/> <code> Z = map(X, "x -> x.charAt(2)")     </code>
+
+Example with data let X = 
 
     # FRAME: nrow = 10, ncol = 1
     # C1 
@@ -2085,6 +2092,45 @@ print(toString(dist)) </code>
       0,600 0,286 0,125 1,000 0,286 0,125 0,125 0,600 0,600 0,000
     #
     
+#### tokenize
+
+Simple example
+
+    X = read(“file1”, data_type=”frame”, rows=3, cols=2, format=”binary”);
+    spec = "{\"algo\": \"whitespace\",\"out\": \"count\",\"id_cols\": [1],\"tokenize_col\": 2}";
+    Y = tokenize(target=X, spec=jspec, max_tokens=1000);
+    write(Y, "file2");
+    
+Example spec
+
+    {
+      "algo": "split",
+      "out": "count",
+      "id_cols": [1],
+      "tokenize_col": 2
+    }
+
+The frame is tokenized along the `tokenize_col` and replicates the `id_cols`.
+
+The output frame can be converted into a matrix with the transform functions. For instance, using `transformencode` with `recode`, followed by `table`.
+Alternatively, for certain algorithms by specifying `"format_wide": true` expands the tokens in the columns instead of creating new rows.
+
+**Table F6**: Tokenizer Algorithms for `algo` field
+
+Algorithm | Algo Description | Parameters | Spec Example
+-------- | ----------- | ---------- | -------
+whitespace | Splits the tokens along whitespace characters. | None | `"{\"algo\": \"whitespace\",\"out\": \"count\",\"out_params\": {\"sort_alpha\": true},\"id_cols\": \[2\],\"tokenize_col\": 3}"`
+ngram | Pretokenizes using `whitespace` then splits the tokens into ngrams | `min_gram` and `max_gram` specify the length of the ngrams. | `"{\"algo\": \"ngram\",\"algo_params\": {\"min_gram\": 2,\"max_gram\": 3},\"out\": \"position\",\"id_cols\": \[1,2\],\"tokenize_col\": 3}"`
+
+**Table F7**: Output Representations of Tokens for `out` field
+
+Out Representation | Format Description | Parameters | Format Example
+-------- | ----------- | ---------- | -------
+count | Outputs the `id_cols`, the `tokens`, and the number of token `occurences` per document. | `sort_alpha` specifies whether the tokens are sorted alphanumerically per document. | `id1,id2,token1,3`
+position | Outputs the `id_cols`, the `position` within the document, and the `token`. | None | `id1,id2,1,token1`
+hash | Outputs the `id_cols`, the `index` of non-zero hashes, and the `hashes` | `num_features` specifies the number of output features | `id1,id2,2,64`
+
+
 * * *
 
 ## Modules

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 /**
  * This DenseBlock is an abstraction for different dense, row-major 
@@ -49,12 +50,7 @@ public abstract class DenseBlock implements Serializable
 	private double[] _reuse;
 	
 	protected DenseBlock(int[] dims) {
-		long odims = UtilFunctions.prod(dims, 1);
-		if( odims > Integer.MAX_VALUE )
-			throw new DMLRuntimeException("Invalid dims: "+Arrays.toString(dims));
-		_rlen = dims[0];
-		//materialize dim offsets (reverse cumprod)
-		_odims = createDimOffsets(dims);
+		setDims(dims);
 	}
 
 	/**
@@ -159,6 +155,29 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public abstract void reset(int rlen, int[] odims, double v);
 	
+	
+	public static double estimateMemory(long nrows, long ncols){
+		long size = 16; // object
+		size += 4; // int
+		size += 4; // padding
+		size += MemoryEstimates.intArrayCost(1); // odims typically 1
+		size += 8; // pointer to reuse that is typically null;
+		return size;
+	}
+
+	/**
+	 * Set the dimensions of the dense MatrixBlock.
+	 * @param dims The dimensions to set, first dimension is rows, second cols.
+	 */
+	public void setDims(int[] dims){
+		long odims = UtilFunctions.prod(dims, 1);
+		if( odims > Integer.MAX_VALUE )
+			throw new DMLRuntimeException("Invalid dims: "+Arrays.toString(dims));
+		_rlen = dims[0];
+		//materialize dim offsets (reverse cumprod)
+		_odims = createDimOffsets(dims);
+	}
+
 	/**
 	 * Get the number of rows.
 	 * 
@@ -459,10 +478,13 @@ public abstract class DenseBlock implements Serializable
 		if (db.isNumeric()) {
 			int rowOther = 0;
 			int colOther = 0;
-			for (int bi = index(rl); bi <= index(ru - 1); bi++) {
+			for (int bi = index(rl); bi <= index(ru-1); bi++) {
+				int rpos = bi*blockSize();
+				int rposl = Math.max(rl-rpos, 0);
 				if (allColumns) {
-					int offset = rl * _odims[0] + cl;
-					for (int i = 0; i < (ru - rl) * _odims[0]; i++) {
+					int offset = rposl * _odims[0] + cl;
+					int rlen = Math.min(ru-Math.max(rpos,rl), blockSize(bi)-rposl);
+					for (int i = 0; i < rlen * _odims[0]; i++) {
 						setInternal(bi, offset + i, db.get(rowOther, colOther));
 						colOther++;
 						if (colOther == db.getCumODims(0)) {

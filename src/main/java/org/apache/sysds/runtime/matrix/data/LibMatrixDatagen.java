@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -186,6 +187,9 @@ public class LibMatrixDatagen
 		int blen = rgen._blocksize;
 		double sparsity = rgen._sparsity;
 		
+		if(out instanceof CompressedMatrixBlock)
+			throw new DMLRuntimeException("Invalid to use compressed matrix block as output");
+
 		// sanity check valid dimensions and sparsity
 		checkMatrixDimensionsAndSparsity(rows, cols, sparsity);
 		
@@ -258,6 +262,9 @@ public class LibMatrixDatagen
 		int blen = rgen._blocksize;
 		double sparsity = rgen._sparsity;
 		
+		if(out instanceof CompressedMatrixBlock)
+			throw new DMLRuntimeException("Invalid to use compressed matrix block as output");
+
 		//sanity check valid dimensions and sparsity
 		checkMatrixDimensionsAndSparsity(rows, cols, sparsity);
 		
@@ -496,13 +503,15 @@ public class LibMatrixDatagen
 				// are always selected uniformly at random.
 				nnzPRNG.setSeed(seed);
 				
-				// block-level sparsity, which may differ from overall sparsity in the matrix.
-				// (e.g., border blocks may fall under skinny matrix turn point, in CP this would be 
-				// irrelevant but we need to ensure consistency with MR)
 				boolean localSparse = MatrixBlock.evalSparseFormatInMemory(
 					blockrows, blockcols, (long)(sparsity*blockrows*blockcols));
-				if ( localSparse ) {
+				if ( localSparse) {
+					
 					SparseBlock c = out.sparseBlock;
+					if(c == null){
+						out.allocateSparseRowsBlock();
+						c = out.sparseBlock;
+					}
 					// Prob [k-1 zeros before a nonzero] = Prob [k-1 < log(uniform)/log(1-p) < k] = p*(1-p)^(k-1), where p=sparsity
 					double log1mp = Math.log(1-sparsity);
 					int idx = 0;  // takes values in range [1, blen*blen] (both ends including)

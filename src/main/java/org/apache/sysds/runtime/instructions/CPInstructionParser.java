@@ -214,6 +214,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uppertri",       CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "rexpand",        CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "toString",       CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "tokenize",       CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformapply", CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformdecode",CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformcolmap",CPType.ParameterizedBuiltin);
@@ -417,8 +418,10 @@ public class CPInstructionParser extends InstructionParser
 						UtilFunctions.isIntegerNumber(parts[3])) ) {
 						// B=log(A), y=log(x)
 						return UnaryCPInstruction.parseInstruction(str);
-					} else if ( parts.length == 4 ) {
+					} else if ( parts.length == 4 || (parts.length == 5 &&
+						UtilFunctions.isIntegerNumber(parts[4])) ) {
 						// B=log(A,10), y=log(x,10)
+						// num threads non-existing for scalar-scalar
 						return BinaryCPInstruction.parseInstruction(str);
 					}
 				}

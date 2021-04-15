@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 class OutputType(Enum):
     MATRIX = auto()
+    FRAME = auto()
     DOUBLE = auto()
     SCALAR = auto()
     ASSIGN = auto()

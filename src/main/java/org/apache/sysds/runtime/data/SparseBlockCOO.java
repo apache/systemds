@@ -25,6 +25,7 @@ import java.util.Iterator;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 /**
  * SparseBlock implementation that realizes a traditional 'coordinate matrix'
@@ -144,14 +145,14 @@ public class SparseBlockCOO extends SparseBlock
 	 * @param sparsity sparsity ratio
 	 * @return memory estimate
 	 */
-	public static long estimateMemory(long nrows, long ncols, double sparsity) {
+	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity) {
 		double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
 		
 		//32B overhead per array, int/int/double arr in nnz 
 		double size = 16 + 8;   //object + 2 int fields
-		size += 24 + lnnz * 4d; //rindexes array (row indexes)
-		size += 24 + lnnz * 4d; //cindexes array (column indexes)
-		size += 24 + lnnz * 8d; //values array (non-zero values)
+		size += MemoryEstimates.intArrayCost((long)lnnz); //rindexes array (row indexes)
+		size += MemoryEstimates.intArrayCost((long)lnnz); //cindexes array (column indexes)
+		size += MemoryEstimates.doubleArrayCost((long)lnnz); //values array (non-zero values)
 		
 		//robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);

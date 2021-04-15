@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -39,6 +40,7 @@ public class LineageCacheEntry {
 	protected LineageItem _origItem;
 	private String _outfile = null;
 	protected double score;
+	protected GPUObject _gpuPointer;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
 		_key = key;
@@ -49,6 +51,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		_nextEntry = null;
 		_origItem = null;
+		_outfile = null;
+		_gpuPointer = null;
 	}
 	
 	protected synchronized void setCacheStatus(LineageCacheStatus st) {
@@ -98,6 +102,10 @@ public class LineageCacheEntry {
 	public boolean isMatrixValue() {
 		return _dt.isMatrix();
 	}
+
+	public boolean isScalarValue() {
+		return _dt.isScalar();
+	}
 	
 	public synchronized void setValue(MatrixBlock val, long computetime) {
 		_MBval = val;
@@ -141,27 +149,23 @@ public class LineageCacheEntry {
 	}
 	
 	protected synchronized void computeScore(Map<LineageItem, Integer> removeList) {
+		// Set timestamp and compute initial score
 		setTimestamp();
-		if (removeList.containsKey(_key)) {
-			//FIXME: increase computetime instead of score (that now leads to overflow).
-			// updating computingtime seamlessly takes care of spilling 
-			//_computeTime = _computeTime * (1 + removeList.get(_key));
-			score = score * (1 + removeList.get(_key));
+
+		// Update score to emulate computeTime scaling by #misses
+		if (removeList.containsKey(_key) && LineageCacheConfig.isCostNsize()) {
+			//score = score * (1 + removeList.get(_key));
+			double w1 = LineageCacheConfig.WEIGHTS[0];
+			int missCount = 1 + removeList.get(_key);
+			score = score + (w1*(((double)_computeTime)/getSize()) * missCount);
 		}
-		if (_computeTime < 0)
-			System.out.println("after recache: "+_computeTime+" miss count: "+removeList.get(_key));
 	}
 	
-	protected synchronized void updateComputeTime() {
-		if ((Long.MAX_VALUE - _computeTime) < _computeTime) {
-			System.out.println("Overflow for: "+_key.getOpcode());
-		}
-		//FIXME: increase computetime instead of score (that now leads to overflow).
-		// updating computingtime seamlessly takes care of spilling 
-		//_computeTime = _computeTime * (1 + removeList.get(_key));
-		//_computeTime += _computeTime;
-		//recomputeScore();
-		score *= 2;
+	protected synchronized void updateScore() {
+		// Update score to emulate computeTime scaling by cache hit
+		//score *= 2;
+		double w1 = LineageCacheConfig.WEIGHTS[0];
+		score = score + w1*(((double)_computeTime)/getSize());
 	}
 	
 	protected synchronized long getTimestamp() {

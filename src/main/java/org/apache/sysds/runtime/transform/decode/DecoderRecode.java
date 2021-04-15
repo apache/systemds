@@ -19,17 +19,21 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
 import java.util.List;
+import java.util.Map.Entry;
+
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.transform.TfUtils;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -43,7 +47,9 @@ public class DecoderRecode extends Decoder
 
 	private HashMap<Long, Object>[] _rcMaps = null;
 	private boolean _onOut = false;
-	
+
+	public DecoderRecode() { super(null, null); }
+
 	protected DecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols) {
 		super(schema, rcCols);
 		_onOut = onOut;
@@ -111,7 +117,7 @@ public class DecoderRecode extends Decoder
 			for( int i=0; i<meta.getNumRows(); i++ ) {
 				if( meta.get(i, _colList[j]-1)==null )
 					break; //reached end of recode map
-				String[] tmp = EncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
+				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
 				Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
 				map.put(Long.parseLong(tmp[1]), obj);
 			}
@@ -134,5 +140,34 @@ public class DecoderRecode extends Decoder
 			idx++;
 		String id = entry.substring(ixq+2,idx); 
 		pair.set(token, id);
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		out.writeBoolean(_onOut);
+		out.writeInt(_rcMaps.length);
+		for(int i = 0; i < _rcMaps.length; i++) {
+			out.writeInt(_rcMaps[i].size());
+			for(Entry<Long,Object> e1 : _rcMaps[i].entrySet()) {
+				out.writeLong(e1.getKey());
+				out.writeUTF(e1.getValue().toString());
+			}
+		}
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		_onOut = in.readBoolean();
+		_rcMaps = (HashMap<Long,Object>[])new HashMap[in.readInt()];
+		for(int i = 0; i < _rcMaps.length; i++) {
+			HashMap<Long, Object> maps = new HashMap<>();
+			int size = in.readInt();
+			for(int j = 0; j < size; j++)
+				maps.put(in.readLong(), in.readUTF());
+			_rcMaps[i] = maps;
+		}
 	}
 }

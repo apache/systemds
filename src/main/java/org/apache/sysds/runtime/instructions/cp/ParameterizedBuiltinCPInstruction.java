@@ -55,9 +55,11 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
-import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
 import org.apache.sysds.runtime.util.DataConverter;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
@@ -72,157 +74,156 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	protected final LinkedHashMap<String, String> params;
 
 	protected ParameterizedBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out,
-			String opcode, String istr) {
+		String opcode, String istr) {
 		super(CPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
 	}
-	
-	public HashMap<String,String> getParameterMap() { 
-		return params; 
+
+	public HashMap<String, String> getParameterMap() {
+		return params;
 	}
-	
+
 	public String getParam(String key) {
 		return getParameterMap().get(key);
 	}
-	
+
 	public static LinkedHashMap<String, String> constructParameterMap(String[] params) {
 		// process all elements in "params" except first(opcode) and last(output)
-		LinkedHashMap<String,String> paramMap = new LinkedHashMap<>();
-		
+		LinkedHashMap<String, String> paramMap = new LinkedHashMap<>();
+
 		// all parameters are of form <name=value>
 		String[] parts;
-		for ( int i=1; i <= params.length-2; i++ ) {
+		for(int i = 1; i <= params.length - 2; i++) {
 			parts = params[i].split(Lop.NAME_VALUE_SEPARATOR);
 			paramMap.put(parts[0], parts[1]);
 		}
-		
+
 		return paramMap;
 	}
-	
-	public static ParameterizedBuiltinCPInstruction parseInstruction ( String str ) {
+
+	public static ParameterizedBuiltinCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// first part is always the opcode
 		String opcode = parts[0];
 		// last part is always the output
-		CPOperand out = new CPOperand( parts[parts.length-1] ); 
+		CPOperand out = new CPOperand(parts[parts.length - 1]);
 
 		// process remaining parts and build a hash map
-		LinkedHashMap<String,String> paramsMap = constructParameterMap(parts);
+		LinkedHashMap<String, String> paramsMap = constructParameterMap(parts);
 
 		// determine the appropriate value function
 		ValueFunction func = null;
-		if ( opcode.equalsIgnoreCase("cdf") ) {
-			if ( paramsMap.get("dist") == null ) 
+		if(opcode.equalsIgnoreCase("cdf")) {
+			if(paramsMap.get("dist") == null)
 				throw new DMLRuntimeException("Invalid distribution: " + str);
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist"));
 			// Determine appropriate Function Object based on opcode
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if ( opcode.equalsIgnoreCase("invcdf") ) {
-			if ( paramsMap.get("dist") == null ) 
+		else if(opcode.equalsIgnoreCase("invcdf")) {
+			if(paramsMap.get("dist") == null)
 				throw new DMLRuntimeException("Invalid distribution: " + str);
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist"));
 			// Determine appropriate Function Object based on opcode
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if ( opcode.equalsIgnoreCase("groupedagg")) {
+		else if(opcode.equalsIgnoreCase("groupedagg")) {
 			// check for mandatory arguments
 			String fnStr = paramsMap.get("fn");
-			if ( fnStr == null ) 
+			if(fnStr == null)
 				throw new DMLRuntimeException("Function parameter is missing in groupedAggregate.");
-			if ( fnStr.equalsIgnoreCase("centralmoment") ) {
-				if ( paramsMap.get("order") == null )
-					throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
+			if(fnStr.equalsIgnoreCase("centralmoment")) {
+				if(paramsMap.get("order") == null)
+					throw new DMLRuntimeException(
+						"Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
 			}
-			
+
 			Operator op = InstructionUtils.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, opcode, str);
-		} else if (opcode.equalsIgnoreCase("rmempty")
-				|| opcode.equalsIgnoreCase("replace")
-				|| opcode.equalsIgnoreCase("rexpand")
-				|| opcode.equalsIgnoreCase("lowertri")
-				|| opcode.equalsIgnoreCase("uppertri")) {
+		}
+		else if(opcode.equalsIgnoreCase("rmempty") || opcode.equalsIgnoreCase("replace") ||
+			opcode.equalsIgnoreCase("rexpand") || opcode.equalsIgnoreCase("lowertri") ||
+			opcode.equalsIgnoreCase("uppertri")) {
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
-		} else if (opcode.equals("transformapply")
-				|| opcode.equals("transformdecode")
-				|| opcode.equals("transformcolmap")
-				|| opcode.equals("transformmeta")
-				|| opcode.equals("toString")
-				|| opcode.equals("nvlist")) {
+		}
+		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") ||
+			opcode.equals("transformcolmap") || opcode.equals("transformmeta") || opcode.equals("tokenize") ||
+			opcode.equals("toString") || opcode.equals("nvlist")) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
-		} else if ("paramserv".equals(opcode)) {
+		}
+		else if("paramserv".equals(opcode)) {
 			return new ParamservBuiltinCPInstruction(null, paramsMap, out, opcode, str);
-		} else {
+		}
+		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 		}
 
 	}
 
-	@Override 
+	@Override
 	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		ScalarObject sores = null;
-		if ( opcode.equalsIgnoreCase("cdf")) {
+		if(opcode.equalsIgnoreCase("cdf")) {
 			SimpleOperator op = (SimpleOperator) _optr;
-			double result =  op.fn.execute(params);
+			double result = op.fn.execute(params);
 			sores = new DoubleObject(result);
 			ec.setScalarOutput(output.getName(), sores);
-		} 
-		else if ( opcode.equalsIgnoreCase("invcdf")) {
+		}
+		else if(opcode.equalsIgnoreCase("invcdf")) {
 			SimpleOperator op = (SimpleOperator) _optr;
-			double result =  op.fn.execute(params);
+			double result = op.fn.execute(params);
 			sores = new DoubleObject(result);
 			ec.setScalarOutput(output.getName(), sores);
-		} 
-		else if ( opcode.equalsIgnoreCase("groupedagg") ) {
+		}
+		else if(opcode.equalsIgnoreCase("groupedagg")) {
 			// acquire locks
 			MatrixBlock target = ec.getMatrixInput(params.get(Statement.GAGG_TARGET));
 			MatrixBlock groups = ec.getMatrixInput(params.get(Statement.GAGG_GROUPS));
-			MatrixBlock weights= null;
-			if ( params.get(Statement.GAGG_WEIGHTS) != null )
+			MatrixBlock weights = null;
+			if(params.get(Statement.GAGG_WEIGHTS) != null)
 				weights = ec.getMatrixInput(params.get(Statement.GAGG_WEIGHTS));
-			
+
 			int ngroups = -1;
-			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
+			if(params.get(Statement.GAGG_NUM_GROUPS) != null) {
 				ngroups = (int) Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS));
 			}
-			
+
 			// compute the result
-			int k = Integer.parseInt(params.get("k")); //num threads
+			int k = Integer.parseInt(params.get("k")); // num threads
 			MatrixBlock soresBlock = groups.groupedAggOperations(target, weights, new MatrixBlock(), ngroups, _optr, k);
-			
+
 			ec.setMatrixOutput(output.getName(), soresBlock);
 			// release locks
 			target = groups = weights = null;
 			ec.releaseMatrixInput(params.get(Statement.GAGG_TARGET));
 			ec.releaseMatrixInput(params.get(Statement.GAGG_GROUPS));
-			if ( params.get(Statement.GAGG_WEIGHTS) != null )
+			if(params.get(Statement.GAGG_WEIGHTS) != null)
 				ec.releaseMatrixInput(params.get(Statement.GAGG_WEIGHTS));
-			
+
 		}
-		else if ( opcode.equalsIgnoreCase("rmempty") ) {
+		else if(opcode.equalsIgnoreCase("rmempty")) {
 			String margin = params.get("margin");
-			if( !(margin.equals("rows") || margin.equals("cols")) )
-				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
-			
+			if(!(margin.equals("rows") || margin.equals("cols")))
+				throw new DMLRuntimeException("Unspupported margin identifier '" + margin + "'.");
+
 			// acquire locks
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
-			MatrixBlock select = params.containsKey("select") ?
-				ec.getMatrixInput(params.get("select")):null;
-			
+			MatrixBlock select = params.containsKey("select") ? ec.getMatrixInput(params.get("select")) : null;
+
 			// compute the result
 			boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
-			MatrixBlock soresBlock = target.removeEmptyOperations(new MatrixBlock(),
-				margin.equals("rows"), emptyReturn, select);
-			
-			//release locks
+			MatrixBlock soresBlock = target
+				.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"), emptyReturn, select);
+
+			// release locks
 			ec.setMatrixOutput(output.getName(), soresBlock);
 			ec.releaseMatrixInput(params.get("target"));
-			if (params.containsKey("select"))
+			if(params.containsKey("select"))
 				ec.releaseMatrixInput(params.get("select"));
 		}
-		else if ( opcode.equalsIgnoreCase("replace") ) {
+		else if(opcode.equalsIgnoreCase("replace")) {
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
 			double pattern = Double.parseDouble(params.get("pattern"));
 			double replacement = Double.parseDouble(params.get("replacement"));
@@ -230,7 +231,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
-		else if ( opcode.equals("lowertri") || opcode.equals("uppertri")) {
+		else if(opcode.equals("lowertri") || opcode.equals("uppertri")) {
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
 			boolean lower = opcode.equals("lowertri");
 			boolean diag = Boolean.parseBoolean(params.get("diag"));
@@ -239,75 +240,89 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
-		else if ( opcode.equalsIgnoreCase("rexpand") ) {
+		else if(opcode.equalsIgnoreCase("rexpand")) {
 			// acquire locks
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
-			
+
 			// compute the result
 			double maxVal = Double.parseDouble(params.get("max"));
 			boolean dirVal = params.get("dir").equals("rows");
 			boolean cast = Boolean.parseBoolean(params.get("cast"));
 			boolean ignore = Boolean.parseBoolean(params.get("ignore"));
 			int numThreads = Integer.parseInt(params.get("k"));
-			MatrixBlock ret = target.rexpandOperations(
-				new MatrixBlock(), maxVal, dirVal, cast, ignore, numThreads);
-			
-			//release locks
+			MatrixBlock ret = target.rexpandOperations(new MatrixBlock(), maxVal, dirVal, cast, ignore, numThreads);
+
+			// release locks
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
-		else if ( opcode.equalsIgnoreCase("transformapply")) {
-			//acquire locks
+		else if(opcode.equalsIgnoreCase("tokenize")) {
+			// acquire locks
+			FrameBlock data = ec.getFrameInput(params.get("target"));
+
+			// compute tokenizer
+			Tokenizer tokenizer = TokenizerFactory.createTokenizer(getParameterMap().get("spec"),
+				Integer.parseInt(getParameterMap().get("max_tokens")));
+			FrameBlock fbout = tokenizer.tokenize(data, new FrameBlock(tokenizer.getSchema()));
+
+			// release locks
+			ec.setFrameOutput(output.getName(), fbout);
+			ec.releaseFrameInput(params.get("target"));
+		}
+		else if(opcode.equalsIgnoreCase("transformapply")) {
+			// acquire locks
 			FrameBlock data = ec.getFrameInput(params.get("target"));
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
 			String[] colNames = data.getColumnNames();
-			
-			//compute transformapply
-			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), colNames, data.getNumColumns(), meta);
-			MatrixBlock mbout = encoder.apply(data, new MatrixBlock(data.getNumRows(), data.getNumColumns(), false));
-			
-			//release locks
+
+			// compute transformapply
+			MultiColumnEncoder encoder = EncoderFactory
+				.createEncoder(params.get("spec"), colNames, data.getNumColumns(), meta);
+			MatrixBlock mbout = encoder.apply(data);
+
+			// release locks
 			ec.setMatrixOutput(output.getName(), mbout);
 			ec.releaseFrameInput(params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
 		}
-		else if ( opcode.equalsIgnoreCase("transformdecode")) {
-			//acquire locks
+		else if(opcode.equalsIgnoreCase("transformdecode")) {
+			// acquire locks
 			MatrixBlock data = ec.getMatrixInput(params.get("target"));
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
 			String[] colnames = meta.getColumnNames();
-			
-			//compute transformdecode
-			Decoder decoder = DecoderFactory.createDecoder(
-				getParameterMap().get("spec"), colnames, null, meta, data.getNumColumns());
+
+			// compute transformdecode
+			Decoder decoder = DecoderFactory
+				.createDecoder(getParameterMap().get("spec"), colnames, null, meta, data.getNumColumns());
 			FrameBlock fbout = decoder.decode(data, new FrameBlock(decoder.getSchema()));
 			fbout.setColumnNames(Arrays.copyOfRange(colnames, 0, fbout.getNumColumns()));
-			
-			//release locks
+
+			// release locks
 			ec.setFrameOutput(output.getName(), fbout);
 			ec.releaseMatrixInput(params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
 		}
-		else if ( opcode.equalsIgnoreCase("transformcolmap")) {
-			//acquire locks
+		else if(opcode.equalsIgnoreCase("transformcolmap")) {
+			// acquire locks
 			FrameBlock meta = ec.getFrameInput(params.get("target"));
 			String[] colNames = meta.getColumnNames();
-			
-			//compute transformapply
-			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), colNames, meta.getNumColumns(), null);
-			MatrixBlock mbout = encoder.getColMapping(meta, new MatrixBlock(meta.getNumColumns(), 3, false));
-			
-			//release locks
+
+			// compute transformapply
+			MultiColumnEncoder encoder = EncoderFactory
+				.createEncoder(params.get("spec"), colNames, meta.getNumColumns(), null);
+			MatrixBlock mbout = encoder.getColMapping(meta);
+
+			// release locks
 			ec.setMatrixOutput(output.getName(), mbout);
 			ec.releaseFrameInput(params.get("target"));
 		}
-		else if ( opcode.equalsIgnoreCase("transformmeta")) {
-			//get input spec and path
+		else if(opcode.equalsIgnoreCase("transformmeta")) {
+			// get input spec and path
 			String spec = getParameterMap().get("spec");
 			String path = getParameterMap().get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD);
 			String delim = getParameterMap().getOrDefault("sep", TfUtils.TXMTD_SEP);
-			
-			//execute transform meta data read
+
+			// execute transform meta data read
 			FrameBlock meta = null;
 			try {
 				meta = TfMetaUtils.readTransformMetaDataFromFile(spec, path, delim);
@@ -315,125 +330,131 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
 			}
-			
-			//release locks
+
+			// release locks
 			ec.setFrameOutput(output.getName(), meta);
 		}
-		else if ( opcode.equalsIgnoreCase("toString")) {
-			//handle input parameters
-			int rows = (getParam("rows")!=null) ? Integer.parseInt(getParam("rows")) : TOSTRING_MAXROWS;
+		else if(opcode.equalsIgnoreCase("toString")) {
+			// handle input parameters
+			int rows = (getParam("rows") != null) ? Integer.parseInt(getParam("rows")) : TOSTRING_MAXROWS;
 			int cols = (getParam("cols") != null) ? Integer.parseInt(getParam("cols")) : TOSTRING_MAXCOLS;
 			int decimal = (getParam("decimal") != null) ? Integer.parseInt(getParam("decimal")) : TOSTRING_DECIMAL;
 			boolean sparse = (getParam("sparse") != null) ? Boolean.parseBoolean(getParam("sparse")) : TOSTRING_SPARSE;
 			String separator = (getParam("sep") != null) ? getParam("sep") : TOSTRING_SEPARATOR;
 			String lineSeparator = (getParam("linesep") != null) ? getParam("linesep") : TOSTRING_LINESEPARATOR;
-			
-			//get input matrix/frame and convert to string
+
+			// get input matrix/frame and convert to string
 			String out = null;
 
 			Data cacheData = ec.getVariable(getParam("target"));
-			if( cacheData instanceof MatrixObject) {
-				MatrixBlock matrix = ((MatrixObject)cacheData).acquireRead();
+			if(cacheData instanceof MatrixObject) {
+				MatrixBlock matrix = ((MatrixObject) cacheData).acquireRead();
 				warnOnTrunction(matrix, rows, cols);
 				out = DataConverter.toString(matrix, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
-			else if( cacheData instanceof TensorObject ) {
-				TensorBlock tensor = ((TensorObject)cacheData).acquireRead();
+			else if(cacheData instanceof TensorObject) {
+				TensorBlock tensor = ((TensorObject) cacheData).acquireRead();
 				// TODO improve truncation to check all dimensions
 				warnOnTrunction(tensor, rows, cols);
-				out = DataConverter.toString(tensor, sparse, separator,
-					lineSeparator, "[", "]", rows, cols, decimal);
+				out = DataConverter.toString(tensor, sparse, separator, lineSeparator, "[", "]", rows, cols, decimal);
 			}
-			else if( cacheData instanceof FrameObject ) {
+			else if(cacheData instanceof FrameObject) {
 				FrameBlock frame = ((FrameObject) cacheData).acquireRead();
 				warnOnTrunction(frame, rows, cols);
 				out = DataConverter.toString(frame, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
-			else if (cacheData instanceof ListObject){
-				out = DataConverter.toString((ListObject) cacheData, rows, cols,
-					sparse, separator, lineSeparator, rows, cols, decimal);
+			else if(cacheData instanceof ListObject) {
+				out = DataConverter.toString((ListObject) cacheData,
+					rows,
+					cols,
+					sparse,
+					separator,
+					lineSeparator,
+					rows,
+					cols,
+					decimal);
 			}
 			else {
 				throw new DMLRuntimeException("toString only converts matrix, tensors, lists or frames to string");
 			}
-			if(!(cacheData instanceof ListObject)){
+			if(!(cacheData instanceof ListObject)) {
 				ec.releaseCacheableData(getParam("target"));
 			}
 			ec.setScalarOutput(output.getName(), new StringObject(out));
 		}
-		else if( opcode.equals("nvlist") ) {
-			//obtain all input data objects and names in insertion order
-			List<Data> data = params.values().stream().map(d -> ec.containsVariable(d) ?
-				ec.getVariable(d) : new StringObject(d)).collect(Collectors.toList());
+		else if(opcode.equals("nvlist")) {
+			// obtain all input data objects and names in insertion order
+			List<Data> data = params.values().stream()
+				.map(d -> ec.containsVariable(d) ? ec.getVariable(d) : new StringObject(d))
+				.collect(Collectors.toList());
 			List<String> names = new ArrayList<>(params.keySet());
-			
-			//create list object over all inputs
+
+			// create list object over all inputs
 			ListObject list = new ListObject(data, names);
 			list.deriveAndSetStatusFromData();
-			
+
 			ec.setVariable(output.getName(), list);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
 		}
 	}
-	
+
 	private void warnOnTrunction(CacheBlock data, int rows, int cols) {
-		//warn on truncation because users might not be aware and use toString for verification
-		if( (getParam("rows")==null && data.getNumRows()>rows)
-			|| (getParam("cols")==null && data.getNumColumns()>cols) )
-		{
-			LOG.warn("Truncating "+data.getClass().getSimpleName()+" of size "
-				+ data.getNumRows()+"x"+data.getNumColumns()+" to "+rows+"x"+cols+". "
+		// warn on truncation because users might not be aware and use toString for verification
+		if((getParam("rows") == null && data.getNumRows() > rows) ||
+			(getParam("cols") == null && data.getNumColumns() > cols)) {
+			LOG.warn("Truncating " + data.getClass().getSimpleName() + " of size " + data.getNumRows() + "x"
+				+ data.getNumColumns() + " to " + rows + "x" + cols + ". "
 				+ "Use toString(X, rows=..., cols=...) if necessary.");
 		}
 	}
 
 	private void warnOnTrunction(TensorBlock data, int rows, int cols) {
-		//warn on truncation because users might not be aware and use toString for verification
-		if( (getParam("rows")==null && data.getDim(0)>rows)
-			|| (getParam("cols")==null && data.getDim(1)>cols) )
-		{
+		// warn on truncation because users might not be aware and use toString for verification
+		if((getParam("rows") == null && data.getDim(0) > rows) || (getParam("cols") == null && data.getDim(1) > cols)) {
 			StringBuilder sb = new StringBuilder();
 			IntStream.range(0, data.getNumDims()).forEach((i) -> {
-				if ((i == data.getNumDims() - 1))
+				if((i == data.getNumDims() - 1))
 					sb.append(data.getDim(i));
 				else
 					sb.append(data.getDim(i)).append("x");
 			});
-			LOG.warn("Truncating "+data.getClass().getSimpleName()+" of size "+sb.toString()+" to "+rows+"x"+cols+". "
-					+ "Use toString(X, rows=..., cols=...) if necessary.");
+			LOG.warn("Truncating " + data.getClass().getSimpleName() + " of size " + sb.toString() + " to " + rows + "x"
+				+ cols + ". " + "Use toString(X, rows=..., cols=...) if necessary.");
 		}
 	}
 
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String opcode = getOpcode();
-		if (opcode.equalsIgnoreCase("groupedagg")) {
+		if(opcode.equalsIgnoreCase("groupedagg")) {
 			CPOperand target = getTargetOperand();
 			CPOperand groups = new CPOperand(params.get(Statement.GAGG_GROUPS), ValueType.FP64, DataType.MATRIX);
-			String wt = params.containsKey(Statement.GAGG_WEIGHTS) ? params.get(Statement.GAGG_WEIGHTS) : String.valueOf(-1);
+			String wt = params.containsKey(Statement.GAGG_WEIGHTS) ? params.get(Statement.GAGG_WEIGHTS) : String
+				.valueOf(-1);
 			CPOperand weights = new CPOperand(wt, ValueType.FP64, DataType.MATRIX);
 			CPOperand fn = getStringLiteral(Statement.GAGG_FN);
-			String ng = params.containsKey(Statement.GAGG_NUM_GROUPS) ? params.get(Statement.GAGG_NUM_GROUPS) : String.valueOf(-1);
-			CPOperand ngroups = new CPOperand(ng , ValueType.INT64, DataType.SCALAR, true);
-			return Pair.of(output.getName(), new LineageItem(getOpcode(),
-				LineageItemUtils.getLineage(ec, target, groups, weights, fn, ngroups)));
+			String ng = params.containsKey(Statement.GAGG_NUM_GROUPS) ? params.get(Statement.GAGG_NUM_GROUPS) : String
+				.valueOf(-1);
+			CPOperand ngroups = new CPOperand(ng, ValueType.INT64, DataType.SCALAR, true);
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, groups, weights, fn, ngroups)));
 		}
-		else if (opcode.equalsIgnoreCase("rmempty")) {
+		else if(opcode.equalsIgnoreCase("rmempty")) {
 			CPOperand target = getTargetOperand();
 			CPOperand margin = getStringLiteral("margin");
 			String sl = params.containsKey("select") ? params.get("select") : String.valueOf(-1);
-			CPOperand select = new CPOperand(sl, ValueType.FP64, DataType.MATRIX); 
-			return Pair.of(output.getName(), new LineageItem(getOpcode(),
-				LineageItemUtils.getLineage(ec, target, margin, select)));
+			CPOperand select = new CPOperand(sl, ValueType.FP64, DataType.MATRIX);
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, margin, select)));
 		}
 		else if(opcode.equalsIgnoreCase("replace")) {
 			CPOperand target = getTargetOperand();
 			CPOperand pattern = getFP64Literal("pattern");
 			CPOperand replace = getFP64Literal("replacement");
-			return Pair.of(output.getName(), new LineageItem(getOpcode(),
-				LineageItemUtils.getLineage(ec, target, pattern, replace)));
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern, replace)));
 		}
 		else if(opcode.equalsIgnoreCase("rexpand")) {
 			CPOperand target = getTargetOperand();
@@ -441,56 +462,55 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			CPOperand dir = getStringLiteral("dir");
 			CPOperand cast = getBoolLiteral("cast");
 			CPOperand ignore = getBoolLiteral("ignore");
-			return Pair.of(output.getName(), new LineageItem(getOpcode(),
-				LineageItemUtils.getLineage(ec, target, max, dir, cast, ignore)));
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, max, dir, cast, ignore)));
 		}
-		else if (opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
+		else if(opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
 			CPOperand target = getTargetOperand();
 			CPOperand lower = getBoolLiteral("lowertri");
 			CPOperand diag = getBoolLiteral("diag");
 			CPOperand values = getBoolLiteral("values");
-			return Pair.of(output.getName(), new LineageItem(getOpcode(),
-				LineageItemUtils.getLineage(ec, target, lower, diag, values)));
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, lower, diag, values)));
 		}
-		else if (opcode.equalsIgnoreCase("transformdecode") ||
-				opcode.equalsIgnoreCase("transformapply")) {
+		else if(opcode.equalsIgnoreCase("transformdecode") || opcode.equalsIgnoreCase("transformapply")) {
 			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.FRAME);
 			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, DataType.FRAME);
 			CPOperand spec = getStringLiteral("spec");
-			return Pair.of(output.getName(), new LineageItem(getOpcode(),
-				LineageItemUtils.getLineage(ec, target, meta, spec)));
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
 		}
 		else {
-			//NOTE: for now, we cannot have a generic fall through path, because the 
-			//data and value types of parmeters are not compiled into the instruction
-			throw new DMLRuntimeException("Unsupported lineage tracing for: "+opcode);
+			// NOTE: for now, we cannot have a generic fall through path, because the
+			// data and value types of parmeters are not compiled into the instruction
+			throw new DMLRuntimeException("Unsupported lineage tracing for: " + opcode);
 		}
 	}
-	
+
 	public CacheableData<?> getTarget(ExecutionContext ec) {
 		return ec.getCacheableData(params.get("target"));
 	}
-	
+
 	private CPOperand getTargetOperand() {
 		return new CPOperand(params.get("target"), ValueType.FP64, DataType.MATRIX);
 	}
-	
+
 	private CPOperand getFP64Literal(String name) {
 		return getLiteral(name, ValueType.FP64);
 	}
-	
+
 	private CPOperand getStringLiteral(String name) {
 		return getLiteral(name, ValueType.STRING);
 	}
-	
+
 	private CPOperand getBoolLiteral(String name) {
 		return getLiteral(name, ValueType.BOOLEAN);
 	}
-	
+
 	private CPOperand getLiteral(String name, ValueType vt) {
 		return new CPOperand(params.get(name), vt, DataType.SCALAR, true);
 	}
-	
+
 	private CPOperand getLiteral(String name, ValueType vt, DataType dt) {
 		return new CPOperand(params.get(name), vt, dt);
 	}

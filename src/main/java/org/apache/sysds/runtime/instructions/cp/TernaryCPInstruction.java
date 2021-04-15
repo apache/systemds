@@ -38,7 +38,8 @@ public class TernaryCPInstruction extends ComputationCPInstruction {
 		CPOperand operand2 = new CPOperand(parts[2]);
 		CPOperand operand3 = new CPOperand(parts[3]);
 		CPOperand outOperand = new CPOperand(parts[4]);
-		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode);
+		int numThreads = parts.length>5 ? Integer.parseInt(parts[5]) : 1;
+		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode, numThreads);
 		return new TernaryCPInstruction(op, operand1, operand2, operand3, outOperand, opcode,str);
 	}
 	

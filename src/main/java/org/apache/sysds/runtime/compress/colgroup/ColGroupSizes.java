@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -33,7 +34,8 @@ public class ColGroupSizes {
 		size += 16; // Object header
 		size += 4; // int numRows,
 		size += 1; // _zeros boolean reference
-		size += 3; // padding
+		size += 1; // _lossy boolean reference
+		size += 2; // padding
 		size += MemoryEstimates.intArrayCost(nrColumns);
 		return size;
 	}
@@ -41,33 +43,19 @@ public class ColGroupSizes {
 	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, boolean lossy) {
 		long size = estimateInMemorySizeGroup(nrColumns);
 		size += 8; // Dictionary Reference.
-		if(lossy) {
+		if(lossy)
 			size += QDictionary.getInMemorySize(nrValues);
-		}
-		else {
+		else
 			size += Dictionary.getInMemorySize(nrValues);
-		}
+
 		return size;
 	}
 
-	public static long estimateInMemorySizeDDC(int nrCols, int uniqueVals, boolean lossy) {
-		long size = estimateInMemorySizeGroupValue(nrCols, uniqueVals, lossy);
-		return size;
-	}
-
-	public static long estimateInMemorySizeDDC1(int nrCols, int uniqueVals, int dataLength, boolean lossy) {
-		if(uniqueVals > 255)
-			return Long.MAX_VALUE;
-		long size = estimateInMemorySizeDDC(nrCols, uniqueVals, lossy);
-		size += MemoryEstimates.byteArrayCost(dataLength);
-		return size;
-	}
-
-	public static long estimateInMemorySizeDDC2(int nrCols, int uniqueVals, int dataLength, boolean lossy) {
-		if(uniqueVals > Character.MAX_VALUE)
-			return Long.MAX_VALUE;
-		long size = estimateInMemorySizeDDC(nrCols, uniqueVals, lossy);
-		size += MemoryEstimates.charArrayCost(dataLength);
+	public static long estimateInMemorySizeDDC(int nrCols, int numTuples, int dataLength, boolean lossy) {
+		// LOG.error("Arguments for DDC memory Estimate " + nrCols + " " + numTuples + " " + dataLength + " " + lossy);
+		long size = estimateInMemorySizeGroupValue(nrCols, numTuples * nrCols, lossy);
+		size += 8; // Map toFactory reference;
+		size += MapToFactory.estimateInMemorySize(dataLength, numTuples);
 		return size;
 	}
 
@@ -100,13 +88,34 @@ public class ColGroupSizes {
 		return size;
 	}
 
+	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff, boolean lossy) {
+		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
+		size += MemoryEstimates.intArrayCost(nrRows - largestOff);
+		// size += MemoryEstimates.byteArrayCost(nrRows- largestOff);
+		size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues);
+		return size;
+	}
+
+	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff,
+		boolean lossy) {
+		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
+		// size += MemoryEstimates.intArrayCost(nrRows - largestOff);
+		size += MemoryEstimates.byteArrayCost(nrRows - largestOff);
+		return size;
+	}
+
 	public static long estimateInMemorySizeCONST(int nrColumns, int nrValues, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
 		return size;
 	}
 
+	public static long estimateInMemorySizeEMPTY(int nrColumns) {
+		long size = estimateInMemorySizeGroup(nrColumns);
+		size += 8; // null pointer to _dict
+		return size;
+	}
+
 	public static long estimateInMemorySizeUncompressed(int nrRows, int nrColumns, double sparsity) {
-		// LOG.error(nrRows + " " + nrColumns + " " + sparsity);
 		long size = 0;
 		// Since the Object is a col group the overhead from the Memory Size group is added
 		size += estimateInMemorySizeGroup(nrColumns);

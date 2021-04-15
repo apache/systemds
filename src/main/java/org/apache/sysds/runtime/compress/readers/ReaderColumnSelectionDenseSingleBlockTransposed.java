@@ -23,33 +23,27 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColumnSelection{
+public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColumnSelection {
 	private double[] _data;
 
-	private DblArray reusableReturn;
-	private double[] reusableArr;
-
-	public ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, int[] colIndices) {
-		super(colIndices.clone(), data.getNumColumns() );
+	public ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, int[] colIndexes) {
+		super(colIndexes.clone(), data.getNumColumns());
 		_data = data.getDenseBlockValues();
 		if(data.getDenseBlock().numBlocks() > 1)
 			throw new DMLCompressionException("Not handling multi block data reading in dense transposed reader");
+		for(int i = 0; i < _colIndexes.length; i++) 
+			_colIndexes[i] = _colIndexes[i] * data.getNumColumns();
 		
-		for(int i = 0; i < colIndices.length; i++){
-			colIndices[i] = colIndices[i] * data.getNumRows();
-		}
-		reusableArr = new double[colIndices.length];
-		reusableReturn = new DblArray(reusableArr);
 	}
 
 	protected DblArray getNextRow() {
 		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data[_colIndexes[i]];
-			_colIndexes[i] += 1;
-		}
+		
+		for(int i = 0; i < _colIndexes.length; i++)
+			reusableArr[i] = _data[_colIndexes[i]++];
+
 		return reusableReturn;
 	}
 }

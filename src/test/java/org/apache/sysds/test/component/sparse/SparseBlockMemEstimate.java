@@ -35,7 +35,7 @@ import org.apache.sysds.test.TestUtils;
 public class SparseBlockMemEstimate extends AutomatedTestBase 
 {
 	private final static int rows = 662;
-	private final static int cols = 444;	
+	private final static int cols = 444;
 	private final static double sparsity1 = 0.39;
 	private final static double sparsity2 = 0.0001;
 	
@@ -88,7 +88,7 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 			if( memMCSR < memCOO )
 				Assert.fail("SparseBlockMCSR memory estimate smaller than SparseBlockCOO estimate.");
 			if( memCSR < memCOO )
-				Assert.fail("SparseBlockCSR memory estimate smaller than SparseBlockCOO estimate.");	
+				Assert.fail("SparseBlockCSR memory estimate smaller than SparseBlockCOO estimate.");
 		}
 	}
 }

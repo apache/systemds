@@ -33,7 +33,7 @@ import org.apache.sysds.common.Types.ReturnType;
  * builtin functions.
  *
  * To add a new builtin script function, simply add the definition here
- * as well as a dml file in scripts/builtin with a matching name. On 
+ * as well as a dml file in scripts/builtin with a matching name. On
  * building SystemDS, these scripts are packaged into the jar as well.
  */
 public enum Builtins {
@@ -82,10 +82,14 @@ public enum Builtins {
 	COLVAR("colVars", false),
 	COMPONENTS("components", true),
 	COMPRESS("compress", false),
+	CSPLINE("cspline", true),
+	CSPLINE_CG("csplineCG", true),
+	CSPLINE_DS("csplineDS", true),
 	DECOMPRESS("decompress", false),
 	CONV2D("conv2d", false),
 	CONV2D_BACKWARD_FILTER("conv2d_backward_filter", false),
 	CONV2D_BACKWARD_DATA("conv2d_backward_data", false),
+	CORRECTTYPOS("correctTypos", true),
 	COS("cos", false),
 	COV("cov", false),
 	COSH("cosh", false),
@@ -97,8 +101,10 @@ public enum Builtins {
 	CUMSUMPROD("cumsumprod", false),
 	CONFUSIONMATRIX("confusionMatrix", true),
 	COR("cor", true),
+	COX("cox", true),
 	DBSCAN("dbscan", true),
 	DETECTSCHEMA("detectSchema", false),
+	DENIALCONSTRAINTS("denialConstraints", true),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
 	DISCOVER_MD("mdedup", true),
@@ -107,12 +113,14 @@ public enum Builtins {
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
+	EMA("ema", true),
 	EXISTS("exists", false),
 	EXECUTE_PIPELINE("executePipeline", true),
 	EXP("exp", false),
 	EVAL("eval", false),
 	FLOOR("floor", false),
 	FRAME_SORT("frameSort", true),
+	GAUSSIAN_CLASSIFIER("gaussianClassifier", true),
 	GET_PERMUTATIONS("getPermutations", true),
 	GLM("glm", true),
 	GMM("gmm", true),
@@ -125,18 +133,24 @@ public enum Builtins {
 	IMG_BRIGHTNESS("img_brightness", true),
 	IMPUTE_BY_MEAN("imputeByMean", true),
 	IMPUTE_BY_MEDIAN("imputeByMedian", true),
+	IMPUTE_BY_MODE("imputeByMode", true),
 	IMG_CROP("img_crop", true),
 	IMPUTE_FD("imputeByFD", true),
 	INTERQUANTILE("interQuantile", false),
 	INTERSECT("intersect", true),
 	INVERSE("inv", "inverse", false),
 	IQM("interQuartileMean", false),
-	ISNA("is.na", false),
-	ISNAN("is.nan", false),
+	ISNA("is.na", "isNA", false),
+	ISNAN("is.nan", "isNaN", false),
 	ISINF("is.infinite", false),
+	KM("km", true),
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),
+	KNNBF("knnbf", true),
+	KNN("knn", true),
+	DECISIONTREE("decisionTree", true),
 	L2SVM("l2svm", true),
+	L2SVMPREDICT("l2svmPredict", true),
 	LASSO("lasso", true),
 	LENGTH("length", false),
 	LINEAGE("lineage", false),
@@ -144,7 +158,7 @@ public enum Builtins {
 	LM("lm", true),
 	LMCG("lmCG", true),
 	LMDS("lmDS", true),
-	LMPREDICT("lmpredict", true),
+	LMPREDICT("lmPredict", true),
 	LOG("log", false),
 	LOGSUMEXP("logSumExp", true),
 	LSTM("lstm", false, ReturnType.MULTI_RETURN),
@@ -182,6 +196,7 @@ public enum Builtins {
 	PROD("prod", false),
 	QR("qr", false, ReturnType.MULTI_RETURN),
 	QUANTILE("quantile", false),
+	RANDOM_FOREST("randomForest", true),
 	RANGE("range", false),
 	RBIND("rbind", false),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),
@@ -199,6 +214,8 @@ public enum Builtins {
 	SAMPLE("sample", false),
 	SD("sd", false),
 	SEQ("seq", false),
+	SHERLOCK("sherlock", true),
+	SHERLOCKPREDICT("sherlockPredict", true),
 	SIGMOID("sigmoid", true),   // 1 / (1 + exp(-X))
 	SIGN("sign", false),
 	SIN("sin", false),
@@ -208,6 +225,7 @@ public enum Builtins {
 	SMOTE("smote", true),
 	SOLVE("solve", false),
 	SPLIT("split", true),
+	SPLIT_BALANCED("splitBalanced", true),
 	STATSNA("statsNA", true),
 	SQRT("sqrt", false),
 	SUM("sum", false),
@@ -218,6 +236,7 @@ public enum Builtins {
 	TANH("tanh", false),
 	TRACE("trace", false),
 	TO_ONE_HOT("toOneHot", true),
+	TOMEKLINK("tomeklink", true),
 	TYPEOF("typeof", false),
 	COUNT_DISTINCT("countDistinct",false),
 	COUNT_DISTINCT_APPROX("countDistinctApprox",false),
@@ -247,9 +266,11 @@ public enum Builtins {
 	QEXP("qexp", false, true),
 	REPLACE("replace", false, true),
 	RMEMPTY("removeEmpty", false, true),
-	SCALE("scale", true, false),     //TODO parameterize center & scale
+	SCALE("scale", true, false),
+	SCALEAPPLY("scaleApply", true, false),
 	TIME("time", false),
 	CVLM("cvlm", true, false),
+	TOKENIZE("tokenize", false, true),
 	TOSTRING("toString", false, true),
 	TRANSFORMAPPLY("transformapply", false, true),
 	TRANSFORMCOLMAP("transformcolmap", false, true),
@@ -354,6 +375,7 @@ public enum Builtins {
 	}
 
 	public static String getInternalFName(String name, DataType dt) {
-		return (dt.isMatrix() ? "m_" : "s_") + name;
+		return !contains(name, true, false) ? name : // private builtin
+			(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
 	}
 }

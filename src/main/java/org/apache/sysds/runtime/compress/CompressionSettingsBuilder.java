@@ -25,7 +25,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 
 /**
  * Builder pattern for Compression Settings. See CompressionSettings for details on values.
@@ -47,7 +47,7 @@ public class CompressionSettingsBuilder {
 
 		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		this.lossy = conf.getBooleanValue(DMLConfig.COMPRESSED_LOSSY);
-		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED);
+		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED, CompressionType.CONST);
 		String[] validCompressionsString = conf.getTextValue(DMLConfig.COMPRESSED_VALID_COMPRESSIONS).split(",");
 		for(String comp : validCompressionsString) {
 			validCompressions.add(CompressionType.valueOf(comp));
@@ -123,11 +123,12 @@ public class CompressionSettingsBuilder {
 	 * Specify if the input matrix should be transposed before compression. This improves cache efficiency while
 	 * compression the input matrix
 	 * 
-	 * @param transposeInput string specifying if the input should be transposed before compression, should be one of "auto", "true" or "false"
+	 * @param transposeInput string specifying if the input should be transposed before compression, should be one of
+	 *                       "auto", "true" or "false"
 	 * @return The CompressionSettingsBuilder
 	 */
 	public CompressionSettingsBuilder setTransposeInput(String transposeInput) {
-		switch(transposeInput){
+		switch(transposeInput) {
 			case "auto":
 			case "true":
 			case "false":
@@ -183,6 +184,8 @@ public class CompressionSettingsBuilder {
 		// should always contain Uncompressed as an option.
 		if(!validCompressions.contains(CompressionType.UNCOMPRESSED))
 			validCompressions.add(CompressionType.UNCOMPRESSED);
+		if(!validCompressions.contains(CompressionType.CONST))
+			validCompressions.add(CompressionType.CONST);
 		this.validCompressions = validCompressions;
 		return this;
 	}

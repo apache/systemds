@@ -19,41 +19,28 @@
 
 package org.apache.sysds.hops.codegen.cplan;
 
-import java.util.ArrayList;
-
+import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+
+import java.util.ArrayList;
 
 public class CNodeRow extends CNodeTpl
 {
-	private static final String TEMPLATE = 
-			  "package codegen;\n"
-			+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofRowwise;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;\n"
-			+ "import org.apache.commons.math3.util.FastMath;\n"
-			+ "\n"
-			+ "public final class %TMP% extends SpoofRowwise { \n"
-			+ "  public %TMP%() {\n"
-			+ "    super(RowType.%TYPE%, %CONST_DIM2%, %TB1%, %VECT_MEM%);\n"
-			+ "  }\n"
-			+ "  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix, int rix) { \n"
-			+ "%BODY_dense%"
-			+ "  }\n"
-			+ "  protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int alen, int len, long grix, int rix) { \n"
-			+ "%BODY_sparse%"
-			+ "  }\n"
-			+ "}\n";
-
 	private static final String TEMPLATE_ROWAGG_OUT  = "    c[rix] = %IN%;\n";
 	private static final String TEMPLATE_FULLAGG_OUT = "    c[0] += %IN%;\n";
 	private static final String TEMPLATE_NOAGG_OUT   = "    LibSpoofPrimitives.vectWrite(%IN%, c, ci, %LEN%);\n";
-	
+	private static final String TEMPLATE_NOAGG_CONST_OUT_CUDA   = "\t\tvectWrite(%IN%, c.vals(0), 0, ci, %LEN%);\n";
+	private static final String TEMPLATE_NOAGG_OUT_CUDA   = "\t\tvectWrite(%IN%, c.vals(0), 0, ci, %LEN%);\n";
+	private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0){\n\t\t\t*(c.vals(rix)) = %IN%;\n//printf(\"rix=%d TMP7=%f TMP8=%f %IN%=%f\\n\",rix, TMP7, TMP8,%IN%);\n}\n";
+	private static final String TEMPLATE_FULLAGG_OUT_CUDA =
+		"\t\tif(threadIdx.x == 0) {\n\t\t\tT old = atomicAdd(c.vals(0), %IN%);\n//\t\t\tprintf(\"bid=%d full_agg add %f to %f\\n\",blockIdx.x, %IN%, old);\n\t\t}\n";
+
+
 	public CNodeRow(ArrayList<CNode> inputs, CNode output ) {
 		super(inputs, output);
 	}
@@ -61,6 +48,7 @@ public class CNodeRow extends CNodeTpl
 	private RowType _type = null; //access pattern 
 	private long _constDim2 = -1; //constant number of output columns
 	private int _numVectors = -1; //number of intermediate vectors
+	private boolean _tb1 = false;
 	
 	public void setRowType(RowType type) {
 		_type = type;
@@ -96,48 +84,73 @@ public class CNodeRow extends CNodeTpl
 	}
 	
 	@Override
-	public String codegen(boolean sparse, GeneratorAPI api) {
-		// note: ignore sparse flag, generate both
-		String tmp = TEMPLATE;
+	public String codegen(boolean sparse, GeneratorAPI _api) {
+		api = _api;
 		
+		// note: ignore sparse flag, generate both
+		String tmp = getLanguageTemplate(this, api);
+
 		//generate dense/sparse bodies
-		String tmpDense = _output.codegen(false, api)
-			+ getOutputStatement(_output.getVarname());
+		String tmpDense = _output.codegen(false, api) + getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
-		String tmpSparse = _output.codegen(true, api)
-			+ getOutputStatement(_output.getVarname());
-		tmp = tmp.replace("%TMP%", createVarname());
-		tmp = tmp.replace("%BODY_dense%", tmpDense);
-		tmp = tmp.replace("%BODY_sparse%", tmpSparse);
+		String tmpSparse = _output.codegen(true, api) + getOutputStatement(_output.getVarname());
+		_output.resetGenerated();
+		String varName = createVarname();
+		tmp = tmp.replace(api.isJava()?"%TMP%":"//%TMP%", varName);
+		if( !api.isJava() )
+			tmp = tmp.replace("/*%TMP%*/SPOOF_OP_NAME", varName);
+		String prefix = api.isJava()? "" : "//";
+		tmp = tmp.replace(prefix+"%BODY_dense%", tmpDense);
+		tmp = tmp.replace(prefix+"%BODY_sparse%", tmpSparse);
 		
 		//replace outputs 
-		tmp = tmp.replace("%OUT%", "c");
+		tmp = api.isJava() ? tmp.replace("%OUT%", "c") :
+			tmp.replace("%OUT%", "c.vals(0)");
 		tmp = tmp.replace("%POSOUT%", "0");
 		
 		//replace size information
-		tmp = tmp.replace("%LEN%", "len");
+		tmp = tmp.replace("%LEN%", "a.cols()");
 		
 		//replace colvector information and number of vector intermediates
 		tmp = tmp.replace("%TYPE%", _type.name());
 		tmp = tmp.replace("%CONST_DIM2%", String.valueOf(_constDim2));
-		tmp = tmp.replace("%TB1%", String.valueOf(
-			TemplateUtils.containsBinary(_output, BinType.VECT_MATRIXMULT)));
+		_tb1 = TemplateUtils.containsBinary(_output, BinType.VECT_MATRIXMULT); 
+		tmp = tmp.replace("%TB1%", String.valueOf(_tb1));
+
+		if(api == GeneratorAPI.CUDA && _numVectors > 0) {
+			tmp = tmp.replace("//%HAS_TEMP_VECT%", ": public TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>");
+			tmp = tmp.replace("/*%INIT_TEMP_VECT%*/", ", TempStorageImpl<T, NUM_TMP_VECT, TMP_VECT_LEN>(tmp_stor)");
+		}
+		else {
+			tmp = tmp.replace("//%HAS_TEMP_VECT%", "");
+			tmp = tmp.replace("/*%INIT_TEMP_VECT%*/", "");
+		}
 		tmp = tmp.replace("%VECT_MEM%", String.valueOf(_numVectors));
-		
+
 		return tmp;
 	}
 	
 	private String getOutputStatement(String varName) {
 		switch( _type ) {
 			case NO_AGG:
+				if(api == GeneratorAPI.CUDA)
+					return TEMPLATE_NOAGG_OUT_CUDA.replace("%IN%", varName + ".vals(0)").replaceAll("%LEN%", _output.getVarname()+".length");
 			case NO_AGG_B1:
 			case NO_AGG_CONST:
-				return TEMPLATE_NOAGG_OUT.replace("%IN%", varName)
-					.replace("%LEN%", _output.getVarname()+".length");
+				if(api == GeneratorAPI.JAVA)
+					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName).replace("%LEN%", _output.getVarname()+".length");
+				else
+					return TEMPLATE_NOAGG_CONST_OUT_CUDA.replace("%IN%", varName + ".vals(0)").replaceAll("%LEN%", _output.getVarname()+".length");
 			case FULL_AGG:
-				return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
+				if(api == GeneratorAPI.JAVA)
+					return TEMPLATE_FULLAGG_OUT.replace("%IN%", varName);
+				else
+					return TEMPLATE_FULLAGG_OUT_CUDA.replace("%IN%", varName);
 			case ROW_AGG:
-				return TEMPLATE_ROWAGG_OUT.replace("%IN%", varName);
+				if(api == GeneratorAPI.JAVA)
+					return TEMPLATE_ROWAGG_OUT.replace("%IN%", varName);
+				else
+					return TEMPLATE_ROWAGG_OUT_CUDA.replace("%IN%", varName);
 			default:
 				return ""; //_type.isColumnAgg()
 		}
@@ -213,12 +226,16 @@ public class CNodeRow extends CNodeTpl
 
 	@Override
 	public boolean isSupported(GeneratorAPI api) {
-		boolean is_supported = (api == GeneratorAPI.JAVA);
-		int i = 0;
-		while(is_supported && i < _inputs.size()) {
-			CNode in = _inputs.get(i++);
-			is_supported = in.isSupported(api);
-		}
-		return  is_supported;
+		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api);
 	}
+
+	public int compile(GeneratorAPI api, String src) {
+		if(api == GeneratorAPI.CUDA)
+			return compile_nvrtc(SpoofCompiler.native_contexts.get(api), _genVar, src, _type.getValue(), _constDim2, 
+				_numVectors, _tb1);
+		return -1;
+	}
+	
+	private native int compile_nvrtc(long context, String name, String src, int type, long constDim2, int numVectors, 
+			boolean TB1);
 }

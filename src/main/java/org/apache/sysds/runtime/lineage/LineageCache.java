@@ -32,6 +32,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
@@ -45,6 +46,8 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -89,8 +92,11 @@ public class LineageCache
 		if (LineageCacheConfig.isReusable(inst, ec)) {
 			ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
 			ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null; 
+			GPUInstruction gpuinst = inst instanceof GPUInstruction ? (GPUInstruction)inst : null;
 				
-			LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue():cfinst.getLineageItem(ec).getValue();
+			LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
+					: (cfinst != null) ? cfinst.getLineageItem(ec).getValue() 
+					: gpuinst.getLineageItem(ec).getValue();
 			List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liList = new ArrayList<>();
@@ -126,8 +132,10 @@ public class LineageCache
 					if(e == null && isMarkedForCaching(inst, ec)) {
 						if (cinst != null)
 							putIntern(item.getKey(), cinst.output.getDataType(), null, null,  0);
-						else
+						else if (cfinst != null)
 							putIntern(item.getKey(), cfinst.output.getDataType(), null, null,  0);
+						else if (gpuinst != null)
+							putIntern(item.getKey(), gpuinst._output.getDataType(), null, null,  0);
 						//FIXME: different o/p datatypes for MultiReturnBuiltins.
 					}
 				}
@@ -144,14 +152,27 @@ public class LineageCache
 							getOutput(entry.getKey().getOpcode().charAt(entry.getKey().getOpcode().length()-1)-'0').getName(); 
 					else if (inst instanceof ComputationCPInstruction)
 						outName = cinst.output.getName();
-					else
+					else if (inst instanceof ComputationFEDInstruction)
 						outName = cfinst.output.getName();
+					else if (inst instanceof GPUInstruction)
+						outName = gpuinst._output.getName();
 					
-					if (e.isMatrixValue())
+					if (e.isMatrixValue() && e._gpuPointer == null)
 						ec.setMatrixOutput(outName, e.getMBValue());
-					else
+					else if (e.isScalarValue())
 						ec.setScalarOutput(outName, e.getSOValue());
+					else { //TODO handle locks on gpu objects
+						//shallow copy the cached GPUObj to the output MatrixObject
+						ec.getMatrixObject(outName).setGPUObject(ec.getGPUContext(0), 
+								ec.getGPUContext(0).shallowCopyGPUObject(e._gpuPointer, ec.getMatrixObject(outName)));
+						//Set dirty to true, so that it is later copied to the host
+						ec.getMatrixObject(outName).getGPUObject(ec.getGPUContext(0)).setDirty(true);
+					}
+
 					reuse = true;
+
+					if (DMLScript.STATISTICS) //increment saved time
+						LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
 				}
 				if (DMLScript.STATISTICS)
 					LineageCacheStatistics.incrementInstHits();
@@ -171,6 +192,7 @@ public class LineageCache
 			return false;
 		
 		boolean reuse = (outParams.size() != 0);
+		long savedComputeTime = 0;
 		HashMap<String, Data> funcOutputs = new HashMap<>();
 		HashMap<String, LineageItem> funcLIs = new HashMap<>();
 		for (int i=0; i<numOutputs; i++) {
@@ -210,6 +232,8 @@ public class LineageCache
 				funcOutputs.put(boundVarName, boundValue);
 				LineageItem orig = e._origItem;
 				funcLIs.put(boundVarName, orig);
+				//all the entries have the same computeTime
+				savedComputeTime = e._computeTime;
 			}
 			else {
 				// if one output cannot be reused, we need to execute the function
@@ -230,26 +254,31 @@ public class LineageCache
 			});
 			//map original lineage items return to the calling site
 			funcLIs.forEach((var, li) -> ec.getLineage().set(var, li));
+
+			if (DMLScript.STATISTICS) //increment saved time
+				LineageCacheStatistics.incrementSavedComputeTime(savedComputeTime);
 		}
 		
 		return reuse;
 	}
 	
 	//Reuse federated UDFs
-	public static boolean reuse(FederatedUDF udf, ExecutionContext ec) 
+	public static FederatedResponse reuse(FederatedUDF udf, ExecutionContext ec) 
 	{
 		if (ReuseCacheType.isNone() || udf.getOutputIds() == null)
-			return false;
+			return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 		//TODO: reuse only those UDFs which are part of reusable instructions
 		
 		boolean reuse = false;
 		List<Long> outIds = udf.getOutputIds();
 		HashMap<String, Data> udfOutputs = new HashMap<>();
+		long savedComputeTime = 0;
 
 		//TODO: support multi-return UDFs
 		if (udf.getLineageItem(ec) == null)
 			//TODO: trace all UDFs
-			return false;
+			return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
+
 		LineageItem li = udf.getLineageItem(ec).getValue();
 		li.setDistLeaf2Node(1); //to save from early eviction
 		LineageCacheEntry e = null;
@@ -276,26 +305,36 @@ public class LineageCache
 				outValue = e.getSOValue();
 			}
 			udfOutputs.put(outName, outValue);
+			savedComputeTime = e._computeTime;
 			reuse = true;
 		}
 		else
 			reuse = false;
 		
 		if (reuse) {
-			udfOutputs.forEach((var, val) -> {
+			FederatedResponse res = null;
+			for (Map.Entry<String, Data> entry : udfOutputs.entrySet()) {
+				String var = entry.getKey();
+				Data val = entry.getValue();
 				//cleanup existing data bound to output name
 				Data exdata = ec.removeVariable(var);
 				if (exdata != val)
 					ec.cleanupDataObject(exdata);
 				//add or replace data in the symbol table
 				ec.setVariable(var, val);
-			});
+				//build and return a federated response
+				res = LineageItemUtils.setUDFResponse(udf, (MatrixObject) val);
+			}
 
-			if (DMLScript.STATISTICS)
+			if (DMLScript.STATISTICS) {
 				//TODO: dedicated stats for federated reuse
 				LineageCacheStatistics.incrementInstHits();
+				LineageCacheStatistics.incrementSavedComputeTime(savedComputeTime);
+			}
+			
+			return res;
 		}
-		return reuse;
+		return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 	}
 	
 	public static boolean probe(LineageItem key) {
@@ -307,12 +346,42 @@ public class LineageCache
 		return p;
 	}
 	
+	//This method is for hard removal of an entry, w/o maintaining eviction data structures
+	public static void removeEntry(LineageItem key) {
+		boolean p = _cache.containsKey(key);
+		if (!p) return;
+		synchronized(_cache) {
+			LineageCacheEntry e = getEntry(key);
+			long size = e.getSize();
+			if (e._origItem == null)
+				_cache.remove(e._key);
+
+			else {
+				LineageCacheEntry h = _cache.get(e._origItem); //head
+				while (h != null) {
+					LineageCacheEntry tmp = h;
+					h = h._nextEntry;
+					_cache.remove(tmp._key);
+				}
+			}
+			LineageCacheEviction.updateSize(size, false);
+		}
+	}
+	
 	public static MatrixBlock getMatrix(LineageItem key) {
 		LineageCacheEntry e = null;
 		synchronized( _cache ) {
 			e = getIntern(key);
 		}
 		return e.getMBValue();
+	}
+
+	public static LineageCacheEntry getEntry(LineageItem key) {
+		LineageCacheEntry e = null;
+		synchronized( _cache ) {
+			e = getIntern(key);
+		}
+		return e;
 	}
 	
 	//NOTE: safe to pin the object in memory as coming from CPInstruction
@@ -341,6 +410,7 @@ public class LineageCache
 		if (LineageCacheConfig.isReusable(inst, ec) ) {
 			//if (!isMarkedForCaching(inst, ec)) return;
 			List<Pair<LineageItem, Data>> liData = null;
+			GPUObject liGpuObj = null;
 			LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liData = new ArrayList<>();
@@ -352,11 +422,33 @@ public class LineageCache
 					liData.add(Pair.of(li, value));
 				}
 			}
+			else if (inst instanceof GPUInstruction) {
+				// TODO: gpu multiretrun instructions
+				Data gpudata = ec.getVariable(((GPUInstruction) inst)._output);
+				liGpuObj = gpudata instanceof MatrixObject ? 
+						ec.getMatrixObject(((GPUInstruction)inst)._output).getGPUObject(ec.getGPUContext(0)) : null;
+
+				// Scalar gpu intermediates is always copied back to host. 
+				// No need to cache the GPUobj for scalar intermediates.
+				if (liGpuObj == null)
+					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction)inst)._output)));
+			}
 			else
 				liData = inst instanceof ComputationCPInstruction ? 
 						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output))) :
 						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
 			synchronized( _cache ) {
+				if (liGpuObj != null) {
+					// No need to make space as the entry is in gpu
+					// TODO: account gpu memory. Eviction
+					LineageCacheEntry centry = _cache.get(instLI);
+					// Cache the GPUObj for future reuse
+					liGpuObj.setIsLinCached(true);
+					centry._gpuPointer = liGpuObj;
+					centry._computeTime = computetime;
+					centry._status = LineageCacheStatus.CACHED;
+					return;
+				}
 				for (Pair<LineageItem, Data> entry : liData) {
 					LineageItem item = entry.getKey();
 					Data data = entry.getValue();
@@ -457,42 +549,44 @@ public class LineageCache
 		if (udf.getLineageItem(ec) == null)
 			//TODO: trace all UDFs
 			return;
-		LineageItem item = udf.getLineageItem(ec).getValue();
-		LineageCacheEntry entry = _cache.get(item);
-		Data data = ec.getVariable(String.valueOf(outIds.get(0)));
-		if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
-			// Don't cache if the udf outputs frames
-			_cache.remove(item);
-			return;
+		synchronized (_cache) {
+			LineageItem item = udf.getLineageItem(ec).getValue();
+			LineageCacheEntry entry = _cache.get(item);
+			Data data = ec.getVariable(String.valueOf(outIds.get(0)));
+			if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
+				// Don't cache if the udf outputs frames
+				_cache.remove(item);
+				return;
+			}
+			
+			MatrixBlock mb = (data instanceof MatrixObject) ? 
+					((MatrixObject)data).acquireReadAndRelease() : null;
+			long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
+
+			//remove the placeholder if the entry is bigger than the cache.
+			//FIXME: the resumed threads will enter into infinite wait as the entry
+			//is removed. Need to add support for graceful remove (placeholder) and resume.
+			if (size > LineageCacheEviction.getCacheLimit()) {
+				_cache.remove(item);
+				return;
+			}
+
+			//make space for the data
+			if (!LineageCacheEviction.isBelowThreshold(size))
+				LineageCacheEviction.makeSpace(_cache, size);
+			LineageCacheEviction.updateSize(size, true);
+
+			//place the data
+			if (data instanceof MatrixObject)
+				entry.setValue(mb, computetime);
+			else if (data instanceof ScalarObject)
+				entry.setValue((ScalarObject)data, computetime);
+
+			//TODO: maintain statistics, lineage estimate
+
+			//maintain order for eviction
+			LineageCacheEviction.addEntry(entry);
 		}
-		
-		MatrixBlock mb = (data instanceof MatrixObject) ? 
-				((MatrixObject)data).acquireReadAndRelease() : null;
-		long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
-
-		//remove the placeholder if the entry is bigger than the cache.
-		//FIXME: the resumed threads will enter into infinite wait as the entry
-		//is removed. Need to add support for graceful remove (placeholder) and resume.
-		if (size > LineageCacheEviction.getCacheLimit()) {
-			_cache.remove(item);
-			return;
-		}
-
-		//make space for the data
-		if (!LineageCacheEviction.isBelowThreshold(size))
-			LineageCacheEviction.makeSpace(_cache, size);
-		LineageCacheEviction.updateSize(size, true);
-
-		//place the data
-		if (data instanceof MatrixObject)
-			entry.setValue(mb, computetime);
-		else if (data instanceof ScalarObject)
-			entry.setValue((ScalarObject)data, computetime);
-
-		//TODO: maintain statistics, lineage estimate
-
-		//maintain order for eviction
-		LineageCacheEviction.addEntry(entry);
 	}
 	
 	public static void resetCache() {
@@ -534,11 +628,10 @@ public class LineageCache
 		// This method is called only when entry is present either in cache or in local FS.
 		LineageCacheEntry e = _cache.get(key);
 		if (e != null && e.getCacheStatus() != LineageCacheStatus.SPILLED) {
-			if (DMLScript.STATISTICS) {
-				// Increment hit count and saved computation time.
+			if (DMLScript.STATISTICS)
+				// Increment hit count.
 				LineageCacheStatistics.incrementMemHits();
-				LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
-			}
+
 			// Maintain order for eviction
 			LineageCacheEviction.getEntry(e);
 			return e;
@@ -586,14 +679,14 @@ public class LineageCache
 	private static boolean isMarkedForCaching (Instruction inst, ExecutionContext ec) {
 		if (!LineageCacheConfig.getCompAssRW())
 			return true;
-
-		CPOperand output = inst instanceof ComputationCPInstruction ? 
-				((ComputationCPInstruction)inst).output :
-				((ComputationFEDInstruction)inst).output;
+		
+		CPOperand output = inst instanceof ComputationCPInstruction ? ((ComputationCPInstruction)inst).output 
+				: inst instanceof ComputationFEDInstruction ? ((ComputationFEDInstruction)inst).output
+				: ((GPUInstruction)inst)._output;
 		if (output.isMatrix()) {
-			MatrixObject mo = inst instanceof ComputationCPInstruction ? 
-					ec.getMatrixObject(((ComputationCPInstruction)inst).output) :
-					ec.getMatrixObject(((ComputationFEDInstruction)inst).output);
+			MatrixObject mo = inst instanceof ComputationCPInstruction ? ec.getMatrixObject(((ComputationCPInstruction)inst).output) 
+				: inst instanceof ComputationFEDInstruction ? ec.getMatrixObject(((ComputationFEDInstruction)inst).output)
+				: ec.getMatrixObject(((GPUInstruction)inst)._output);
 			//limit this to full reuse as partial reuse is applicable even for loop dependent operation
 			return !(LineageCacheConfig.getCacheType() == ReuseCacheType.REUSE_FULL  
 				&& !mo.isMarked());

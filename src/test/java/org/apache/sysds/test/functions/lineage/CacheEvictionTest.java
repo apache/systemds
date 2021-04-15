@@ -20,6 +20,7 @@
 
 package org.apache.sysds.test.functions.lineage;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,6 @@ import java.util.List;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.lineage.Lineage;
-import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -44,6 +44,8 @@ public class CacheEvictionTest extends LineageBase {
 	protected static final String TEST_NAME1 = "CacheEviction2";
 
 	protected String TEST_CLASS_DIR = TEST_DIR + CacheEvictionTest.class.getSimpleName() + "/";
+	private final static String TEST_CONF = "SystemDS-config-eviction.xml";
+	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
 	@Override
 	public void setUp() {
@@ -82,7 +84,6 @@ public class CacheEvictionTest extends LineageBase {
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
 			Lineage.resetInternalState();
-			LineageCacheConfig.setSpill(false); //disable spilling
 			
 			// LRU based eviction
 			List<String> proArgs = new ArrayList<>();
@@ -126,8 +127,17 @@ public class CacheEvictionTest extends LineageBase {
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
-			LineageCacheConfig.setSpill(true);
 			Recompiler.reinitRecompiler();
 		}
+	}
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
 	}
 }

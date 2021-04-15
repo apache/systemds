@@ -21,9 +21,9 @@ package org.apache.sysds.runtime.compress.estim;
 
 import java.util.HashMap;
 
-import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.sample.HassAndStokes;
+import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.ABitmap.BitmapType;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -79,7 +79,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 		// extract statistics from sample
 		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _data, _transposed);
-		EstimationFactors fact = EstimationFactors.computeSizeEstimationFactors(ubm, false, _numRows, numCols);
+		EstimationFactors fact = EstimationFactors.computeSizeEstimationFactors(ubm, false, _numRows, colIndexes);
 
 		// estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
 		// TODO Replace this with lib matrix/data/LibMatrixCountDistinct
@@ -107,7 +107,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 		boolean containsZero = numZeros > 0;
 
-		EstimationFactors totalFacts = new EstimationFactors(numCols, totalCardinality, numNonZeros, totalNumRuns,
+		EstimationFactors totalFacts = new EstimationFactors(colIndexes, totalCardinality, numNonZeros, totalNumRuns, numZeros,
 			fact.numSingle, _numRows, containsZero, ubm.getType() == BitmapType.Lossy);
 
 		// construct new size info summary

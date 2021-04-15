@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.codegen;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -45,18 +47,42 @@ public abstract class SpoofRowwise extends SpoofOperator
 {
 	private static final long serialVersionUID = 6242910797139642998L;
 	
+	// Enum with explicit integer values
+	// Thanks to https://codingexplained.com/coding/java/enum-to-integer-and-integer-to-enum
+	// these values need to match with their native counterparts (spoof cuda ops)
 	public enum RowType {
-		NO_AGG,       //no aggregation
-		NO_AGG_B1,    //no aggregation w/ matrix mult B1
-		NO_AGG_CONST, //no aggregation w/ expansion/contraction
-		FULL_AGG,     //full row/col aggregation
-		ROW_AGG,      //row aggregation (e.g., rowSums() or X %*% v)
-		COL_AGG,      //col aggregation (e.g., colSums() or t(y) %*% X)
-		COL_AGG_T,    //transposed col aggregation (e.g., t(X) %*% y)
-		COL_AGG_B1,   //col aggregation w/ matrix mult B1
-		COL_AGG_B1_T, //transposed col aggregation w/ matrix mult B1
-		COL_AGG_B1R,  //col aggregation w/ matrix mult B1 to row vector
-		COL_AGG_CONST;//col aggregation w/ expansion/contraction
+		NO_AGG(0),       //no aggregation
+		NO_AGG_B1(1),    //no aggregation w/ matrix mult B1
+		NO_AGG_CONST(2), //no aggregation w/ expansion/contraction
+		FULL_AGG(3),     //full row/col aggregation
+		ROW_AGG(4),      //row aggregation (e.g., rowSums() or X %*% v)
+		COL_AGG (5),      //col aggregation (e.g., colSums() or t(y) %*% X)
+		COL_AGG_T(6),    //transposed col aggregation (e.g., t(X) %*% y)
+		COL_AGG_B1(7),   //col aggregation w/ matrix mult B1
+		COL_AGG_B1_T(8), //transposed col aggregation w/ matrix mult B1
+		COL_AGG_B1R(9),  //col aggregation w/ matrix mult B1 to row vector
+		COL_AGG_CONST (10);//col aggregation w/ expansion/contraction
+		
+		private final int value;
+		private final static HashMap<Integer, RowType> map = new HashMap<>();
+		
+		RowType(int value) {
+			this.value = value;
+		}
+		
+		static {
+			for (RowType rowType : RowType.values()) {
+				map.put(rowType.value, rowType);
+			}
+		}
+		
+		public static RowType valueOf(int rowType) {
+			return map.get(rowType);
+		}
+		
+		public int getValue() {
+			return value;
+		}
 		
 		public boolean isColumnAgg() {
 			return this == COL_AGG || this == COL_AGG_T
@@ -103,6 +129,10 @@ public abstract class SpoofRowwise extends SpoofOperator
 	@Override
 	public String getSpoofType() {
 		return "RA" +  getClass().getName().split("\\.")[1];
+	}
+	
+	@Override public SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep) {
+		return new SpoofCUDARowwise(_type, _constDim2, _tB1, _reqVectMem, opID, ep);
 	}
 	
 	@Override
@@ -247,7 +277,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			.anyMatch(in -> in.getNumColumns()>1);
 	}
 	
-	private static int getMinColsMatrixSideInputs(ArrayList<MatrixBlock> inputs) {
+	protected static int getMinColsMatrixSideInputs(ArrayList<MatrixBlock> inputs) {
 		//For B1 types, get the output number of columns as the minimum
 		//number of columns of side input matrices other than vectors.
 		return IntStream.range(1, inputs.size())
@@ -255,20 +285,45 @@ public abstract class SpoofRowwise extends SpoofOperator
 			.filter(ncol -> ncol > 1).min().orElse(1);
 	}
 	
-	private void allocateOutputMatrix(int m, int n, int n2, MatrixBlock out) {
-		switch( _type ) {
-			case NO_AGG:        out.reset(m, n, false); break;
-			case NO_AGG_B1:     out.reset(m, n2, false); break;
-			case NO_AGG_CONST:  out.reset(m, (int)_constDim2, false); break;
-			case FULL_AGG:      out.reset(1, 1, false); break;
-			case ROW_AGG:       out.reset(m, 1, false); break;
-			case COL_AGG:       out.reset(1, n, false); break;
-			case COL_AGG_T:     out.reset(n, 1, false); break;
-			case COL_AGG_B1:    out.reset(n2, n, false); break;
-			case COL_AGG_B1_T:  out.reset(n, n2, false); break;
-			case COL_AGG_B1R:   out.reset(1, n2, false); break;
-			case COL_AGG_CONST: out.reset(1, (int)_constDim2, false); break;
+	public static boolean hasMatrixObjectSideInput(ArrayList<MatrixObject> inputs) {
+		return IntStream.range(1, inputs.size())
+			.mapToObj(i -> inputs.get(i))
+			.anyMatch(in -> in.getNumColumns()>1);
+	}
+	
+	protected static int getMinColsMatrixObjectSideInputs(ArrayList<MatrixObject> inputs) {
+		//For B1 types, get the output number of columns as the minimum
+		//number of columns of side input matrices other than vectors.
+		return IntStream.range(1, inputs.size())
+			.map(i -> (int) inputs.get(i).getNumColumns())
+			.filter(ncol -> ncol > 1).min().orElse(1);
+	}
+	
+	protected class OutputDimensions {
+		public final int rows;
+		public final int cols;
+		OutputDimensions(int m, int n, int n2) {
+			switch(_type) {
+				case NO_AGG:  		rows = m;	cols = n; break;
+				case NO_AGG_B1: 	rows = m;	cols = n2; break;
+				case NO_AGG_CONST: 	rows = m;	cols = (int) SpoofRowwise.this._constDim2; break;
+				case FULL_AGG: 		rows = 1;	cols = 1; break;
+				case ROW_AGG: 		rows = m;	cols = 1; break;
+				case COL_AGG: 		rows = 1;	cols = n; break;
+				case COL_AGG_T: 	rows = n;	cols = 1; break;
+				case COL_AGG_B1: 	rows = n2;	cols = n; break;
+				case COL_AGG_B1_T: 	rows = n;	cols = n2; break;
+				case COL_AGG_B1R: 	rows = 1;	cols = n2; break;
+				case COL_AGG_CONST: rows = 1;	cols = (int) SpoofRowwise.this._constDim2; break;
+				default: 			rows = 0;	cols = 0;
+			}
 		}
+	};
+	
+	
+	private void allocateOutputMatrix(int m, int n, int n2, MatrixBlock out) {
+		OutputDimensions dims = new OutputDimensions(m, n, n2);
+		out.reset(dims.rows, dims.cols, false);
 		out.allocateDenseBlock();
 	}
 	

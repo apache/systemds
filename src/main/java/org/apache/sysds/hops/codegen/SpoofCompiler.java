@@ -19,19 +19,13 @@
 
 package org.apache.sysds.hops.codegen;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -46,8 +40,8 @@ import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysds.hops.codegen.cplan.CNodeOuterProduct;
 import org.apache.sysds.hops.codegen.cplan.CNodeRow;
 import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
-import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysds.hops.codegen.cplan.CNodeTernary.TernaryType;
+import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysds.hops.codegen.opt.PlanSelection;
 import org.apache.sysds.hops.codegen.opt.PlanSelectionFuseAll;
 import org.apache.sysds.hops.codegen.opt.PlanSelectionFuseCostBased;
@@ -55,13 +49,13 @@ import org.apache.sysds.hops.codegen.opt.PlanSelectionFuseCostBasedV2;
 import org.apache.sysds.hops.codegen.opt.PlanSelectionFuseNoRedundancy;
 import org.apache.sysds.hops.codegen.template.CPlanCSERewriter;
 import org.apache.sysds.hops.codegen.template.CPlanMemoTable;
-import org.apache.sysds.hops.codegen.template.CPlanOpRewriter;
-import org.apache.sysds.hops.codegen.template.TemplateBase;
-import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
+import org.apache.sysds.hops.codegen.template.CPlanOpRewriter;
+import org.apache.sysds.hops.codegen.template.TemplateBase;
 import org.apache.sysds.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.hops.recompile.RecompileStatus;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
@@ -80,10 +74,8 @@ import org.apache.sysds.parser.IfStatementBlock;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
-import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
-import org.apache.sysds.runtime.codegen.SpoofCUDA;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -101,6 +93,20 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.utils.Statistics;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 public class SpoofCompiler {
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
@@ -129,7 +135,10 @@ public class SpoofCompiler {
 	public enum GeneratorAPI {
 		AUTO,
 		JAVA,
-		CUDA
+		CUDA;
+		public boolean isJava() {
+			return this == JAVA;
+		}
 	}
 
 	public enum IntegrationType {
@@ -191,6 +200,22 @@ public class SpoofCompiler {
 			native_contexts = new HashMap<>();
 
 		if(!native_contexts.containsKey(generator)) {
+			String local_tmp = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_TMP_DIR);
+			String jar_path = SpoofCompiler.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+			if(jar_path.contains(".jar")) {
+				try {
+					extractCodegenSources(local_tmp, jar_path);
+				}
+				catch (IOException e){
+					LOG.error("Could not extract spoof files from jar: " + e);
+					API = GeneratorAPI.JAVA;
+					return;
+				}
+			}
+			else {
+				local_tmp = System.getProperty("user.dir") + "/src/main".replace("/", File.separator);
+			}
+			
 			if(generator == GeneratorAPI.CUDA) {
 				// init GPUs with jCuda to avoid double initialization problems
 				GPUContextPool.initializeGPU();
@@ -204,6 +229,7 @@ public class SpoofCompiler {
 				if(SystemUtils.IS_OS_WINDOWS) {
 					os = "Windows";
 					suffix = ".dll";
+					arch = arch.toUpperCase();
 				}
 
 				String libName = "libsystemds_spoof_cuda-" + os + "-" + arch + suffix;
@@ -221,26 +247,12 @@ public class SpoofCompiler {
 					isLoaded = NativeHelper.loadLibraryHelperFromResource(libName);
 
 				if(isLoaded) {
-					String local_tmp = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_TMP_DIR);
-					String jar_path = SpoofCompiler.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-					if(jar_path.contains(".jar")) {
-						try {
-							extractCodegenSources(local_tmp, jar_path);
-						}
-						catch (IOException e){
-							LOG.error("Could not extract spoof files from jar: " + e);
-							API = GeneratorAPI.JAVA;
-							return;
-						}
-					}
-					else {
-						local_tmp = System.getProperty("user.dir") + "/src/main".replace("/", File.separator);
-					}
-
 					long ctx_ptr = initialize_cuda_context(0, local_tmp);
 					if(ctx_ptr != 0) {
 						native_contexts.put(GeneratorAPI.CUDA, ctx_ptr);
 						API = GeneratorAPI.CUDA;
+						org.apache.sysds.runtime.instructions.gpu.SpoofCUDAInstruction.resetFloatingPointPrecision();
+						
 						LOG.info("Successfully loaded spoof cuda library");
 					}
 					else {
@@ -271,7 +283,8 @@ public class SpoofCompiler {
 	
 			while (files_in_jar.hasMoreElements()) {
 				JarEntry in_file = files_in_jar.nextElement();
-				if (in_file.getName().startsWith("cuda/") && !in_file.isDirectory()) {
+				if ((in_file.getName().startsWith("cuda/") || in_file.getName().startsWith("java/")) &&
+						!in_file.isDirectory()) {
 					File out_file = new File(resource_path, in_file.getName());
 					out_file.deleteOnExit();
 					File parent = out_file.getParentFile();
@@ -285,13 +298,7 @@ public class SpoofCompiler {
 		}
 	}
 
-	private static boolean compile_cuda(String name, String src) {
-		return compile_cuda_kernel(native_contexts.get(GeneratorAPI.CUDA), name, src);
-	}
-
 	private static native long initialize_cuda_context(int device_id, String resource_path);
-
-	private static native boolean compile_cuda_kernel(long ctx, String name, String src);
 
 	private static native void destroy_cuda_context(long ctx, int device_id);
 
@@ -510,21 +517,25 @@ public class SpoofCompiler {
 				Class<?> cla = planCache.getPlan(tmp.getValue());
 				
 				if( cla == null ) {
-					String src = "";
-					boolean native_compiled_successfully = false;
+					String src_cuda = "";
+					String src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
+					cla = CodegenUtils.compileClass("codegen." + tmp.getValue().getClassname(), src);
 
-					if(API == GeneratorAPI.CUDA && tmp.getValue().isSupported(API)) {
-						src = tmp.getValue().codegen(false, GeneratorAPI.CUDA);
-						native_compiled_successfully = compile_cuda(tmp.getValue().getVarname(), src);
-						if (native_compiled_successfully)
-							CodegenUtils.putNativeOpData(new SpoofCUDA(tmp.getValue()));
+					if(API == GeneratorAPI.CUDA) {
+						if(tmp.getValue().isSupported(API)) {
+							src_cuda = tmp.getValue().codegen(false, GeneratorAPI.CUDA);
+							int op_id = tmp.getValue().compile(API, src_cuda);
+							if(op_id >= 0) {
+								CodegenUtils.putCUDAOpID("codegen." + tmp.getValue().getClassname(), op_id);
+								CodegenUtils.putCUDASource(op_id, src_cuda);
+							}
+							else {
+								LOG.warn("CUDA compilation failed, falling back to JAVA");
+								tmp.getValue().setGeneratorAPI(GeneratorAPI.JAVA);
+							}
+						}
 						else
-							LOG.warn("CUDA compilation failed, falling back to JAVA");
-					}
-
-					if(API == GeneratorAPI.JAVA || !native_compiled_successfully) {
-							src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
-							cla = CodegenUtils.compileClass("codegen."+ tmp.getValue().getClassname(), src);
+							LOG.warn("CPlan " + tmp.getValue().getVarname() + " not supported by SPOOF CUDA");
 					}
 
 					//explain debug output cplans or generated source code
@@ -535,22 +546,46 @@ public class SpoofCompiler {
 							+ Explain.explainCPlan(cplan.getValue().getValue()));
 					}
 					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
-						LOG.info("Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() + 
+						LOG.info("JAVA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
 							", line "+tmp.getValue().getBeginLine() + ", hash="+tmp.getValue().hashCode()+"):");
-						LOG.info(src);
+						LOG.info(CodegenUtils.printWithLineNumber(src));
+						
+						if(API == GeneratorAPI.CUDA) {
+							LOG.info("CUDA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
+									", line " + tmp.getValue().getBeginLine() + ", hash=" + tmp.getValue().hashCode() + "):");
+
+							LOG.info(CodegenUtils.printWithLineNumber(src_cuda));
+						}
 					}
 
 					//maintain plan cache
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )
 						planCache.putPlan(tmp.getValue(), cla);
 				}
-				else if( DMLScript.STATISTICS ) {
-					Statistics.incrementCodegenOpCacheHits();
+				else {
+					if( DMLScript.STATISTICS ) 
+						Statistics.incrementCodegenOpCacheHits();
+					if(CodegenUtils.getCUDAopID(cla.getName()) != null) {
+						tmp.getValue().setGeneratorAPI(GeneratorAPI.CUDA);
+						tmp.getValue().setVarName(cla.getName().split("\\.")[1]);
+					}
 				}
 				
 				//make class available and maintain hits
-				if(cla != null || API != GeneratorAPI.JAVA)
-					clas.put(cplan.getKey(), new Pair<Hop[],Class<?>>(tmp.getKey(),cla));
+				if(cla != null) {
+//					if(CodegenUtils.getNativeOpData(cla.getName()) != null) {
+//						if(tmp.getValue().getVarname() == null) {
+//							tmp.getValue().setVarName(cla.getName());
+//							if(tmp.getValue().getGeneratorAPI() != CodegenUtils.getNativeOpData(cla.getName())
+//								.getCNodeTemplate().getGeneratorAPI())
+//							{
+//								tmp.getValue().setGeneratorAPI(CodegenUtils.getNativeOpData(cla.getName())
+//									.getCNodeTemplate().getGeneratorAPI());
+//							}
+//						}
+//					}
+					clas.put(cplan.getKey(), new Pair<Hop[], Class<?>>(tmp.getKey(), cla));
+				}
 				if( DMLScript.STATISTICS )
 					Statistics.incrementCodegenOpCacheTotal();
 			}

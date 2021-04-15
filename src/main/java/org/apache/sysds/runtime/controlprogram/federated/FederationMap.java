@@ -30,13 +30,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -134,12 +135,15 @@ public class FederationMap {
 	/**
 	 * Creates separate slices of an input data object according to the index ranges of federated data. Theses slices
 	 * are then wrapped in separate federated requests for broadcasting.
-	 * 
+	 *
 	 * @param data       input data object (matrix, tensor, frame)
 	 * @param transposed false: slice according to federated data, true: slice according to transposed federated data
 	 * @return array of federated requests corresponding to federated data
 	 */
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
+		if( _type == FType.FULL )
+			return new FederatedRequest[]{broadcast(data)};
+
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
@@ -148,13 +152,16 @@ public class FederationMap {
 		int[][] ix = new int[_fedMap.size()][];
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-			int rl, ru, cl, cu;
-			// TODO Handle different cases than ROW aligned Matrices.
-			rl = transposed ? 0 : e.getKey().getBeginDimsInt()[0];
-			ru = transposed ? cb.getNumRows() - 1 : e.getKey().getEndDimsInt()[0] - 1;
-			cl = transposed ? e.getKey().getBeginDimsInt()[0] : 0;
-			cu = transposed ? e.getKey().getEndDimsInt()[0] - 1 : cb.getNumColumns() - 1;
-			ix[pos++] = new int[] {rl, ru, cl, cu};
+			int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
+			int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
+			int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
+			int nc = _type == FType.ROW ? cb.getNumColumns() : cb.getNumRows();
+			int rl = transposed ? 0 : beg;
+			int ru = transposed ? nr - 1 : end - 1;
+			int cl = transposed ? beg : 0;
+			int cu = transposed ? end - 1 : nc - 1;
+			ix[pos++] = _type == FType.ROW ?
+				new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 		}
 
 		// multi-threaded block slicing and federation request creation
@@ -222,6 +229,29 @@ public class FederationMap {
 		// prepare results (future federated responses), with optional wait to ensure the
 		// order of requests without data dependencies (e.g., cleanup RPCs)
 		if( wait )
+			FederationUtils.waitFor(ret);
+		return ret.toArray(new Future[0]);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait,
+		FederatedRequest[][] frSlices, FederatedRequest[] fr) {
+		// executes step1[] - ... - stepM[] - stepM+1 - ... stepN (only first step federated-data-specific)
+		FederatedRequest[] allSlices = Arrays.stream(frSlices).flatMap(Stream::of).toArray(FederatedRequest[]::new);
+		setThreadID(tid, allSlices, fr);
+		List<Future<FederatedResponse>> ret = new ArrayList<>();
+		int pos = 0;
+		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+			FederatedRequest[] fedReq = fr;
+			for(FederatedRequest[] slice : frSlices)
+				fedReq = addAll(slice[pos], fedReq);
+			ret.add(e.getValue().executeFederatedOperation(fedReq));
+			pos++;
+		}
+
+		// prepare results (future federated responses), with optional wait to ensure the
+		// order of requests without data dependencies (e.g., cleanup RPCs)
+		if(wait)
 			FederationUtils.waitFor(ret);
 		return ret.toArray(new Future[0]);
 	}
@@ -354,7 +384,7 @@ public class FederationMap {
 	 * Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair. The function should
 	 * not change any data of the pair and instead use <code>mapParallel</code> if that is a necessity. Note that this
 	 * operation is parallel and necessary synchronisation has to be performed.
-	 * 
+	 *
 	 * @param forEachFunction function to execute for each pair
 	 */
 	public void forEachParallel(BiFunction<FederatedRange, FederatedData, Void> forEachFunction) {

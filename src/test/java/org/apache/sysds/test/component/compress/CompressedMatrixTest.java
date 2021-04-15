@@ -28,9 +28,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -56,7 +56,7 @@ import org.openjdk.jol.layouters.Layouter;
 public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	public CompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettings compSettings, MatrixTypology matrixTypology, OverLapping ov) {
+		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov) {
 		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1);
 	}
 
@@ -70,15 +70,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				for(int j = 0; j < cols; j++) {
 					double ulaVal = mb.quickGetValue(i, j);
 					double claVal = cmb.getValue(i, j); // calls quickGetValue internally
-					if(compressionSettings.lossy)
+					if(compressionSettings.lossy || overlappingType == OverLapping.SQUASH)
 						TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false);
-					else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE ||
-						overlappingType == OverLapping.MATRIX_PLUS || overlappingType == OverLapping.MATRIX ||
-						overlappingType == OverLapping.COL)
-						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 32768);
+					else if(OverLapping.effectOnOutput(overlappingType)){
+						double percentDistance = TestUtils.getPercentDistance(ulaVal, claVal, true);
+						assertTrue(percentDistance > .99);
+					}
 					else
 						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0); // Should be exactly same value
-
 				}
 		}
 		catch(Exception e) {
@@ -104,18 +103,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(ret2 instanceof CompressedMatrixBlock)
 				ret2 = ((CompressedMatrixBlock) ret2).decompress();
 
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy)
-				TestUtils.compareMatrices(d1, d2, lossyTolerance);
-
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 128, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 0, 1, "Test Append Matrix");
-
+			compareResultMatrices(ret1, ret2, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -182,17 +170,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// decompress the compressed matrix block
 			MatrixBlock tmp = cmb2.decompress();
 
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(mb);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(tmp);
-			if(compressionSettings.lossy)
-				TestUtils.compareMatrices(d1, d2, lossyTolerance, this.toString());
-			else if(overlappingType == OverLapping.MATRIX_MULT_NEGATIVE || overlappingType == OverLapping.MATRIX_PLUS ||
-				overlappingType == OverLapping.MATRIX || overlappingType == OverLapping.COL)
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 32768, 128, this.toString());
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 0, 0, this.toString());
-
+			compareResultMatrices(mb, tmp, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -227,6 +205,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			if(compressionSettings.samplingRatio < 1.0) {
 				allowedTolerance = sampleTolerance;
+			}
+			if(rows > 50000){
+				allowedTolerance *= 10;
 			}
 
 			boolean res = Math.abs(colsEstimate - actualSize) <= originalSize;
@@ -320,7 +301,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		for(Object ob : new Object[] {cmb, cmb.getColGroups()}) {
 			jolEstimate += ClassLayout.parseInstance(ob, l).instanceSize();
 		}
-		for(ColGroup cg : cmb.getColGroups()) {
+		for(AColGroup cg : cmb.getColGroups()) {
 			jolEstimate += cg.estimateInMemorySize();
 		}
 		return jolEstimate;

@@ -20,18 +20,19 @@
 #-------------------------------------------------------------
 
 
-#THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
+# THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
+# Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
+# NAME          TYPE        DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
-# X     Double  ---     Data Matrix X
-# B     Double  ---     Regression parameters betas
-# Y     Double  ---     Response vector Y
-# ---------------------------------------------------------------------------------------------
-# OUTPUT: Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
-# OUTPUT:
+# X             Matrix      ---     Data Matrix X
+# B             Matrix      ---     Regression parameters betas
+# Y             Matrix      ---     Response vector Y
+# verbose       Boolean     FALSE   /
+#
+# RETURN VALUES
 # ---------------------------------------------------------------------------------------------
 # NAME               TYPE   DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
@@ -40,39 +41,35 @@
 # accuracy           Double  ---     scalar value of accuracy
 # ---------------------------------------------------------------------------------------------
 
-
 m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Double] Y, Boolean verbose = FALSE)
-return(Matrix[Double] M, Matrix[Double] predicted_Y, Double accuracy)
-{  
-  if(min(Y) <= 0)
-    stop("class labels should be greater than zero")
-    
-  num_records = nrow(X);
-  num_features = ncol(X);
+  return(Matrix[Double] M, Matrix[Double] predicted_Y, Double accuracy)
+{
+  if(min(Y) <= 0) {
+    print("multiLogRegPredict: class labels should be greater than "
+        + "zero - converting all labels <= 0 to max(Y)+1");
+    Y = ifelse(Y <= 0, max(Y) + 1, Y);
+  }
+  if(ncol(X) < nrow(B)-1)
+    stop("multiLogRegPredict: mismatching ncol(X) and nrow(B): "+ncol(X)+" "+nrow(B));
+  accuracy = 0.0 # initialize variable 
   beta = B[1:ncol(X), ];
-  intercept = B[nrow(B), ];
-
-  if (nrow(B) == ncol(X))
-    intercept = 0.0 * intercept; 
-  else
-    num_features = num_features + 1;
-
-  ones_rec = matrix(1, rows = num_records, cols = 1);
-  linear_terms = X %*% beta + ones_rec %*% intercept;
+  intercept = ifelse(ncol(X)==nrow(B), matrix(0,1,ncol(B)), B[nrow(B),]);
+  linear_terms = X %*% beta + matrix(1,nrow(X),1) %*% intercept;
 
   M = probabilities(linear_terms); # compute the probablitites on unknown data
   predicted_Y = rowIndexMax(M); # extract the class labels
 
   if(nrow(Y) != 0)
-    accuracy = sum((predicted_Y - Y) == 0) / num_records * 100;
+    accuracy = sum((predicted_Y - Y) == 0) / nrow(Y) * 100;
   
   if(verbose)
     print("Accuracy (%): " + accuracy);
 }
 
 probabilities = function (Matrix[double] linear_terms)
-  return (Matrix[double] means) {
-   # PROBABLITIES FOR MULTINOMIAL LOGIT DISTRIBUTION
+  return (Matrix[double] means)
+{
+  # PROBABLITIES FOR MULTINOMIAL LOGIT DISTRIBUTION
   num_points = nrow (linear_terms);
   elt = exp (linear_terms);
   ones_pts = matrix (1, rows = num_points, cols = 1);
@@ -80,5 +77,3 @@ probabilities = function (Matrix[double] linear_terms)
   ones_ctg = matrix (1, rows = ncol (elt), cols = 1);
   means = elt / (rowSums (elt) %*% t(ones_ctg));
 }
-
-

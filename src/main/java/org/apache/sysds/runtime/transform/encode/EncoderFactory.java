@@ -19,113 +19,137 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.CollectionUtils.except;
+import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder.EncoderType;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import static org.apache.sysds.runtime.util.CollectionUtils.except;
-import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
+public class EncoderFactory {
 
-public class EncoderFactory 
-{
-	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
 	}
-	
-	public static Encoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta, int minCol,
-		int maxCol) {
+
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta,
+		int minCol, int maxCol) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta, minCol, maxCol);
 	}
 
-	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen, FrameBlock meta) {
-		ValueType[] lschema = (schema==null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen,
+		FrameBlock meta) {
+		ValueType[] lschema = (schema == null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
 		return createEncoder(spec, colnames, lschema, meta);
 	}
-	
-	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
+
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema,
+		FrameBlock meta) {
 		return createEncoder(spec, colnames, schema, meta, -1, -1);
 	}
-	
-	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int minCol,
-		int maxCol) {
-		Encoder encoder = null;
+
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta,
+		int minCol, int maxCol) {
+		MultiColumnEncoder encoder;
 		int clen = schema.length;
-		
+
 		try {
-			//parse transform specification
+			// parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
-			List<Encoder> lencoders = new ArrayList<>();
-			
-			//prepare basic id lists (recode, feature hash, dummycode, pass-through)
-			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
-			List<Integer>haIDs = Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
-			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+			List<ColumnEncoderComposite> lencoders = new ArrayList<>();
+			HashMap<Integer, List<ColumnEncoder>> colEncoders = new HashMap<>();
+			boolean ids = jSpec.containsKey("ids") && jSpec.getBoolean("ids");
+
+			// prepare basic id lists (recode, feature hash, dummycode, pass-through)
+			List<Integer> rcIDs = Arrays.asList(ArrayUtils
+				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
+			List<Integer> haIDs = Arrays.asList(ArrayUtils
+				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
+			List<Integer> dcIDs = Arrays.asList(ArrayUtils
+				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
-			//note: any dummycode column requires recode as preparation, unless it follows binning
+			// note: any dummycode column requires recode as preparation, unless it follows binning
 			rcIDs = except(unionDistinct(rcIDs, except(dcIDs, binIDs)), haIDs);
-			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1),
-				unionDistinct(rcIDs,haIDs)), binIDs);
-			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol)));
+			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1), unionDistinct(rcIDs, haIDs)),
+				binIDs);
+			List<Integer> oIDs = Arrays.asList(ArrayUtils
+				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol)));
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol)));
-			
-			//create individual encoders
-			if( !rcIDs.isEmpty() ) {
-				EncoderRecode ra = new EncoderRecode(jSpec, colnames, clen, minCol, maxCol);
-				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
-				lencoders.add(ra);
+
+			// create individual encoders
+			if(!rcIDs.isEmpty()) {
+				for(Integer id : rcIDs) {
+					ColumnEncoderRecode ra = new ColumnEncoderRecode(id);
+					addEncoderToMap(ra, colEncoders);
+				}
 			}
-			if( !haIDs.isEmpty() ) {
-				EncoderFeatureHash ha = new EncoderFeatureHash(jSpec, colnames, clen, minCol, maxCol);
-				ha.setColList(ArrayUtils.toPrimitive(haIDs.toArray(new Integer[0])));
-				lencoders.add(ha);
+			if(!haIDs.isEmpty()) {
+				for(Integer id : haIDs) {
+					ColumnEncoderFeatureHash ha = new ColumnEncoderFeatureHash(id, TfMetaUtils.getK(jSpec));
+					addEncoderToMap(ha, colEncoders);
+				}
 			}
-			if( !ptIDs.isEmpty() )
-				lencoders.add(new EncoderPassThrough(
-						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));
-			if( !binIDs.isEmpty() )
-				lencoders.add(new EncoderBin(jSpec, colnames, schema.length, minCol, maxCol));
-			if( !dcIDs.isEmpty() )
-				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length, minCol, maxCol));
-			if( !oIDs.isEmpty() )
-				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length, minCol, maxCol));
-			if( !mvIDs.isEmpty() ) {
+			if(!ptIDs.isEmpty())
+				for(Integer id : ptIDs) {
+					ColumnEncoderPassThrough pt = new ColumnEncoderPassThrough(id);
+					addEncoderToMap(pt, colEncoders);
+				}
+			if(!binIDs.isEmpty())
+				for(Object o : (JSONArray) jSpec.get(TfMethod.BIN.toString())) {
+					JSONObject colspec = (JSONObject) o;
+					int numBins = colspec.containsKey("numbins") ? colspec.getInt("numbins") : 1;
+					int id = TfMetaUtils.parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
+					if(id <= 0)
+						continue;
+					ColumnEncoderBin bin = new ColumnEncoderBin(id, numBins);
+					addEncoderToMap(bin, colEncoders);
+				}
+			if(!dcIDs.isEmpty())
+				for(Integer id : dcIDs) {
+					ColumnEncoderDummycode dc = new ColumnEncoderDummycode(id);
+					addEncoderToMap(dc, colEncoders);
+				}
+			// create composite decoder of all created encoders
+			for(Entry<Integer, List<ColumnEncoder>> listEntry : colEncoders.entrySet()) {
+				lencoders.add(new ColumnEncoderComposite(listEntry.getValue()));
+			}
+			encoder = new MultiColumnEncoder(lencoders);
+			if(!oIDs.isEmpty()) {
+				encoder.addReplaceLegacyEncoder(new EncoderOmit(jSpec, colnames, schema.length, minCol, maxCol));
+			}
+			if(!mvIDs.isEmpty()) {
 				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length, minCol, maxCol);
 				ma.initRecodeIDList(rcIDs);
-				lencoders.add(ma);
+				encoder.addReplaceLegacyEncoder(ma);
 			}
-			
-			//create composite decoder of all created encoders
-			encoder = new EncoderComposite(lencoders);
-			
-			//initialize meta data w/ robustness for superset of cols
-			if( meta != null ) {
+
+			// initialize meta data w/ robustness for superset of cols
+			if(meta != null) {
 				String[] colnames2 = meta.getColumnNames();
-				if( !TfMetaUtils.isIDSpec(jSpec) && colnames!=null && colnames2!=null
-					&& !ArrayUtils.isEquals(colnames, colnames2) )
-				{
+				if(!TfMetaUtils.isIDSpec(jSpec) && colnames != null && colnames2 != null &&
+					!ArrayUtils.isEquals(colnames, colnames2)) {
 					HashMap<String, Integer> colPos = getColumnPositions(colnames2);
-					//create temporary meta frame block w/ shallow column copy
+					// create temporary meta frame block w/ shallow column copy
 					FrameBlock meta2 = new FrameBlock(meta.getSchema(), colnames2);
 					meta2.setNumRows(meta.getNumRows());
-					for( int i=0; i<colnames.length; i++ ) {
-						if( !colPos.containsKey(colnames[i]) ) {
-							throw new DMLRuntimeException("Column name not found in meta data: "
-								+ colnames[i]+" (meta: "+Arrays.toString(colnames2)+")");
+					for(int i = 0; i < colnames.length; i++) {
+						if(!colPos.containsKey(colnames[i])) {
+							throw new DMLRuntimeException("Column name not found in meta data: " + colnames[i]
+								+ " (meta: " + Arrays.toString(colnames2) + ")");
 						}
 						int pos = colPos.get(colnames[i]);
 						meta2.setColumn(i, meta.getColumn(pos));
@@ -141,11 +165,51 @@ public class EncoderFactory
 		}
 		return encoder;
 	}
-	
+
+	private static void addEncoderToMap(ColumnEncoder encoder, HashMap<Integer, List<ColumnEncoder>> map) {
+		if(!map.containsKey(encoder._colID)) {
+			map.put(encoder._colID, new ArrayList<>());
+		}
+		map.get(encoder._colID).add(encoder);
+	}
+
+	public static int getEncoderType(ColumnEncoder columnEncoder) {
+		if(columnEncoder instanceof ColumnEncoderBin)
+			return EncoderType.Bin.ordinal();
+		else if(columnEncoder instanceof ColumnEncoderDummycode)
+			return EncoderType.Dummycode.ordinal();
+		else if(columnEncoder instanceof ColumnEncoderFeatureHash)
+			return EncoderType.FeatureHash.ordinal();
+		else if(columnEncoder instanceof ColumnEncoderPassThrough)
+			return EncoderType.PassThrough.ordinal();
+		else if(columnEncoder instanceof ColumnEncoderRecode)
+			return EncoderType.Recode.ordinal();
+		throw new DMLRuntimeException("Unsupported encoder type: " + columnEncoder.getClass().getCanonicalName());
+	}
+
+	public static ColumnEncoder createInstance(int type) {
+		EncoderType etype = EncoderType.values()[type];
+		switch(etype) {
+			case Bin:
+				return new ColumnEncoderBin();
+			case Dummycode:
+				return new ColumnEncoderDummycode();
+			case FeatureHash:
+				return new ColumnEncoderFeatureHash();
+			case PassThrough:
+				return new ColumnEncoderPassThrough();
+			case Recode:
+				return new ColumnEncoderRecode();
+			default:
+				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
+		}
+	}
+
 	private static HashMap<String, Integer> getColumnPositions(String[] colnames) {
 		HashMap<String, Integer> ret = new HashMap<>();
-		for(int i=0; i<colnames.length; i++)
+		for(int i = 0; i < colnames.length; i++)
 			ret.put(colnames[i], i);
 		return ret;
 	}
+
 }

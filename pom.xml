@@ -50,6 +50,7 @@
 		<jcuda.version>10.2.0</jcuda.version>
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
+		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>true</jacoco.skip>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
 		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
@@ -106,11 +107,24 @@
 				<directory>src/main/cuda/headers</directory>
 				<includes>
 					<include>agg_ops.cuh</include>
+					<include>operators.cuh</include>
 					<include>reduction.cuh</include>
 					<include>spoof_utils.cuh</include>
+					<include>TempStorage.cuh</include>
 					<include>utils.cuh</include>
+					<include>vector_write.cuh</include>
+					<include>vector_add.cuh</include>
+					<include>Matrix.h</include>
 				</includes>
 				<targetPath>cuda/headers</targetPath>
+			</resource>
+			<resource>
+				<directory>src/main/java/org/apache/sysds/hops/codegen/cplan/java</directory>
+				<includes>
+					<include>Cellwise.java.template</include>
+					<include>Rowwise.java.template</include>
+				</includes>
+				<targetPath>java/spoof</targetPath>
 			</resource>
 		</resources>
 
@@ -280,7 +294,7 @@
 					<reuseForks>false</reuseForks>
 					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
-					<rerunFailingTestsCount>2</rerunFailingTestsCount>
+					<rerunFailingTestsCount>${rerun.failing.tests.count}</rerunFailingTestsCount>
 				</configuration>
 			</plugin>
 
@@ -554,6 +568,7 @@
 								<exclude>.project</exclude>
 								<exclude>src/main/python/docs/build/**/*</exclude>
 								<exclude>src/main/python/docs/source/_build/**</exclude>
+								<exclude>src/main/python/generator/resources/**</exclude>
 								<exclude>docs/api/**/*</exclude>
 								<exclude>docs/_site/**/*</exclude>
 								<exclude>docs/site/run_issues.md</exclude>
@@ -604,6 +619,7 @@
 								<exclude>scripts/perftest/python/requirements.txt</exclude>
 								<!-- external sources -->
 								<exclude>src/main/cuda/ext/**</exclude>
+								<exclude>src/main/cuda/.idea/</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

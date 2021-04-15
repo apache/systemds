@@ -79,6 +79,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -172,28 +173,6 @@ public class Recompiler
 			LocalVariableMap vars, RecompileStatus status, boolean inplace, boolean replaceLit, long tid ) 
 	{
 		return recompileHopsDag(sb, hops, new ExecutionContext(vars), status, inplace, replaceLit, tid);
-	}
-	
-	public static ArrayList<Instruction> recompileHopsDag( Hop hop, ExecutionContext ec, 
-			RecompileStatus status, boolean inplace, boolean replaceLit, long tid ) 
-	{
-		ArrayList<Instruction> newInst = null;
-
-		//need for synchronization as we do temp changes in shared hops/lops
-		synchronized( hop ) {
-			newInst = recompile(null, new ArrayList<>(Arrays.asList(hop)),
-				ec, status, inplace, replaceLit, true, false, true, null, tid);
-		}
-		
-		// replace thread ids in new instructions
-		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
-		
-		// explain recompiled instructions
-		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
-			logExplainPred(hop, newInst);
-		
-		return newInst;
 	}
 
 	public static ArrayList<Instruction> recompileHopsDag( Hop hop, LocalVariableMap vars, 
@@ -447,11 +426,25 @@ public class Recompiler
 			System.out.println("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(inst,1));
 	}
 
-	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, ResetType resetRecompile ) {
-		RecompileStatus status = new RecompileStatus();
+	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, boolean inplace, ResetType resetRecompile ) {
+		//function recompilation via two-phase approach due to challenges 
+		//of unclear reconciliation of arbitrary complex control flow
+		
+		// phase 1: normal inplace=true w/o rewrite as usual, but track requiresRecompile
+		// (preserve variables for potential second pass, otherwise corrupted stats)
+		RecompileStatus status1 = new RecompileStatus(tid, true, resetRecompile, false);
 		synchronized( pbs ) {
 			for( ProgramBlock pb : pbs )
-				rRecompileProgramBlock(pb, vars, status, tid, resetRecompile);
+				rRecompileProgramBlock(pb, vars, status1);
+		
+			// phase 2: if called with inplace-false, run a second in-place=false pass in
+			// order to apply rewrites (at this point sizes are already propagated, but for
+			// correctness we call it with an empty symbol table to avoid invalid size updates)
+			if( !status1.requiresRecompile() && !inplace ) {
+				RecompileStatus status2 = new RecompileStatus(tid, false, resetRecompile, false);
+				for( ProgramBlock pb : pbs )
+					rRecompileProgramBlock(pb, new LocalVariableMap(), status2);
+			}
 		}
 	}
 	
@@ -635,27 +628,26 @@ public class Recompiler
 	// private helper functions //
 	//////////////////////////////
 	
-	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, 
-		RecompileStatus status, long tid, ResetType resetRecompile ) 
+	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, RecompileStatus status )
 	{
 		if (pb instanceof WhileProgramBlock) {
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			WhileStatementBlock wsb = (WhileStatementBlock) wpb.getStatementBlock();
 			//recompile predicate
-			recompileWhilePredicate(wpb, wsb, vars, status, tid, resetRecompile);
+			recompileWhilePredicate(wpb, wsb, vars, status);
 			//remove updated scalars because in loop
 			removeUpdatedScalars(vars, wsb); 
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
 			RecompileStatus oldStatus = (RecompileStatus) status.clone();
 			for (ProgramBlock pb2 : wpb.getChildBlocks())
-				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
+				rRecompileProgramBlock(pb2, vars, status);
 			if( reconcileUpdatedCallVarsLoops(oldVars, vars, wsb) 
 				| reconcileUpdatedCallVarsLoops(oldStatus, status, wsb) ) {
 				//second pass with unknowns if required
-				recompileWhilePredicate(wpb, wsb, vars, status, tid, resetRecompile);
+				recompileWhilePredicate(wpb, wsb, vars, status);
 				for (ProgramBlock pb2 : wpb.getChildBlocks())
-					rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
+					rRecompileProgramBlock(pb2, vars, status);
 			}
 			removeUpdatedScalars(vars, wsb);
 		}
@@ -663,16 +655,16 @@ public class Recompiler
 			IfProgramBlock ipb = (IfProgramBlock)pb;
 			IfStatementBlock isb = (IfStatementBlock)ipb.getStatementBlock();
 			//recompile predicate
-			recompileIfPredicate(ipb, isb, vars, status, tid, resetRecompile);
+			recompileIfPredicate(ipb, isb, vars, status);
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
 			LocalVariableMap varsElse = (LocalVariableMap) vars.clone();
 			RecompileStatus oldStatus = (RecompileStatus)status.clone();
 			RecompileStatus statusElse = (RecompileStatus)status.clone();
 			for( ProgramBlock pb2 : ipb.getChildBlocksIfBody() )
-				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
+				rRecompileProgramBlock(pb2, vars, status);
 			for( ProgramBlock pb2 : ipb.getChildBlocksElseBody() )
-				rRecompileProgramBlock(pb2, varsElse, statusElse, tid, resetRecompile);
+				rRecompileProgramBlock(pb2, varsElse, statusElse);
 			reconcileUpdatedCallVarsIf(oldVars, vars, varsElse, isb);
 			reconcileUpdatedCallVarsIf(oldStatus, status, statusElse, isb);
 			removeUpdatedScalars(vars, ipb.getStatementBlock());
@@ -681,20 +673,20 @@ public class Recompiler
 			ForProgramBlock fpb = (ForProgramBlock)pb;
 			ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
 			//recompile predicates
-			recompileForPredicates(fpb, fsb, vars, status, tid, resetRecompile);
+			recompileForPredicates(fpb, fsb, vars, status);
 			//remove updated scalars because in loop
 			removeUpdatedScalars(vars, fpb.getStatementBlock());
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
 			RecompileStatus oldStatus = (RecompileStatus) status.clone();
 			for( ProgramBlock pb2 : fpb.getChildBlocks() )
-				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
+				rRecompileProgramBlock(pb2, vars, status);
 			if( reconcileUpdatedCallVarsLoops(oldVars, vars, fsb) 
 				| reconcileUpdatedCallVarsLoops(oldStatus, status, fsb)) {
 				//second pass with unknowns if required
-				recompileForPredicates(fpb, fsb, vars, status, tid, resetRecompile);
+				recompileForPredicates(fpb, fsb, vars, status);
 				for( ProgramBlock pb2 : fpb.getChildBlocks() )
-					rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
+					rRecompileProgramBlock(pb2, vars, status);
 			}
 			removeUpdatedScalars(vars, fpb.getStatementBlock());
 		}
@@ -711,20 +703,22 @@ public class Recompiler
 			
 			//recompile all for stats propagation and recompile flags
 			tmp = Recompiler.recompileHopsDag(
-				sb, sb.getHops(), vars, status, true, false, tid);
+				sb, sb.getHops(), vars, status, status.isInPlace(), false, status.getTID());
 			bpb.setInstructions( tmp );
 			
 			//propagate stats across hops (should be executed on clone of vars)
-			Recompiler.extractDAGOutputStatistics(sb.getHops(), vars);
+			if( status.isInPlace() )
+				Recompiler.extractDAGOutputStatistics(sb.getHops(), vars);
 			
 			//reset recompilation flags (w/ special handling functions)
 			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
 				&& !containsRootFunctionOp(sb.getHops())
-				&& resetRecompile.isReset() )
+				&& status.isReset() )
 			{
-				Hop.resetRecompilationFlag(sb.getHops(), ExecType.CP, resetRecompile);
+				Hop.resetRecompilationFlag(sb.getHops(), ExecType.CP, status.getReset());
 				sb.updateRecompilationFlag();
 			}
+			status.trackRecompile(sb.requiresRecompilation());
 		}
 	}
 	
@@ -952,91 +946,70 @@ public class Recompiler
 	
 	//helper functions for predicate recompile
 	
-	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, RecompileStatus status, long tid, ResetType resetRecompile ) 
-	{
-		if( isb == null )
+	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, RecompileStatus status ) {
+		if( isb == null || isb.getPredicateHops() == null )
 			return;
-		
 		Hop hops = isb.getPredicateHops();
-		if( hops != null ) {
-			ArrayList<Instruction> tmp = recompileHopsDag(
-				hops, vars, status, true, false, tid);
-			ipb.setPredicate( tmp );
-			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs
-				&& resetRecompile.isReset() ) {
-				Hop.resetRecompilationFlag(hops, ExecType.CP, resetRecompile);
-				isb.updatePredicateRecompilationFlag();
-			}
+		ArrayList<Instruction> tmp = recompileHopsDag(
+			hops, vars, status, status.isInPlace(), false, status.getTID());
+		ipb.setPredicate( tmp );
+		if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs && status.isReset() ) {
+			Hop.resetRecompilationFlag(hops, ExecType.CP, status.getReset());
+			isb.updatePredicateRecompilationFlag();
 		}
+		status.trackRecompile(isb.requiresPredicateRecompilation());
 	}
 	
-	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, RecompileStatus status, long tid, ResetType resetRecompile ) {
-		if( wsb == null )
+	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, RecompileStatus status ) {
+		if( wsb == null || wsb.getPredicateHops() == null )
+			return;
+		Hop hops = wsb.getPredicateHops();
+		ArrayList<Instruction> tmp = recompileHopsDag(
+			hops, vars, status, status.isInPlace(), false, status.getTID());
+		wpb.setPredicate( tmp );
+		if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs && status.isReset() ) {
+			Hop.resetRecompilationFlag(hops, ExecType.CP, status.getReset());
+			wsb.updatePredicateRecompilationFlag();
+		}
+		status.trackRecompile(wsb.requiresPredicateRecompilation());
+	}
+	
+	private static void recompileForPredicates( ForProgramBlock fpb, ForStatementBlock fsb, LocalVariableMap vars, RecompileStatus status ) {
+		if( fsb == null )
 			return;
 		
-		Hop hops = wsb.getPredicateHops();
-		if( hops != null ) {
+		Hop fromHops = fsb.getFromHops();
+		Hop toHops = fsb.getToHops();
+		Hop incrHops = fsb.getIncrementHops();
+		
+		// recompile predicates
+		if( fromHops != null ) {
 			ArrayList<Instruction> tmp = recompileHopsDag(
-				hops, vars, status, true, false, tid);
-			wpb.setPredicate( tmp );
-			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
-				&& resetRecompile.isReset() ) {
-				Hop.resetRecompilationFlag(hops, ExecType.CP, resetRecompile);
-				wsb.updatePredicateRecompilationFlag();
-			}
+				fromHops, vars, status, status.isInPlace(), false, status.getTID());
+			fpb.setFromInstructions(tmp);
 		}
-	}
-	
-	private static void recompileForPredicates( ForProgramBlock fpb, ForStatementBlock fsb, LocalVariableMap vars, RecompileStatus status, long tid, ResetType resetRecompile ) {
-		if( fsb != null )
-		{
-			Hop fromHops = fsb.getFromHops();
-			Hop toHops = fsb.getToHops();
-			Hop incrHops = fsb.getIncrementHops();
-			
-			//handle recompilation flags
-			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
-				&& resetRecompile.isReset() ) 
-			{
-				if( fromHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(
-						fromHops, vars, status, true, false, tid);
-					fpb.setFromInstructions(tmp);
-					Hop.resetRecompilationFlag(fromHops,ExecType.CP, resetRecompile);
-				}
-				if( toHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(
-						toHops, vars, status, true, false, tid);
-					fpb.setToInstructions(tmp);
-					Hop.resetRecompilationFlag(toHops,ExecType.CP, resetRecompile);
-				}
-				if( incrHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(
-						incrHops, vars, status, true, false, tid);
-					fpb.setIncrementInstructions(tmp);
-					Hop.resetRecompilationFlag(incrHops,ExecType.CP, resetRecompile);
-				}
-				fsb.updatePredicateRecompilationFlags();
-			}
-			else //no reset of recompilation flags
-			{
-				if( fromHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(
-						fromHops, vars, status, true, false, tid);
-					fpb.setFromInstructions(tmp);
-				}
-				if( toHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(
-						toHops, vars, status, true, false, tid);
-					fpb.setToInstructions(tmp);
-				}
-				if( incrHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(
-						incrHops, vars, status, true, false, tid);
-					fpb.setIncrementInstructions(tmp);
-				}
-			}
+		if( toHops != null ) {
+			ArrayList<Instruction> tmp = recompileHopsDag(
+				toHops, vars, status, status.isInPlace(), false, status.getTID());
+			fpb.setToInstructions(tmp);
 		}
+		if( incrHops != null ) {
+			ArrayList<Instruction> tmp = recompileHopsDag(
+				incrHops, vars, status, status.isInPlace(), false, status.getTID());
+			fpb.setIncrementInstructions(tmp);
+		}
+		
+		//handle recompilation flags
+		if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs && status.isReset() ) {
+			if( fromHops != null )
+				Hop.resetRecompilationFlag(fromHops, ExecType.CP, status.getReset());
+			if( toHops != null )
+				Hop.resetRecompilationFlag(toHops, ExecType.CP, status.getReset());
+			if( incrHops != null )
+				Hop.resetRecompilationFlag(incrHops, ExecType.CP, status.getReset());
+			fsb.updatePredicateRecompilationFlags();
+		}
+		status.trackRecompile(fsb.requiresPredicateRecompilation());
 	}
 	
 	public static void rRecompileProgramBlock2Forced( ProgramBlock pb, long tid, HashSet<String> fnStack, ExecType et ) {
@@ -1142,13 +1115,11 @@ public class Recompiler
 		}
 	}
 	
-	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars)
-	{
+	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars) {
 		extractDAGOutputStatistics(hops, vars, true);
 	}
 	
-	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars, boolean overwrite)
-	{
+	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars, boolean overwrite) {
 		for( Hop hop : hops ) //for all hop roots
 			extractDAGOutputStatistics(hop, vars, overwrite);
 	}
@@ -1333,7 +1304,13 @@ public class Recompiler
 					FrameObject fo = (FrameObject) dat;
 					d.setDim1(fo.getNumRows());
 					d.setDim2(fo.getNumColumns());
-				} else if( dat instanceof TensorObject) {
+				}
+				else if( dat instanceof ListObject ) {
+					ListObject lo = (ListObject) dat;
+					d.setDim1(lo.getLength());
+					d.setDim2(1);
+				}
+				else if( dat instanceof TensorObject) {
 					TensorObject to = (TensorObject) dat;
 					// TODO: correct dimensions
 					d.setDim1(to.getNumRows());
@@ -1344,7 +1321,7 @@ public class Recompiler
 		}
 		//special case for persistent reads with unknown size (read-after-write)
 		else if( HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD)
-			&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormat.CSV
+			&& !hop.dimsKnown() && ((DataOp)hop).getFileFormat()!=FileFormat.CSV
 			&& !ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA) )
 		{
 			//update hop with read meta data
@@ -1417,18 +1394,42 @@ public class Recompiler
 			}
 		}
 		//update size expression for indexing according to symbol table entries
-		else if( hop instanceof IndexingOp && hop.getDataType()!=DataType.LIST ) {
+		else if( hop instanceof IndexingOp ) {
 			hop.refreshSizeInformation(); //update, incl reset
 			if( !hop.dimsKnown() ) {
-				HashMap<Long, Double> memo = new HashMap<>();
-				double rl = Hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
-				double ru = Hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
-				double cl = Hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
-				double cu = Hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
-				if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
-					hop.setDim1( (long)(ru-rl+1) );
-				if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
-					hop.setDim2( (long)(cu-cl+1) );
+				if( hop.getDataType().isList() 
+					&& hop.getInput().get(1).getValueType() == ValueType.STRING ) {
+					hop.setDim1(1);
+					hop.setDim2(1);
+				}
+				else {
+					HashMap<Long, Double> memo = new HashMap<>();
+					double rl = Hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
+					double ru = Hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
+					double cl = Hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
+					double cu = Hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
+					if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
+						hop.setDim1( (long)(ru-rl+1) );
+					if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
+						hop.setDim2( (long)(cu-cl+1) );
+				}
+			}
+		}
+		else if(HopRewriteUtils.isUnary(hop, OpOp1.CAST_AS_MATRIX)
+			&& hop.getInput(0) instanceof IndexingOp && hop.getInput(0).getDataType().isList()
+			&& HopRewriteUtils.isData(hop.getInput(0).getInput(0), OpOpData.TRANSIENTREAD) ) {
+			Data ldat = vars.get(hop.getInput(0).getInput(0).getName()); //list, or matrix during IPA
+			Hop rix = hop.getInput(0);
+			if( ldat != null && ldat instanceof ListObject
+				&& rix.getInput(1) instanceof LiteralOp
+				&& rix.getInput(2) instanceof LiteralOp
+				&& HopRewriteUtils.isEqualValue(rix.getInput(1), rix.getInput(2))) {
+				ListObject list = (ListObject) ldat;
+				MatrixObject mo = (MatrixObject) ((rix.getInput(1).getValueType() == ValueType.STRING) ? 
+					list.getData(((LiteralOp)rix.getInput(1)).getStringValue()) :
+					list.getData((int)HopRewriteUtils.getIntValueSafe(rix.getInput(1))-1));
+				hop.setDim1(mo.getNumRows());
+				hop.setDim2(mo.getNumColumns());
 			}
 		}
 		else {

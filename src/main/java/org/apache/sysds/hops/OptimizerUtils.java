@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlock.Type;
 import org.apache.sysds.runtime.functionobjects.IntegerDivide;
 import org.apache.sysds.runtime.functionobjects.Modulus;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -660,12 +661,16 @@ public class OptimizerUtils
 	 * @param dc matrix characteristics
 	 * @return memory estimate
 	 */
-	public static long estimatePartitionedSizeExactSparsity(DataCharacteristics dc)
+	public static long estimatePartitionedSizeExactSparsity(DataCharacteristics dc) {
+		return estimatePartitionedSizeExactSparsity(dc, true);
+	}
+	
+	public static long estimatePartitionedSizeExactSparsity(DataCharacteristics dc, boolean outputEmptyBlocks)
 	{
 		if (dc instanceof MatrixCharacteristics) {
 			return estimatePartitionedSizeExactSparsity(
-				dc.getRows(), dc.getCols(),
-				dc.getBlocksize(), dc.getNonZerosBound());
+				dc.getRows(), dc.getCols(), dc.getBlocksize(),
+				dc.getNonZerosBound(), outputEmptyBlocks);
 		}
 		else {
 			// TODO estimate partitioned size exact for tensor
@@ -690,6 +695,11 @@ public class OptimizerUtils
 	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long blen, long nnz)  {
 		double sp = getSparsity(rlen, clen, nnz);
 		return estimatePartitionedSizeExactSparsity(rlen, clen, blen, sp);
+	}
+	
+	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long blen, long nnz, boolean outputEmptyBlocks)  {
+		double sp = getSparsity(rlen, clen, nnz);
+		return estimatePartitionedSizeExactSparsity(rlen, clen, blen, sp, outputEmptyBlocks);
 	}
 
 	/**
@@ -717,7 +727,12 @@ public class OptimizerUtils
 	 * @param sp sparsity
 	 * @return memory estimate
 	 */
-	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long blen, double sp) 
+	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long blen, double sp) {
+		return estimatePartitionedSizeExactSparsity(rlen, clen, blen, sp, true);
+	}
+	
+	
+	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long blen, double sp, boolean outputEmptyBlocks)
 	{
 		long ret = 0;
 
@@ -728,8 +743,8 @@ public class OptimizerUtils
 		if( nnz <= tnrblks * tncblks ) {
 			long lrlen = Math.min(rlen, blen);
 			long lclen = Math.min(clen, blen);
-			return nnz * estimateSizeExactSparsity(lrlen, lclen, 1)
-				 + (tnrblks * tncblks - nnz) * estimateSizeEmptyBlock(lrlen, lclen);
+			return nnz * MatrixBlock.estimateSizeSparseInMemory(lrlen, lclen, 1d/lrlen/lclen, Type.COO)
+				 + (outputEmptyBlocks ? (tnrblks * tncblks - nnz) * estimateSizeEmptyBlock(lrlen, lclen) : 0);
 		}
 		
 		//estimate size of full blen x blen blocks
@@ -763,19 +778,17 @@ public class OptimizerUtils
 	 * @param ncols number of cols
 	 * @return memory estimate
 	 */
-	public static long estimateSize(long nrows, long ncols) 
-	{
+	public static long estimateSize(long nrows, long ncols) {
 		return estimateSizeExactSparsity(nrows, ncols, 1.0);
 	}
 	
-	public static long estimateSizeEmptyBlock(long nrows, long ncols)
-	{
+	public static long estimateSizeEmptyBlock(long nrows, long ncols) {
 		return estimateSizeExactSparsity(0, 0, 0.0d);
 	}
 
 	public static long estimateSizeTextOutput(long rows, long cols, long nnz, FileFormat fmt) {
 		long bsize = MatrixBlock.estimateSizeOnDisk(rows, cols, nnz);
-		if( fmt.isIJVFormat() )
+		if( fmt.isIJV() )
 			return bsize * 3;
 		else if( fmt == FileFormat.LIBSVM )
 			return Math.round(bsize * 2.5);
@@ -941,8 +954,8 @@ public class OptimizerUtils
 			ret &= ( p.getExecType()==ExecType.CP 
 				||(p instanceof AggBinaryOp && allowsToFilterEmptyBlockOutputs(p) )
 				||(HopRewriteUtils.isReorg(p, ReOrgOp.RESHAPE, ReOrgOp.TRANS) && allowsToFilterEmptyBlockOutputs(p) )
-				||(HopRewriteUtils.isData(p, OpOpData.PERSISTENTWRITE) && ((DataOp)p).getInputFormatType()==FileFormat.TEXT))
-				&& !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getInputFormatType()!=FileFormat.TEXT) ); //no function call or transient write
+				||(HopRewriteUtils.isData(p, OpOpData.PERSISTENTWRITE) && ((DataOp)p).getFileFormat()==FileFormat.TEXT))
+				&& !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getFileFormat()!=FileFormat.TEXT) ); //no function call or transient write
 		}
 		return ret;
 	}

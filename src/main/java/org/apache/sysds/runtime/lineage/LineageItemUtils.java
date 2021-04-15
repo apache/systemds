@@ -47,7 +47,9 @@ import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
@@ -56,6 +58,8 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.DiagMatrix;
+import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.Rdiag;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 import java.io.IOException;
@@ -157,6 +161,14 @@ public class LineageItemUtils {
 			for (Pair<String, LineageItem> item : items)
 				ec.getLineage().set(item.getKey(), item.getValue());
 		}
+	}
+	
+	public static FederatedResponse setUDFResponse(FederatedUDF udf, MatrixObject mo) {
+		if (udf instanceof DiagMatrix || udf instanceof Rdiag)
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, 
+					new int[]{(int) mo.getNumRows(), (int) mo.getNumColumns()});
+		
+		return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
 	}
 	
 	public static void constructLineageFromHops(Hop[] roots, String claName, Hop[] inputs, HashMap<Long, Hop> spoofmap) {

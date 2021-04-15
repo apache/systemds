@@ -96,7 +96,22 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract void reset(int rl, int cl, boolean sp, long nnzs);
 	public abstract void reset(int rl, int cl, double v);
 
+	/**
+	 * Copy this MatrixValue into that MatrixValue.
+	 * 
+	 * If the MatrixValue is a MatrixBlock evaluate the sparsity of the original matrix,
+	 * and copy into either a sparse or a dense matrix.
+	 * 
+	 * @param that object to copy the values into.
+	 */
 	public abstract void copy(MatrixValue that);
+
+	/**
+	 * Copy this MatrixValue into that MatrixValue. But select sparse destination block depending on boolean parameter.
+	 * 
+	 * @param that object to copy the values into.
+	 * @param sp boolean specifying if output should be forced sparse or dense. (only applicable if the 'that' is a MatrixBlock)
+	 */
 	public abstract void copy(MatrixValue that, boolean sp);
 	
 	public abstract MatrixValue scalarOperations(ScalarOperator op, MatrixValue result);
@@ -132,6 +147,21 @@ public abstract class MatrixValue implements WritableComparable
 
 	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary);
 	
+	/**
+	 * Slice out up to 4 matrixBlocks that are separated by the row and col Cuts.
+	 * 
+	 * This is used in the context of spark execution to distributed sliced out matrix blocks of correct block size.
+	 * 
+	 * @param outlist The output matrix blocks that is extracted from the matrix
+	 * @param range An index range containing overlapping information.
+	 * @param rowCut The row to cut and split the matrix.
+	 * @param colCut The column to cut ans split the matrix.
+	 * @param blen The Block size of the output matrices.
+	 * @param boundaryRlen The row length of the edge case matrix block, used for the final blocks
+	 *                     that does not have enough rows to construct a full block.
+	 * @param boundaryClen The col length of the edge case matrix block, used for the final blocks
+	 *                     that does not have enough cols to construct a full block.
+	 */
 	public abstract void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 		int blen, int boundaryRlen, int boundaryClen);
 

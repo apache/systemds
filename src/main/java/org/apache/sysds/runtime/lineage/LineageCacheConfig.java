@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -30,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 
 import java.util.Comparator;
 
@@ -77,7 +80,7 @@ public class LineageCacheConfig
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
-	private static boolean _allowSpill = false;
+	//private static boolean _allowSpill = false;
 	// Minimum reliable spilling estimate in milliseconds.
 	public static final double MIN_SPILL_TIME_ESTIMATE = 10;
 	// Minimum reliable data size for spilling estimate in MB.
@@ -170,7 +173,7 @@ public class LineageCacheConfig
 	static {
 		//setup static configuration parameters
 		REUSE_OPCODES = OPCODES;
-		setSpill(true); 
+		//setSpill(true); 
 		setCachePolicy(LineageCachePolicy.COSTNSIZE);
 		setCompAssRW(true);
 	}
@@ -186,6 +189,7 @@ public class LineageCacheConfig
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		boolean insttype = inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
+			|| inst instanceof GPUInstruction
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
@@ -198,12 +202,30 @@ public class LineageCacheConfig
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
-		ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
-		if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
-			return false;
-		long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
-		long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
-		return(c1 == 1 || c2 == 1);
+		if (inst instanceof ComputationFEDInstruction) {
+			ComputationFEDInstruction fedinst = (ComputationFEDInstruction) inst;
+			if (!fedinst.input1.isMatrix() || !fedinst.input2.isMatrix())
+				return false;
+			long c1 = ec.getMatrixObject(fedinst.input1).getNumColumns();
+			long c2 = ec.getMatrixObject(fedinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
+		else if (inst instanceof ComputationCPInstruction) { //CPInstruction
+			ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
+			if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
+				return false;
+			long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
+			long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
+		else { //GPUInstruction
+			GPUInstruction gpuinst = (GPUInstruction)inst;
+			if( !gpuinst._input1.isMatrix() || !gpuinst._input2.isMatrix() )
+				return false;
+			long c1 = ec.getMatrixObject(gpuinst._input1).getNumColumns();
+			long c2 = ec.getMatrixObject(gpuinst._input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
 	}
 	
 	public static boolean isOutputFederated(Instruction inst, Data data) {
@@ -308,13 +330,15 @@ public class LineageCacheConfig
 		return (WEIGHTS[2] > 0);
 	}
 
-	public static void setSpill(boolean toSpill) {
+	/*public static void setSpill(boolean toSpill) {
 		_allowSpill = toSpill;
 		// NOTE: _allowSpill only enables/disables disk spilling, but has 
 		// no control over eviction order of cached items.
-	}
+	}*/
 	
 	public static boolean isSetSpill() {
-		return _allowSpill;
+		// Check if cachespill set in SystemDS-config (default true)
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
+		return conf.getBooleanValue(DMLConfig.LINEAGECACHESPILL);
 	}
 }

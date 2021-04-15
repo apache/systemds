@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -51,12 +52,18 @@ import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
-import org.apache.sysds.runtime.instructions.cp.*;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
+import org.apache.sysds.runtime.util.EMAUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -164,6 +171,11 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		return (_schema != null) ? _schema.length : 0;
 	}
 
+	@Override
+	public DataCharacteristics getDataCharacteristics() {
+		return new MatrixCharacteristics(getNumRows(), getNumColumns(), -1);
+	}
+	
 	/**
 	 * Returns the schema of the frame block.
 	 *
@@ -600,6 +612,17 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	 */
 	public Iterator<String[]> getStringRowIterator(int[] cols) {
 		return new StringRowIterator(0, _numRows, cols);
+	}
+
+	/**
+	 * Get a row iterator over the frame where all selected fields are encoded as strings independent of their value
+	 * types.
+	 *
+	 * @param colID column selection, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int colID) {
+		return new StringRowIterator(0, _numRows, new int[] {colID});
 	}
 
 	/**
@@ -1228,7 +1251,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-				String[] tmp = EncoderRecode.splitRecodeMapEntry(val.toString());
+				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
 				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}
@@ -2100,6 +2123,15 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
 	}
+	
+	public void mapInplace(Function<String, String> fun) {
+		for(int j=0; j<getNumColumns(); j++)
+			for(int i=0; i<getNumRows(); i++) {
+				Object tmp = get(i, j);
+				set(i, j, (tmp == null) ? tmp :
+					UtilFunctions.objectToObject(_schema[j], fun.apply(tmp.toString())));
+			}
+	}
 
 	public FrameBlock map (String lambdaExpr){
 		if(!lambdaExpr.contains("->")) {
@@ -2107,6 +2139,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			if(args.contains(",")) {
 				String[] arguments = args.split(",");
 				return DMVUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
+			} else if (args.contains(";")) {
+				String[] arguments = args.split(";");
+				return EMAUtils.exponentialMovingAverageImputation(this, Integer.parseInt(arguments[0]), arguments[1], Integer.parseInt(arguments[2]), Double.parseDouble(arguments[3]), Double.parseDouble(arguments[4]), Double.parseDouble(arguments[5]));
 			}
 		}
 		if(lambdaExpr.contains("jaccardSim"))

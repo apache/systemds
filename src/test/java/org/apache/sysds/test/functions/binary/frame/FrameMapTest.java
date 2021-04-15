@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.binary.frame;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -46,7 +47,8 @@ public class FrameMapTest extends AutomatedTestBase {
 		CHAR_AT,
 		REPLACE,
 		UPPER_CASE,
-		DATE_UTILS
+		DATE_UTILS,
+		SHERLOCK_PREP
 	}
 	@BeforeClass
 	public static void init() {
@@ -109,6 +111,12 @@ public class FrameMapTest extends AutomatedTestBase {
 		runDmlMapTest("x -> UtilFunctions.toMillis(x)", TestType.DATE_UTILS, ExecType.SPARK);
 	}
 
+	@Test
+	public void testColumnStringToSherlockFeatures() {
+		runDmlMapTest("x -> UtilFunctions.columnStringToCSVString(x,\"§§\")", TestType.SHERLOCK_PREP, ExecType.SPARK);
+	}
+
+
 	private void runDmlMapTest( String expression, TestType type, ExecType et)
 	{
 		Types.ExecMode platformOld = setExecMode(et);
@@ -127,6 +135,14 @@ public class FrameMapTest extends AutomatedTestBase {
 					date[i][0] = (i%30)+"/"+(i%12)+"/200"+(i%20);
 				FrameWriterFactory.createFrameWriter(FileFormat.CSV).
 					writeFrameToHDFS(new FrameBlock(schemaStrings1, date), input("A"), rows2, 1);
+			}
+			else if(type == TestType.SHERLOCK_PREP) {
+				String[][] data = new String[1][1];
+				data[0][0] =  "\"['Global', 'United States', 'Australia']\"";
+        FileFormatPropertiesCSV ffp = new FileFormatPropertiesCSV();
+        ffp.setDelim(";");
+				FrameWriterFactory.createFrameWriter(FileFormat.CSV, ffp).
+					writeFrameToHDFS(new FrameBlock(schemaStrings1, data), input("A"), 1, 1);
 			}
 			else {
 				double[][] A = getRandomMatrix(rows, 1, 0, 1, 1, 2);
@@ -163,6 +179,10 @@ public class FrameMapTest extends AutomatedTestBase {
 				case DATE_UTILS:
 					for(int i =0; i<input.length; i++)
 						TestUtils.compareScalars(String.valueOf(UtilFunctions.toMillis(input[i])), output[i]);
+					break;
+				case SHERLOCK_PREP:
+					for(int i =0; i<input.length; i++) 
+						TestUtils.compareScalars(UtilFunctions.columnStringToCSVString(input[i],"§§"), output[i]);
 					break;
 			}
 		}

@@ -1,0 +1,128 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# Computes the parameters needed for Gaussian Classification.
+# Thus it computes the following per class: the prior probability,
+# the inverse covariance matrix, the mean per feature and the determinant
+# of the covariance matrix. Furthermore (if not explicitely defined), it
+# adds some small smoothing value along the variances, to prevent
+# numerical errors / instabilities.
+#
+#
+# INPUT PARAMETERS:
+# -------------------------------------------------------------------------------------------------
+# NAME           TYPE               DEFAULT  MEANING
+# -------------------------------------------------------------------------------------------------
+# D              Matrix[Double]     ---      Input matrix (training set)
+# C              Matrix[Double]     ---      Target vector
+# varSmoothing   Double             1e-9     Smoothing factor for variances
+# verbose        Boolean            TRUE     Print accuracy of the training set
+# ---------------------------------------------------------------------------------------------
+# OUTPUT:
+# ---------------------------------------------------------------------------------------------
+# NAME                  TYPE             DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# classPriors           Matrix[Double]   ---      Vector storing the class prior probabilities
+# classMeans            Matrix[Double]   ---      Matrix storing the means of the classes
+# classInvCovariances   List[Unknown]    ---      List of inverse covariance matrices
+# determinants          Matrix[Double]   ---      Vector storing the determinants of the classes
+# ---------------------------------------------------------------------------------------------
+#
+
+
+m_gaussianClassifier = function(Matrix[Double] D, Matrix[Double] C, Double varSmoothing=1e-9, Boolean verbose = TRUE)
+  return (Matrix[Double] classPriors, Matrix[Double] classMeans,
+  List[Unknown] classInvCovariances, Matrix[Double] determinants)
+{
+  #Retrieve number of samples, classes and features
+  nSamples = nrow(D)
+  nClasses = max(C)
+  nFeats = ncol(D)
+
+  #Compute means, variances and priors
+  classCounts = aggregate(target=C, groups=C, fn="count", ngroups=as.integer(nClasses));
+  classMeans = aggregate(target=D, groups=C, fn="mean", ngroups=as.integer(nClasses));
+  classVars = aggregate(target=D, groups=C, fn="variance", ngroups=as.integer(nClasses));
+  classPriors = classCounts / nSamples
+
+  smoothedVar = diag(matrix(1.0, rows=nFeats, cols=1)) * max(classVars) * varSmoothing
+
+  classInvCovariances = list()
+  determinants = matrix(0, rows=nClasses, cols=1)
+
+  #Compute determinants and inverseCovariances
+  for (class in 1:nClasses)
+  {
+    covMatrix = matrix(0, rows=nFeats, cols=nFeats)
+    classMatrix = removeEmpty(target=D, margin="rows", select=(C==class))
+    # TODO replace with implementation of new built-in for var-cov matrix
+    # possible vectorized implementation but results are varying in some digits
+    # difference = classMatrix - classMeans[class,]
+    # cov_S = 1/nrow(classMatrix) * (t(difference) %*% difference)
+    
+    for (i in 1:nFeats)
+    {
+      for (j in 1:nFeats)
+      {
+        if (j == i)
+          covMatrix[i,j] = classVars[class, j]
+        else if (j < i)
+          covMatrix[i,j] = covMatrix[j,i]
+        else
+          covMatrix[i,j] = cov(classMatrix[,i], classMatrix[,j])
+      }
+    }
+
+    #Apply smoothing of the variances, to avoid numerical errors
+    covMatrix = covMatrix + smoothedVar
+
+    #Compute inverse
+    [eVals, eVecs] = eigen(covMatrix)
+    lam = diag(eVals^(-1))
+    invCovMatrix = eVecs %*% lam %*% t(eVecs)
+
+    #Compute determinant
+    det = prod(eVals)
+
+    determinants[class, 1] = det
+    classInvCovariances = append(classInvCovariances, invCovMatrix)
+  }
+
+  #Compute accuracy on the training set
+  if (verbose)
+  {
+    results = matrix(0, rows=nSamples, cols=nClasses)
+    parfor (class in 1:nClasses)
+    {
+      for (i in 1:nSamples)
+      {
+        intermediate = 0
+        meanDiff = (D[i,] - classMeans[class,])
+        intermediate = -1/2 * log((2*pi)^nFeats * determinants[class,])
+        intermediate = intermediate - 1/2 * (meanDiff %*% as.matrix(classInvCovariances[class]) %*% t(meanDiff))
+        intermediate = log(classPriors[class,]) + intermediate
+        results[i, class] = intermediate
+      }
+    }
+    acc = sum(rowIndexMax(results) == C) / nSamples * 100
+    print("Training Accuracy (%): " + acc)
+  }
+}

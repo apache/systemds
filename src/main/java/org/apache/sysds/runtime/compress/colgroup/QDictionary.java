@@ -24,18 +24,15 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -62,7 +59,7 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public double[] getValues() {
-		if(_values == null){
+		if(_values == null) {
 			return new double[0];
 		}
 		double[] res = new double[_values.length];
@@ -125,6 +122,22 @@ public class QDictionary extends ADictionary {
 		return ret;
 	}
 
+
+	@Override
+	public double[] aggregateTuples(Builtin fn, final int nCol){
+		if(nCol == 1)
+			return getValues();
+		final int nRows = _values.length / nCol;
+		double[] res = new double[nRows];
+		for(int i = 0; i < nRows; i++){
+			final int off = i * nCol;
+			res[i] = _values[off];
+			for(int j = off + 1; j < off + nCol; j++)
+				res[i] = fn.execute(res[i], _values[j] * _scale);
+		}
+		return res;
+	}
+
 	@Override
 	public QDictionary apply(ScalarOperator op) {
 		if(_values == null)
@@ -185,16 +198,17 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
-	
-		if (_values == null){
-			if (sparseSafe){
+	public QDictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+
+		if(_values == null) {
+			if(sparseSafe) {
 				return new QDictionary(null, 1);
-			} else{
+			}
+			else {
 				_values = new byte[0];
 			}
 		}
-			
+
 		double[] temp = sparseSafe ? new double[_values.length] : new double[_values.length + colIndexes.length];
 		double max = Math.abs(fn.execute(0, v[0]));
 		final int colL = colIndexes.length;
@@ -207,7 +221,7 @@ public class QDictionary extends ADictionary {
 			}
 		}
 		if(!sparseSafe)
-			for(; i <size() + colL; i++) {
+			for(; i < size() + colL; i++) {
 				temp[i] = fn.execute(0, v[colIndexes[i % colL]]);
 				double absTemp = Math.abs(temp[i]);
 				if(absTemp > max) {
@@ -225,7 +239,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public int size(){
+	public QDictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+		throw new NotImplementedException("Not Implemented yet");
+	}
+
+	@Override
+	public int size() {
 		return _values == null ? 0 : _values.length;
 	}
 
@@ -269,25 +288,26 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected double[] sumAllRowsToDouble(KahanFunction kplus, int nrColumns) {
-		if(nrColumns == 1 && kplus instanceof KahanPlus)
+	protected double[] sumAllRowsToDouble(boolean square, int nrColumns) {
+		if(nrColumns == 1 && !square)
 			return getValues(); // shallow copy of values
 
-		final int numVals =  getNumberOfValues(nrColumns);
+		final int numVals = getNumberOfValues(nrColumns);
 		double[] ret = ColGroupValue.allocDVector(numVals, false);
 		for(int k = 0; k < numVals; k++) {
-			ret[k] = sumRow(k, kplus, nrColumns);
+			ret[k] = sumRow(k, square, nrColumns);
 		}
 
 		return ret;
 	}
 
 	@Override
-	protected double sumRow(int k, KahanFunction kplus, int nrColumns) {
-		if (_values == null) return 0;
+	protected double sumRow(int k, boolean square, int nrColumns) {
+		if(_values == null)
+			return 0;
 		int valOff = k * nrColumns;
-		
-		if(kplus instanceof KahanPlus) {
+
+		if(!square) {
 			int res = 0;
 			for(int i = 0; i < nrColumns; i++) {
 				res += _values[valOff + i];
@@ -304,60 +324,86 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus) {
-
-		final int rows = c.length / 2;
-		if(!(kplus instanceof KahanPlusSq)) {
-			int[] sum = new int[colIndexes.length];
-			int valOff = 0;
-			for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
-				int cntk = counts[k];
-				for(int j = 0; j < colIndexes.length; j++) {
-					sum[j] += cntk * getValueByte(valOff++);
-				}
-			}
-			for(int j = 0; j < colIndexes.length; j++) {
-				c[colIndexes[j]] = c[colIndexes[j]] + sum[j] * _scale;
-			}
-		}
-		else {
-			KahanObject kbuff = new KahanObject(0, 0);
-			int valOff = 0;
-			for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
-				int cntk = counts[k];
-				for(int j = 0; j < colIndexes.length; j++) {
-					kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
-					kplus.execute3(kbuff, getValue(valOff++), cntk);
-					c[colIndexes[j]] = kbuff._sum;
-					c[colIndexes[j] + rows] = kbuff._correction;
-				}
-			}
-		}
+	protected void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
+		throw new NotImplementedException("Not Implemented");
+		// final int rows = c.length / 2;
+		// if(!(kplus instanceof KahanPlusSq)) {
+		// int[] sum = new int[colIndexes.length];
+		// int valOff = 0;
+		// for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
+		// int cntk = counts[k];
+		// for(int j = 0; j < colIndexes.length; j++) {
+		// sum[j] += cntk * getValueByte(valOff++);
+		// }
+		// }
+		// for(int j = 0; j < colIndexes.length; j++) {
+		// c[colIndexes[j]] = c[colIndexes[j]] + sum[j] * _scale;
+		// }
+		// }
+		// else {
+		// KahanObject kbuff = new KahanObject(0, 0);
+		// int valOff = 0;
+		// for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
+		// int cntk = counts[k];
+		// for(int j = 0; j < colIndexes.length; j++) {
+		// kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
+		// kplus.execute3(kbuff, getValue(valOff++), cntk);
+		// c[colIndexes[j]] = kbuff._sum;
+		// c[colIndexes[j] + rows] = kbuff._correction;
+		// }
+		// }
+		// }
 	}
 
 	@Override
-	protected double sum(int[] counts, int ncol, KahanFunction kplus) {
-		if(!(kplus instanceof KahanPlusSq)) {
-			int sum = 0;
-			int valOff = 0;
-			for(int k = 0; k < getNumberOfValues(ncol); k++) {
-				int countK = counts[k];
-				for(int j = 0; j < ncol; j++) {
-					sum += countK * getValueByte(valOff++);
-				}
-			}
-			return sum * _scale;
+	protected double sum(int[] counts, int ncol) {
+		throw new NotImplementedException("Not Implemented");
+		// if(!(kplus instanceof KahanPlusSq)) {
+		// int sum = 0;
+		// int valOff = 0;
+		// for(int k = 0; k < getNumberOfValues(ncol); k++) {
+		// int countK = counts[k];
+		// for(int j = 0; j < ncol; j++) {
+		// sum += countK * getValueByte(valOff++);
+		// }
+		// }
+		// return sum * _scale;
+		// }
+		// else {
+		// KahanObject kbuff = new KahanObject(0, 0);
+		// int valOff = 0;
+		// for(int k = 0; k < getNumberOfValues(ncol); k++) {
+		// int countK = counts[k];
+		// for(int j = 0; j < ncol; j++) {
+		// kplus.execute3(kbuff, getValue(valOff++), countK);
+		// }
+		// }
+		// return kbuff._sum;
+		// }
+	}
+
+	@Override
+	protected double sumsq(int[] counts, int ncol) {
+		throw new NotImplementedException("Not Implemented");
+	}
+
+	@Override
+	protected void addMaxAndMin(double[] ret, int[] colIndexes) {
+		byte[] mins = new byte[colIndexes.length];
+		byte[] maxs = new byte[colIndexes.length];
+		for(int i = 0; i < colIndexes.length; i++) {
+			mins[i] = _values[i];
+			maxs[i] = _values[i];
 		}
-		else {
-			KahanObject kbuff = new KahanObject(0, 0);
-			int valOff = 0;
-			for(int k = 0; k < getNumberOfValues(ncol); k++) {
-				int countK = counts[k];
-				for(int j = 0; j < ncol; j++) {
-					kplus.execute3(kbuff, getValue(valOff++), countK);
-				}
-			}
-			return kbuff._sum;
+		for(int i = colIndexes.length; i < _values.length; i++) {
+			int idx = i % colIndexes.length;
+			mins[idx] = (byte) Math.min(_values[i], mins[idx]);
+			maxs[idx] = (byte) Math.max(_values[i], maxs[idx]);
+		}
+		for(int i = 0; i < colIndexes.length; i++) {
+			int idy = colIndexes[i] * 2;
+			ret[idy] += mins[i] * _scale;
+			ret[idy + 1] += maxs[i] * _scale;
 		}
 	}
 
@@ -367,5 +413,59 @@ public class QDictionary extends ADictionary {
 			sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n" : " ");
 		}
 		return sb;
+	}
+
+	public Dictionary makeDoubleDictionary() {
+		double[] doubleValues = getValues();
+		return new Dictionary(doubleValues);
+	}
+
+	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
+		int numberTuples = getNumberOfValues(previousNumberOfColumns);
+		int tupleLengthAfter = idxEnd - idxStart;
+		byte[] newDictValues = new byte[tupleLengthAfter * numberTuples];
+		int orgOffset = idxStart;
+		int targetOffset = 0;
+		for(int v = 0; v < numberTuples; v++) {
+			for(int c = 0; c < tupleLengthAfter; c++, orgOffset++, targetOffset++) {
+				newDictValues[targetOffset] = _values[orgOffset];
+			}
+			orgOffset += previousNumberOfColumns - idxEnd + idxStart;
+		}
+		return new QDictionary(newDictValues, _scale);
+	}
+
+	public ADictionary reExpandColumns(int max) {
+		byte[] newDictValues = new byte[_values.length * max];
+
+		for(int i = 0, offset = 0; i < _values.length; i++, offset += max) {
+			int val = _values[i] - 1;
+			newDictValues[offset + val] = 1;
+		}
+
+		return new QDictionary(newDictValues, 1.0);
+	}
+
+	@Override
+	public boolean containsValue(double pattern){
+		if(Double.isNaN(pattern) || Double.isInfinite(pattern))
+			return false;
+		throw new NotImplementedException("Not contains value on Q Dictionary");
+	}
+
+	@Override
+	public long getNumberNonZeros(int[] counts, int nCol){
+		long nnz =  0;
+		final int nRow = _values.length / nCol;
+		for(int i = 0; i < nRow; i++){
+			long rowCount = 0;
+			final int off = i * nCol; 
+			for(int j = off; j < off + nCol; j++){
+				if(_values[j] != 0)
+					rowCount ++;
+			}
+			nnz += rowCount * counts[i];
+		}
+		return nnz;
 	}
 }

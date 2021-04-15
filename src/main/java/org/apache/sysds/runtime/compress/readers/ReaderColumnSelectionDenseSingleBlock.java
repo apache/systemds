@@ -28,8 +28,6 @@ public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection
 	private int indexOff;
 	private int _numCols;
 
-	private DblArray reusableReturn;
-	private double[] reusableArr;
 
 	public ReaderColumnSelectionDenseSingleBlock(MatrixBlock data, int[] colIndices) {
 		super(colIndices, data.getNumRows());
@@ -39,8 +37,6 @@ public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection
 			throw new DMLCompressionException("Not handling multi block data reading in dense reader");
 
 		_numCols = data.getNumColumns();
-		reusableArr = new double[colIndices.length];
-		reusableReturn = new DblArray(reusableArr);
 	}
 
 	protected DblArray getNextRow() {

@@ -28,7 +28,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.ColGroupType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.ColGroupType;
 
 /**
  * This has the IO responsibility of ColGroups, such that it enables to read and write ColGroups to and from a DataInput
@@ -45,20 +45,20 @@ public class ColGroupIO {
 	 * @return Return a List containing the ColGroups from the DataInput.
 	 * @throws IOException Throws IO Exception if the in refuses to read data.
 	 */
-	public static List<ColGroup> readGroups(DataInput in) throws IOException {
+	public static List<AColGroup> readGroups(DataInput in) throws IOException {
 
 		// Read in how many colGroups there are
 		int nColGroups = in.readInt();
 		LOG.debug("reading " + nColGroups + " ColGroups");
 		// Allocate that amount into an ArrayList
-		List<ColGroup> _colGroups = new ArrayList<>(nColGroups);
+		List<AColGroup> _colGroups = new ArrayList<>(nColGroups);
 
 		// Read each ColGroup one at a time.
 
 		for(int i = 0; i < nColGroups; i++) {
 			ColGroupType ctype = ColGroupType.values()[in.readByte()];
 			LOG.debug(ctype);
-			ColGroup grp = null;
+			AColGroup grp = null;
 
 			// create instance of column group
 			switch(ctype) {
@@ -71,14 +71,32 @@ public class ColGroupIO {
 				case RLE:
 					grp = new ColGroupRLE();
 					break;
-				case DDC1:
-					grp = new ColGroupDDC1();
+				case DDC:
+					grp = new ColGroupDDC();
 					break;
-				case DDC2:
-					grp = new ColGroupDDC2();
-					break;
+				// case DDC1:
+				// 	grp = new ColGroupDDC1();
+				// 	break;
+				// case DDC2:
+				// 	grp = new ColGroupDDC2();
+				// 	break;
 				case CONST:
 					grp = new ColGroupConst();
+					break;
+				case EMPTY:
+					grp = new ColGroupEmpty();
+					break;
+				case SDC:
+					grp = new ColGroupSDC();
+					break;
+				case SDCSingle:
+					grp = new ColGroupSDCSingle();
+					break;
+				case SDCSingleZeros:
+					grp = new ColGroupSDCSingleZeros();
+					break;
+				case SDCZeros:
+					grp = new ColGroupSDCZeros();
 					break;
 				default:
 					throw new DMLRuntimeException("Unsupported ColGroup Type used:  " + ctype);
@@ -101,11 +119,11 @@ public class ColGroupIO {
 	 * @param colGroups List of the ColGroups to write to file.
 	 * @throws IOException Throws IO Exception if the out refuses to write.
 	 */
-	public static void writeGroups(DataOutput out, List<ColGroup> colGroups) throws IOException {
+	public static void writeGroups(DataOutput out, List<AColGroup> colGroups) throws IOException {
 		// Write out how many ColGroups to save.
 		out.writeInt(colGroups.size());
 
-		for(ColGroup grp : colGroups) {
+		for(AColGroup grp : colGroups) {
 			out.writeByte(grp.getColGroupType().ordinal());
 			grp.write(out);
 		}

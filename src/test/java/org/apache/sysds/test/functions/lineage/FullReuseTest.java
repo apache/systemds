@@ -100,6 +100,7 @@ public class FullReuseTest extends LineageBase {
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
+			//proArgs.add("dedup");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

@@ -22,7 +22,6 @@ package org.apache.sysds.test.functions.codegenalg.partone;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LopProperties.ExecType;
@@ -31,6 +30,8 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class AlgorithmPCA extends AutomatedTestBase
 {
@@ -56,81 +57,97 @@ public class AlgorithmPCA extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void testPCADenseRewritesCP() {
 		runPCATest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
+	@Ignore
 	public void testPCASparseRewritesCP() {
 		runPCATest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
+	@Ignore
 	public void testPCADenseCP() {
 		runPCATest(TEST_NAME1, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
+	@Ignore
 	public void testPCASparseCP() {
 		runPCATest(TEST_NAME1, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
+	@Ignore
 	public void testPCADenseRewritesSP() {
 		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
+	@Ignore
 	public void testPCASparseRewritesSP() {
 		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
+	@Ignore
 	public void testPCADenseSP() {
 		runPCATest(TEST_NAME1, false, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
+	@Ignore
 	public void testPCASparseSP() {
 		runPCATest(TEST_NAME1, false, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
+	@Ignore
 	public void testPCADenseRewritesCPFuseAll() {
 		runPCATest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
+	@Ignore
 	public void testPCASparseRewritesCPFuseAll() {
 		runPCATest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
+	@Ignore
 	public void testPCADenseRewritesSPFuseAll() {
 		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
+	@Ignore
 	public void testPCASparseRewritesSPFuseAll() {
 		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
+	@Ignore
 	public void testPCADenseRewritesCPFuseNoRedundancy() {
 		runPCATest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
+	@Ignore
 	public void testPCASparseRewritesCPFuseNoRedundancy() {
 		runPCATest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
+	@Ignore
 	public void testPCADenseRewritesSPFuseNoRedundancy() {
 		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
+	@Ignore
 	public void testPCASparseRewritesSPFuseNoRedundancy() {
 		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}

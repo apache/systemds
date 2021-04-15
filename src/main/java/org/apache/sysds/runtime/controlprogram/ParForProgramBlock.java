@@ -297,7 +297,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean FORCE_CP_ON_REMOTE_SPARK    = true; // compile body to CP if exec type forced to Spark
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; // export only read variables according to live variable analysis
 	public static final boolean RESET_RECOMPILATION_FLAGs   = true;
-	public static final boolean ALLOW_BROADCAST_INPUTS      = false; // enables to broadcast inputs for remote_spark
+	public static       boolean ALLOW_BROADCAST_INPUTS      = true; // enables to broadcast inputs for remote_spark
 	
 	public static final String PARFOR_FNAME_PREFIX          = "/parfor/"; 
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = PARFOR_FNAME_PREFIX + "%ID%_MR_taskfile"; 
@@ -866,13 +866,14 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( _monitor )
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 		
-		//write matrices to HDFS 
-		exportMatricesToHDFS(ec);
+		//handle broadcast / export of inputs
+		Set<String> brVars = getBroadcastVariables(ec, _resultVars);
+		exportMatricesToHDFS(ec, brVars);
 		
 		// Step 3) submit Spark parfor job (no lazy evaluation, since collect on result)
 		boolean topLevelPF = OptimizerUtils.isTopLevelParFor();
 		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program,
-			clsMap, tasks, ec, _resultVars, _enableCPCaching, _numThreads, topLevelPF);
+			clsMap, tasks, ec, brVars, _resultVars, _enableCPCaching, _numThreads, topLevelPF);
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
@@ -930,7 +931,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 		
 		//write matrices to HDFS, except DP matrix which is the input to the RemoteDPParForSpark job
-		exportMatricesToHDFS(ec, _colocatedDPMatrix);
+		exportMatricesToHDFS(ec, CollectionUtils.asSet(_colocatedDPMatrix)); //incl colocated
 		
 		// Step 4) submit MR job (wait for finished work)
 		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(
@@ -1115,11 +1116,24 @@ public class ParForProgramBlock extends ForProgramBlock
 					out.put(var, dataObj);
 			}
 	}
+	
+	private static Set<String> getBroadcastVariables(ExecutionContext ec, List<ResultVar> resultVars) {
+		if( !ALLOW_BROADCAST_INPUTS )
+			return new HashSet<>();
+		LocalVariableMap inputs = ec.getVariables();
+		// exclude the result variables
+		Set<String> retVars = resultVars.stream()
+			.map(v -> v._name).collect(Collectors.toSet());
+		Set<String> brVars = inputs.keySet().stream()
+			.filter(v -> !retVars.contains(v))
+			.filter(v -> ec.getVariable(v).getDataType().isMatrix())
+			.filter(v -> OptimizerUtils.estimateSize(ec.getDataCharacteristics(v))< 2.14e9)
+			.collect(Collectors.toSet());
+		return brVars;
+	}
 
-	private void exportMatricesToHDFS(ExecutionContext ec, String... excludeListNames) 
-	{
+	private void exportMatricesToHDFS(ExecutionContext ec, Set<String> excludeNames)  {
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
-		Set<String> excludeList = CollectionUtils.asSet(excludeListNames);
 		
 		if( LIVEVAR_AWARE_EXPORT && sb != null)
 		{
@@ -1127,18 +1141,17 @@ public class ParForProgramBlock extends ForProgramBlock
 			//export only variables that are read in the body
 			VariableSet varsRead = sb.variablesRead();
 			for (String key : ec.getVariables().keySet() ) {
-				if( varsRead.containsVariable(key) && !excludeList.contains(key) ) {
+				if( varsRead.containsVariable(key) && !excludeNames.contains(key) ) {
 					Data d = ec.getVariable(key);
 					if( d.getDataType() == DataType.MATRIX )
 						((MatrixObject)d).exportData(_replicationExport);
 				}
 			}
 		}
-		else
-		{
+		else {
 			//export all matrices in symbol table
 			for (String key : ec.getVariables().keySet() ) {
-				if( !excludeList.contains(key) ) {
+				if( !excludeNames.contains(key) ) {
 					Data d = ec.getVariable(key);
 					if( d.getDataType() == DataType.MATRIX )
 						((MatrixObject)d).exportData(_replicationExport);

@@ -150,7 +150,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 
 	private void runTest( String testName, Class<?> exceptionExpected ) 
 	{
-        String RI_HOME = SCRIPT_DIR + TEST_DIR;
+		String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + testName + ".dml";
 		programArgs = new String[]{};
 		
@@ -160,7 +160,6 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		//integration test from outside SystemDS
 		runTest(true, exceptionExpected != null, exceptionExpected, -1);
 	}
-	
 
 	private void runValidateTest( String fullTestName, boolean expectedException )
 	{

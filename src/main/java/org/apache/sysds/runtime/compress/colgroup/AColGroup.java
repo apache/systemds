@@ -65,7 +65,7 @@ public abstract class AColGroup implements Serializable {
 	public enum ColGroupType {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros;
 
-		public CompressionType getSuperType(ColGroupType c) {
+		public static CompressionType getSuperType(ColGroupType c) {
 			switch(c) {
 				case RLE:
 					return CompressionType.RLE;
@@ -645,6 +645,8 @@ public abstract class AColGroup implements Serializable {
 	public abstract AColGroup copy();
 
 	public abstract boolean containsValue(double pattern);
+
+	public abstract long getNumberNonZeros();
 
 	@Override
 	public String toString() {

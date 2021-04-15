@@ -145,31 +145,61 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?i
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#AggregateBinary">AggregateBinary</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#AggregateUnary">AggregateUnary</a></span></code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#AggregateTernary">AggregateTernary</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Append">Append</a></span></code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#AggregateUnary">AggregateUnary</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Append">Append</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Binary">Binary</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#CumulativeAggregate">CumulativeAggregate</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Init">Init</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#MMChain">MMChain</a></span></code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#MatrixIndexing">MatrixIndexing</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#MultiReturnParameterizedBuiltin">MultiReturnParameterizedBuiltin</a></span></code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#MMChain">MMChain</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#MultiReturnParameterizedBuiltin">MultiReturnParameterizedBuiltin</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#ParameterizedBuiltin">ParameterizedBuiltin</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#QPick">QPick</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#QSort">QSort</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Quaternary">Quaternary</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Reorg">Reorg</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Reshape">Reshape</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#SpoofFused">SpoofFused</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Ternary">Ternary</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Tsmm">Tsmm</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html#Unary">Unary</a></span></code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -246,6 +276,15 @@ the order they are declared.</div>
 <pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> AggregateUnary</pre>
 </li>
 </ul>
+<a name="AggregateTernary">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>AggregateTernary</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> AggregateTernary</pre>
+</li>
+</ul>
 <a name="Append">
 <!--   -->
 </a>
@@ -262,6 +301,15 @@ the order they are declared.</div>
 <li class="blockList">
 <h4>Binary</h4>
 <pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> Binary</pre>
+</li>
+</ul>
+<a name="CumulativeAggregate">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>CumulativeAggregate</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> CumulativeAggregate</pre>
 </li>
 </ul>
 <a name="Init">
@@ -282,6 +330,33 @@ the order they are declared.</div>
 <pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> MultiReturnParameterizedBuiltin</pre>
 </li>
 </ul>
+<a name="MMChain">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>MMChain</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> MMChain</pre>
+</li>
+</ul>
+<a name="MatrixIndexing">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>MatrixIndexing</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> MatrixIndexing</pre>
+</li>
+</ul>
+<a name="Ternary">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>Ternary</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> Ternary</pre>
+</li>
+</ul>
 <a name="ParameterizedBuiltin">
 <!--   -->
 </a>
@@ -289,6 +364,60 @@ the order they are declared.</div>
 <li class="blockList">
 <h4>ParameterizedBuiltin</h4>
 <pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> ParameterizedBuiltin</pre>
+</li>
+</ul>
+<a name="Quaternary">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>Quaternary</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> Quaternary</pre>
+</li>
+</ul>
+<a name="QSort">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>QSort</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> QSort</pre>
+</li>
+</ul>
+<a name="QPick">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>QPick</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> QPick</pre>
+</li>
+</ul>
+<a name="Reorg">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>Reorg</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> Reorg</pre>
+</li>
+</ul>
+<a name="Reshape">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>Reshape</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> Reshape</pre>
+</li>
+</ul>
+<a name="SpoofFused">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>SpoofFused</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> SpoofFused</pre>
 </li>
 </ul>
 <a name="Tsmm">
@@ -300,22 +429,13 @@ the order they are declared.</div>
 <pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> Tsmm</pre>
 </li>
 </ul>
-<a name="MMChain">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>MMChain</h4>
-<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> MMChain</pre>
-</li>
-</ul>
-<a name="Reorg">
+<a name="Unary">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>Reorg</h4>
-<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> Reorg</pre>
+<h4>Unary</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a> Unary</pre>
 </li>
 </ul>
 </li>
@@ -437,6 +557,6 @@ not permitted.)</div>
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

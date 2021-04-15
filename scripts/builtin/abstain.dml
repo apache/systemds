@@ -25,10 +25,11 @@ return (Matrix[Double] abstain)
 {
 
   # for(i in 1:100) {
-  betas = multiLogReg(X=X, Y=Y, icpt=2, tol=1e-9, reg=0.0001, maxi=100, maxii=0, verbose=FALSE)
+  betas = multiLogReg(X=X, Y=Y, icpt=1, reg=0, maxi=100, maxii=0, verbose=FALSE)
   [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
+  print("accuracy "+accuracy)
   abstain = cbind(X, Y)
-  inc = ((yhat != Y) & (rowMaxs(prob) < threshold))
+  inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
 
   if(sum(inc) > 0)
   {
@@ -37,4 +38,3 @@ return (Matrix[Double] abstain)
   }
 
 }
-

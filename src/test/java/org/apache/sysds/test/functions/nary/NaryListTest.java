@@ -27,27 +27,26 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 public class NaryListTest extends AutomatedTestBase {
-    private final static String TEST_NAME = "NaryList";
+	private final static String TEST_NAME = "NaryList";
 	private final static String TEST_DIR = "functions/nary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + NaryListTest.class.getSimpleName() + "/";
 
-    @Override
+	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
 	}
 
-    @Test
-    public void test(){
-        TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
+	@Test
+	public void test(){
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
 		
 		String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-        programArgs = new String[]{"-stats" };
+		programArgs = new String[]{"-stats" };
 
-        String out = runTest(true, false, null, -1).toString();
-        assertTrue( "Output: " + out, out.contains("[hi, Im, a, list]"));
-    }
-
+		String out = runTest(true, false, null, -1).toString();
+		assertTrue( "Output: " + out, out.contains("[hi, Im, a, list]"));
+	}
 }

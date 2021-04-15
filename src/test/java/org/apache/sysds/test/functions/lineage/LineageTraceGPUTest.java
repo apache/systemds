@@ -61,12 +61,12 @@ public class LineageTraceGPUTest extends AutomatedTestBase{
 		System.out.println("------------ BEGIN " + testname + "------------");
 		
 		int gpuStatus = TestUtils.isGPUAvailable(); 
+		if (gpuStatus == cudaError.cudaSuccess)
+			AutomatedTestBase.TEST_GPU = true;  //adds '-gpu'
 		getAndLoadTestConfiguration(testname);
 		List<String> proArgs = new ArrayList<>();
 		
 		proArgs.add("-stats");
-		if (gpuStatus == cudaError.cudaSuccess)
-			proArgs.add("-gpu");
 		proArgs.add("-lineage");
 		proArgs.add("-args");
 		proArgs.add(output("R"));
@@ -81,6 +81,7 @@ public class LineageTraceGPUTest extends AutomatedTestBase{
 		
 		//get lineage and generate program
 		String Rtrace = readDMLLineageFromHDFS("R");
+		AutomatedTestBase.TEST_GPU = false;
 		//NOTE: the generated program is CP-only.
 		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
 		

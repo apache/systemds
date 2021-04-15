@@ -1,0 +1,68 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+num_records = $n;
+lambda = $l;
+p_event = $p;
+n_groups = $g;
+n_strata = $s;
+max_level = $f;
+n_seed = $sd;
+
+p_censor = 1 - p_event; # prob. that record is censored
+
+v = $v;
+# generate categorical features used for grouping and stratifying
+X_t = ceil (rand (rows = num_records, cols = n_groups + n_strata, min = 0.000000001, max = max_level - 0.000000001, pdf = "uniform", seed = n_seed));
+#X_t = ceil (matrix (max_level - 0.000000001, rows = num_records, cols = n_groups + n_strata));
+
+# generate timestamps
+U = rand (rows = num_records, cols = 1, min = 0.000000001, max = 1, seed = n_seed);
+#U = matrix (1, rows = num_records, cols = 1);
+T = (-log (U) / lambda) ^ (1/v);
+
+Y = matrix (0, rows = num_records, cols = 2);
+event = floor (rand (rows = num_records, cols = 1, min = (1 - p_censor), max = (1 + p_event), seed = n_seed));
+#event = floor (matrix (1 + p_event, rows = num_records, cols = 1));
+n_time = sum (event);
+Y[,2] = event;
+
+# binning of event times
+min_T = min (T);
+max_T = max (T);
+# T = T - min_T;
+len = max_T - min_T;
+num_bins = len / n_time;
+T = ceil (T / num_bins);
+
+Y[,1] = T;
+X = cbind (Y, X_t);
+TE = matrix ("1 2", rows = 2, cols = 1);
+
+GI = matrix (1, rows = n_groups, cols = 1);
+SI = matrix (1, rows = n_strata, cols = 1);
+
+[O, M, T, T_GROUPS_OE] = km(X, TE, GI, SI, $alpha, $err_type, $conf_type, $test_type);
+
+write(O, $O);
+write(M, $M);
+write(T, $T);
+write(T_GROUPS_OE, $T_GROUPS_OE);

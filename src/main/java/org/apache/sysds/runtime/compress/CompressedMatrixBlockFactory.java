@@ -127,6 +127,7 @@ public class CompressedMatrixBlockFactory {
 		if(res == null)
 			return abortCompression();
 
+		res.recomputeNonZeros();
 		return new ImmutablePair<>(res, _stats);
 	}
 
@@ -190,12 +191,15 @@ public class CompressedMatrixBlockFactory {
 		mb.cleanupBlock(true, true);
 
 		_stats.size = res.estimateCompressedSizeInMemory();
-		_stats.originalSize = mb.estimateSizeInMemory();
+		_stats.originalSize = original.estimateSizeInMemory();
+		_stats.denseSize = MatrixBlock.estimateSizeInMemory(original.getNumRows(), original.getNumColumns(), 1.0);
 		_stats.ratio = _stats.originalSize / (double) _stats.size;
 
 		if(_stats.ratio < 1) {
-			LOG.info("--compressed size: " + _stats.size);
-			LOG.info("--compression ratio: " + _stats.ratio);
+			LOG.info("--dense size:        " + _stats.denseSize);
+			LOG.info("--original size:     " + _stats.originalSize);
+			LOG.info("--compressed size:   " + _stats.size);
+			LOG.info("--compression ratio: " + _stats.ratio );
 			LOG.info("Abort block compression because compression ratio is less than 1.");
 			res = null;
 			return;
@@ -239,8 +243,10 @@ public class CompressedMatrixBlockFactory {
 					LOG.debug("--compression phase " + phase + " Cleanup   : " + _stats.getLastTimePhase());
 					LOG.debug("--col groups types " + _stats.getGroupsTypesString());
 					LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
-					LOG.debug("--compressed size: " + _stats.size);
-					LOG.debug("--compression ratio: " + _stats.ratio);
+					LOG.debug("--dense size:        " + _stats.denseSize);
+					LOG.debug("--original size:     " + _stats.originalSize);
+					LOG.debug("--compressed size:   " + _stats.size);
+					LOG.debug("--compression ratio: " + _stats.ratio );
 					int[] lengths = new int[res.getColGroups().size()];
 					int i = 0;
 					for(AColGroup colGroup : res.getColGroups()) {

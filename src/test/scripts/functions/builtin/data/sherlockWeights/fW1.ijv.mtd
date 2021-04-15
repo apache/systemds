@@ -1,0 +1,10 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 312,
+    "cols": 500,
+    "nnz": 156000,
+    "format": "text",
+    "author": "cfindenig",
+    "created": "2021-02-27 11:33:13 CET"
+}

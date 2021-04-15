@@ -51,7 +51,7 @@ m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Doubl
   }
   if(ncol(X) < nrow(B)-1)
     stop("multiLogRegPredict: mismatching ncol(X) and nrow(B): "+ncol(X)+" "+nrow(B));
-
+  accuracy = 0.0 # initialize variable 
   beta = B[1:ncol(X), ];
   intercept = ifelse(ncol(X)==nrow(B), matrix(0,1,ncol(B)), B[nrow(B),]);
   linear_terms = X %*% beta + matrix(1,nrow(X),1) %*% intercept;

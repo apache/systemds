@@ -66,7 +66,7 @@ public class FunctionReturnTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain"};
+			programArgs = new String[]{};
 	
 			runTest(true, false, null, -1); 
 		}

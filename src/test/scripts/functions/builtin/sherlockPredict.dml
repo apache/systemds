@@ -1,0 +1,72 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+source("scripts/builtin/sherlockPredict.dml") as sherlockPredict
+
+X = read($X)
+cW1 = read($cW1)
+cb1 = read($cb1)
+cW2 = read($cW2)
+cb2 = read($cb2)
+cW3 = read($cW3)
+cb3 = read($cb3)
+wW1 = read($wW1)
+wb1 = read($wb1)
+wW2 = read($wW2)
+wb2 = read($wb2)
+wW3 = read($wW3)
+wb3 = read($wb3)
+pW1 = read($pW1)
+pb1 = read($pb1)
+pW2 = read($pW2)
+pb2 = read($pb2)
+pW3 = read($pW3)
+pb3 = read($pb3)
+sW1 = read($sW1)
+sb1 = read($sb1)
+sW2 = read($sW2)
+sb2 = read($sb2)
+sW3 = read($sW3)
+sb3 = read($sb3)
+fW1 = read($fW1)
+fb1 = read($fb1)
+fW2 = read($fW2)
+fb2 = read($fb2)
+fW3 = read($fW3)
+fb3 = read($fb3)
+
+probs = sherlockPredict(X,
+cW1,  cb1,
+cW2,  cb2,
+cW3,  cb3,
+wW1,  wb1,
+wW2,  wb2,
+wW3,  wb3,
+pW1,  pb1,
+pW2,  pb2,
+pW3,  pb3,
+sW1,  sb1,
+sW2,  sb2,
+sW3,  sb3,
+fW1,  fb1,
+fW2,  fb2,
+fW3,  fb3)
+
+write(probs, $probs)

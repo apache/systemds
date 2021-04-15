@@ -235,7 +235,6 @@ public class Conv1DTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("output");
-			System.out.println(dmlfile.toString());
 			if ( expected != null)
 				TestUtils.compareMatrices(dmlfile, expected, epsilon, "B-DML", "B-R");
 		}

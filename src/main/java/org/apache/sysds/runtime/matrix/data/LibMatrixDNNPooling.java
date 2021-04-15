@@ -22,9 +22,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
@@ -33,10 +36,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
  */
 public class LibMatrixDNNPooling {
 	
-	// *********************************** low-level runtime operator selection ***********************************************
-	// *********************************** based on runtime properties (sparsity, native, etc) ********************************
-	// These methods help reduce branch miss predictions and instruction-cache misses.
-	// Also, they simplify the design of LibMatrixDNN and help in code-maintenance.
+	protected static final Log LOG =  LogFactory.getLog(LibMatrixDNNPooling.class.getName());
 	
 	/**
 	 * Factory method that returns list of callable tasks for performing pooling operation
@@ -73,6 +73,7 @@ public class LibMatrixDNNPooling {
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k / 2));
 		if(poolType == PoolingType.MAX) {
+			
 			boolean sparse1 = params.input1.isInSparseFormat();
 			boolean sparse2 = params.input2.isInSparseFormat();
 			for(int i = 0; i*taskSize < params.N; i++) {
@@ -344,28 +345,62 @@ public class LibMatrixDNNPooling {
 			C = params.C; CHW = params.C*params.H*params.W; HW = params.H*params.W;
 			P = params.P; Q = params.Q; CPQ = params.C*params.P*params.Q;
 			PQ = params.P*params.Q;
-			if (inputArray == null || doutArray == null || output.getDenseBlock() == null )
+			if (inputArray == null || doutArray == null )
 				throw new RuntimeException("Incorrect usage: empty inputs");
 		}
 		
 		@Override
 		public Long call() throws Exception {
-			double[] out = output.getDenseBlockValues();
-			for(int n = _rl; n < _ru; n++)  {
-				for (int c = 0; c < C; c++) {
-					final int inputOffset = n*CHW + c*HW;
-					final int outputOffset = n*CPQ + c*PQ;
-					for (int p = 0; p < P; p++) {
-						for (int q = 0; q < Q; q++) {
-							int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, _params, performReluBackward);
-							if(maxIndex != -1)
-								out[maxIndex] += doutArray[outputOffset +  p * Q + q];
+			if(output.isInSparseFormat()){
+				SparseBlock out = output.getSparseBlock();
+				final int[] i = new int[Q];
+				final double[] v = new double[Q];  
+				for(int n = _rl; n < _ru; n++){
+					// each row correspond to a single batch element.
+					// here we allocate the sparse row.
+					out.allocate(n, P*Q*C);
+					final SparseRow elm = out.get(n);
+					final int nCHW = n*CHW;
+
+					// tmp arrays for sorting.
+					for(int c = 0; c < C; c++){
+						// each channel processed.
+						final int inputOffset = nCHW + c*HW;
+						final int outputOffset = n*CPQ + c*PQ;
+						for(int p = 0; p < P; p++){
+							int pointer = 0;
+							for(int q = 0; q < Q; q++){
+								int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, _params, performReluBackward);
+								if(maxIndex != -1){
+									i[pointer] = maxIndex - nCHW;
+									v[pointer] = doutArray[outputOffset +  p * Q + q];
+									pointer++;
+								}
+							}
+							add(elm,i,v,pointer);
+						}
+					}
+				}
+			}
+			else{
+				double[] out = output.getDenseBlockValues();
+				for(int n = _rl; n < _ru; n++)  {
+					for (int c = 0; c < C; c++) {
+						final int inputOffset = n*CHW + c*HW;
+						final int outputOffset = n*CPQ + c*PQ;
+						for (int p = 0; p < P; p++) {
+							for (int q = 0; q < Q; q++) {
+								int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, _params, performReluBackward);
+								if(maxIndex != -1)
+									out[maxIndex] += doutArray[outputOffset +  p * Q + q];
+							}
 						}
 					}
 				}
 			}
 			//thread-local nnz maintenance
-			return output.recomputeNonZeros(_rl, _ru-1);
+			// we know the number of nonzeros in the output because max pooling backwards only ouput one value per kernel.
+			return P*Q*C*(long)(_ru - _rl);
 		}
 	}
 	
@@ -379,7 +414,7 @@ public class LibMatrixDNNPooling {
 		MatrixBlock output; 
 		boolean performReluBackward;
 		double [] inputArray;  MatrixBlock dout;
-		int CHW; int P; int Q; int HW;
+		final int CHW; final int P; final int Q; final int HW; final int C;
 		public PoolingBackwardDenseSparse(int rl, int ru, DnnParameters params, boolean performReluBackward) {
 			_rl = rl; _ru = ru;
 			_params = params;
@@ -387,9 +422,10 @@ public class LibMatrixDNNPooling {
 			inputArray = params.input1.getDenseBlockValues();
 			dout = params.input2;
 			output = params.output;
+			C = params.C;
 			CHW = params.C*params.H*params.W; HW = params.H*params.W;
 			P = params.P; Q = params.Q; 
-			if (inputArray == null || output.getDenseBlock() == null )
+			if (inputArray == null )
 				throw new RuntimeException("Incorrect usage: empty inputs");
 			if (!params.input2.isInSparseFormat())
 				throw new RuntimeException("Incorrect usage: Call optimized versions");
@@ -397,29 +433,73 @@ public class LibMatrixDNNPooling {
 		
 		@Override
 		public Long call() throws Exception {
-			CellIndex3 ix = new CellIndex3();
-			double[] out = output.getDenseBlockValues();
+
 			SparseBlock sblock = dout.sparseBlock;
-			for(int n = _rl; n < _ru; n++)  {
-				if( sblock.isEmpty(n) ) continue;
-				int apos = sblock.pos(n);
-				int alen = sblock.size(n);
-				int[] aix = sblock.indexes(n);
-				double[] avals = sblock.values(n);
-				for(int j = apos; j < apos+alen; j++) {
-					ix = LibMatrixDNNHelper.computeTensorIndexes(aix[j], P, Q, ix);
-					final int inputOffset = n*CHW + ix.ix1*HW;
-					int maxIndex = getMaxIndex(ix.ix2, ix.ix3,
-						inputOffset, inputArray, _params, performReluBackward);
-					if(maxIndex != -1)
-						out[maxIndex] += avals[j];
+			if(output.isInSparseFormat()){
+				SparseBlock out = output.getSparseBlock();
+				final int[] i = new int[Q];
+				final double[] v = new double[Q];  
+				for(int n = _rl; n < _ru; n++){
+					// each row correspond to a single batch element.
+					// here we allocate the sparse row.
+					if( sblock.isEmpty(n) ) continue;
+					
+					out.allocate(n, P*Q*C);
+					final SparseRow elm = out.get(n);
+					
+					final int apos = sblock.pos(n);
+					final int alen = sblock.size(n);
+					final int[] aix = sblock.indexes(n);
+					final double[] avals = sblock.values(n);
+
+					int oldP = 0;
+					int pointer = 0;
+					final int nCHW = n*CHW;
+
+					for(int j = apos; j < apos+alen; j++) {
+						final int tmp = aix[j] / Q;
+						final int inputOffset = nCHW + (tmp / P) * HW;
+						final int p = tmp % P;
+						final int q = aix[j] % Q;
+						if(p != oldP){
+							add(elm, i, v, pointer);
+							oldP = p;
+							pointer = 0;
+						}
+						int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, _params, performReluBackward);
+						if(maxIndex != -1){
+							i[pointer] = maxIndex - nCHW;
+							v[pointer] = avals[j];
+							pointer++;
+						}
+					}
+					add(elm, i, v, pointer);
+				}
+			}
+			else {
+				CellIndex3 ix = new CellIndex3();
+				double[] out = output.getDenseBlockValues();
+				for(int n = _rl; n < _ru; n++)  {
+					if( sblock.isEmpty(n) ) continue;
+					int apos = sblock.pos(n);
+					int alen = sblock.size(n);
+					int[] aix = sblock.indexes(n);
+					double[] avals = sblock.values(n);
+					for(int j = apos; j < apos+alen; j++) {
+						ix = LibMatrixDNNHelper.computeTensorIndexes(aix[j], P, Q, ix);
+						final int inputOffset = n*CHW + ix.ix1*HW;
+						int maxIndex = getMaxIndex(ix.ix2, ix.ix3,
+							inputOffset, inputArray, _params, performReluBackward);
+						if(maxIndex != -1)
+							out[maxIndex] += avals[j];
+					}
 				}
 			}
 			//thread-local nnz maintenance
-			return output.recomputeNonZeros(_rl, _ru-1);
+			return P*Q*C*(long)(_ru - _rl);
 		}
 	}
-	
+
 	/**
 	 * Performs the avgpooling backward operation for sparse error (dout)
 	 */
@@ -477,6 +557,10 @@ public class LibMatrixDNNPooling {
 	
 	/**
 	 * Performs the maxpooling backward operation for sparse input and dense error (dout)
+	 * 
+	 * Currently this is NOT IN USE since the sparse left part is forced dense.
+	 * This is because this method is inefficient compared to our dense version.
+	 * 
 	 */
 	private static class PoolingBackwardSparseDense implements Callable<Long> 
 	{
@@ -495,7 +579,7 @@ public class LibMatrixDNNPooling {
 		
 		public PoolingBackwardSparseDense(int rl, int ru, DnnParameters params, boolean relu) {
 			this(rl, ru, params, relu, params.input2, params.output);
-			if (doutput.getDenseBlock() == null || output.getDenseBlock() == null )
+			if (doutput.getDenseBlock() == null )
 				throw new RuntimeException("Incorrect usage: empty inputs");
 			if (!params.input1.isInSparseFormat())
 				throw new RuntimeException("Incorrect usage: sparse input1 expected");
@@ -516,26 +600,26 @@ public class LibMatrixDNNPooling {
 			//allocate auxiliary data structures
 			double[] maxVal = new double[PQ];
 			int[] maxIx = new int[PQ];
-			
 			for(int n = _rl; n < _ru; n++)  {
 				for (int c = 0; c < C; c++) {
-					//step 0: basic initializations
-					final int outOffset = n*CHW + c*HW;
-					
 					//step 1: perform maxpooling w/ index maintenance in a 
 					//single, sequential pass over the sparse input matrix
-					maxpoolingForward(maxVal, maxIx, n, c,
+					boolean empty = maxpoolingForward(maxVal, maxIx, n, c,
 						padh, padw, strideh, stridew, C, P, Q, R, S, HW, W);
-					
-					//step 2: perform maxpooling backward
-					maxpoolingBackward(maxIx, outOffset, n, c, C, Q, PQ, CPQ);
+					if(!empty){
+						//step 2: perform maxpooling backward
+						if(output.isInSparseFormat())
+							maxpoolingBackwardSparse(maxIx, c*HW, n, c, C, Q, P, CPQ);
+						else
+							maxpoolingBackwardDense(maxIx, n*CHW + c*HW, n, c, C, Q, PQ, CPQ);
+					}
 				}
 			}
 			//thread-local nnz maintenance
-			return output.recomputeNonZeros(_rl, _ru-1);
+			return P*Q*C*(long)(_ru - _rl);
 		}
 		
-		protected void maxpoolingForward(double[] maxVal, int[] maxIx, int n, int c, int padh, int padw, int strideh, int stridew, int C, int P, int Q, int R, int S, int HW, int W) {
+		protected boolean maxpoolingForward(double[] maxVal, int[] maxIx, int n, int c, int padh, int padw, int strideh, int stridew, int C, int P, int Q, int R, int S, int HW, int W) {
 			SparseBlock sblock = _params.input1.getSparseBlock();
 			if( !sblock.isEmpty(n) ) {
 				Arrays.fill(maxVal, -Double.MAX_VALUE);
@@ -562,26 +646,34 @@ public class LibMatrixDNNPooling {
 				}
 				//handle skipped zero values at end of row
 				update0(lastix+1, (c+1)*HW, maxVal, maxIx, padh, padw, strideh, stridew, P, Q, R, S, HW, W);
+				return false;
 			}
 			else {
-				//handle empty row
-				Arrays.fill(maxVal, 0);
-				for(int p = 0, ix=0; p < P; p++) {
-					int h = Math.max(-padh+p*strideh, 0);
-					for(int q = 0; q < Q; q++, ix++) {
-						int w = Math.max(-padw+q*stridew, 0);
-						maxIx[ix] = h * W + w;
-					}
-				}
+				return true;
 			}
 		}
 		
-		protected void maxpoolingBackward(int[] maxIx, int outOffset, int n, int c, int C, int Q, int PQ, int CPQ) {
+		protected void maxpoolingBackwardDense(int[] maxIx, int outOffset, int n, int c, int C, int Q, int PQ, int CPQ) {
 			double[] dout = doutput.getDenseBlockValues();
 			double[] out = output.getDenseBlockValues();
 			final int doutOffset = n*CPQ + c*PQ;
 			for( int pq = 0; pq < PQ; pq++ )
 				out[ outOffset + maxIx[pq] ] += dout[ doutOffset + pq ];
+		}
+
+		protected void maxpoolingBackwardSparse(int[] maxIx, int offset, int n, int c, int C, int Q, int P, int CPQ) {
+			double[] dout = doutput.getDenseBlockValues();
+			SparseBlock out = output.getSparseBlock();
+			out.allocate(n, P * Q);
+			SparseRow row = out.get(n);
+			final int doutOffset = n*CPQ + c*P * Q;
+			int pq = 0;
+			for( int p = 0; p < P; p++ ){
+				for(int q = 0; q < Q; q++){
+					row.add(maxIx[pq] + offset ,dout[ doutOffset + pq ]);
+					pq++;
+				}
+			}
 		}
 		
 		private static void update0(int lix, int uix, double[] maxVal, int[] maxIx, int padh, int padw, int strideh, int stridew, int P, int Q, int R, int S, int HW, int W) {
@@ -613,19 +705,21 @@ public class LibMatrixDNNPooling {
 	
 	/**
 	 * Performs the maxpooling backward operation for sparse input and sparse error (dout)
+	 * 
+	 * Currently this is NOT IN USE since the sparse left part is forced dense.
+	 * This is because this method is inefficient compared to our dense version.
+	 * 
 	 */
 	private static class PoolingBackwardSparseSparse extends PoolingBackwardSparseDense
 	{
 		public PoolingBackwardSparseSparse(int rl, int ru, DnnParameters params, boolean relu) {
 			super(rl, ru, params, relu, params.input2, params.output);
-			if (output.getDenseBlock() == null )
-				throw new RuntimeException("Incorrect usage: empty outputs");
 			if (!params.input1.isInSparseFormat() || !params.input2.isInSparseFormat())
 				throw new RuntimeException("Incorrect usage: Call optimized versions");
 		}
 		
 		@Override
-		protected void maxpoolingBackward(int[] maxIx, int outOffset, int n, int c, int C, int Q, int PQ, int CPQ) {
+		protected void maxpoolingBackwardDense(int[] maxIx, int outOffset, int n, int c, int C, int Q, int PQ, int CPQ) {
 			SparseBlock sblock = doutput.getSparseBlock();
 			double[] out = output.getDenseBlockValues();
 			if( sblock.isEmpty(n) )
@@ -646,6 +740,34 @@ public class LibMatrixDNNPooling {
 				out[ outOffset + maxIx[pq] ] += avals[j];
 			}
 		}
+
+		@Override
+		protected void maxpoolingBackwardSparse(int[] maxIx, int offset, int n, int c, int C, int Q, int P, int CPQ) {
+			SparseBlock sblock = doutput.getSparseBlock();
+			if( sblock.isEmpty(n) )
+				return;
+			final int PQ = P*Q;
+			SparseBlock out = output.getSparseBlock();
+			out.allocate(n, PQ);
+			SparseRow row = out.get(n);
+
+			int apos = sblock.pos(n);
+			int alen = sblock.size(n);
+			int[] aix = sblock.indexes(n);
+			double[] avals = sblock.values(n);
+			//find channel start and end, w/ robustness for non-existing entries
+			int cpos = (c==0) ? 0 : sblock.posFIndexGTE(n, c*PQ);
+			int cpos2 = (c+1==C) ? alen : sblock.posFIndexGTE(n, (c+1)*PQ);
+			cpos = (cpos>=0) ? cpos : alen;
+			cpos2 = (cpos2>=0) ? cpos2 : alen;
+			for(int j = apos+cpos; j<apos+cpos2; j++) {
+				int p = (aix[j] % PQ) / Q;
+				int q = aix[j] % Q;
+				int pq = p * Q + q;
+				row.add( maxIx[pq] + offset, avals[j]);
+			}
+		}
+
 	}
 	
 	private static double avg(final double aval, double[] b, final int bi, final int len, final double poolingMultiplier) {
@@ -677,24 +799,199 @@ public class LibMatrixDNNPooling {
 		int end_index_w = params.end_indexes_w[q];
 		
 		int maxIndex = -1; 
-		double maxVal = -Double.MAX_VALUE;
+		double maxVal = performReluBackward ? 0 : Double.NEGATIVE_INFINITY;
 		
 		// Note: We do not treat pad as zero and hence we don't do:  
 		// maxVal = 0 
 		// if start_index_h < 0 || start_index_w < 0 || end_index_h >= params.H || end_index_w >= params.W
 		
 		// Find maxIndex
-		double currDoutVal = -1;
 		for (int h = start_index_h; h < end_index_h; h++) {
 			for (int w = start_index_w; w < end_index_w; w++) {
-				currDoutVal = inputArray[inputOffset +  h*params.W + w];
-				currDoutVal = performReluBackward && currDoutVal < 0 ? 0 : currDoutVal;
+				final int idx = inputOffset +  h*params.W + w;
+				final double currDoutVal = inputArray[idx];
 				if(maxVal < currDoutVal) {
-					maxIndex = inputOffset +  h*params.W + w;
+					maxIndex = idx;
 					maxVal = currDoutVal;
 				}
 			}
 		}
-		return maxIndex;
+		return maxVal == 0 && performReluBackward ? -1 : maxIndex;
+	}
+
+	/**
+	 * Add all elements in the arrays to the sparse row. It is guaranteed that all i is larger than all indexes already contained in row.
+	 * 
+	 * @param row the row to append to
+	 * @param i the indexes to append
+	 * @param v the values to append
+	 */
+	private static void add(SparseRow row, int[] i, double[] v, int size){
+		// sort based on the i array.
+		sort(i,v, size);
+		for(int x = 0; x < size; x++){
+			row.append(i[x], v[x]);
+		}
+	}
+
+
+
+	/**
+	 * Use sorting networks for small arrays.
+	 * Note small arrays here is less than 32.
+	 * 
+	 * The basic idea is to use Network sorting, that is the theoretical
+	 * fewest compare and swap operations possible for a specific size array.
+	 * 
+	 * @param i indexes to sort by
+	 * @param v the values to sort along side
+	 */
+	private static void sort(int[] i , double[] v, int size){
+		if(size > 32)
+			LOG.warn("Not a optimal size for small array sort " + size);
+		switch (size) {
+			case 1: break;
+			case 2: comp(i,v,0,1); break;
+			case 3: sort3(i,v); break;
+			case 4: sort4(i,v); break;
+			case 5: sort5(i,v); break;
+			case 6: sort6(i,v); break;
+			case 7: sort7(i,v); break;
+			default:
+				// Most cases are handled by the sorting of smaller arrays, 
+				// but just in case we have a insertion sort here. 
+				// Since the array is already semi sorted, it is okay. But not ideal once 
+				// we see larger arrays.
+				// Larger arrays only occur if the input data allow many kernels in the horizontal
+				// dimension.
+				insertSort(i,v, size);
+				break;
+		}
+	}
+
+	private static void sort3(int[] i, double[] v){
+		// 3 moves
+		comp(i,v,0,2);
+		comp(i,v,0,1);
+		comp(i,v,1,2);
+	}
+
+	private static void sort4(int[] i, double[] v){
+		// 5 moves
+		// block 1
+		comp(i,v,0,2);
+		comp(i,v,1,3);
+		// block 2
+		comp(i,v,0,1);
+		comp(i,v,2,3);
+		// block 3
+		comp(i,v,1,2);
+	}
+
+	private static void sort5(int[] i, double[] v){
+		// 9 moves
+		// block 1
+		comp(i,v,0,1);
+		comp(i,v,2,3);
+		// block 2
+		comp(i,v,1,3);
+		comp(i,v,2,4);
+		// block 3
+		comp(i,v,1,4);
+		comp(i,v,0,2);
+		// block 4
+		comp(i,v,1,2);
+		comp(i,v,3,4);
+		// block 5
+		comp(i,v,2,3);
+	}
+
+	private static void sort6(int[] i, double[] v){
+		// 12 moves
+		// block 1
+		comp(i,v,0,1);
+		comp(i,v,2,3);
+		comp(i,v,4,5);
+		// block 2
+		comp(i,v,1,3);
+		// block 3
+		comp(i,v,0,4);
+		// block 4
+		comp(i,v,1,3);
+		// block 5
+		comp(i,v,1,5);
+		// block 6
+		comp(i,v,2,4);
+		// block 7
+		comp(i,v,1,2);
+		comp(i,v,3,5);
+		// block 8
+		comp(i,v,3,4);
+		// block 9
+		comp(i,v,2,3);
+	}
+
+	private static void sort7(int[] i, double[] v){
+		// 16 moves.
+		// block 1
+		comp(i,v,0,1);
+		comp(i,v,2,3);
+		comp(i,v,4,5);
+		// block 2
+		comp(i,v,0,6);
+		// block 3
+		comp(i,v,2,4);
+		// block 4
+		comp(i,v,0,2);
+		// block 5
+		comp(i,v,1,3);
+		comp(i,v,5,6);
+		// block 6
+		comp(i,v,1,4);
+		// block 7
+		comp(i,v,2,5);
+		// block 8
+		comp(i,v,1,2);
+		comp(i,v,4,5);
+		// block 9
+		comp(i,v,2,4);
+		// block 10
+		comp(i,v,3,6);
+		// block 11
+		comp(i,v,3,5);
+		// block 12
+		comp(i,v,3,4);
+	}
+
+	private static void insertSort(int[] i, double[] v, int size){
+		int p, k, j;
+		double t;
+		for(p  = 1; p < size; p++){
+			k = i[p];
+			t = v[p];
+			j = p -1;
+			while(j >= 0 && i[j] > k){
+				i[j+1] = i[j];
+				v[j+1] = v[j];
+				j = j-1;
+			}
+			i[j+1] = k;
+			v[j+1] = t;
+		}
+	}
+
+	private static void comp(int[] i , double[] v, int f, int t){
+		if(i[f] > i[t])
+			swap(i,v,f,t);
+	}
+
+	private static void swap(int[] i , double[] v, int f, int t){
+		int tmpI = i[f];
+		double tmpV = v[f];
+		i[f] = i[t];
+		v[f] = v[t];
+		i[t] = tmpI;
+		v[t] = tmpV; 
 	}
 }
+

@@ -1,0 +1,276 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/max_pool2d.dml") as max_pool2d
+source("scripts/nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
+source("src/test/scripts/applications/nn/max_pool2d_simple.dml") as max_pool2d_simple
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("scripts/nn/util.dml") as util
+
+
+max_pool2d_pad = function(Integer h, Integer w) {
+  /*
+   * Test for the 2D max pooling functions.
+   */
+  
+  print("Testing the 2D max pooling functions for equivalence between implementations")
+
+  # # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  Hin = 8  # input height
+  Win = 8  # input width
+  Hf = 2  # filter height
+  Wf = 2  # filter width
+  stride = 2
+  X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
+  padh = h
+  padw = w
+
+  print(" - Testing w/ padh="+padh+" & padw="+padw+".")
+  #while(FALSE){}  # force correct printing
+  #print("   - Testing forward")
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, padh, padw)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride,
+                                                                      padh, padw)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win,
+                                                                          Hf, Wf,
+                                                                          stride, stride,
+                                                                          padh, padw)
+
+  # Equivalency check
+  out = matrix(out, rows=1, cols=N*C*Hout*Wout)
+  out_simple = matrix(out_simple, rows=1, cols=N*C*Hout*Wout)
+  out_builtin = matrix(out_builtin, rows=1, cols=N*C*Hout*Wout)
+  for (i in 1:length(out)) {
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
+                                           as.scalar(out_simple[1,i]), 1e-10, 1e-12)
+    rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
+                                           as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+  }
+
+  #print("   - Testing backward")
+  dout = rand(rows=N, cols=C*Hout*Wout, pdf="normal")
+  dX = max_pool2d::backward(dout, Hout, Wout, X, C, Hin, Win, Hf, Wf, stride, stride,
+                            padh, padw)
+  dX_simple = max_pool2d_simple::backward(dout, Hout_simple, Wout_simple, X, C, Hin, Win,
+                                          Hf, Wf, stride, stride, padh, padw)
+  dX_builtin = max_pool2d_builtin::backward(dout, Hout_builtin, Wout_builtin, X, C, Hin, Win,
+                                            Hf, Wf, stride, stride, padh, padw)
+  print(toString(dX))
+  print(toString(dX_simple))
+  print(toString(dX_builtin))
+  # Equivalency check
+  dX = matrix(dX, rows=1, cols=N*C*Hin*Win)
+  dX_simple = matrix(dX_simple, rows=1, cols=N*C*Hin*Win)
+  dX_builtin = matrix(dX_builtin, rows=1, cols=N*C*Hin*Win)
+  for (i in 1:length(dX)) {
+    rel_error = test_util::check_rel_error(as.scalar(dX[1,i]),
+                                           as.scalar(dX_simple[1,i]), 1e-10, 1e-12)
+    rel_error = test_util::check_rel_error(as.scalar(dX[1,i]),
+                                           as.scalar(dX_builtin[1,i]), 1e-10, 1e-12)
+  }
+}
+
+max_pool2d = function() {
+  /*
+   * Test for the 2D max pooling functions.
+   */
+  print("Testing the 2D max pooling functions.")
+
+  # # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  Hin = 8  # input height
+  Win = 8  # input width
+  Hf = 2  # filter height
+  Wf = 2  # filter width
+  stride = 2
+  X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
+
+  # ---
+  print(" - Testing for correct behavior against known answer w/ pad=0.")
+  # generate data
+  # -- channel 1
+  #  1  2  3  4
+  #  5  6  7  8
+  #  9 10 11 12
+  # 13 14 15 16
+  # -- channel 2
+  #  1  5  9 13
+  #  2  6 10 14
+  #  3  7 11 15
+  #  4  8 12 16
+  C = 2  # num channels
+  Hin = 4  # input height
+  Win = 4  # input width
+  X = matrix(seq(1,16,1), rows=Hin, cols=Win)
+  X = matrix(rbind(X, t(X)), rows=1, cols=C*Hin*Win)  # C=2
+  X = rbind(X, X)  # n=2
+  pad = 0
+
+  # forward
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride, pad, pad)
+
+  # equivalency check
+  # -- channel 1
+  #   6  8
+  #  14 16
+  # -- channel 2
+  #  6  14
+  #  8  16
+  target = matrix("6 8 14 16 6 14 8 16", rows=1, cols=C*Hout*Wout)
+  target = rbind(target, target)  # n=2
+  tmp = test_util::check_all_equal(out, target)
+  tmp = test_util::check_all_equal(out_simple, target)
+  tmp = test_util::check_all_equal(out_builtin, target)
+
+  print(" - Testing for correct behavior against known answer w/ pad=1.")
+  # generate data
+  # -- channel 1
+  #  0  0  0  0  0  0
+  #  0  1  2  3  4  0
+  #  0  5  6  7  8  0
+  #  0  9 10 11 12  0
+  #  0 13 14 15 16  0
+  #  0  0  0  0  0  0
+  # -- channel 2
+  #  0  0  0  0  0  0
+  #  0  1  5  9 13  0
+  #  0  2  6 10 14  0
+  #  0  3  7 11 15  0
+  #  0  4  8 12 16  0
+  #  0  0  0  0  0  0
+  pad = 1
+
+  # forward
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride, pad, pad)
+
+  # equivalency check
+  # -- channel 1
+  #  1  3  4
+  #  9 11 12
+  # 13 15 16
+  # -- channel 2
+  #  1  9 13
+  #  3 11 15
+  #  4 12 16
+  target = matrix("1 3 4 9 11 12 13 15 16 1 9 13 3 11 15 4 12 16", rows=1, cols=C*Hout*Wout)
+  target = rbind(target, target)  # n=2
+  tmp = test_util::check_all_equal(out, target)
+  tmp = test_util::check_all_equal(out_simple, target)
+  tmp = test_util::check_all_equal(out_builtin, target)
+
+  print(" - Testing for correct behavior against known answer w/ all negative matrix w/ pad=0.")
+  # generate data
+  # -- channel 1
+  #  -1  -2  -3  -4
+  #  -5  -6  -7  -8
+  #  -9 -10 -11 -12
+  # -13 -14 -15 -16
+  # -- channel 2
+  #  -1  -5  -9 -13
+  #  -2  -6 -10 -14
+  #  -3  -7 -11 -15
+  #  -4  -8 -12 -16
+  X = X * -1
+  pad = 0
+
+  # forward
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride, pad, pad)
+
+  # equivalency check
+  # -- channel 1
+  #  -1  -3
+  #  -9 -11
+  # -- channel 2
+  #  -1  -9
+  #  -3 -11
+  target = matrix("-1 -3 -9 -11 -1 -9 -3 -11", rows=1, cols=C*Hout*Wout)
+  target = rbind(target, target)  # n=2
+  tmp = test_util::check_all_equal(out, target)
+  tmp = test_util::check_all_equal(out_simple, target)
+  tmp = test_util::check_all_equal(out_builtin, target)
+
+
+  print(" - Testing for correct behavior against known answer w/ all negative matrix w/ pad=1.")
+  # generate data
+  # -- channel 1
+  #  0   0   0   0   0  0
+  #  0  -1  -2  -3  -4  0
+  #  0  -5  -6  -7  -8  0
+  #  0  -9 -10 -11 -12  0
+  #  0 -13 -14 -15 -16  0
+  #  0   0   0   0   0  0
+  # -- channel 2
+  #  0   0   0   0   0  0
+  #  0  -1  -5  -9 -13  0
+  #  0  -2  -6 -10 -14  0
+  #  0  -3  -7 -11 -15  0
+  #  0  -4  -8 -12 -16  0
+  #  0   0   0   0   0  0
+  pad = 1
+
+  # forward
+  [out, Hout, Wout] = max_pool2d::forward(X, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] = max_pool2d_simple::forward(X, C, Hin, Win, Hf, Wf,
+                                                                      stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] = max_pool2d_builtin::forward(X, C, Hin, Win, Hf, Wf,
+                                                                          stride, stride, pad, pad)
+
+  # equivalency check
+  # -- channel 1
+  #  0  0  0
+  #  0 -6  0
+  #  0  0  0
+  # -- channel 2
+  #  0  0  0
+  #  0 -6  0
+  #  0  0  0
+  target = matrix("-1 -2 -4 -5 -6 -8 -13 -14 -16 -1 -5 -13 -2 -6 -14 -4 -8 -16",
+                  rows=1, cols=C*Hout*Wout)
+  target = rbind(target, target)  # n=2
+  tmp = test_util::check_all_equal(out, target)
+  tmp = test_util::check_all_equal(out_simple, target)
+  tmp = test_util::check_all_equal(out_builtin, target)
+}
+
+print("")
+h = ifdef($h, -1)
+w = ifdef($w, -1)
+
+if(h != -1 & w != -1)
+  max_pool2d_pad(h,w)
+else
+  max_pool2d()

@@ -161,7 +161,7 @@ public class FrameReaderTextCSV extends FrameReader {
 				for(String part : parts) // foreach cell
 				{
 					part = part.trim();
-					if(part.isEmpty() || naValues.contains(part)) {
+					if(part.isEmpty() || (naValues != null && naValues.contains(part))) {
 						if(isFill && dfillValue != 0)
 							dest.set(row, col, UtilFunctions.stringToObject(schema[col], sfillValue));
 						emptyValuesFound = true;

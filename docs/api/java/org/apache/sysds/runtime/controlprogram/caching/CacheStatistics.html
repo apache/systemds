@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -223,85 +223,109 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#getMemHits--">getMemHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#getLinHits--">getLinHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#getReleaseTime--">getReleaseTime</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#getLinWrites--">getLinWrites</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementAcquireMTime-long-">incrementAcquireMTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#getMemHits--">getMemHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i15" class="rowColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementAcquireRTime-long-">incrementAcquireRTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#getReleaseTime--">getReleaseTime</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i16" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementExportTime-long-">incrementExportTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementAcquireMTime-long-">incrementAcquireMTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i17" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSBuffHits--">incrementFSBuffHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementAcquireRTime-long-">incrementAcquireRTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i18" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSBuffHits-int-">incrementFSBuffHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementExportTime-long-">incrementExportTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i19" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSBuffWrites--">incrementFSBuffWrites</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSBuffHits--">incrementFSBuffHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i20" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSBuffWrites-int-">incrementFSBuffWrites</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSBuffHits-int-">incrementFSBuffHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i21" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSHits--">incrementFSHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSBuffWrites--">incrementFSBuffWrites</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i22" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSHits-int-">incrementFSHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSBuffWrites-int-">incrementFSBuffWrites</a></span>(int&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i23" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSWrites--">incrementFSWrites</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSHits--">incrementFSHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i24" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSWrites-int-">incrementFSWrites</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSHits-int-">incrementFSHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i25" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementHDFSHits--">incrementHDFSHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSWrites--">incrementFSWrites</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i26" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementHDFSHits-int-">incrementHDFSHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementFSWrites-int-">incrementFSWrites</a></span>(int&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i27" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementHDFSWrites--">incrementHDFSWrites</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementHDFSHits--">incrementHDFSHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementHDFSWrites-int-">incrementHDFSWrites</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementHDFSHits-int-">incrementHDFSHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i29" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementMemHits--">incrementMemHits</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementHDFSWrites--">incrementHDFSWrites</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i30" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementMemHits-int-">incrementMemHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementHDFSWrites-int-">incrementHDFSWrites</a></span>(int&nbsp;delta)</code>&nbsp;</td>
 </tr>
 <tr id="i31" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementReleaseTime-long-">incrementReleaseTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementLinHits--">incrementLinHits</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i32" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementLinHits-int-">incrementLinHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+</tr>
+<tr id="i33" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementLinWrites--">incrementLinWrites</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i34" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementLinWrites-int-">incrementLinWrites</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+</tr>
+<tr id="i35" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementMemHits--">incrementMemHits</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i36" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementMemHits-int-">incrementMemHits</a></span>(int&nbsp;delta)</code>&nbsp;</td>
+</tr>
+<tr id="i37" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#incrementReleaseTime-long-">incrementReleaseTime</a></span>(long&nbsp;delta)</code>&nbsp;</td>
+</tr>
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheStatistics.html#reset--">reset</a></span>()</code>&nbsp;</td>
 </tr>
@@ -461,6 +485,33 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public static&nbsp;long&nbsp;getHDFSHits()</pre>
 </li>
 </ul>
+<a name="incrementLinHits--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>incrementLinHits</h4>
+<pre>public static&nbsp;void&nbsp;incrementLinHits()</pre>
+</li>
+</ul>
+<a name="incrementLinHits-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>incrementLinHits</h4>
+<pre>public static&nbsp;void&nbsp;incrementLinHits(int&nbsp;delta)</pre>
+</li>
+</ul>
+<a name="getLinHits--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getLinHits</h4>
+<pre>public static&nbsp;long&nbsp;getLinHits()</pre>
+</li>
+</ul>
 <a name="incrementFSBuffWrites--">
 <!--   -->
 </a>
@@ -540,6 +591,33 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>getHDFSWrites</h4>
 <pre>public static&nbsp;long&nbsp;getHDFSWrites()</pre>
+</li>
+</ul>
+<a name="incrementLinWrites--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>incrementLinWrites</h4>
+<pre>public static&nbsp;void&nbsp;incrementLinWrites()</pre>
+</li>
+</ul>
+<a name="incrementLinWrites-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>incrementLinWrites</h4>
+<pre>public static&nbsp;void&nbsp;incrementLinWrites(int&nbsp;delta)</pre>
+</li>
+</ul>
+<a name="getLinWrites--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getLinWrites</h4>
+<pre>public static&nbsp;long&nbsp;getLinWrites()</pre>
 </li>
 </ul>
 <a name="incrementAcquireRTime-long-">
@@ -710,6 +788,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

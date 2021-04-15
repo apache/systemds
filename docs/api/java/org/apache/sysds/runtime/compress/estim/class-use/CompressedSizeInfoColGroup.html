@@ -139,6 +139,23 @@
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressedSizeInfo.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html#getGroupInfo-int-">getGroupInfo</a></span>(int&nbsp;index)</code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>[]</code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedSizeInfo.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html#getInfo--">getInfo</a></span>()</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/package-summary.html">org.apache.sysds.runtime.compress.estim</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedSizeInfo.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html#setInfo-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup:A-">setInfo</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>[]&nbsp;info)</code>&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
@@ -148,11 +165,10 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html#CompressedSizeInfo-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup:A-java.util.List-java.util.List-java.util.HashMap-int-">CompressedSizeInfo</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>[]&nbsp;compressionInfo,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;colsC,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;colsUC,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html?is-external=true" title="class or interface in java.lang">Double</a>&gt;&nbsp;compRatios,
-                  int&nbsp;nnzUC)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html#CompressedSizeInfo-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup:A-int-int-int-">CompressedSizeInfo</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>[]&nbsp;compressionInfo,
+                  int&nbsp;nnz,
+                  int&nbsp;numRows,
+                  int&nbsp;numCols)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -208,6 +224,6 @@
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

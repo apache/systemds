@@ -44,7 +44,7 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 
 		String opcode = getOpcode();
-		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
+		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		if(opcode != "ucumk+*")
 			ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
 
@@ -119,7 +119,7 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 			LOG.trace("processInstruction() " + getExtendedOpcode() + " executed in " + duration + "ms.");
 		}
 
-		ec.releaseMatrixInputForGPUInstruction(_input.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 }

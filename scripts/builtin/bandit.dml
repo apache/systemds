@@ -1,5 +1,4 @@
 #-------------------------------------------------------------
-#-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -19,39 +18,55 @@
 # under the License.
 #
 #-------------------------------------------------------------
+source("scripts/pipelines/scripts/utils.dml") as utils;
 
-m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_val, 
-  Matrix[Double] Y_val, Matrix[Double] mask, Frame[Unknown] schema, Frame[Unknown] lp, 
-  Frame[Unknown] primitives, Frame[Unknown] param,  Integer k = 3, Double testAccuracy = 0.8,
-  Boolean isWeighted, Integer R=50,  Boolean verbose = TRUE)
-  return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams,  Matrix[Double] bestAccuracy) 
+m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, List[Unknown] metaList, List[Unknown] targetList,
+  Frame[Unknown] lp, Frame[Unknown] primitives, Frame[Unknown] param,  Integer k = 3, Integer R=50, Boolean verbose = TRUE)
+  return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams,  Matrix[Double] bestAccuracy, Frame[String] feaFrameOuter) 
 {
+  print("Starting optimizer")
+  NUM_FEATURES = 14
   print("null in data "+sum(is.na(X_train)))
-  # initialize output variables
-  hparam = list()
-  pipeline = list()
-  
+  bestPipeline = frame("", rows=1, cols=1)
+  bestHyperparams = as.matrix(0)
+  bestAccuracy = as.matrix(0)
   # initialize bandit variables
   # variable names follow publication where algorithm is introduced
   eta = 2  # the halving ratio is fixed to 2
   s_max = floor(log(R,eta));
   B = (s_max + 1) * R;
   
-  for(s in s_max:0) {
+  # initialize output variables
+  hparam = matrix(0, rows=k*(s_max+1), cols=55)
+  pipeline = frame(0, rows=k*(s_max+1), cols=ncol(lp)+1)
+  startOut=0; endOut=0;
+  feaFrameOuter = frame("", rows = 1, cols = NUM_FEATURES + ncol(lp) + 1 )
+
+  for(s in s_max:0, check = 0) {
     
-    bracket_hp = list()
-    bracket_pipel = list()
+   # result variables
+    bracket_hp = matrix(0, rows=k*(s+1)+k, cols=55)
+    bracket_pipel = matrix(0, rows=k*(s+1)+k, cols=3)
+    start=1; end=0;
     
+    # # compute the number of initial pipelines n
     n = ceil(floor(B/R/(s+1)) * eta^s);
     r = R * eta^(-s);
-    configurations = get_physical_configurations(lp, n, primitives)
+    # get the physical pipelines, the pipelines, pipelines are recoded
+    [configurations, n] = get_physical_configurations(lp, n, primitives)
+    
+    # append configuration keys for extracting the pipeline later on
+    id = seq(1, nrow(configurations))
+    configurations = cbind(as.frame(id), configurations)
+    # save the original configuration as a lookup table
+    lookup = configurations
     
     if(verbose) 
       print("n "+ n +"\n R "+ R +"\n s_max "+ s_max +"\n B "+ B +"\n n "+ n +"\n r "+ r)
     
-    for( i in 0:s ) {
+    for( i in 0:s, check=0 ) {
       # successive halving    
-      n_i = as.integer(floor(n * eta^(-i)));
+      n_i = min(max(as.integer(floor(n * eta^(-i))), 1), nrow(configurations));
       r_i = as.integer(floor(r * eta^i));
       
       if(verbose) {
@@ -59,40 +74,41 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
         print("no of resources --------------"+r_i)
         print("iteration  ---------------------"+i)
       }
-      configurations = configurations[1:n_i, ]
-      [a,b] = run_with_hyperparam(configurations, r_i, X_train, Y_train, X_val, Y_val, mask, 
-        schema, param, isWeighted, verbose)
-      # sort the pipelines by order of accuracy decreasing
-      a = frameSort(a)
-      b = order(target = b, by = 1, decreasing=TRUE, index.return=FALSE)
       
-      rowIndex = ifelse(nrow(a) > k, k, nrow(a))
-      # maintain the brackets results
-      bracket_pipel = append(bracket_pipel, a[1:rowIndex,])
-      bracket_hp = append(bracket_hp, b[1:rowIndex, ])
-      print("inside brackets ")
-      print(toString(bracket_pipel))
-      print("------------------")
-      print(toString(bracket_hp))
-      while(FALSE){}
-    }
-    
+      configurations = configurations[1:n_i, ]      
+      [outPip,outHp, feaFrameOuter] = run_with_hyperparam(configurations, r_i, X_train, Y_train, metaList,
+        targetList, param, feaFrameOuter, verbose)
+      # sort the pipelines by order of accuracy decreasing
+      a = order(target = outPip, by = 1, decreasing=TRUE, index.return=FALSE)
+      b = order(target = outHp, by = 1, decreasing=TRUE, index.return=FALSE)
+      rowIndex = ifelse(nrow(a) >= k, k, nrow(a))
 
+      # maintain the brackets results
+      end = end + rowIndex
+      bracket_pipel[start:end, ] =  a[1:rowIndex,]
+      bracket_hp[start:end, 1:ncol(b)] =  b[1:rowIndex,]
+      start = end + 1
+
+      # sort the configurations fro successive halving
+      avergae_perf =  getMaxPerConf(outPip) 
+      configurations = frameSort(cbind(avergae_perf, configurations))
+      configurations = configurations[, 2:ncol(configurations)]
+    }
+    bracket_pipel = removeEmpty(target=bracket_pipel, margin="rows")
+    bracket_hp = removeEmpty(target=bracket_hp, margin="rows")
     # keep the best k results for each bracket
-    [bracket_bestPipeline, bracket_bestHyperparams] = extractTopK(bracket_pipel, 
-      bracket_hp, testAccuracy, k)
-    pipeline = append(pipeline, bracket_bestPipeline)
-    hparam = append(hparam, bracket_bestHyperparams)
+    [bracket_bestPipeline, bracket_bestHyperparams] = extractBracketWinners(bracket_pipel, bracket_hp, k, lookup)
+    # optimize by the features
+
+    startOut = endOut + 1
+    endOut = endOut + nrow(bracket_bestPipeline)
+    pipeline[startOut: endOut, ] = bracket_bestPipeline
+    hparam[startOut:endOut, 1:ncol(bracket_bestHyperparams)] = bracket_bestHyperparams
   }
-  print("after all brackets ")
-  while(FALSE){}
-  print(toString(pipeline))
-  print("------------------")
-  print(toString(hparam))
-  while(FALSE){}
-  # extract best top k from all iterations
-  [bestPipeline, bestHyperparams] = extractTopK(pipeline, hparam, testAccuracy, k)
-  bestAccuracy = as.matrix(bestPipeline[, 1])
+
+  [bestPipeline, bestHyperparams] = extractTopK(pipeline, hparam, as.scalar(targetList['dirAcc']), k)
+
+  bestAccuracy = as.matrix(bestPipeline[,1])
   bestPipeline = bestPipeline[,2:ncol(bestPipeline)]
   bestHyperparams = bestHyperparams[,2:ncol(bestHyperparams)]
   
@@ -100,16 +116,17 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
     print("best pipeline"+ toString(bestPipeline))
     print("best hyper-parameters \n"+ toString(bestHyperparams))
     print("best accuracy \n"+ toString(bestAccuracy))
-    print("dirty accuracy "+testAccuracy)
+    if(as.scalar(targetList['target']) != "compare")
+      print("dirty accuracy "+as.scalar(targetList['dirAcc']))
   }
 }
 
 
 # this method will extract the physical pipelines for a given logical pipelines
 
-get_physical_configurations = function(Frame[String] logical, Scalar[int] n, 
+get_physical_configurations = function(Frame[String] logical, Scalar[int] numConfigs, 
   Frame[Unknown] primitives)
-  return(Frame[String] physical)
+  return(Frame[String] physical, Double min)
 {
   # load the primitives
   physical = as.frame("NaN")
@@ -118,6 +135,8 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] n,
   noise = primitives[,3]
   ci = primitives[,4]
   dim = primitives[,5]
+  dummy = primitives[,6]
+  scale = primitives[,7]
 
  
   operator = as.frame(matrix(0,nrow(outliers),1)) #combine all logical primitives
@@ -133,11 +152,16 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] n,
     else if(as.scalar(logical[1,j]) == "CI")
       operator = cbind(operator, ci);
     else if(as.scalar(logical[1,j]) == "DIM")
-      operator = cbind(operator, dim);  
+      operator = cbind(operator, dim);
+    else if(as.scalar(logical[1,j]) == "DUMMY")
+      operator = cbind(operator, dummy);  
+    else if(as.scalar(logical[1,j]) == "SCALE")
+      operator = cbind(operator, scale);
+    else stop("invalid operation "+as.scalar(logical[1,j]))
   }
   opt = operator[,2:ncol(operator)] 
-  
-  idx = seq(1, ncol(opt))
+
+  idx = matrix(1, rows=1, cols=ncol(logical))
   # get the indexes of columns for recode transformation
   index = vectorToCsv(idx)
   # recode logical pipelines for easy handling
@@ -150,449 +174,362 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] n,
     vect = removeEmpty(target = X[,j], margin = "rows");
     paramLens[j,1] = nrow(vect);
   }
-   paramVals = matrix(0, ncol(logical), max(paramLens));
-   for( j in 1:ncol(logical) ) {
+  min = prod(paramLens)
+  sample = ifelse(min > numConfigs, TRUE, FALSE)
+  paramVals = matrix(0, ncol(logical), max(paramLens));
+  for( j in 1:ncol(logical) ) {
     vect = removeEmpty(target = X[,j], margin = "rows");
     paramVals[j,1:nrow(vect)] = t(vect);
   }
   cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
-  numConfigs = n;
   # materialize hyper-parameter combinations 
-  HP = matrix(0, numConfigs, ncol(logical));
-  parfor( i in 1:nrow(HP) ) {
-    for( j in 1:ncol(logical) )
-      HP[i,j] = paramVals[j,as.scalar(((i-1)/cumLens[j,1])%%paramLens[j,1]+1)];
+  HP = matrix(0, min(numConfigs, min), ncol(logical));
+  if(sample) 
+    pip = sample(numConfigs,numConfigs)
+  else pip = seq(1,nrow(HP))
+  for( i in 1:nrow(HP) ) {
+    for( j in 1:ncol(logical) ) {
+      HP[i,j] = paramVals[j,as.scalar((as.scalar(pip[i,1])/cumLens[j,1])%%paramLens[j,1]+1)];
+    }
   }
   
   physical = transformdecode(target=HP, spec=jspecR, meta=M);
+  print("physical pipeline "+toString(physical))
 }
 
 # this method will call the execute pipelines with their hyper-parameters
-run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double] X, Matrix[Double] Y,
-  Matrix[Double] X_val, Matrix[Double] Y_val, Matrix[Double] mask, Frame[Unknown] schema, 
-  Frame[Unknown] param, Boolean isWeighted, Boolean verbose)                    
-  return (Frame[Unknown] output_operator, Matrix[Double] output_hyperparam)
-{
-  output_hyperparam = matrix(-1, 1, 1)
-  output_operator = as.frame("")
+run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double] X, Matrix[Double] Y, List[Unknown] metaList, 
+   List[Unknown] targetList, Frame[Unknown] param, Frame[Unknown] featureFrameOuter, Boolean verbose)                    
+  return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Frame[Unknown] featureFrameOuter) {
+
+  output_hp = matrix(0, nrow(ph_pip)*r_i, 50)
+  output_accuracy = matrix(0, nrow(ph_pip)*r_i, 1)
+  output_pipelines = matrix(0, nrow(ph_pip)*r_i, 2)
+  
+  # rows in validation set
   clone_X = X
-  clone_x_val = X_val  
   clone_Y = Y
-  clone_y_val = Y_val
+  index = 1
+  id = as.matrix(ph_pip[, 1])
+  ph_pip = ph_pip[, 2:ncol(ph_pip)]
+  
+  feaVec = utils::gatherStats(X, Y, as.matrix(metaList['mask']), as.scalar(targetList['target']))
+
   for(i in 1:nrow(ph_pip))
   {
     # execute configurations with r resources
-    for(r in 1:r_i)
-    {
-      tmp_hp = matrix(0, 1, 1)
-      tmp_op = as.frame("")
-
-      hp = getHyperparam(ph_pip[i,], param)
-      [X, Y] = executePipeline(ph_pip[i], X, Y, mask, schema, hp, FALSE)
-      [X_val, Y_val] = executePipeline(ph_pip[i], X_val, Y_val, mask, schema, hp, FALSE)
-      accuracy = fclassify(X, Y, X_val, Y_val, isWeighted)
-
-      hp_vec = listToVector(hp, FALSE)
-      tmp_hp = cbind(cbind(as.matrix(accuracy), hp_vec), tmp_hp)
-      tmp_op = cbind(cbind(as.frame(accuracy), ph_pip[i]), tmp_op)
-      if(as.scalar(output_hyperparam[1,1]) == -1 ) {
-        output_hyperparam = tmp_hp
-        output_operator = tmp_op
-        }
-      else {
-        if(ncol(tmp_hp) < ncol(output_hyperparam))
-          tmp_hp = cbind(tmp_hp, matrix(0,1,ncol(output_hyperparam) - ncol(tmp_hp)))
-        else if(ncol(tmp_hp) > ncol(output_hyperparam))
-          output_hyperparam = cbind(output_hyperparam, matrix(0,nrow(output_hyperparam), 
-          ncol(tmp_hp) - ncol(output_hyperparam) ))
-      
-        output_hyperparam = rbind(output_hyperparam, tmp_hp)
-        output_operator = rbind(output_operator, tmp_op)
-      }
+    [hp, no_of_res, no_of_flag_vars] = getHyperparam(ph_pip[i], param, r_i)
+    feaFrame = frame("", rows = no_of_res, cols = ncol(feaVec) + ncol(ph_pip) + 1)
+    for(r in 1:no_of_res)
+    { 
+      # as the matrix first block of r rows belongs to first operator and r+1 block of rows to second operator 
+      # we need to extract a row from each block
+      indexes = matrix(no_of_res, rows=ncol(ph_pip), cols=1)
+      indexes[1, 1] = r
+      indexes = cumsum(indexes)
+      indexes = table(indexes, 1, 1, nrow(hp), 1)
+      hp_matrix = removeEmpty(target = hp, margin="rows", select = indexes)
+      [X, Y] = executePipeline(ph_pip[i], X, Y, as.matrix(metaList['mask']), as.matrix(metaList['fd']), hp_matrix, no_of_flag_vars, FALSE)
+      if(as.scalar(targetList['target']) == "compare")
+        accuracy = utils::compareValue(clone_X, X, as.matrix(targetList['cleanData']), as.matrix(metaList['mask']))
+      else
+        accuracy = fclassify(X, Y, as.matrix(metaList['mask']), as.matrix(targetList['mlHp']), as.scalar(targetList['dirAcc']), 
+        as.scalar(targetList['wAccuracy']), as.scalar(targetList['cv']))
+      matrix_width = as.matrix(nrow(hp_matrix) * ncol(hp_matrix))
+      hp_vec = cbind(matrix_width, matrix(hp_matrix, rows=1, cols=nrow(hp_matrix)*ncol(hp_matrix), byrow=TRUE))
+      output_accuracy[index, 1] = accuracy
+      output_hp[index, 1:ncol(hp_vec)] = hp_vec
+      output_pipelines[index, ] = cbind(as.matrix(i), id[i,1])
       X = clone_X
-      X_val = clone_x_val
       Y = clone_Y
-      Y_val = clone_y_val
-      while(FALSE){}
+      index = index + 1  
+      feaFrame[r, 1:ncol(feaVec)] = as.frame(feaVec)
+      feaFrame[r, ncol(feaVec)+1:ncol(feaVec)+ncol(ph_pip[1])] = ph_pip[i]
+      feaFrame[r, ncol(feaFrame)] = accuracy
     }
-
+    
+    X = clone_X
+    Y = clone_Y
+    featureFrameOuter = rbind(featureFrameOuter, feaFrame)
   }
-  output_hyperparam = output_hyperparam[, 1:ncol(output_hyperparam) - 1]
-  output_operator = output_operator[, 1:ncol(output_operator) - 1]
-
+  output_hyperparam = removeEmpty(target=cbind(output_accuracy, output_hp), margin="rows")
+  output_operator = removeEmpty(target=cbind(output_accuracy, output_pipelines) ,margin="rows")
 }
 
 # extract the hyper-parameters for pipelines
-getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList)
-  return (List[Unknown] paramList)
+getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Integer no_of_res)
+  return (Matrix[Double] paramMatrix, Integer no_of_res, Integer NUM_META_FLAGS)
 {
+
+  allParam = 0;
+  START_INDEX = 8 # value from where the hyper-params starts after skipping meta flags
+  NUM_META_FLAGS = 5
   # load the hyper-parameters values
   paramList = list()
-  for(i in 1:ncol(pipeline)) {
-    op = as.scalar(pipeline[1,i])
-    hasParam = map(hpList[,1], "x->x.contains(\""+op+"\")")
-    m_hasParam = matrix(0, nrow(hasParam), 1)
-
+  # store the row indexes of the operator matches
+  indexes = matrix(0, rows= ncol(pipeline), cols=1)
+  paramCount = matrix(0, rows= ncol(pipeline), cols=1)
+  for(k in 1:ncol(pipeline))
+  {
+    op = as.scalar(pipeline[1,k])
+    hasParam = map(hpList[,1], "x->x.split(\",\")[0].equals(\""+op+"\")")    
     # convert the boolean vector to 0/1 matrix representation
-    for(h in 1:nrow(hasParam))
-      m_hasParam[h] = ifelse(as.scalar(hasParam[h,1]) == "true",1,0)
+    m_hasParam = hasParam == frame("true", rows=nrow(hasParam), cols=1)
+    m_hasParam = as.matrix(m_hasParam)
     # compute the relevant index 
     index = m_hasParam * seq(1, nrow(m_hasParam))
     index = as.scalar(removeEmpty(target = index, margin = "rows"))
-    no_of_param = as.integer(as.scalar(hpList[index, 2]))
+    indexes[k] = index
+    paramCount[k] = as.integer(as.scalar(hpList[index, 2]))
+  }
+  # if there are no hyper-parameters than change the values of resources
+  # so that the pipeline is only executed once and no resource are wasted, saving looping
+  no_of_res = ifelse(sum(paramCount) > 0, no_of_res, 1)
+  # the below matrix stores the different combinations of hyper-parameter value for each pipeline
+  # if the resource value is greater than zero this means for 1 pipeline it will store r rows where each row store set
+  # of hyperparameter values for ith pipeline. If resource value rv = 10 and ncol(pip) = 3 then the output matrix will have
+  # 10*3= 30 rows and 1:10 hyper-paramters for i-the pipeline 11:20 for (i+1)-th pipeline and so on
+  # this matrix stores no. of hps, values of hps, and flags
+  paramMatrix = matrix(0, rows=ncol(pipeline)*no_of_res, cols=max(paramCount)+NUM_META_FLAGS+1)
 
+  for(i in 1:ncol(pipeline)) {
+    index = as.scalar(indexes[i])
+    no_of_param = as.integer(as.scalar(paramCount[i]))
     # extract hasY and verbose flags
-    attachY = as.matrix(hpList[index, 3])
-    isVerbose = as.matrix(hpList[index, 4])
+    attachMask = matrix(as.scalar(hpList[index, 3]), rows=no_of_res, cols=1)
+    attachFD = matrix(as.scalar(hpList[index, 4]), rows=no_of_res, cols=1)
+    attachY = matrix(as.scalar(hpList[index, 5]), rows=no_of_res, cols=1)
+    isVerbose = matrix(as.scalar(hpList[index, 6]), rows=no_of_res, cols=1)
+    dataFlag = matrix(as.scalar(hpList[index, 7]), rows=no_of_res, cols=1)
     
     if(no_of_param > 0) {
-      start = 5
-      t = 5
-      OpParam = matrix(0, 1, no_of_param)
+      paramIdx = START_INDEX
+      typeIdx = START_INDEX
+      OpParam = matrix(0, rows=no_of_res, cols=max(paramCount))
+      
       for(j in 1:no_of_param) {
-        type = as.scalar(hpList[index, t])
-        paramValIndex = (no_of_param) + start
+        type = as.scalar(hpList[index, typeIdx])
+        paramValIndex = (no_of_param) + paramIdx
         minVal =  as.scalar(hpList[index, paramValIndex])
         maxVal = as.scalar(hpList[index, paramValIndex + 1])
-        [minVal, maxVal] = verifyHp(i, pipeline, minVal, maxVal, j)
         if(type == "FP") {
-          val = as.scalar(rand(rows=1, cols=1, min=minVal,
-                          max=maxVal, pdf="uniform"));
-          OpParam[1, j] = val
-        }
-        else if(type == "INT") {
-          # val = ifelse(minVal == maxVal , minVal, as.scalar(sample(maxVal, 1)));
-          val = round(as.scalar(rand(rows=1, cols=1, min=minVal, 
-                                max=maxVal, pdf="uniform")));
-          OpParam[1, j] = val
-        }
-        else if(type == "BOOL") {
-          s = as.scalar(sample(2,1))
-          b = as.integer(s-1)
-          OpParam[1, j] = b
-        }
-        else {
+          val = rand(rows=no_of_res, cols=1, min=minVal,max=maxVal, pdf="uniform");
+          OpParam[, j] = val;
+        } else if(type == "INT") {
+          val = sample(maxVal, no_of_res, TRUE);
+          less_than_min = val < minVal;
+          val = (less_than_min * minVal) + val;
+          OpParam[, j] = val
+        } else if(type == "BOOL") {
+          if(maxVal == 1) {
+            s = sample(2, no_of_res, TRUE);
+            b = s - 1;
+            OpParam[, j] = b;
+          } else  
+            OpParam[, j] = matrix(0, rows=no_of_res, cols=1)
+        } else {
           # TODO handle string set something like {,,}
           print("invalid data type")
         }
-        start = start + 2
-        t = t + 1
+        paramIdx = paramIdx + 2
+        typeIdx = typeIdx + 1
       }
-      OpParam = cbind(OpParam, attachY, isVerbose)
+      # hyper-parameter vector contains no. of hp, values of hp, and flag values
+      OpParam = cbind(matrix(no_of_param, rows=nrow(OpParam), cols=1),OpParam, attachMask,
+        attachFD, attachY, isVerbose, dataFlag)
     }
     else {
-      OpParam = attachY
-      OpParam = cbind(OpParam, isVerbose)
+      # no hyper-parameters, so create a dummy matrix of zeros so flags are always aligned
+      dummy = matrix(0, rows=no_of_res, cols=max(paramCount)+1)
+      OpParam = cbind(dummy, attachMask, attachFD, attachY)
+      OpParam = cbind(OpParam, isVerbose, dataFlag)
     }
-    while(FALSE){}
-    paramList = append(paramList, OpParam)
+    paramMatrix[((i-1)*no_of_res)+1:i*no_of_res, 1:ncol(OpParam)] = OpParam
   }
 }
 
 
-listToVector = function(List[Unknown] hp, Boolean verbose)
-return (Matrix[Double] hp_vec)
+# extract the top k pipelines as a final result after deduplication and sorting
+extractTopK = function(Frame[Unknown] pipeline, Matrix[Double] hyperparam, 
+  Double testAccuracy, Integer k)
+  return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams)
 {
-  hp_vec = matrix(0,1,1)
-  len = length(hp)
-  for(k in 1:len) {
-    mat = as.matrix(hp[k])
-    hpy = cbind(as.matrix(ncol(mat)), mat)
-    hp_vec = cbind(hp_vec, hpy)
+
+  idx = vectorToCsv(seq(1, ncol(pipeline)))
+  jspecDC = "{ids:true, recode:["+idx+"]}";
+  # OHE of categorical features
+  [dpipeline, dM] = transformencode(target=pipeline, spec=jspecDC);
+  # bind the pipelines and hyper-parameters into one matrix
+  forDedup = cbind(dpipeline, hyperparam) 
+  # perform the similarity based deduplication
+  dup = mdedup(cbind(pipeline, as.frame(hyperparam)), matrix(seq(2, ncol(forDedup)), 1,
+    ncol(forDedup)-1), matrix(1,1,ncol(forDedup)-1), as.matrix(1), as.matrix(1), FALSE)
+
+  if(sum(dup) > 0)
+  {
+    # take out the unique tuples
+    uniqueTuples =  removeEmpty(target= forDedup, margin="rows", select = (dup ==0))
+    # remove the zero rows, identifiers of unique records
+    dup =  removeEmpty(target = dup, margin="rows")
+    # get the counts of duplicate tuples with their tuple id
+    countDist = table(dup, 1) > 0
+    countDist = countDist * seq(1, nrow(countDist))
+    countsVal = removeEmpty(target= countDist, margin="rows")
+    indexes = table(seq(1, nrow(countsVal)),countsVal,1,nrow(countsVal), cols=nrow(forDedup))
+
+    # for each duplicate record just take the one reocrd and strip the others
+    deduplicates = indexes %*% forDedup
+  
+    # combine the deduplicated tuples and unique tuples again 
+    forDedup = rbind(uniqueTuples, deduplicates)
   }
-  hp_vec = hp_vec[1, 2:ncol(hp_vec)]
+  
+  # decode the pipelines 
+  decoded = transformdecode(target=forDedup[, 1:ncol(pipeline)], meta=dM, spec=jspecDC)
+  
+  # separate the pipelines and hyper-parameters
+  pipeline = decoded[, 1:ncol(pipeline)]
+  hyperparam = forDedup[, ncol(pipeline)+1:ncol(forDedup)]
+
+  # sort results
+  hyperparam = order(target = hyperparam, by = 1, decreasing=TRUE, index.return=FALSE)
+  pipeline = frameSort(pipeline)
+
+
+  # remove the row with accuracy less than test accuracy 
+  mask = (hyperparam[, 1] < testAccuracy) == 0
+  hyperparam = removeEmpty(target = hyperparam, margin = "rows", select = mask)
+  rowIndex = ifelse(nrow(hyperparam) > k, k, nrow(hyperparam))
+  # select the top k
+  bestPipeline = pipeline[1:rowIndex,]
+  bestHyperparams = hyperparam[1:rowIndex,]
+  
 }
 
 
-fclassify = function(Matrix[Double] X, Matrix[Double] Y,  Matrix[Double] X_val, 
-  Matrix[Double] y_val, Boolean isWeighted)
+
+# extract the top k pipelines for each bracket, the intermediate results
+extractBracketWinners = function(Matrix[Double] pipeline, Matrix[Double] hyperparam, 
+  Integer k, Frame[Unknown] conf)
+  return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams)
+{
+
+  # bestPipeline = frameSort(bestPipeline)
+  hyperparam = order(target = hyperparam, by = 1, decreasing=TRUE, index.return=FALSE)
+  pipeline = order(target = pipeline, by = 1, decreasing=TRUE, index.return=FALSE)
+  
+  rowIndex = ifelse(nrow(pipeline) > k, k, nrow(pipeline))
+
+  pipeline = pipeline[1:rowIndex,]
+  bestHyperparams = hyperparam[1:rowIndex,]
+  bestPipeline = frame(data="|", rows=nrow(pipeline), cols=ncol(conf)-1)
+  for(i in 1: nrow(pipeline), check=0)
+  {
+    index = as.scalar(pipeline[i, 3])
+    bestPipeline[i, 1:ncol(bestPipeline)] = conf[index, 2:ncol(conf)]
+  }
+  bestPipeline = cbind(as.frame(pipeline[, 1]),  bestPipeline)
+  
+}
+
+###########################################################################
+# The function will return the max performance by each individual pipeline
+############################################################################
+getMaxPerConf = function(Matrix[Double] pipelines)
+return (Frame[Unknown] maxperconf)
+{
+  tab = removeEmpty(target=table(pipelines[, 2], pipelines[, 3], pipelines[, 1]), margin="cols")
+  maxperconf = frame(0, rows=max(pipelines[, 2]), cols=1)
+  maxperconf[1:ncol(tab),] = as.frame(t(colMaxs(tab)))
+}
+
+
+# function to classify the data using cross validation
+fclassify = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, Matrix[Double] MLhp,
+  Double testAccuracy, Boolean isWeighted, Integer cv=3)
   return (Double accuracy)
 {
-  K = 10
+ 
   if(max(Y) == min(Y)) {
     print("Y contains only one class")
     accuracy = as.double(0)
   }
-  else 
-  { 
-    print("STARTING "+K+" CROSS VALIDATIONS")
+  else { 
+    print("STARTING "+cv+" CROSS VALIDATIONS")
     # do the k = 3 cross validations
-    accuracyMatrix = crossV(rbind(X, X_val), rbind(Y, y_val), K, isWeighted)
+    accuracyMatrix = crossV(X, Y, cv, mask, MLhp, isWeighted)
+    accuracyMatrix = removeEmpty(target=accuracyMatrix, margin="rows")
     acc = colMeans(accuracyMatrix)
     accuracy = as.scalar(acc[1,1])
     print("validation accuracy "+accuracy)
   }
 }
 
-crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Boolean isWeighted) 
+# # ######################################################################
+# # # # Function for cross validation using hold out method
+# # # # Inputs: The input dataset X, Y and the value of k validation, mask of the 
+# # # # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# # # # via gridsearch and a boolean value of (un)weighted accuracy.
+# # # # Output: It return a matrix having the accuracy of each fold.
+# # ######################################################################
+
+crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] mask,
+  Matrix[Double] MLhp, Boolean isWeighted) 
 return (Matrix[Double] accuracyMatrix)
 {
 
-  #create empty lists
-  dataset_X = list(); #empty list
-  dataset_y = list();
-  fs = ceil(nrow(X)/k);
-  off = fs - 1;
-  #divide X, y into lists of k matrices
-  for (i in seq(1, k)) {
-    dataset_X = append(dataset_X, X[i*fs-off : min(i*fs, nrow(X)),]);
-    dataset_y = append(dataset_y, y[i*fs-off : min(i*fs, nrow(y)),]);
+  accuracyMatrix = matrix(0, k, 1)
+
+  dataList = list()
+  testL = list()
+  data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+  classes = table(data[, 1], 1)
+  ins_per_fold = classes/k
+  start_fold = matrix(1, rows=nrow(ins_per_fold), cols=1)
+  fold_idxes = cbind(start_fold, ins_per_fold)
+
+  start_i = 0; end_i = 0; idx_fold = 1;;
+  for(i in 1:k)
+  {
+    fold_i = matrix(0, 0, ncol(data))
+    start=0; end=0; 
+    for(j in 1:nrow(classes))
+    {
+      idx = as.scalar(classes[j, 1])
+      start = end + 1;
+      end = end + idx
+      class_j =  data[start:end, ]
+
+      start_i = as.scalar(fold_idxes[j, 1]);
+      end_i = as.scalar(fold_idxes[j, 2])
+
+      fold_i = rbind(fold_i, class_j[start_i:end_i, ])
+    }
+
+    dataList = append(dataList, fold_i)
+    fold_idxes[, 1] = fold_idxes[, 2] + 1
+    fold_idxes[, 2] += ins_per_fold
+    while(FALSE){}
   }
 
-  accuracyMatrix = matrix(0, k, 2)
-
-  #keep one fold for testing in each iteration
-  for (i in seq(1, k)) {
-    [tmpX, testX] = remove(dataset_X, i);
-    [tmpy, testy] = remove(dataset_y, i);
-    trainX = rbind(tmpX);
-    trainy = rbind(tmpy);
-    trainX = trainX[,1:ncol(X)] # TODO improve list size propagation
-    testX = as.matrix(testX)
-    testy = as.matrix(testy)
-    beta = multiLogReg(X=trainX, Y=trainy, icpt=2, reg=0.00001, tol=1e-9, maxi=50, 
-      maxii= 50, verbose=FALSE);
+  for(i in seq(1,k))
+  {
+    [trainList, hold_out] = remove(dataList, i)
+    trainset = rbind(trainList)
+    testset = as.matrix(hold_out)
+    trainX = trainset[, 2:ncol(trainset)]
+    trainy = trainset[, 1]
+    testX = testset[, 2:ncol(testset)]
+    testy = testset[, 1]
+    beta = multiLogReg(X=trainX, Y=trainy, icpt=1, reg=as.scalar(MLhp[1,1]), tol= 1e-9, 
+    maxi=as.scalar(MLhp[1,2]), maxii= 50, verbose=FALSE);
     [prob, yhat, a] = multiLogRegPredict(testX, beta, testy, FALSE)
-    
     accuracy = getAccuracy(testy, yhat, isWeighted)
-    accuracyMatrix[i, 1] = accuracy
-
+    accuracyMatrix[i] = accuracy
   }
 }
 
-# extract the top k pipelines
-extractTopK = function(List[Unknown] pipeline, List[Unknown] hyperparam, 
-  Double testAccuracy, Integer k)
-  return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams)
-{
-  len = length(pipeline)
-  print("length "+len)
-  # process the pipelines
-  bestPipeline = as.frame(pipeline[1])
-  pipelineLength = ncol(bestPipeline)
-  if(len > 1)
-  {
-    for(i in 2:length(pipeline))
-    {
-      right = as.frame(pipeline[i, 1:pipelineLength])
-      bestPipeline = rbind(bestPipeline, right )
-    }
-  }
 
-  # process the hyper-parameters
-  pipLen = matrix(0, length(hyperparam), 1)
-  pipWidth = matrix(0, length(hyperparam), 1)
-  for(i in 1:length(hyperparam))
-  {
-    mat = as.matrix(hyperparam[i])
-    pipLen[i] = ncol(mat)
-    pipWidth[i] = nrow(mat)
-  }
-  rowLen = cumsum(pipWidth)
-  bestHyperparams = matrix(0, max(rowLen), max(pipLen))
-  
-  start = 1
-  for(i in 1: length(hyperparam))
-  { 
-    matSep = as.scalar(rowLen[i])
-    vect = as.matrix(hyperparam[i])
-    bestHyperparams[start:matSep, 1:ncol(vect)] = vect 
-    start = matSep + 1
-  }
-
-  mask = (bestHyperparams[, 1] < testAccuracy) == 0
-  bestPipeline = frameRmEmpty(bestPipeline, mask)
-  bestHyperparams = removeEmpty(target = bestHyperparams, margin = "rows", select = mask)
-  
-  bestPipeline = frameSort(bestPipeline)
-  bestHyperparams = order(target = bestHyperparams, by = 1, decreasing=TRUE, index.return=FALSE)
-  rowIndex = ifelse(nrow(bestPipeline) > k, k, nrow(bestPipeline))
-
-  bestPipeline = bestPipeline[1:rowIndex,]
-  bestHyperparams = bestHyperparams[1:rowIndex,]
-
-}
-
-# remove empty wrapper for frames
-frameRmEmpty = function(Frame[Unknown] frameblock, Matrix[Double] selectMatrix)
-return (Frame[Unknown] frameblock)
-{
-  idx = seq(1, ncol(frameblock))
-  # get the indexes of columns for recode transformation
-  index = vectorToCsv(idx)
-  # recode logical pipelines for easy handling
-  jspecR = "{ids:true, recode:["+index+"]}";
-  [X, M] = transformencode(target=frameblock, spec=jspecR);
-  X = removeEmpty(target = X, margin = "rows", select = selectMatrix)
-  frameblock = transformdecode(target = X, spec = jspecR, meta = M)
-}
-
-
-# smote wrapper for doing relative over-sampling
-SMOTE  = function(Matrix[Double] X, Matrix[Double] Y,  Boolean verbose)
-return (Matrix[Double] XY)
-{
-
-  XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
-  # get the class count 
-  classes = table(Y, 1)
-  print("before smote")
-  print(toString(classes))
-  start_class = 1
-  end_class = 0
-  k = table(Y, 1)
-  getMax = max(k)
-  maxKIndex = as.scalar(rowIndexMax(t(k)))
-  outSet = matrix(0, 0, ncol(XY))
- 
-  for(i in 1: nrow(k)) {
-    end_class = end_class + as.scalar(classes[i])
-    class_t = XY[start_class:end_class, ]
-    remainingRatio = (round(getMax/nrow(class_t)) - 1) * 100
-    if((i != maxKIndex)) {
-      # TODO implement SMOTE-NC for categorical data oversampling
-      synthesized = smote(class_t, remainingRatio, 1, FALSE)
-      outSet = rbind(outSet, synthesized)
-      if(verbose) {
-        print("max value: "+getMax)
-        print("values of i: "+i)
-        print("remaining ratio: "+remainingRatio)
-      }
-    }
-    start_class = end_class + 1
-  }
-  
-  XY = rbind(XY, synthesized)
-  Y = XY[, 1]
-  X = XY[, 2:ncol(XY)]
-  XY = cbind(X,Y)
-  classes = table(Y, 1)
-  print("after smote")
-  print(toString(classes))
-}
-
-# constraints over hyper parameters
-verifyHp = function(Integer index, Frame[Unknown] pip, Double minVal, Double maxVal, Integer paraNo)
-return (Double minVal, Double maxVal) {
-  op = as.scalar(pip[1,index])
-  # 1. if next op is pca then current op should not leave NaNs in data
-  # 2. if next op is mice then current op should not replace NaNs with zeros
-  
-  if((op == "outlierBySd" | op == "outlierByIQR") & index < ncol(pip) & paraNo == 2)
-  {
-    nextOp = as.scalar(pip[1, index + 1])
-    if(nextOp == "pca" | nextOp == "abstain" | nextOp == "SMOTE")
-    {
-      maxVal = 1.0
-    }
-    if(nextOp == "mice")
-    {
-      minVal = 2.0
-    }
-  }
-  # print("now min and max val ")
-  # print(minVal+" "+maxVal)
-  
-}
-
-# smote_nc = function(Matrix[Double] X, Integer s = 200, Matrix[Double] mask, Integer k = 1, Boolean verbose = FALSE) 
-# return (Matrix[Double] Y) {
-
-  # if(s < 100 | (s%%100) != 0)
-  # {
-    # print("the number of samples should be an integral multiple of 100. Setting s = 100")
-    # s = 100
-  # }
-  
-  # if(k < 1) {
-    # print("k should not be less than 1. Setting k value to default k = 1.")
-    # k = 1
-  # }
-  
-  # # matrix to keep the index of KNN for each minority sample
-  # knn_index = matrix(0,k,nrow(X))
-  # # find nearest neighbour
-  # for(i in 1:nrow(X))
-  # {
-    # knn = nn(X, X[i, ], k)
-    # knn_index[, i] = knn
-  # }
-  
-  # # number of synthetic samples from each minority class sample
-  # iter = 0
-  # iterLim = (s/100)
-  # # matrix to store synthetic samples
-  # synthetic_samples = matrix(0, iterLim*ncol(knn_index), ncol(X))
-  
-  # # shuffle the nn indexes
-  # #rand_index =  ifelse(k < iterLim, sample(k, iterLim, TRUE, 42), sample(k, iterLim, 42))
-  # if (k < iterLim)
-    # rand_index = sample(k, iterLim, TRUE, 42);
-  # else
-    # rand_index = sample(k, iterLim, 42);
-
-  # while(iter < iterLim)
-  # {
-    # # pick the random NN
-    # knn_sample = knn_index[as.scalar(rand_index[iter+1]),] 
-    # # generate sample    
-    # for(i in 1:ncol(knn_index))
-    # {
-      # index = as.scalar(knn_sample[1,i])
-      # X_diff = X[index,] - X[i, ]
-      # gap = as.scalar(Rand(rows=1, cols=1, min=0, max=1, seed = 42))
-      # X_sys = X[i, ] + (gap*X_diff)
-      # synthetic_samples[iter*ncol(knn_index)+i,] = X_sys;
-    # }
-    # iter = iter + 1
-  # }
-
-  # Y = synthetic_samples
-  
-  # if(verbose)
-    # print(nrow(Y)+ " synthesized samples generated.")
-
-# }
-  
-
-
-# nn = function(Matrix[Double] X, Matrix[Double] instance, Integer k )
-# return (Matrix[Double] knn_)
-# {
-  # if(nrow(X) < k)
-    # stop("can not pick "+k+" nearest neighbours from "+nrow(X)+" total instances")
-
-  # # compute the euclidean distance
-  # diff = X - instance
-  # square_diff = diff^2
-  # distance = sqrt(rowSums(square_diff))
-  # sort_dist = order(target = distance, by = 1, decreasing= FALSE, index.return =  TRUE)
-  # knn_ = sort_dist[2:k+1,]
-# }
-
-downSample = function(Matrix[Double] X, matrix[Double] Y)
-return (Matrix[Double] XY)
-{
-  # find the class distribution
-  classes = table(Y, 1)
-  XY = order(target = cbind(X,Y), by = ncol(X), decreasing = FALSE, index.return = FALSE)
-  # take minimum class out
-  minRecords = min(classes)
-  start_class = 1
-  out_s = 1 
-  out_e = 0
-  end_class = 0
-
-  out = matrix(0, minRecords * nrow(classes), ncol(XY))
-
-  for(i in 1:nrow(classes))
-  {
-    end_class = end_class + as.scalar(classes[i])
-    class_t = XY[start_class:end_class, ]
-    out_e = out_e + i * minRecords
-    out[out_s:out_e, ] = class_t[1:minRecords, ] 
-    out_s = out_e + 1
-    start_class = end_class + 1
-  }
-
-}
+# data=["#MissingValues", "MinVla", "MaxVal", "AverageMin", "AverageMax", 
+# "#CategoricalFeatures", "#NumericFeatures", "Mean", "#Outliers", "#OHEfeatures", "#Classes",
+# "Imbalance", "#rows", "#cols", ""]

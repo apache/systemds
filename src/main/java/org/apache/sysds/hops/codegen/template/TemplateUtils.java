@@ -99,13 +99,17 @@ public class TemplateUtils
 	}
 	
 	public static CNode wrapLookupIfNecessary(CNode node, Hop hop) {
+		return wrapLookupIfNecessary(node, hop, false);
+	}
+	
+	public static CNode wrapLookupIfNecessary(CNode node, Hop hop, boolean rowTpl) {
 		CNode ret = node;
 		if( isColVector(node) )
 			ret = new CNodeUnary(node, UnaryType.LOOKUP_R);
 		else if( isRowVector(node) )
 			ret = new CNodeUnary(node, UnaryType.LOOKUP_C);
 		else if( node instanceof CNodeData && hop.getDataType().isMatrix() )
-			ret = new CNodeUnary(node, UnaryType.LOOKUP_RC);
+			ret = rowTpl ? node : new CNodeUnary(node, UnaryType.LOOKUP_RC);
 		return ret;
 	}
 	

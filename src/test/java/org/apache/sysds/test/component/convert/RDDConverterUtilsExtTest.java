@@ -59,7 +59,12 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 	public static void setUpClass() {
 		if (conf == null)
 			conf = SparkExecutionContext.createSystemDSSparkConf().setAppName("RDDConverterUtilsExtTest")
-					.setMaster("local");
+					.set("spark.port.maxRetries", "100")
+					.setMaster("local")
+					.set("spark.driver.bindAddress", "127.0.0.1")
+					.set("SPARK_MASTER_PORT", "0")
+					.set("SPARK_WORKER_PORT", "0");
+
 		if (sc == null)
 			sc = new JavaSparkContext(conf);
 	}

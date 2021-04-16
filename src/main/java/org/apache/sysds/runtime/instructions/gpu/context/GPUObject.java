@@ -935,7 +935,9 @@ public class GPUObject {
 			mat.release();
 			return;
 		}
-		
+		boolean sparse = false;
+		if(isDensePointerNull())
+			sparse = true;
 		MatrixBlock tmp = null;
 		long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if (!isDensePointerNull()) {
@@ -965,7 +967,7 @@ public class GPUObject {
 		if (DMLScript.STATISTICS && !isEviction) {
 			// Eviction time measure in malloc
 			long totalTime = System.nanoTime() - start;
-			int count = !isDensePointerNull() ? 1 : 3;
+			int count = sparse ? 3 : 1;
 			GPUStatistics.cudaFromDevTime.add(totalTime);
 			GPUStatistics.cudaFromDevCount.add(count);
 		}

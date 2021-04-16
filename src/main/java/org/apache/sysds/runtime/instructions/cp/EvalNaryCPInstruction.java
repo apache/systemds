@@ -80,8 +80,10 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		String funcName2 = Builtins.getInternalFName(funcName, dt1);
 		if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcName)) {
 			nsName = DMLProgram.BUILTIN_NAMESPACE;
-			if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcName2) )
-				compileFunctionProgramBlock(funcName, dt1, ec.getProgram());
+			synchronized(ec.getProgram()) { //prevent concurrent recompile/prog modify
+				if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcName2) )
+					compileFunctionProgramBlock(funcName, dt1, ec.getProgram());
+			}
 			funcName = funcName2;
 		}
 		
@@ -187,8 +189,8 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			if( !prog.containsFunctionProgramBlock(null, fsb.getKey(), false) ) {
 				FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
 					.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
-				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true); // optimized
-				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false);    // unoptimized -> eval
+				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true);  // optimized
+				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
 			}
 		}
 	}

@@ -29,14 +29,19 @@
 ##############################################################
 
 #  If not set by env,  set to 1 to run spark-submit instead of local java
-#  This should be used if "-exec SPARK" or "-exec HYBRID" is required
-if [ -z "$SYSDS_DISTRIBUTED" ]; then
+#  This should be used to run with spark-submit instead of java
+if [[ -z "$SYSDS_DISTRIBUTED" ]]; then
   SYSDS_DISTRIBUTED=0
 fi
 
 # if not set by env, set to 1 to disable setup output of this script
 if [ -z "$SYSDS_QUIET" ]; then
   SYSDS_QUIET=0
+fi
+
+# if not set by env, set to hybrid execution by default
+if [[ -z "$SYSDS_EXEC_MODE" ]]; then
+  SYSDS_EXEC_MODE=hybrid
 fi
 
 # an echo toggle
@@ -215,7 +220,7 @@ if [ -z "$WORKER" ] ; then
   WORKER=0
 fi
 
-if [ -z "$SYSTEMDS_ROOT" ] ; then
+if [[ -z $SYSTEMDS_ROOT ]] ; then
   SYSTEMDS_ROOT=.
 	print_out "SYSTEMDS_ROOT not set defaulting to current dir $(pwd)"
 else
@@ -224,15 +229,28 @@ else
 fi;
 
 # when using find, look in the directories in this order
-DIR_SEARCH_ORDER="conf lib $SYSTEMDS_ROOT/conf $SYSTEMDS_ROOT/target"
+DIR_SEARCH_ORDER=". $SYSTEMDS_ROOT $SYSTEMDS_ROOT/conf  $SYSTEMDS_ROOT/lib $SYSTEMDS_ROOT/src $SYSTEMDS_ROOT/target"
+ordered_find() {
+  result=""
+  for dir in $(echo "$DIR_SEARCH_ORDER" | tr ' ' '\n') ; do
+    if [[ $dir == "$SYSTEMDS_ROOT" ]] || [[ $dir == "." ]]; then
+      result=$(find "$dir" -maxdepth 1 -iname "$1" -print -quit)
+      if [[ $result != "" ]]; then break; fi
+    else
+      result=$(find "$dir" -iname "$1" -print -quit 2> /dev/null)
+      if [[ $result != "" ]]; then break; fi
+    fi
+  done
+  echo "$result"
+}
 
 # find me a SystemDS jar file to run
 if [ -z "$SYSTEMDS_JAR_FILE" ];then
-  SYSTEMDS_JAR_FILE=$(find $DIR_SEARCH_ORDER -iname "systemds.jar" 2> /dev/null | tail -n 1)
+  SYSTEMDS_JAR_FILE=$(ordered_find "systemds.jar")
   if [ -z "$SYSTEMDS_JAR_FILE" ];then
-    SYSTEMDS_JAR_FILE=$(find $DIR_SEARCH_ORDER -iname "systemds-?.?.?.jar" 2> /dev/null | head -n 1)
+    SYSTEMDS_JAR_FILE=$(ordered_find "systemds-?.?.?.jar")
     if [ -z "$SYSTEMDS_JAR_FILE" ];then
-      SYSTEMDS_JAR_FILE=$(find $DIR_SEARCH_ORDER -iname "systemds-?.?.?-SNAPSHOT.jar" 2> /dev/null | head -n 1)
+      SYSTEMDS_JAR_FILE=$(ordered_find "systemds-?.?.?-SNAPSHOT.jar")
     fi
   fi
 else
@@ -242,7 +260,8 @@ fi
 # check if log4j config file exists, otherwise unset
 # to run with a non fatal complaint by SystemDS
 if [ -z "$LOG4JPROP" ] ; then
-  LOG4JPROP=$(find $DIR_SEARCH_ORDER -iname "log4j*properties" 2> /dev/null | head -n 1)
+  LOG4JPROP=$(ordered_find "log4j*properties")
+
   if [ -z "${LOG4JPROP}" ]; then
     LOG4JPROP=""
   else
@@ -262,23 +281,68 @@ else
 fi
 
 if [[ "$*" == *-config* ]]; then
-  CONFIG_FILE=""
+# override config file from env var if given as parameter to SystemDS
+  read -r -d '' -a myArray < <( echo "$@" )
+  INDEX=0
+  for i in "${myArray[@]}"; do
+    if [[ ${myArray[INDEX]} == *-config* ]]; then
+      if [ -f "${myArray[((INDEX+1))]}" ]; then      
+        CONFIG_FILE="${myArray[((INDEX+1))]}"
+      else
+        echo Warning! Passed config file "${myArray[((INDEX+1))]}" does not exist.
+      fi
+      # remove -config
+      unset 'myArray[INDEX]'
+      
+      # remove -config param if not starting with -
+      if [[ "${myArray[((INDEX+1))]:0:1}" != "-" ]]; then
+        unset 'myArray[((INDEX+1))]'
+      fi
+      # setting the script arguments without the passed -config for further processing  
+      set -- "${myArray[@]}"
+      break;
+    fi
+    # debug print array item
+    #echo "${myArray[INDEX]}" 
+    (( INDEX=INDEX+1 ))
+  done
+
+  if [ -f "$CONFIG_FILE" ] ; then
+    CONFIG_FILE="-config $CONFIG_FILE"
+  else    
+    CONFIG_FILE=""
+  fi
 elif [ -z "$CONFIG_FILE" ] ; then
   # same as above: set config file param if the file exists
-  CONFIG_FILE=$(find $DIR_SEARCH_ORDER -iname "SystemDS*config*.xml" 2> /dev/null  | head -n 1)
+  CONFIG_FILE=$(ordered_find "SystemDS*config*.xml")
   if [ -z "$CONFIG_FILE" ]; then
     CONFIG_FILE=""
   else
-    CONFIG_FILE="--config $CONFIG_FILE"
+    CONFIG_FILE="-config $CONFIG_FILE"
   fi
 else
   # CONFIG_FILE was set by env var. Unset if that setting is wrong
-  CONFIG_FILE2=$(find "$CONFIG_FILE")
-  if [ -z "${CONFIG_FILE2}" ]; then
-    CONFIG_FILE=""
+  if [ -f "${CONFIG_FILE}" ]; then
+    CONFIG_FILE="-config $CONFIG_FILE"
   else
-    CONFIG_FILE="--config $CONFIG_FILE"
+    CONFIG_FILE=""
   fi
+fi
+
+# override exec mode if given as parameter to SystemDS (e.g. -exec singlenode)
+read -r -d '' -a myArray < <( echo "$@" )
+INDEX=0
+for i in "${myArray[@]}"; do 
+  if [[ ${myArray[INDEX]} == *-exec* ]]; then
+    SYSDS_EXEC_MODE="${myArray[((INDEX+1))]}"
+    break;
+  fi
+  (( INDEX=INDEX+1 ))
+done
+
+if [ $SYSDS_DISTRIBUTED -ne 0 ] && [[ $SYSDS_EXEC_MODE == "singlenode" ]]; then
+  echo "Error: Can not run on Spark with execution mode singlenode"
+  exit 1
 fi
 
 # find absolute path to hadoop home in SYSTEMDS_ROOT
@@ -327,6 +391,7 @@ fi
 print_out "###############################################################################"
 print_out "#  SYSTEMDS_ROOT= $SYSTEMDS_ROOT"
 print_out "#  SYSTEMDS_JAR_FILE= $SYSTEMDS_JAR_FILE"
+print_out "#  SYSDS_EXEC_MODE= $SYSDS_EXEC_MODE"
 print_out "#  CONFIG_FILE= $CONFIG_FILE"
 print_out "#  LOG4JPROP= $LOG4JPROP"
 print_out "#  CLASSPATH= $CLASSPATH"
@@ -357,7 +422,7 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   $LOG4JPROP \
   org.apache.sysds.api.DMLScript \
   -f $SCRIPT_FILE \
-  -exec singlenode \
+  -exec $SYSDS_EXEC_MODE \
   $CONFIG_FILE \
   $*"
   print_out "Executing command:  $CMD"
@@ -374,6 +439,8 @@ else
   --files $SPARK_LOG4J_PATH \
   $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
+  -exec $SYSDS_EXEC_MODE \
+  $CONFIG_FILE \
   $*"
   print_out "Executing command: $CMD"
   print_out  ""

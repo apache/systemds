@@ -906,7 +906,7 @@ public abstract class Hop implements ParseInfo {
 	
 	public boolean dimsKnown() {
 		return ( _dataType == DataType.SCALAR 
-			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
+			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME || _dataType==DataType.LIST) 
 				&& _dc.rowsKnown() && _dc.colsKnown()) );
 	}
 	

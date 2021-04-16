@@ -293,7 +293,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
 	public static       boolean ALLOW_REUSE_PARTITION_VARS  = true; //reuse partition input matrices, applied only if read-only in surrounding loops
 	public static final int     WRITE_REPLICATION_FACTOR    = 1;
-	public static final int     MAX_RETRYS_ON_ERROR         = 1;
+	public static       int     MAX_RETRYS_ON_ERROR         = 1;
 	public static final boolean FORCE_CP_ON_REMOTE_SPARK    = true; // compile body to CP if exec type forced to Spark
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; // export only read variables according to live variable analysis
 	public static final boolean RESET_RECOMPILATION_FLAGs   = true;

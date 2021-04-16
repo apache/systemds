@@ -50,7 +50,6 @@ public class CleaningTestClassification extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 	}
 
-
 	@Ignore
 	public void testCP1() {
 		runFindPipelineTest(0.1, 5,10, 2,

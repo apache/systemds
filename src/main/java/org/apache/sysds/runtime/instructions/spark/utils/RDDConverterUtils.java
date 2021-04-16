@@ -26,8 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
@@ -79,8 +77,6 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Tuple2;
 
 public class RDDConverterUtils {
-	private static final Log LOG = LogFactory.getLog(RDDConverterUtils.class.getName());
-
 	public static final String DF_ID_COLUMN = "__INDEX";
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textCellToBinaryBlock(JavaSparkContext sc,

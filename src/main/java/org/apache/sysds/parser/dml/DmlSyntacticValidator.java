@@ -1139,7 +1139,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		String filePath, String filePath2, DMLProgram prog ) {
 		info.namespaces = new HashMap<>();
 		if(prog != null) {
-			info.namespaces.put(getQualifiedNamespace(namespace), prog.getDefaultFunctionDictionary());
+			//add loaded namespaces (imported namespace already w/ correct name, not default)
 			for( Entry<String, FunctionDictionary<FunctionStatementBlock>> e : prog.getNamespaces().entrySet() )
 				info.namespaces.put(getQualifiedNamespace(e.getKey()), e.getValue());
 			ImportStatement istmt = new ImportStatement();

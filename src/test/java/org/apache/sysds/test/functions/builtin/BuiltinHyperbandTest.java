@@ -33,6 +33,8 @@ public class BuiltinHyperbandTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "HyperbandLM";
 	private final static String TEST_NAME2 = "HyperbandLM2";
+	private final static String TEST_NAME3 = "HyperbandLM3";
+	
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinHyperbandTest.class.getSimpleName() + "/";
 	
@@ -43,6 +45,7 @@ public class BuiltinHyperbandTest extends AutomatedTestBase
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"R"}));
 	}
 	
 	@Test
@@ -53,6 +56,11 @@ public class BuiltinHyperbandTest extends AutomatedTestBase
 	@Test
 	public void testHyperbandNoCompareCP() {
 		runHyperband(TEST_NAME2, ExecType.CP);
+	}
+	
+	@Test
+	public void testHyperbandNoCompare2CP() {
+		runHyperband(TEST_NAME3, ExecType.CP);
 	}
 	
 	@Test

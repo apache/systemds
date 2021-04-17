@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
@@ -146,16 +147,20 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		if( fsbs.isEmpty() )
 			throw new DMLRuntimeException("Failed to compile function '"+name+"'.");
 		
+		DMLProgram dmlp = (prog.getDMLProg() != null) ? prog.getDMLProg() :
+			fsbs.get(Builtins.getInternalFName(name, dt)).getDMLProg();
+		
+		//filter already existing functions (e.g., already loaded internally-called functions)
+		fsbs = (dmlp.getBuiltinFunctionDictionary() == null) ? fsbs : fsbs.entrySet().stream()
+			.filter(e -> !dmlp.getBuiltinFunctionDictionary().containsFunction(e.getKey()))
+			.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+		
 		// prepare common data structures, including a consolidated dml program
 		// to facilitate function validation which tries to inline lazily loaded
 		// and existing functions.
-		DMLProgram dmlp = (prog.getDMLProg() != null) ? prog.getDMLProg() :
-			fsbs.get(Builtins.getInternalFName(name, dt)).getDMLProg();
 		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
 			dmlp.createNamespace(nsName); // create namespace on demand
-			if( !dmlp.getBuiltinFunctionDictionary().containsFunction(fsb.getKey()) ) {
-				dmlp.addFunctionStatementBlock(nsName, fsb.getKey(), fsb.getValue());
-			}
+			dmlp.addFunctionStatementBlock(nsName, fsb.getKey(), fsb.getValue());
 			fsb.getValue().setDMLProg(dmlp);
 		}
 		DMLTranslator dmlt = new DMLTranslator(dmlp);
@@ -186,12 +191,10 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		
 		// compile runtime program
 		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
-			if( !prog.containsFunctionProgramBlock(null, fsb.getKey(), false) ) {
-				FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
-					.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
-				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true);  // optimized
-				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
-			}
+			FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
+				.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
+			prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true);  // optimized
+			prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
 		}
 	}
 	

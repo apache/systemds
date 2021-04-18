@@ -25,6 +25,7 @@ import java.io.ObjectOutput;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -54,21 +55,31 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
-		throw new DMLRuntimeException("Called DummyCoder with FrameBlock");
+		return apply(in, out, outputCol, 0, -1);
 	}
 
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		throw new DMLRuntimeException("Called DummyCoder with FrameBlock");
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
 		// Out Matrix should already be correct size!
 		// append dummy coded or unchanged values to output
-		final int clen = in.getNumColumns();
-		for(int i = 0; i < in.getNumRows(); i++) {
+		for(int i = rowStart; i < end; i++) {
 			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
 			// applied in a previous encoder
 			double val = in.quickGetValue(i, outputCol);
 			int nCol = outputCol + (int) val - 1;
-			out.quickSetValue(i, nCol, 1);
+			out.getDenseBlock().set(i, nCol, 1);
 			if(nCol != outputCol)
-				out.quickSetValue(i, outputCol, 0);
+				out.getDenseBlock().set(i, outputCol, 0);
 		}
 		return out;
 	}

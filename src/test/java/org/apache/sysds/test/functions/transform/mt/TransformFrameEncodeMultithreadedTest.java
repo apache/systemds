@@ -19,19 +19,14 @@
 
 package org.apache.sysds.test.functions.transform.mt;
 
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
-import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -42,12 +37,11 @@ import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.ExecutorService;
 
-public class TransformFrameEncodeApplyMultithreadedTest extends AutomatedTestBase {
+public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "TransformFrameEncodeApply";
 	private final static String TEST_DIR = "functions/transform/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeApplyMultithreadedTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeMultithreadedTest.class.getSimpleName() + "/";
 	
 	//dataset and transform tasks without missing values
 	private final static String DATASET1 = "homes3/homes.csv";
@@ -105,6 +99,30 @@ public class TransformFrameEncodeApplyMultithreadedTest extends AutomatedTestBas
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY, false);
 	}
 
+	@Test
+	public void testHomesRecodeDummyCodeIDsSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_DUMMY, false);
+	}
+
+	@Test
+	public void testHomesBinIDsSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN, false);
+	}
+
+	@Test
+	public void testHomesBinDummyIDsSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, false);
+	}
+
+	@Test
+	public void testHomesHashIDsSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH, false);
+	}
+
+	@Test
+	public void testHomesHashRecodeIDsSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, false);
+	}
 	
 	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames )	{
 
@@ -146,6 +164,8 @@ public class TransformFrameEncodeApplyMultithreadedTest extends AutomatedTestBas
 			double[][] R1 = DataConverter.convertToDoubleMatrix(outputS);
 			double[][] R2 = DataConverter.convertToDoubleMatrix(outputM);
 			TestUtils.compareMatrices(R1, R2, R1.length, R1[0].length, 0);
+			Assert.assertEquals(outputS.getNonZeros(), outputM.getNonZeros());
+			Assert.assertTrue(outputM.getNonZeros() > 0);
 
 			if( rt == ExecMode.HYBRID ) {
 				Assert.assertEquals("Wrong number of executed Spark instructions: " +

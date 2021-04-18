@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -106,14 +107,24 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		try {
 			for(int i = 0; i < _columnEncoders.size(); i++) {
 				if(i == 0) {
 					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
-					_columnEncoders.get(i).apply(in, out, outputCol);
+					_columnEncoders.get(i).apply(in, out, outputCol, rowStart, blk);
 				}
 				else {
-					_columnEncoders.get(i).apply(out, out, outputCol);
+					_columnEncoders.get(i).apply(out, out, outputCol, rowStart, blk);
 				}
 			}
 		}
@@ -125,15 +136,15 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		try {
 			for(int i = 0; i < _columnEncoders.size(); i++) {
 				if(i == 0) {
 					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
-					_columnEncoders.get(i).apply(in, out, outputCol);
+					_columnEncoders.get(i).apply(in, out, outputCol, rowStart, blk);
 				}
 				else {
-					_columnEncoders.get(i).apply(out, out, outputCol);
+					_columnEncoders.get(i).apply(out, out, outputCol, rowStart, blk);
 				}
 			}
 		}

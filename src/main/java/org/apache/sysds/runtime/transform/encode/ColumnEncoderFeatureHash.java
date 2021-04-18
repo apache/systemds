@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -62,26 +63,38 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
 		// apply feature hashing column wise
-		for(int i = 0; i < in.getNumRows(); i++) {
+		for(int i = rowStart; i < end; i++) {
 			Object okey = in.get(i, _colID - 1);
 			String key = (okey != null) ? okey.toString() : null;
 			if(key == null)
 				throw new DMLRuntimeException("Missing Value encountered in input Frame for FeatureHash");
 			long code = getCode(key);
-			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
+			out.getDenseBlock().set(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
 		// apply feature hashing column wise
-		for(int i = 0; i < in.getNumRows(); i++) {
+		for(int i = rowStart; i < end; i++) {
 			Object okey = in.quickGetValue(i, _colID - 1);
 			String key = okey.toString();
 			long code = getCode(key);
-			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
+			out.getDenseBlock().set(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}

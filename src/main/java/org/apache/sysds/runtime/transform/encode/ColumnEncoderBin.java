@@ -24,6 +24,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -129,22 +130,34 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
-		for(int i = 0; i < in.getNumRows(); i++) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+		for(int i = rowStart; i < end; i++) {
 			double inVal = UtilFunctions.objectToDouble(in.getSchema()[_colID - 1], in.get(i, _colID - 1));
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			out.quickSetValue(i, outputCol, binID);
+			out.getDenseBlock().set(i, outputCol, binID);
 		}
 		return out;
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
-		for(int i = 0; i < in.getNumRows(); i++) {
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+		for(int i = rowStart; i < end; i++) {
 			double inVal = in.quickGetValue(i, _colID - 1);
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			out.quickSetValue(i, outputCol, binID);
+			out.getDenseBlock().set(i, outputCol, binID);
 		}
 		return out;
 	}

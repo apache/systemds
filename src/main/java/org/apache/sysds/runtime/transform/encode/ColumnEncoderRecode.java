@@ -161,15 +161,26 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		// FrameBlock is column Major and MatrixBlock row Major this results in cache inefficiencies :(
-		for(int i = 0; i < in.getNumRows(); i++) {
+		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+		for(int i = rowStart; i < end; i++) {
 			Object okey = in.get(i, _colID - 1);
 			String key = (okey != null) ? okey.toString() : null;
 			long code = lookupRCDMap(key);
-			// NNZ in matrix block do not need updating since set value is never 0
 			out.getDenseBlock().set(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		throw new DMLRuntimeException(
+				"Recode called with MatrixBlock. Should not happen since Recode is the first " + "encoder in the Stack");
 	}
 
 	@Override

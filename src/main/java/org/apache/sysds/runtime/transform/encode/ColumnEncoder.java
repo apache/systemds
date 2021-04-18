@@ -47,6 +47,9 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 
 	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol);
 
+	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk);
+
+	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk);
 	/**
 	 * Indicates if this encoder is applicable, i.e, if there is a column to encode.
 	 *

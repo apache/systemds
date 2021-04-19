@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -52,188 +53,213 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.Statistics;
 
 public class ReblockSPInstruction extends UnarySPInstruction {
-	private int blen;
-	private boolean outputEmptyBlocks;
+  private int blen;
+  private boolean outputEmptyBlocks;
 
-	private ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
-			String opcode, String instr) {
-		super(SPType.Reblock, op, in, out, opcode, instr);
-		blen = br;
-		blen = bc;
-		outputEmptyBlocks = emptyBlocks;
-	}
+  private ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
+    String opcode, String instr) {
+    super(SPType.Reblock, op, in, out, opcode, instr);
+    blen = br;
+    blen = bc;
+    outputEmptyBlocks = emptyBlocks;
+  }
 
-	public static ReblockSPInstruction parseInstruction(String str) {
-		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];
-		
-		if(!opcode.equals("rblk")) {
-			throw new DMLRuntimeException("Incorrect opcode for ReblockSPInstruction:" + opcode);
-		}
-		
-		CPOperand in = new CPOperand(parts[1]);
-		CPOperand out = new CPOperand(parts[2]);
-		int blen=Integer.parseInt(parts[3]);
-		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
-		
-		Operator op = null; // no operator for ReblockSPInstruction
-		return new ReblockSPInstruction(op, in, out, blen, blen, outputEmptyBlocks, opcode, str);
-	}
+  public static ReblockSPInstruction parseInstruction(String str) {
+    String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
+    String opcode = parts[0];
 
-	@Override
-	public void processInstruction(ExecutionContext ec) {
-		SparkExecutionContext sec = (SparkExecutionContext)ec;
+    if(!opcode.equals("rblk")) {
+      throw new DMLRuntimeException("Incorrect opcode for ReblockSPInstruction:" + opcode);
+    }
 
-		//set the output characteristics
-		CacheableData<?> obj = sec.getCacheableData(input1.getName());
-		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
-		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-		mcOut.set(mc.getRows(), mc.getCols(), blen, mc.getNonZeros());
-		
-		//get the source format from the meta data
-		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
-		if(iimd == null)
-			throw new DMLRuntimeException("Error: Metadata not found");
+    CPOperand in = new CPOperand(parts[1]);
+    CPOperand out = new CPOperand(parts[2]);
+    int blen = Integer.parseInt(parts[3]);
+    boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
 
-		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
-		if( Recompiler.checkCPReblock(sec, input1.getName()) ) {
-			if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() )
-				Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName());
-			Statistics.decrementNoOfExecutedSPInst();
-			return;
-		}
-		
-		//execute matrix/frame reblock
-		if( input1.getDataType() == DataType.MATRIX )
-			processMatrixReblockInstruction(sec, iimd.getFileFormat());
-		else if( input1.getDataType() == DataType.FRAME )
-			processFrameReblockInstruction(sec, iimd.getFileFormat());
-	}
+    Operator op = null; // no operator for ReblockSPInstruction
+    return new ReblockSPInstruction(op, in, out, blen, blen, outputEmptyBlocks, opcode, str);
+  }
 
-	@SuppressWarnings("unchecked")
-	protected void processMatrixReblockInstruction(SparkExecutionContext sec, FileFormat fmt) {
-		MatrixObject mo = sec.getMatrixObject(input1.getName());
-		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
-		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-		
-		if(fmt == FileFormat.TEXT || fmt == FileFormat.MM ) {
-			//get matrix market file properties if necessary
-			FileFormatPropertiesMM mmProps = (fmt == FileFormat.MM) ?
-				IOUtilFunctions.readAndParseMatrixMarketHeader(mo.getFileName()) : null;
-			
-			//get the input textcell rdd
-			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>)
-				sec.getRDDHandleForMatrixObject(mo, fmt);
-			
-			//convert textcell to binary block
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.textCellToBinaryBlock(
-				sec.getSparkContext(), lines, mcOut, outputEmptyBlocks, mmProps);
-			
-			//put output RDD handle into symbol table
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
-		}
-		else if(fmt == FileFormat.CSV) {
-			// HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read
-			// throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
-			CSVReblockSPInstruction csvInstruction = null;
-			boolean hasHeader = false;
-			String delim = ",";
-			boolean fill = false;
-			double fillValue = 0;
-			Set<String> naStrings = null;
-			if(mo.getFileFormatProperties() instanceof FileFormatPropertiesCSV
-			   && mo.getFileFormatProperties() != null )
-			{
-				FileFormatPropertiesCSV props = (FileFormatPropertiesCSV) mo.getFileFormatProperties();
-				hasHeader = props.hasHeader();
-				delim = props.getDelim();
-				fill = props.isFill();
-				fillValue = props.getFillValue();
-				naStrings = props.getNAStrings();
-			}
-			
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString, naStrings);
-			csvInstruction.processInstruction(sec);
-			return;
-		}
-		else if(fmt == FileFormat.BINARY && mc.getBlocksize() <= 0) {
-			//BINARY BLOCK <- BINARY CELL (e.g., after grouped aggregate)
-			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForMatrixObject(mo, FileFormat.BINARY);
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellToBinaryBlock(sec.getSparkContext(), binaryCells, mcOut, outputEmptyBlocks);
+  @Override public void processInstruction(ExecutionContext ec) {
+    SparkExecutionContext sec = (SparkExecutionContext) ec;
 
-			//put output RDD handle into symbol table
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
-		}
-		else if(fmt == FileFormat.BINARY) {
-			//BINARY BLOCK <- BINARY BLOCK (different sizes)
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
-			
-			boolean shuffleFreeReblock = mc.dimsKnown() && mcOut.dimsKnown()
-				&& (mc.getRows() < mcOut.getBlocksize() || mc.getBlocksize()%mcOut.getBlocksize() == 0)
-				&& (mc.getCols() < mcOut.getBlocksize() || mc.getBlocksize()%mcOut.getBlocksize() == 0);
-			
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1
-				.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
-			if( !shuffleFreeReblock )
-				out = RDDAggregateUtils.mergeByKey(out, false);
-			
-			//put output RDD handle into symbol table
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
-		}
-		else {
-			throw new DMLRuntimeException("The given format is not implemented "
-				+ "for ReblockSPInstruction:" + fmt.toString());
-		}
-	}
+    //set the output characteristics
+    CacheableData<?> obj = sec.getCacheableData(input1.getName());
+    DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
+    DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+    mcOut.set(mc.getRows(), mc.getCols(), blen, mc.getNonZeros());
 
-	@SuppressWarnings("unchecked")
-	protected void processFrameReblockInstruction(SparkExecutionContext sec, FileFormat fmt)
-	{
-		FrameObject fo = sec.getFrameObject(input1.getName());
-		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-		
-		if(fmt == FileFormat.TEXT) {
-			//get the input textcell rdd
-			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>)
-				sec.getRDDHandleForFrameObject(fo, fmt);
-			
-			//convert textcell to binary block
-			JavaPairRDD<Long, FrameBlock> out =
-				FrameRDDConverterUtils.textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, fo.getSchema());
-			
-			//put output RDD handle into symbol table
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
-		}
-		else if(fmt == FileFormat.CSV) {
-			// HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read
-			// throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
-			CSVReblockSPInstruction csvInstruction = null;
-			boolean hasHeader = false;
-			String delim = ",";
-			boolean fill = false;
-			double fillValue = 0;
-			Set<String> naStrings = null;
-			if(fo.getFileFormatProperties() instanceof FileFormatPropertiesCSV
-				&& fo.getFileFormatProperties() != null )
-			{
-				FileFormatPropertiesCSV props = (FileFormatPropertiesCSV) fo.getFileFormatProperties();
-				hasHeader = props.hasHeader();
-				delim = props.getDelim();
-				fill = props.isFill();
-				fillValue = props.getFillValue();
-				naStrings = props.getNAStrings();
-			}
-			
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString, naStrings);
-			csvInstruction.processInstruction(sec);
-		}
-		else {
-			throw new DMLRuntimeException("The given format is not implemented "
-				+ "for ReblockSPInstruction: " + fmt.toString());
-		}
-	}
+    //get the source format from the meta data
+    MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
+    if(iimd == null)
+      throw new DMLRuntimeException("Error: Metadata not found");
+
+    //check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
+    if(Recompiler.checkCPReblock(sec, input1.getName())) {
+      if(input1.getDataType().isMatrix() || input1.getDataType().isFrame())
+        Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName());
+      Statistics.decrementNoOfExecutedSPInst();
+      return;
+    }
+
+    //execute matrix/frame reblock
+    if(input1.getDataType() == DataType.MATRIX)
+      processMatrixReblockInstruction(sec, iimd.getFileFormat());
+    else if(input1.getDataType() == DataType.FRAME) {
+      processFrameReblockInstruction(sec, iimd.getFileFormat());
+    }
+  }
+
+  @SuppressWarnings("unchecked") protected void processMatrixReblockInstruction(SparkExecutionContext sec,
+    FileFormat fmt) {
+    MatrixObject mo = sec.getMatrixObject(input1.getName());
+    DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
+    DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+
+    if(fmt == FileFormat.TEXT || fmt == FileFormat.MM) {
+      //get matrix market file properties if necessary
+      FileFormatPropertiesMM mmProps = (fmt == FileFormat.MM) ? IOUtilFunctions
+        .readAndParseMatrixMarketHeader(mo.getFileName()) : null;
+
+      //get the input textcell rdd
+      JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) sec
+        .getRDDHandleForMatrixObject(mo, fmt);
+
+      //convert textcell to binary block
+      JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils
+        .textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, outputEmptyBlocks, mmProps);
+
+      //put output RDD handle into symbol table
+      sec.setRDDHandleForVariable(output.getName(), out);
+      sec.addLineageRDD(output.getName(), input1.getName());
+    }
+    else if(fmt == FileFormat.CSV) {
+      // HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read
+      // throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
+      CSVReblockSPInstruction csvInstruction = null;
+      boolean hasHeader = false;
+      String delim = ",";
+      boolean fill = false;
+      double fillValue = 0;
+      Set<String> naStrings = null;
+      if(mo.getFileFormatProperties() instanceof FileFormatPropertiesCSV && mo.getFileFormatProperties() != null) {
+        FileFormatPropertiesCSV props = (FileFormatPropertiesCSV) mo.getFileFormatProperties();
+        hasHeader = props.hasHeader();
+        delim = props.getDelim();
+        fill = props.isFill();
+        fillValue = props.getFillValue();
+        naStrings = props.getNAStrings();
+      }
+
+      csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(),
+        hasHeader, delim, fill, fillValue, "csvrblk", instString, naStrings);
+      csvInstruction.processInstruction(sec);
+    }
+    else if(fmt == FileFormat.BINARY && mc.getBlocksize() <= 0) {
+      //BINARY BLOCK <- BINARY CELL (e.g., after grouped aggregate)
+      JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec
+        .getRDDHandleForMatrixObject(mo, FileFormat.BINARY);
+      JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils
+        .binaryCellToBinaryBlock(sec.getSparkContext(), binaryCells, mcOut, outputEmptyBlocks);
+
+      //put output RDD handle into symbol table
+      sec.setRDDHandleForVariable(output.getName(), out);
+      sec.addLineageRDD(output.getName(), input1.getName());
+    }
+    else if(fmt == FileFormat.BINARY) {
+      //BINARY BLOCK <- BINARY BLOCK (different sizes)
+      JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
+
+      boolean shuffleFreeReblock = mc.dimsKnown() && mcOut.dimsKnown() && (mc.getRows() < mcOut.getBlocksize() || mc
+        .getBlocksize() % mcOut.getBlocksize() == 0) && (mc.getCols() < mcOut.getBlocksize() || mc
+        .getBlocksize() % mcOut.getBlocksize() == 0);
+
+      JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
+      if(!shuffleFreeReblock)
+        out = RDDAggregateUtils.mergeByKey(out, false);
+
+      //put output RDD handle into symbol table
+      sec.setRDDHandleForVariable(output.getName(), out);
+      sec.addLineageRDD(output.getName(), input1.getName());
+    }
+    else if(fmt == FileFormat.LIBSVM) {
+      String delim = IOUtilFunctions.LIBSVM_DELIM;
+      String indexDelim = IOUtilFunctions.LIBSVM_INDEX_DELIM;
+      if(mo.getFileFormatProperties() instanceof FileFormatPropertiesLIBSVM && mo.getFileFormatProperties() != null) {
+        FileFormatPropertiesLIBSVM props = (FileFormatPropertiesLIBSVM) mo.getFileFormatProperties();
+        delim = props.getDelim();
+        indexDelim = props.getIndexDelim();
+      }
+
+      LIBSVMReblockSPInstruction libsvmInstruction = new LIBSVMReblockSPInstruction(null, input1, output,
+        mcOut.getBlocksize(), mcOut.getBlocksize(), "libsvmblk", delim, indexDelim, instString);
+      libsvmInstruction.processInstruction(sec);
+    }
+    else {
+      throw new DMLRuntimeException(
+        "The given format is not implemented " + "for ReblockSPInstruction:" + fmt.toString());
+    }
+  }
+
+  @SuppressWarnings("unchecked") protected void processFrameReblockInstruction(SparkExecutionContext sec,
+    FileFormat fmt) {
+    FrameObject fo = sec.getFrameObject(input1.getName());
+    DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+
+    if(fmt == FileFormat.TEXT) {
+      //get the input textcell rdd
+      JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForFrameObject(fo, fmt);
+
+      //convert textcell to binary block
+      JavaPairRDD<Long, FrameBlock> out = FrameRDDConverterUtils
+        .textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, fo.getSchema());
+
+      //put output RDD handle into symbol table
+      sec.setRDDHandleForVariable(output.getName(), out);
+      sec.addLineageRDD(output.getName(), input1.getName());
+
+    }
+    else if(fmt == FileFormat.CSV) {
+      // HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read
+      // throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
+      CSVReblockSPInstruction csvInstruction = null;
+      boolean hasHeader = false;
+      String delim = ",";
+      boolean fill = false;
+      double fillValue = 0;
+      Set<String> naStrings = null;
+      if(fo.getFileFormatProperties() instanceof FileFormatPropertiesCSV && fo.getFileFormatProperties() != null) {
+        FileFormatPropertiesCSV props = (FileFormatPropertiesCSV) fo.getFileFormatProperties();
+        hasHeader = props.hasHeader();
+        delim = props.getDelim();
+        fill = props.isFill();
+        fillValue = props.getFillValue();
+        naStrings = props.getNAStrings();
+      }
+
+      csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(),
+        hasHeader, delim, fill, fillValue, "csvrblk", instString, naStrings);
+      csvInstruction.processInstruction(sec);
+    }
+    else if(fmt == FileFormat.LIBSVM) {
+      String delim = IOUtilFunctions.LIBSVM_DELIM;
+      String indexDelim = IOUtilFunctions.LIBSVM_INDEX_DELIM;
+      if(fo.getFileFormatProperties() instanceof FileFormatPropertiesLIBSVM && fo.getFileFormatProperties() != null) {
+        FileFormatPropertiesLIBSVM props = (FileFormatPropertiesLIBSVM) fo.getFileFormatProperties();
+        delim = props.getDelim();
+        indexDelim = props.getIndexDelim();
+      }
+      LIBSVMReblockSPInstruction libsvmInstruction = new LIBSVMReblockSPInstruction(null, input1, output,
+        mcOut.getBlocksize(), mcOut.getBlocksize(), "libsvmblk", delim, indexDelim, instString);
+      libsvmInstruction.processInstruction(sec);
+
+    }
+
+    else {
+      throw new DMLRuntimeException(
+        "The given format is not implemented " + "for ReblockSPInstruction: " + fmt.toString());
+
+    }
+  }
 }

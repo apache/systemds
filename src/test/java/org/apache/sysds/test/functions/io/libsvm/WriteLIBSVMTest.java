@@ -19,56 +19,78 @@
 
 package org.apache.sysds.test.functions.io.libsvm;
 
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.CompilerConfig;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
-public class WriteLIBSVMTest extends AutomatedTestBase
-{
-	private final static String TEST_NAME = "WriteLIBSVMTest";
-	private final static String TEST_DIR = "functions/io/libsvm/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + WriteLIBSVMTest.class.getSimpleName() + "/";
-	
-	@Override
-	public void setUp() 
-	{
-		addTestConfiguration(TEST_NAME, 
-		new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );  
-	}
-	
-	@Test
-	public void testLIBSVM1_CP() {
-		runWriteLIBSVMTest(ExecMode.SINGLE_NODE, 1, 1, false);
-	}
+public abstract class WriteLIBSVMTest extends WriteLIBSVMTestBase {
 
-	@Test
-	public void testLIBSVM2_CP() {
-		runWriteLIBSVMTest(ExecMode.SINGLE_NODE, 1, 2, true);
-	}
+  protected abstract int getId();
 
-	@Test
-	public void testLIBSVM3_CP() {
-		runWriteLIBSVMTest(ExecMode.SINGLE_NODE, 2, 3, true);
-	}
-	
-	private void runWriteLIBSVMTest(ExecMode platform, int tno, int mno, boolean sparse) {
-		ExecMode oldPlatform = rtplatform;
-		rtplatform = platform;
-		
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
-		loadTestConfiguration(config);
-		
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		String inputMatrixName = HOME + "test" + mno +"w.libsvm";
-		String dmlOutput = output("dml.scalar");
-		String libsvmOutputName = output("libsvm_dml.data");
-		
-		fullDMLScriptName = HOME + TEST_NAME + "_" + tno + ".dml";
-		programArgs = new String[]{"-explain", "-args", inputMatrixName, dmlOutput, libsvmOutputName,
-			Boolean.toString(sparse) };
-		
-		runTest(true, false, null, -1);
-		rtplatform = oldPlatform;
-	}
+  protected String getInputLIBSVMFileName() {
+    return "transfusion_W" + getId() + ".libsvm";
+  }
+
+  @Test public void testlibsvm1_Seq_CP() {
+    runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, " ", ":", false);
+  }
+
+  @Test public void testlibsvm2_Seq_CP() {
+    runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, " ", ":", true);
+  }
+
+  @Test public void testlibsvm1_Pllel_CP() {
+    runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, " ", ":", true);
+  }
+
+  @Test public void testlibsvm2_Pllel_CP() {
+    runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, " ", ":", false);
+  }
+
+  @Test public void testlibsvm1_SP() {
+    runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, " ", ":", true);
+  }
+
+  @Test public void testlibsvm2_SP() {
+    runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, " ", ":", false);
+  }
+
+  protected void runWriteLIBSVMTest(int testNumber, ExecMode platform, boolean parallel, String sep, String indSep,
+    boolean sparse) {
+
+    ExecMode oldPlatform = rtplatform;
+    rtplatform = platform;
+
+    boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+    if(rtplatform == ExecMode.SPARK)
+      DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
+    boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
+
+    try {
+
+      CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
+
+      TestConfiguration config = getTestConfiguration(getTestName());
+      loadTestConfiguration(config);
+
+      String HOME = SCRIPT_DIR + TEST_DIR;
+      String inputMatrixName = HOME + INPUT_DIR + getInputLIBSVMFileName();
+      String dmlOutput = output("dml.scalar");
+      String libsvmOutputName = output("libsvm_write" + testNumber + ".data");
+
+      fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
+      programArgs = new String[] {"-args", inputMatrixName, dmlOutput, libsvmOutputName, sep, indSep,
+        Boolean.toString(sparse)};
+
+      runTest(true, false, null, -1);
+    }
+    finally {
+      rtplatform = oldPlatform;
+      CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
+      DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+    }
+  }
 }

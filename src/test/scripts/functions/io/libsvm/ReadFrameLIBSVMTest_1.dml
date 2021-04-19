@@ -19,9 +19,10 @@
 #
 #-------------------------------------------------------------
 
-# DML script that tests read libsvm
+# DML script that tests read libsvm with .mtd file
 
-A = read($1, format="libsvm", rows=1605, cols=124, sep=" ", indSep=":");
-x = sum(A);
-write(x, $2);
+A = read($1);  
+print(toString(A));
+#x = sum(A);
+#write(x, $2);
 

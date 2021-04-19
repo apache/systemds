@@ -19,33 +19,47 @@
 
 package org.apache.sysds.test.functions.io.libsvm;
 
+import com.google.gson.Gson;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
+public class ReadFrameLIBSVMTest extends AutomatedTestBase {
 
-  protected abstract int getId();
+  protected final static String TEST_DIR = "functions/io/libsvm/";
+  private final static String TEST_NAME = "ReadFrameLIBSVMTest";
+  protected final static String TEST_CLASS_DIR = TEST_DIR + ReadFrameLIBSVMTest.class.getSimpleName() + "/";
 
   protected String getInputLIBSVMFileName() {
-    return "transfusion_" + getId() + ".libsvm";
+    return "frame_" + getId();
   }
 
-  @Test public void testlibsvm1_Seq_CP() {
-    runlibsvmTest(getId(), ExecMode.SINGLE_NODE, false);
+  protected int getId() {
+    return 1;
   }
 
-  @Test public void testlibsvm2_Pllel_CP() {
-    runlibsvmTest(getId(), ExecMode.SINGLE_NODE, true);
+  protected String getTestClassDir() {
+    return TEST_CLASS_DIR;
   }
 
-  @Test public void testlibsvm3_SP() {
-    runlibsvmTest(getId(), ExecMode.SPARK, false);
+  protected String getTestName() {
+    return TEST_NAME;
   }
 
-  protected void runlibsvmTest(int testNumber, ExecMode platform, boolean parallel) {
+  @Override public void setUp() {
+    TestUtils.clearAssertionInformation();
+    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
+  }
+
+  @Test public void testFrameLibsvm1_SP() {
+    runlibsvmTest(1, ExecMode.SINGLE_NODE, false);
+  }
+
+  private void runlibsvmTest(int testNumber, ExecMode platform, boolean parallel) {
     ExecMode oldPlatform = rtplatform;
     rtplatform = platform;
 
@@ -54,20 +68,27 @@ public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
       DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
     boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
-
+    String output;
     try {
       CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
       TestConfiguration config = getTestConfiguration(getTestName());
+
       loadTestConfiguration(config);
 
       String HOME = SCRIPT_DIR + TEST_DIR;
-      String inputMatrix = HOME + INPUT_DIR + getInputLIBSVMFileName();
+      String inputMatrixNameNoExtension = HOME + INPUT_DIR + getInputLIBSVMFileName();
+      String inputMatrixNameWithExtension = inputMatrixNameNoExtension + ".libsvm";
       String dmlOutput = output("dml.scalar");
 
       fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
-      programArgs = new String[] {"-explain", "hops", "-args", inputMatrix, dmlOutput};
-      runTest(true, false, null, -1);
+      programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput};
+
+      Gson gson = new Gson();
+      System.out.println(gson.toJson(programArgs));
+
+      output = runTest(true, false, null, -1).toString();
+
     }
     finally {
       rtplatform = oldPlatform;

@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -71,24 +72,25 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 	public static WriteSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
-		
+
 		if( !opcode.equals("write") ) {
 			throw new DMLRuntimeException("Unsupported opcode");
 		}
-		
-		// All write instructions have 3 parameters, except in case of delimited/csv file.
+
+		// All write instructions have 3 parameters, except in case of delimited/csv/libsvm file.
 		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
+		// Write instructions for libsvm files also include three additional parameters (delimiter, index delimiter, sparse)
 		if ( parts.length != 5 && parts.length != 9 ) {
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
-		
+
 		// _mVar2·MATRIX·DOUBLE
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand in3 = new CPOperand(parts[3]);
-		
-		WriteSPInstruction inst = new WriteSPInstruction(in1, in2, in3, opcode, str); 
-		
+
+		WriteSPInstruction inst = new WriteSPInstruction(in1, in2, in3, opcode, str);
+
 		if ( in3.getName().equalsIgnoreCase("csv") ) {
 			boolean hasHeader = Boolean.parseBoolean(parts[4]);
 			String delim = parts[5];
@@ -97,7 +99,17 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			inst.setFormatProperties(formatProperties);
 			CPOperand in4 = new CPOperand(parts[8]);
 			inst.input4 = in4;
-		} else {
+		}
+		else if(in3.getName().equalsIgnoreCase("libsvm")) {
+			String delim = parts[4];
+			String indexDelim = parts[5];
+			boolean sparse = Boolean.parseBoolean(parts[6]);
+			FileFormatProperties formatProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
+			inst.setFormatProperties(formatProperties);
+			CPOperand in4 = new CPOperand(parts[8]);
+			inst.input4 = in4;
+		}
+		else {
 			FileFormatProperties ffp = new FileFormatProperties();
 
 			CPOperand in4 = new CPOperand(parts[4]);
@@ -106,24 +118,24 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 		return inst;
 	}
-	
-	
+
+
 	public FileFormatProperties getFormatProperties() {
 		return formatProperties;
 	}
-	
+
 	public void setFormatProperties(FileFormatProperties prop) {
 		formatProperties = prop;
 	}
-	
-	public CPOperand getInput1() { 
+
+	public CPOperand getInput1() {
 		return input1;
 	}
-	
+
 	public CPOperand getInput2() {
 		return input2;
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext) ec;
@@ -133,9 +145,9 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
 		formatProperties.setDescription(desc);
 
-		ValueType[] schema = (input1.getDataType()==DataType.FRAME) ? 
+		ValueType[] schema = (input1.getDataType()==DataType.FRAME) ?
 				sec.getFrameObject(input1.getName()).getSchema() : null;
-		
+
 		try
 		{
 			//if the file already exists on HDFS, remove it.
@@ -143,7 +155,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 
 			//prepare output info according to meta data
 			FileFormat fmt = FileFormat.safeValueOf(input3.getName());
-			
+
 			//core matrix/frame write
 			switch( input1.getDataType() ) {
 				case MATRIX: processMatrixWriteInstruction(sec, fname, fmt); break;
@@ -158,13 +170,13 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 	}
 
-	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt) 
+	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt)
 		throws IOException
 	{
 		//get input rdd
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
-		
+
 		if( fmt == FileFormat.MM || fmt == FileFormat.TEXT )
 		{
 			//piggyback nnz maintenance on write
@@ -173,7 +185,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
-			
+
 			JavaRDD<String> header = null;
 			if( fmt == FileFormat.MM ) {
 				ArrayList<String> headerContainer = new ArrayList<>(1);
@@ -184,13 +196,13 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				headerContainer.add(headerStr);
 				header = sec.getSparkContext().parallelize(headerContainer);
 			}
-			
+
 			JavaRDD<String> ijv = RDDConverterUtils.binaryBlockToTextCell(in1, mc);
 			if(header != null)
 				customSaveTextFile(header.union(ijv), fname, true);
 			else
 				customSaveTextFile(ijv, fname, false);
-			
+
 			if( !mc.nnzKnown() )
 				mc.setNonZeros( aNnz.value() );
 		}
@@ -200,20 +212,20 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				throw new IOException("Write of matrices with zero rows or columns"
 					+ " not supported ("+mc.getRows()+"x"+mc.getCols()+").");
 			}
-			
+
 			LongAccumulator aNnz = null;
-			
+
 			//piggyback nnz computation on actual write
 			if( !mc.nnzKnown() ) {
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
-			
+
 			JavaRDD<String> out = RDDConverterUtils.binaryBlockToCsv(
 				in1, mc, (FileFormatPropertiesCSV) formatProperties, true);
 
 			customSaveTextFile(out, fname, false);
-			
+
 			if( !mc.nnzKnown() )
 				mc.setNonZeros(aNnz.value().longValue());
 		}
@@ -224,10 +236,33 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
-			
+
 			//save binary block rdd on hdfs
 			in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
-			
+
+			if(!mc.nnzKnown())
+				mc.setNonZeros(aNnz.value().longValue());
+		}
+		else if(fmt == FileFormat.LIBSVM) {
+			if(mc.getRows() == 0 || mc.getCols() == 0) {
+				throw new IOException(
+					"Write of matrices with zero rows or columns" + " not supported (" + mc.getRows() + "x" + mc
+						.getCols() + ").");
+			}
+
+			LongAccumulator aNnz = null;
+
+			//piggyback nnz computation on actual write
+			if(!mc.nnzKnown()) {
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}
+
+			JavaRDD<String> out = RDDConverterUtils
+				.binaryBlockToLibsvm(in1, mc, (FileFormatPropertiesLIBSVM) formatProperties, true);
+
+			customSaveTextFile(out, fname, false);
+
 			if( !mc.nnzKnown() )
 				mc.setNonZeros(aNnz.value().longValue());
 		}
@@ -235,19 +270,19 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			//unsupported formats: binarycell (not externalized)
 			throw new DMLRuntimeException("Unexpected data format: " + fmt.toString());
 		}
-		
+
 		// write meta data file
 		HDFSTool.writeMetaDataFile (fname + ".mtd", ValueType.FP64, mc, fmt, formatProperties);
 	}
 
-	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt, ValueType[] schema) 
+	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt, ValueType[] schema)
 		throws IOException
 	{
 		//get input rdd
 		JavaPairRDD<Long,FrameBlock> in1 = sec
 			.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
-		
+
 		switch(fmt) {
 			case TEXT: {
 				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToTextCell(in1, mc);
@@ -260,6 +295,13 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				customSaveTextFile(out, fname, false);
 				break;
 			}
+			case LIBSVM: {
+				// TODO: implement for libsvm
+				//				FileFormatPropertiesCSV props = (formatProperties!=null) ?(FileFormatPropertiesCSV) formatProperties : null;
+				//				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
+				//				customSaveTextFile(out, fname, false);
+				break;
+			}
 			case BINARY: {
 				JavaPairRDD<LongWritable,FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
 				out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
@@ -268,7 +310,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			default:
 				throw new DMLRuntimeException("Unexpected data format: " + fmt.toString());
 		}
-		
+
 		// write meta data file
 		HDFSTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, fmt, formatProperties);
 	}
@@ -281,10 +323,10 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				while(HDFSTool.existsFileOnHDFS(randFName)) {
 					randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
 				}
-				
+
 				rdd.saveAsTextFile(randFName);
 				HDFSTool.mergeIntoSingleFile(randFName, fname); // Faster version :)
-				
+
 				// rdd.coalesce(1, true).saveAsTextFile(randFName);
 				// MapReduceTool.copyFileOnHDFS(randFName + "/part-00000", fname);
 			} catch (IOException e) {

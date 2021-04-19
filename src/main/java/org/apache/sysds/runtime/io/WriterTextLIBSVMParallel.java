@@ -40,34 +40,34 @@ import org.apache.sysds.runtime.util.HDFSTool;
 
 public class WriterTextLIBSVMParallel extends WriterTextLIBSVM
 {
-	public WriterTextLIBSVMParallel() {
-		super();
+	public WriterTextLIBSVMParallel(FileFormatPropertiesLIBSVM _props) {
+		super(_props);
 	}
 
 	@Override
 	protected void writeLIBSVMMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src)
-		throws IOException 
+		throws IOException
 	{
 		//estimate output size and number of output blocks (min 1)
 		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(),
 				src.getNonZeros(), FileFormat.LIBSVM)  / InfrastructureAnalyzer.getHDFSBlockSize());
 		numPartFiles = Math.max(numPartFiles, 1);
-		
+
 		//determine degree of parallelism
 		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
 		numThreads = Math.min(numThreads, numPartFiles);
-	
+
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
 		if( numThreads <= 1 ) {
 			super.writeLIBSVMMatrixToHDFS(path, job, fs, src);
 			return;
 		}
-		
+
 		//create directory for concurrent tasks
 		HDFSTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-		
+
 		//create and execute tasks
-		try 
+		try
 		{
 			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<WriteLIBSVMTask> tasks = new ArrayList<>();
@@ -81,31 +81,31 @@ public class WriterTextLIBSVMParallel extends WriterTextLIBSVM
 			//wait until all tasks have been executed
 			List<Future<Object>> rt = pool.invokeAll(tasks);
 			pool.shutdown();
-			
-			//check for exceptions 
+
+			//check for exceptions
 			for( Future<Object> task : rt )
 				task.get();
-			
+
 			// delete crc files if written to local file system
 			if (fs instanceof LocalFileSystem) {
-				for(int i=0; i<numThreads & i*blklen<rlen; i++) 
+				for(int i=0; i<numThreads & i*blklen<rlen; i++)
 					IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs,
 						new Path(path, IOUtilFunctions.getPartFileName(i)));
 			}
-		} 
+		}
 		catch (Exception e) {
 			throw new IOException("Failed parallel write of libsvm output.", e);
 		}
 	}
 
-	private class WriteLIBSVMTask implements Callable<Object> 
+	private class WriteLIBSVMTask implements Callable<Object>
 	{
 		private final JobConf _job;
 		private final FileSystem _fs;
 		private final MatrixBlock _src;
 		private final Path _path;
 		private final int _rl, _ru;
-		
+
 		public WriteLIBSVMTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru) {
 			_path = path;
 			_job = job;

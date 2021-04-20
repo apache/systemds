@@ -47,3 +47,9 @@ github:
     # Enable rebase button
     rebase: true
     
+
+  protected_branches:
+    master:
+      # Do not allow merge commits
+      # by allowing linear history
+      required_linear_history: true

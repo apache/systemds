@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 
 from systemds.operator.operation_node import OperationNode
+from systemds.operator.operation_node2 import OperationNode2
 from systemds.operator import algorithm
 
-__all__ = [OperationNode, algorithm]
+__all__ = [OperationNode, OperationNode2, algorithm]

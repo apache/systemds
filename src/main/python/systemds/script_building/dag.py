@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 
 from enum import Enum, auto
-from typing import Any, Dict, Union, Sequence, TYPE_CHECKING
+from typing import Any, Dict, Union, Sequence, TYPE_CHECKING, List, Tuple
 from abc import ABC
 
 from py4j.java_gateway import JavaObject, JVMView
@@ -45,9 +45,10 @@ class DAGNode(ABC):
     sds_context: 'SystemDSContext'
     _unnamed_input_nodes: Sequence[Union['DAGNode', str, int, float, bool]]
     _named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
-    _output_type: OutputType
+    _outputs: List[Tuple[str, OutputType]]
+    _output_nodes: Dict[str, Union['DAGNode']]
     _is_python_local_data: bool
-    _number_of_outputs: int
+    _dml_name: str
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> Any:
         """Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
@@ -98,9 +99,17 @@ class DAGNode(ABC):
         return self._is_python_local_data
 
     @property
-    def number_of_outputs(self):
-        return self._number_of_outputs
+    def output_nodes(self):
+        return self._output_nodes
 
     @property
-    def output_type(self):
-        return self._output_type
+    def outputs(self):
+        return self._outputs
+
+    @property
+    def dml_name(self):
+        return self._dml_name
+
+    @dml_name.setter
+    def dml_name(self, value):
+        self._dml_name = value

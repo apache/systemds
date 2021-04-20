@@ -25,15 +25,15 @@ from typing import Dict, Optional, Sequence, Tuple, Union
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
 from systemds.context import SystemDSContext
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode2
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import numpy_to_matrix_block
 
 # TODO maybe instead of having a new class we could have a function `matrix` instead, adding behavior to
-#  `OperationNode` would be necessary
+#  `OperationNode2` would be necessary
 
 
-class Matrix(OperationNode):
+class Matrix(OperationNode2):
     _np_array: Optional[np.array]
 
     def __init__(self, sds_context: 'SystemDSContext', mat: np.array,

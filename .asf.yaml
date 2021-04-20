@@ -32,7 +32,7 @@ github:
     
   features:
     # Enable issues management
-    issues: true
+    issues: false
     # Enable projects for project management boards
     projects: false
     # Enable wiki for documentation

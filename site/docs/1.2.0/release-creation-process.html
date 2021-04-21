@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Release Creation Process - SystemML 1.2.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Description of the SystemML release build process.">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.2.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">SystemML Release Creation Process</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#release-creation-guidelines-documentation" id="markdown-toc-release-creation-guidelines-documentation">Release Creation Guidelines Documentation</a></li>
+</ul>
+
+<h4 id="release-creation-guidelines-documentation">Release Creation Guidelines Documentation</h4>
+<p>Prerequisite: <a href="https://github.com/SparkTC/development-guidelines/blob/master/project-release-guidelines.md">Project release guidelines</a></p>
+
+<p>Tips to prepare and release the build</p>
+
+<p>Step 0: Minimum changes and verification to be done before release build process starts.</p>
+
+<pre><code>1. ReadMe update and “Must Fix” changes are already in.
+2. Performance Test is passing for dataset size of 80GB and below.
+</code></pre>
+
+<p>Step 1: Prepare the release.</p>
+
+<pre><code># Extract latest code to a directory
+&lt;GitRepoHome&gt;
+
+# Go to dev/release directory
+cd &lt;GitRepoHome&gt;/dev/release
+</code></pre>
+
+<p>1.a. Dry Run (this is trial build, will not commit anything in repository).</p>
+
+<pre><code>e.g. (On Master branch with release candidate rc1, release version 0.15.0, and next development version 1.0.0-SNAPSHOT)
+./release-build.sh --release-prepare --releaseVersion="0.15.0" --developmentVersion="1.0.0-SNAPSHOT" --releaseRc="rc1" --tag="v0.15.0-rc1" --dryRun
+
+e.g. (On branch-0.15 branch with release candidate rc2, release version 0.15.0, and next development version 0.15.1-SNAPSHOT)
+./release-build.sh --release-prepare --releaseVersion="0.15.0" --developmentVersion="0.15.1-SNAPSHOT" --releaseRc="rc2" --tag="v0.15.0-rc2"  --gitCommitHash="branch-0.15" --dryRun
+</code></pre>
+
+<p>1.b. Compile release verification code.</p>
+
+<pre><code>./release-verify.sh --compile
+</code></pre>
+
+<p>1.c. Run license verification.</p>
+
+<pre><code>./release-verify.sh --verifyLic
+</code></pre>
+
+<p>1.d. Run command to do release prepare step (this will commit changes to the repository).<br />
+	This is same as step 1.a, without —dryRun option.</p>
+
+<pre><code>e.g. (On the Master branch)&lt;br&gt;
+./release-build.sh --release-prepare --releaseVersion="0.15.0" --developmentVersion="1.0.0-SNAPSHOT" --releaseRc="rc1" --tag="v0.15.0-rc1"
+
+e.g. (On the branch-0.15 branch)
+./release-build.sh --release-prepare --releaseVersion="0.15.0" --developmentVersion="0.15.1-SNAPSHOT" --releaseRc="rc2" --tag="v0.15.0-rc2"  --gitCommitHash="branch-0.15"
+</code></pre>
+
+<p>1.e. Verify the release.<br />
+	This will verify release on Mac Operating System (OS), assuming these steps are run on Mac OS. It will verify licenses, notice and all other required verification only on Mac OS.
+	Verification of licenses and notice is required only on one platform.</p>
+
+<pre><code>./release-verify.sh --verifyAll
+</code></pre>
+
+<p>Step 2: Publish the release.</p>
+
+<pre><code>e.g.
+./release-build.sh --release-publish --gitTag="v0.15.0-rc1"
+</code></pre>
+
+<p>Step 3: Close the release candidate build on Nexus site.</p>
+
+<p>Visit <a href="https://repository.apache.org/#stagingRepositories">NexusRepository</a> site.</p>
+
+<pre><code>Find out SystemML under (Staging Repositories) link. It should be in Open State (status). Close it (button on top left to middle) with proper comment. Once it completes copying, URL will be updated with maven location to be sent in mail.
+</code></pre>
+
+<p>Step 4: Send mail for voting (dev PMC dev@systemml.apache.org).</p>
+
+<p>Please check <a href="https://github.com/SparkTC/development-guidelines/blob/master/project-release-guidelines.md">Project release guidelines</a>
+or previous mail thread for format/content of the mail.</p>
+
+<p>Step 5: Create a branch based on release to be released.</p>
+
+<pre><code># Create a branch based on TAG
+Syntax: git branch &lt;branch name&gt; &lt;Tag Name&gt;
+e.g.    git branch branch-0.15 v0.15.0-rc1
+
+# Push a branch to master repository
+Syntax: git push origin &lt;branch name&gt;		
+(origin is https://git-wip-us.apache.org/repos/asf/systemml.git)
+e.g.    git push origin branch-0.15
+</code></pre>
+
+<p>Step 6: If there is failure to get votes then address issues and repeat from step 1.</p>
+
+<p>Step 7: If release has been approved, then make it available for general use for everyone.</p>
+
+<pre><code>7.a. Move distribution from dev to release (run following commands from command line).
+
+RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/systemml/"
+RELEASE_STAGING_LOCATION2="https://dist.apache.org/repos/dist/release/systemml/"
+
+e.g. for SystemML 0.15 rc2 build
+svn move -m "Move SystemML 0.15 from dev to release" $RELEASE_STAGING_LOCATION/0.15.0-rc2  $RELEASE_STAGING_LOCATION2/0.15.0
+
+
+7.b. Move Nexus data from dev to release.
+Visit following site and identify release sent for voting in step 3 above. It would be in “closed” state (status).
+
+https://repository.apache.org/#stagingRepositories
+
+Click on “Release” button on top middle of the screen and complete the process.
+
+Note: Release candidates which were not approved can be dropped by clicking “drop” button from top middle of the screen.
+
+7.c. Update pypi from following site (request someone who has the access).
+https://pypi.python.org/pypi/systemml/
+
+7.d. Update documents and release notes.
+
+7.e. Send ANNOUNCE NOTE.
+To:  dev@systemml.apache.org  announce@apache.org
+Subject e.g.
+[ANNOUNCE] Apache SystemML 0.15.0 released.
+</code></pre>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

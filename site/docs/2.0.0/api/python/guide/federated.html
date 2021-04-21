@@ -1,0 +1,356 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Federated Environment &mdash; SystemDS 2.0.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../static/documentation_options.js"></script>
+        <script src="../static/jquery.js"></script>
+        <script src="../static/underscore.js"></script>
+        <script src="../static/doctools.js"></script>
+        <script src="../static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Built-in Algorithms" href="algorithms_basics.html" />
+    <link rel="prev" title="QuickStart" href="../getting_started/simple_examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> SystemDS
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/install.html">Install SystemDS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/simple_examples.html">QuickStart</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Federated Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#start-federated-worker">Start Federated worker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simple-aggregation-example">Simple Aggregation Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multiple-federated-environments">Multiple Federated Environments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms_basics.html">Built-in Algorithms</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/onnx_systemds.html">QuickStart Onnx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/onnx_systemds_design.html">Design</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/context/systemds_context.html">SystemDSContext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/matrix/matrix.html">Matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/matrix/federated.html">Federated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/operation_node.html">Operation Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/convert.html">Convert</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/onnx_helper.html">Onnx Helper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/operator_gen.html">Operator Gen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/util.html">Util</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Internals API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/script_building/dag.html">Dag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/script_building/script.html">Script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils/converters.html">Converters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils/helpers.html">Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SystemDS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Federated Environment</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../sources/guide/federated.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="federated-environment">
+<h1>Federated Environment<a class="headerlink" href="#federated-environment" title="Permalink to this headline">¶</a></h1>
+<p>The python SystemDS supports federated execution.
+To enable this, each of the federated environments have to have
+a running federated worker.</p>
+<div class="section" id="start-federated-worker">
+<h2>Start Federated worker<a class="headerlink" href="#start-federated-worker" title="Permalink to this headline">¶</a></h2>
+<p>To start a federated worker, you first have to setup your environment variables.
+A simple guide to do this is in the SystemDS <a class="reference external" href="https://github.com/apache/systemds/tree/master/bin/">Repository</a>.</p>
+<p>If that is setup correctly simply start a worker using the following command.
+Here the <code class="docutils literal notranslate"><span class="pre">8001</span></code> refer to the port used by the worker.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">systemds</span> <span class="n">WORKER</span> <span class="mi">8001</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="simple-aggregation-example">
+<h2>Simple Aggregation Example<a class="headerlink" href="#simple-aggregation-example" title="Permalink to this headline">¶</a></h2>
+<p>In this example we use a single federated worker, and aggregate the sum of its data.</p>
+<p>First we need to create some data for our federated worker to use.
+In this example we simply use Numpy to create a <code class="docutils literal notranslate"><span class="pre">test.csv</span></code> file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">]])</span>
+<span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s2">&quot;temp/test.csv&quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Currently we also require a metadata file for the federated worker.
+This should be located next to the <code class="docutils literal notranslate"><span class="pre">test.csv</span></code> file called <code class="docutils literal notranslate"><span class="pre">test.csv.mtd</span></code>.
+To make this simply execute the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="s1">&#39;{ &quot;format&quot;:&quot;csv&quot;, &quot;header&quot;:false, &quot;rows&quot;:3, &quot;cols&quot;:3 }&#39;</span> <span class="o">&gt;</span> <span class="n">temp</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">csv</span><span class="o">.</span><span class="n">mtd</span>
+</pre></div>
+</div>
+<p>After creating our data we the federated worker becomes able to execute federated instructions.
+The aggregated sum using federated instructions in python SystemDS is done as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy and SystemDS federated</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">systemds.matrix</span> <span class="kn">import</span> <span class="n">Federated</span>
+<span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+
+<span class="c1"># Create a federated matrix</span>
+<span class="c1">## Indicate the dimensions of the data:</span>
+<span class="c1">### Here the first list in the tuple is the top left Coordinate,</span>
+<span class="c1">### and the second the bottom left coordinate.</span>
+<span class="c1">### It is ordered as [col,row].</span>
+<span class="n">dims</span> <span class="o">=</span> <span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+
+<span class="c1">## Specify the address + file path from worker:</span>
+<span class="n">address</span> <span class="o">=</span> <span class="s2">&quot;localhost:8001/temp/test.csv&quot;</span>
+
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+  <span class="n">fed_a</span> <span class="o">=</span> <span class="n">Federated</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="p">[</span><span class="n">address</span><span class="p">],</span> <span class="p">[</span><span class="n">dims</span><span class="p">])</span>
+  <span class="c1"># Sum the federated matrix and call compute to execute</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">fed_a</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">compute</span><span class="p">())</span>
+  <span class="c1"># Result should be 45.</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="multiple-federated-environments">
+<h2>Multiple Federated Environments<a class="headerlink" href="#multiple-federated-environments" title="Permalink to this headline">¶</a></h2>
+<p>In this example we multiply matrices that are located in different federated environments.</p>
+<p>Using the data created from the last example we can simulate
+multiple federated workers by starting multiple ones on different ports.
+Start with 3 different terminals, and run one federated environment in each.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">systemds</span> <span class="n">WORKER</span> <span class="mi">8001</span>
+<span class="n">systemds</span> <span class="n">WORKER</span> <span class="mi">8002</span>
+<span class="n">systemds</span> <span class="n">WORKER</span> <span class="mi">8003</span>
+</pre></div>
+</div>
+<p>Once all three workers are up and running we can leverage all three in the following example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy and SystemDS federated</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">systemds.matrix</span> <span class="kn">import</span> <span class="n">Federated</span>
+<span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+
+<span class="n">addr1</span> <span class="o">=</span> <span class="s2">&quot;localhost:8001/temp/test.csv&quot;</span>
+<span class="n">addr2</span> <span class="o">=</span> <span class="s2">&quot;localhost:8002/temp/test.csv&quot;</span>
+<span class="n">addr3</span> <span class="o">=</span> <span class="s2">&quot;localhost:8003/temp/test.csv&quot;</span>
+
+<span class="c1"># Create a federated matrix using two federated environments</span>
+<span class="c1"># Note that the two federated matrices are stacked on top of each other</span>
+
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+  <span class="n">fed_a</span> <span class="o">=</span> <span class="n">Federated</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">addr1</span><span class="p">,</span> <span class="n">addr2</span><span class="p">],</span>
+    <span class="p">[([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">]),</span> <span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">])])</span>
+
+  <span class="n">fed_b</span> <span class="o">=</span> <span class="n">Federated</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">addr1</span><span class="p">,</span> <span class="n">addr3</span><span class="p">],</span>
+    <span class="p">[([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">]),</span> <span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">])])</span>
+
+  <span class="c1"># Multiply, compute and print.</span>
+  <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="n">fed_a</span> <span class="o">*</span> <span class="n">fed_b</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The print should look like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span> <span class="mf">1.</span>  <span class="mf">4.</span>  <span class="mf">9.</span>  <span class="mf">1.</span>  <span class="mf">4.</span>  <span class="mf">9.</span><span class="p">]</span>
+ <span class="p">[</span><span class="mf">16.</span> <span class="mf">25.</span> <span class="mf">36.</span> <span class="mf">16.</span> <span class="mf">25.</span> <span class="mf">36.</span><span class="p">]</span>
+ <span class="p">[</span><span class="mf">49.</span> <span class="mf">64.</span> <span class="mf">81.</span> <span class="mf">49.</span> <span class="mf">64.</span> <span class="mf">81.</span><span class="p">]]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If it does not work, then double check
+that you have:</p>
+<p>a csv file, mtd file, and SystemDS Environment is set correctly.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="algorithms_basics.html" class="btn btn-neutral float-right" title="Built-in Algorithms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../getting_started/simple_examples.html" class="btn btn-neutral float-left" title="QuickStart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Apache SystemDS
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

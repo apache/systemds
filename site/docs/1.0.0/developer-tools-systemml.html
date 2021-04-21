@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Developer Tools - SystemML 1.0.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="SystemML Developer Tools">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.0.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">SystemML Developer Tools</h1>
+          
+
+          <!--
+
+-->
+
+<p>Useful Tools for Developing SystemML:</p>
+
+<ul id="markdown-toc">
+  <li><a href="#intellij" id="markdown-toc-intellij">IntelliJ</a>    <ul>
+      <li><a href="#import-systemml-project-to-intellij" id="markdown-toc-import-systemml-project-to-intellij">Import SystemML project to IntelliJ</a></li>
+    </ul>
+  </li>
+  <li><a href="#eclipse" id="markdown-toc-eclipse">Eclipse</a>    <ul>
+      <li><a href="#eclipse-with-scala" id="markdown-toc-eclipse-with-scala">Eclipse with Scala</a></li>
+      <li><a href="#eclipse-java-only-how-to-skip-scala" id="markdown-toc-eclipse-java-only-how-to-skip-scala">Eclipse Java Only (How to skip Scala)</a></li>
+    </ul>
+  </li>
+  <li><a href="#troubleshooting" id="markdown-toc-troubleshooting">Troubleshooting</a>    <ul>
+      <li><a href="#invalid-cross-compiled-libraries-error" id="markdown-toc-invalid-cross-compiled-libraries-error">Invalid cross-compiled libraries error</a></li>
+      <li><a href="#incompatible-scala-version-error" id="markdown-toc-incompatible-scala-version-error">Incompatible Scala version error</a></li>
+      <li><a href="#not-found-type-error" id="markdown-toc-not-found-type-error">Not found type error</a></li>
+      <li><a href="#marketplace-not-found-error-for-eclipse-luna" id="markdown-toc-marketplace-not-found-error-for-eclipse-luna">Marketplace not found error for Eclipse Luna</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="intellij">IntelliJ</h2>
+
+<p>IntelliJ can be used since it provides great support for mixed Java and Scala projects as described <a href="https://cwiki.apache.org/confluence/display/SPARK/Useful+Developer+Tools#UsefulDeveloperTools-IntelliJ">here</a>.</p>
+
+<h3 id="import-systemml-project-to-intellij">Import SystemML project to IntelliJ</h3>
+
+<ol>
+  <li>Download IntelliJ and install the Scala plug-in for IntelliJ.</li>
+  <li>Go to &#8220;File -&gt; Import Project&#8221;, locate the systemml source directory, and select &#8220;Maven Project&#8221;.</li>
+  <li>In the Import wizard, it&#8217;s fine to leave settings at their default. However it is usually useful to enable &#8220;Import Maven projects automatically&#8221;, since changes to the project structure will automatically update the IntelliJ project.</li>
+</ol>
+
+<h2 id="eclipse">Eclipse</h2>
+
+<p>Eclipse <a href="https://eclipse.org/downloads/packages/release/luna/sr2">Luna SR2</a> can be used for an integrated development environment with SystemML code.  Maven integration is required which is included in the <a href="https://eclipse.org/downloads/packages/eclipse-ide-java-developers/lunasr2">Eclipse IDE for Java Developers</a> package.</p>
+
+<p>To get started in Eclipse, import SystemML&#8217;s pom.xml file as an existing Maven project.  After import is completed, the resulting Eclipse installation should include two maven connectors.</p>
+
+<p><img src="img/developer-tools/about-eclipse.png" alt="About Eclipse" title="About Eclipse" /></p>
+
+<p><img src="img/developer-tools/eclipse-details.png" alt="Eclipse Details" title="Eclipse Details" /></p>
+
+<h3 id="eclipse-with-scala">Eclipse with Scala</h3>
+
+<p>An additional Maven connector is required for working with Scala code in Eclipse.  The <a href="http://scala-ide.org/docs/tutorials/m2eclipse/">Maven Integration for Scala IDE</a> plugin can be installed into Eclipse from <a href="http://alchim31.free.fr/m2e-scala/update-site/">this</a> update site.</p>
+
+<p><img src="img/developer-tools/maven-scala.png" alt="Maven Scala Integration" title="Maven Scala Integration" /></p>
+
+<p><img src="img/developer-tools/maven-connectors.png" alt="Installed Maven Connectors" title="Installed Maven Connectors" /></p>
+
+<p>The <a href="http://scala-ide.org/download/prev-stable.html">Scala IDE 4.0.0 plugin for Eclipse</a> is known to work for mixed Java and Scala development in <a href="https://eclipse.org/downloads/packages/eclipse-ide-java-developers/lunasr2">Eclipse IDE for Java Developers Luna SR2</a>.  <b>Release 4.0.0</b> of the Scala IDE for Eclipse plugin can be downloaded <a href="http://download.scala-ide.org/sdk/lithium/e44/scala211/stable/site_assembly-20150305-1905.zip">here</a> and then installed through Eclipse&#8217;s &#8216;Install New Software&#8217; menu item.  Only the Scala IDE and ScalaTest components are needed.</p>
+
+<p><img src="img/developer-tools/scala-components.png" alt="Scala IDE Components" title="Scala IDE Components" /></p>
+
+<p><img src="img/developer-tools/eclipse-scala.png" alt="Eclipse Scala Details" title="Eclipse Scala Details" /></p>
+
+<p>Note the corresponding Eclipse project needs to include the Scala nature.  Typically this occurs automatically during project import but also can be invoked directly by right clicking on the systemml project node in the Eclipse Package Explorer view.</p>
+
+<p><img src="img/developer-tools/scala-nature.png" alt="Add Scala Nature" title="Add Scala Nature" /></p>
+
+<h3 id="eclipse-java-only-how-to-skip-scala">Eclipse Java Only (How to skip Scala)</h3>
+
+<p>Since the core SystemML code is written in Java, developers may prefer not to use Eclipse in a mixed Java/Scala environment.  To configure Eclipse to skip the Scala code of SystemML and avoid installing any Scala-related components, Maven lifecycle mappings can be created.  The simplest way to create these mappings is to use Eclipse&#8217;s quick fix option to resolve the following pom.xml errors which occur if Maven Integration for Scala is not present.</p>
+
+<p><img src="img/developer-tools/pom-scala-errors.png" alt="Scala pom errors" title="Scala pom errors" /></p>
+
+<p><img src="img/developer-tools/pom-scala-ignore.png" alt="Scala pom ignore" title="Scala pom Quick Fix" /></p>
+
+<p>The lifecycle mappings are stored in a workspace metadata file as specified in Eclipse&#8217;s Maven Lifecycle Mappings Preferences page.  The pom.xml file itself is unchanged which allows the Scala portion to be built outside of Eclipse using mvn command line.</p>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<p>Please see below tips for resolving some compilation issues that might occur after importing the SystemML project.</p>
+
+<h3 id="invalid-cross-compiled-libraries-error">Invalid cross-compiled libraries error</h3>
+
+<p>Since Scala IDE bundles the latest versions (2.10.5 and 2.11.6 at this point), you need to add one in Eclipse Preferences -&gt; Scala -&gt; Installations by pointing to the <code>lib</code> directory of your Scala 2.10.4 distribution. Once this is done, select SystemML project, right-click, choose Scala -&gt; Set Scala Installation and point to the 2.10.4 installation. This should clear all errors about invalid cross-compiled libraries. A clean build should succeed now.</p>
+
+<h3 id="incompatible-scala-version-error">Incompatible Scala version error</h3>
+
+<p>Change IDE Scala version <code>Project-&gt;Properties-&gt;Scala Compiler -&gt; Scala Installation</code>  to   <code>Fixed Scala Installation: 2.10.5</code></p>
+
+<h3 id="not-found-type-error">Not found type error</h3>
+
+<p>Run command <code>mvn package</code>, and do <code>Project -&gt; Refresh</code></p>
+
+<h3 id="marketplace-not-found-error-for-eclipse-luna">Marketplace not found error for Eclipse Luna</h3>
+
+<p>Except for Scala IDE plugin install, please make sure to get update from &#8220;http://alchim31.free.fr/m2e-scala/update-site&#8221; to update maven connector for Scala.</p>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

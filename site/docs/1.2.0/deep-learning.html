@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Deep Learning with SystemML - SystemML 1.2.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Deep Learning with SystemML">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.2.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Deep Learning with SystemML</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a>    <ul>
+      <li><a href="#mllearn-api" id="markdown-toc-mllearn-api">mllearn API</a>        <ul>
+          <li><a href="#training-functions" id="markdown-toc-training-functions">Training functions</a></li>
+          <li><a href="#prediction-functions" id="markdown-toc-prediction-functions">Prediction functions</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#training-lenet-on-the-mnist-dataset" id="markdown-toc-training-lenet-on-the-mnist-dataset">Training Lenet on the MNIST dataset</a></li>
+  <li><a href="#prediction-using-a-pretrained-resnet-50" id="markdown-toc-prediction-using-a-pretrained-resnet-50">Prediction using a pretrained ResNet-50</a></li>
+</ul>
+
+<p><br /></p>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>There are three different ways to implement a Deep Learning model in SystemML:
+1. Using the <a href="https://github.com/apache/systemml/tree/master/scripts/nn">DML-bodied NN library</a>: This library allows the user to exploit full flexibility of <a href="http://apache.github.io/systemml/dml-language-reference">DML language</a> to implement your neural network.
+2. Using the experimental <a href="http://apache.github.io/systemml/beginners-guide-caffe2dml.html">Caffe2DML API</a>: This API allows a model expressed in Caffe&#8217;s proto format to be imported into SystemML. This API <strong>doesnot</strong> require Caffe to be installed on your SystemML.
+3. Using the experimental <a href="http://apache.github.io/systemml/beginners-guide-keras2dml.html">Keras2DML API</a>: This API allows a model expressed in Keras&#8217;s API to be imported into SystemML. However, this API requires Keras to be installed on your driver.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>&#160;</th>
+      <th>NN library</th>
+      <th>Caffe2DML</th>
+      <th>Keras2DML</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>External dependency</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Keras</td>
+    </tr>
+    <tr>
+      <td>Ability to add custom layers</td>
+      <td>Yes</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>The user needs to know</td>
+      <td><a href="http://apache.github.io/systemml/dml-language-reference">DML</a></td>
+      <td><a href="http://apache.github.io/systemml/reference-guide-caffe2dml#layers-supported-in-caffe2dml">Caffe&#8217;s proto API</a></td>
+      <td><a href="https://keras.io/models/about-keras-models/">Keras&#8217; API</a></td>
+    </tr>
+    <tr>
+      <td>Can be invoked using pyspark</td>
+      <td>Yes. Please see <a href="http://apache.github.io/systemml/spark-mlcontext-programming-guide">Python MLContext API</a></td>
+      <td>Yes.</td>
+      <td>Yes.</td>
+    </tr>
+    <tr>
+      <td>Can be invoked using spark-shell</td>
+      <td>Yes. Please see <a href="http://apache.github.io/systemml/spark-mlcontext-programming-guide">Scala MLContext API</a></td>
+      <td>Limited support</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Can be invoked via command-line or JMLC API</td>
+      <td>Yes</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>GPU and <a href="http://apache.github.io/systemml/native-backend.html">native BLAS</a> support</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Part of SystemML&#8217;s <a href="http://apache.github.io/systemml/python-reference.html#mllearn-api">mllearn</a> API</td>
+      <td>No</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="mllearn-api">mllearn API</h2>
+
+<p>Before we go any further, let us briefly discuss the training and prediction functions in the mllearn API (i.e. Caffe2DML and Keras2DML).</p>
+
+<h3 id="training-functions">Training functions</h3>
+
+<div class="codetabs">
+<div data-lang="sklearn way">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Input: Two Python objects (X_train, y_train) of type numpy, pandas or scipy.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span></code></pre></div>
+
+  </div>
+<div data-lang="mllib way">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Input: One LabeledPoint DataFrame with atleast two columns: features (of type Vector) and labels.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_df</span><span class="p">)</span></code></pre></div>
+
+  </div>
+</div>
+
+<h3 id="prediction-functions">Prediction functions</h3>
+
+<div class="codetabs">
+<div data-lang="sklearn way">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Input: One Python object (X_test) of type numpy, pandas or scipy.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="c"># OR model.score(X_test, y_test)</span></code></pre></div>
+
+  </div>
+<div data-lang="mllib way">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Input: One LabeledPoint DataFrame (df_test) with atleast one column: features (of type Vector).</span>
+<span class="n">model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df_test</span><span class="p">)</span></code></pre></div>
+
+  </div>
+</div>
+
+<p>Please note that when training using mllearn API (i.e. <code>model.fit(X_df)</code>), SystemML 
+expects that labels have been converted to 1-based value.
+This avoids unnecessary decoding overhead for large dataset if the label columns has already been decoded.
+For scikit-learn API, there is no such requirement.</p>
+
+<h1 id="training-lenet-on-the-mnist-dataset">Training Lenet on the MNIST dataset</h1>
+
+<p>Download the MNIST dataset using <a href="https://pypi.python.org/pypi/mlxtend">mlxtend package</a>.</p>
+
+<p><code>python
+from mlxtend.data import mnist_data
+import numpy as np
+from sklearn.utils import shuffle
+# Download the MNIST dataset
+X, y = mnist_data()
+X, y = shuffle(X, y)
+# Split the data into training and test
+n_samples = len(X)
+X_train = X[:int(.9 * n_samples)]
+y_train = y[:int(.9 * n_samples)]
+X_test = X[int(.9 * n_samples):]
+y_test = y[int(.9 * n_samples):]
+</code></p>
+
+<div class="codetabs">
+
+<div data-lang="NN library">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">systemml</span> <span class="kn">import</span> <span class="n">MLContext</span><span class="p">,</span> <span class="n">dml</span>
+
+<span class="n">ml</span> <span class="o">=</span> <span class="n">MLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="n">ml</span><span class="o">.</span><span class="n">setStatistics</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="c"># ml.setConfigProperty("sysml.native.blas", "auto")</span>
+<span class="c"># ml.setGPU(True).setForceGPU(True)</span>
+<span class="n">script</span> <span class="o">=</span> <span class="s">"""
+  source("nn/examples/mnist_lenet.dml") as mnist_lenet
+
+  # Scale images to [-1,1], and one-hot encode the labels
+  images = (images / 255) * 2 - 1
+  n = nrow(images)
+  labels = table(seq(1, n), labels+1, n, 10)
+
+  # Split into training (4000 examples) and validation (4000 examples)
+  X = images[501:nrow(images),]
+  X_val = images[1:500,]
+  y = labels[501:nrow(images),]
+  y_val = labels[1:500,]
+
+  # Train the model to produce weights &amp; biases.
+  [W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, y, X_val, y_val, C, Hin, Win, epochs)
+"""</span>
+<span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="s">'W1'</span><span class="p">,</span> <span class="s">'b1'</span><span class="p">,</span> <span class="s">'W2'</span><span class="p">,</span> <span class="s">'b2'</span><span class="p">,</span> <span class="s">'W3'</span><span class="p">,</span> <span class="s">'b3'</span><span class="p">,</span> <span class="s">'W4'</span><span class="p">,</span> <span class="s">'b4'</span><span class="p">)</span>
+<span class="n">prog</span> <span class="o">=</span> <span class="p">(</span><span class="n">dml</span><span class="p">(</span><span class="n">script</span><span class="p">)</span><span class="o">.</span><span class="nb">input</span><span class="p">(</span><span class="n">images</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">y_train</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">Hin</span><span class="o">=</span><span class="mi">28</span><span class="p">,</span> <span class="n">Win</span><span class="o">=</span><span class="mi">28</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="o">*</span><span class="n">out</span><span class="p">))</span>
+
+<span class="n">W1</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">W2</span><span class="p">,</span> <span class="n">b2</span><span class="p">,</span> <span class="n">W3</span><span class="p">,</span> <span class="n">b3</span><span class="p">,</span> <span class="n">W4</span><span class="p">,</span> <span class="n">b4</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">prog</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="o">*</span><span class="n">out</span><span class="p">)</span>
+
+<span class="n">script_predict</span> <span class="o">=</span> <span class="s">"""
+  source("nn/examples/mnist_lenet.dml") as mnist_lenet
+
+  # Scale images to [-1,1]
+  X_test = (X_test / 255) * 2 - 1
+
+  # Predict
+  y_prob = mnist_lenet::predict(X_test, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+  y_pred = rowIndexMax(y_prob) - 1
+"""</span>
+<span class="n">prog</span> <span class="o">=</span> <span class="p">(</span><span class="n">dml</span><span class="p">(</span><span class="n">script_predict</span><span class="p">)</span><span class="o">.</span><span class="nb">input</span><span class="p">(</span><span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">Hin</span><span class="o">=</span><span class="mi">28</span><span class="p">,</span> <span class="n">Win</span><span class="o">=</span><span class="mi">28</span><span class="p">,</span> <span class="n">W1</span><span class="o">=</span><span class="n">W1</span><span class="p">,</span> <span class="n">b1</span><span class="o">=</span><span class="n">b1</span><span class="p">,</span>
+                                  <span class="n">W2</span><span class="o">=</span><span class="n">W2</span><span class="p">,</span> <span class="n">b2</span><span class="o">=</span><span class="n">b2</span><span class="p">,</span> <span class="n">W3</span><span class="o">=</span><span class="n">W3</span><span class="p">,</span> <span class="n">b3</span><span class="o">=</span><span class="n">b3</span><span class="p">,</span> <span class="n">W4</span><span class="o">=</span><span class="n">W4</span><span class="p">,</span> <span class="n">b4</span><span class="o">=</span><span class="n">b4</span><span class="p">)</span>
+                           <span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="s">"y_pred"</span><span class="p">))</span>
+
+<span class="n">y_pred</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">prog</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">"y_pred"</span><span class="p">)</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span></code></pre></div>
+
+  </div>
+
+<div data-lang="Caffe2DML">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="kn">import</span> <span class="n">Caffe2DML</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+
+<span class="c"># Download the Lenet network</span>
+<span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="s">'https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet.proto'</span><span class="p">,</span> <span class="s">'lenet.proto'</span><span class="p">)</span>
+<span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="s">'https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto'</span><span class="p">,</span> <span class="s">'lenet_solver.proto'</span><span class="p">)</span>
+<span class="c"># Train Lenet On MNIST using scikit-learn like API</span>
+
+<span class="c"># MNIST dataset contains 28 X 28 gray-scale (number of channel=1).</span>
+<span class="n">lenet</span> <span class="o">=</span> <span class="n">Caffe2DML</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s">'lenet_solver.proto'</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">))</span>
+<span class="n">lenet</span><span class="o">.</span><span class="n">setStatistics</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="c"># lenet.setConfigProperty("sysml.native.blas", "auto")</span>
+<span class="c"># lenet.setGPU(True).setForceGPU(True)</span>
+
+<span class="c"># Since Caffe2DML is a mllearn API, it allows for scikit-learn like method for training.</span>
+<span class="n">lenet</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="c"># Either perform prediction: lenet.predict(X_test) or scoring:</span>
+<span class="n">lenet</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span></code></pre></div>
+
+  </div>
+
+<div data-lang="Keras2DML">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">keras.models</span> <span class="kn">import</span> <span class="n">Sequential</span>
+<span class="kn">from</span> <span class="nn">keras.layers</span> <span class="kn">import</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Dense</span><span class="p">,</span> <span class="n">Conv2D</span><span class="p">,</span> <span class="n">MaxPooling2D</span><span class="p">,</span> <span class="n">Dropout</span><span class="p">,</span><span class="n">Flatten</span>
+<span class="kn">from</span> <span class="nn">keras</span> <span class="kn">import</span> <span class="n">backend</span> <span class="k">as</span> <span class="n">K</span>
+<span class="kn">from</span> <span class="nn">keras.models</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">28</span><span class="p">,</span><span class="mi">28</span><span class="p">)</span> <span class="k">if</span> <span class="n">K</span><span class="o">.</span><span class="n">image_data_format</span><span class="p">()</span> <span class="o">==</span> <span class="s">'channels_first'</span> <span class="k">else</span> <span class="p">(</span><span class="mi">28</span><span class="p">,</span><span class="mi">28</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">keras_model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">()</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Conv2D</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">activation</span><span class="o">=</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">))</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Conv2D</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">activation</span><span class="o">=</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">))</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Flatten</span><span class="p">())</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">'relu'</span><span class="p">))</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">'softmax'</span><span class="p">))</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+
+<span class="c"># Scale the input features</span>
+<span class="n">scale</span> <span class="o">=</span> <span class="mf">0.00390625</span>
+<span class="n">X_train</span> <span class="o">=</span> <span class="n">X_train</span><span class="o">*</span><span class="n">scale</span>
+<span class="n">X_test</span> <span class="o">=</span> <span class="n">X_test</span><span class="o">*</span><span class="n">scale</span>
+
+<span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="kn">import</span> <span class="n">Keras2DML</span>
+<span class="n">sysml_model</span> <span class="o">=</span> <span class="n">Keras2DML</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">keras_model</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">28</span><span class="p">,</span><span class="mi">28</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="s">'weights_dir'</span><span class="p">)</span>
+<span class="c"># sysml_model.setConfigProperty("sysml.native.blas", "auto")</span>
+<span class="c"># sysml_model.setGPU(True).setForceGPU(True)</span>
+<span class="n">sysml_model</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+<span class="n">sysml_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="n">sysml_model</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span></code></pre></div>
+
+  </div>
+
+</div>
+
+<h1 id="prediction-using-a-pretrained-resnet-50">Prediction using a pretrained ResNet-50</h1>
+
+<div class="codetabs">
+
+<div data-lang="NN library">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">Will</span> <span class="n">be</span> <span class="n">added</span> <span class="n">soon</span> <span class="o">...</span></code></pre></div>
+
+  </div>
+
+<div data-lang="Caffe2DML">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">Will</span> <span class="n">be</span> <span class="n">added</span> <span class="n">soon</span> <span class="o">...</span></code></pre></div>
+
+  </div>
+
+<div data-lang="Keras2DML">
+
+    <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="kn">import</span> <span class="n">Keras2DML</span>
+<span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="n">sml</span>
+<span class="kn">import</span> <span class="nn">keras</span><span class="p">,</span> <span class="n">urllib</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">keras.applications.resnet50</span> <span class="kn">import</span> <span class="n">preprocess_input</span><span class="p">,</span> <span class="n">decode_predictions</span><span class="p">,</span> <span class="n">ResNet50</span>
+
+<span class="n">keras_model</span> <span class="o">=</span> <span class="n">ResNet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="s">'imagenet'</span><span class="p">,</span><span class="n">include_top</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">pooling</span><span class="o">=</span><span class="s">'None'</span><span class="p">,</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span><span class="mi">224</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s">'sgd'</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span> <span class="s">'categorical_crossentropy'</span><span class="p">)</span>
+
+<span class="n">sysml_model</span> <span class="o">=</span> <span class="n">Keras2DML</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span><span class="n">keras_model</span><span class="p">,</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">224</span><span class="p">,</span><span class="mi">224</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="s">'weights_dir'</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="s">'https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/labels.txt'</span><span class="p">)</span>
+<span class="n">sysml_model</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+<span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="s">'https://upload.wikimedia.org/wikipedia/commons/f/f4/Cougar_sitting.jpg'</span><span class="p">,</span> <span class="s">'test.jpg'</span><span class="p">)</span>
+<span class="n">img_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">)</span>
+<span class="n">input_image</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">convertImageToNumPyArr</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="nb">open</span><span class="p">(</span><span class="s">'test.jpg'</span><span class="p">),</span> <span class="n">img_shape</span><span class="o">=</span><span class="n">img_shape</span><span class="p">)</span>
+<span class="n">sysml_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">input_image</span><span class="p">)</span></code></pre></div>
+
+  </div>
+
+</div>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

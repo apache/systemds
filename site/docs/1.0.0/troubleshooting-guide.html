@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Troubleshooting Guide - SystemML 1.0.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Troubleshooting Guide">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.0.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Troubleshooting Guide</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#classnotfoundexception-for-commons-math3" id="markdown-toc-classnotfoundexception-for-commons-math3">ClassNotFoundException for commons-math3</a></li>
+  <li><a href="#outofmemoryerror-in-hadoop-reduce-phase" id="markdown-toc-outofmemoryerror-in-hadoop-reduce-phase">OutOfMemoryError in Hadoop Reduce Phase</a></li>
+  <li><a href="#total-size-of-serialized-results-is-bigger-than-sparkdrivermaxresultsize" id="markdown-toc-total-size-of-serialized-results-is-bigger-than-sparkdrivermaxresultsize">Total size of serialized results is bigger than spark.driver.maxResultSize</a></li>
+  <li><a href="#file-does-not-exist-on-hdfslfs-error-from-remote-parfor" id="markdown-toc-file-does-not-exist-on-hdfslfs-error-from-remote-parfor">File does not exist on HDFS/LFS error from remote parfor</a></li>
+  <li><a href="#jvm-garbage-collection-related-flags" id="markdown-toc-jvm-garbage-collection-related-flags">JVM Garbage Collection related flags</a></li>
+  <li><a href="#memory-overhead" id="markdown-toc-memory-overhead">Memory overhead</a></li>
+  <li><a href="#network-timeout" id="markdown-toc-network-timeout">Network timeout</a></li>
+  <li><a href="#advanced-developer-statistics" id="markdown-toc-advanced-developer-statistics">Advanced developer statistics</a></li>
+  <li><a href="#out-of-memory-on-executors" id="markdown-toc-out-of-memory-on-executors">Out-Of-Memory on executors</a></li>
+  <li><a href="#native-blas-errors" id="markdown-toc-native-blas-errors">Native BLAS errors</a></li>
+</ul>
+
+<p><br /></p>
+
+<h2 id="classnotfoundexception-for-commons-math3">ClassNotFoundException for commons-math3</h2>
+
+<p>The Apache Commons Math library is utilized by SystemML. The commons-math3
+dependency is included with Spark and with newer versions of Hadoop. Running
+SystemML on an older Hadoop cluster can potentially generate an error such
+as the following due to the missing commons-math3 dependency:</p>
+
+<pre><code>java.lang.ClassNotFoundException: org.apache.commons.math3.linear.RealMatrix
+</code></pre>
+
+<p>This issue can be fixed by changing the commons-math3 <code>scope</code> in the pom.xml file
+from <code>provided</code> to <code>compile</code>.</p>
+
+<pre><code>&lt;dependency&gt;
+	&lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
+	&lt;artifactId&gt;commons-math3&lt;/artifactId&gt;
+	&lt;version&gt;3.1.1&lt;/version&gt;
+	&lt;scope&gt;compile&lt;/scope&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>SystemML can then be rebuilt with the <code>commons-math3</code> dependency using
+Maven (<code>mvn clean package -P distribution</code>).</p>
+
+<h2 id="outofmemoryerror-in-hadoop-reduce-phase">OutOfMemoryError in Hadoop Reduce Phase</h2>
+<p>In Hadoop MapReduce, outputs from mapper nodes are copied to reducer nodes and then sorted (known as the <em>shuffle</em> phase) before being consumed by reducers. The shuffle phase utilizes several buffers that share memory space with other MapReduce tasks, which will throw an <code>OutOfMemoryError</code> if the shuffle buffers take too much space:</p>
+
+<pre><code>Error: java.lang.OutOfMemoryError: Java heap space
+    at org.apache.hadoop.mapred.IFile$Reader.readNextBlock(IFile.java:357)
+    at org.apache.hadoop.mapred.IFile$Reader.next(IFile.java:419)
+    at org.apache.hadoop.mapred.Merger$Segment.next(Merger.java:238)
+    at org.apache.hadoop.mapred.Merger$MergeQueue.adjustPriorityQueue(Merger.java:348)
+    at org.apache.hadoop.mapred.Merger$MergeQueue.next(Merger.java:368)
+    at org.apache.hadoop.mapred.Merger.writeFile(Merger.java:156)
+    ...
+</code></pre>
+
+<p>One way to fix this issue is lowering the following buffer thresholds.</p>
+
+<pre><code>mapred.job.shuffle.input.buffer.percent # default 0.70; try 0.20 
+mapred.job.shuffle.merge.percent # default 0.66; try 0.20
+mapred.job.reduce.input.buffer.percent # default 0.0; keep 0.0
+</code></pre>
+
+<p>These configurations can be modified <strong>globally</strong> by inserting/modifying the following in <code>mapred-site.xml</code>.</p>
+
+<pre><code>&lt;property&gt;
+ &lt;name&gt;mapred.job.shuffle.input.buffer.percent&lt;/name&gt;
+ &lt;value&gt;0.2&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+ &lt;name&gt;mapred.job.shuffle.merge.percent&lt;/name&gt;
+ &lt;value&gt;0.2&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+ &lt;name&gt;mapred.job.reduce.input.buffer.percent&lt;/name&gt;
+ &lt;value&gt;0.0&lt;/value&gt;
+&lt;/property&gt;
+</code></pre>
+
+<p>They can also be configured on a <strong>per SystemML-task basis</strong> by inserting the following in <code>SystemML-config.xml</code>.</p>
+
+<pre><code>&lt;mapred.job.shuffle.merge.percent&gt;0.2&lt;/mapred.job.shuffle.merge.percent&gt;
+&lt;mapred.job.shuffle.input.buffer.percent&gt;0.2&lt;/mapred.job.shuffle.input.buffer.percent&gt;
+&lt;mapred.job.reduce.input.buffer.percent&gt;0&lt;/mapred.job.reduce.input.buffer.percent&gt;
+</code></pre>
+
+<p>Note: The default <code>SystemML-config.xml</code> is located in <code>&lt;path to SystemML root&gt;/conf/</code>. It is passed to SystemML using the <code>-config</code> argument:</p>
+
+<pre><code>hadoop jar SystemML.jar [-? | -help | -f &lt;filename&gt;] (-config &lt;config_filename&gt;) ([-args | -nvargs] &lt;args-list&gt;)
+</code></pre>
+
+<p>See <a href="hadoop-batch-mode.html">Invoking SystemML in Hadoop Batch Mode</a> for details of the syntax.</p>
+
+<h2 id="total-size-of-serialized-results-is-bigger-than-sparkdrivermaxresultsize">Total size of serialized results is bigger than spark.driver.maxResultSize</h2>
+
+<p>Spark aborts a job if the estimated result size of collect is greater than maxResultSize to avoid out-of-memory errors in driver.
+However, SystemML&#8217;s optimizer has estimates the memory required for each operator and provides guards against these out-of-memory errors in driver.
+So, we recommend setting the configuration <code>--conf spark.driver.maxResultSize=0</code>.</p>
+
+<h2 id="file-does-not-exist-on-hdfslfs-error-from-remote-parfor">File does not exist on HDFS/LFS error from remote parfor</h2>
+
+<p>This error usually comes from incorrect HDFS configuration on the worker nodes. To investigate this, we recommend</p>
+
+<ul>
+  <li>Testing if HDFS is accessible from the worker node: <code>hadoop fs -ls &lt;file path&gt;</code></li>
+  <li>Synchronize hadoop configuration across the worker nodes.</li>
+  <li>Set the environment variable <code>HADOOP_CONF_DIR</code>. You may have to restart the cluster-manager to get the hadoop configuration.</li>
+</ul>
+
+<h2 id="jvm-garbage-collection-related-flags">JVM Garbage Collection related flags</h2>
+
+<p>We recommend providing 10% of maximum memory to young generation and using <code>-server</code> flag for robust garbage collection policy. 
+For example: if you intend to use 20G driver and 60G executor, then please add following to your configuration:</p>
+
+<pre><code> spark-submit --driver-memory 20G --executor-memory 60G --conf "spark.executor.extraJavaOptions=-Xmn6G -server" --conf  "spark.driver.extraJavaOptions=-Xmn2G -server" ... 
+</code></pre>
+
+<h2 id="memory-overhead">Memory overhead</h2>
+
+<p>Spark sets <code>spark.yarn.executor.memoryOverhead</code>, <code>spark.yarn.driver.memoryOverhead</code> and <code>spark.yarn.am.memoryOverhead</code> to be 10% of memory provided
+to the executor, driver and YARN Application Master respectively (with minimum of 384 MB). For certain workloads, the user may have to increase this
+overhead to 12-15% of the memory budget.</p>
+
+<h2 id="network-timeout">Network timeout</h2>
+
+<p>To avoid false-positive errors due to network failures in case of compute-bound scripts, the user may have to increase the timeout <code>spark.network.timeout</code> (default: 120s).</p>
+
+<h2 id="advanced-developer-statistics">Advanced developer statistics</h2>
+
+<p>Few of our operators (for example: convolution-related operator) and GPU backend allows an expert user to get advanced statistics
+by setting the configuration <code>systemml.stats.extraGPU</code> and <code>systemml.stats.extraDNN</code> in the file SystemML-config.xml.</p>
+
+<h2 id="out-of-memory-on-executors">Out-Of-Memory on executors</h2>
+
+<p>Out-Of-Memory on executors is often caused due to side-effects of lazy evaluation and in-memory input data of Spark for large-scale problems. 
+Though we are constantly improving our optimizer to address this scenario, a quick hack to resolve this is reducing the number of cores allocated to the executor.
+We would highly appreciate if you file a bug report on our <a href="https://issues.apache.org/jira/browse/SYSTEMML">issue tracker</a> if and when you encounter OOM.</p>
+
+<h2 id="native-blas-errors">Native BLAS errors</h2>
+
+<p>Please see <a href="http://apache.github.io/systemml/native-backend">the user guide of native backend</a>.</p>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

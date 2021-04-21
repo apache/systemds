@@ -1,0 +1,17 @@
+org.apache.sysml.api
+org.apache.sysml.api.jmlc
+org.apache.sysml.api.mlcontext
+org.apache.sysml.api.monitoring
+org.apache.sysml.runtime
+org.apache.sysml.runtime.compress
+org.apache.sysml.runtime.compress.estim
+org.apache.sysml.runtime.compress.utils
+org.apache.sysml.runtime.instructions
+org.apache.sysml.runtime.instructions.gpu
+org.apache.sysml.runtime.instructions.gpu.context
+org.apache.sysml.runtime.instructions.spark
+org.apache.sysml.runtime.instructions.spark.utils
+org.apache.sysml.runtime.matrix
+org.apache.sysml.runtime.matrix.data
+org.apache.sysml.udf
+org.apache.sysml.udf.lib

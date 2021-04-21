@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Beginner's Guide to DML and PyDML - SystemML 0.13.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Beginner's Guide to DML and PyDML">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML (incubating)" title="Apache SystemML (incubating)"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup> (incubating)</a><br/>
+                        <span class="version">0.13.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Javadoc</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Beginner's Guide to DML and PyDML</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#overview" id="markdown-toc-overview">Overview</a></li>
+  <li><a href="#script-invocation" id="markdown-toc-script-invocation">Script Invocation</a></li>
+  <li><a href="#data-types" id="markdown-toc-data-types">Data Types</a></li>
+  <li><a href="#matrix-basics" id="markdown-toc-matrix-basics">Matrix Basics</a>    <ul>
+      <li><a href="#creating-a-matrix" id="markdown-toc-creating-a-matrix">Creating a Matrix</a></li>
+      <li><a href="#saving-a-matrix" id="markdown-toc-saving-a-matrix">Saving a Matrix</a></li>
+      <li><a href="#loading-a-matrix" id="markdown-toc-loading-a-matrix">Loading a Matrix</a></li>
+      <li><a href="#matrix-operations" id="markdown-toc-matrix-operations">Matrix Operations</a></li>
+      <li><a href="#matrix-indexing" id="markdown-toc-matrix-indexing">Matrix Indexing</a></li>
+    </ul>
+  </li>
+  <li><a href="#control-statements" id="markdown-toc-control-statements">Control Statements</a></li>
+  <li><a href="#user-defined-functions" id="markdown-toc-user-defined-functions">User-Defined Functions</a></li>
+  <li><a href="#command-line-arguments-and-default-values" id="markdown-toc-command-line-arguments-and-default-values">Command-Line Arguments and Default Values</a></li>
+  <li><a href="#additional-information" id="markdown-toc-additional-information">Additional Information</a></li>
+</ul>
+
+<p><br /></p>
+
+<h1 id="overview">Overview</h1>
+
+<p>SystemML enables <em>flexible</em>, scalable machine learning. This flexibility is achieved
+through the specification of a high-level declarative machine learning language
+that comes in two flavors, one with an R-like syntax (DML) and one with
+a Python-like syntax (PyDML).</p>
+
+<p>Algorithm scripts written in DML and PyDML can be run on Spark, on Hadoop, or
+in Standalone mode. SystemML also features an MLContext API that allows SystemML
+to be accessed via Scala or Python from a Spark Shell, a Jupyter Notebook, or a Zeppelin Notebook.</p>
+
+<p>This Beginner&#8217;s Guide serves as a starting point for writing DML and PyDML
+scripts.</p>
+
+<h1 id="script-invocation">Script Invocation</h1>
+
+<p>DML and PyDML scripts can be invoked in a variety of ways. Suppose that we have <code class="highlighter-rouge">hello.dml</code> and
+<code class="highlighter-rouge">hello.pydml</code> scripts containing the following:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>print('hello ' + $1)
+</code></pre>
+</div>
+
+<p>One way to begin working with SystemML is to <a href="http://systemml.apache.org/download.html">download a standalone distribution of SystemML</a>
+and use the <code class="highlighter-rouge">runStandaloneSystemML.sh</code> and <code class="highlighter-rouge">runStandaloneSystemML.bat</code> scripts to run SystemML in standalone
+mode. The name of the DML or PyDML script
+is passed as the first argument to these scripts, along with a variety of arguments.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>./runStandaloneSystemML.sh hello.dml -args world
+./runStandaloneSystemML.sh hello.pydml -python -args world
+</code></pre>
+</div>
+
+<h1 id="data-types">Data Types</h1>
+
+<p>SystemML has four value data types. In DML, these are: <strong>double</strong>, <strong>integer</strong>,
+<strong>string</strong>, and <strong>boolean</strong>. In PyDML, these are: <strong>float</strong>, <strong>int</strong>,
+<strong>str</strong>, and <strong>bool</strong>. In normal usage, the data type of a variable is implicit
+based on its value. Mathematical operations typically operate on
+doubles/floats, whereas integers/ints are typically useful for tasks such as
+iteration and accessing elements in a matrix.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">aDouble</span> <span class="o">=</span> <span class="m">3.0</span>
+<span class="n">bInteger</span> <span class="o">=</span> <span class="m">2</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'aDouble = '</span> <span class="o">+</span> <span class="n">aDouble</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'bInteger = '</span> <span class="o">+</span> <span class="n">bInteger</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'aDouble + bInteger = '</span> <span class="o">+</span> <span class="p">(</span><span class="n">aDouble</span> <span class="o">+</span> <span class="n">bInteger</span><span class="p">))</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'bInteger ^ 3 = '</span> <span class="o">+</span> <span class="p">(</span><span class="n">bInteger</span> <span class="o">^</span> <span class="m">3</span><span class="p">))</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'aDouble ^ 2 = '</span> <span class="o">+</span> <span class="p">(</span><span class="n">aDouble</span> <span class="o">^</span> <span class="m">2</span><span class="p">))</span>
+
+<span class="n">cBoolean</span> <span class="o">=</span> <span class="n">TRUE</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'cBoolean = '</span> <span class="o">+</span> <span class="n">cBoolean</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'(2 &lt; 1) = '</span> <span class="o">+</span> <span class="p">(</span><span class="m">2</span> <span class="o">&lt;</span> <span class="m">1</span><span class="p">))</span>
+
+<span class="n">dString</span> <span class="o">=</span> <span class="s1">'Hello'</span>
+<span class="n">eString</span> <span class="o">=</span> <span class="n">dString</span> <span class="o">+</span> <span class="s1">' World'</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'dString = '</span> <span class="o">+</span> <span class="n">dString</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="s1">'eString = '</span> <span class="o">+</span> <span class="n">eString</span><span class="p">)</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">aFloat</span> <span class="o">=</span> <span class="mf">3.0</span>
+<span class="n">bInt</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'aFloat = '</span> <span class="o">+</span> <span class="n">aFloat</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'bInt = '</span> <span class="o">+</span> <span class="n">bInt</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'aFloat + bInt = '</span> <span class="o">+</span> <span class="p">(</span><span class="n">aFloat</span> <span class="o">+</span> <span class="n">bInt</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'bInt ** 3 = '</span> <span class="o">+</span> <span class="p">(</span><span class="n">bInt</span> <span class="o">**</span> <span class="mi">3</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'aFloat ** 2 = '</span> <span class="o">+</span> <span class="p">(</span><span class="n">aFloat</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+
+<span class="n">cBool</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'cBool = '</span> <span class="o">+</span> <span class="n">cBool</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'(2 &lt; 1) = '</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="n">dStr</span> <span class="o">=</span> <span class="s">'Hello'</span>
+<span class="n">eStr</span> <span class="o">=</span> <span class="n">dStr</span> <span class="o">+</span> <span class="s">' World'</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'dStr = '</span> <span class="o">+</span> <span class="n">dStr</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'eStr = '</span> <span class="o">+</span> <span class="n">eStr</span><span class="p">)</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="DML Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>aDouble = 3.0
+bInteger = 2
+aDouble + bInteger = 5.0
+bInteger ^ 3 = 8.0
+aDouble ^ 2 = 9.0
+cBoolean = TRUE
+(2 &lt; 1) = FALSE
+dString = Hello
+eString = Hello World
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="PyDML Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>aFloat = 3.0
+bInt = 2
+aFloat + bInt = 5.0
+bInt ** 3 = 8.0
+aFloat ** 2 = 9.0
+cBool = TRUE
+(2 &lt; 1) = FALSE
+dStr = Hello
+eStr = Hello World
+</code></pre>
+    </div>
+  </div>
+
+</div>
+
+<h1 id="matrix-basics">Matrix Basics</h1>
+
+<h2 id="creating-a-matrix">Creating a Matrix</h2>
+
+<p>A matrix can be created in DML using the <strong><code class="highlighter-rouge">matrix()</code></strong> function and in PyDML using the <strong><code class="highlighter-rouge">full()</code></strong> 
+function. In the example below, a matrix element is still considered to be of the matrix data type,
+so the value is cast to a scalar in order to print it. Matrix element values are of type <strong>double</strong>/<strong>float</strong>.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">m</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="s2">"1 2 3 4 5 6 7 8 9 10 11 12"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="m">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="m">3</span><span class="p">)</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">nrow</span><span class="p">(</span><span class="n">m</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">ncol</span><span class="p">(</span><span class="n">m</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">print</span><span class="p">(</span><span class="s1">'['</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s1">','</span> <span class="o">+</span> <span class="n">j</span> <span class="o">+</span> <span class="s1">']:'</span> <span class="o">+</span> <span class="n">as.scalar</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">m</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="s">"1 2 3 4 5 6 7 8 9 10 11 12"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">nrow</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">ncol</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'['</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">','</span> <span class="o">+</span> <span class="n">j</span> <span class="o">+</span> <span class="s">']:'</span> <span class="o">+</span> <span class="n">scalar</span><span class="p">(</span><span class="n">n</span><span class="p">))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="DML Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>[1,1]:1.0
+[1,2]:2.0
+[1,3]:3.0
+[2,1]:4.0
+[2,2]:5.0
+[2,3]:6.0
+[3,1]:7.0
+[3,2]:8.0
+[3,3]:9.0
+[4,1]:10.0
+[4,2]:11.0
+[4,3]:12.0
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="PyDML Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>[0,0]:1.0
+[0,1]:2.0
+[0,2]:3.0
+[1,0]:4.0
+[1,1]:5.0
+[1,2]:6.0
+[2,0]:7.0
+[2,1]:8.0
+[2,2]:9.0
+[3,0]:10.0
+[3,1]:11.0
+[3,2]:12.0
+</code></pre>
+    </div>
+  </div>
+
+</div>
+
+<p>We can also output the matrix element values using the <strong><code class="highlighter-rouge">toString</code></strong> function:</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">m</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="s2">"1 2 3 4 5 6 7 8 9 10 11 12"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="m">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="m">3</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">" | "</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="m">1</span><span class="p">))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">m</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="s">"1 2 3 4 5 6 7 8 9 10 11 12"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">" | "</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>1.0 | 2.0 | 3.0
+4.0 | 5.0 | 6.0
+7.0 | 8.0 | 9.0
+10.0 | 11.0 | 12.0
+</code></pre>
+    </div>
+  </div>
+
+</div>
+
+<p>For additional information about the <strong><code class="highlighter-rouge">matrix()</code></strong> and <strong><code class="highlighter-rouge">full()</code></strong> functions, please see the 
+<a href="dml-language-reference.html#matrix-construction-manipulation-and-aggregation-built-in-functions">Matrix Construction</a>
+section of the Language Reference. For information about the <strong><code class="highlighter-rouge">toString()</code></strong> function, see
+the <a href="dml-language-reference.html#other-built-in-functions">Other Built-In Functions</a> section of the Language Reference.</p>
+
+<h2 id="saving-a-matrix">Saving a Matrix</h2>
+
+<p>A matrix can be saved using the <strong><code class="highlighter-rouge">write()</code></strong> function in DML and the <strong><code class="highlighter-rouge">save()</code></strong> function in PyDML. SystemML supports four
+different formats: <strong><code class="highlighter-rouge">text</code></strong> (<code class="highlighter-rouge">i,j,v</code>), <strong><code class="highlighter-rouge">mm</code></strong> (<code class="highlighter-rouge">Matrix Market</code>), <strong><code class="highlighter-rouge">csv</code></strong> (<code class="highlighter-rouge">delimiter-separated values</code>), and <strong><code class="highlighter-rouge">binary</code></strong>.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">m</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="s2">"1 2 3 0 0 0 7 8 9 0 0 0"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="m">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="m">3</span><span class="p">)</span>
+<span class="n">write</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">"m.txt"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s2">"text"</span><span class="p">)</span>
+<span class="n">write</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">"m.mm"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s2">"mm"</span><span class="p">)</span>
+<span class="n">write</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">"m.csv"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s2">"csv"</span><span class="p">)</span>
+<span class="n">write</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">"m.binary"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s2">"binary"</span><span class="p">)</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">m</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="s">"1 2 3 0 0 0 7 8 9 0 0 0"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">save</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s">"m.txt"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"text"</span><span class="p">)</span>
+<span class="n">save</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s">"m.mm"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"mm"</span><span class="p">)</span>
+<span class="n">save</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s">"m.csv"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"csv"</span><span class="p">)</span>
+<span class="n">save</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s">"m.binary"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"binary"</span><span class="p">)</span></code></pre></figure>
+
+  </div>
+
+</div>
+
+<p>Saving a matrix automatically creates a metadata file for each format except for Matrix Market, since Matrix Market contains
+metadata within the *.mm file. All formats are text-based except binary. The contents of the resulting files are shown here.
+<em>Note that the <strong><code class="highlighter-rouge">text</code></strong> (<code class="highlighter-rouge">i,j,v</code>) and <strong><code class="highlighter-rouge">mm</code></strong> (<code class="highlighter-rouge">Matrix Market</code>) formats index from 1, even when working with PyDML, which
+is 0-based.</em></p>
+
+<div class="codetabs2">
+
+<div data-lang="m.txt">
+    <div class="highlighter-rouge"><pre class="highlight"><code>1 1 1.0
+1 2 2.0
+1 3 3.0
+3 1 7.0
+3 2 8.0
+3 3 9.0
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="m.txt.mtd">
+    <div class="highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nt">"data_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"matrix"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"value_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"double"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"rows"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"cols"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"nnz"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"format"</span><span class="p">:</span><span class="w"> </span><span class="s2">"text"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"author"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SystemML"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2017-01-01 00:00:01 PST"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+    </div>
+  </div>
+
+<div data-lang="m.mm">
+    <div class="highlighter-rouge"><pre class="highlight"><code>%%MatrixMarket matrix coordinate real general
+4 3 6
+1 1 1.0
+1 2 2.0
+1 3 3.0
+3 1 7.0
+3 2 8.0
+3 3 9.0
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="m.csv">
+    <div class="highlighter-rouge"><pre class="highlight"><code>1.0,2.0,3.0
+0,0,0
+7.0,8.0,9.0
+0,0,0
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="m.csv.mtd">
+    <div class="highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nt">"data_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"matrix"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"value_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"double"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"rows"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"cols"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"nnz"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"format"</span><span class="p">:</span><span class="w"> </span><span class="s2">"csv"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"header"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"sep"</span><span class="p">:</span><span class="w"> </span><span class="s2">","</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"author"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SystemML"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2017-01-01 00:00:01 PST"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+    </div>
+  </div>
+
+<div data-lang="m.binary">
+    <div class="highlighter-rouge"><pre class="highlight"><code>Not text-based
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="m.binary.mtd">
+    <div class="highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nt">"data_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"matrix"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"value_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"double"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"rows"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"cols"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"rows_in_block"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"cols_in_block"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"nnz"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"format"</span><span class="p">:</span><span class="w"> </span><span class="s2">"binary"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"author"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SystemML"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2017-01-01 00:00:01 PST"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+    </div>
+  </div>
+
+</div>
+
+<h2 id="loading-a-matrix">Loading a Matrix</h2>
+
+<p>A matrix can be loaded using the <strong><code class="highlighter-rouge">read()</code></strong> function in DML and the <strong><code class="highlighter-rouge">load()</code></strong> function in PyDML. As with saving, SystemML supports four
+formats: <strong><code class="highlighter-rouge">text</code></strong> (<code class="highlighter-rouge">i,j,v</code>), <strong><code class="highlighter-rouge">mm</code></strong> (<code class="highlighter-rouge">Matrix Market</code>), <strong><code class="highlighter-rouge">csv</code></strong> (<code class="highlighter-rouge">delimiter-separated values</code>), and <strong><code class="highlighter-rouge">binary</code></strong>. To read a file, a corresponding
+metadata file is required, except for the Matrix Market format. A metadata file is not required if a <code class="highlighter-rouge">format</code> parameter is specified to the <strong><code class="highlighter-rouge">read()</code></strong>
+or <strong><code class="highlighter-rouge">load()</code></strong> functions.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">m</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"m.csv"</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="s2">"min:"</span> <span class="o">+</span> <span class="n">min</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="n">print</span><span class="p">(</span><span class="s2">"max:"</span> <span class="o">+</span> <span class="n">max</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="n">print</span><span class="p">(</span><span class="s2">"sum:"</span> <span class="o">+</span> <span class="n">sum</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="n">mRowSums</span> <span class="o">=</span> <span class="n">rowSums</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">nrow</span><span class="p">(</span><span class="n">mRowSums</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">print</span><span class="p">(</span><span class="s2">"row "</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s2">" sum:"</span> <span class="o">+</span> <span class="n">as.scalar</span><span class="p">(</span><span class="n">mRowSums</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="m">1</span><span class="p">]))</span>
+<span class="p">}</span>
+<span class="n">mColSums</span> <span class="o">=</span> <span class="n">colSums</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">ncol</span><span class="p">(</span><span class="n">mColSums</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">print</span><span class="p">(</span><span class="s2">"col "</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s2">" sum:"</span> <span class="o">+</span> <span class="n">as.scalar</span><span class="p">(</span><span class="n">mColSums</span><span class="p">[</span><span class="m">1</span><span class="p">,</span><span class="n">i</span><span class="p">]))</span>
+<span class="p">}</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">m</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s">"m.csv"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"min:"</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"max:"</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"sum:"</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="n">mRowSums</span> <span class="o">=</span> <span class="n">rowSums</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">nrow</span><span class="p">(</span><span class="n">mRowSums</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"row "</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">" sum:"</span> <span class="o">+</span> <span class="n">scalar</span><span class="p">(</span><span class="n">mRowSums</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+<span class="n">mColSums</span> <span class="o">=</span> <span class="n">colSums</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">ncol</span><span class="p">(</span><span class="n">mColSums</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"col "</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">" sum:"</span> <span class="o">+</span> <span class="n">scalar</span><span class="p">(</span><span class="n">mColSums</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">]))</span>
+    </code></pre></figure>
+
+  </div>
+
+<div data-lang="DML Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>min:0.0
+max:9.0
+sum:30.0
+row 1 sum:6.0
+row 2 sum:0.0
+row 3 sum:24.0
+row 4 sum:0.0
+col 1 sum:8.0
+col 2 sum:10.0
+col 3 sum:12.0
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="PyDML Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>min:0.0
+max:9.0
+sum:30.0
+row 0 sum:6.0
+row 1 sum:0.0
+row 2 sum:24.0
+row 3 sum:0.0
+col 0 sum:8.0
+col 1 sum:10.0
+col 2 sum:12.0
+</code></pre>
+    </div>
+  </div>
+
+</div>
+
+<h2 id="matrix-operations">Matrix Operations</h2>
+
+<p>DML and PyDML offer a rich set of operators and built-in functions to perform various operations on matrices and scalars.
+Operators and built-in functions are described in great detail in the Language Reference
+(<a href="dml-language-reference.html#expressions">Expressions</a>, <a href="dml-language-reference.html#built-in-functions">Built-In Functions</a>).</p>
+
+<p>In this example, we create a matrix A. Next, we create another matrix B by adding 4 to each element in A. Next, we flip
+B by taking its transpose. We then multiply A and B, represented by matrix C. We create a matrix D with the same number
+of rows and columns as C, and initialize its elements to 5. We then subtract D from C and divide the values of its elements
+by 2 and assign the resulting matrix to D.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="s2">"1 2 3 4 5 6"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="m">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="m">2</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">A</span><span class="p">))</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">A</span> <span class="o">+</span> <span class="m">4</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">B</span><span class="p">))</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">A</span> <span class="o">%*%</span> <span class="n">B</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">C</span><span class="p">))</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="n">nrow</span><span class="p">(</span><span class="n">C</span><span class="p">),</span> <span class="n">cols</span><span class="o">=</span><span class="n">ncol</span><span class="p">(</span><span class="n">C</span><span class="p">))</span>
+<span class="n">D</span> <span class="o">=</span> <span class="p">(</span><span class="n">C</span> <span class="o">-</span> <span class="n">D</span><span class="p">)</span> <span class="o">/</span> <span class="m">2</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">D</span><span class="p">))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">A</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="s">"1 2 3 4 5 6"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">A</span><span class="p">))</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">A</span> <span class="o">+</span> <span class="mi">4</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">transpose</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">B</span><span class="p">))</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">C</span><span class="p">))</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="n">nrow</span><span class="p">(</span><span class="n">C</span><span class="p">),</span> <span class="n">cols</span><span class="o">=</span><span class="n">ncol</span><span class="p">(</span><span class="n">C</span><span class="p">))</span>
+<span class="n">D</span> <span class="o">=</span> <span class="p">(</span><span class="n">C</span> <span class="o">-</span> <span class="n">D</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">D</span><span class="p">))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>1.000 2.000
+3.000 4.000
+5.000 6.000
+
+5.000 7.000 9.000
+6.000 8.000 10.000
+
+17.000 23.000 29.000
+39.000 53.000 67.000
+61.000 83.000 105.000
+
+6.000 9.000 12.000
+17.000 24.000 31.000
+28.000 39.000 50.000
+</code></pre>
+    </div>
+  </div>
+
+</div>
+
+<h2 id="matrix-indexing">Matrix Indexing</h2>
+
+<p>The elements in a matrix can be accessed by their row and column indices. In the example below, we have 3x3 matrix A.
+First, we access the element at the third row and third column. Next, we obtain a row slice (vector) of the matrix by
+specifying the row and leaving the column blank. We obtain a column slice (vector) by leaving the row blank and specifying
+the column. After that, we obtain a submatrix via range indexing, where we specify rows, separated by a colon, and columns,
+separated by a colon.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="s2">"1 2 3 4 5 6 7 8 9"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="m">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="m">3</span><span class="p">)</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">A</span><span class="p">))</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="m">3</span><span class="p">,</span><span class="m">3</span><span class="p">]</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">B</span><span class="p">))</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="m">2</span><span class="p">,]</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">C</span><span class="p">))</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">A</span><span class="p">[,</span><span class="m">3</span><span class="p">]</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">D</span><span class="p">))</span>
+<span class="n">E</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="m">2</span><span class="o">:</span><span class="m">3</span><span class="p">,</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">]</span>
+<span class="n">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">E</span><span class="p">))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">A</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="s">"1 2 3 4 5 6 7 8 9"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">A</span><span class="p">))</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">B</span><span class="p">))</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">,]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">C</span><span class="p">))</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">A</span><span class="p">[,</span><span class="mi">2</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">D</span><span class="p">))</span>
+<span class="n">E</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">toString</span><span class="p">(</span><span class="n">E</span><span class="p">))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>1.000 2.000 3.000
+4.000 5.000 6.000
+7.000 8.000 9.000
+
+9.000
+
+4.000 5.000 6.000
+
+3.000
+6.000
+9.000
+
+4.000 5.000
+7.000 8.000
+</code></pre>
+    </div>
+
+  </div>
+
+</div>
+
+<h1 id="control-statements">Control Statements</h1>
+
+<p>DML and PyDML both feature <code class="highlighter-rouge">if</code>, <code class="highlighter-rouge">if-else</code>, and <code class="highlighter-rouge">if-else-if</code> conditional statements.</p>
+
+<p>DML and PyDML feature 3 loop statements: <code class="highlighter-rouge">while</code>, <code class="highlighter-rouge">for</code>, and <code class="highlighter-rouge">parfor</code> (parallel for). In the example, note that the 
+<code class="highlighter-rouge">print</code> statements within the <code class="highlighter-rouge">parfor</code> loop can occur in any order since the iterations occur in parallel rather than
+sequentially as in a regular <code class="highlighter-rouge">for</code> loop. The <code class="highlighter-rouge">parfor</code> statement can include several optional parameters, as described
+in the Language Reference (<a href="dml-language-reference.html#parfor-statement">ParFor Statement</a>).</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">i</span> <span class="o">=</span> <span class="m">1</span>
+<span class="k">while</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="m">3</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="m">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">print</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">)</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="m">2</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">print</span><span class="p">(</span><span class="s1">'world'</span><span class="p">)</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="n">print</span><span class="p">(</span><span class="s1">'!!!'</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="m">1</span>
+<span class="p">}</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="s2">"1 2 3 4 5 6"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="m">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="m">2</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">nrow</span><span class="p">(</span><span class="n">A</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">print</span><span class="p">(</span><span class="s2">"for A["</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s2">",1]:"</span> <span class="o">+</span> <span class="n">as.scalar</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="m">1</span><span class="p">]))</span>
+<span class="p">}</span>
+
+<span class="n">parfor</span><span class="p">(</span><span class="n">i</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">nrow</span><span class="p">(</span><span class="n">A</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">print</span><span class="p">(</span><span class="s2">"parfor A["</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s2">",1]:"</span> <span class="o">+</span> <span class="n">as.scalar</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="m">1</span><span class="p">]))</span>
+<span class="p">}</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">while</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'hello'</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'world'</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'!!!'</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="s">"1 2 3 4 5 6"</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">nrow</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"for A["</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">",0]:"</span> <span class="o">+</span> <span class="n">scalar</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+
+<span class="n">parfor</span><span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">nrow</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"parfor A["</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">",0]:"</span> <span class="o">+</span> <span class="n">scalar</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="DML Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hello
+world
+!!!
+for A[1,1]:1.0
+for A[2,1]:3.0
+for A[3,1]:5.0
+parfor A[2,1]:3.0
+parfor A[1,1]:1.0
+parfor A[3,1]:5.0
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="PyDML Result">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hello
+world
+!!!
+for A[0,0]:1.0
+for A[1,0]:3.0
+for A[2,0]:5.0
+parfor A[0,0]:1.0
+parfor A[2,0]:5.0
+parfor A[1,0]:3.0
+</code></pre>
+    </div>
+  </div>
+
+</div>
+
+<h1 id="user-defined-functions">User-Defined Functions</h1>
+
+<p>Functions encapsulate useful functionality in SystemML. In addition to built-in functions, users can define their own functions.
+Functions take 0 or more parameters and return 0 or more values.
+Currently, if a function returns nothing, it still needs to be assigned to a variable.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">doSomething</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">double</span><span class="p">]</span> <span class="n">mat</span><span class="p">)</span> <span class="k">return</span> <span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">double</span><span class="p">]</span> <span class="n">ret</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">additionalCol</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="n">nrow</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">cols</span><span class="o">=</span><span class="m">1</span><span class="p">)</span> <span class="c1"># 1x3 matrix with 1 values
+</span>    <span class="n">ret</span> <span class="o">=</span> <span class="n">cbind</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">additionalCol</span><span class="p">)</span> <span class="c1"># concatenate column to matrix
+</span>    <span class="n">ret</span> <span class="o">=</span> <span class="n">cbind</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">seq</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">))</span>  <span class="c1"># concatenate column (0,1,2) to matrix
+</span>    <span class="n">ret</span> <span class="o">=</span> <span class="n">cbind</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">rowMaxs</span><span class="p">(</span><span class="n">ret</span><span class="p">))</span>  <span class="c1"># concatenate column of max row values to matrix
+</span>    <span class="n">ret</span> <span class="o">=</span> <span class="n">cbind</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">rowSums</span><span class="p">(</span><span class="n">ret</span><span class="p">))</span>  <span class="c1"># concatenate column of row sums to matrix
+</span><span class="p">}</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="m">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="m">2</span><span class="p">,</span> <span class="n">min</span><span class="o">=</span><span class="m">0</span><span class="p">,</span> <span class="n">max</span><span class="o">=</span><span class="m">2</span><span class="p">)</span> <span class="c1"># random 3x2 matrix with values 0 to 2
+</span><span class="n">B</span> <span class="o">=</span> <span class="n">doSomething</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="n">write</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="s2">"A.csv"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s2">"csv"</span><span class="p">)</span>
+<span class="n">write</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="s2">"B.csv"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s2">"csv"</span><span class="p">)</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">doSomething</span><span class="p">(</span><span class="n">mat</span><span class="p">:</span> <span class="n">matrix</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">ret</span><span class="p">:</span> <span class="n">matrix</span><span class="p">[</span><span class="nb">float</span><span class="p">]):</span>
+    <span class="n">additionalCol</span> <span class="o">=</span> <span class="n">full</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="n">nrow</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="c"># 1x3 matrix with 1 values</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">cbind</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">additionalCol</span><span class="p">)</span> <span class="c"># concatenate column to matrix</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">cbind</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">seq</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c"># concatenate column (0,1,2) to matrix</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">cbind</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">rowMaxs</span><span class="p">(</span><span class="n">ret</span><span class="p">))</span>  <span class="c"># concatenate column of max row values to matrix</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">cbind</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">rowSums</span><span class="p">(</span><span class="n">ret</span><span class="p">))</span>  <span class="c"># concatenate column of row sums to matrix</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="c"># random 3x2 matrix with values 0 to 2</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">doSomething</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="n">save</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="s">"A.csv"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"csv"</span><span class="p">)</span>
+<span class="n">save</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="s">"B.csv"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"csv"</span><span class="p">)</span></code></pre></figure>
+
+  </div>
+
+</div>
+
+<p>In the above example, a 3x2 matrix of random doubles between 0 and 2 is created using the <strong><code class="highlighter-rouge">rand()</code></strong> function.
+Additional parameters can be passed to <strong><code class="highlighter-rouge">rand()</code></strong> to control sparsity and other matrix characteristics.</p>
+
+<p>Matrix A is passed to the <code class="highlighter-rouge">doSomething</code> function. A column of 1 values is concatenated to the matrix. A column
+consisting of the values <code class="highlighter-rouge">(0, 1, 2)</code> is concatenated to the matrix. Next, a column consisting of the maximum row values
+is concatenated to the matrix. A column consisting of the row sums is concatenated to the matrix, and this resulting
+matrix is returned to variable B. Matrix A is output to the <code class="highlighter-rouge">A.csv</code> file and matrix B is saved as the <code class="highlighter-rouge">B.csv</code> file.</p>
+
+<div class="codetabs2">
+
+<div data-lang="A.csv">
+    <div class="highlighter-rouge"><pre class="highlight"><code>1.6091961493071,0.7088614208099939
+0.5984862383600267,1.5732118950764993
+0.2947607068519842,1.9081406573366781
+</code></pre>
+    </div>
+  </div>
+
+<div data-lang="B.csv">
+    <div class="highlighter-rouge"><pre class="highlight"><code>1.6091961493071,0.7088614208099939,1.0,0,1.6091961493071,4.927253719424194
+0.5984862383600267,1.5732118950764993,1.0,1.0,1.5732118950764993,5.744910028513026
+0.2947607068519842,1.9081406573366781,1.0,2.0,2.0,7.202901364188662
+</code></pre>
+    </div>
+  </div>
+
+</div>
+
+<h1 id="command-line-arguments-and-default-values">Command-Line Arguments and Default Values</h1>
+
+<p>Command-line arguments can be passed to DML and PyDML scripts either as named arguments or as positional arguments. Named
+arguments are the preferred technique. Named arguments can be passed utilizing the <code class="highlighter-rouge">-nvargs</code> switch, and positional arguments
+can be passed using the <code class="highlighter-rouge">-args</code> switch.</p>
+
+<p>Default values can be set using the <strong><code class="highlighter-rouge">ifdef()</code></strong> function.</p>
+
+<p>In the example below, a matrix is read from the file system using named argument <code class="highlighter-rouge">M</code>. The number of rows to print is specified
+using the <code class="highlighter-rouge">rowsToPrint</code> argument, which defaults to 2 if no argument is supplied. Likewise, the number of columns is
+specified using <code class="highlighter-rouge">colsToPrint</code> with a default value of 2.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">fileM</span> <span class="o">=</span> <span class="o">$</span><span class="n">M</span>
+
+<span class="n">numRowsToPrint</span> <span class="o">=</span> <span class="n">ifdef</span><span class="p">(</span><span class="o">$</span><span class="n">rowsToPrint</span><span class="p">,</span> <span class="m">2</span><span class="p">)</span> <span class="c1"># default to 2
+</span><span class="n">numColsToPrint</span> <span class="o">=</span> <span class="n">ifdef</span><span class="p">(</span><span class="o">$</span><span class="n">colsToPrint</span><span class="p">,</span> <span class="m">2</span><span class="p">)</span> <span class="c1"># default to 2
+</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">fileM</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">numRowsToPrint</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">numColsToPrint</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">print</span><span class="p">(</span><span class="s1">'['</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s1">','</span> <span class="o">+</span> <span class="n">j</span> <span class="o">+</span> <span class="s1">']:'</span> <span class="o">+</span> <span class="n">as.scalar</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]))</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">fileM</span> <span class="o">=</span> <span class="err">$</span><span class="n">M</span>
+
+<span class="n">numRowsToPrint</span> <span class="o">=</span> <span class="n">ifdef</span><span class="p">(</span><span class="err">$</span><span class="n">rowsToPrint</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c"># default to 2</span>
+<span class="n">numColsToPrint</span> <span class="o">=</span> <span class="n">ifdef</span><span class="p">(</span><span class="err">$</span><span class="n">colsToPrint</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c"># default to 2</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">fileM</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">numRowsToPrint</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">numColsToPrint</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'['</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">','</span> <span class="o">+</span> <span class="n">j</span> <span class="o">+</span> <span class="s">']:'</span> <span class="o">+</span> <span class="n">scalar</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="DML Named Arguments and Results">
+    <div class="highlighter-rouge"><pre class="highlight"><code>Example #1 Arguments:
+-f ex.dml -nvargs M=m.csv rowsToPrint=1 colsToPrint=3
+
+Example #1 Results:
+[1,1]:1.0
+[1,2]:2.0
+[1,3]:3.0
+
+Example #2 Arguments:
+-f ex.dml -nvargs M=m.csv
+
+Example #2 Results:
+[1,1]:1.0
+[1,2]:2.0
+[2,1]:0.0
+[2,2]:0.0
+</code></pre>
+    </div>
+
+  </div>
+
+<div data-lang="PyDML Named Arguments and Results">
+    <div class="highlighter-rouge"><pre class="highlight"><code>Example #1 Arguments:
+-f ex.pydml -python -nvargs M=m.csv rowsToPrint=1 colsToPrint=3
+
+Example #1 Results:
+[0,0]:1.0
+[0,1]:2.0
+[0,2]:3.0
+
+Example #2 Arguments:
+-f ex.pydml -python -nvargs M=m.csv
+
+Example #2 Results:
+[0,0]:1.0
+[0,1]:2.0
+[1,0]:0.0
+[1,1]:0.0
+</code></pre>
+    </div>
+
+  </div>
+
+</div>
+
+<p>Here, we see identical functionality but with positional arguments.</p>
+
+<div class="codetabs2">
+
+<div data-lang="DML">
+
+    <figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">fileM</span> <span class="o">=</span> <span class="o">$</span><span class="m">1</span>
+
+<span class="n">numRowsToPrint</span> <span class="o">=</span> <span class="n">ifdef</span><span class="p">(</span><span class="o">$</span><span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">)</span> <span class="c1"># default to 2
+</span><span class="n">numColsToPrint</span> <span class="o">=</span> <span class="n">ifdef</span><span class="p">(</span><span class="o">$</span><span class="m">3</span><span class="p">,</span> <span class="m">2</span><span class="p">)</span> <span class="c1"># default to 2
+</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">fileM</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">numRowsToPrint</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">numColsToPrint</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">print</span><span class="p">(</span><span class="s1">'['</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s1">','</span> <span class="o">+</span> <span class="n">j</span> <span class="o">+</span> <span class="s1">']:'</span> <span class="o">+</span> <span class="n">as.scalar</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]))</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PyDML">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">fileM</span> <span class="o">=</span> <span class="err">$</span><span class="mi">1</span>
+
+<span class="n">numRowsToPrint</span> <span class="o">=</span> <span class="n">ifdef</span><span class="p">(</span><span class="err">$</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c"># default to 2</span>
+<span class="n">numColsToPrint</span> <span class="o">=</span> <span class="n">ifdef</span><span class="p">(</span><span class="err">$</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c"># default to 2</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">fileM</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">numRowsToPrint</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="n">numColsToPrint</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'['</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">','</span> <span class="o">+</span> <span class="n">j</span> <span class="o">+</span> <span class="s">']:'</span> <span class="o">+</span> <span class="n">scalar</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]))</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="DML Positional Arguments and Results">
+    <div class="highlighter-rouge"><pre class="highlight"><code>Example #1 Arguments:
+-f ex.dml -args m.csv 1 3
+
+Example #1 Results:
+[1,1]:1.0
+[1,2]:2.0
+[1,3]:3.0
+
+Example #2 Arguments:
+-f ex.dml -args m.csv
+
+Example #2 Results:
+[1,1]:1.0
+[1,2]:2.0
+[2,1]:0.0
+[2,2]:0.0
+</code></pre>
+    </div>
+
+  </div>
+
+<div data-lang="PyDML Positional Arguments and Results">
+    <div class="highlighter-rouge"><pre class="highlight"><code>Example #1 Arguments:
+-f ex.pydml -python -args m.csv 1 3
+
+Example #1 Results:
+[0,0]:1.0
+[0,1]:2.0
+[0,2]:3.0
+
+Example #2 Arguments:
+-f ex.pydml -python -args m.csv
+
+Example #2 Results:
+[0,0]:1.0
+[0,1]:2.0
+[1,0]:0.0
+[1,1]:0.0
+</code></pre>
+    </div>
+
+  </div>
+
+</div>
+
+<h1 id="additional-information">Additional Information</h1>
+
+<p>The <a href="dml-language-reference.html">Language Reference</a> contains highly detailed information regarding DML.</p>
+
+<p>In addition, many excellent examples of DML and PyDML can be found in the <a href="https://github.com/apache/incubator-systemml/tree/master/scripts"><code class="highlighter-rouge">scripts</code></a> directory.</p>
+
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

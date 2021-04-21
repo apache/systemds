@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Engine Developer Guide - SystemML 0.13.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="SystemML Engine Developer Guide">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML (incubating)" title="Apache SystemML (incubating)"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup> (incubating)</a><br/>
+                        <span class="version">0.13.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Javadoc</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">SystemML Engine Developer Guide</h1>
+          
+
+          <!--
+
+-->
+<ul id="markdown-toc">
+  <li><a href="#building-systemml" id="markdown-toc-building-systemml">Building SystemML</a></li>
+  <li><a href="#testing-systemml" id="markdown-toc-testing-systemml">Testing SystemML</a></li>
+  <li><a href="#development-environment" id="markdown-toc-development-environment">Development Environment</a></li>
+  <li><a href="#python-mlcontext-api" id="markdown-toc-python-mlcontext-api">Python MLContext API</a></li>
+  <li><a href="#matrix-multiplication-operators" id="markdown-toc-matrix-multiplication-operators">Matrix Multiplication Operators</a>    <ul>
+      <li><a href="#basic-matrix-multiplication-operators" id="markdown-toc-basic-matrix-multiplication-operators">Basic Matrix Multiplication Operators</a></li>
+      <li><a href="#complex-matrix-multiplication-operators" id="markdown-toc-complex-matrix-multiplication-operators">Complex Matrix Multiplication Operators</a></li>
+      <li><a href="#core-matrix-multiplication-primitives" id="markdown-toc-core-matrix-multiplication-primitives">Core Matrix Multiplication Primitives</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="building-systemml">Building SystemML</h2>
+
+<p>SystemML is built using <a href="http://maven.apache.org/">Apache Maven</a>.
+SystemML will build on Linux, MacOS, or Windows, and requires Maven 3 and Java 7 (or higher).
+To build SystemML, run:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn clean package
+</code></pre>
+</div>
+
+<p>To build the SystemML distributions, run:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn clean package -P distribution
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="testing-systemml">Testing SystemML</h2>
+
+<p>SystemML features a comprehensive set of integration tests. To perform these tests, run:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn verify
+</code></pre>
+</div>
+
+<p>Note: these tests require <a href="https://www.r-project.org/">R</a> to be installed and available as part of the PATH variable on
+the machine on which you are running these tests.</p>
+
+<p>If required, please install the following packages in R:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>install.packages(c("batch", "bitops", "boot", "caTools", "data.table", "doMC", "doSNOW", "ggplot2", "glmnet", "lda", "Matrix", "matrixStats", "moments", "plotrix", "psych", "reshape", "topicmodels", "wordcloud"), dependencies=TRUE)
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="development-environment">Development Environment</h2>
+
+<p>SystemML itself is written in Java and is managed using Maven. As a result, SystemML can readily be
+imported into a standard development environment such as Eclipse and IntelliJ IDEA.
+The <code class="highlighter-rouge">DMLScript</code> class serves as the main entrypoint to SystemML. Executing
+<code class="highlighter-rouge">DMLScript</code> with no arguments displays usage information. A script file can be specified using the <code class="highlighter-rouge">-f</code> argument.</p>
+
+<p>In Eclipse, a Debug Configuration can be created with <code class="highlighter-rouge">DMLScript</code> as the Main class and any arguments specified as
+Program arguments. A PyDML script requires the addition of a <code class="highlighter-rouge">-python</code> switch.</p>
+
+<p>Suppose that we have a <code class="highlighter-rouge">hello.dml</code> script containing the following:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>print('hello ' + $1)
+</code></pre>
+</div>
+
+<p>This SystemML script can be debugged in Eclipse using a Debug Configuration such as the following:</p>
+
+<div class="codetabs2">
+
+<div data-lang="Eclipse Debug Configuration - Main">
+    <p><img src="img/engine-dev-guide/dmlscript-debug-configuration-hello-world-main-class.png" alt="Eclipse Debug Configuration - Main" title="DMLScript Debug Configuration, Main class" /></p>
+  </div>
+
+<div data-lang="Eclipse Debug Configuration - Arguments">
+    <p><img src="img/engine-dev-guide/dmlscript-debug-configuration-hello-world-program-arguments.png" alt="Eclipse Debug Configuration - Arguments" title="DMLScript Debug Configuration, Program arguments" /></p>
+  </div>
+
+</div>
+
+<hr />
+
+<h2 id="python-mlcontext-api">Python MLContext API</h2>
+
+<p>When working with the Python MLContext API (see <code class="highlighter-rouge">src/main/python/systemml/mlcontext.py</code>) during development,
+it can be useful to install the Python MLContext API in editable mode (<code class="highlighter-rouge">-e</code>). This allows Python updates
+to take effect without requiring the SystemML python artifact to be built and installed.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">mvn clean
+pip3 install -e src/main/python
+mvn clean package
+<span class="nv">PYSPARK_PYTHON</span><span class="o">=</span>python3 pyspark --driver-class-path target/SystemML.jar</code></pre></figure>
+
+<div class="codetabs">
+
+<div data-lang="Python 3">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">systemml</span> <span class="kn">import</span> <span class="n">MLContext</span><span class="p">,</span> <span class="n">dml</span>
+<span class="n">ml</span> <span class="o">=</span> <span class="n">MLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="n">script</span> <span class="o">=</span> <span class="n">dml</span><span class="p">(</span><span class="s">"print('hello world')"</span><span class="p">)</span>
+<span class="n">ml</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">script</span><span class="p">)</span></code></pre></figure>
+
+  </div>
+
+<div data-lang="PySpark">
+
+    <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">Python</span> <span class="mf">3.5</span><span class="o">.</span><span class="mi">2</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Jul</span> <span class="mi">28</span> <span class="mi">2016</span><span class="p">,</span> <span class="mi">21</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mo">07</span><span class="p">)</span> 
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.2</span><span class="o">.</span><span class="mi">1</span> <span class="n">Compatible</span> <span class="n">Apple</span> <span class="n">LLVM</span> <span class="mf">7.0</span><span class="o">.</span><span class="mi">2</span> <span class="p">(</span><span class="n">clang</span><span class="o">-</span><span class="mf">700.1</span><span class="o">.</span><span class="mi">81</span><span class="p">)]</span> <span class="n">on</span> <span class="n">darwin</span>
+<span class="n">Type</span> <span class="s">"help"</span><span class="p">,</span> <span class="s">"copyright"</span><span class="p">,</span> <span class="s">"credits"</span> <span class="ow">or</span> <span class="s">"license"</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+<span class="n">Using</span> <span class="n">Spark</span><span class="s">'s default log4j profile: org/apache/spark/log4j-defaults.properties</span><span class="err">
+</span><span class="s">Setting default log level to "WARN".</span><span class="err">
+</span><span class="s">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><span class="err">
+</span><span class="s">17/02/03 12:33:42 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><span class="err">
+</span><span class="s">17/02/03 12:33:56 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException</span><span class="err">
+</span><span class="s">Welcome to</span><span class="err">
+</span><span class="s">      ____              __</span><span class="err">
+</span><span class="s">     / __/__  ___ _____/ /__</span><span class="err">
+</span><span class="s">    _</span><span class="err">\</span><span class="s"> </span><span class="err">\</span><span class="s">/ _ </span><span class="err">\</span><span class="s">/ _ `/ __/  '</span><span class="n">_</span><span class="o">/</span>
+   <span class="o">/</span><span class="n">__</span> <span class="o">/</span> <span class="o">.</span><span class="n">__</span><span class="o">/</span>\<span class="n">_</span><span class="p">,</span><span class="n">_</span><span class="o">/</span><span class="n">_</span><span class="o">/</span> <span class="o">/</span><span class="n">_</span><span class="o">/</span>\<span class="n">_</span>\   <span class="n">version</span> <span class="mf">2.1</span><span class="o">.</span><span class="mi">0</span>
+      <span class="o">/</span><span class="n">_</span><span class="o">/</span>
+
+<span class="n">Using</span> <span class="n">Python</span> <span class="n">version</span> <span class="mf">3.5</span><span class="o">.</span><span class="mi">2</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Jul</span> <span class="mi">28</span> <span class="mi">2016</span> <span class="mi">21</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mo">07</span><span class="p">)</span>
+<span class="n">SparkSession</span> <span class="n">available</span> <span class="k">as</span> <span class="s">'spark'</span><span class="o">.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">systemml</span> <span class="kn">import</span> <span class="n">MLContext</span><span class="p">,</span> <span class="n">dml</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ml</span> <span class="o">=</span> <span class="n">MLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+
+<span class="n">Welcome</span> <span class="n">to</span> <span class="n">Apache</span> <span class="n">SystemML</span><span class="err">!</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">script</span> <span class="o">=</span> <span class="n">dml</span><span class="p">(</span><span class="s">"print('hello world')"</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ml</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
+<span class="n">hello</span> <span class="n">world</span>
+<span class="n">MLResults</span></code></pre></figure>
+
+  </div>
+
+</div>
+
+<hr />
+
+<h2 id="matrix-multiplication-operators">Matrix Multiplication Operators</h2>
+
+<p>In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.</p>
+
+<h3 id="basic-matrix-multiplication-operators">Basic Matrix Multiplication Operators</h3>
+
+<p>An <code class="highlighter-rouge">AggBinaryOp</code> hop can be compiled into the following physical operators.</p>
+
+<p><strong>1. Physical Operators in CP (single node, control program)</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Operation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">MM</code></td>
+      <td>basic matrix multiplication</td>
+      <td><code class="highlighter-rouge">mm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MMChain</code></td>
+      <td>matrix multiplication chain</td>
+      <td><code class="highlighter-rouge">mmchain</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">TSMM</code></td>
+      <td>transpose-self matrix multiplication</td>
+      <td><code class="highlighter-rouge">tsmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">PMM</code></td>
+      <td>permutation matrix multiplication</td>
+      <td><code class="highlighter-rouge">pmm</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>2. Physical Operator in MR (distributed, mapreduce)</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Operation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">MapMM</code></td>
+      <td>map-side matrix multiplication, w/ or w/o agg</td>
+      <td><code class="highlighter-rouge">mm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapMMChain</code></td>
+      <td>map-side matrix chain multiplication</td>
+      <td><code class="highlighter-rouge">mmchain</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">TSMM</code></td>
+      <td>map-side transpose-self matrix multiplication</td>
+      <td><code class="highlighter-rouge">tsmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">PMM</code></td>
+      <td>map-side permutation matrix multiplication</td>
+      <td><code class="highlighter-rouge">pmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">CPMM</code></td>
+      <td>cross-product matrix multiplication, 2 jobs</td>
+      <td><code class="highlighter-rouge">mm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RMM</code></td>
+      <td>replication-based matrix multiplication, 1 job</td>
+      <td><code class="highlighter-rouge">mm</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>3. Physical Operators in SPARK (distributed, spark)</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Operation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">MapMM</code></td>
+      <td>see MR, flatmap/mappartitions/maptopair + reduce/reducebykey/no_aggregation</td>
+      <td><code class="highlighter-rouge">mm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapMMChain</code></td>
+      <td>see MR, mapvalues/maptopair + reduce</td>
+      <td><code class="highlighter-rouge">mmchain</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">TSMM</code></td>
+      <td>see MR, mapvalues + reduce</td>
+      <td><code class="highlighter-rouge">tsmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">PMM</code></td>
+      <td>see MR, flatmaptopair + reducebykey</td>
+      <td><code class="highlighter-rouge">pmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">CPMM</code></td>
+      <td>see MR, 2 x maptopair + join + maptopair + reduce/reducebykey</td>
+      <td><code class="highlighter-rouge">mm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RMM</code></td>
+      <td>see MR, 2 x flatmap + join + maptopair + reducebykey</td>
+      <td><code class="highlighter-rouge">mm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">ZIPMM</code></td>
+      <td>partitioning-preserving 1-1 zipping mm, join + mapvalues + reduce</td>
+      <td><code class="highlighter-rouge">mm</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="complex-matrix-multiplication-operators">Complex Matrix Multiplication Operators</h3>
+
+<p>A <code class="highlighter-rouge">QuaternaryOp</code> hop can be compiled into the following physical operators. Note that <code class="highlighter-rouge">wsloss</code>, <code class="highlighter-rouge">wsigmoid</code>, <code class="highlighter-rouge">wdivmm</code> have different semantics though. The main goal of these operators is to prevent the creation of dense &#8220;outer&#8221; products via selective computation over a sparse driver (sparse matrix and sparse-safe operation).</p>
+
+<p><strong>1. Physical Operators in CP (single node, control program)</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Operation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">WSLoss</code></td>
+      <td>weighted squared loss</td>
+      <td><code class="highlighter-rouge">wsloss</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">WSigmoid</code></td>
+      <td>weighted sigmoid</td>
+      <td><code class="highlighter-rouge">wsigmoid</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">WDivMM</code></td>
+      <td>weighted divide matrix multiplication</td>
+      <td><code class="highlighter-rouge">wdivmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">WCeMM</code></td>
+      <td>weighted cross entropy matrix multiplication</td>
+      <td><code class="highlighter-rouge">wcemm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">WuMM</code></td>
+      <td>weighted unary op matrix multiplication</td>
+      <td><code class="highlighter-rouge">wumm</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>2. Physical Operator in MR (distributed, mapreduce)</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Operation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">MapWSLoss</code></td>
+      <td>map-side weighted squared loss</td>
+      <td><code class="highlighter-rouge">wsloss</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWSLoss</code></td>
+      <td>reduce-side weighted squared loss</td>
+      <td><code class="highlighter-rouge">wsloss</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapWSigmoid</code></td>
+      <td>map-side weighted sigmoid</td>
+      <td><code class="highlighter-rouge">wsigmoid</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWSigmoid</code></td>
+      <td>reduce-side weighted sigmoid</td>
+      <td><code class="highlighter-rouge">wsigmoid</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapWDivMM</code></td>
+      <td>map-side weighted divide matrix mult</td>
+      <td><code class="highlighter-rouge">wdivmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWDivMM</code></td>
+      <td>reduce-side weighted divide matrix mult</td>
+      <td><code class="highlighter-rouge">wdivmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapWCeMM</code></td>
+      <td>map-side weighted cross entr. matrix mult</td>
+      <td><code class="highlighter-rouge">wcemm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWCeMM</code></td>
+      <td>reduce-side w. cross entr. matrix mult</td>
+      <td><code class="highlighter-rouge">wcemm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapWuMM</code></td>
+      <td>map-side weighted unary op matrix mult</td>
+      <td><code class="highlighter-rouge">wumm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWuMM</code></td>
+      <td>reduce-side weighted unary op matrix mult</td>
+      <td><code class="highlighter-rouge">wumm</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>3. Physical Operators in SPARK (distributed, spark)</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Operation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">MapWSLoss</code></td>
+      <td>see MR, mappartitions + reduce</td>
+      <td><code class="highlighter-rouge">wsloss</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWSLoss</code></td>
+      <td>see MR, 1/2x flatmaptopair + 1-3x join + maptopair + reduce</td>
+      <td><code class="highlighter-rouge">wsloss</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapWSigmoid</code></td>
+      <td>see MR, mappartitions</td>
+      <td><code class="highlighter-rouge">wsigmoid</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWSigmoid</code></td>
+      <td>see MR, 1/2x flatmaptopair + 1/2x join + maptopair</td>
+      <td><code class="highlighter-rouge">wsigmoid</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapWDivMM</code></td>
+      <td>see MR, mappartitions + reducebykey</td>
+      <td><code class="highlighter-rouge">wdivmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWDivMM</code></td>
+      <td>see MR, 1/2x flatmaptopair + 1/2x join + maptopair + reducebykey</td>
+      <td><code class="highlighter-rouge">wdivmm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapWCeMM</code></td>
+      <td>see MR, mappartitions + reduce</td>
+      <td><code class="highlighter-rouge">wcemm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWCeMM</code></td>
+      <td>see MR, 1/2x flatmaptopair + 1/2x join + maptopair + reduce</td>
+      <td><code class="highlighter-rouge">wcemm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">MapWuMM</code></td>
+      <td>see MR, mappartitions</td>
+      <td><code class="highlighter-rouge">wumm</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">RedWuMM</code></td>
+      <td>see MR, 1/2x flatmaptopair + 1/2x join + maptopair</td>
+      <td><code class="highlighter-rouge">wumm</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="core-matrix-multiplication-primitives">Core Matrix Multiplication Primitives</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Operation</th>
+      <th>Equations</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="vertical-align: top">
+      <td>1</td>
+      <td><code class="boldcell">mm</code></td>
+      <td><code>(a) <span class="boldcell">A%*%B</span></code></td>
+      <td>
+         - sequential / multi-threaded (same block ops, par over rows in A)<br />
+         - dense-dense, dense-sparse, sparse-dense, sparse-sparse, ultra-sparse<br />
+         - ~20 special cases for matrix-vector, vector-vector, etc
+      </td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td>2</td>
+      <td><code class="boldcell">mmchain</code></td>
+      <td>
+        <code>(a) <span class="boldcell">t(X)%*%(X%*%v)</span></code><br />
+        <code>(b) <span class="boldcell">t(X)%*%(w*(X%*%v))</span></code>
+      </td>
+      <td>
+         - sequential / multi-threaded (same block ops, par over rows in X)<br />
+         - dense / sparse x 2 patterns
+      </td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td>3</td>
+      <td><code class="boldcell">tsmm</code></td>
+      <td>
+        <code>(a) <span class="boldcell">t(X)%*%X</span></code><br />
+        <code>(b) <span class="boldcell">X%*%t(X)</span></code>
+      </td>
+      <td>
+        - sequential / multi-threaded (same block ops, par over rows in R, 2x tasks)<br />
+        - dense / sparse x 2 patterns; special cases for dot products
+      </td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td>4</td>
+      <td><code class="boldcell">pmm</code></td>
+      <td><code>(a) <span class="boldcell">removeEmpty(diag(v),"rows")%*%X</span></code></td>
+      <td>
+        - sequential / multi-threaded (same block ops, par over rows in X)<br />
+        - sparse-sparse, dense-dense, sparse-dense
+      </td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td>5</td>
+      <td><code class="boldcell">wsloss</code></td>
+      <td>
+        <code>(a) <span class="boldcell">sum(W*(X-U%*%t(V))^2)</span></code><br />
+        <code>(b) <span class="boldcell">sum((X-W*(U%*%t(V)))^2)</span></code><br />
+        <code>(c) <span class="boldcell">sum((X-(U%*%t(V)))^2))</span></code><br />
+        <code>(d) <span class="boldcell">sum(W*(U%*%t(V)-X)^2)</span></code><br />
+        <code>(e) <span class="boldcell">sum((W*(U%*%t(V))-X)^2)</span></code><br />
+        <code>(f) <span class="boldcell">sum(((U%*%t(V))-X)^2)</span></code>
+      </td>
+      <td>
+        - sequential / multi-threaded (same block ops, par over rows in W/X)<br />
+        - all dense, sparse-dense factors, sparse/dense-* x 3 patterns<br />
+        - special patterns for (a) and (d) if W is X!=0
+      </td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td>6</td>
+      <td><code class="boldcell">wsigmoid</code></td>
+      <td>
+        <code>(a) <span class="boldcell">W*sigmoid(Y%*%t(X))</span></code><br />
+        <code>(b) <span class="boldcell">W*sigmoid(-(Y%*%t(X)))</span></code><br />
+        <code>(c) <span class="boldcell">W*log(sigmoid(Y%*%t(X)))</span></code><br />
+        <code>(d) <span class="boldcell">W*log(sigmoid(-(Y%*%t(X))))</span></code>
+      </td>
+      <td>
+        - sequential / multi-threaded (same block ops, par over rows in W)<br />
+        - all dense, sparse-dense factors, sparse/dense-* x 4 patterns
+      </td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td>7</td>
+      <td><code class="boldcell">wdivmm</code></td>
+      <td>
+        <code>(a) <span class="boldcell">t(t(U)%*%(W/(U%*%t(V))))</span></code><br />
+        <code>(b) <span class="boldcell">(W/(U%*%t(V)))%*%V</span></code><br />
+        <code>(c) <span class="boldcell">t(t(U)%*%(W*(U%*%t(V))))</span></code><br />
+        <code>(d) <span class="boldcell">(W*(U%*%t(V)))%*%V</span></code><br />
+        <code>(e) <span class="boldcell">W*(U%*%t(V))</span></code><br />
+        <code>(f) <span class="boldcell">t(t(U)%*%((X!=0)*(U%*%t(V)-X)))</span></code><br />
+        <code>(g) <span class="boldcell">(X!=0)*(U%*%t(V)-X)%*%V</span></code><br />
+        <code>(h) <span class="boldcell">t(t(U)%*%(W*(U%*%t(V)-X)))</span></code><br />
+        <code>(i) <span class="boldcell">(W*(U%*%t(V)-X))%*%V</span></code><br />
+        <code>(j) <span class="boldcell">t(t(U)%*%(W/(U%*%t(V)+x)))</span></code><br />
+        <code>(k) <span class="boldcell">(W/(U%*%t(V)+x))%*%V</span></code>
+      </td>
+      <td>
+        - sequential / multi-threaded (same block ops, par over rows in X)<br />
+        - all dense, sparse-dense factors, sparse/dense-* x 9 patterns
+      </td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td>8</td>
+      <td><code class="boldcell">wcemm</code></td>
+      <td>
+        <code>(a) <span class="boldcell">sum(X*log(U%*%t(V)))</span></code><br />
+        <code>(b) <span class="boldcell">sum(X*log(U%*%t(V)+epsilon))</span></code>
+      </td>
+      <td>
+        - sequential / multi-threaded (same block ops, par over rows in X)<br />
+        - all dense, sparse-dense factors, sparse/dense-*, 1 pattern
+      </td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td>9</td>
+      <td><code class="boldcell">wumm</code></td>
+      <td>
+        <code>(a) <span class="boldcell">X*uop(U%*%t(V))</span></code><br />
+        <code>(b) <span class="boldcell">X/uop(U%*%t(V))</span></code>
+      </td>
+      <td>
+        - any unary operator, e.g., X*exp(U%*%t(V)) or X*(U%*%t(V))^2<br />
+        - sequential / multi-threaded (same block ops, par over rows in X)<br />
+        - all dense, sparse-dense factors, sparse/dense-*, 2 pattern
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

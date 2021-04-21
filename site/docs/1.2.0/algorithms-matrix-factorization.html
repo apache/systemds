@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Algorithms Reference - Matrix Factorization - SystemML 1.2.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.2.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title"><a href="algorithms-reference.html">SystemML Algorithms Reference</a></h1>
+          
+
+          <!--
+
+-->
+
+<h1 id="matrix-factorization">5 Matrix Factorization</h1>
+
+<h2 id="principal-component-analysis">5.1 Principal Component Analysis</h2>
+
+<h3 id="description">Description</h3>
+
+<p>Principal Component Analysis (PCA) is a simple, non-parametric method to
+transform the given data set with possibly correlated columns into a set
+of linearly uncorrelated or orthogonal columns, called <em>principal
+components</em>. The principal components are ordered in such a way
+that the first component accounts for the largest possible variance,
+followed by remaining principal components in the decreasing order of
+the amount of variance captured from the data. PCA is often used as a
+dimensionality reduction technique, where the original data is projected
+or rotated onto a low-dimensional space with basis vectors defined by
+top-$K$ (for a given value of $K$) principal components.</p>
+
+<h3 id="usage">Usage</h3>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f PCA.dml
+                        -nvargs INPUT=&lt;file&gt;
+                                K=&lt;int&gt;
+                                CENTER=[int]
+                                SCALE=[int]
+                                PROJDATA=&lt;int&gt;
+                                OFMT=[format]
+                                MODEL=&lt;file&gt;
+                                OUTPUT=&lt;file&gt;
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f PCA.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs INPUT=&lt;file&gt;
+                                     K=&lt;int&gt;
+                                     CENTER=[int]
+                                     SCALE=[int]
+                                     PROJDATA=&lt;int&gt;
+                                     OFMT=[format]
+                                     MODEL=&lt;file&gt;
+                                     OUTPUT=&lt;file&gt;
+</code></pre>
+  </div>
+</div>
+
+<h4 id="arguments">Arguments</h4>
+
+<p><strong>INPUT</strong>: Location (on HDFS) to read the input matrix.</p>
+
+<p><strong>K</strong>: Indicates dimension of the new vector space constructed from $K$
+    principal components. It must be a value between <code>1</code> and the number
+    of columns in the input data.</p>
+
+<p><strong>CENTER</strong>: (default: <code>0</code>) <code>0</code> or <code>1</code>. Indicates whether or not to
+    <em>center</em> input data prior to the computation of
+    principal components.</p>
+
+<p><strong>SCALE</strong>: (default: <code>0</code>) <code>0</code> or <code>1</code>. Indicates whether or not to
+    <em>scale</em> input data prior to the computation of
+    principal components.</p>
+
+<p><strong>PROJDATA</strong>: <code>0</code> or <code>1</code>. Indicates whether or not the input data must be projected
+    on to new vector space defined over principal components.</p>
+
+<p><strong>OFMT</strong>: (default: <code>"csv"</code>) Matrix file output format, such as <code>text</code>,
+<code>mm</code>, or <code>csv</code>; see read/write functions in
+SystemML Language Reference for details.</p>
+
+<p><strong>MODEL</strong>: Either the location (on HDFS) where the computed model is
+    stored; or the location of an existing model.</p>
+
+<p><strong>OUTPUT</strong>: Location (on HDFS) to store the data rotated on to the new
+    vector space.</p>
+
+<h4 id="examples">Examples</h4>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f PCA.dml 
+                        -nvargs INPUT=/user/ml/input.mtx
+                                K=10
+                                CENTER=1
+                                SCALE=1
+                                FMT=csv
+                                PROJDATA=1
+                                OUTPUT=/user/ml/pca_output/
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f PCA.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs INPUT=/user/ml/input.mtx
+                                     K=10
+                                     CENTER=1
+                                     SCALE=1
+                                     FMT=csv
+                                     PROJDATA=1
+                                     OUTPUT=/user/ml/pca_output/
+</code></pre>
+  </div>
+</div>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f PCA.dml
+                        -nvargs INPUT=/user/ml/test_input.mtx
+                                K=10
+                                CENTER=1
+                                SCALE=1
+                                FMT=csv
+                                PROJDATA=1
+                                MODEL=/user/ml/pca_output/
+                                OUTPUT=/user/ml/test_output.mtx
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f PCA.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs INPUT=/user/ml/test_input.mtx
+                                     K=10
+                                     CENTER=1
+                                     SCALE=1
+                                     FMT=csv
+                                     PROJDATA=1
+                                     MODEL=/user/ml/pca_output/
+                                     OUTPUT=/user/ml/test_output.mtx
+</code></pre>
+  </div>
+</div>
+
+<h4 id="details">Details</h4>
+
+<p>Principal Component Analysis (PCA) is a non-parametric procedure for
+orthogonal linear transformation of the input data to a new coordinate
+system, such that the greatest variance by some projection of the data
+comes to lie on the first coordinate (called the first principal
+component), the second greatest variance on the second coordinate, and
+so on. In other words, PCA first selects a normalized direction in
+$m$-dimensional space ($m$ is the number of columns in the input data)
+along which the variance in input data is maximized – this is referred
+to as the first principal component. It then repeatedly finds other
+directions (principal components) in which the variance is maximized. At
+every step, PCA restricts the search for only those directions that are
+perpendicular to all previously selected directions. By doing so, PCA
+aims to reduce the redundancy among input variables. To understand the
+notion of redundancy, consider an extreme scenario with a data set
+comprising of two variables, where the first one denotes some quantity
+expressed in meters, and the other variable represents the same quantity
+but in inches. Both these variables evidently capture redundant
+information, and hence one of them can be removed. In a general
+scenario, keeping solely the linear combination of input variables would
+both express the data more concisely and reduce the number of variables.
+This is why PCA is often used as a dimensionality reduction technique.</p>
+
+<p>The specific method to compute such a new coordinate system is as
+follows – compute a covariance matrix $C$ that measures the strength of
+correlation among all pairs of variables in the input data; factorize
+$C$ according to eigen decomposition to calculate its eigenvalues and
+eigenvectors; and finally, order eigenvectors in the decreasing order of
+their corresponding eigenvalue. The computed eigenvectors (also known as
+<em>loadings</em>) define the new coordinate system and the square
+root of eigen values provide the amount of variance in the input data
+explained by each coordinate or eigenvector.</p>
+
+<h4 id="returns">Returns</h4>
+
+<p>When MODEL is not provided, PCA procedure is
+applied on INPUT data to generate MODEL as well as the rotated data
+OUTPUT (if PROJDATA is set to $1$) in the new coordinate system. The
+produced model consists of basis vectors MODEL$/dominant.eigen.vectors$
+for the new coordinate system; eigen values
+MODEL$/dominant.eigen.values$; and the standard deviation
+MODEL$/dominant.eigen.standard.deviations$ of principal components. When
+MODEL is provided, INPUT data is rotated according to the coordinate
+system defined by MODEL$/dominant.eigen.vectors$. The resulting data is
+stored at location OUTPUT.</p>
+
+<hr />
+
+<h2 id="matrix-completion-via-alternating-minimizations">5.2 Matrix Completion via Alternating Minimizations</h2>
+
+<h3 id="description-1">Description</h3>
+
+<p>Low-rank matrix completion is an effective technique for statistical
+data analysis widely used in the data mining and machine learning
+applications. Matrix completion is a variant of low-rank matrix
+factorization with the goal of recovering a partially observed and
+potentially noisy matrix from a subset of its revealed entries. Perhaps
+the most popular applications in which matrix completion has been
+successfully applied is in the context of collaborative filtering in
+recommender systems. In this setting, the rows in the data matrix
+correspond to users, the columns to items such as movies, and entries to
+feedback provided by users for items. The goal is to predict missing
+entries of the rating matrix. This implementation uses the alternating
+least-squares (ALS) technique for solving large-scale matrix completion
+problems.</p>
+
+<h3 id="usage-1">Usage</h3>
+
+<p><strong>ALS</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f ALS.dml
+                        -nvargs V=&lt;file&gt;
+                                L=&lt;file&gt;
+                                R=&lt;file&gt;
+                                rank=[int]
+                                reg=[L2|wL2]
+                                lambda=[double]
+                                maxi=[int]
+                                check=[boolean]
+                                thr=[double]
+                                fmt=[format]
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f ALS.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs V=&lt;file&gt;
+                                     L=&lt;file&gt;
+                                     R=&lt;file&gt;
+                                     rank=[int]
+                                     reg=[L2|wL2]
+                                     lambda=[double]
+                                     maxi=[int]
+                                     check=[boolean]
+                                     thr=[double]
+                                     fmt=[format]
+</code></pre>
+  </div>
+</div>
+
+<p><strong>ALS Prediction</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f ALS_predict.dml
+                        -nvargs X=&lt;file&gt;
+                                Y=&lt;file&gt;
+                                L=&lt;file&gt;
+                                R=&lt;file&gt;
+                                Vrows=&lt;int&gt;
+                                Vcols=&lt;int&gt;
+                                fmt=[format]
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f ALS_predict.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=&lt;file&gt;
+                                     Y=&lt;file&gt;
+                                     L=&lt;file&gt;
+                                     R=&lt;file&gt;
+                                     Vrows=&lt;int&gt;
+                                     Vcols=&lt;int&gt;
+                                     fmt=[format]
+</code></pre>
+  </div>
+</div>
+
+<p><strong>ALS Top-K Prediction</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f ALS_topk_predict.dml
+                        -nvargs X=&lt;file&gt;
+                                Y=&lt;file&gt;
+                                L=&lt;file&gt;
+                                R=&lt;file&gt;
+                                V=&lt;file&gt;
+                                K=[int]
+                                fmt=[format]
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f ALS_topk_predict.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=&lt;file&gt;
+                                     Y=&lt;file&gt;
+                                     L=&lt;file&gt;
+                                     R=&lt;file&gt;
+                                     V=&lt;file&gt;
+                                     K=[int]
+                                     fmt=[format]
+</code></pre>
+  </div>
+</div>
+
+<h3 id="arguments---als">Arguments - ALS</h3>
+
+<p><strong>V</strong>: Location (on HDFS) to read the input (user-item) matrix $V$ to be
+factorized</p>
+
+<p><strong>L</strong>: Location (on HDFS) to write the left (user) factor matrix $L$</p>
+
+<p><strong>R</strong>: Location (on HDFS) to write the right (item) factor matrix $R$</p>
+
+<p><strong>rank</strong>: (default: <code>10</code>) Rank of the factorization</p>
+
+<p><strong>reg</strong>: (default: <code>L2</code>) Regularization:</p>
+
+<ul>
+  <li><code>L2</code> = <code>L2</code> regularization</li>
+  <li><code>wL2</code> = weighted <code>L2</code> regularization</li>
+</ul>
+
+<p><strong>lambda</strong>: (default: <code>0.000001</code>) Regularization parameter</p>
+
+<p><strong>maxi</strong>: (default: <code>50</code>) Maximum number of iterations</p>
+
+<p><strong>check</strong>: (default: <code>FALSE</code>) Check for convergence after every iteration, i.e., updating
+$L$ and $R$ once</p>
+
+<p><strong>thr</strong>: (default: <code>0.0001</code>) Assuming <code>check=TRUE</code>, the algorithm stops and
+convergence is declared if the decrease in loss in any two consecutive
+iterations falls below threshold <code>thr</code>; if
+<code>check=FALSE</code>, parameter <code>thr</code> is ignored.</p>
+
+<p><strong>fmt</strong>: (default: <code>"text"</code>) Matrix file output format, such as <code>text</code>,
+<code>mm</code>, or <code>csv</code>; see read/write functions in
+SystemML Language Reference for details.</p>
+
+<h3 id="arguments---als-predictiontop-k-prediction">Arguments - ALS Prediction/Top-K Prediction</h3>
+
+<p><strong>X</strong>: Location (on HDFS) to read the input matrix $X$ with following format:</p>
+
+<ul>
+  <li>for <code>ALS_predict.dml</code>: a 2-column matrix that contains
+the user-ids (first column) and the item-ids (second column)</li>
+  <li>for <code>ALS_topk_predict.dml</code>: a 1-column matrix that
+contains the user-ids</li>
+</ul>
+
+<p><strong>Y</strong>: Location (on HDFS) to write the output of prediction with the following
+format:</p>
+
+<ul>
+  <li>for <code>ALS_predict.dml</code>: a 3-column matrix that contains
+the user-ids (first column), the item-ids (second column) and the
+predicted ratings (third column)</li>
+  <li>for <code>ALS_topk_predict.dml</code>: a (<code>K+1</code>)-column matrix
+that contains the user-ids in the first column and the top-K
+item-ids in the remaining <code>K</code> columns will be stored at
+<code>Y</code>. Additionally, a matrix with the same dimensions that
+contains the corresponding actual top-K ratings will be stored at
+<code>Y.ratings</code>; see below for details</li>
+</ul>
+
+<p><strong>L</strong>: Location (on HDFS) to read the left (user) factor matrix $L$</p>
+
+<p><strong>R</strong>: Location (on HDFS) to write the right (item) factor matrix $R$</p>
+
+<p><strong>V</strong>: Location (on HDFS) to read the user-item matrix $V$</p>
+
+<p><strong>Vrows</strong>: Number of rows of $V$ (i.e., number of users)</p>
+
+<p><strong>Vcols</strong>: Number of columns of $V$ (i.e., number of items)</p>
+
+<p><strong>K</strong>: (default: <code>5</code>) Number of top-K items for top-K prediction</p>
+
+<p><strong>fmt</strong>: (default: <code>"text"</code>) Matrix file output format, such as <code>text</code>,
+<code>mm</code>, or <code>csv</code>; see read/write functions in
+SystemML Language Reference for details.</p>
+
+<h3 id="examples-1">Examples</h3>
+
+<p><strong>ALS</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f ALS.dml
+                        -nvargs V=/user/ml/V
+                                L=/user/ml/L
+                                R=/user/ml/R
+                                rank=10
+                                reg="wL"
+                                lambda=0.0001
+                                maxi=50
+                                check=TRUE
+                                thr=0.001
+                                fmt=csv
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f ALS.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs V=/user/ml/V
+                                     L=/user/ml/L
+                                     R=/user/ml/R
+                                     rank=10
+                                     reg="wL"
+                                     lambda=0.0001
+                                     maxi=50
+                                     check=TRUE
+                                     thr=0.001
+                                     fmt=csv
+</code></pre>
+  </div>
+</div>
+
+<p><strong>ALS Prediction</strong>:</p>
+
+<p>To compute predicted ratings for a given list of users and items:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f ALS_predict.dml
+                        -nvargs X=/user/ml/X
+                                Y=/user/ml/Y
+                                L=/user/ml/L
+                                R=/user/ml/R
+                                Vrows=100000
+                                Vcols=10000
+                                fmt=csv
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f ALS_predict.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X
+                                     Y=/user/ml/Y
+                                     L=/user/ml/L
+                                     R=/user/ml/R
+                                     Vrows=100000
+                                     Vcols=10000
+                                     fmt=csv
+</code></pre>
+  </div>
+</div>
+
+<p><strong>ALS Top-K Prediction</strong>:</p>
+
+<p>To compute top-K items with highest predicted ratings together with the
+predicted ratings for a given list of users:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f ALS_topk_predict.dml
+                        -nvargs X=/user/ml/X
+                                Y=/user/ml/Y
+                                L=/user/ml/L
+                                R=/user/ml/R
+                                V=/user/ml/V
+                                K=10
+                                fmt=csv
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f ALS_topk_predict.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X
+                                     Y=/user/ml/Y
+                                     L=/user/ml/L
+                                     R=/user/ml/R
+                                     V=/user/ml/V
+                                     K=10
+                                     fmt=csv
+</code></pre>
+  </div>
+</div>
+
+<h3 id="details-1">Details</h3>
+
+<p>Given an $m \times n$ input matrix $V$ and a rank parameter
+$r \ll \min{(m,n)}$, low-rank matrix factorization seeks to find an
+$m \times r$ matrix $L$ and an $r \times n$ matrix $R$ such that
+$V \approx LR$, i.e., we aim to approximate $V$ by the low-rank matrix
+$LR$. The quality of the approximation is determined by an
+application-dependent loss function $\mathcal{L}$. We aim at finding the
+loss-minimizing factor matrices, i.e.,</p>
+
+<script type="math/tex; mode=display">\begin{equation}
+(L^*, R^*) = \textrm{argmin}_{L,R}{\mathcal{L}(V,L,R)}
+\end{equation}</script>
+
+<p>In the
+context of collaborative filtering in the recommender systems it is
+often the case that the input matrix $V$ contains several missing
+entries. Such entries are coded with the 0 value and the loss function
+is computed only based on the nonzero entries in $V$, i.e.,</p>
+
+<script type="math/tex; mode=display">%\label{eq:loss}
+ \mathcal{L}=\sum_{(i,j)\in\Omega}l(V_{ij},L_{i*},R_{*j})</script>
+
+<p>where
+<script type="math/tex">L_{i*}</script> and <script type="math/tex">R_{*j}</script>, respectively, denote the $i$th row of $L$ and the
+$j$th column of $R$, <script type="math/tex">\Omega=\{\omega_1,\dots,\omega_N\}</script> denotes the
+training set containing the observed (nonzero) entries in $V$, and $l$
+is some local loss function.</p>
+
+<p>ALS is an optimization technique that can
+be used to solve quadratic problems. For matrix completion, the
+algorithm repeatedly keeps one of the unknown matrices ($L$ or $R$)
+fixed and optimizes the other one. In particular, ALS alternates between
+recomputing the rows of $L$ in one step and the columns of $R$ in the
+subsequent step. Our implementation of the ALS algorithm supports the
+loss functions summarized in <a href="algorithms-matrix-factorization.html#table16"><strong>Table 16</strong></a>
+commonly used for matrix completion <a href="algorithms-bibliography.html">[ZhouWSP08]</a>.</p>
+
+<hr />
+
+<p><a name="table16"></a>
+<strong>Table 16</strong>: Popular loss functions supported by our ALS implementation; <script type="math/tex">N_{i*}</script>
+  and <script type="math/tex">N_{*j}</script>, respectively, denote the number of nonzero entries in
+  row $i$ and column $j$ of $V$.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Loss</th>
+      <th>Definition</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><script type="math/tex">\mathcal{L}_\text{Nzsl}</script></td>
+      <td><script type="math/tex">\sum_{i,j:V_{ij}\neq 0} (V_{ij} - [LR]_{ij})^2</script></td>
+    </tr>
+    <tr>
+      <td><script type="math/tex">\mathcal{L}_\text{Nzsl+L2}</script></td>
+      <td><script type="math/tex">\mathcal{L}_\text{Nzsl} + \lambda \Bigl( \sum_{ik} L_{ik}^2 + \sum_{kj} R_{kj}^2 \Bigr)</script></td>
+    </tr>
+    <tr>
+      <td><script type="math/tex">\mathcal{L}_\text{Nzsl+wL2}</script></td>
+      <td><script type="math/tex">\mathcal{L}_\text{Nzsl} + \lambda \Bigl(\sum_{ik}N_{i*} L_{ik}^2 + \sum_{kj}N_{*j} R_{kj}^2 \Bigr)</script></td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<p>Note that the matrix completion problem as defined in (1)
+is a non-convex problem for all loss functions from
+<a href="algorithms-matrix-factorization.html#table16"><strong>Table 16</strong></a>. However, when fixing one of the matrices
+$L$ or $R$, we get a least-squares problem with a globally optimal
+solution. For example, for the case of <script type="math/tex">\mathcal{L}_\text{Nzsl+wL2}</script> we
+have the following closed form solutions</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{aligned}
+  L^\top_{n+1,i*} &\leftarrow (R^{(i)}_n {[R^{(i)}_n]}^\top + \lambda N_2 I)^{-1} R_n V^\top_{i*}, \\
+  R_{n+1,*j} &\leftarrow ({[L^{(j)}_{n+1}]}^\top L^{(j)}_{n+1} + \lambda N_1 I)^{-1} L^\top_{n+1} V_{*j}, 
+  \end{aligned} %]]></script>
+
+<p>where <script type="math/tex">L_{n+1,i*}</script> (resp. <script type="math/tex">R_{n+1,*j}</script>) denotes the
+$i$th row of <script type="math/tex">L_{n+1}</script> (resp. $j$th column of <script type="math/tex">R_{n+1}</script>), $\lambda$
+denotes the regularization parameter, $I$ is the identity matrix of
+appropriate dimensionality, <script type="math/tex">V_{i*}</script> (resp. <script type="math/tex">V_{*j}</script>) denotes the
+revealed entries in row $i$ (column $j$), <script type="math/tex">R^{(i)}_n</script> (resp.
+<script type="math/tex">L^{(j)}_{n+1}</script>) refers to the corresponding columns of $R_n$ (rows of
+<script type="math/tex">L_{n+1}</script>), and $N_1$ (resp. $N_2$) denotes a diagonal matrix that
+contains the number of nonzero entries in row $i$ (column $j$) of $V$.</p>
+
+<p><strong>Prediction.</strong> Based on the factor matrices computed by ALS we provide
+two prediction scripts:</p>
+
+<ol>
+  <li><code>ALS_predict.dml</code> computes the predicted ratings for a given
+list of users and items.</li>
+  <li><code>ALS_topk_predict.dml</code> computes top-K item (where $K$ is
+given as input) with highest predicted ratings together with their
+corresponding ratings for a given list of users.</li>
+</ol>
+
+<h3 id="returns-1">Returns</h3>
+
+<p>We output the factor matrices $L$ and $R$ after the algorithm has
+converged. The algorithm is declared as converged if one of the two
+criteria is meet: (1) the decrease in the value of loss function falls
+below <code>thr</code> given as an input parameter (if parameter
+<code>check=TRUE</code>), or (2) the maximum number of iterations
+(defined as parameter <code>maxi</code>) is reached. Note that for a
+given user $i$ prediction is possible only if user $i$ has rated at
+least one item, i.e., row $i$ in matrix $V$ has at least one nonzero
+entry. In case, some users have not rated any items the corresponding
+factor in $L$ will be all 0s. Similarly if some items have not been
+rated at all the corresponding factors in $R$ will contain only 0s. Our
+prediction scripts output the predicted ratings for a given list of
+users and items as well as the top-K items with highest predicted
+ratings together with the predicted ratings for a given list of users.
+Note that the predictions will only be provided for the users who have
+rated at least one item, i.e., the corresponding rows contain at least
+one nonzero entry.</p>
+
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

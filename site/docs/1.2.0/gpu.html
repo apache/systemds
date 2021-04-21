@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Using SystemML with GPU - SystemML 1.2.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Using SystemML with GPU">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.2.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Using SystemML with GPU</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#user-guide" id="markdown-toc-user-guide">User Guide</a>    <ul>
+      <li><a href="#python-users" id="markdown-toc-python-users">Python users</a></li>
+      <li><a href="#command-line-users" id="markdown-toc-command-line-users">Command-line users</a></li>
+      <li><a href="#scala-users" id="markdown-toc-scala-users">Scala users</a></li>
+    </ul>
+  </li>
+  <li><a href="#troubleshooting-guide" id="markdown-toc-troubleshooting-guide">Troubleshooting guide</a></li>
+  <li><a href="#advanced-configuration" id="markdown-toc-advanced-configuration">Advanced Configuration</a>    <ul>
+      <li><a href="#using-single-precision" id="markdown-toc-using-single-precision">Using single precision</a></li>
+      <li><a href="#training-very-deep-network" id="markdown-toc-training-very-deep-network">Training very deep network</a>        <ul>
+          <li><a href="#shadow-buffer" id="markdown-toc-shadow-buffer">Shadow buffer</a></li>
+          <li><a href="#unified-memory-allocator" id="markdown-toc-unified-memory-allocator">Unified memory allocator</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p><br /></p>
+
+<h1 id="user-guide">User Guide</h1>
+
+<p>To use SystemML on GPUs, please ensure that <a href="https://developer.nvidia.com/cuda-90-download-archive">CUDA 9</a> and
+<a href="https://developer.nvidia.com/cudnn">CuDNN 7</a> is installed on your system.</p>
+
+<h2 id="python-users">Python users</h2>
+
+<p>Please install SystemML using pip:
+- For released version: <code>pip install systemml</code>
+- For bleeding edge version: <code>pip install https://sparktc.ibmcloud.com/repo/latest/systemml-1.2.0-SNAPSHOT-python.tar.gz</code></p>
+
+<p>Then you can use the <code>setGPU(True)</code> method of <a href="http://apache.github.io/systemml/spark-mlcontext-programming-guide.html">MLContext</a> and 
+<a href="http://apache.github.io/systemml/beginners-guide-python.html#invoke-systemmls-algorithms">MLLearn</a> APIs to enable the GPU usage.</p>
+
+<p><code>python
+from systemml.mllearn import Caffe2DML
+lenet = Caffe2DML(spark, solver='lenet_solver.proto', input_shape=(1, 28, 28))
+lenet.setGPU(True)
+</code>
+To skip memory-checking and force all GPU-enabled operations on the GPU, please use the <code>setForceGPU(True)</code> method after <code>setGPU(True)</code> method.</p>
+
+<p><code>python
+from systemml.mllearn import Caffe2DML
+lenet = Caffe2DML(spark, solver='lenet_solver.proto', input_shape=(1, 28, 28))
+lenet.setGPU(True).setForceGPU(True)
+</code></p>
+
+<h2 id="command-line-users">Command-line users</h2>
+
+<p>To enable the GPU backend via command-line, please provide <code>systemml-1.*-extra.jar</code> in the classpath and <code>-gpu</code> flag.</p>
+
+<p><code>
+spark-submit --jars systemml-1.*-extra.jar SystemML.jar -f myDML.dml -gpu
+</code></p>
+
+<p>To skip memory-checking and force all GPU-enabled operations on the GPU, please provide <code>force</code> option to the <code>-gpu</code> flag.</p>
+
+<p><code>
+spark-submit --jars systemml-1.*-extra.jar SystemML.jar -f myDML.dml -gpu force
+</code></p>
+
+<h2 id="scala-users">Scala users</h2>
+
+<p>To enable the GPU backend via command-line, please provide <code>systemml-1.*-extra.jar</code> in the classpath and use 
+the <code>setGPU(True)</code> method of <a href="http://apache.github.io/systemml/spark-mlcontext-programming-guide.html">MLContext</a> API to enable the GPU usage.</p>
+
+<p><code>
+spark-shell --jars systemml-1.*-extra.jar,SystemML.jar
+</code></p>
+
+<h1 id="troubleshooting-guide">Troubleshooting guide</h1>
+
+<ul>
+  <li>If you have older gcc (&lt; 5.0) and if you get <code>libstdc++.so.6: version CXXABI_1.3.8 not found</code> error, please upgrade to gcc v5+. 
+On Centos 5, you may have to compile gcc from the source:</li>
+</ul>
+
+<p><code>
+sudo yum install libmpc-devel mpfr-devel gmp-devel zlib-devel*
+curl ftp://ftp.gnu.org/pub/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2 -O
+tar xvfj gcc-5.3.0.tar.bz2
+cd gcc-5.3.0
+./configure --with-system-zlib --disable-multilib --enable-languages=c,c++
+num_cores=`grep -c ^processor /proc/cpuinfo`
+make -j $num_cores
+sudo make install
+</code></p>
+
+<h1 id="advanced-configuration">Advanced Configuration</h1>
+
+<h2 id="using-single-precision">Using single precision</h2>
+
+<p>By default, SystemML uses double precision to store its matrices in the GPU memory.
+To use single precision, the user needs to set the configuration property &#8216;sysml.floating.point.precision&#8217;
+to &#8216;single&#8217;. However, with exception of BLAS operations, SystemML always performs all CPU operations
+in double precision.</p>
+
+<h2 id="training-very-deep-network">Training very deep network</h2>
+
+<h3 id="shadow-buffer">Shadow buffer</h3>
+<p>To train very deep network with double precision, no additional configurations are necessary.
+But to train very deep network with single precision, the user can speed up the eviction by 
+using shadow buffer. The fraction of the driver memory to be allocated to the shadow buffer can<br />
+be set by using the configuration property &#8216;sysml.gpu.eviction.shadow.bufferSize&#8217;.
+In the current version, the shadow buffer is currently not guarded by SystemML
+and can potentially lead to OOM if the network is deep as well as wide.</p>
+
+<h3 id="unified-memory-allocator">Unified memory allocator</h3>
+
+<p>By default, SystemML uses CUDA&#8217;s memory allocator and performs on-demand eviction
+using the eviction policy set by the configuration property &#8216;sysml.gpu.eviction.policy&#8217;.
+To use CUDA&#8217;s unified memory allocator that performs page-level eviction instead,
+please set the configuration property &#8216;sysml.gpu.memory.allocator&#8217; to &#8216;unified_memory&#8217;.</p>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

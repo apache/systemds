@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Beginner's Guide for Caffe2DML users - SystemML 1.2.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Beginner's Guide for Caffe2DML users">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.2.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Beginner's Guide for Caffe2DML users</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#layers-supported-in-caffe2dml" id="markdown-toc-layers-supported-in-caffe2dml">Layers supported in Caffe2DML</a>    <ul>
+      <li><a href="#vision-layers" id="markdown-toc-vision-layers">Vision Layers</a>        <ul>
+          <li><a href="#convolution-layer" id="markdown-toc-convolution-layer">Convolution Layer</a></li>
+          <li><a href="#pooling-layer" id="markdown-toc-pooling-layer">Pooling Layer</a></li>
+          <li><a href="#upsampling-layer" id="markdown-toc-upsampling-layer">Upsampling Layer</a></li>
+          <li><a href="#deconvolution-layer" id="markdown-toc-deconvolution-layer">Deconvolution Layer</a></li>
+        </ul>
+      </li>
+      <li><a href="#recurrent-layers" id="markdown-toc-recurrent-layers">Recurrent Layers</a>        <ul>
+          <li><a href="#rnn-layer" id="markdown-toc-rnn-layer">RNN Layer</a></li>
+          <li><a href="#lstm-layer" id="markdown-toc-lstm-layer">LSTM Layer</a></li>
+        </ul>
+      </li>
+      <li><a href="#common-layers" id="markdown-toc-common-layers">Common Layers</a>        <ul>
+          <li><a href="#inner-product--fully-connected-layer" id="markdown-toc-inner-product--fully-connected-layer">Inner Product / Fully Connected Layer</a></li>
+          <li><a href="#dropout-layer" id="markdown-toc-dropout-layer">Dropout Layer</a></li>
+        </ul>
+      </li>
+      <li><a href="#normalization-layers" id="markdown-toc-normalization-layers">Normalization Layers</a>        <ul>
+          <li><a href="#batchnorm-layer" id="markdown-toc-batchnorm-layer">BatchNorm Layer</a></li>
+        </ul>
+      </li>
+      <li><a href="#activation--neuron-layers" id="markdown-toc-activation--neuron-layers">Activation / Neuron Layers</a>        <ul>
+          <li><a href="#relu--rectified-linear-layer" id="markdown-toc-relu--rectified-linear-layer">ReLU / Rectified-Linear Layer</a></li>
+          <li><a href="#tanh-layer" id="markdown-toc-tanh-layer">TanH Layer</a></li>
+          <li><a href="#sigmoid-layer" id="markdown-toc-sigmoid-layer">Sigmoid Layer</a></li>
+          <li><a href="#threshold-layer" id="markdown-toc-threshold-layer">Threshold Layer</a></li>
+        </ul>
+      </li>
+      <li><a href="#utility-layers" id="markdown-toc-utility-layers">Utility Layers</a>        <ul>
+          <li><a href="#eltwise-layer" id="markdown-toc-eltwise-layer">Eltwise Layer</a></li>
+          <li><a href="#concat-layer" id="markdown-toc-concat-layer">Concat Layer</a></li>
+          <li><a href="#softmax-layer" id="markdown-toc-softmax-layer">Softmax Layer</a></li>
+        </ul>
+      </li>
+      <li><a href="#loss-layers" id="markdown-toc-loss-layers">Loss Layers</a>        <ul>
+          <li><a href="#softmax-with-loss-layer" id="markdown-toc-softmax-with-loss-layer">Softmax with Loss Layer</a></li>
+          <li><a href="#euclidean-layer" id="markdown-toc-euclidean-layer">Euclidean layer</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#frequently-asked-questions" id="markdown-toc-frequently-asked-questions">Frequently asked questions</a>    <ul>
+      <li><a href="#what-is-the-purpose-of-caffe2dml-api-" id="markdown-toc-what-is-the-purpose-of-caffe2dml-api-">What is the purpose of Caffe2DML API ?</a></li>
+      <li><a href="#with-caffe2dml-does-systemml-now-require-caffe-to-be-installed-" id="markdown-toc-with-caffe2dml-does-systemml-now-require-caffe-to-be-installed-">With Caffe2DML, does SystemML now require Caffe to be installed ?</a></li>
+      <li><a href="#how-can-i-speedup-the-training-with-caffe2dml-" id="markdown-toc-how-can-i-speedup-the-training-with-caffe2dml-">How can I speedup the training with Caffe2DML ?</a></li>
+      <li><a href="#how-to-enable-gpu-support-in-caffe2dml-" id="markdown-toc-how-to-enable-gpu-support-in-caffe2dml-">How to enable GPU support in Caffe2DML ?</a></li>
+      <li><a href="#what-is-lrpolicy-in-the-solver-specification-" id="markdown-toc-what-is-lrpolicy-in-the-solver-specification-">What is lr_policy in the solver specification ?</a></li>
+      <li><a href="#how-do-i-regularize-weight-matrices-in-the-neural-network-" id="markdown-toc-how-do-i-regularize-weight-matrices-in-the-neural-network-">How do I regularize weight matrices in the neural network ?</a></li>
+      <li><a href="#how-to-set-batch-size-" id="markdown-toc-how-to-set-batch-size-">How to set batch size ?</a></li>
+      <li><a href="#how-to-set-maximum-number-of-iterations-for-training-" id="markdown-toc-how-to-set-maximum-number-of-iterations-for-training-">How to set maximum number of iterations for training ?</a></li>
+      <li><a href="#how-to-set-the-size-of-the-validation-dataset-" id="markdown-toc-how-to-set-the-size-of-the-validation-dataset-">How to set the size of the validation dataset ?</a></li>
+      <li><a href="#how-to-monitor-loss-via-command-line-" id="markdown-toc-how-to-monitor-loss-via-command-line-">How to monitor loss via command-line ?</a></li>
+      <li><a href="#how-to-pass-a-single-jpeg-image-to-caffe2dml-for-prediction-" id="markdown-toc-how-to-pass-a-single-jpeg-image-to-caffe2dml-for-prediction-">How to pass a single jpeg image to Caffe2DML for prediction ?</a></li>
+      <li><a href="#how-to-prepare-a-directory-of-jpeg-images-for-training-with-caffe2dml-" id="markdown-toc-how-to-prepare-a-directory-of-jpeg-images-for-training-with-caffe2dml-">How to prepare a directory of jpeg images for training with Caffe2DML ?</a></li>
+      <li><a href="#can-i-use-caffe2dml-via-scala-" id="markdown-toc-can-i-use-caffe2dml-via-scala-">Can I use Caffe2DML via Scala ?</a></li>
+      <li><a href="#how-can-i-get-summary-information-of-my-network-" id="markdown-toc-how-can-i-get-summary-information-of-my-network-">How can I get summary information of my network ?</a></li>
+      <li><a href="#how-can-i-view-the-script-generated-by-caffe2dml-" id="markdown-toc-how-can-i-view-the-script-generated-by-caffe2dml-">How can I view the script generated by Caffe2DML ?</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p><br /></p>
+
+<h1 id="layers-supported-in-caffe2dml">Layers supported in Caffe2DML</h1>
+
+<p>Caffe2DML to be as compatible with <a href="http://caffe.berkeleyvision.org/tutorial/layers.html">the Caffe specification</a> as possible.
+The main differences are given below along with the usage guide that mirrors the Caffe specification.</p>
+
+<h2 id="vision-layers">Vision Layers</h2>
+
+<h3 id="convolution-layer">Convolution Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/conv2d_builtin.dml">nn/layers/conv2d_builtin.dml</a>
+or <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/conv2d_depthwise.dml">nn/layers/conv2d_depthwise.dml</a> layer.</p>
+
+<p><strong>Required Parameters:</strong></p>
+
+<ul>
+  <li>num_output: the number of filters</li>
+  <li>kernel_size (or kernel_h and kernel_w): specifies height and width of each filter</li>
+</ul>
+
+<p><strong>Optional Parameters:</strong></p>
+
+<ul>
+  <li>bias_term (default true): specifies whether to learn and apply a set of additive biases to the filter outputs</li>
+  <li>pad (or pad_h and pad_w) (default 0): specifies the number of pixels to (implicitly) add to each side of the input</li>
+  <li>stride (or stride_h and stride_w) (default 1): specifies the intervals at which to apply the filters to the input</li>
+  <li>group (g) (default 1): If g &gt; 1, we restrict the connectivity of each filter to a subset of the input. 
+Specifically, the input and output channels are separated into g groups, 
+and the ith output group channels will be only connected to the ith input group channels.
+Note: we only support depthwise convolution, hence <code>g</code> should be divisible by number of channels</li>
+</ul>
+
+<p><strong>Parameters that are ignored:</strong></p>
+
+<ul>
+  <li>weight_filler: We use the heuristic by He et al., which limits the magnification of inputs/gradients 
+during forward/backward passes by scaling unit-Gaussian weights by a factor of sqrt(2/n), 
+under the assumption of relu neurons.</li>
+  <li>bias_filler: We use <code>constant bias_filler</code> with <code>value:0</code></li>
+</ul>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+    name: "conv1"
+    type: "Convolution"
+    bottom: "data"
+    top: "conv1"
+    # learning rate and decay multipliers for the filters
+    param { lr_mult: 1 decay_mult: 1 }
+    # learning rate and decay multipliers for the biases
+    param { lr_mult: 2 decay_mult: 0 }
+    convolution_param {
+      num_output: 96     # learn 96 filters
+      kernel_size: 11    # each filter is 11x11
+      stride: 4          # step 4 pixels between each filter application
+      weight_filler {
+        type: "xavier" # initialize the filters from a Gaussian
+      }
+      bias_filler {
+        type: "constant" # initialize the biases to zero (0)
+        value: 0
+      }
+    }
+  }
+</code></p>
+
+<h3 id="pooling-layer">Pooling Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/max_pool2d_builtin.dml">nn/layers/max_pool2d_builtin.dml</a> layer.</p>
+
+<p><strong>Required Parameters:</strong></p>
+
+<ul>
+  <li>kernel_size (or kernel_h and kernel_w): specifies height and width of each filter</li>
+</ul>
+
+<p><strong>Optional Parameters:</strong>
+- pool (default MAX): the pooling method. Currently, we only support MAX and AVE, not STOCHASTIC.
+- pad (or pad_h and pad_w) (default 0): specifies the number of pixels to (implicitly) add to each side of the input
+- stride (or stride_h and stride_w) (default 1): specifies the intervals at which to apply the filters to the input</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3 # pool over a 3x3 region
+    stride: 2      # step two pixels (in the bottom blob) between pooling regions
+  }
+}
+</code></p>
+
+<h3 id="upsampling-layer">Upsampling Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/upsample2d.dml">nn/layers/upsample2d.dml</a> layer.</p>
+
+<p><strong>Required Parameters:</strong></p>
+
+<ul>
+  <li>size_h and size_w: specifies the upsampling factor for rows and columns.</li>
+</ul>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "upsample1"
+  type: "Upsample"
+  bottom: "pool1"
+  top: "upsample1"
+  upsample_param  {
+    size_h = 2
+    size_w = 2
+  }
+}
+</code></p>
+
+<h3 id="deconvolution-layer">Deconvolution Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/conv2d_transpose.dml">nn/layers/conv2d_transpose.dml</a>
+or <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/conv2d_transpose_depthwise.dml">nn/layers/conv2d_transpose_depthwise.dml</a> layer.</p>
+
+<p><strong>Required Parameters:</strong></p>
+
+<ul>
+  <li>num_output: the number of filters</li>
+  <li>kernel_size (or kernel_h and kernel_w): specifies height and width of each filter</li>
+</ul>
+
+<p><strong>Optional Parameters:</strong></p>
+
+<ul>
+  <li>bias_term (default true): specifies whether to learn and apply a set of additive biases to the filter outputs</li>
+  <li>pad (or pad_h and pad_w) (default 0): specifies the number of pixels to (implicitly) add to each side of the input</li>
+  <li>stride (or stride_h and stride_w) (default 1): specifies the intervals at which to apply the filters to the input</li>
+  <li>group (g) (default 1): If g &gt; 1, we restrict the connectivity of each filter to a subset of the input. 
+Specifically, the input and output channels are separated into g groups, 
+and the ith output group channels will be only connected to the ith input group channels.
+Note: we only support depthwise convolution, hence <code>g</code> should be divisible by number of channels</li>
+</ul>
+
+<p><strong>Parameters that are ignored:</strong></p>
+
+<ul>
+  <li>weight_filler: We use the heuristic by He et al., which limits the magnification of inputs/gradients 
+during forward/backward passes by scaling unit-Gaussian weights by a factor of sqrt(2/n), 
+under the assumption of relu neurons.</li>
+  <li>bias_filler: We use <code>constant bias_filler</code> with <code>value:0</code></li>
+</ul>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "upconv_d5c_u4a"
+  type: "Deconvolution"
+  bottom: "u5d"
+  top: "u4a"
+  param {
+    lr_mult: 0.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 190
+    bias_term: false
+    pad: 1
+    kernel_size: 4
+    group: 190
+    stride: 2
+    weight_filler {
+      type: "bilinear"
+    }
+  }
+}
+</code></p>
+
+<h2 id="recurrent-layers">Recurrent Layers</h2>
+
+<h3 id="rnn-layer">RNN Layer</h3>
+
+<p>In a simple RNN, the output of the previous timestep is fed back in as an additional input at the current timestep.</p>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/rnn.dml">nn/layers/rnn.dml</a> layer.</p>
+
+<p><strong>Required Parameters:</strong></p>
+
+<ul>
+  <li>num_output: number of output</li>
+  <li>return_sequences: Whether to return output at all timesteps, or just for the final timestep.</li>
+</ul>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+        top: "rnn_1"
+        recurrent_param {
+                return_sequences: false
+                num_output: 32
+        }
+        type: "RNN"
+        name: "rnn_1"
+        bottom: "rnn_1_input"
+}
+</code></p>
+
+<h3 id="lstm-layer">LSTM Layer</h3>
+
+<p>In an LSTM, an internal cell state is maintained, additive
+interactions operate over the cell state at each timestep, and
+some amount of this cell state is exposed as output at each
+timestep.  Additionally, the output of the previous timestep is fed
+back in as an additional input at the current timestep.</p>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/lstm.dml">nn/layers/lstm.dml</a> layer.</p>
+
+<p><strong>Required Parameters:</strong></p>
+
+<ul>
+  <li>num_output: number of output</li>
+  <li>return_sequences: Whether to return output at all timesteps, or just for the final timestep.</li>
+</ul>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+        top: "lstm_1"
+        recurrent_param {
+                return_sequences: false
+                num_output: 32
+        }
+        type: "LSTM"
+        name: "lstm_1"
+        bottom: "lstm_1_input"
+}
+</code></p>
+
+<h2 id="common-layers">Common Layers</h2>
+
+<h3 id="inner-product--fully-connected-layer">Inner Product / Fully Connected Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/affine.dml">nn/layers/affine.dml</a> layer.</p>
+
+<p><strong>Required Parameters:</strong></p>
+
+<ul>
+  <li>num_output: the number of filters</li>
+</ul>
+
+<p><strong>Parameters that are ignored:</strong>
+- weight_filler (default type: &#8216;constant&#8217; value: 0): We use the heuristic by He et al., which limits the magnification
+of inputs/gradients during forward/backward passes by scaling unit-Gaussian weights by a factor of sqrt(2/n), under the
+assumption of relu neurons.
+- bias_filler (default type: &#8216;constant&#8217; value: 0): We use the default type and value.
+- bias_term (default true): specifies whether to learn and apply a set of additive biases to the filter outputs. We use <code>bias_term=true</code>.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "fc8"
+  type: "InnerProduct"
+  # learning rate and decay multipliers for the weights
+  param { lr_mult: 1 decay_mult: 1 }
+  # learning rate and decay multipliers for the biases
+  param { lr_mult: 2 decay_mult: 0 }
+  inner_product_param {
+    num_output: 1000
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+  bottom: "fc7"
+  top: "fc8"
+}
+</code></p>
+
+<h3 id="dropout-layer">Dropout Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/dropout.dml">nn/layers/dropout.dml</a> layer.</p>
+
+<p><strong>Optional Parameters:</strong></p>
+
+<ul>
+  <li>dropout_ratio(default = 0.5): dropout ratio</li>
+</ul>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "drop1"
+  type: "Dropout"
+  bottom: "relu3"
+  top: "drop1"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+</code></p>
+
+<h2 id="normalization-layers">Normalization Layers</h2>
+
+<h3 id="batchnorm-layer">BatchNorm Layer</h3>
+
+<p>This is used in combination with Scale layer.</p>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/batch_norm2d.dml">nn/layers/batch_norm2d.dml</a> layer.</p>
+
+<p><strong>Optional Parameters:</strong>
+- moving_average_fraction (default = .999): Momentum value for moving averages. Typical values are in the range of [0.9, 0.999].
+- eps (default = 1e-5): Smoothing term to avoid divide by zero errors. Typical values are in the range of [1e-5, 1e-3].</p>
+
+<p><strong>Parameters that are ignored:</strong>
+- use_global_stats: If false, normalization is performed over the current mini-batch 
+and global statistics are accumulated (but not yet used) by a moving average.
+If true, those accumulated mean and variance values are used for the normalization.
+By default, it is set to false when the network is in the training phase and true when the network is in the testing phase.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+	bottom: "conv1"
+	top: "conv1"
+	name: "bn_conv1"
+	type: "BatchNorm"
+	batch_norm_param {
+		use_global_stats: true
+	}
+}
+layer {
+	bottom: "conv1"
+	top: "conv1"
+	name: "scale_conv1"
+	type: "Scale"
+	scale_param {
+		bias_term: true
+	}
+}
+</code></p>
+
+<h2 id="activation--neuron-layers">Activation / Neuron Layers</h2>
+
+<p>In general, activation / Neuron layers are element-wise operators, taking one bottom blob and producing one top blob of the same size. 
+In the layers below, we will ignore the input and out sizes as they are identical.</p>
+
+<h3 id="relu--rectified-linear-layer">ReLU / Rectified-Linear Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/relu.dml">nn/layers/relu.dml</a> layer.</p>
+
+<p><strong>Parameters that are ignored:</strong>
+- negative_slope (default 0): specifies whether to leak the negative part by multiplying it with the slope value rather than setting it to 0.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+}
+</code></p>
+
+<h3 id="tanh-layer">TanH Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/tanh.dml">nn/layers/tanh.dml</a> layer.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "tanh1"
+  type: "TanH"
+  bottom: "conv1"
+  top: "conv1"
+}
+</code></p>
+
+<h3 id="sigmoid-layer">Sigmoid Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/sigmoid.dml">nn/layers/sigmoid.dml</a> layer.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "sigmoid1"
+  type: "Sigmoid"
+  bottom: "conv1"
+  top: "conv1"
+}
+</code></p>
+
+<h3 id="threshold-layer">Threshold Layer</h3>
+
+<p>Computes <code>X &gt; threshold</code></p>
+
+<p><strong>Parameters that are ignored:</strong>
+- threshold (default: 0):Strictly positive values</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "threshold1"
+  type: "Threshold"
+  bottom: "conv1"
+  top: "conv1"
+}
+</code></p>
+
+<h2 id="utility-layers">Utility Layers</h2>
+
+<h3 id="eltwise-layer">Eltwise Layer</h3>
+
+<p>Element-wise operations such as product or sum between two blobs.</p>
+
+<p><strong>Parameters that are ignored:</strong>
+- operation(default: SUM): element-wise operation. only SUM supported for now.
+- table_prod_grad(default: true): Whether to use an asymptotically slower (for &gt;2 inputs) but stabler method
+of computing the gradient for the PROD operation. (No effect for SUM op.)</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+	bottom: "res2a_branch1"
+	bottom: "res2a_branch2c"
+	top: "res2a"
+	name: "res2a"
+	type: "Eltwise"
+}
+</code></p>
+
+<h3 id="concat-layer">Concat Layer</h3>
+
+<p><strong>Inputs:</strong>
+- <code>n_i * c_i * h * w</code> for each input blob i from 1 to K.</p>
+
+<p><strong>Outputs:</strong>
+- out: Outputs, of shape
+  - if axis = 0: <code>(n_1 + n_2 + ... + n_K) * c_1 * h * w</code>, and all input <code>c_i</code> should be the same.
+  - if axis = 1: <code>n_1 * (c_1 + c_2 + ... + c_K) * h * w</code>, and all input <code>n_i</code> should be the same.</p>
+
+<p><strong>Optional Parameters:</strong>
+- axis (default: 1): The axis along which to concatenate.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "concat_d5cc_u5a-b"
+  type: "Concat"
+  bottom: "u5a"
+  bottom: "d5c"
+  top: "u5b"
+}
+</code></p>
+
+<h3 id="softmax-layer">Softmax Layer</h3>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/softmax.dml">nn/layers/softmax.dml</a> layer.</p>
+
+<p>Computes the forward pass for a softmax classifier.  The inputs
+are interpreted as unnormalized, log-probabilities for each of
+N examples, and the softmax function transforms them to normalized
+probabilities.</p>
+
+<p>This can be interpreted as a generalization of the sigmoid
+function to multiple classes.</p>
+
+<p><code>probs_ij = e^scores_ij / sum(e^scores_i)</code></p>
+
+<p><strong>Parameters that are ignored:</strong>
+- axis (default: 1): The axis along which to perform the softmax.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "sm"
+  type: "Softmax"
+  bottom: "score"
+  top: "sm"
+}
+</code></p>
+
+<h2 id="loss-layers">Loss Layers</h2>
+
+<p>Loss drives learning by comparing an output to a target and assigning cost to minimize. 
+The loss itself is computed by the forward pass and the gradient w.r.t. to the loss is computed by the backward pass.</p>
+
+<h3 id="softmax-with-loss-layer">Softmax with Loss Layer</h3>
+
+<p>The softmax loss layer computes the multinomial logistic loss of the softmax of its inputs. 
+It’s conceptually identical to a softmax layer followed by a multinomial logistic loss layer, but provides a more numerically stable gradient.</p>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/softmax.dml">nn/layers/softmax.dml</a>
+and <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/cross_entropy_loss.dml">nn/layers/cross_entropy_loss.dml</a> 
+for classification problems.</p>
+
+<p>For image segmentation problems, invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/softmax2d_loss.dml">nn/layers/softmax2d_loss.dml</a> layer.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "ip2"
+  bottom: "label"
+  top: "loss"
+}
+</code></p>
+
+<h3 id="euclidean-layer">Euclidean layer</h3>
+
+<p>The Euclidean loss layer computes the sum of squares of differences of its two inputs.</p>
+
+<p>Invokes <a href="https://github.com/apache/systemml/blob/master/scripts/nn/layers/l2_loss.dml">nn/layers/l2_loss.dml</a> layer.</p>
+
+<p><strong>Sample Usage:</strong>
+<code>
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "ip2"
+  bottom: "label"
+  top: "loss"
+}
+</code></p>
+
+<h1 id="frequently-asked-questions">Frequently asked questions</h1>
+
+<h4 id="what-is-the-purpose-of-caffe2dml-api-">What is the purpose of Caffe2DML API ?</h4>
+
+<p>Most deep learning experts are more likely to be familiar with the Caffe&#8217;s specification
+rather than DML language. For these users, the Caffe2DML API reduces the learning curve to using SystemML.
+Instead of requiring the users to write a DML script for training, fine-tuning and testing the model,
+Caffe2DML takes as an input a network and solver specified in the Caffe specification
+and automatically generates the corresponding DML.</p>
+
+<h4 id="with-caffe2dml-does-systemml-now-require-caffe-to-be-installed-">With Caffe2DML, does SystemML now require Caffe to be installed ?</h4>
+
+<p>Absolutely not. We only support Caffe&#8217;s API for convenience of the user as stated above.
+Since the Caffe&#8217;s API is specified in the protobuf format, we are able to generate the java parser files
+and donot require Caffe to be installed. This is also true for Tensorboard feature of Caffe2DML.</p>
+
+<p><code>
+Dml.g4      ---&gt; antlr  ---&gt; DmlLexer.java, DmlListener.java, DmlParser.java ---&gt; parse foo.dml
+caffe.proto ---&gt; protoc ---&gt; target/generated-sources/caffe/Caffe.java       ---&gt; parse caffe_network.proto, caffe_solver.proto 
+</code></p>
+
+<p>Again, the SystemML engine doesnot invoke (or depend on) Caffe for any of its runtime operators.
+Since the grammar files for the respective APIs (i.e. <code>caffe.proto</code>) are used by SystemML, 
+we include their licenses in our jar files.</p>
+
+<h4 id="how-can-i-speedup-the-training-with-caffe2dml-">How can I speedup the training with Caffe2DML ?</h4>
+
+<ul>
+  <li>Enable native BLAS to improve the performance of CP convolution and matrix multiplication operators.
+If you are using OpenBLAS, please ensure that it was built with <code>USE_OPENMP</code> flag turned on.
+For more detail see http://apache.github.io/systemml/native-backend</li>
+</ul>
+
+<p><code>python
+caffe2dmlObject.setConfigProperty("sysml.native.blas", "auto")
+</code></p>
+
+<ul>
+  <li>Turn on the experimental codegen feature. This should help reduce unnecessary allocation cost after every binary operation.</li>
+</ul>
+
+<p><code>python
+caffe2dmlObject.setConfigProperty("sysml.codegen.enabled", "true").setConfigProperty("sysml.codegen.plancache", "true")
+</code></p>
+
+<ul>
+  <li>
+    <p>Tuned the <a href="http://spark.apache.org/docs/latest/tuning.html#garbage-collection-tuning">Garbage Collector</a>.</p>
+  </li>
+  <li>
+    <p>Enable GPU support (described below).</p>
+  </li>
+</ul>
+
+<h4 id="how-to-enable-gpu-support-in-caffe2dml-">How to enable GPU support in Caffe2DML ?</h4>
+
+<p>To be consistent with other mllearn algorithms, we recommend that you use following method instead of setting 
+the <code>solver_mode</code> in solver file.</p>
+
+<p><code>python
+# The below method tells SystemML optimizer to use a GPU-enabled instruction if the operands fit in the GPU memory 
+caffe2dmlObject.setGPU(True)
+# The below method tells SystemML optimizer to always use a GPU-enabled instruction irrespective of the memory requirement
+caffe2dmlObject.setForceGPU(True)
+</code></p>
+
+<h4 id="what-is-lrpolicy-in-the-solver-specification-">What is lr_policy in the solver specification ?</h4>
+
+<p>The parameter <code>lr_policy</code> specifies the learning rate decay policy. Caffe2DML supports following policies:
+- <code>fixed</code>: always return <code>base_lr</code>.
+- <code>step</code>: return <code>base_lr * gamma ^ (floor(iter / step))</code>
+- <code>exp</code>: return <code>base_lr * gamma ^ iter</code>
+- <code>inv</code>: return <code>base_lr * (1 + gamma * iter) ^ (- power)</code>
+- <code>poly</code>: the effective learning rate follows a polynomial decay, to be zero by the max_iter. return <code>base_lr (1 - iter/max_iter) ^ (power)</code>
+- <code>sigmoid</code>: the effective learning rate follows a sigmod decay return b<code>ase_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))</code></p>
+
+<p>The parameters <code>base_lr</code> and  <code>lr_policy</code> are required and other parameters are optional:
+<code>
+lr_policy: "step" # learning rate policy: drop the learning rate in "steps"
+                  # by a factor of gamma every stepsize iterations (required)
+base_lr: 0.01     # begin training at a learning rate of 0.01 (required)
+gamma: 0.95       # drop the learning rate by the given factor (optional, default value: 0.95)
+stepsize: 100000  # drop the learning rate every 100K iterations (optional, default value: 100000)
+power: 0.75       # (optional, default value: 0.75)
+</code></p>
+
+<h4 id="how-do-i-regularize-weight-matrices-in-the-neural-network-">How do I regularize weight matrices in the neural network ?</h4>
+
+<p>The user can specify the type of regularization using the parameter <code>regularization_type</code> in the solver file.
+The valid values are <code>L2</code> (default) and <code>L1</code>.
+Caffe2DML then invokes the backward function of the layers <code>nn/layers/l2_reg.dml</code> and <code>nn/layers/l1_reg.dml</code> respectively.
+The regularation strength is set using the property <code>weight_decay</code> in the solver file:
+<code>
+regularization_type: "L2"
+weight_decay: 5e-4
+</code></p>
+
+<p>Like learning rate, you can customize the regularation strength of a given layer by specifying the property <code>decay_mult</code> in the network file:
+<code>
+param { lr_mult: 1 decay_mult: 1 }
+</code></p>
+
+<h4 id="how-to-set-batch-size-">How to set batch size ?</h4>
+
+<p>Batch size is set in <code>data_param</code> of the Data layer:</p>
+
+<p><code>
+layer {
+  name: "mnist"
+  type: "Data"
+  top: "data"
+  top: "label"
+  data_param {
+    source: "mnist_train"
+    batch_size: 64
+    backend: LMDB
+  }
+}
+</code></p>
+
+<h4 id="how-to-set-maximum-number-of-iterations-for-training-">How to set maximum number of iterations for training ?</h4>
+
+<p>The maximum number of iterations can be set in the solver specification</p>
+
+<p><code>bash
+# The maximum number of iterations
+max_iter: 2000
+</code></p>
+
+<h4 id="how-to-set-the-size-of-the-validation-dataset-">How to set the size of the validation dataset ?</h4>
+
+<p>The size of the validation dataset is determined by the parameters <code>test_iter</code> and the batch size. For example: If the batch size is 64 and 
+<code>test_iter</code> is 10, then the validation size is 640. This setting generates following DML code internally:</p>
+
+<p><code>python
+num_images = nrow(y_full)
+BATCH_SIZE = 64
+num_validation = 10 * BATCH_SIZE
+X = X_full[(num_validation+1):num_images,]; y = y_full[(num_validation+1):num_images,]
+X_val = X_full[1:num_validation,]; y_val = y_full[1:num_validation,]
+num_images = nrow(y)
+</code></p>
+
+<h4 id="how-to-monitor-loss-via-command-line-">How to monitor loss via command-line ?</h4>
+
+<p>To monitor loss, please set following parameters in the solver specification</p>
+
+<p><code>
+# Display training loss and accuracy every 100 iterations
+display: 100
+# Carry out validation every 500 training iterations and display validation loss and accuracy.
+test_iter: 10
+test_interval: 500
+</code></p>
+
+<h4 id="how-to-pass-a-single-jpeg-image-to-caffe2dml-for-prediction-">How to pass a single jpeg image to Caffe2DML for prediction ?</h4>
+
+<p>To convert a jpeg into NumPy matrix, you can use the <a href="https://pillow.readthedocs.io/">pillow package</a> and 
+SystemML&#8217;s  <code>convertImageToNumPyArr</code> utility function. The below pyspark code demonstrates the usage:</p>
+
+<p><code>python
+from PIL import Image
+import systemml as sml
+from systemml.mllearn import Caffe2DML
+img_shape = (3, 224, 224)
+input_image = sml.convertImageToNumPyArr(Image.open(img_file_path), img_shape=img_shape)
+resnet = Caffe2DML(sqlCtx, solver='ResNet_50_solver.proto', weights='ResNet_50_pretrained_weights', input_shape=img_shape)
+resnet.predict(input_image)
+</code></p>
+
+<h4 id="how-to-prepare-a-directory-of-jpeg-images-for-training-with-caffe2dml-">How to prepare a directory of jpeg images for training with Caffe2DML ?</h4>
+
+<p>The below pyspark code assumes that the input dataset has 2 labels <code>cat</code> and <code>dogs</code> and the filename has these labels as prefix.
+We iterate through the directory and convert each jpeg image into pyspark.ml.linalg.Vector using pyspark.
+These vectors are stored as DataFrame and randomized using Spark SQL&#8217;s <code>orderBy(rand())</code> function.
+The DataFrame is then saved in parquet format to reduce the cost of preprocessing for repeated training.</p>
+
+<p><code>python
+from systemml.mllearn import Caffe2DML
+from pyspark.sql import SQLContext
+import numpy as np
+import urllib, os, scipy.ndimage
+from pyspark.ml.linalg import Vectors
+from pyspark import StorageLevel
+import systemml as sml
+from pyspark.sql.functions import rand 
+# ImageNet specific parameters
+img_shape = (3, 224, 224)
+train_dir = '/home/biuser/dogs_vs_cats/train'
+def getLabelFeatures(filename):
+	from PIL import Image
+	vec = Vectors.dense(sml.convertImageToNumPyArr(Image.open(os.path.join(train_dir, filename)), img_shape=img_shape)[0,:])
+	if filename.lower().startswith('cat'):
+		return (1, vec)
+	elif filename.lower().startswith('dog'):
+		return (2, vec)
+	else:
+		raise ValueError('Expected the filename to start with either cat or dog')
+list_jpeg_files = os.listdir(train_dir)
+# 10 files per partition
+train_df = sc.parallelize(list_jpeg_files, int(len(list_jpeg_files)/10)).map(lambda filename : getLabelFeatures(filename)).toDF(['label', 'features']).orderBy(rand())
+# Optional: but helps seperates conversion-related from training
+# Alternatively, this dataframe can be passed directly to `caffe2dml_model.fit(train_df)`
+train_df.write.parquet('kaggle-cats-dogs.parquet')
+</code></p>
+
+<p>An alternative way to load images into a PySpark DataFrame for prediction, is to use MLLib&#8217;s LabeledPoint class:</p>
+
+<p><code>python
+list_jpeg_files = os.listdir(train_dir)
+train_df = sc.parallelize(list_jpeg_files, int(len(list_jpeg_files)/10)).map(lambda filename : LabeledPoint(0, sml.convertImageToNumPyArr(Image.open(os.path.join(train_dir, filename)), img_shape=img_shape)[0,:])).toDF().select('features')
+# Note: convertVectorColumnsToML has an additional serialization cost
+train_df = MLUtils.convertVectorColumnsToML(train_df)
+</code></p>
+
+<h4 id="can-i-use-caffe2dml-via-scala-">Can I use Caffe2DML via Scala ?</h4>
+
+<p>Though we recommend using Caffe2DML via its Python interfaces, it is possible to use it by creating an object of the class
+<code>org.apache.sysml.api.dl.Caffe2DML</code>. It is important to note that Caffe2DML&#8217;s scala API is packaged in <code>systemml-*-extra.jar</code>.</p>
+
+<h4 id="how-can-i-get-summary-information-of-my-network-">How can I get summary information of my network ?</h4>
+
+<p><code>python
+lenet.summary()
+</code></p>
+
+<p>Output:</p>
+
+<p><code>
++-----+---------------+--------------+------------+---------+-----------+---------+
+| Name|           Type|        Output|      Weight|     Bias|        Top|   Bottom|
++-----+---------------+--------------+------------+---------+-----------+---------+
+|mnist|           Data| (, 1, 28, 28)|            |         |mnist,mnist|         |
+|conv1|    Convolution|(, 32, 28, 28)|   [32 X 25]| [32 X 1]|      conv1|    mnist|
+|relu1|           ReLU|(, 32, 28, 28)|            |         |      relu1|    conv1|
+|pool1|        Pooling|(, 32, 14, 14)|            |         |      pool1|    relu1|
+|conv2|    Convolution|(, 64, 14, 14)|  [64 X 800]| [64 X 1]|      conv2|    pool1|
+|relu2|           ReLU|(, 64, 14, 14)|            |         |      relu2|    conv2|
+|pool2|        Pooling|  (, 64, 7, 7)|            |         |      pool2|    relu2|
+|  ip1|   InnerProduct| (, 512, 1, 1)|[3136 X 512]|[1 X 512]|        ip1|    pool2|
+|relu3|           ReLU| (, 512, 1, 1)|            |         |      relu3|      ip1|
+|drop1|        Dropout| (, 512, 1, 1)|            |         |      drop1|    relu3|
+|  ip2|   InnerProduct|  (, 10, 1, 1)|  [512 X 10]| [1 X 10]|        ip2|    drop1|
+| loss|SoftmaxWithLoss|  (, 10, 1, 1)|            |         |       loss|ip2,mnist|
++-----+---------------+--------------+------------+---------+-----------+---------+
+</code></p>
+
+<h4 id="how-can-i-view-the-script-generated-by-caffe2dml-">How can I view the script generated by Caffe2DML ?</h4>
+
+<p>To view the generated DML script (and additional debugging information), please set the <code>debug</code> parameter to True.</p>
+
+<p><code>python
+lenet.set(debug=True)
+</code></p>
+
+<p>Output:
+```
+001|debug = TRUE
+002|source(&#8220;nn/layers/softmax.dml&#8221;) as softmax
+003|source(&#8220;nn/layers/cross_entropy_loss.dml&#8221;) as cross_entropy_loss
+004|source(&#8220;nn/layers/conv2d_builtin.dml&#8221;) as conv2d_builtin
+005|source(&#8220;nn/layers/relu.dml&#8221;) as relu
+006|source(&#8220;nn/layers/max_pool2d_builtin.dml&#8221;) as max_pool2d_builtin
+007|source(&#8220;nn/layers/affine.dml&#8221;) as affine
+008|source(&#8220;nn/layers/dropout.dml&#8221;) as dropout
+009|source(&#8220;nn/optim/sgd_momentum.dml&#8221;) as sgd_momentum
+010|source(&#8220;nn/layers/l2_reg.dml&#8221;) as l2_reg
+011|X_full_path = ifdef($X, &#8220; &#8220;)
+012|X_full = read(X_full_path)
+013|y_full_path = ifdef($y, &#8220; &#8220;)
+014|y_full = read(y_full_path)
+015|num_images = nrow(y_full)
+016|# Convert to one-hot encoding (Assumption: 1-based labels)
+017|y_full = table(seq(1,num_images,1), y_full, num_images, 10)
+018|weights = ifdef($weights, &#8220; &#8220;)
+019|# Initialize the layers and solvers
+020|X_full = X_full * 0.00390625
+021|BATCH_SIZE = 64
+022|[conv1_weight,conv1_bias] = conv2d_builtin::init(32,1,5,5)
+023|[conv2_weight,conv2_bias] = conv2d_builtin::init(64,32,5,5)
+024|[ip1_weight,ip1_bias] = affine::init(3136,512)
+025|[ip2_weight,ip2_bias] = affine::init(512,10)
+026|conv1_weight_v = sgd_momentum::init(conv1_weight)
+027|conv1_bias_v = sgd_momentum::init(conv1_bias)
+028|conv2_weight_v = sgd_momentum::init(conv2_weight)
+029|conv2_bias_v = sgd_momentum::init(conv2_bias)
+030|ip1_weight_v = sgd_momentum::init(ip1_weight)
+031|ip1_bias_v = sgd_momentum::init(ip1_bias)
+032|ip2_weight_v = sgd_momentum::init(ip2_weight)
+033|ip2_bias_v = sgd_momentum::init(ip2_bias)
+034|num_validation = 10 * BATCH_SIZE
+035|# Sanity check to ensure that validation set is not too large
+036|if(num_validation &gt; ceil(0.3 * num_images)) {
+037|    max_test_iter = floor(ceil(0.3 * num_images) / BATCH_SIZE)
+038|    stop(&#8220;Too large validation size. Please reduce test_iter to &#8220; + max_test_iter)
+039|}
+040|X = X_full[(num_validation+1):num_images,]; y = y_full[(num_validation+1):num_images,]; X_val = X_full[1:num_validation,]; y_val = y_full[1:num_validation,]; num_images = nrow(y)
+041|num_iters_per_epoch = ceil(num_images / BATCH_SIZE)
+042|max_epochs = ceil(2000 / num_iters_per_epoch)
+043|iter = 0
+044|lr = 0.01
+045|for(e in 1:max_epochs) {
+046|    for(i in 1:num_iters_per_epoch) {
+047|            beg = ((i-1) * BATCH_SIZE) %% num_images + 1; end = min(beg + BATCH_SIZE - 1, num_images); Xb = X[beg:end,]; yb = y[beg:end,];
+048|            iter = iter + 1
+049|            # Perform forward pass
+050|            [out3,ignoreHout_3,ignoreWout_3] = conv2d_builtin::forward(Xb,conv1_weight,conv1_bias,1,28,28,5,5,1,1,2,2)
+051|            out4 = relu::forward(out3)
+052|            [out5,ignoreHout_5,ignoreWout_5] = max_pool2d_builtin::forward(out4,32,28,28,2,2,2,2,0,0)
+053|            [out6,ignoreHout_6,ignoreWout_6] = conv2d_builtin::forward(out5,conv2_weight,conv2_bias,32,14,14,5,5,1,1,2,2)
+054|            out7 = relu::forward(out6)
+055|            [out8,ignoreHout_8,ignoreWout_8] = max_pool2d_builtin::forward(out7,64,14,14,2,2,2,2,0,0)
+056|            out9 = affine::forward(out8,ip1_weight,ip1_bias)
+057|            out10 = relu::forward(out9)
+058|            [out11,mask11] = dropout::forward(out10,0.5,-1)
+059|            out12 = affine::forward(out11,ip2_weight,ip2_bias)
+060|            out13 = softmax::forward(out12)
+061|            # Perform backward pass
+062|            dProbs = cross_entropy_loss::backward(out13,yb); dOut13 = softmax::backward(dProbs,out12); dOut13_12 = dOut13; dOut13_2 = dOut13;
+063|            [dOut12,ip2_dWeight,ip2_dBias] = affine::backward(dOut13_12,out11,ip2_weight,ip2_bias); dOut12_11 = dOut12;
+064|            dOut11 = dropout::backward(dOut12_11,out10,0.5,mask11); dOut11_10 = dOut11;
+065|            dOut10 = relu::backward(dOut11_10,out9); dOut10_9 = dOut10;
+066|            [dOut9,ip1_dWeight,ip1_dBias] = affine::backward(dOut10_9,out8,ip1_weight,ip1_bias); dOut9_8 = dOut9;
+067|            dOut8 = max_pool2d_builtin::backward(dOut9_8,7,7,out7,64,14,14,2,2,2,2,0,0); dOut8_7 = dOut8;
+068|            dOut7 = relu::backward(dOut8_7,out6); dOut7_6 = dOut7;
+069|            [dOut6,conv2_dWeight,conv2_dBias] = conv2d_builtin::backward(dOut7_6,14,14,out5,conv2_weight,conv2_bias,32,14,14,5,5,1,1,2,2); dOut6_5 = dOut6;
+070|            dOut5 = max_pool2d_builtin::backward(dOut6_5,14,14,out4,32,28,28,2,2,2,2,0,0); dOut5_4 = dOut5;
+071|            dOut4 = relu::backward(dOut5_4,out3); dOut4_3 = dOut4;
+072|            [dOut3,conv1_dWeight,conv1_dBias] = conv2d_builtin::backward(dOut4_3,28,28,Xb,conv1_weight,conv1_bias,1,28,28,5,5,1,1,2,2); dOut3_2 = dOut3;
+073|            # Update the parameters
+074|            conv1_dWeight_reg = l2_reg::backward(conv1_weight, 5.000000237487257E-4)
+075|            conv1_dWeight = conv1_dWeight + conv1_dWeight_reg
+076|            [conv1_weight,conv1_weight_v] = sgd_momentum::update(conv1_weight,conv1_dWeight,(lr * 1.0),0.8999999761581421,conv1_weight_v)
+077|            [conv1_bias,conv1_bias_v] = sgd_momentum::update(conv1_bias,conv1_dBias,(lr * 2.0),0.8999999761581421,conv1_bias_v)
+078|            conv2_dWeight_reg = l2_reg::backward(conv2_weight, 5.000000237487257E-4)
+079|            conv2_dWeight = conv2_dWeight + conv2_dWeight_reg
+080|            [conv2_weight,conv2_weight_v] = sgd_momentum::update(conv2_weight,conv2_dWeight,(lr * 1.0),0.8999999761581421,conv2_weight_v)
+081|            [conv2_bias,conv2_bias_v] = sgd_momentum::update(conv2_bias,conv2_dBias,(lr * 2.0),0.8999999761581421,conv2_bias_v)
+082|            ip1_dWeight_reg = l2_reg::backward(ip1_weight, 5.000000237487257E-4)
+083|            ip1_dWeight = ip1_dWeight + ip1_dWeight_reg
+084|            [ip1_weight,ip1_weight_v] = sgd_momentum::update(ip1_weight,ip1_dWeight,(lr * 1.0),0.8999999761581421,ip1_weight_v)
+085|            [ip1_bias,ip1_bias_v] = sgd_momentum::update(ip1_bias,ip1_dBias,(lr * 2.0),0.8999999761581421,ip1_bias_v)
+086|            ip2_dWeight_reg = l2_reg::backward(ip2_weight, 5.000000237487257E-4)
+087|            ip2_dWeight = ip2_dWeight + ip2_dWeight_reg
+088|            [ip2_weight,ip2_weight_v] = sgd_momentum::update(ip2_weight,ip2_dWeight,(lr * 1.0),0.8999999761581421,ip2_weight_v)
+089|            [ip2_bias,ip2_bias_v] = sgd_momentum::update(ip2_bias,ip2_dBias,(lr * 2.0),0.8999999761581421,ip2_bias_v)
+090|            # Compute training loss &amp; accuracy
+091|            if(iter  %% 100 == 0) {
+092|                    loss = 0
+093|                    accuracy = 0
+094|                    tmp_loss = cross_entropy_loss::forward(out13,yb)
+095|                    loss = loss + tmp_loss
+096|                    true_yb = rowIndexMax(yb)
+097|                    predicted_yb = rowIndexMax(out13)
+098|                    accuracy = mean(predicted_yb == true_yb)<em>100
+099|                    training_loss = loss
+100|                    training_accuracy = accuracy
+101|                    print(&#8220;Iter:&#8221; + iter + &#8220;, training loss:&#8221; + training_loss + &#8220;, training accuracy:&#8221; + training_accuracy)
+102|                    if(debug) {
+103|                            num_rows_error_measures = min(10, ncol(yb))
+104|                            error_measures = matrix(0, rows=num_rows_error_measures, cols=5)
+105|                            for(class_i in 1:num_rows_error_measures) {
+106|                                    tp = sum( (true_yb == predicted_yb) * (true_yb == class_i) )
+107|                                    tp_plus_fp = sum( (predicted_yb == class_i) )
+108|                                    tp_plus_fn = sum( (true_yb == class_i) )
+109|                                    precision = tp / tp_plus_fp
+110|                                    recall = tp / tp_plus_fn
+111|                                    f1Score = 2</em>precision<em>recall / (precision+recall)
+112|                                    error_measures[class_i,1] = class_i
+113|                                    error_measures[class_i,2] = precision
+114|                                    error_measures[class_i,3] = recall
+115|                                    error_measures[class_i,4] = f1Score
+116|                                    error_measures[class_i,5] = tp_plus_fn
+117|                            }
+118|                            print(&#8220;class    \tprecision\trecall  \tf1-score\tnum_true_labels\n&#8221; + toString(error_measures, decimal=7, sep=&#8221;\t&#8221;))
+119|                    }
+120|            }
+121|            # Compute validation loss &amp; accuracy
+122|            if(iter  %% 500 == 0) {
+123|                    loss = 0
+124|                    accuracy = 0
+125|                    validation_loss = 0
+126|                    validation_accuracy = 0
+127|                    for(iVal in 1:num_iters_per_epoch) {
+128|                            beg = ((iVal-1) * BATCH_SIZE) %% num_validation + 1; end = min(beg + BATCH_SIZE - 1, num_validation); Xb = X_val[beg:end,]; yb = y_val[beg:end,];
+129|                            # Perform forward pass
+130|                            [out3,ignoreHout_3,ignoreWout_3] = conv2d_builtin::forward(Xb,conv1_weight,conv1_bias,1,28,28,5,5,1,1,2,2)
+131|                            out4 = relu::forward(out3)
+132|                            [out5,ignoreHout_5,ignoreWout_5] = max_pool2d_builtin::forward(out4,32,28,28,2,2,2,2,0,0)
+133|                            [out6,ignoreHout_6,ignoreWout_6] = conv2d_builtin::forward(out5,conv2_weight,conv2_bias,32,14,14,5,5,1,1,2,2)
+134|                            out7 = relu::forward(out6)
+135|                            [out8,ignoreHout_8,ignoreWout_8] = max_pool2d_builtin::forward(out7,64,14,14,2,2,2,2,0,0)
+136|                            out9 = affine::forward(out8,ip1_weight,ip1_bias)
+137|                            out10 = relu::forward(out9)
+138|                            [out11,mask11] = dropout::forward(out10,0.5,-1)
+139|                            out12 = affine::forward(out11,ip2_weight,ip2_bias)
+140|                            out13 = softmax::forward(out12)
+141|                            tmp_loss = cross_entropy_loss::forward(out13,yb)
+142|                            loss = loss + tmp_loss
+143|                            true_yb = rowIndexMax(yb)
+144|                            predicted_yb = rowIndexMax(out13)
+145|                            accuracy = mean(predicted_yb == true_yb)</em>100
+146|                            validation_loss = validation_loss + loss
+147|                            validation_accuracy = validation_accuracy + accuracy
+148|                    }
+149|                    validation_accuracy = validation_accuracy / num_iters_per_epoch
+150|                    print(&#8220;Iter:&#8221; + iter + &#8220;, validation loss:&#8221; + validation_loss + &#8220;, validation accuracy:&#8221; + validation_accuracy)
+151|            }
+152|    }
+153|    # Learning rate
+154|    lr = (0.009999999776482582 * 0.949999988079071^e)
+155|}</p>
+
+<p>Iter:100, training loss:0.24014199350958168, training accuracy:87.5
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       3.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+3.0000000       0.8888889       0.8888889       0.8888889       9.0000000
+4.0000000       0.7500000       0.7500000       0.7500000       4.0000000
+5.0000000       0.7500000       1.0000000       0.8571429       3.0000000
+6.0000000       0.8333333       1.0000000       0.9090909       5.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+8.0000000       0.8571429       0.7500000       0.8000000       8.0000000
+9.0000000       1.0000000       0.5714286       0.7272727       7.0000000
+10.0000000      0.7272727       0.8888889       0.8000000       9.0000000</p>
+
+<p>Iter:200, training loss:0.09555593867171894, training accuracy:98.4375
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       10.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       3.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       9.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+6.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+7.0000000       1.0000000       0.6666667       0.8000000       3.0000000
+8.0000000       1.0000000       1.0000000       1.0000000       9.0000000
+9.0000000       0.8571429       1.0000000       0.9230769       6.0000000
+10.0000000      1.0000000       1.0000000       1.0000000       3.0000000</p>
+
+<p>Iter:300, training loss:0.058686794512570216, training accuracy:98.4375
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       9.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+6.0000000       1.0000000       0.8750000       0.9333333       8.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+8.0000000       1.0000000       1.0000000       1.0000000       2.0000000
+9.0000000       0.8888889       1.0000000       0.9411765       8.0000000
+10.0000000      1.0000000       1.0000000       1.0000000       8.0000000</p>
+
+<p>Iter:400, training loss:0.08742103541529415, training accuracy:96.875
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+2.0000000       0.8000000       1.0000000       0.8888889       8.0000000
+3.0000000       1.0000000       0.8333333       0.9090909       6.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+6.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+8.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+9.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+10.0000000      1.0000000       0.9230769       0.9600000       13.0000000</p>
+
+<p>Iter:500, training loss:0.05873836245880005, training accuracy:98.4375
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       3.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       9.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+6.0000000       1.0000000       0.8571429       0.9230769       7.0000000
+7.0000000       0.8571429       1.0000000       0.9230769       6.0000000
+8.0000000       1.0000000       1.0000000       1.0000000       9.0000000
+9.0000000       1.0000000       1.0000000       1.0000000       10.0000000
+10.0000000      1.0000000       1.0000000       1.0000000       5.0000000</p>
+
+<p>Iter:500, validation loss:260.1580978627665, validation accuracy:96.43954918032787
+Iter:600, training loss:0.07584116043829209, training accuracy:98.4375
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+6.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+8.0000000       1.0000000       0.9230769       0.9600000       13.0000000
+9.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+10.0000000      0.8333333       1.0000000       0.9090909       5.0000000</p>
+
+<p>Iter:700, training loss:0.07973166944626336, training accuracy:98.4375
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+6.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       10.0000000
+8.0000000       0.8000000       1.0000000       0.8888889       4.0000000
+9.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+10.0000000      1.0000000       0.9166667       0.9565217       12.0000000</p>
+
+<p>Iter:800, training loss:0.0063778595034221855, training accuracy:100.0
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       9.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+6.0000000       1.0000000       1.0000000       1.0000000       9.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+8.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+9.0000000       1.0000000       1.0000000       1.0000000       2.0000000
+10.0000000      1.0000000       1.0000000       1.0000000       6.0000000</p>
+
+<p>Iter:900, training loss:0.019673112167879484, training accuracy:100.0
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       3.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       3.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+6.0000000       1.0000000       1.0000000       1.0000000       10.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+8.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+9.0000000       1.0000000       1.0000000       1.0000000       12.0000000
+10.0000000      1.0000000       1.0000000       1.0000000       7.0000000</p>
+
+<p>Iter:1000, training loss:0.06137978002508307, training accuracy:96.875
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       8.0000000
+4.0000000       0.8333333       0.8333333       0.8333333       6.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       5.0000000
+6.0000000       1.0000000       1.0000000       1.0000000       10.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       3.0000000
+8.0000000       0.8888889       0.8888889       0.8888889       9.0000000
+9.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+10.0000000      1.0000000       1.0000000       1.0000000       4.0000000</p>
+
+<p>Iter:1000, validation loss:238.62301345198944, validation accuracy:97.02868852459017
+Iter:1100, training loss:0.023325103696013115, training accuracy:100.0
+class           precision       recall          f1-score        num_true_labels
+1.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+2.0000000       1.0000000       1.0000000       1.0000000       10.0000000
+3.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+4.0000000       1.0000000       1.0000000       1.0000000       4.0000000
+5.0000000       1.0000000       1.0000000       1.0000000       2.0000000
+6.0000000       1.0000000       1.0000000       1.0000000       10.0000000
+7.0000000       1.0000000       1.0000000       1.0000000       7.0000000
+8.0000000       1.0000000       1.0000000       1.0000000       6.0000000
+9.0000000       1.0000000       1.0000000       1.0000000       9.0000000
+10.0000000      1.0000000       1.0000000       1.0000000       6.0000000
+&#8230;
+```</p>
+
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

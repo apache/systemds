@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Algorithms Reference - Clustering - SystemML 0.14.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML (incubating)" title="Apache SystemML (incubating)"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup> (incubating)</a><br/>
+                        <span class="version">0.14.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Javadoc</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title"><a href="algorithms-reference.html">SystemML Algorithms Reference</a></h1>
+          
+
+          <!--
+
+-->
+
+<h1 id="clustering">3. Clustering</h1>
+
+<h2 id="k-means-clustering">3.1. K-Means Clustering</h2>
+
+<h3 id="description">Description</h3>
+
+<p>Given a collection of $n$ records with a pairwise similarity measure,
+the goal of clustering is to assign a category label to each record so
+that similar records tend to get the same label. In contrast to
+multinomial logistic regression, clustering is an <em>unsupervised</em>
+learning problem with neither category assignments nor label
+interpretations given in advance. In $k$-means clustering, the records
+$x_1, x_2, \ldots, x_n$ are numerical feature vectors of $\dim x_i = m$
+with the squared Euclidean distance $|x_i - x_{i&#8217;}|_2^2$ as the
+similarity measure. We want to partition $\{x_1, \ldots, x_n\}$ into $k$
+clusters $\{S_1, \ldots, S_k\}$ so that the aggregated squared distance
+from records to their cluster means is minimized:</p>
+
+<script type="math/tex; mode=display">\begin{equation}
+\textrm{WCSS}\,\,=\,\, \sum_{i=1}^n \,\big\|x_i - mean(S_j: x_i\in S_j)\big\|_2^2 \,\,\to\,\,\min
+\end{equation}</script>
+
+<p>The aggregated distance measure in (1) is
+called the <em>within-cluster sum of squares</em> (WCSS). It can be viewed as a
+measure of residual variance that remains in the data after the
+clustering assignment, conceptually similar to the residual sum of
+squares (RSS) in linear regression. However, unlike for the RSS, the
+minimization of (1) is an NP-hard
+problem <a href="algorithms-bibliography.html">[AloiseDHP2009]</a>.</p>
+
+<p>Rather than searching for the global optimum in (1), a
+heuristic algorithm called Lloyd’s algorithm is typically used. This
+iterative algorithm maintains and updates a set of $k$ <em>centroids</em>
+$\{c_1, \ldots, c_k\}$, one centroid per cluster. It defines each
+cluster $S_j$ as the set of all records closer to $c_j$ than to any
+other centroid. Each iteration of the algorithm reduces the WCSS in two
+steps:</p>
+
+<ol>
+  <li>Assign each record to the closest centroid, making
+$mean(S_j)\neq c_j$</li>
+  <li>Reset each centroid to its cluster’s mean:
+$c_j := mean(S_j)$</li>
+</ol>
+
+<p>After Step 1, the centroids are generally
+different from the cluster means, so we can compute another
+&#8220;within-cluster sum of squares&#8221; based on the centroids:</p>
+
+<script type="math/tex; mode=display">\textrm{WCSS_C}\,\,=\,\, \sum_{i=1}^n \,\big\|x_i - \mathop{\textrm{centroid}}(S_j: x_i\in S_j)\big\|_2^2
+\label{eqn:WCSS:C}</script>
+
+<p>This WCSS_C after Step 1
+is less than the means-based WCSS before Step 1
+(or equal if convergence achieved), and in Step 2
+the WCSS cannot exceed the WCSS_C for <em>the same</em> clustering; hence the
+WCSS reduction.</p>
+
+<p>Exact convergence is reached when each record becomes closer to its
+cluster’s mean than to any other cluster’s mean, so there are no more
+re-assignments and the centroids coincide with the means. In practice,
+iterations may be stopped when the reduction in WCSS (or in WCSS_C)
+falls below a minimum threshold, or upon reaching the maximum number of
+iterations. The initialization of the centroids is also an important
+part of the algorithm. The smallest WCSS obtained by the algorithm is
+not the global minimum and varies depending on the initial centroids. We
+implement multiple parallel runs with different initial centroids and
+report the best result.</p>
+
+<p><strong>Scoring.</strong> Our scoring script evaluates the clustering output by comparing it with
+a known category assignment. Since cluster labels have no prior
+correspondence to the categories, we cannot count &#8220;correct&#8221; and &#8220;wrong&#8221;
+cluster assignments. Instead, we quantify them in two ways:</p>
+
+<ol>
+  <li>Count how many same-category and different-category pairs of records end
+up in the same cluster or in different clusters;</li>
+  <li>For each category, count the prevalence of its most common cluster; for
+each cluster, count the prevalence of its most common category.</li>
+</ol>
+
+<p>The number of categories and the number of clusters ($k$) do not have to
+be equal. A same-category pair of records clustered into the same
+cluster is viewed as a &#8220;true positive,&#8221; a different-category pair
+clustered together is a &#8220;false positive,&#8221; a same-category pair clustered
+apart is a &#8220;false negative&#8221; etc.</p>
+
+<h3 id="usage">Usage</h3>
+
+<p><strong>K-Means</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hadoop jar SystemML.jar -f Kmeans.dml
+                        -nvargs X=&lt;file&gt;
+                                C=[file]
+                                k=&lt;int&gt;
+                                runs=[int]
+                                maxi=[int]
+                                tol=[double]
+                                samp=[int]
+                                isY=[int]
+                                Y=[file]
+                                fmt=[format]
+                                verb=[int]
+</code></pre>
+    </div>
+  </div>
+<div data-lang="Spark">
+    <div class="highlighter-rouge"><pre class="highlight"><code>$SPARK_HOME/bin/spark-submit --master yarn-cluster
+                             --conf spark.driver.maxResultSize=0
+                             --conf spark.akka.frameSize=128
+                             SystemML.jar
+                             -f Kmeans.dml
+                             -config=SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=&lt;file&gt;
+                                     C=[file]
+                                     k=&lt;int&gt;
+                                     runs=[int]
+                                     maxi=[int]
+                                     tol=[double]
+                                     samp=[int]
+                                     isY=[int]
+                                     Y=[file]
+                                     fmt=[format]
+                                     verb=[int]
+</code></pre>
+    </div>
+  </div>
+</div>
+
+<p><strong>K-Means Prediction</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hadoop jar SystemML.jar -f Kmeans-predict.dml
+                        -nvargs X=[file]
+                                C=[file]
+                                spY=[file]
+                                prY=[file]
+                                fmt=[format]
+                                O=[file]
+</code></pre>
+    </div>
+  </div>
+<div data-lang="Spark">
+    <div class="highlighter-rouge"><pre class="highlight"><code>$SPARK_HOME/bin/spark-submit --master yarn-cluster
+                             --conf spark.driver.maxResultSize=0
+                             --conf spark.akka.frameSize=128
+                             SystemML.jar
+                             -f Kmeans-predict.dml
+                             -config=SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=[file]
+                                     C=[file]
+                                     spY=[file]
+                                     prY=[file]
+                                     fmt=[format]
+                                     O=[file]
+</code></pre>
+    </div>
+  </div>
+</div>
+
+<h3 id="arguments---k-means">Arguments - K-Means</h3>
+
+<p><strong>X</strong>: Location to read matrix $X$ with the input data records as rows</p>
+
+<p><strong>C</strong>: (default: <code class="highlighter-rouge">"C.mtx"</code>) Location to store the output matrix with the best available
+cluster centroids as rows</p>
+
+<p><strong>k</strong>: Number of clusters (and centroids)</p>
+
+<p><strong>runs</strong>: (default: <code class="highlighter-rouge">10</code>) Number of parallel runs, each run with different initial
+centroids</p>
+
+<p><strong>maxi</strong>: (default: <code class="highlighter-rouge">1000</code>) Maximum number of iterations per run</p>
+
+<p><strong>tol</strong>: (default: <code class="highlighter-rouge">0.000001</code>) Tolerance (epsilon) for single-iteration WCSS_C change ratio</p>
+
+<p><strong>samp</strong>: (default: <code class="highlighter-rouge">50</code>) Average number of records per centroid in data samples used
+in the centroid initialization procedure</p>
+
+<p><strong>Y</strong>: (default: <code class="highlighter-rouge">"Y.mtx"</code>) Location to store the one-column matrix $Y$ with the best
+available mapping of records to clusters (defined by the output
+centroids)</p>
+
+<p><strong>isY</strong>: (default: <code class="highlighter-rouge">0</code>) <code class="highlighter-rouge">0</code> = do not write matrix $Y$, <code class="highlighter-rouge">1</code> = write $Y$</p>
+
+<p><strong>fmt</strong>: (default: <code class="highlighter-rouge">"text"</code>) Matrix file output format, such as <code class="highlighter-rouge">text</code>,
+<code class="highlighter-rouge">mm</code>, or <code class="highlighter-rouge">csv</code>; see read/write functions in
+SystemML Language Reference for details.</p>
+
+<p><strong>verb</strong>: (default: <code class="highlighter-rouge">0</code>) <code class="highlighter-rouge">0</code> = do not print per-iteration statistics for
+each run, <code class="highlighter-rouge">1</code> = print them (the &#8220;verbose&#8221; option)</p>
+
+<h3 id="arguments---k-means-prediction">Arguments - K-Means Prediction</h3>
+
+<p><strong>X</strong>: (default: <code class="highlighter-rouge">" "</code>) Location to read matrix $X$ with the input data records as
+rows, optional when <code class="highlighter-rouge">prY</code> input is provided</p>
+
+<p><strong>C</strong>: (default: <code class="highlighter-rouge">" "</code>) Location to read matrix $C$ with cluster centroids as rows,
+optional when <code class="highlighter-rouge">prY</code> input is provided; NOTE: if both
+X and C are provided, <code class="highlighter-rouge">prY</code> is an
+output, not input</p>
+
+<p><strong>spY</strong>: (default: <code class="highlighter-rouge">" "</code>) Location to read a one-column matrix with the externally
+specified &#8220;true&#8221; assignment of records (rows) to categories, optional
+for prediction without scoring</p>
+
+<p><strong>prY</strong>: (default: <code class="highlighter-rouge">" "</code>) Location to read (or write, if X and
+C are present) a column-vector with the predicted
+assignment of rows to clusters; NOTE: No prior correspondence is assumed
+between the predicted cluster labels and the externally specified
+categories</p>
+
+<p><strong>fmt</strong>: (default: <code class="highlighter-rouge">"text"</code>) Matrix file output format for <code class="highlighter-rouge">prY</code>, such as
+<code class="highlighter-rouge">text</code>, <code class="highlighter-rouge">mm</code>, or <code class="highlighter-rouge">csv</code>; see read/write
+functions in SystemML Language Reference for details.</p>
+
+<p><strong>0</strong>: (default: <code class="highlighter-rouge">" "</code>) Location to write the output statistics defined in
+<a href="algorithms-clustering.html#table6"><strong>Table 6</strong></a>, by default print them to the
+standard output</p>
+
+<h3 id="examples">Examples</h3>
+
+<p><strong>K-Means</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hadoop jar SystemML.jar -f Kmeans.dml
+                        -nvargs X=/user/ml/X.mtx
+                                k=5
+                                C=/user/ml/centroids.mtx
+                                fmt=csv
+</code></pre>
+    </div>
+  </div>
+<div data-lang="Spark">
+    <div class="highlighter-rouge"><pre class="highlight"><code>$SPARK_HOME/bin/spark-submit --master yarn-cluster
+                             --conf spark.driver.maxResultSize=0
+                             --conf spark.akka.frameSize=128
+                             SystemML.jar
+                             -f Kmeans.dml
+                             -config=SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X.mtx
+                                     k=5
+                                     C=/user/ml/centroids.mtx
+                                     fmt=csv
+</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hadoop jar SystemML.jar -f Kmeans.dml
+                        -nvargs X=/user/ml/X.mtx
+                                k=5
+                                runs=100
+                                maxi=5000
+                                tol=0.00000001
+                                samp=20
+                                C=/user/ml/centroids.mtx
+                                isY=1
+                                Y=/user/ml/Yout.mtx
+                                verb=1
+</code></pre>
+    </div>
+  </div>
+<div data-lang="Spark">
+    <div class="highlighter-rouge"><pre class="highlight"><code>$SPARK_HOME/bin/spark-submit --master yarn-cluster
+                             --conf spark.driver.maxResultSize=0
+                             --conf spark.akka.frameSize=128
+                             SystemML.jar
+                             -f Kmeans.dml
+                             -config=SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X.mtx
+                                     k=5
+                                     runs=100
+                                     maxi=5000
+                                     tol=0.00000001
+                                     samp=20
+                                     C=/user/ml/centroids.mtx
+                                     isY=1
+                                     Y=/user/ml/Yout.mtx
+                                     verb=1
+</code></pre>
+    </div>
+  </div>
+</div>
+
+<p><strong>K-Means Prediction</strong>:</p>
+
+<p>To predict Y given X and C:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hadoop jar SystemML.jar -f Kmeans-predict.dml
+                        -nvargs X=/user/ml/X.mtx
+                                C=/user/ml/C.mtx
+                                prY=/user/ml/PredY.mtx
+                                O=/user/ml/stats.csv
+</code></pre>
+    </div>
+  </div>
+<div data-lang="Spark">
+    <div class="highlighter-rouge"><pre class="highlight"><code>$SPARK_HOME/bin/spark-submit --master yarn-cluster
+                             --conf spark.driver.maxResultSize=0
+                             --conf spark.akka.frameSize=128
+                             SystemML.jar
+                             -f Kmeans-predict.dml
+                             -config=SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X.mtx
+                                     C=/user/ml/C.mtx
+                                     prY=/user/ml/PredY.mtx
+                                     O=/user/ml/stats.csv
+</code></pre>
+    </div>
+  </div>
+</div>
+
+<p>To compare &#8220;actual&#8221; labels <code class="highlighter-rouge">spY</code> with &#8220;predicted&#8221; labels
+given X and C:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hadoop jar SystemML.jar -f Kmeans-predict.dml
+                        -nvargs X=/user/ml/X.mtx
+                                C=/user/ml/C.mtx
+                                spY=/user/ml/Y.mtx
+                                O=/user/ml/stats.csv
+</code></pre>
+    </div>
+  </div>
+<div data-lang="Spark">
+    <div class="highlighter-rouge"><pre class="highlight"><code>$SPARK_HOME/bin/spark-submit --master yarn-cluster
+                             --conf spark.driver.maxResultSize=0
+                             --conf spark.akka.frameSize=128
+                             SystemML.jar
+                             -f Kmeans-predict.dml
+                             -config=SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X.mtx
+                                     C=/user/ml/C.mtx
+                                     spY=/user/ml/Y.mtx
+                                     O=/user/ml/stats.csv
+</code></pre>
+    </div>
+  </div>
+</div>
+
+<p>To compare &#8220;actual&#8221; labels <code class="highlighter-rouge">spY</code> with given &#8220;predicted&#8221;
+labels prY:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <div class="highlighter-rouge"><pre class="highlight"><code>hadoop jar SystemML.jar -f Kmeans-predict.dml
+                        -nvargs spY=/user/ml/Y.mtx
+                                prY=/user/ml/PredY.mtx
+                                O=/user/ml/stats.csv
+</code></pre>
+    </div>
+  </div>
+<div data-lang="Spark">
+    <div class="highlighter-rouge"><pre class="highlight"><code>$SPARK_HOME/bin/spark-submit --master yarn-cluster
+                             --conf spark.driver.maxResultSize=0
+                             --conf spark.akka.frameSize=128
+                             SystemML.jar
+                             -f Kmeans-predict.dml
+                             -config=SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs spY=/user/ml/Y.mtx
+                                     prY=/user/ml/PredY.mtx
+                                     O=/user/ml/stats.csv
+</code></pre>
+    </div>
+  </div>
+</div>
+
+<hr />
+
+<p><a name="table6"></a>
+<strong>Table 6</strong>: The O-file for Kmeans-predict provides the
+output statistics in CSV format, one per line, in the following
+format: (NAME, [CID], VALUE). Note: the 1st group statistics are
+given if X input is available; the 2nd group statistics
+are given if X and C inputs are available;
+the 3rd and 4th group statistics are given if spY input
+is available; only the 4th group statistics contain a nonempty CID
+value; when present, CID contains either the specified category label
+or the predicted cluster label.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Inputs Available</th>
+      <th>Name</th>
+      <th>CID</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center" rowspan="5">X</td>
+      <td>TSS</td>
+      <td>&#160;</td>
+      <td>Total Sum of Squares (from the total mean)</td>
+    </tr>
+    <tr>
+      <td>WCSS_M</td>
+      <td>&#160;</td>
+      <td>Within-Cluster Sum of Squares (means as centers)</td>
+    </tr>
+    <tr>
+      <td>WCSS_M_PC</td>
+      <td>&#160;</td>
+      <td>Within-Cluster Sum of Squares (means), in % of TSS</td>
+    </tr>
+    <tr>
+      <td>BCSS_M</td>
+      <td>&#160;</td>
+      <td>Between-Cluster Sum of Squares (means as centers)</td>
+    </tr>
+    <tr>
+      <td>BCSS_M_PC</td>
+      <td>&#160;</td>
+      <td>Between-Cluster Sum of Squares (means), in % of TSS</td>
+    </tr>
+    <tr>
+      <td style="text-align: center" rowspan="4">X and C</td>
+      <td>WCSS_C</td>
+      <td>&#160;</td>
+      <td>Within-Cluster Sum of Squares (centroids as centers)</td>
+    </tr>
+    <tr>
+      <td>WCSS_C_PC</td>
+      <td>&#160;</td>
+      <td>Within-Cluster Sum of Squares (centroids), % of TSS</td>
+    </tr>
+    <tr>
+      <td>BCSS_C</td>
+      <td>&#160;</td>
+      <td>Between-Cluster Sum of Squares (centroids as centers)</td>
+    </tr>
+    <tr>
+      <td>BCSS_C_PC</td>
+      <td>&#160;</td>
+      <td>Between-Cluster Sum of Squares (centroids), % of TSS</td>
+    </tr>
+    <tr>
+      <td style="text-align: center" rowspan="8">spY</td>
+      <td>TRUE_SAME_CT</td>
+      <td>&#160;</td>
+      <td>Same-category pairs predicted as Same-cluster, count</td>
+    </tr>
+    <tr>
+      <td>TRUE_SAME_PC</td>
+      <td>&#160;</td>
+      <td>Same-category pairs predicted as Same-cluster, %</td>
+    </tr>
+    <tr>
+      <td>TRUE_DIFF_CT</td>
+      <td>&#160;</td>
+      <td>Diff-category pairs predicted as Diff-cluster, count</td>
+    </tr>
+    <tr>
+      <td>TRUE_DIFF_PC</td>
+      <td>&#160;</td>
+      <td>Diff-category pairs predicted as Diff-cluster, %</td>
+    </tr>
+    <tr>
+      <td>FALSE_SAME_CT</td>
+      <td>&#160;</td>
+      <td>Diff-category pairs predicted as Same-cluster, count</td>
+    </tr>
+    <tr>
+      <td>FALSE_SAME_PC</td>
+      <td>&#160;</td>
+      <td>Diff-category pairs predicted as Same-cluster, %</td>
+    </tr>
+    <tr>
+      <td>FALSE_DIFF_CT</td>
+      <td>&#160;</td>
+      <td>Same-category pairs predicted as Diff-cluster, count</td>
+    </tr>
+    <tr>
+      <td>FALSE_DIFF_PC</td>
+      <td>&#160;</td>
+      <td>Same-category pairs predicted as Diff-cluster, %</td>
+    </tr>
+    <tr>
+      <td style="text-align: center" rowspan="8">spY</td>
+      <td>SPEC_TO_PRED</td>
+      <td style="text-align: center">+</td>
+      <td>For specified category, the best predicted cluster id</td>
+    </tr>
+    <tr>
+      <td>SPEC_FULL_CT</td>
+      <td style="text-align: center">+</td>
+      <td>For specified category, its full count</td>
+    </tr>
+    <tr>
+      <td>SPEC_MATCH_CT</td>
+      <td style="text-align: center">+</td>
+      <td>For specified category, best-cluster matching count</td>
+    </tr>
+    <tr>
+      <td>SPEC_MATCH_PC</td>
+      <td style="text-align: center">+</td>
+      <td>For specified category, % of matching to full count</td>
+    </tr>
+    <tr>
+      <td>PRED_TO_SPEC</td>
+      <td style="text-align: center">+</td>
+      <td>For predicted cluster, the best specified category id</td>
+    </tr>
+    <tr>
+      <td>PRED_FULL_CT</td>
+      <td style="text-align: center">+</td>
+      <td>For predicted cluster, its full count</td>
+    </tr>
+    <tr>
+      <td>PRED_MATCH_CT</td>
+      <td style="text-align: center">+</td>
+      <td>For predicted cluster, best-category matching count</td>
+    </tr>
+    <tr>
+      <td>PRED_MATCH_PC</td>
+      <td style="text-align: center">+</td>
+      <td>For predicted cluster, % of matching to full count</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h3 id="details">Details</h3>
+
+<p>Our clustering script proceeds in 3 stages: centroid initialization,
+parallel $k$-means iterations, and the best-available output generation.
+Centroids are initialized at random from the input records (the rows
+of $X$), biased towards being chosen far apart from each other. The
+initialization method is based on the <code class="highlighter-rouge">k-means++</code> heuristic
+from <a href="algorithms-bibliography.html">[ArthurVassilvitskii2007]</a>, with one important difference: to
+reduce the number of passes through $X$, we take a small sample of $X$
+and run the <code class="highlighter-rouge">k-means++</code> heuristic over this sample. Here is,
+conceptually, our centroid initialization algorithm for one clustering
+run:</p>
+
+<ol>
+    <li>Sample the rows of $X$ uniformly at random, picking each row with
+probability $p = ks / n$ where
+    <ul>
+      <li>$k$ is the number of centroids</li>
+      <li>$n$ is the number of records</li>
+      <li>$s$ is the samp input parameter</li>
+    </ul>
+     If $ks \geq n$, the entire $X$ is used in place of its sample.
+     </li>
+     <li>Choose the first centroid uniformly at random from the sampled rows.</li>
+     <li>Choose each subsequent centroid from the sampled rows, at random, with
+probability proportional to the squared Euclidean distance between the
+row and the nearest already-chosen centroid.</li>
+  </ol>
+
+<p>The sampling of $X$ and the selection of centroids are performed
+independently and in parallel for each run of the $k$-means algorithm.
+When we sample the rows of $X$, rather than tossing a random coin for
+each row, we compute the number of rows to skip until the next sampled
+row as $\lceil \log(u) / \log(1 - p) \rceil$ where $u\in (0, 1)$ is
+uniformly random. This time-saving trick works because</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+Prob[k-1 < \log_{1-p}(u) < k] \,\,=\,\, p(1-p)^{k-1} \,\,=\,\,
+Prob[\textrm{skip $k-1$ rows}] %]]></script>
+
+<p>However, it requires us to estimate the maximum sample size, which we
+set near $ks + 10\sqrt{ks}$ to make it generous enough.</p>
+
+<p>Once we selected the initial centroid sets, we start the $k$-means
+iterations independently in parallel for all clustering runs. The number
+of clustering runs is given as the runs input parameter.
+Each iteration of each clustering run performs the following steps:</p>
+
+<ul>
+  <li>Compute the centroid-dependent part of squared Euclidean distances from
+all records (rows of $X$) to each of the $k$ centroids using matrix
+product.</li>
+  <li>Take the minimum of the above for each record.</li>
+  <li>Update the current within-cluster sum of squares (WCSS) value, with
+centroids substituted instead of the means for efficiency.</li>
+  <li>Check the convergence
+criterion:
+<script type="math/tex">% <![CDATA[
+\textrm{WCSS}_{\mathrm{old}} - \textrm{WCSS}_{\mathrm{new}} < {\varepsilon}\cdot\textrm{WCSS}_{\mathrm{new}} %]]></script>
+as
+well as the number of iterations limit.</li>
+  <li>Find the closest centroid for each record, sharing equally any records
+with multiple closest centroids.</li>
+  <li>Compute the number of records closest to each centroid, checking for
+&#8220;runaway&#8221; centroids with no records left (in which case the run fails).</li>
+  <li>Compute the new centroids by averaging the records in their clusters.</li>
+</ul>
+
+<p>When a termination condition is satisfied, we store the centroids and
+the WCSS value and exit this run. A run has to satisfy the WCSS
+convergence criterion to be considered successful. Upon the termination
+of all runs, we select the smallest WCSS value among the successful
+runs, and write out this run’s centroids. If requested, we also compute
+the cluster assignment of all records in $X$, using integers from 1
+to $k$ as the cluster labels. The scoring script can then be used to
+compare the cluster assignment with an externally specified category
+assignment.</p>
+
+<h3 id="returns">Returns</h3>
+
+<p>We output the $k$ centroids for the best available clustering,
+i. e. whose WCSS is the smallest of all successful runs. The centroids
+are written as the rows of the $k\,{\times}\,m$-matrix into the output
+file whose path/name was provided as the <code class="highlighter-rouge">C</code> input
+argument. If the input parameter <code class="highlighter-rouge">isY</code> was set
+to <code class="highlighter-rouge">1</code>, we also output the one-column matrix with the cluster
+assignment for all the records. This assignment is written into the file
+whose path/name was provided as the <code class="highlighter-rouge">Y</code> input argument. The
+best WCSS value, as well as some information about the performance of
+the other runs, is printed during the script execution. The scoring
+script <code class="highlighter-rouge">Kmeans-predict.dml</code> prints all its results in a
+self-explanatory manner, as defined in
+<a href="algorithms-clustering.html#table6"><strong>Table 6</strong></a>.</p>
+
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

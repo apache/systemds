@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Performance Testing - SystemML 0.15.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Description of SystemML performance testing.">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">0.15.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">SystemML Performance Testing</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#performance-testing-algorithms-user-manual" id="markdown-toc-performance-testing-algorithms-user-manual">Performance Testing Algorithms User Manual</a>    <ul>
+      <li><a href="#architecture" id="markdown-toc-architecture">Architecture</a></li>
+      <li><a href="#adding-new-algorithms" id="markdown-toc-adding-new-algorithms">Adding New Algorithms</a></li>
+      <li><a href="#current-default-settings" id="markdown-toc-current-default-settings">Current Default Settings</a></li>
+      <li><a href="#examples" id="markdown-toc-examples">Examples</a></li>
+      <li><a href="#google-sheets-api" id="markdown-toc-google-sheets-api">Google sheets API</a></li>
+      <li><a href="#result-consolidation-and-plotting" id="markdown-toc-result-consolidation-and-plotting">Result Consolidation and Plotting</a></li>
+      <li><a href="#operational-notes" id="markdown-toc-operational-notes">Operational Notes</a></li>
+      <li><a href="#troubleshooting" id="markdown-toc-troubleshooting">Troubleshooting</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="performance-testing-algorithms-user-manual">Performance Testing Algorithms User Manual</h1>
+
+<p>This user manual contains details on how to conduct automated performance tests. Work was mostly done in this <a href="https://github.com/apache/systemml/pull/537">PR</a> and part of <a href="https://issues.apache.org/jira/browse/SYSTEMML-1451">SYSTEMML-1451</a>. Our aim was to move from existing <code class="highlighter-rouge">bash</code> based performance tests to automatic <code class="highlighter-rouge">python</code> based automatic performance tests.</p>
+
+<h2 id="architecture">Architecture</h2>
+
+<p>Our performance tests suit contains <code class="highlighter-rouge">7</code> families namely <code class="highlighter-rouge">binomial</code>, <code class="highlighter-rouge">multinomial</code>, <code class="highlighter-rouge">stats1</code>, <code class="highlighter-rouge">stats2</code>, <code class="highlighter-rouge">regression1</code>, <code class="highlighter-rouge">regression2</code>, <code class="highlighter-rouge">clustering</code>. Within these families we have algorithms grouped under it. Typically a family is a set of algorithms that require the same data generation script.</p>
+
+<ul>
+  <li>Exceptions: <code class="highlighter-rouge">regression1</code>, <code class="highlighter-rouge">regression2</code> and <code class="highlighter-rouge">binomial</code>. We decide to include these algorithms in separate families to keep the architecture simple.</li>
+</ul>
+
+<p><img src="img/performance-test/perf_test_arch.png" alt="System ML Architecture" /></p>
+
+<p>On a very high level use construct a string with arguments required to run each operation. Once this string is constructed we use the subprocess module to execute this string and extract time from the standard out.</p>
+
+<p>We also use <code class="highlighter-rouge">json</code> module write our configurations to a json file. This ensure that our operations are easy to debug.</p>
+
+<p>We have <code class="highlighter-rouge">7</code> files in performance test suit:</p>
+
+<ul>
+  <li>Entry File <code class="highlighter-rouge">run_perftest.py</code></li>
+  <li>Supporting Files <code class="highlighter-rouge">datagen.py</code>, <code class="highlighter-rouge">train.py</code>, <code class="highlighter-rouge">predict.py</code></li>
+  <li>Utility Files <code class="highlighter-rouge">utils_exec.py</code>, <code class="highlighter-rouge">utils_fs.py</code>, <code class="highlighter-rouge">utils_misc.py</code></li>
+</ul>
+
+<p><code class="highlighter-rouge">datagen.py</code>, <code class="highlighter-rouge">train.py</code> and <code class="highlighter-rouge">predict.py</code> generate a dictionary. Our key is the name of algorithm being processed and values is a list with path(s) where all the data required is present. We define this dictionary as a configuration packet.</p>
+
+<p>We will describe each of them in detail the following sections below.</p>
+
+<p><code class="highlighter-rouge">run_perftest.py</code> at a high level creates <code class="highlighter-rouge">algos_to_run</code> list. This list is tuple with key as algorithm and value as family to be executed in our performance test.</p>
+
+<p>In <code class="highlighter-rouge">datagen.py</code> script we have all functions required to generate data. We return the required configuration packet as a result of this script, that contains key as the <code class="highlighter-rouge">data-gen</code> script to run and values with location to read data-gen json files from.</p>
+
+<p>In <code class="highlighter-rouge">train.py</code> script we have functions required to generate training output. We return the required configuration packet as a result of this script, that contains key as the algorithm to run and values with location to read training json files from.</p>
+
+<p>The file <code class="highlighter-rouge">predict.py</code> contains all functions for all algorithms in the performance test that contain predict script. We return the required configuration packet as a result of this script, that contains key as the algorithm to run and values with location to read predict json files from.</p>
+
+<p>In the file(s) <code class="highlighter-rouge">utils_*.py</code> we have all the helper functions required in our performance test. These functions do operations like write <code class="highlighter-rouge">json</code> files, extract time from std out etc.</p>
+
+<h2 id="adding-new-algorithms">Adding New Algorithms</h2>
+
+<p>While adding a new algorithm we need know if it has to be part of the any pre existing family. If this algorithm depends on a new data generation script we would need to create a new family. Steps below to take below to add a new algorithm.</p>
+
+<p>Following changes to <code class="highlighter-rouge">run_perftest.py</code>:</p>
+
+<ul>
+  <li>Add the algorithm to <code class="highlighter-rouge">ML_ALGO</code> dictionary with its respective family.</li>
+  <li>Add the name of the data generation script in <code class="highlighter-rouge">ML_GENDATA</code> dictionary if it does not exist already.</li>
+  <li>Add the name of the training script in <code class="highlighter-rouge">ML_TRAIN</code> dictionary.</li>
+  <li>Add the name of the prediction script in <code class="highlighter-rouge">ML_PREDICT</code> incase the prediction script exists.</li>
+</ul>
+
+<p>Following changes to <code class="highlighter-rouge">datagen.py</code>:</p>
+
+<ul>
+  <li>Check if the data generation algorithm has the ability to generate dense and sparse data. If it had the ability to generate only dense data add the corresponding family to <code class="highlighter-rouge">FAMILY_NO_MATRIX_TYPE</code> list.</li>
+  <li>Create a function with <code class="highlighter-rouge">familyname + _ + datagen</code> with same input arguments namely <code class="highlighter-rouge">matrix_dim</code>, <code class="highlighter-rouge">matrix_type</code>, <code class="highlighter-rouge">datagen_dir</code>.</li>
+  <li>Constants and arguments for the data generation script should be defined in function.</li>
+  <li>Test the perf test with the algorithm with <code class="highlighter-rouge">mode</code> as <code class="highlighter-rouge">data-gen</code>.</li>
+  <li>Check output folders, json files, output log.</li>
+  <li>Check for possible errors if these folders/files do not exist. (See the troubleshooting section).</li>
+</ul>
+
+<p>Following changes to <code class="highlighter-rouge">train.py</code>:</p>
+
+<ul>
+  <li>Create the function with <code class="highlighter-rouge">familyname + _ + algoname + _ + train</code>.</li>
+  <li>This function needs to have the following arguments <code class="highlighter-rouge">save_folder_name</code>, <code class="highlighter-rouge">datagen_dir</code>, <code class="highlighter-rouge">train_dir</code>.</li>
+  <li>Constants and arguments for the training script should be defined in function.</li>
+  <li>Make sure that the return type is a list.</li>
+  <li>Test the perf test with the algorithm with <code class="highlighter-rouge">mode</code> as <code class="highlighter-rouge">train</code>.</li>
+  <li>Check output folders, json files, output log.</li>
+  <li>Check for possible errors if these folders/files do not exist. (See the troubleshooting section).</li>
+</ul>
+
+<p>Following changes to <code class="highlighter-rouge">predict.py</code>:</p>
+
+<ul>
+  <li>Create the function with <code class="highlighter-rouge">algoname + _ + predict</code>.</li>
+  <li>This function needs to have the following arguments <code class="highlighter-rouge">save_file_name</code>, <code class="highlighter-rouge">datagen_dir</code>, <code class="highlighter-rouge">train_dir</code>, <code class="highlighter-rouge">predict_dir</code>.</li>
+  <li>Constants and arguments for the training script should be defined in function.</li>
+  <li>Test the perf test with the algorithm with <code class="highlighter-rouge">mode</code> as <code class="highlighter-rouge">predict</code>.</li>
+  <li>Check output folders, json files, output log.</li>
+  <li>Check for possible errors if these folders/files do not exist. (Please see the troubleshooting section).</li>
+  <li>Note: <code class="highlighter-rouge">predict.py</code> will not be executed if the current algorithm being executed does not have predict script.</li>
+</ul>
+
+<h2 id="current-default-settings">Current Default Settings</h2>
+
+<p>Default setting for our performance test below:</p>
+
+<ul>
+  <li>Matrix size to 10,000 rows and 100 columns.</li>
+  <li>Execution mode <code class="highlighter-rouge">singlenode</code>.</li>
+  <li>Operation modes <code class="highlighter-rouge">data-gen</code>, <code class="highlighter-rouge">train</code> and <code class="highlighter-rouge">predict</code> in sequence.</li>
+  <li>Matrix type set to <code class="highlighter-rouge">all</code>. Which will generate <code class="highlighter-rouge">dense</code>, <code class="highlighter-rouge">sparse</code> matrices for all relevant algorithms.</li>
+</ul>
+
+<h2 id="examples">Examples</h2>
+
+<p>Some examples of SystemML performance test with arguments shown below:</p>
+
+<p><code class="highlighter-rouge">./scripts/perftest/python/run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2
+</code>
+Test all algorithms with default parameters.</p>
+
+<p><code class="highlighter-rouge">./scripts/perftest/python/run_perftest.py --exec-type hybrid_spark --family binomial clustering multinomial regression1 regression2 stats1 stats2
+</code>
+Test all algorithms in hybrid spark execution mode.</p>
+
+<p><code class="highlighter-rouge">./scripts/perftest/python/run_perftest.py --exec-type hybrid_spark --family clustering --mat-shape 10k_5 10k_10 10k_50
+</code>
+Test all algorithms in <code class="highlighter-rouge">clustering</code> family in hybrid spark execution mode, on different matrix size <code class="highlighter-rouge">10k_10</code> (10,000 rows and 5 columns), <code class="highlighter-rouge">10k_10</code> and <code class="highlighter-rouge">10k_50</code>.</p>
+
+<p><code class="highlighter-rouge">./scripts/perftest/python/run_perftest.py --algo Univar-Stats bivar-stats
+</code>
+Run performance test for following algorithms <code class="highlighter-rouge">Univar-Stats</code> and <code class="highlighter-rouge">bivar-stats</code>.</p>
+
+<p><code class="highlighter-rouge">./scripts/perftest/python/run_perftest.py --algo m-svm --family multinomial binomial --mode data-gen train
+</code>
+Run performance test for the algorithms <code class="highlighter-rouge">m-svm</code> with <code class="highlighter-rouge">multinomial</code> family. Run only data generation and training operations.</p>
+
+<p><code class="highlighter-rouge">./scripts/perftest/python/run_perftest.py --family regression2 --filename new_log
+</code>
+Run performance test for all algorithms under the family <code class="highlighter-rouge">regression2</code> and log with filename <code class="highlighter-rouge">new_log</code>.</p>
+
+<p><code class="highlighter-rouge">./scripts/perftest/python/run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2 --config-dir /Users/krishna/open-source/systemml/scripts/perftest/temp3 --temp-dir hdfs://localhost:9000/temp3</code>
+Run performance test for all algorithms using HDFS.</p>
+
+<h2 id="google-sheets-api">Google sheets API</h2>
+
+<p>Steps below to configure google client API:</p>
+
+<ul>
+  <li>Navigate to <a href="https://console.developers.google.com/apis/">Google APIs Console</a>.</li>
+  <li>Create a new project.</li>
+  <li>Click Enable API. Search for and enable the Google Drive API.</li>
+  <li>Create credentials for a Web Server to access Application Data.</li>
+  <li>Name the service account and grant it a Project Role of Editor.</li>
+  <li>Download the JSON file.</li>
+  <li>Copy the JSON file to your code directory and rename it to client_secret.json</li>
+</ul>
+
+<p>Steps below to configure google sheets:</p>
+
+<ul>
+  <li>Create a new spread sheet with google sheets.</li>
+  <li>Create seperate sheets for <code class="highlighter-rouge">singlenode</code> and <code class="highlighter-rouge">hybrid_spark</code>.</li>
+  <li>Find the  client_email inside client_secret.json and save it.</li>
+  <li>Back in your spreadsheet, click the Share button in the top right, and paste the client email into the People field to give it edit rights for each sheet.</li>
+  <li>Click Send</li>
+</ul>
+
+<h2 id="result-consolidation-and-plotting">Result Consolidation and Plotting</h2>
+<p>We have two scripts, <code class="highlighter-rouge">stats.py</code> forpulling results from google docs and <code class="highlighter-rouge">update.py</code> to updating results to google docs or local file system.</p>
+
+<p>Example of <code class="highlighter-rouge">update.py</code> would be below
+<code class="highlighter-rouge">./scripts/perftest/python/google_docs/update.py --file  ../../temp/perf_test_singlenode.out --exec-type singlenode --tag 2 --append test.csv</code> 
+The arguments being <code class="highlighter-rouge">--file</code> path of the perf-test output, <code class="highlighter-rouge">--exec-type</code> execution mode used to generate the perf-test output, <code class="highlighter-rouge">--tag</code> being the realease version or a unique name, <code class="highlighter-rouge">--append</code> being an optional argument that would append the a local csv file. If instead of <code class="highlighter-rouge">--append</code> the <code class="highlighter-rouge">--auth</code> argument needs the location of the <code class="highlighter-rouge">google api key</code> file.</p>
+
+<p>Example of <code class="highlighter-rouge">stats.py</code> below 
+`  ./stats.py &#8211;auth ../key/client_json.json &#8211;exec-type singlenode &#8211;plot stats1_data-gen_none_dense_10k_100<code class="highlighter-rouge">
+</code>&#8211;plot` argument needs the name of the composite key that you would like to compare results over. If this argument is not specified the results would be grouped by keys.</p>
+
+<h2 id="operational-notes">Operational Notes</h2>
+
+<p>All performance test depend mainly on two scripts for execution <code class="highlighter-rouge">systemml-standalone.py</code> and <code class="highlighter-rouge">systemml-spark-submit.py</code>. Incase we need to change standalone or spark parameters we need to manually change these parameters in their respective scripts.</p>
+
+<p>Constants like <code class="highlighter-rouge">DATA_FORMAT</code> currently set to <code class="highlighter-rouge">csv</code> and <code class="highlighter-rouge">MATRIX_TYPE_DICT</code> with <code class="highlighter-rouge">density</code> set to <code class="highlighter-rouge">0.9</code> and <code class="highlighter-rouge">sparsity</code> set to <code class="highlighter-rouge">0.01</code> are hardcoded in the performance test scripts. They can be changed easily as they are defined at the top of their respective operational scripts.</p>
+
+<p>The logs contain the following information below comma separated.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>algorithm</th>
+      <th>run_type</th>
+      <th>intercept</th>
+      <th>matrix_type</th>
+      <th>data_shape</th>
+      <th>time_sec</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>multinomial</td>
+      <td>data-gen</td>
+      <td>0</td>
+      <td>10k_100</td>
+      <td>dense</td>
+      <td>0.33</td>
+    </tr>
+    <tr>
+      <td>MultiLogReg</td>
+      <td>train</td>
+      <td>0</td>
+      <td>10k_100</td>
+      <td>dense</td>
+      <td>6.956</td>
+    </tr>
+    <tr>
+      <td>MultiLogReg</td>
+      <td>predict</td>
+      <td>0</td>
+      <td>10k_100</td>
+      <td>dense</td>
+      <td>4.780</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>These logs and config <code class="highlighter-rouge">json</code> files can be found in <code class="highlighter-rouge">temp</code> folder (<code class="highlighter-rouge">$SYSTEMML_HOME/scripts/perftest/temp</code>) in-case not overridden by <code class="highlighter-rouge">--config-dir</code>.</p>
+
+<p><code class="highlighter-rouge">--temp-dir</code> by default points to local file system. We can change this to point to a hdfs path by <code class="highlighter-rouge">--temp-dir hdfs://localhost:9000/temp</code> where all files generated during execution will be saved.</p>
+
+<p>Every time a script executes in <code class="highlighter-rouge">data-gen</code> mode successfully, we write a <code class="highlighter-rouge">_SUCCESS</code> file. If this file exists we ensures that re-runs of the same script is not possible. Support for configuration options like <code class="highlighter-rouge">-stats</code>, <code class="highlighter-rouge">-explain</code>, <code class="highlighter-rouge">--conf</code> have also been added.</p>
+
+<p>Results obtained by our performance tests can be automatically uploaded to google docs.</p>
+
+<p><code class="highlighter-rouge">./update.py --file ../temp/singlenode.out --exec-mode singlenode --auth client_json.json --tag 1.0</code></p>
+
+<p>In the example above <code class="highlighter-rouge">--tag</code> can be a major/minor systemml version and <code class="highlighter-rouge">--auth</code> points to the <code class="highlighter-rouge">json</code> key required by <code class="highlighter-rouge">google docs</code>.</p>
+
+<p>Currently we only support time difference between algorithms in different versions. This can be obtained by running the script below
+<code class="highlighter-rouge">./stats.py --auth client_json.json --exec-mode singlenode --tags 1.0 2.0</code></p>
+
+<p>We pass different <code class="highlighter-rouge">matrix shapes</code> using <code class="highlighter-rouge">--mat-shape</code> argument.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Matrix Shape</th>
+      <th>Approximate Data Size</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>10k_1k</td>
+      <td>80MB</td>
+    </tr>
+    <tr>
+      <td>100k_1k</td>
+      <td>800MB</td>
+    </tr>
+    <tr>
+      <td>1M_1k</td>
+      <td>8GB</td>
+    </tr>
+    <tr>
+      <td>10M_1k</td>
+      <td>80GB</td>
+    </tr>
+    <tr>
+      <td>100M_1k</td>
+      <td>800GB</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>For example the command below runs performance test for all data sizes described above
+<code class="highlighter-rouge">run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2 --mat-shape 10k_1k 100k_1k 1M_1k 10M_1k 100M_1k --master yarn-client  --temp-dir hdfs://localhost:9000/user/systemml</code></p>
+
+<p>By default data generated in <code class="highlighter-rouge">hybrid_spark</code> execution mode is in the current users <code class="highlighter-rouge">hdfs</code> home directory.</p>
+
+<p>Note: Please use this command <code class="highlighter-rouge">pip3 install -r requirements.txt</code> before using the perftest scripts.</p>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<p>We can debug the performance test by making changes in the following locations based on</p>
+
+<ul>
+  <li>Please see <code class="highlighter-rouge">utils_exec.py</code> function <code class="highlighter-rouge">subprocess_exec</code>.</li>
+  <li>Please see <code class="highlighter-rouge">run_perftest.py</code>. Changing the verbosity level to <code class="highlighter-rouge">0</code> allows us to log more information while the script runs.</li>
+  <li>Eyeballing the json files generated and making sure the configuration arguments are correct.</li>
+</ul>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

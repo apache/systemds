@@ -1,0 +1,339 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>systemml.random package &#8212; SystemML 1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="systemml.mllearn package" href="systemml.mllearn.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="systemml.mllearn.html" title="systemml.mllearn package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">SystemML 1.1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="systemml.html" accesskey="U">systemml package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="systemml-random-package">
+<h1>systemml.random package<a class="headerlink" href="#systemml-random-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-systemml.random.sampling">
+<span id="systemml-random-sampling-module"></span><h2>systemml.random.sampling module<a class="headerlink" href="#module-systemml.random.sampling" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="systemml.random.sampling.normal">
+<code class="descclassname">systemml.random.sampling.</code><code class="descname">normal</code><span class="sig-paren">(</span><em>loc=0.0</em>, <em>scale=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.random.sampling.normal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw random samples from a normal (Gaussian) distribution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>loc</strong> (<em>Mean</em><em> (</em><em>&quot;centre&quot;</em><em>) </em><em>of the distribution.</em>) – </li>
+<li><strong>scale</strong> (<em>Standard deviation</em><em> (</em><em>spread</em><em> or </em><em>&quot;width&quot;</em><em>) </em><em>of the distribution.</em>) – </li>
+<li><strong>size</strong> (<em>Output shape</em><em> (</em><em>only tuple of length 2</em><em>, </em><em>i.e.</em><em> (</em><em>m</em><em>, </em><em>n</em><em>)</em><em>, </em><em>supported</em><em>)</em><em></em>) – </li>
+<li><strong>sparsity</strong> (<em>Sparsity</em><em> (</em><em>between 0.0 and 1.0</em><em>)</em><em></em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 3.48857226,  6.17261819,  2.51167259],</span>
+<span class="go">       [ 3.60506708, -1.90266305,  3.97601633],</span>
+<span class="go">       [ 3.62245706,  5.9430881 ,  2.53070413]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.random.sampling.uniform">
+<code class="descclassname">systemml.random.sampling.</code><code class="descname">uniform</code><span class="sig-paren">(</span><em>low=0.0</em>, <em>high=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.random.sampling.uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw samples from a uniform distribution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>low</strong> (<em>Lower boundary of the output interval.</em>) – </li>
+<li><strong>high</strong> (<em>Upper boundary of the output interval.</em>) – </li>
+<li><strong>size</strong> (<em>Output shape</em><em> (</em><em>only tuple of length 2</em><em>, </em><em>i.e.</em><em> (</em><em>m</em><em>, </em><em>n</em><em>)</em><em>, </em><em>supported</em><em>)</em><em></em>) – </li>
+<li><strong>sparsity</strong> (<em>Sparsity</em><em> (</em><em>between 0.0 and 1.0</em><em>)</em><em></em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 0.54511396,  0.11937437,  0.72975775],</span>
+<span class="go">       [ 0.14135946,  0.01944448,  0.52544478],</span>
+<span class="go">       [ 0.67582422,  0.87068849,  0.02766852]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.random.sampling.poisson">
+<code class="descclassname">systemml.random.sampling.</code><code class="descname">poisson</code><span class="sig-paren">(</span><em>lam=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.random.sampling.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw samples from a Poisson distribution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>lam</strong> (<em>Expectation of interval</em><em>, </em><em>should be &gt; 0.</em>) – </li>
+<li><strong>size</strong> (<em>Output shape</em><em> (</em><em>only tuple of length 2</em><em>, </em><em>i.e.</em><em> (</em><em>m</em><em>, </em><em>n</em><em>)</em><em>, </em><em>supported</em><em>)</em><em></em>) – </li>
+<li><strong>sparsity</strong> (<em>Sparsity</em><em> (</em><em>between 0.0 and 1.0</em><em>)</em><em></em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 1.,  0.,  2.],</span>
+<span class="go">       [ 1.,  0.,  0.],</span>
+<span class="go">       [ 0.,  0.,  0.]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-systemml.random">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-systemml.random" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="random-number-generation">
+<h3>Random Number Generation<a class="headerlink" href="#random-number-generation" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" colspan="2">Univariate distributions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>normal</td>
+<td>Normal / Gaussian distribution.</td>
+</tr>
+<tr class="row-odd"><td>poisson</td>
+<td>Poisson distribution.</td>
+</tr>
+<tr class="row-even"><td>uniform</td>
+<td>Uniform distribution.</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="systemml.random.normal">
+<code class="descclassname">systemml.random.</code><code class="descname">normal</code><span class="sig-paren">(</span><em>loc=0.0</em>, <em>scale=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.random.normal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw random samples from a normal (Gaussian) distribution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>loc</strong> (<em>Mean</em><em> (</em><em>&quot;centre&quot;</em><em>) </em><em>of the distribution.</em>) – </li>
+<li><strong>scale</strong> (<em>Standard deviation</em><em> (</em><em>spread</em><em> or </em><em>&quot;width&quot;</em><em>) </em><em>of the distribution.</em>) – </li>
+<li><strong>size</strong> (<em>Output shape</em><em> (</em><em>only tuple of length 2</em><em>, </em><em>i.e.</em><em> (</em><em>m</em><em>, </em><em>n</em><em>)</em><em>, </em><em>supported</em><em>)</em><em></em>) – </li>
+<li><strong>sparsity</strong> (<em>Sparsity</em><em> (</em><em>between 0.0 and 1.0</em><em>)</em><em></em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 3.48857226,  6.17261819,  2.51167259],</span>
+<span class="go">       [ 3.60506708, -1.90266305,  3.97601633],</span>
+<span class="go">       [ 3.62245706,  5.9430881 ,  2.53070413]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.random.uniform">
+<code class="descclassname">systemml.random.</code><code class="descname">uniform</code><span class="sig-paren">(</span><em>low=0.0</em>, <em>high=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.random.uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw samples from a uniform distribution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>low</strong> (<em>Lower boundary of the output interval.</em>) – </li>
+<li><strong>high</strong> (<em>Upper boundary of the output interval.</em>) – </li>
+<li><strong>size</strong> (<em>Output shape</em><em> (</em><em>only tuple of length 2</em><em>, </em><em>i.e.</em><em> (</em><em>m</em><em>, </em><em>n</em><em>)</em><em>, </em><em>supported</em><em>)</em><em></em>) – </li>
+<li><strong>sparsity</strong> (<em>Sparsity</em><em> (</em><em>between 0.0 and 1.0</em><em>)</em><em></em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 0.54511396,  0.11937437,  0.72975775],</span>
+<span class="go">       [ 0.14135946,  0.01944448,  0.52544478],</span>
+<span class="go">       [ 0.67582422,  0.87068849,  0.02766852]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.random.poisson">
+<code class="descclassname">systemml.random.</code><code class="descname">poisson</code><span class="sig-paren">(</span><em>lam=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.random.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw samples from a Poisson distribution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>lam</strong> (<em>Expectation of interval</em><em>, </em><em>should be &gt; 0.</em>) – </li>
+<li><strong>size</strong> (<em>Output shape</em><em> (</em><em>only tuple of length 2</em><em>, </em><em>i.e.</em><em> (</em><em>m</em><em>, </em><em>n</em><em>)</em><em>, </em><em>supported</em><em>)</em><em></em>) – </li>
+<li><strong>sparsity</strong> (<em>Sparsity</em><em> (</em><em>between 0.0 and 1.0</em><em>)</em><em></em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 1.,  0.,  2.],</span>
+<span class="go">       [ 1.,  0.,  0.],</span>
+<span class="go">       [ 0.,  0.,  0.]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/systemml-logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">systemml.random package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-systemml.random.sampling">systemml.random.sampling module</a></li>
+<li><a class="reference internal" href="#module-systemml.random">Module contents</a><ul>
+<li><a class="reference internal" href="#random-number-generation">Random Number Generation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="systemml.mllearn.html"
+                        title="previous chapter">systemml.mllearn package</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="systemml.mllearn.html" title="systemml.mllearn package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">SystemML 1.1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="systemml.html" >systemml package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017 The Apache Software Foundation.  All rights reserved.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.
+    </div>
+  </body>
+</html>

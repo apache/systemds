@@ -1,0 +1,552 @@
+<!--
+
+-->
+<!--
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <!--
+
+-->
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Roadmap</title>
+  
+  <meta name="description" content="Apache SystemDS Roadmap"> 
+  <meta name="author" content="Apache SystemDS">
+
+  <!-- Enable responsive viewport -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- You can use Open Graph tags to customize link previews.
+  Learn more: https://developers.facebook.com/docs/sharing/webmasters -->
+  <meta property="og:url" content="https://systemds.apache.org/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Roadmap" />
+  <meta property="og:description" content="Apache SystemDS provides an optimal workplace for Machine Learning using big data" />
+  <meta property="og:image" content="" />
+
+  <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <!-- Le styles -->
+  <link rel="stylesheet" href="/assets/css/main.css">
+
+  <!-- favicons -->
+  <link rel="shortcut icon" href="/assets/img/favicon.png">
+</head> <!-- META -->
+  <body class="vcard">
+    <!--
+
+-->
+<header class="site-header site-header--not-home">
+  <h1 class="logo"><a class="url" href="/"><i class="logo-mark"></i><span class="fn org">Apache SystemDS<sup
+          id="trademark">&trade;</sup></span></a></h1>
+  <nav class="main-nav">
+    <ul>
+      
+      <li role="presentation">
+        
+        
+        <a href="/download" target="_self">Download</a>
+        
+      </li>
+      
+      <li role="presentation">
+        
+        
+        <a href="/get-started" target="_self">Get Started</a>
+        
+      </li>
+      
+      <li role="presentation">
+        
+        
+        <a href="/documentation" target="_self">Docs</a>
+        
+      </li>
+      
+      <li role="presentation">
+        
+        <a class="nav-link--hover">Community <i class="icon icon-chevron-down"></i></a>
+        <ul>
+          
+          
+          <li><a href="/community" target="_self">Get Involved</a></li>
+          
+          
+          <li><a href="https://issues.apache.org/jira/browse/SYSTEMDS" target="_blank">Issue Tracker</a></li>
+          
+          
+          <li><a href="https://github.com/apache/systemds" target="_blank">Source Code</a></li>
+          
+          
+          <li><a href="https://github.com/apache/systemds-website" target="_blank">Website Source Code</a></li>
+          
+        </ul>
+        
+      </li>
+      
+      <li role="presentation">
+        
+        <a class="nav-link--hover">Apache <i class="icon icon-chevron-down"></i></a>
+        <ul>
+          
+          
+          <li><a href="http://www.apache.org/foundation/how-it-works" target="_blank">Apache Software Foundation</a></li>
+          
+          
+          <li><a href="http://www.apache.org/licenses/" target="_blank">Apache License</a></li>
+          
+          
+          <li><a href="http://www.apache.org/foundation/sponsorship" target="_blank">Sponsorship</a></li>
+          
+          
+          <li><a href="http://www.apache.org/foundation/thanks" target="_blank">Thanks</a></li>
+          
+          
+          <li><a href="/privacy-policy" target="_self">Privacy Policy</a></li>
+          
+          
+          <li><a href="/security" target="_self">Security</a></li>
+          
+        </ul>
+        
+      </li>
+      
+    </ul>
+  </nav>
+</header> <!-- GLOBAL HEADER -->
+    <!--
+
+-->
+<!--
+
+-->
+<div>
+  <!--
+
+-->
+
+<!-- Hero  -->
+<section class="full-stripe full-stripe--subpage-header clear-header">
+  <div class="ml-container ml-container--horizontally-center">
+    <div class="col col-12 content-group content-group--center-content content-group--center-align">
+      <h1>Apache SystemDS<sup id="trademark">&trade;</sup> Roadmap</h1>
+    </div>
+  </div>
+</section>
+
+
+<section class="full-stripe full-stripe--alternate">
+  <div class="ml-container ml-container--narrow content-group">
+    <div class="col col-12">
+      <h2>Planned for Future Releases</h2>
+      <ul>
+        <li>Completion of Prior Experimental Features</li>
+        <li>Algorithms & builtin functions
+          <ul>
+            <li>NN layers-based factorization machines with regression & classification capabilities</li>
+            <li>NN optimization test suite with well known optimization test functions</li>
+            <li>Model selection & hyper parameter tuning</li>
+            <li>Additional distribution functions, e.g. weibull, gamma</li>
+            <li>Time Series Analysis and Anomaly Detection</li>
+            <li>Scalable Decomposition Algorithms</li>
+          </ul>
+        </li>
+        <li>Enhanced Deep Learning support
+          <ul>
+            <li>Coherent sparse operations on CPU/GPU</li>
+            <li>Coherent single-precision support on CPU/GPU</li>
+            <li>Distributed DL operations</li>
+          </ul>
+        </li>
+        <li>GPU Support
+          <ul>
+            <li>Full compiler integration (cost-based, automatic placement)</li>
+            <li>Multi GPUs</li>
+            <li>Distributed GPUs</li>
+          </ul>
+        </li>
+        <li>Code generation
+          <ul>
+            <li>Deep learning operations</li>
+            <li>Heterogeneous HW, incl GPUs</li>
+          </ul>
+        </li>
+        <li>Compressed Linear Algebra
+          <ul>
+            <li>Deep learning operations</li>
+            <li>Ultra-sparse datasets</li>
+          </ul>
+        </li>
+        <li>Model Serving</li>
+        <li>Misc Runtime
+          <ul>
+            <li>NUMA-awareness (thread pools, matrix partitioning)</li>
+            <li>Unified memory management (ops, bufferpool, RDDs/broadcasts)</li>
+            <li>Support additional external formats such as feather format for matrices and frames</li>
+            <li>Parfor support for broadcasts</li>
+          </ul>
+        </li>
+        <li>Misc Compiler
+          <ul>
+            <li>Holistic sum-product optimization and operator fusion</li>
+            <li>SPOOF compiler improvement</li>
+            <li>Tree-based Data Structures</li>
+            <li>Global Dataflow Optimizations</li>
+          </ul>
+        </li>
+        <li>Tooling</li>
+        <li>Common DSL Architecture</li>
+      </ul>
+    </div>
+
+    <div class="col col-12">
+      <h2>Current Release</h2>
+      <ul>
+        <li>
+          <strong>SystemML 1.2.0 (<a href="release-notes/systemml-release-notes-1.2.0.html">released</a> in Aug, 2018)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12342959&projectId=12319522">details</a></strong>
+          <ul>
+            <li>New data type list for lists and structs</li>
+            <li>Built in deep learning functions, e.g. convolution, maxpooling, bias</li>
+            <li>DML eval function</li>
+            <li>Multiple new builtin functions, e.g. exists, lower.tri, upper.tri</li>
+            <li>Code motion, global subexpression elimination, rewrites for codegen</li>
+            <li>Performance improvements for ultra-sparse data and instruction generation
+          </ul>
+        </li>
+        <li>
+          Experimental Features
+          <ul>
+            <li>Parameter server</li>
+            <li>Sparsity estimators</li>
+          </ul>
+        </li>
+        <li>
+          Removals
+          <ul>
+            <li>Opt level 4</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <div class="col col-12">
+      <h2>Prior Releases</h2>
+      <ul>
+        <li>
+          <strong>SystemML 1.1.0 (<a href="release-notes/systemml-release-notes-1.1.0.html">released</a> in March, 2018)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12342282">details</a></strong>
+          <ul>
+            <li>New Builtin Functions: `ifelse`, `assert`, `eval`, `avg_pool`, `avg_pool_backward`</li>
+            <li>Additional Layers in NN library: average pooling, upsampling, low-rank fully connected</li>
+            <li>New Capabilities/Features such as dense matrix blocks >16GB, additional ParFor result aggregation
+              operations, UDFs callable in expressions, zero rows/columns matrices, matrix-matrix multiplication over
+              compressed matrices</li>
+            <li>Extended Caffe2DML and Keras2DML APIs</li>
+            <li>Compiler & Runtime enhancements</>
+            <li>Performance improvements</li>
+          </ul>
+        </li>
+        <li>
+          <strong>SystemML 1.0.0 (<a href="release-notes/systemml-release-notes-1.0.0.html">released</a> in December,
+            2017)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12338328">details</a></strong>
+          <ul>
+            <li>Enhanced Deep Learning support with enhanced NN layers and functions, Caffe2DML, and operator
+              implementation</li>
+            <li>Native BLAS support</li>
+            <li>Additional algorithms: autoencoder, enhanced PCA</li>
+            <li>Enhanced rewrites, IPA, vectorization, and instruction generation</li>
+            <li>Enhanced JMLC API, e.g. prepared scripts with thread affinity for outputs and configs, script cloning,
+              configuration management</li>
+            <li>SystemML Lite artifact</li>
+            <li>Compression on by default</li>
+          </ul>
+        </li>
+        <li>
+          Experimental Features
+          <ul>
+            <li>Keras2DML.</li>
+            <li>Enhanced code generation, code gen optimizer, and multi-threaded codegen operators/li>
+            <li>Enhanced GPU support</li>
+          </ul>
+        </li>
+        <li>
+          Removals
+          <ul>
+            <li>Dropped JDK 7 support</li>
+          </ul>
+        </li>
+        <li>
+          <strong>SystemML 0.15.0 (<a href="release-notes/systemml-release-notes-0.15.0.html">released</a> in September,
+            2017)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12341587">details</a></strong>
+          <ul>
+            <li>Added several new 2D convolution layers</li>
+            <li>Graduated `nn` library from staging to `scripts/nn`</li>
+          </ul>
+        </li>
+        <li>
+          Experimental Features
+          <ul>
+            <li>Expanded Code Generation for broader performance improvements</li>
+            <li>Enhanced GPU support and scalability</li>
+          </ul>
+        </li>
+        <li>
+          Removals
+          <ul>
+            <li>Removed file-based transform</li>
+            <li>Removed original MLContext API</li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul>
+        <li>
+          <strong>SystemML 0.14.0-incubating (<a
+              href="release-notes/systemml-release-notes-0.14.0-incubating.html">released</a> in May, 2017)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12340322">details</a></strong>
+          <ul>
+            <li>Runtime feature extensions (new libsvm-binary data converters, parfor spark buffer pool handling, parfor
+              block partitioning of fixed size batches of rows or columns, native dataset support in parfor spark
+              datapartition-execute)</li>
+            <li>Compiler feature extensions (improved parfor execution type selection, improved literal replacement for
+              nrow/ncol, simplified instruction generation across back-ends, consolidated static/dynamic rewrite
+              utilities)</li>
+          </ul>
+        </li>
+        <li>
+          Experimental Features
+          <ul>
+            <li>New Code Generation capabilities for automatic operator fusion (basic code generator, compiler
+              integration, runtime integration, in-memory source code compilation, extended explain tool, support for
+              right indexing and replace in cellwise and
+              row aggregate templates, support for row, column, or no aggregation in rowwise template). Note code
+              generation provides significant performance gains with fewer read/write intermediates, reduced scans of
+              inputs and intermediates, and enhanced
+              sparsity exploitation. To enable this feature, set codegen.enabled property to true in SystemML-config.xml
+              file.</li>
+            <li>New instructions and operators for GPU support (relu_maxpooling, conv2d_bias_add, bias_multiply)</li>
+          </ul>
+        </li>
+        <li>
+          Removals
+          <ul>
+            <li>Removed support for Java 6 and Java 7</li>
+            <li>Removed parfor perftesttool and cost estimator</li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul>
+        <li>
+          <strong>SystemML 0.13.0-incubating (<a
+              href="release-notes/systemml-release-notes-0.13.0-incubating.html">released</a> in March, 2017)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12339247">details</a></strong>
+          <ul>
+            <li>Updated build for Spark 2.1.0</li>
+            <li>New simplification rewrites for stratstats</li>
+            <li>New fused operator tack+* in CP and Spark</li>
+            <li>New dmlFromResource capability in Python (equivalent to Scala)</li>
+            <li>Add input float support to MLContext</li>
+          </ul>
+        </li>
+        <li>
+          Documentation Enhancements
+          <ul>
+            <li>Deploy versioned documentation to main project website</li>
+            <li>Add python mlcontext example to engine dev guide</li>
+            <li>Add MLContext info functionality to docs</li>
+            <li>Update DML Language Reference for write description parameter</li>
+          </ul>
+        </li>
+        <li>
+          Deprecations, Removals
+          <ul>
+            <li>Deprecate old MLContext API</li>
+            <li>Deprecate parfor perftesttool</li>
+            <li>Deprecate SQLContext methods</li>
+            <li>Replace deprecated Accumulator with AccumulatorV2</li>
+            <li>Replace append with cbind for matrices</li>
+            <li>Migrate Vector and LabeledPoint classes from mllib to ml</li>
+          </ul>
+        </li>
+        <li>
+          Experimental Features / Algorithms
+          <ul>
+            <li>Compressed Linear Algebra v2 (new DDC encoding format, hardened sample-based estimators, debugging
+              tools, new column grouping algorithm, additional operations)</li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul>
+        <li>
+          <strong>SystemML 0.12.0-incubating (<a
+              href="release-notes/systemml-release-notes-0.12.0-incubating.html">released</a> in February, 2017)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12339246">details</a></strong>
+          <ul>
+            <li>Support pip install of new python package</li>
+            <li>Allow NumPy arrays, Pandas DataFrame and SciPy matrices as input to MLContext</li>
+            <li>Improve SystemML Python DSL for NumPy</li>
+            <li>Updated build for Spark 1.6.0</li>
+            <li>DML utility script to shuffle input dataset</li>
+          </ul>
+        </li>
+        <li>
+          Experimental Features / Algorithms
+          <ul>
+            <li>GPU Enhancements</li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul>
+        <li>
+          <strong>SystemML 0.11.0-incubating (<a
+              href="release-notes/systemml-release-notes-0.11.0-incubating.html">released</a> in November, 2016)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12335820">details</a></strong>
+          <ul>
+            <li>SystemML frames</li>
+            <li>New MLContext API</li>
+            <li>Transform functions based on SystemML frames</li>
+          </ul>
+        </li>
+        <li>
+          Experimental Features / Algorithms
+          <ul>
+            <li>New built-in functions for deep learning (convolution and pooling)</li>
+            <li>Deep learning library (DML bodied functions)</li>
+            <li>Python DSL Integration</li>
+            <li>GPU Support</li>
+            <li>Compressed Linear Algebra</li>
+          </ul>
+        </li>
+        <li>
+          New Algorithms
+          <ul>
+            <li>Lasso</li>
+            <li>kNN</li>
+            <li>Lanczos</li>
+            <li>PPCA</li>
+          </ul>
+        </li>
+        <li>
+          Deep Learning Algorithms
+          <ul>
+            <li>CNN (Lenet)</li>
+            <li>RBM</li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul>
+        <li>
+          <strong>SystemML 0.10.0-incubating (<a
+              href="release-notes/systemml-release-notes-0.10.0-incubating.html">released</a> in June, 2016)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12334651">details</a></strong>
+          <ul>
+            <li>Different types of Spark Matrix Blocks: MCSR, CSR, COO</li>
+            <li>SystemML Frame support in JMLC/CP</li>
+            <li>Initial Deep Learning support</li>
+            <li>API/Scripts: parser error handling, SystemML configuration handling,</li>
+          </ul>
+        </li>
+        <li>
+          Include Algorithms in SystemML jar, print matrix
+          <ul>
+            <li>New fused operator: wdivmm with variations</li>
+            <li>Performance Features: cache-conscious operations, more multithreaded</li>
+          </ul>
+        </li>
+        <li>
+          Operations, New Simplification Rewrites
+          <ul>
+            <li>New Algorithms: kNN</li>
+            <li>Documentation: javadocs, Jupyter/Zeppelin notebook examples</li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul>
+        <li>
+          <strong>SystemML 0.9.0-incubating (<a
+              href="release-notes/systemml-release-notes-0.9.0-incubating.html">released</a> in January, 2016)
+            <a
+              href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12319522&version=12334650">details</a></strong>
+          <ul>
+            <li>Improvements to MLContext and MLPipeline wrappers</li>
+            <li>New converter utilities for RDDs and DataFrames</li>
+            <li>New Optimizations for Spark Backend, e.g. eager RDD caching and</li>
+          </ul>
+        </li>
+        <li>
+          Repartitioning, RDD Checkpointing, On-Demand Creation of SparkContext
+          <ul>
+            <li>New Runtime Operators for mmult, multihreaded readers and operators.</li>
+            <li>New Algorithms: ALS, Cubic Splines</li>
+            <li>Online Documentation</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+</div>
+
+ 
+    <!--
+
+-->
+<footer class="site-footer">
+  <div class="ml-container ml-container--horizontally-center">
+    <div class="footer-col-wrapper">
+      <div style="margin-top: 20px; margin-bottom: 20px;">
+        <a href="http://www.apache.org"><img src="/assets/img/apache-foundation-logo.png" alt="Apache Incubator" /></a>
+      </div>
+      <!--Footer copyright year update credit: http://updateyourfooter.com/-->
+      <div>
+        Copyright &copy; 2015
+        <script>new Date().getFullYear() > 2015 && document.write("-" + new Date().getFullYear());</script>
+        <a href="http://www.apache.org">The Apache Software Foundation</a>.
+        Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.
+        <br>
+        Apache and the Apache Feather logo are trademarks of The Apache Software Foundation.
+      </div>
+    </div>
+  </div>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-71553733-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+</footer> <!-- GLOBAL FOOTER-->
+    <script src="assets/js/bundle.min.js"></script>
+  </body>
+</html>
+

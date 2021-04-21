@@ -1,0 +1,632 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>systemml.mllearn package &#8212; SystemML 0.15.0 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.15.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="systemml.random package" href="systemml.random.html" />
+    <link rel="prev" title="systemml package" href="systemml.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="systemml.random.html" title="systemml.random package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="systemml.html" title="systemml package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">SystemML 0.15.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="systemml.html" accesskey="U">systemml package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="systemml-mllearn-package">
+<h1>systemml.mllearn package<a class="headerlink" href="#systemml-mllearn-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-systemml.mllearn.estimators">
+<span id="systemml-mllearn-estimators-module"></span><h2>systemml.mllearn.estimators module<a class="headerlink" href="#module-systemml.mllearn.estimators" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="systemml.mllearn.estimators.LinearRegression">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">LinearRegression</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=inf</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.LinearRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLRegressor</span></code></p>
+<p>Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LinearRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Load the diabetes dataset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_diabetes</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Use only one feature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Split the data into training/testing sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X_train</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X_test</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Split the targets into training/testing sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_y_train</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_y_test</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create linear regression object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regr</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s1">&#39;newton-cg&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train the model using the training sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">diabetes_X_train</span><span class="p">,</span> <span class="n">diabetes_y_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># The mean square error</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Residual sum of squares: </span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">regr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">diabetes_X_test</span><span class="p">)</span> <span class="o">-</span> <span class="n">diabetes_y_test</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.estimators.LogisticRegression">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">LogisticRegression</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>penalty='l2'</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>, <em>max_iter=100</em>, <em>max_inner_iter=0</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.LogisticRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs both binomial and multinomial logistic regression.</p>
+<p class="rubric">Examples</p>
+<p>Scikit-learn way</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LogisticRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparkSession</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logistic</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LogisticRegression score: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">logistic</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>MLPipeline way</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.ml</span> <span class="k">import</span> <span class="n">Pipeline</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LogisticRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.ml.feature</span> <span class="k">import</span> <span class="n">HashingTF</span><span class="p">,</span> <span class="n">Tokenizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparkSession</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">training</span> <span class="o">=</span> <span class="n">sparkSession</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">0</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;a b c d e spark&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">1</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;b d&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">2</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark f g h&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">3</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;hadoop mapreduce&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">4</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;b spark who&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">5</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;g d a y&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">6</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark fly&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">7</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;was mapreduce&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">8</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;e spark program&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">9</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;a e c l&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">10</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark compile&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">11</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;hadoop software&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="n">inputCol</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">outputCol</span><span class="o">=</span><span class="s2">&quot;words&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">hashingTF</span> <span class="o">=</span> <span class="n">HashingTF</span><span class="p">(</span><span class="n">inputCol</span><span class="o">=</span><span class="s2">&quot;words&quot;</span><span class="p">,</span> <span class="n">outputCol</span><span class="o">=</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="n">numFeatures</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">stages</span><span class="o">=</span><span class="p">[</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">hashingTF</span><span class="p">,</span> <span class="n">lr</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">sparkSession</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">12</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark i j k&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">13</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;l m n&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">14</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;mapreduce spark&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">15</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;apache hadoop&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.estimators.SVM">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">SVM</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>is_multi_class=False</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.SVM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs both binary-class and multiclass SVM (Support Vector Machines).</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">SVM</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparkSession</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">svm</span> <span class="o">=</span> <span class="n">SVM</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">,</span> <span class="n">is_multi_class</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LogisticRegression score: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">svm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.estimators.NaiveBayes">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">NaiveBayes</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>laplace=1.0</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.NaiveBayes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs Naive Bayes.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">fetch_20newsgroups</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="k">import</span> <span class="n">TfidfVectorizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">NaiveBayes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">metrics</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparkSession</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">categories</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;alt.atheism&#39;</span><span class="p">,</span> <span class="s1">&#39;talk.religion.misc&#39;</span><span class="p">,</span> <span class="s1">&#39;comp.graphics&#39;</span><span class="p">,</span> <span class="s1">&#39;sci.space&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newsgroups_train</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newsgroups_test</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectorizer</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Both vectors and vectors_test are SciPy CSR matrix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectors</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">newsgroups_train</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectors_test</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">newsgroups_test</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nb</span> <span class="o">=</span> <span class="n">NaiveBayes</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nb</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span> <span class="n">newsgroups_train</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pred</span> <span class="o">=</span> <span class="n">nb</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">vectors_test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metrics</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">newsgroups_test</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.estimators.Caffe2DML">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">Caffe2DML</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>solver</em>, <em>input_shape</em>, <em>transferUsingDF=False</em>, <em>tensorboard_log_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.Caffe2DML" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs training/prediction for a given caffe network.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">Caffe2DML</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mlxtend.data</span> <span class="k">import</span> <span class="n">mnist_data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="k">import</span> <span class="n">shuffle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">mnist_data</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imgShape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">urllib</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="s1">&#39;https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto&#39;</span><span class="p">,</span> <span class="s1">&#39;lenet.proto&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="s1">&#39;https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto&#39;</span><span class="p">,</span> <span class="s1">&#39;lenet_solver.proto&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">caffe2DML</span> <span class="o">=</span> <span class="n">Caffe2DML</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="s1">&#39;lenet_solver.proto&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">caffe2DML</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="systemml.mllearn.estimators.Caffe2DML.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>weights=None</em>, <em>sep='/'</em>, <em>ignore_weights=None</em>, <em>eager=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.Caffe2DML.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a pretrained model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>weights</strong> (<em>directory whether learned weights are stored</em><em> (</em><em>default: None</em><em>)</em>) – </li>
+<li><strong>sep</strong> (<em>seperator to use</em><em> (</em><em>default: '/'</em><em>)</em>) – </li>
+<li><strong>ignore_weights</strong> (<em>names of layers to not read from the weights directory</em><em> (</em><em>list of string</em><em>, </em><em>default:None</em><em>)</em>) – </li>
+<li><strong>eager</strong> (<em>load the model eagerly</em><em> (</em><em>default: False</em><em>)</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mllearn.estimators.Caffe2DML.set">
+<code class="descname">set</code><span class="sig-paren">(</span><em>debug=None</em>, <em>train_algo=None</em>, <em>test_algo=None</em>, <em>parallel_batches=None</em>, <em>output_activations=None</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.Caffe2DML.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set input to Caffe2DML</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>debug</strong> (<em>to add debugging DML code such as classification report</em><em>, </em><em>print DML script</em><em>, </em><em>etc</em><em> (</em><em>default: False</em><em>)</em>) – </li>
+<li><strong>train_algo</strong> (<em>can be minibatch</em><em>, </em><em>batch</em><em>, </em><em>allreduce_parallel_batches</em><em> or </em><em>allreduce</em><em> (</em><em>default: minibatch</em><em>)</em>) – </li>
+<li><strong>test_algo</strong> (<em>can be minibatch</em><em>, </em><em>batch</em><em>, </em><em>allreduce_parallel_batches</em><em> or </em><em>allreduce</em><em> (</em><em>default: minibatch</em><em>)</em>) – </li>
+<li><strong>parallel_batches</strong> (<em>number of parallel batches</em>) – </li>
+<li><strong>output_activations</strong> (<em>(</em><em>developer flag</em><em>) </em><em>directory to output activations of each layer as csv while prediction. To be used only in batch mode</em><em> (</em><em>default: None</em><em>)</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mllearn.estimators.Caffe2DML.summary">
+<code class="descname">summary</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.Caffe2DML.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the summary of the network</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mllearn.estimators.Caffe2DML.visualize">
+<code class="descname">visualize</code><span class="sig-paren">(</span><em>layerName=None</em>, <em>varType='weight'</em>, <em>aggFn='mean'</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.estimators.Caffe2DML.visualize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use this to visualize the training procedure (requires validation_percentage to be non-zero).
+When one provides no argument to this method, we visualize training and validation loss.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>layerName</strong> (<em>Name of the layer in the Caffe prototype</em>) – </li>
+<li><strong>varType</strong> (<em>should be either 'weight'</em><em>, </em><em>'bias'</em><em>, </em><em>'dweight'</em><em>, </em><em>'dbias'</em><em>, </em><em>'output'</em><em> or </em><em>'doutput'</em>) – </li>
+<li><strong>aggFn</strong> (<em>should be either 'sum'</em><em>, </em><em>'mean'</em><em>, </em><em>'var'</em><em> or </em><em>'sd'</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-systemml.mllearn">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-systemml.mllearn" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="systemml-algorithms">
+<h3>SystemML Algorithms<a class="headerlink" href="#systemml-algorithms" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" colspan="2">Classification Algorithms</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>LogisticRegression</td>
+<td>Performs binomial and multinomial logistic regression</td>
+</tr>
+<tr class="row-odd"><td>SVM</td>
+<td>Performs both binary-class and multi-class SVM</td>
+</tr>
+<tr class="row-even"><td>NaiveBayes</td>
+<td>Multinomial naive bayes classifier</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" colspan="2">Regression Algorithms</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>LinearRegression</td>
+<td>Performs linear regression</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="systemml.mllearn.LinearRegression">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">LinearRegression</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=inf</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.LinearRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLRegressor</span></code></p>
+<p>Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LinearRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Load the diabetes dataset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_diabetes</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Use only one feature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Split the data into training/testing sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X_train</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X_test</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Split the targets into training/testing sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_y_train</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_y_test</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create linear regression object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regr</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s1">&#39;newton-cg&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train the model using the training sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">diabetes_X_train</span><span class="p">,</span> <span class="n">diabetes_y_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># The mean square error</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Residual sum of squares: </span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">regr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">diabetes_X_test</span><span class="p">)</span> <span class="o">-</span> <span class="n">diabetes_y_test</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.LogisticRegression">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">LogisticRegression</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>penalty='l2'</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>, <em>max_iter=100</em>, <em>max_inner_iter=0</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.LogisticRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs both binomial and multinomial logistic regression.</p>
+<p class="rubric">Examples</p>
+<p>Scikit-learn way</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LogisticRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparkSession</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logistic</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LogisticRegression score: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">logistic</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>MLPipeline way</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.ml</span> <span class="k">import</span> <span class="n">Pipeline</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LogisticRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.ml.feature</span> <span class="k">import</span> <span class="n">HashingTF</span><span class="p">,</span> <span class="n">Tokenizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparkSession</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">training</span> <span class="o">=</span> <span class="n">sparkSession</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">0</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;a b c d e spark&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">1</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;b d&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">2</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark f g h&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">3</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;hadoop mapreduce&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">4</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;b spark who&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">5</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;g d a y&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">6</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark fly&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">7</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;was mapreduce&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">8</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;e spark program&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">9</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;a e c l&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">10</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark compile&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">11</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;hadoop software&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="n">inputCol</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">outputCol</span><span class="o">=</span><span class="s2">&quot;words&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">hashingTF</span> <span class="o">=</span> <span class="n">HashingTF</span><span class="p">(</span><span class="n">inputCol</span><span class="o">=</span><span class="s2">&quot;words&quot;</span><span class="p">,</span> <span class="n">outputCol</span><span class="o">=</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="n">numFeatures</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">stages</span><span class="o">=</span><span class="p">[</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">hashingTF</span><span class="p">,</span> <span class="n">lr</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">sparkSession</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">12</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark i j k&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">13</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;l m n&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">14</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;mapreduce spark&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">15</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;apache hadoop&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.SVM">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">SVM</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>is_multi_class=False</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.SVM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs both binary-class and multiclass SVM (Support Vector Machines).</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">SVM</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparkSession</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">svm</span> <span class="o">=</span> <span class="n">SVM</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">,</span> <span class="n">is_multi_class</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LogisticRegression score: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">svm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.NaiveBayes">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">NaiveBayes</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>laplace=1.0</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.NaiveBayes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs Naive Bayes.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">fetch_20newsgroups</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="k">import</span> <span class="n">TfidfVectorizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">NaiveBayes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">metrics</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparkSession</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">categories</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;alt.atheism&#39;</span><span class="p">,</span> <span class="s1">&#39;talk.religion.misc&#39;</span><span class="p">,</span> <span class="s1">&#39;comp.graphics&#39;</span><span class="p">,</span> <span class="s1">&#39;sci.space&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newsgroups_train</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newsgroups_test</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectorizer</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Both vectors and vectors_test are SciPy CSR matrix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectors</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">newsgroups_train</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectors_test</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">newsgroups_test</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nb</span> <span class="o">=</span> <span class="n">NaiveBayes</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nb</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span> <span class="n">newsgroups_train</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pred</span> <span class="o">=</span> <span class="n">nb</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">vectors_test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metrics</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">newsgroups_test</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.Caffe2DML">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">Caffe2DML</code><span class="sig-paren">(</span><em>sparkSession</em>, <em>solver</em>, <em>input_shape</em>, <em>transferUsingDF=False</em>, <em>tensorboard_log_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.Caffe2DML" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs training/prediction for a given caffe network.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">Caffe2DML</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mlxtend.data</span> <span class="k">import</span> <span class="n">mnist_data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="k">import</span> <span class="n">shuffle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">mnist_data</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imgShape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">urllib</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="s1">&#39;https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto&#39;</span><span class="p">,</span> <span class="s1">&#39;lenet.proto&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="s1">&#39;https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto&#39;</span><span class="p">,</span> <span class="s1">&#39;lenet_solver.proto&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">caffe2DML</span> <span class="o">=</span> <span class="n">Caffe2DML</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="s1">&#39;lenet_solver.proto&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">caffe2DML</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="systemml.mllearn.Caffe2DML.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>weights=None</em>, <em>sep='/'</em>, <em>ignore_weights=None</em>, <em>eager=False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.Caffe2DML.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a pretrained model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>weights</strong> (<em>directory whether learned weights are stored</em><em> (</em><em>default: None</em><em>)</em>) – </li>
+<li><strong>sep</strong> (<em>seperator to use</em><em> (</em><em>default: '/'</em><em>)</em>) – </li>
+<li><strong>ignore_weights</strong> (<em>names of layers to not read from the weights directory</em><em> (</em><em>list of string</em><em>, </em><em>default:None</em><em>)</em>) – </li>
+<li><strong>eager</strong> (<em>load the model eagerly</em><em> (</em><em>default: False</em><em>)</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mllearn.Caffe2DML.set">
+<code class="descname">set</code><span class="sig-paren">(</span><em>debug=None</em>, <em>train_algo=None</em>, <em>test_algo=None</em>, <em>parallel_batches=None</em>, <em>output_activations=None</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.Caffe2DML.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set input to Caffe2DML</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>debug</strong> (<em>to add debugging DML code such as classification report</em><em>, </em><em>print DML script</em><em>, </em><em>etc</em><em> (</em><em>default: False</em><em>)</em>) – </li>
+<li><strong>train_algo</strong> (<em>can be minibatch</em><em>, </em><em>batch</em><em>, </em><em>allreduce_parallel_batches</em><em> or </em><em>allreduce</em><em> (</em><em>default: minibatch</em><em>)</em>) – </li>
+<li><strong>test_algo</strong> (<em>can be minibatch</em><em>, </em><em>batch</em><em>, </em><em>allreduce_parallel_batches</em><em> or </em><em>allreduce</em><em> (</em><em>default: minibatch</em><em>)</em>) – </li>
+<li><strong>parallel_batches</strong> (<em>number of parallel batches</em>) – </li>
+<li><strong>output_activations</strong> (<em>(</em><em>developer flag</em><em>) </em><em>directory to output activations of each layer as csv while prediction. To be used only in batch mode</em><em> (</em><em>default: None</em><em>)</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mllearn.Caffe2DML.summary">
+<code class="descname">summary</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.Caffe2DML.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the summary of the network</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mllearn.Caffe2DML.visualize">
+<code class="descname">visualize</code><span class="sig-paren">(</span><em>layerName=None</em>, <em>varType='weight'</em>, <em>aggFn='mean'</em><span class="sig-paren">)</span><a class="headerlink" href="#systemml.mllearn.Caffe2DML.visualize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use this to visualize the training procedure (requires validation_percentage to be non-zero).
+When one provides no argument to this method, we visualize training and validation loss.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>layerName</strong> (<em>Name of the layer in the Caffe prototype</em>) – </li>
+<li><strong>varType</strong> (<em>should be either 'weight'</em><em>, </em><em>'bias'</em><em>, </em><em>'dweight'</em><em>, </em><em>'dbias'</em><em>, </em><em>'output'</em><em> or </em><em>'doutput'</em>) – </li>
+<li><strong>aggFn</strong> (<em>should be either 'sum'</em><em>, </em><em>'mean'</em><em>, </em><em>'var'</em><em> or </em><em>'sd'</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/systemml-logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">systemml.mllearn package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-systemml.mllearn.estimators">systemml.mllearn.estimators module</a></li>
+<li><a class="reference internal" href="#module-systemml.mllearn">Module contents</a><ul>
+<li><a class="reference internal" href="#systemml-algorithms">SystemML Algorithms</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="systemml.html"
+                        title="previous chapter">systemml package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="systemml.random.html"
+                        title="next chapter">systemml.random package</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="systemml.random.html" title="systemml.random package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="systemml.html" title="systemml package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">SystemML 0.15.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="systemml.html" >systemml package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017 The Apache Software Foundation.  All rights reserved.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

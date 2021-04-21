@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Algorithms Reference - SystemML 0.12.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="SystemML Algorithms Reference">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML (incubating)" title="Apache SystemML (incubating)"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup> (incubating)</a><br/>
+                        <span class="version">0.12.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Javadoc</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">SystemML Algorithms Reference</h1>
+          
+
+          <!--
+
+-->
+
+<ul>
+  <li><a href="algorithms-descriptive-statistics.html">Descriptive Statistics</a>
+    <ul>
+      <li><a href="algorithms-descriptive-statistics.html#univariate-statistics">Univariate Statistics</a></li>
+      <li><a href="algorithms-descriptive-statistics.html#bivariate-statistics">Bivariate Statistics</a></li>
+      <li><a href="algorithms-descriptive-statistics.html#stratified-bivariate-statistics">Stratified Bivariate Statistics</a></li>
+    </ul>
+  </li>
+  <li><a href="algorithms-classification.html">Classification</a>
+    <ul>
+      <li><a href="algorithms-classification.html#multinomial-logistic-regression">Multinomial Logistic Regression</a></li>
+      <li><a href="algorithms-classification.html#support-vector-machines">Support Vector Machines</a>
+        <ul>
+          <li><a href="algorithms-classification.html#binary-class-support-vector-machines">Binary-Class Support Vector Machines</a></li>
+          <li><a href="algorithms-classification.html#multi-class-support-vector-machines">Multi-Class Support Vector Machines</a></li>
+        </ul>
+      </li>
+      <li><a href="algorithms-classification.html#naive-bayes">Naive Bayes</a></li>
+      <li><a href="algorithms-classification.html#decision-trees">Decision Trees</a></li>
+      <li><a href="algorithms-classification.html#random-forests">Random Forests</a></li>
+    </ul>
+  </li>
+  <li><a href="algorithms-clustering.html">Clustering</a>
+    <ul>
+      <li><a href="algorithms-clustering.html#k-means-clustering">K-Means Clustering</a></li>
+    </ul>
+  </li>
+  <li><a href="algorithms-regression.html">Regression</a>
+    <ul>
+      <li><a href="algorithms-regression.html#linear-regression">Linear Regression</a></li>
+      <li><a href="algorithms-regression.html#stepwise-linear-regression">Stepwise Linear Regression</a></li>
+      <li><a href="algorithms-regression.html#generalized-linear-models">Generalized Linear Models</a></li>
+      <li><a href="algorithms-regression.html#stepwise-generalized-linear-regression">Stepwise Generalized Linear Regression</a></li>
+      <li><a href="algorithms-regression.html#regression-scoring-and-prediction">Regression Scoring and Prediction</a></li>
+    </ul>
+  </li>
+  <li><a href="algorithms-matrix-factorization.html">Matrix Factorization</a>
+    <ul>
+      <li><a href="algorithms-matrix-factorization.html#principal-component-analysis">Principal Component Analysis</a></li>
+      <li><a href="algorithms-matrix-factorization.html#matrix-completion-via-alternating-minimizations">Matrix Completion via Alternating Minimizations</a></li>
+    </ul>
+  </li>
+  <li><a href="algorithms-survival-analysis.html">Survival Analysis</a>
+    <ul>
+      <li><a href="algorithms-survival-analysis.html#kaplan-meier-survival-analysis">Kaplan-Meier Survival Analysis</a></li>
+      <li><a href="algorithms-survival-analysis.html#cox-proportional-hazard-regression-model">Cox Proportional Hazard Regression Model</a></li>
+    </ul>
+  </li>
+  <li><a href="algorithms-bibliography.html">Bibliography</a></li>
+</ul>
+
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

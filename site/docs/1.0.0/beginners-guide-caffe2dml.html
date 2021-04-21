@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Beginner's Guide for Caffe2DML users - SystemML 1.0.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Beginner's Guide for Caffe2DML users">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.0.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Beginner's Guide for Caffe2DML users</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#training-lenet" id="markdown-toc-training-lenet">Training Lenet</a></li>
+  <li><a href="#download-the-lenet-network" id="markdown-toc-download-the-lenet-network">Download the Lenet network</a></li>
+  <li><a href="#mnist-dataset-contains-28-x-28-gray-scale-number-of-channel1" id="markdown-toc-mnist-dataset-contains-28-x-28-gray-scale-number-of-channel1">MNIST dataset contains 28 X 28 gray-scale (number of channel=1).</a></li>
+  <li><a href="#additional-configuration" id="markdown-toc-additional-configuration">Additional Configuration</a></li>
+  <li><a href="#saving-the-trained-model" id="markdown-toc-saving-the-trained-model">Saving the trained model</a></li>
+  <li><a href="#loading-a-pretrained-caffemodel" id="markdown-toc-loading-a-pretrained-caffemodel">Loading a pretrained caffemodel</a></li>
+</ul>
+
+<p><br /></p>
+
+<p>Caffe2DML is an <strong>experimental API</strong> that converts a Caffe specification to DML. 
+It is designed to fit well into the mllearn framework and hence supports NumPy, Pandas as well as PySpark DataFrame.</p>
+
+<h1 id="training-lenet">Training Lenet</h1>
+
+<p>To create a Caffe2DML object, one needs to create a solver and network file that conforms 
+to the <a href="http://caffe.berkeleyvision.org/">Caffe specification</a>.
+In this example, we will train Lenet which is a simple convolutional neural network, proposed by Yann LeCun in 1998. 
+It has 2 convolutions/pooling and fully connected layer. 
+Similar to Caffe, the network has been modified to add dropout. 
+For more detail, please see <a href="http://yann.lecun.com/exdb/lenet/">http://yann.lecun.com/exdb/lenet/</a>.</p>
+
+<p>The <a href="https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto">solver specification</a>
+specifies to Caffe2DML to use following configuration when generating the training DML script:<br />
+- <code>type: "SGD", momentum: 0.9</code>: Stochastic Gradient Descent with momentum optimizer with <code>momentum=0.9</code>.
+- <code>lr_policy: "exp", gamma: 0.95, base_lr: 0.01</code>: Use exponential decay learning rate policy (<code>base_lr * gamma ^ iter</code>).
+- <code>display: 100</code>: Display training loss after every 100 iterations.
+- <code>test_interval: 500</code>: Display validation loss after every 500 iterations.
+- <code>test_iter: 10</code>: Validation data size = 10 * BATCH_SIZE.</p>
+
+<p>```python
+from systemml.mllearn import Caffe2DML
+import urllib</p>
+
+<h1 id="download-the-lenet-network">Download the Lenet network</h1>
+<p>urllib.urlretrieve(&#8216;https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet.proto&#8217;, &#8216;lenet.proto&#8217;)
+urllib.urlretrieve(&#8216;https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto&#8217;, &#8216;lenet_solver.proto&#8217;)
+# Train Lenet On MNIST using scikit-learn like API</p>
+
+<h1 id="mnist-dataset-contains-28-x-28-gray-scale-number-of-channel1">MNIST dataset contains 28 X 28 gray-scale (number of channel=1).</h1>
+<p>lenet = Caffe2DML(spark, solver=&#8217;lenet_solver.proto&#8217;, input_shape=(1, 28, 28))
+lenet.summary()
+```</p>
+
+<p>Output:</p>
+
+<p>```
++&#8212;&#8211;+&#8212;&#8212;&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8212;&#8211;+&#8212;&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8211;+&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8211;+
+| Name|           Type|        Output|      Weight|     Bias|        Top|   Bottom|Memory* (train/test)|
++&#8212;&#8211;+&#8212;&#8212;&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8212;&#8211;+&#8212;&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8211;+&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8211;+
+|mnist|           Data| (, 1, 28, 28)|            |         |mnist,mnist|         |                 1/0|
+|conv1|    Convolution|(, 32, 28, 28)|   [32 X 25]| [32 X 1]|      conv1|    mnist|               25/12|
+|relu1|           ReLU|(, 32, 28, 28)|            |         |      relu1|    conv1|               25/12|
+|pool1|        Pooling|(, 32, 14, 14)|            |         |      pool1|    relu1|                 6/3|
+|conv2|    Convolution|(, 64, 14, 14)|  [64 X 800]| [64 X 1]|      conv2|    pool1|                38/7|
+|relu2|           ReLU|(, 64, 14, 14)|            |         |      relu2|    conv2|                12/6|
+|pool2|        Pooling|  (, 64, 7, 7)|            |         |      pool2|    relu2|                 3/2|
+|  ip1|   InnerProduct| (, 512, 1, 1)|[3136 X 512]|[1 X 512]|        ip1|    pool2|              797/13|
+|relu3|           ReLU| (, 512, 1, 1)|            |         |      relu3|      ip1|                 1/0|
+|drop1|        Dropout| (, 512, 1, 1)|            |         |      drop1|    relu3|                 1/0|
+|  ip2|   InnerProduct|  (, 10, 1, 1)|  [512 X 10]| [1 X 10]|        ip2|    drop1|                 3/0|
+| loss|SoftmaxWithLoss|  (, 10, 1, 1)|            |         |       loss|ip2,mnist|                 0/0|
++&#8212;&#8211;+&#8212;&#8212;&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8212;&#8211;+&#8212;&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8211;+&#8212;&#8212;&#8212;+&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8211;+</p>
+
+<p>Total number of layer outputs/errors/weights/bias/gradients: 5568768/5568768/1662752/618/106455680
+Total memory requirements for parameters* for train/test: 910/55
+[Advanced] Key network statistics to compute intermediate CP overhead batchSize/maxThreads/1-thread im2col<em>(sum, max)/1-thread reshape_col</em>(sum, max): 64/48/(1, 1)/(0, 0).
+* =&gt; memory in megabytes assuming the parameters are in double precision and in dense format.
+```</p>
+
+<p>To train the above lenet model, we use the MNIST dataset. 
+The MNIST dataset was constructed from two datasets of the US National Institute of Standards and Technology (NIST). 
+The training set consists of handwritten digits from 250 different people, 50 percent high school students, and 50 percent employees from the Census Bureau. Note that the test set contains handwritten digits from different people following the same split.
+In this example, we are using mlxtend package to load the mnist dataset into Python NumPy arrays, but you are free to download it directly from http://yann.lecun.com/exdb/mnist/.</p>
+
+<p><code>bash
+pip install mlxtend
+</code></p>
+
+<p>We first split the MNIST dataset into train and test.</p>
+
+<p><code>python
+from mlxtend.data import mnist_data
+import numpy as np
+from sklearn.utils import shuffle
+# Download the MNIST dataset
+X, y = mnist_data()
+X, y = shuffle(X, y)
+# Split the data into training and test
+n_samples = len(X)
+X_train = X[:int(.9 * n_samples)]
+y_train = y[:int(.9 * n_samples)]
+X_test = X[int(.9 * n_samples):]
+y_test = y[int(.9 * n_samples):]
+</code></p>
+
+<p>Finally, we use the training and test dataset to perform training and prediction using scikit-learn like API.</p>
+
+<p><code>python
+# Since Caffe2DML is a mllearn API, it allows for scikit-learn like method for training.
+lenet.fit(X_train, y_train)
+# Either perform prediction: lenet.predict(X_test) or scoring:
+lenet.score(X_test, y_test)
+</code></p>
+
+<p>Output:
+<code>
+Iter:100, training loss:0.189008481420049, training accuracy:92.1875
+Iter:200, training loss:0.21657020576713149, training accuracy:96.875
+Iter:300, training loss:0.05780939180052287, training accuracy:98.4375
+Iter:400, training loss:0.03406193840071965, training accuracy:100.0
+Iter:500, training loss:0.02847187709112875, training accuracy:100.0
+Iter:500, validation loss:222.736109642486, validation accuracy:96.49077868852459
+Iter:600, training loss:0.04867848427394318, training accuracy:96.875
+Iter:700, training loss:0.043060905384304224, training accuracy:98.4375
+Iter:800, training loss:0.01861298388336358, training accuracy:100.0
+Iter:900, training loss:0.03495462005933769, training accuracy:100.0
+Iter:1000, training loss:0.04598737325942163, training accuracy:98.4375
+Iter:1000, validation loss:180.04232316810746, validation accuracy:97.28483606557377
+Iter:1100, training loss:0.05630274512793694, training accuracy:98.4375
+Iter:1200, training loss:0.027278141291535066, training accuracy:98.4375
+Iter:1300, training loss:0.04356275106270366, training accuracy:98.4375
+Iter:1400, training loss:0.00780793048139091, training accuracy:100.0
+Iter:1500, training loss:0.004135965492374173, training accuracy:100.0
+Iter:1500, validation loss:156.61636761709374, validation accuracy:97.48975409836065
+Iter:1600, training loss:0.007939063305475983, training accuracy:100.0
+Iter:1700, training loss:0.0025769653351162196, training accuracy:100.0
+Iter:1800, training loss:0.0023251742357435204, training accuracy:100.0
+Iter:1900, training loss:0.0016795711023936644, training accuracy:100.0
+Iter:2000, training loss:0.03676045262879483, training accuracy:98.4375
+Iter:2000, validation loss:173.66147359346, validation accuracy:97.48975409836065
+0.97399999999999998
+</code></p>
+
+<h1 id="additional-configuration">Additional Configuration</h1>
+
+<ul>
+  <li>Print the generated DML script along with classification report:  <code>lenet.set(debug=True)</code></li>
+  <li>Print the heavy hitters instruction and the execution plan (advanced users): <code>lenet.setStatistics(True).setExplain(True)</code></li>
+  <li>(Optional but recommended) Enable <a href="http://apache.github.io/systemml/native-backend">native BLAS</a>: <code>lenet.setConfigProperty("sysml.native.blas", "auto")</code></li>
+  <li>Enable experimental feature such as codegen: <code>lenet.setConfigProperty("sysml.codegen.enabled", "true").setConfigProperty("sysml.codegen.plancache", "true")</code></li>
+  <li>Force GPU execution (please make sure the required jcuda dependency are included): lenet.setGPU(True).setForceGPU(True)</li>
+</ul>
+
+<p>Unlike Caffe where default train and test algorithm is <code>minibatch</code>, you can specify the
+algorithm using the parameters <code>train_algo</code> and <code>test_algo</code> (valid values are: <code>minibatch</code>, <code>allreduce_parallel_batches</code>, 
+and <code>allreduce</code>). Here are some common settings:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>&#160;</th>
+      <th>PySpark script</th>
+      <th>Changes to Network/Solver</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Single-node CPU execution (similar to Caffe with solver_mode: CPU)</td>
+      <td><code>lenet.set(train_algo="minibatch", test_algo="minibatch")</code></td>
+      <td>Ensure that <code>batch_size</code> is set to appropriate value (for example: 64)</td>
+    </tr>
+    <tr>
+      <td>Single-node single-GPU execution</td>
+      <td><code>lenet.set(train_algo="minibatch", test_algo="minibatch").setGPU(True).setForceGPU(True)</code></td>
+      <td>Ensure that <code>batch_size</code> is set to appropriate value (for example: 64)</td>
+    </tr>
+    <tr>
+      <td>Single-node multi-GPU execution (similar to Caffe with solver_mode: GPU)</td>
+      <td><code>lenet.set(train_algo="allreduce_parallel_batches", test_algo="minibatch", parallel_batches=num_gpu).setGPU(True).setForceGPU(True)</code></td>
+      <td>Ensure that <code>batch_size</code> is set to appropriate value (for example: 64)</td>
+    </tr>
+    <tr>
+      <td>Distributed prediction</td>
+      <td><code>lenet.set(test_algo="allreduce")</code></td>
+      <td>&#160;</td>
+    </tr>
+    <tr>
+      <td>Distributed synchronous training</td>
+      <td><code>lenet.set(train_algo="allreduce_parallel_batches", parallel_batches=num_cluster_cores)</code></td>
+      <td>Ensure that <code>batch_size</code> is set to appropriate value (for example: 64)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1 id="saving-the-trained-model">Saving the trained model</h1>
+
+<p><code>python
+lenet.fit(X_train, y_train)
+lenet.save('trained_weights')
+new_lenet = Caffe2DML(spark, solver='lenet_solver.proto', input_shape=(1, 28, 28))
+new_lenet.load('trained_weights')
+new_lenet.score(X_test, y_test)
+</code></p>
+
+<h1 id="loading-a-pretrained-caffemodel">Loading a pretrained caffemodel</h1>
+
+<p>We provide a converter utility to convert <code>.caffemodel</code> trained using Caffe to SystemML format.</p>
+
+<p><code>python
+# First download deploy file and caffemodel
+import urllib
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/vgg19/VGG_ILSVRC_19_layers_deploy.proto', 'VGG_ILSVRC_19_layers_deploy.proto')
+urllib.urlretrieve('http://www.robots.ox.ac.uk/~vgg/software/very_deep/caffe/VGG_ILSVRC_19_layers.caffemodel', 'VGG_ILSVRC_19_layers.caffemodel')
+# Save the weights into trained_vgg_weights directory
+import systemml as sml
+sml.convert_caffemodel(sc, 'VGG_ILSVRC_19_layers_deploy.proto', 'VGG_ILSVRC_19_layers.caffemodel',  'trained_vgg_weights')
+</code></p>
+
+<p>We can then use the <code>trained_vgg_weights</code> directory for performing prediction or fine-tuning.</p>
+
+<p><code>python
+# Download the VGG network
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/vgg19/VGG_ILSVRC_19_layers_network.proto', 'VGG_ILSVRC_19_layers_network.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/vgg19/VGG_ILSVRC_19_layers_solver.proto', 'VGG_ILSVRC_19_layers_solver.proto')
+# Storing the labels.txt in the weights directory allows predict to return a label (for example: 'cougar, puma, catamount, mountain lion, painter, panther, Felis concolor') rather than the column index of one-hot encoded vector (for example: 287).
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/labels.txt', os.path.join('trained_vgg_weights', 'labels.txt'))
+from systemml.mllearn import Caffe2DML
+vgg = Caffe2DML(sqlCtx, solver='VGG_ILSVRC_19_layers_solver.proto', input_shape=(3, 224, 224))
+vgg.load('trained_vgg_weights')
+# We can then perform prediction:
+from PIL import Image
+X_test = sml.convertImageToNumPyArr(Image.open('test.jpg'), img_shape=(3, 224, 224))
+vgg.predict(X_test)
+# OR Fine-Tuning: vgg.fit(X_train, y_train)
+</code></p>
+
+<p>Please see <a href="http://apache.github.io/systemml/reference-guide-caffe2dml">Caffe2DML&#8217;s reference guide</a> for more details.</p>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

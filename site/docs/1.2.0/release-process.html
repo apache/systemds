@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Release Process - SystemML 1.2.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Description of the SystemML release process and validation.">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.2.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">SystemML Release Process</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#snapshot-deployment" id="markdown-toc-snapshot-deployment">Snapshot Deployment</a>    <ul>
+      <li><a href="#snapshot-deployment-setup" id="markdown-toc-snapshot-deployment-setup">Snapshot Deployment Setup</a></li>
+      <li><a href="#deploy-artifacts-to-snapshot-repository" id="markdown-toc-deploy-artifacts-to-snapshot-repository">Deploy Artifacts to Snapshot Repository</a></li>
+    </ul>
+  </li>
+  <li><a href="#release-candidate-build-and-deployment" id="markdown-toc-release-candidate-build-and-deployment">Release Candidate Build and Deployment</a></li>
+  <li><a href="#release-candidate-checklist" id="markdown-toc-release-candidate-checklist">Release Candidate Checklist</a>    <ul>
+      <li><a href="#all-artifacts-and-checksums-present" id="markdown-toc-all-artifacts-and-checksums-present">All Artifacts and Checksums Present</a></li>
+      <li><a href="#release-candidate-build" id="markdown-toc-release-candidate-build">Release Candidate Build</a></li>
+      <li><a href="#test-suite-passes" id="markdown-toc-test-suite-passes">Test Suite Passes</a></li>
+      <li><a href="#all-binaries-execute" id="markdown-toc-all-binaries-execute">All Binaries Execute</a></li>
+      <li><a href="#python-tests" id="markdown-toc-python-tests">Python Tests</a></li>
+      <li><a href="#check-license-and-notice-files" id="markdown-toc-check-license-and-notice-files">Check LICENSE and NOTICE Files</a></li>
+      <li><a href="#src-artifact-builds-and-tests-pass" id="markdown-toc-src-artifact-builds-and-tests-pass">Src Artifact Builds and Tests Pass</a></li>
+      <li><a href="#single-node-standalone" id="markdown-toc-single-node-standalone">Single-Node Standalone</a></li>
+      <li><a href="#single-node-spark" id="markdown-toc-single-node-spark">Single-Node Spark</a></li>
+      <li><a href="#single-node-hadoop" id="markdown-toc-single-node-hadoop">Single-Node Hadoop</a></li>
+      <li><a href="#notebooks" id="markdown-toc-notebooks">Notebooks</a></li>
+      <li><a href="#performance-suite" id="markdown-toc-performance-suite">Performance Suite</a></li>
+    </ul>
+  </li>
+  <li><a href="#run-nn-unit-tests-for-gpu" id="markdown-toc-run-nn-unit-tests-for-gpu">Run NN Unit Tests for GPU</a></li>
+  <li><a href="#run-other-gpu-unit-tests" id="markdown-toc-run-other-gpu-unit-tests">Run other GPU Unit Tests</a></li>
+  <li><a href="#voting" id="markdown-toc-voting">Voting</a></li>
+  <li><a href="#release" id="markdown-toc-release">Release</a>    <ul>
+      <li><a href="#release-deployment" id="markdown-toc-release-deployment">Release Deployment</a></li>
+      <li><a href="#documentation-deployment" id="markdown-toc-documentation-deployment">Documentation Deployment</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="snapshot-deployment">Snapshot Deployment</h1>
+
+<p>The following instructions describe how to deploy artifacts to the Apache Snapshot Repository during development.</p>
+
+<h2 id="snapshot-deployment-setup">Snapshot Deployment Setup</h2>
+
+<p><strong>Maven Password Encryption</strong></p>
+
+<p>Follow the instructions at <a href="https://maven.apache.org/guides/mini/guide-encryption.html">https://maven.apache.org/guides/mini/guide-encryption.html</a>.</p>
+
+<p><strong>Create an Encrypted Master Password</strong></p>
+
+<p><code>
+mvn --encrypt-master-password
+</code></p>
+
+<p>This will generate an encrypted password. Create a <code>settings-security.xml</code> file at <code>~/.m2/settings-security.xml</code> if it doesn&#8217;t exist.
+Add the encrypted master password to this file.</p>
+
+<p>```</p>
+<settingsSecurity>
+  <master>{ENCRYPTED_PASSWORD_GOES_HERE}</master>
+</settingsSecurity>
+<p>```</p>
+
+<p><strong>Create an Encrypted Version of your Apache Password</strong></p>
+
+<p><code>
+mvn --encrypt-password
+</code></p>
+
+<p>Add a server entry to your <code>~/.m2/settings.xml</code> file (create this file if it doesn&#8217;t already exist). This server entry will have the
+Apache Snapshot ID, your Apache ID, and your encrypted password.</p>
+
+<p>```</p>
+<settings>
+  <servers>
+    <server>
+      <id>apache.snapshots.https</id>
+      <username>YOUR_APACHE_ID</username>
+      <password>{ENCRYPTED_PASSWORD_GOES_HERE}</password>
+    </server>
+  </servers>
+</settings>
+<p>```</p>
+
+<p><strong>Install and Configure GPG</strong></p>
+
+<p>On OS X, download GPG from <a href="https://gpgtools.org/">https://gpgtools.org/</a>. One such release is
+<a href="https://releases.gpgtools.org/GPG_Suite-2016.08_v2.dmg">https://releases.gpgtools.org/GPG_Suite-2016.08_v2.dmg</a>.</p>
+
+<p>Install GPG.</p>
+
+<p>Generate a public/private key pair. For example, you can use your name and Apache email.</p>
+
+<p><code>
+gpg --gen-key
+</code></p>
+
+<p>Your public and private keys can be verified using:</p>
+
+<p><code>
+gpg --list-keys
+gpg --list-secret-keys
+</code></p>
+
+<p><strong>Clone SystemML Repository</strong></p>
+
+<p>Since the artifacts will be deployed publicly, you should ensure that the project is completely clean.
+The deploy command should not be run on a copy of the project that you develop on. It should be a completely
+clean project used only for building and deploying.</p>
+
+<p>Therefore, create a directory such as:</p>
+
+<p><code>
+mkdir ~/clean-systemml
+</code></p>
+
+<p>In that directory, clone a copy of the project.</p>
+
+<p><code>
+git clone https://github.com/apache/systemml.git
+</code></p>
+
+<h2 id="deploy-artifacts-to-snapshot-repository">Deploy Artifacts to Snapshot Repository</h2>
+
+<p>Before deploying the latest snapshot artifacts, ensure you have the latest code on the master branch.</p>
+
+<p><code>
+git pull
+</code></p>
+
+<p>In the <code>pom.xml</code> file, the <code>maven-gpg-plugin</code>&#8217;s <code>sign</code> goal is bound to the <code>verify</code> stage of the Maven lifecycle.
+Therefore, you can check that signing works by installing the snapshot to your local Maven repository.</p>
+
+<p><code>
+mvn clean install -DskipTests -Pdistribution
+</code></p>
+
+<p>If this succeeds, you can deploy the snapshot artifacts to the Apache Snapshot Repository using the following:</p>
+
+<p><code>
+mvn clean deploy -DskipTests -Pdistribution
+</code></p>
+
+<p>Verify that the snapshot is now available at
+<a href="https://repository.apache.org/content/repositories/snapshots/org/apache/systemml/systemml">https://repository.apache.org/content/repositories/snapshots/org/apache/systemml/systemml</a>.</p>
+
+<h1 id="release-candidate-build-and-deployment">Release Candidate Build and Deployment</h1>
+
+<p>For detailed information, please see <a href="release-creation-process.html">SystemML Release Creation Process</a>.</p>
+
+<h1 id="release-candidate-checklist">Release Candidate Checklist</h1>
+
+<h2 id="all-artifacts-and-checksums-present">All Artifacts and Checksums Present</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>Verify that each expected artifact is present at <a href="https://dist.apache.org/repos/dist/dev/systemml/">https://dist.apache.org/repos/dist/dev/systemml/</a> and that each artifact has accompanying
+checksums (such as .asc and .md5).</p>
+
+<h2 id="release-candidate-build">Release Candidate Build</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>The release candidate should build on Windows, OS X, and Linux. To do this cleanly,
+the following procedure can be performed.</p>
+
+<p>Clone the Apache SystemML GitHub repository
+to an empty location. Next, check out the release tag. Following
+this, build the distributions using Maven. This should be performed
+with an empty local Maven repository.</p>
+
+<p>Here is an example:</p>
+
+<pre><code>$ git clone https://github.com/apache/systemml.git
+$ cd systemml
+$ git tag -l
+$ git checkout tags/1.0.0-rc1 -b 1.0.0-rc1
+$ mvn -Dmaven.repo.local=$HOME/.m2/temp-repo clean package -P distribution
+</code></pre>
+
+<h2 id="test-suite-passes">Test Suite Passes</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>The entire test suite should pass on Windows, OS X, and Linux.
+The test suite can be run using:</p>
+
+<pre><code>$ mvn clean verify
+</code></pre>
+
+<h2 id="all-binaries-execute">All Binaries Execute</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>Validate that all of the binary artifacts can execute, including those artifacts packaged
+in other artifacts (in the tgz and zip artifacts).</p>
+
+<p>The build artifacts should be downloaded from <a href="https://dist.apache.org/repos/dist/dev/systemml/">https://dist.apache.org/repos/dist/dev/systemml/</a> and these artifacts should be tested, as in
+this OS X example.</p>
+
+<pre><code># download artifacts
+wget -r -nH -nd -np -R 'index.html*' https://dist.apache.org/repos/dist/dev/systemml/1.0.0-rc1/
+
+# verify standalone tgz works
+tar -xvzf systemml-1.0.0-bin.tgz
+cd systemml-1.0.0-bin
+echo "print('hello world');" &gt; hello.dml
+./runStandaloneSystemML.sh hello.dml
+cd ..
+
+# verify standalone zip works
+rm -rf systemml-1.0.0-bin
+unzip systemml-1.0.0-bin.zip
+cd systemml-1.0.0-bin
+echo "print('hello world');" &gt; hello.dml
+./runStandaloneSystemML.sh hello.dml
+cd ..
+
+# verify src works
+tar -xvzf systemml-1.0.0-src.tgz
+cd systemml-1.0.0-src
+mvn clean package -P distribution
+cd target/
+java -cp "./lib/*:systemml-1.0.0.jar" org.apache.sysml.api.DMLScript -s "print('hello world');"
+java -cp "./lib/*:SystemML.jar" org.apache.sysml.api.DMLScript -s "print('hello world');"
+cd ../..
+
+# verify spark batch mode
+export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
+cd systemml-1.0.0-bin/target/lib
+$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -s "print('hello world');" -exec hybrid_spark
+
+# verify hadoop batch mode
+hadoop jar systemml-1.0.0.jar -s "print('hello world');"
+
+
+# verify python artifact
+# install numpy, pandas, scipy &amp; set SPARK_HOME
+pip install numpy
+pip install pandas
+pip install scipy
+export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
+# get into the pyspark prompt
+cd systemml-1.0.0
+$SPARK_HOME/bin/pyspark --driver-class-path systemml-java/systemml-1.0.0.jar
+# Use this program at the prompt:
+import systemml as sml
+import numpy as np
+m1 = sml.matrix(np.ones((3,3)) + 2)
+m2 = sml.matrix(np.ones((3,3)) + 3)
+m2 = m1 * (m2 + m1)
+m4 = 1.0 - m2
+m4.sum(axis=1).toNumPy()
+
+# This should be printed
+# array([[-60.],
+#       [-60.],
+#       [-60.]])
+</code></pre>
+
+<h2 id="python-tests">Python Tests</h2>
+
+<p>For Spark 1.*, the Python tests at (<code>src/main/python/tests</code>) can be executed in the following manner:</p>
+
+<pre><code>PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_matrix_agg_fn.py
+PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_matrix_binary_op.py
+PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mlcontext.py
+PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mllearn_df.py
+PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mllearn_numpy.py
+</code></pre>
+
+<p>For Spark 2.*, pyspark can&#8217;t be used to run the Python tests, so they can be executed using
+spark-submit:</p>
+
+<pre><code>spark-submit --driver-class-path SystemML.jar test_matrix_agg_fn.py
+spark-submit --driver-class-path SystemML.jar test_matrix_binary_op.py
+spark-submit --driver-class-path SystemML.jar test_mlcontext.py
+spark-submit --driver-class-path SystemML.jar test_mllearn_df.py
+spark-submit --driver-class-path SystemML.jar test_mllearn_numpy.py
+</code></pre>
+
+<h2 id="check-license-and-notice-files">Check LICENSE and NOTICE Files</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>Each artifact <em>must</em> contain LICENSE and NOTICE files. These files must reflect the
+contents of the artifacts. If the project dependencies (ie, libraries) have changed
+since the last release, the LICENSE and NOTICE files must be updated to reflect these
+changes.</p>
+
+<p>For more information, see:</p>
+
+<ol>
+  <li><a href="http://www.apache.org/dev/#releases">http://www.apache.org/dev/#releases</a></li>
+  <li><a href="http://www.apache.org/dev/licensing-howto.html">http://www.apache.org/dev/licensing-howto.html</a></li>
+</ol>
+
+<h2 id="src-artifact-builds-and-tests-pass">Src Artifact Builds and Tests Pass</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>The project should be built using the <code>src</code> (tgz and zip) artifacts.
+In addition, the test suite should be run using an <code>src</code> artifact and
+the tests should pass.</p>
+
+<pre><code>tar -xvzf systemml-1.0.0-src.tgz
+cd systemml-1.0.0-src
+mvn clean package -P distribution
+mvn verify
+</code></pre>
+
+<h2 id="single-node-standalone">Single-Node Standalone</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>The standalone tgz and zip artifacts contain <code>runStandaloneSystemML.sh</code> and <code>runStandaloneSystemML.bat</code>
+files. Verify that one or more algorithms can be run on a single node using these
+standalone distributions.</p>
+
+<p>Here is an example based on the <a href="http://apache.github.io/systemml/standalone-guide.html">Standalone Guide</a>
+demonstrating the execution of an algorithm (on OS X).</p>
+
+<pre><code>tar -xvzf systemml-1.0.0-bin.tgz
+cd systemml-1.0.0-bin
+wget -P data/ http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
+echo '{"rows": 306, "cols": 4, "format": "csv"}' &gt; data/haberman.data.mtd
+echo '1,1,1,2' &gt; data/types.csv
+echo '{"rows": 1, "cols": 4, "format": "csv"}' &gt; data/types.csv.mtd
+./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+cd ..
+</code></pre>
+
+<h2 id="single-node-spark">Single-Node Spark</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>Verify that SystemML runs algorithms on Spark locally.</p>
+
+<p>Here is an example of running the <code>Univar-Stats.dml</code> algorithm on random generated data.</p>
+
+<pre><code>cd systemml-1.0.0-bin/lib
+export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
+$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -f ../scripts/datagen/genRandData4Univariate.dml -exec hybrid_spark -args 1000000 100 10 1 2 3 4 uni.mtx
+echo '1' &gt; uni-types.csv
+echo '{"rows": 1, "cols": 1, "format": "csv"}' &gt; uni-types.csv.mtd
+$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -f ../scripts/algorithms/Univar-Stats.dml -exec hybrid_spark -nvargs X=uni.mtx TYPES=uni-types.csv STATS=uni-stats.txt CONSOLE_OUTPUT=TRUE
+cd ..
+</code></pre>
+
+<h2 id="single-node-hadoop">Single-Node Hadoop</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>Verify that SystemML runs algorithms on Hadoop locally.</p>
+
+<p>Based on the &#8220;Single-Node Spark&#8221; setup above, the <code>Univar-Stats.dml</code> algorithm could be run as follows:</p>
+
+<pre><code>cd systemml-1.0.0-bin/lib
+hadoop jar systemml-1.0.0.jar -f ../scripts/algorithms/Univar-Stats.dml -nvargs X=uni.mtx TYPES=uni-types.csv STATS=uni-stats.txt CONSOLE_OUTPUT=TRUE
+</code></pre>
+
+<h2 id="notebooks">Notebooks</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>Verify that SystemML can be executed from Jupyter and Zeppelin notebooks.
+For examples, see the <a href="http://apache.github.io/systemml/spark-mlcontext-programming-guide.html">Spark MLContext Programming Guide</a>.</p>
+
+<h2 id="performance-suite">Performance Suite</h2>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>Verify that the performance suite executes on Spark and Hadoop. Testing should
+include 80MB, 800MB, 8GB, and 80GB data sizes.</p>
+
+<p>For more information, please see <a href="python-performance-test.html">SystemML Performance Testing</a>.</p>
+
+<h1 id="run-nn-unit-tests-for-gpu">Run NN Unit Tests for GPU</h1>
+
+<p><a href="#release-candidate-checklist">Up to Checklist</a></p>
+
+<p>The unit tests for NN operators for GPU take a long time to run and are therefore not run as part of the Jenkins build.
+They must be run before a release. To run them, edit the
+<a href="https://github.com/apache/systemml/blob/master/src/test/java/org/apache/sysml/test/gpu/NeuralNetworkOpTests.java">NeuralNetworkOpTests.java</a>
+file and remove all the <code>@Ignore</code> annotations from all the tests. Then run the NN unit tests using mvn verify:</p>
+
+<pre><code>mvn -Dit.test=org.apache.sysml.test.gpu.NeuralNetworkOpTests verify -PgpuTests
+</code></pre>
+
+<h1 id="run-other-gpu-unit-tests">Run other GPU Unit Tests</h1>
+
+<pre><code>rm result.txt
+for t in AggregateUnaryOpTests  BinaryOpTests  MatrixMatrixElementWiseOpTests  RightIndexingTests AppendTest  MatrixMultiplicationOpTest ReorgOpTests ScalarMatrixElementwiseOpTests UnaryOpTests
+do
+	mvn -Dit.test="org.apache.sysml.test.gpu."$t verify -PgpuTests &amp;&gt; tmp.txt
+	SUCCESS=`grep "BUILD SUCCESS" tmp.txt`
+	echo $t" =&gt; "$SUCCESS &gt;&gt; result.txt
+	rm tmp.txt
+done
+</code></pre>
+
+<h1 id="voting">Voting</h1>
+
+<p>Following a successful release candidate vote by SystemML PMC members on the SystemML mailing list, the release candidate
+has been approved.</p>
+
+<h1 id="release">Release</h1>
+
+<h2 id="release-deployment">Release Deployment</h2>
+
+<p>To be written. (What steps need to be done? How is the release deployed to Apache dist and the central maven repo?
+Where do the release notes for the release go?)</p>
+
+<h2 id="documentation-deployment">Documentation Deployment</h2>
+
+<p>This section describes how to deploy versioned project documentation to the main website.
+Note that versioned project documentation is committed directly to the <code>svn</code> project&#8217;s <code>docs</code> folder.
+The versioned project documentation is not committed to the website&#8217;s <code>git</code> project.</p>
+
+<p>Checkout branch in main project (<code>systemml</code>).</p>
+
+<pre><code>$ git checkout branch-1.0.0
+</code></pre>
+
+<p>In <code>systemml/docs/_config.yml</code>, set:</p>
+
+<ul>
+  <li><code>SYSTEMML_VERSION</code> to project version (1.0.0)</li>
+  <li><code>FEEDBACK_LINKS</code> to <code>false</code> (only have feedback links on <code>LATEST</code> docs)</li>
+  <li><code>API_DOCS_MENU</code> to <code>true</code> (adds <code>API Docs</code> menu to get to project javadocs)</li>
+</ul>
+
+<p>Generate <code>docs/_site</code> by running <code>bundle exec jekyll serve</code> in <code>systemml/docs</code>.</p>
+
+<pre><code>$ bundle exec jekyll serve
+</code></pre>
+
+<p>Verify documentation site looks correct.</p>
+
+<p>In website <code>svn</code> project, create <code>systemml-website-site/docs/1.0.0</code> folder.</p>
+
+<p>Copy contents of <code>systemml/docs/_site</code> to <code>systemml-website-site/docs/1.0.0</code>.</p>
+
+<p>Delete any unnecessary files (<code>Gemfile</code>, <code>Gemfile.lock</code>).</p>
+
+<p>Create <code>systemml-website-site/docs/1.0.0/api/java</code> folder for javadocs.
+Create <code>systemml-website-site/docs/1.0.0/api/python</code> folder for pythondocs.</p>
+
+<p>Update <code>systemml/pom.xml</code> project version to what should be displayed in javadocs (such as <code>1.0.0</code>).</p>
+
+<p>Build project (which generates javadocs).</p>
+
+<pre><code>$ mvn clean package -P distribution
+</code></pre>
+
+<p>Copy contents of <code>systemml/target/apidocs</code> to <code>systemml-website-site/docs/1.0.0/api/java</code>.</p>
+
+<p>Define environment variables to match version and release number used in updated <code>systemml/pom.xml</code>.  Both environment variables are referenced when building pythondocs with Sphinx.</p>
+
+<pre><code>$ export SYSTEMML_VERSION=1.0
+$ export SYSTEMML_RELEASE=1.0.0
+</code></pre>
+
+<p>Generate pythondocs with Sphinx.</p>
+
+<pre><code>$ cd systemml/src/main/pythondoc
+$ make html
+</code></pre>
+
+<p>Copy contents of <code>systemml/target/pydocs/html</code> to <code>systemml-website-site/docs/1.0.0/api/python</code>.</p>
+
+<p>Open up <code>file:///.../systemml-website-site/docs/1.0.0/index.html</code> and verify <code>API Docs</code> &#8594; <code>Java</code> link works and that the correct Javadoc version is displayed.
+Verify <code>API Docs</code> &#8594; <code>Python</code> link works and that the same Pythondoc version is displayed. Verify feedback links under <code>Issues</code> menu are not present.</p>
+
+<p>Clean up any unnecessary files (such as deleting <code>.DS_Store</code> files on OS X).</p>
+
+<pre><code>$ find . -name '.DS_Store' -type f -delete
+</code></pre>
+
+<p>Commit the versioned project documentation to <code>svn</code>:</p>
+
+<pre><code>$ svn status
+$ svn add docs/1.0.0
+$ svn commit -m "Add 1.0.0 docs to website"
+</code></pre>
+
+<p>Update <code>systemml-website/_src/documentation.html</code> to include 1.0.0 link.</p>
+
+<p>Start main website site by running <code>gulp</code> in <code>systemml-website</code>:</p>
+
+<pre><code>$ gulp
+</code></pre>
+
+<p>Commit and push the update to <code>git</code> project.</p>
+
+<pre><code>$ git add -u
+$ git commit -m "Add 1.0.0 link to documentation page"
+$ git push
+$ git push apache master
+</code></pre>
+
+<p>Copy contents of <code>systemml-website/_site</code> (generated by <code>gulp</code>) to <code>systemml-website-site</code>.
+After doing so, we should see that <code>systemml-website-site/documentation.html</code> has been updated.</p>
+
+<pre><code>$ svn status
+$ svn diff
+</code></pre>
+
+<p>Commit the update to <code>documentation.html</code> to publish the website update.</p>
+
+<pre><code>$ svn commit -m "Add 1.0.0 link to documentation page"
+</code></pre>
+
+<p>The versioned project documentation is now deployed to the main website, and the
+<a href="http://systemml.apache.org/documentation">Documentation Page</a> contains a link to the versioned documentation.</p>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Algorithms Reference - Survival Analysis - SystemML 1.2.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <span class="version">1.2.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Java</a></li>
+                                <li><a href="./api/python/index.html">Python</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title"><a href="algorithms-reference.html">SystemML Algorithms Reference</a></h1>
+          
+
+          <!--
+
+-->
+
+<h1 id="survival-analysis">6. Survival Analysis</h1>
+
+<h2 id="kaplan-meier-survival-analysis">6.1. Kaplan-Meier Survival Analysis</h2>
+
+<h3 id="description">Description</h3>
+
+<p>Survival analysis examines the time needed for a particular event of
+interest to occur. In medical research, for example, the prototypical
+such event is the death of a patient but the methodology can be applied
+to other application areas, e.g., completing a task by an individual in
+a psychological experiment or the failure of electrical components in
+engineering. Kaplan-Meier or (product limit) method is a simple
+non-parametric approach for estimating survival probabilities from both
+censored and uncensored survival times.</p>
+
+<h3 id="usage">Usage</h3>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f KM.dml
+                        -nvargs X=&lt;file&gt;
+                                TE=&lt;file&gt;
+                                GI=&lt;file&gt;
+                                SI=&lt;file&gt;
+                                O=&lt;file&gt;
+                                M=&lt;file&gt;
+                                T=&lt;file&gt;
+                                alpha=[double]
+                                etype=[greenwood|peto]
+                                ctype=[plain|log|log-log]
+                                ttype=[none|log-rank|wilcoxon]
+                                fmt=[format]
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f KM.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=&lt;file&gt;
+                                     TE=&lt;file&gt;
+                                     GI=&lt;file&gt;
+                                     SI=&lt;file&gt;
+                                     O=&lt;file&gt;
+                                     M=&lt;file&gt;
+                                     T=&lt;file&gt;
+                                     alpha=[double]
+                                     etype=[greenwood|peto]
+                                     ctype=[plain|log|log-log]
+                                     ttype=[none|log-rank|wilcoxon]
+                                     fmt=[format]
+</code></pre>
+  </div>
+</div>
+
+<h3 id="arguments">Arguments</h3>
+
+<p><strong>X</strong>: Location (on HDFS) to read the input matrix of the survival data
+containing:</p>
+
+<ul>
+  <li>timestamps</li>
+  <li>whether event occurred (1) or data is censored (0)</li>
+  <li>a number of factors (i.e., categorical features) for grouping and/or
+stratifying</li>
+</ul>
+
+<p><strong>TE</strong>: Location (on HDFS) to read the 1-column matrix $TE$ that contains the
+column indices of the input matrix $X$ corresponding to timestamps
+(first entry) and event information (second entry)</p>
+
+<p><strong>GI</strong>: Location (on HDFS) to read the 1-column matrix $GI$ that contains the
+column indices of the input matrix $X$ corresponding to the factors
+(i.e., categorical features) to be used for grouping</p>
+
+<p><strong>SI</strong>: Location (on HDFS) to read the 1-column matrix $SI$ that contains the
+column indices of the input matrix $X$ corresponding to the factors
+(i.e., categorical features) to be used for grouping</p>
+
+<p><strong>O</strong>: Location (on HDFS) to write the matrix containing the results of the
+Kaplan-Meier analysis $KM$</p>
+
+<p><strong>M</strong>: Location (on HDFS) to write Matrix $M$ containing the following
+statistics: total number of events, median and its confidence intervals;
+if survival data for multiple groups and strata are provided each row of
+$M$ contains the above statistics per group and stratum.</p>
+
+<p><strong>T</strong>: If survival data from multiple groups is available and
+<code>ttype=log-rank</code> or <code>ttype=wilcoxon</code>, location (on
+HDFS) to write the two matrices that contains the result of the
+(stratified) test for comparing these groups; see below for details.</p>
+
+<p><strong>alpha</strong>: (default: <code>0.05</code>) Parameter to compute $100(1-\alpha)\%$ confidence intervals
+for the survivor function and its median</p>
+
+<p><strong>etype</strong>: (default: <code>"greenwood"</code>) Parameter to specify the error type according to <code>greenwood</code>
+or <code>peto</code></p>
+
+<p><strong>ctype</strong>: (default: <code>"log"</code>) Parameter to modify the confidence interval; <code>plain</code> keeps
+the lower and upper bound of the confidence interval unmodified, <code>log</code>
+corresponds to logistic transformation and <code>log-log</code> corresponds to the
+complementary log-log transformation</p>
+
+<p><strong>ttype</strong>: (default: <code>"none"</code>) If survival data for multiple groups is available specifies
+which test to perform for comparing survival data across multiple
+groups: <code>none</code>, <code>log-rank</code> or <code>wilcoxon</code> test</p>
+
+<p><strong>fmt</strong>: (default:<code>"text"</code>) Matrix file output format, such as <code>text</code>,
+<code>mm</code>, or <code>csv</code>; see read/write functions in
+SystemML Language Reference for details.</p>
+
+<h3 id="examples">Examples</h3>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f KM.dml
+                        -nvargs X=/user/ml/X.mtx
+                                TE=/user/ml/TE
+                                GI=/user/ml/GI
+                                SI=/user/ml/SI
+                                O=/user/ml/kaplan-meier.csv
+                                M=/user/ml/model.csv
+                                alpha=0.01
+                                etype=greenwood
+                                ctype=plain
+                                fmt=csv
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f KM.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X.mtx
+                                     TE=/user/ml/TE
+                                     GI=/user/ml/GI
+                                     SI=/user/ml/SI
+                                     O=/user/ml/kaplan-meier.csv
+                                     M=/user/ml/model.csv
+                                     alpha=0.01
+                                     etype=greenwood
+                                     ctype=plain
+                                     fmt=csv
+</code></pre>
+  </div>
+</div>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f KM.dml
+                        -nvargs X=/user/ml/X.mtx
+                                TE=/user/ml/TE
+                                GI=/user/ml/GI
+                                SI=/user/ml/SI
+                                O=/user/ml/kaplan-meier.csv
+                                M=/user/ml/model.csv
+                                T=/user/ml/test.csv
+                                alpha=0.01
+                                etype=peto
+                                ctype=log
+                                ttype=log-rank
+                                fmt=csv
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f KM.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X.mtx
+                                     TE=/user/ml/TE
+                                     GI=/user/ml/GI
+                                     SI=/user/ml/SI
+                                     O=/user/ml/kaplan-meier.csv
+                                     M=/user/ml/model.csv
+                                     T=/user/ml/test.csv
+                                     alpha=0.01
+                                     etype=peto
+                                     ctype=log
+                                     ttype=log-rank
+                                     fmt=csv
+</code></pre>
+  </div>
+</div>
+
+<h3 id="details">Details</h3>
+
+<p>The Kaplan-Meier estimate is a non-parametric maximum likelihood
+estimate (MLE) of the survival function $S(t)$, i.e., the probability of
+survival from the time origin to a given future time. As an illustration
+suppose that there are $n$ individuals with observed survival times
+$t_1,t_2,\ldots t_n$ out of which there are $r\leq n$ distinct death
+times <script type="math/tex">t_{(1)}\leq t_{(2)}\leq t_{(r)}</script>—since some of the observations
+may be censored, in the sense that the end-point of interest has not
+been observed for those individuals, and there may be more than one
+individual with the same survival time. Let $S(t_j)$ denote the
+probability of survival until time $t_j$, $d_j$ be the number of events
+at time $t_j$, and $n_j$ denote the number of individual at risk (i.e.,
+those who die at time $t_j$ or later). Assuming that the events occur
+independently, in Kaplan-Meier method the probability of surviving from
+$t_j$ to <script type="math/tex">t_{j+1}</script> is estimated from $S(t_j)$ and given by</p>
+
+<script type="math/tex; mode=display">\hat{S}(t) = \prod_{j=1}^{k} \left( \frac{n_j-d_j}{n_j} \right)</script>
+
+<p>for
+<script type="math/tex">% <![CDATA[
+t_k\leq t<t_{k+1} %]]></script>, <script type="math/tex">k=1,2,\ldots r</script>, <script type="math/tex">\hat{S}(t)=1</script> for <script type="math/tex">% <![CDATA[
+t<t_{(1)} %]]></script>,
+and <script type="math/tex">t_{(r+1)}=\infty</script>. Note that the value of $\hat{S}(t)$ is constant
+between times of event and therefore the estimate is a step function
+with jumps at observed event times. If there are no censored data this
+estimator would simply reduce to the empirical survivor function defined
+as $\frac{n_j}{n}$. Thus, the Kaplan-Meier estimate can be seen as the
+generalization of the empirical survivor function that handles censored
+observations.</p>
+
+<p>The methodology used in our <code>KM.dml</code> script closely
+follows Section 2 of <a href="algorithms-bibliography.html">[Collett2003]</a>. For completeness we briefly
+discuss the equations used in our implementation.</p>
+
+<p><strong>Standard error of the survivor function.</strong> The standard error of the
+estimated survivor function (controlled by parameter <code>etype</code>)
+can be calculated as</p>
+
+<script type="math/tex; mode=display">\text{se} \{\hat{S}(t)\} \approx \hat{S}(t) {\bigg\{ \sum_{j=1}^{k} \frac{d_j}{n_j(n_j -   d_j)}\biggr\}}^2</script>
+
+<p>for <script type="math/tex">% <![CDATA[
+t_{(k)}\leq t<t_{(k+1)} %]]></script>. This equation is known as the
+<em>Greenwood’s</em> formula. An alternative approach is to apply
+the <em>Petos’s</em> expression</p>
+
+<script type="math/tex; mode=display">\text{se}\{\hat{S}(t)\}=\frac{\hat{S}(t)\sqrt{1-\hat{S}(t)}}{\sqrt{n_k}}</script>
+
+<p>for <script type="math/tex">% <![CDATA[
+t_{(k)}\leq t<t_{(k+1)} %]]></script>. Once the standard error of $\hat{S}$ has
+been found we compute the following types of confidence intervals
+(controlled by parameter <code>cctype</code>): The <code>plain</code>
+$100(1-\alpha)\%$ confidence interval for $S(t)$ is computed using</p>
+
+<script type="math/tex; mode=display">\hat{S}(t)\pm z_{\alpha/2} \text{se}\{\hat{S}(t)\}</script>
+
+<p>where
+$z_{\alpha/2}$ is the upper $\alpha/2$-point of the standard normal
+distribution. Alternatively, we can apply the <code>log</code> transformation using</p>
+
+<script type="math/tex; mode=display">\hat{S}(t)^{\exp[\pm z_{\alpha/2} \text{se}\{\hat{S}(t)\}/\hat{S}(t)]}</script>
+
+<p>or the <code>log-log</code> transformation using</p>
+
+<script type="math/tex; mode=display">\hat{S}(t)^{\exp [\pm z_{\alpha/2} \text{se} \{\log [-\log \hat{S}(t)]\}]}</script>
+
+<p><strong>Median, its standard error and confidence interval.</strong> Denote by
+<script type="math/tex">\hat{t}(50)</script> the estimated median of <script type="math/tex">\hat{S}</script>, i.e.,
+<script type="math/tex">% <![CDATA[
+\hat{t}(50)=\min \{ t_i \mid \hat{S}(t_i) < 0.5\} %]]></script>, where <script type="math/tex">t_i</script> is the
+observed survival time for individual <script type="math/tex">i</script>. The standard error of
+<script type="math/tex">\hat{t}(50)</script> is given by</p>
+
+<script type="math/tex; mode=display">\text{se}\{ \hat{t}(50) \} = \frac{1}{\hat{f}\{\hat{t}(50)\}} \text{se}[\hat{S}\{ \hat{t}(50) \}]</script>
+
+<p>where <script type="math/tex">\hat{f}\{ \hat{t}(50) \}</script> can be found from</p>
+
+<script type="math/tex; mode=display">\hat{f}\{ \hat{t}(50) \} = \frac{\hat{S}\{ \hat{u}(50) \} -\hat{S}\{ \hat{l}(50) \} }{\hat{l}(50) - \hat{u}(50)}</script>
+
+<p>Above, $\hat{u}(50)$ is the largest survival time for which $\hat{S}$
+exceeds $0.5+\epsilon$, i.e.,
+<script type="math/tex">\hat{u}(50)=\max \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \geq 0.5+\epsilon \bigr\}</script>,
+and $\hat{l}(50)$ is the smallest survivor time for which $\hat{S}$ is
+less than $0.5-\epsilon$, i.e.,
+<script type="math/tex">\hat{l}(50)=\min \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \leq 0.5+\epsilon \bigr\}</script>,
+for small $\epsilon$.</p>
+
+<p><strong>Log-rank test and Wilcoxon test.</strong> Our implementation supports
+comparison of survival data from several groups using two non-parametric
+procedures (controlled by parameter <code>ttype</code>): the
+<em>log-rank test</em> and the <em>Wilcoxon test</em> (also
+known as the <em>Breslow test</em>). Assume that the survival
+times in $g\geq 2$ groups of survival data are to be compared. Consider
+the <em>null hypothesis</em> that there is no difference in the
+survival times of the individuals in different groups. One way to
+examine the null hypothesis is to consider the difference between the
+observed number of deaths with the numbers expected under the null
+hypothesis. In both tests we define the $U$-statistics (<script type="math/tex">U_{L}</script> for the
+log-rank test and <script type="math/tex">U_{W}</script> for the Wilcoxon test) to compare the observed
+and the expected number of deaths in $1,2,\ldots,g-1$ groups as follows:</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{aligned}
+U_{Lk} &= \sum_{j=1}^{r}\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right) \\
+U_{Wk} &= \sum_{j=1}^{r}n_j\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right)\end{aligned} %]]></script>
+
+<p>where <script type="math/tex">d_{kj}</script> is the of number deaths at time <script type="math/tex">t_{(j)}</script> in group $k$,
+<script type="math/tex">n_{kj}</script> is the number of individuals at risk at time <script type="math/tex">t_{(j)}</script> in group
+$k$, and $k=1,2,\ldots,g-1$ to form the vectors $U_L$ and $U_W$ with
+$(g-1)$ components. The covariance (variance) between <script type="math/tex">U_{Lk}</script> and
+<script type="math/tex">U_{Lk'}</script> (when $k=k&#8217;$) is computed as</p>
+
+<script type="math/tex; mode=display">V_{Lkk'}=\sum_{j=1}^{r} \frac{n_{kj}d_j(n_j-d_j)}{n_j(n_j-1)} \left( \delta_{kk'}-\frac{n_{k'j}}{n_j} \right)</script>
+
+<p>for $k,k&#8217;=1,2,\ldots,g-1$, with</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\delta_{kk'} = 
+\begin{cases}
+1 & \text{if } k=k'\\
+0 & \text{otherwise}
+\end{cases} %]]></script>
+
+<p>These terms are combined in a
+<em>variance-covariance</em> matrix $V_L$ (referred to as the
+$V$-statistic). Similarly, the variance-covariance matrix for the
+Wilcoxon test $V_W$ is a matrix where the entry at position $(k,k&#8217;)$ is
+given by</p>
+
+<script type="math/tex; mode=display">V_{Wkk'}=\sum_{j=1}^{r} n_j^2 \frac{n_{kj}d_j(n_j-d_j)}{n_j(n_j-1)} \left( \delta_{kk'}-\frac{n_{k'j}}{n_j} \right)</script>
+
+<p>Under the null hypothesis of no group differences, the test statistics
+$U_L^\top V_L^{-1} U_L$ for the log-rank test and
+$U_W^\top V_W^{-1} U_W$ for the Wilcoxon test have a Chi-squared
+distribution on $(g-1)$ degrees of freedom. Our <code>KM.dml</code>
+script also provides a stratified version of the log-rank or Wilcoxon
+test if requested. In this case, the values of the $U$- and $V$-
+statistics are computed for each stratum and then combined over all
+strata.</p>
+
+<h3 id="returns">Returns</h3>
+
+<p>Below we list the results of the survival analysis computed by
+<code>KM.dml</code>. The calculated statistics are stored in matrix $KM$
+with the following schema:</p>
+
+<ul>
+  <li>Column 1: timestamps</li>
+  <li>Column 2: number of individuals at risk</li>
+  <li>Column 3: number of events</li>
+  <li>Column 4: Kaplan-Meier estimate of the survivor function $\hat{S}$</li>
+  <li>Column 5: standard error of $\hat{S}$</li>
+  <li>Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for
+$\hat{S}$</li>
+  <li>Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for
+$\hat{S}$</li>
+</ul>
+
+<p>Note that if survival data for multiple groups and/or strata is
+available, each collection of 7 columns in $KM$ stores the results per
+group and/or per stratum. In this case $KM$ has $7g+7s$ columns, where
+$g\geq 1$ and $s\geq 1$ denote the number of groups and strata,
+respectively.</p>
+
+<p>Additionally, <code>KM.dml</code> stores the following statistics in the
+1-row matrix $M$ whose number of columns depends on the number of groups
+($g$) and strata ($s$) in the data. Below $k$ denotes the number of
+factors used for grouping and $l$ denotes the number of factors used for
+stratifying.</p>
+
+<ul>
+  <li>Columns 1 to $k$: unique combination of values in the $k$ factors
+used for grouping</li>
+  <li>Columns $k+1$ to $k+l$: unique combination of values in the $l$
+factors used for stratifying</li>
+  <li>Column $k+l+1$: total number of records</li>
+  <li>Column $k+l+2$: total number of events</li>
+  <li>Column $k+l+3$: median of $\hat{S}$</li>
+  <li>Column $k+l+4$: lower bound of $100(1-\alpha)\%$ confidence interval
+for the median of $\hat{S}$</li>
+  <li>Column $k+l+5$: upper bound of $100(1-\alpha)\%$ confidence interval
+for the median of $\hat{S}$.</li>
+</ul>
+
+<p>If there is only 1 group and 1 stratum available $M$ will be a 1-row
+matrix with 5 columns where</p>
+
+<ul>
+  <li>Column 1: total number of records</li>
+  <li>Column 2: total number of events</li>
+  <li>Column 3: median of $\hat{S}$</li>
+  <li>Column 4: lower bound of $100(1-\alpha)\%$ confidence interval for
+the median of $\hat{S}$</li>
+  <li>Column 5: upper bound of $100(1-\alpha)\%$ confidence interval for
+the median of $\hat{S}$.</li>
+</ul>
+
+<p>If a comparison of the survival data across multiple groups needs to be
+performed, <code>KM.dml</code> computes two matrices $T$ and
+<script type="math/tex">T\_GROUPS\_OE</script> that contain a summary of the test. The 1-row matrix $T$
+stores the following statistics:</p>
+
+<ul>
+  <li>Column 1: number of groups in the survival data</li>
+  <li>Column 2: degree of freedom for Chi-squared distributed test
+statistic</li>
+  <li>Column 3: value of test statistic</li>
+  <li>Column 4: $P$-value.</li>
+</ul>
+
+<p>Matrix <script type="math/tex">T\_GROUPS\_OE</script> contains the following statistics for each of $g$
+groups:</p>
+
+<ul>
+  <li>Column 1: number of events</li>
+  <li>Column 2: number of observed death times ($O$)</li>
+  <li>Column 3: number of expected death times ($E$)</li>
+  <li>Column 4: $(O-E)^2/E$</li>
+  <li>Column 5: $(O-E)^2/V$.</li>
+</ul>
+
+<hr />
+
+<h2 id="cox-proportional-hazard-regression-model">6.2. Cox Proportional Hazard Regression Model</h2>
+
+<h3 id="description-1">Description</h3>
+
+<p>The Cox (proportional hazard or PH) is a semi-parametric statistical
+approach commonly used for analyzing survival data. Unlike
+non-parametric approaches, e.g., the <a href="algorithms-survival-analysis.html#kaplan-meier-survival-analysis">Kaplan-Meier estimates</a>,
+which can be used to analyze single sample of
+survival data or to compare between groups of survival times, the Cox PH
+models the dependency of the survival times on the values of
+<em>explanatory variables</em> (i.e., covariates) recorded for
+each individual at the time origin. Our focus is on covariates that do
+not change value over time, i.e., time-independent covariates, and that
+may be categorical (ordinal or nominal) as well as continuous-valued.</p>
+
+<h3 id="usage-1">Usage</h3>
+
+<p><strong>Cox</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f Cox.dml
+                        -nvargs X=&lt;file&gt;
+                                TE=&lt;file&gt;
+                                F=&lt;file&gt;
+                                R=[file]
+                                M=&lt;file&gt;
+                                S=[file]
+                                T=[file]
+                                COV=&lt;file&gt;
+                                RT=&lt;file&gt;
+                                XO=&lt;file&gt;
+                                MF=&lt;file&gt;
+                                alpha=[double]
+                                tol=[double]
+                                moi=[int]
+                                mii=[int]
+                                fmt=[format]
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f Cox.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=&lt;file&gt;
+                                     TE=&lt;file&gt;
+                                     F=&lt;file&gt;
+                                     R=[file]
+                                     M=&lt;file&gt;
+                                     S=[file]
+                                     T=[file]
+                                     COV=&lt;file&gt;
+                                     RT=&lt;file&gt;
+                                     XO=&lt;file&gt;
+                                     MF=&lt;file&gt;
+                                     alpha=[double]
+                                     tol=[double]
+                                     moi=[int]
+                                     mii=[int]
+                                     fmt=[format]
+</code></pre>
+  </div>
+</div>
+
+<p><strong>Cox Prediction</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f Cox-predict.dml
+                        -nvargs X=&lt;file&gt;
+                                RT=&lt;file&gt;
+                                M=&lt;file&gt;
+                                Y=&lt;file&gt;
+                                COV=&lt;file&gt;
+                                MF=&lt;file&gt;
+                                P=&lt;file&gt;
+                                fmt=[format]
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f Cox-predict.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=&lt;file&gt;
+                                     RT=&lt;file&gt;
+                                     M=&lt;file&gt;
+                                     Y=&lt;file&gt;
+                                     COV=&lt;file&gt;
+                                     MF=&lt;file&gt;
+                                     P=&lt;file&gt;
+                                     fmt=[format]
+</code></pre>
+  </div>
+</div>
+
+<h3 id="arguments---cox-model-fittingprediction">Arguments - Cox Model Fitting/Prediction</h3>
+
+<p><strong>X</strong>: Location (on HDFS) to read the input matrix of the survival data
+containing:</p>
+
+<ul>
+  <li>timestamps</li>
+  <li>whether event occurred (1) or data is censored (0)</li>
+  <li>feature vectors</li>
+</ul>
+
+<p><strong>Y</strong>: Location (on HDFS) to the read matrix used for prediction</p>
+
+<p><strong>TE</strong>: Location (on HDFS) to read the 1-column matrix $TE$ that contains the
+column indices of the input matrix $X$ corresponding to timestamps
+(first entry) and event information (second entry)</p>
+
+<p><strong>F</strong>: Location (on HDFS) to read the 1-column matrix $F$ that contains the
+column indices of the input matrix $X$ corresponding to the features to
+be used for fitting the Cox model</p>
+
+<p><strong>R</strong>: (default: <code>" "</code>) If factors (i.e., categorical features) are available in the
+input matrix $X$, location (on HDFS) to read matrix $R$ containing the
+start (first column) and end (second column) indices of each factor in
+$X$; alternatively, user can specify the indices of the baseline level
+of each factor which needs to be removed from $X$. If $R$ is not
+provided by default all variables are considered to be
+continuous-valued.</p>
+
+<p><strong>M</strong>: Location (on HDFS) to store the results of Cox regression analysis
+including regression coefficients $\beta_j$s, their standard errors,
+confidence intervals, and $P$-values</p>
+
+<p><strong>S</strong>: (default: <code>" "</code>) Location (on HDFS) to store a summary of some statistics of
+the fitted model including number of records, number of events,
+log-likelihood, AIC, Rsquare (Cox &amp; Snell), and maximum possible Rsquare</p>
+
+<p><strong>T</strong>: (default: <code>" "</code>) Location (on HDFS) to store the results of Likelihood ratio
+test, Wald test, and Score (log-rank) test of the fitted model</p>
+
+<p><strong>COV</strong>: Location (on HDFS) to store the variance-covariance matrix of
+$\beta_j$s; note that parameter <code>COV</code> needs to be provided as
+input to prediction.</p>
+
+<p><strong>RT</strong>: Location (on HDFS) to store matrix $RT$ containing the order-preserving
+recoded timestamps from $X$; note that parameter <code>RT</code> needs
+to be provided as input for prediction.</p>
+
+<p><strong>XO</strong>: Location (on HDFS) to store the input matrix $X$ ordered by the
+timestamps; note that parameter <code>XO</code> needs to be provided as
+input for prediction.</p>
+
+<p><strong>MF</strong>: Location (on HDFS) to store column indices of $X$ excluding the baseline
+factors if available; note that parameter <code>MF</code> needs to be
+provided as input for prediction.</p>
+
+<p><strong>P</strong>: Location (on HDFS) to store matrix $P$ containing the results of
+prediction</p>
+
+<p><strong>alpha</strong>: (default: <code>0.05</code>) Parameter to compute a $100(1-\alpha)\%$ confidence interval
+for $\beta_j$s</p>
+
+<p><strong>tol</strong>: (default: <code>0.000001</code>) Tolerance ($\epsilon$) used in the convergence criterion</p>
+
+<p><strong>moi</strong>: (default: <code>100</code>) Maximum number of outer (Fisher scoring) iterations</p>
+
+<p><strong>mii</strong>: (default: <code>0</code>) Maximum number of inner (conjugate gradient) iterations, or 0
+if no maximum limit provided</p>
+
+<p><strong>fmt</strong>: (default: <code>"text"</code>) Matrix file output format, such as <code>text</code>,
+<code>mm</code>, or <code>csv</code>; see read/write functions in
+SystemML Language Reference for details.</p>
+
+<h3 id="examples-1">Examples</h3>
+
+<p><strong>Cox</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f Cox.dml
+                        -nvargs X=/user/ml/X.mtx
+                                TE=/user/ml/TE
+                                F=/user/ml/F
+                                R=/user/ml/R
+                                M=/user/ml/model.csv
+                                T=/user/ml/test.csv
+                                COV=/user/ml/var-covar.csv
+                                XO=/user/ml/X-sorted.mtx
+                                fmt=csv
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f Cox.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X.mtx
+                                     TE=/user/ml/TE
+                                     F=/user/ml/F
+                                     R=/user/ml/R
+                                     M=/user/ml/model.csv
+                                     T=/user/ml/test.csv
+                                     COV=/user/ml/var-covar.csv
+                                     XO=/user/ml/X-sorted.mtx
+                                     fmt=csv
+</code></pre>
+  </div>
+</div>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f Cox.dml
+                        -nvargs X=/user/ml/X.mtx
+                                TE=/user/ml/TE
+                                F=/user/ml/F
+                                R=/user/ml/R
+                                M=/user/ml/model.csv
+                                T=/user/ml/test.csv
+                                COV=/user/ml/var-covar.csv
+                                RT=/user/ml/recoded-timestamps.csv
+                                XO=/user/ml/X-sorted.csv
+                                MF=/user/ml/baseline.csv
+                                alpha=0.01
+                                tol=0.000001
+                                moi=100
+                                mii=20
+                                fmt=csv
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f Cox.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X.mtx
+                                     TE=/user/ml/TE
+                                     F=/user/ml/F
+                                     R=/user/ml/R
+                                     M=/user/ml/model.csv
+                                     T=/user/ml/test.csv
+                                     COV=/user/ml/var-covar.csv
+                                     RT=/user/ml/recoded-timestamps.csv
+                                     XO=/user/ml/X-sorted.csv
+                                     MF=/user/ml/baseline.csv
+                                     alpha=0.01
+                                     tol=0.000001
+                                     moi=100
+                                     mii=20
+                                     fmt=csv
+</code></pre>
+  </div>
+</div>
+
+<p><strong>Cox Prediction</strong>:</p>
+
+<div class="codetabs">
+<div data-lang="Hadoop">
+    <pre><code>hadoop jar SystemML.jar -f Cox-predict.dml
+                        -nvargs X=/user/ml/X-sorted.mtx
+                                RT=/user/ml/recoded-timestamps.csv
+                                M=/user/ml/model.csv
+                                Y=/user/ml/Y.mtx
+                                COV=/user/ml/var-covar.csv
+                                MF=/user/ml/baseline.csv
+                                P=/user/ml/predictions.csv
+                                fmt=csv
+</code></pre>
+  </div>
+<div data-lang="Spark">
+    <pre><code>$SPARK_HOME/bin/spark-submit --master yarn
+                             --deploy-mode cluster
+                             --conf spark.driver.maxResultSize=0
+                             SystemML.jar
+                             -f Cox-predict.dml
+                             -config SystemML-config.xml
+                             -exec hybrid_spark
+                             -nvargs X=/user/ml/X-sorted.mtx
+                                     RT=/user/ml/recoded-timestamps.csv
+                                     M=/user/ml/model.csv
+                                     Y=/user/ml/Y.mtx
+                                     COV=/user/ml/var-covar.csv
+                                     MF=/user/ml/baseline.csv
+                                     P=/user/ml/predictions.csv
+                                     fmt=csv
+</code></pre>
+  </div>
+</div>
+
+<h3 id="details-1">Details</h3>
+
+<p>In the Cox PH regression model, the relationship between the hazard
+function — i.e., the probability of event occurrence at a given time — and
+the covariates is described as</p>
+
+<script type="math/tex; mode=display">\begin{equation}
+h_i(t)=h_0(t)\exp\Bigl\{ \sum_{j=1}^{p} \beta_jx_{ij} \Bigr\}
+\end{equation}</script>
+
+<p>where the hazard function for the $i$th individual
+(<script type="math/tex">i\in\{1,2,\ldots,n\}</script>) depends on a set of $p$ covariates
+<script type="math/tex">x_i=(x_{i1},x_{i2},\ldots,x_{ip})</script>, whose importance is measured by the
+magnitude of the corresponding coefficients
+<script type="math/tex">\beta=(\beta_1,\beta_2,\ldots,\beta_p)</script>. The term <script type="math/tex">h_0(t)</script> is the
+baseline hazard and is related to a hazard value if all covariates equal
+0. In the Cox PH model the hazard function for the individuals may vary
+over time, however the baseline hazard is estimated non-parametrically
+and can take any form. Note that re-writing (1) we have</p>
+
+<script type="math/tex; mode=display">\log\biggl\{ \frac{h_i(t)}{h_0(t)} \biggr\} = \sum_{j=1}^{p} \beta_jx_{ij}</script>
+
+<p>Thus, the Cox PH model is essentially a linear model for the logarithm
+of the hazard ratio and the hazard of event for any individual is a
+constant multiple of the hazard of any other. We follow similar notation
+and methodology as in Section 3 of 
+<a href="algorithms-bibliography.html">[Collett2003]</a>. For
+completeness we briefly discuss the equations used in our
+implementation.</p>
+
+<p><strong>Factors in the model.</strong> Note that if some of the feature variables are
+factors they need to <em>dummy code</em> as follows. Let $\alpha$
+be such a variable (i.e., a factor) with $a$ levels. We introduce $a-1$
+indicator (or dummy coded) variables $X_2,X_3\ldots,X_a$ with $X_j=1$ if
+$\alpha=j$ and 0 otherwise, for <script type="math/tex">j\in\{ 2,3,\ldots,a\}</script>. In particular,
+one of $a$ levels of $\alpha$ will be considered as the baseline and is
+not included in the model. In our implementation, user can specify a
+baseline level for each of the factor (as selecting the baseline level
+for each factor is arbitrary). On the other hand, if for a given factor
+$\alpha$ no baseline is specified by the user, the most frequent level
+of $\alpha$ will be considered as the baseline.</p>
+
+<p><strong>Fitting the model.</strong> We estimate the coefficients of the Cox model via
+negative log-likelihood method. In particular the Cox PH model is fitted
+by using trust region Newton method with conjugate
+gradient <a href="algorithms-bibliography.html">[Nocedal2006]</a>. Define the risk set $R(t_j)$ at time
+$t_j$ to be the set of individuals who die at time $t_i$ or later. The
+PH model assumes that survival times are distinct. In order to handle
+tied observations we use the <em>Breslow</em> approximation of the likelihood
+function</p>
+
+<script type="math/tex; mode=display">\mathcal{L}=\prod_{j=1}^{r} \frac{\exp(\beta^\top s_j)}{\biggl\{ \sum_{l\in R(t_j)} \exp(\beta^\top x_l) \biggr\}^{d_j} }</script>
+
+<p>where $d_j$ is number individuals who die at time $t_j$ and $s_j$
+denotes the element-wise sum of the covariates for those individuals who
+die at time $t_j$, $j=1,2,\ldots,r$, i.e., the $h$th element of $s_j$ is
+given by <script type="math/tex">s_{hj}=\sum_{k=1}^{d_j}x_{hjk}</script>, where $x_{hjk}$ is the value
+of $h$th variable (<script type="math/tex">h\in \{1,2,\ldots,p\}</script>) for the $k$th of the $d_j$
+individuals (<script type="math/tex">k\in\{ 1,2,\ldots,d_j \}</script>) who die at the $j$th death time
+(<script type="math/tex">j\in\{ 1,2,\ldots,r \}</script>).</p>
+
+<p><strong>Standard error and confidence interval for coefficients.</strong> Note that
+the variance-covariance matrix of the estimated coefficients
+$\hat{\beta}$ can be approximated by the inverse of the Hessian
+evaluated at $\hat{\beta}$. The square root of the diagonal elements of
+this matrix are the standard errors of estimated coefficients. Once the
+standard errors of the coefficients $se(\hat{\beta})$ is obtained we can
+compute a $100(1-\alpha)\%$ confidence interval using
+<script type="math/tex">\hat{\beta}\pm z_{\alpha/2}se(\hat{\beta})</script>, where $z_{\alpha/2}$ is
+the upper $\alpha/2$-point of the standard normal distribution. In
+<code>Cox.dml</code>, we utilize the built-in function
+<code>inv()</code> to compute the inverse of the Hessian. Note that this
+build-in function can be used only if the Hessian fits in the main
+memory of a single machine.</p>
+
+<p><strong>Wald test, likelihood ratio test, and log-rank test.</strong> In order to
+test the <em>null hypothesis</em> that all of the coefficients
+$\beta_j$s are 0, our implementation provides three statistical test:
+<em>Wald test</em>, <em>likelihood ratio test</em>, the
+<em>log-rank test</em> (also known as the <em>score
+test</em>). Let $p$ be the number of coefficients. The Wald test is
+based on the test statistic ${\hat{\beta}}^2/{se(\hat{\beta})}^2$, which
+is compared to percentage points of the Chi-squared distribution to
+obtain the $P$-value. The likelihood ratio test relies on the test
+statistic <script type="math/tex">-2\log\{ {L}(\textbf{0})/{L}(\hat{\beta}) \}</script> ($\textbf{0}$
+denotes a zero vector of size $p$ ) which has an approximate Chi-squared
+distribution with $p$ degrees of freedom under the null hypothesis that
+all $\beta_j$s are 0. The Log-rank test is based on the test statistic
+$l=\nabla^\top L(\textbf{0}) {\mathcal{H}}^{-1}(\textbf{0}) \nabla L(\textbf{0})$,
+where $\nabla L(\textbf{0})$ is the gradient of $L$ and
+$\mathcal{H}(\textbf{0})$ is the Hessian of $L$ evaluated at <strong>0</strong>.
+Under the null hypothesis that $\beta=\textbf{0}$, $l$ has a Chi-squared
+distribution on $p$ degrees of freedom.</p>
+
+<p><strong>Prediction.</strong> Once the parameters of the model are fitted, we compute
+the following predictions together with their standard errors</p>
+
+<ul>
+  <li>linear predictors</li>
+  <li>risk</li>
+  <li>estimated cumulative hazard</li>
+</ul>
+
+<p>Given feature vector <script type="math/tex">X_i</script> for individual <script type="math/tex">i</script>, we obtain the above
+predictions at time <script type="math/tex">t</script> as follows. The linear predictors (denoted as
+<script type="math/tex">\mathcal{LP}</script>) as well as the risk (denoted as $\mathcal{R}$) are
+computed relative to a baseline whose feature values are the mean of the
+values in the corresponding features. Let <script type="math/tex">X_i^\text{rel} = X_i - \mu</script>,
+where <script type="math/tex">\mu</script> is a row vector that contains the mean values for each
+feature. We have <script type="math/tex">\mathcal{LP}=X_i^\text{rel} \hat{\beta}</script> and
+<script type="math/tex">\mathcal{R}=\exp\{ X_i^\text{rel}\hat{\beta} \}</script>. The standard errors
+of the linear predictors <script type="math/tex">se\{\mathcal{LP} \}</script> are computed as the
+square root of <script type="math/tex">{(X_i^\text{rel})}^\top V(\hat{\beta}) X_i^\text{rel}</script>
+and the standard error of the risk <script type="math/tex">se\{ \mathcal{R} \}</script> are given by
+the square root of
+<script type="math/tex">{(X_i^\text{rel} \odot \mathcal{R})}^\top V(\hat{\beta}) (X_i^\text{rel} \odot \mathcal{R})</script>,
+where <script type="math/tex">V(\hat{\beta})</script> is the variance-covariance matrix of the
+coefficients and <script type="math/tex">\odot</script> is the element-wise multiplication.</p>
+
+<p>We estimate the cumulative hazard function for individual $i$ by</p>
+
+<script type="math/tex; mode=display">\hat{H}_i(t) = \exp(\hat{\beta}^\top X_i) \hat{H}_0(t)</script>
+
+<p>where
+<script type="math/tex">\hat{H}_0(t)</script> is the <em>Breslow estimate</em> of the cumulative baseline
+hazard given by</p>
+
+<script type="math/tex; mode=display">\hat{H}_0(t) = \sum_{j=1}^{k} \frac{d_j}{\sum_{l\in R(t_{(j)})} \exp(\hat{\beta}^\top X_l)}</script>
+
+<p>In the equation above, as before, $d_j$ is the number of deaths, and
+<script type="math/tex">R(t_{(j)})</script> is the risk set at time <script type="math/tex">t_{(j)}</script>, for
+<script type="math/tex">t_{(k)} \leq t \leq t_{(k+1)}</script>, <script type="math/tex">k=1,2,\ldots,r-1</script>. The standard error
+of <script type="math/tex">\hat{H}_i(t)</script> is obtained using the estimation</p>
+
+<script type="math/tex; mode=display">se\{ \hat{H}_i(t) \} = \sum_{j=1}^{k} \frac{d_j}{ {\left[ \sum_{l\in R(t_{(j)})} \exp(X_l\hat{\beta}) \right]}^2 } + J_i^\top(t) V(\hat{\beta}) J_i(t)\</script>
+
+<p>where</p>
+
+<script type="math/tex; mode=display">J_i(t) = \sum_{j-1}^{k} d_j \frac{\sum_{l\in R(t_{(j)})} (X_l-X_i)\exp \{ (X_l-X_i)\hat{\beta} \}}{ {\left[ \sum_{l\in R(t_{(j)})} \exp\{(X_l-X_i)\hat{\beta}\} \right]}^2  }</script>
+
+<p>for <script type="math/tex">t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1</script>.</p>
+
+<h3 id="returns-1">Returns</h3>
+
+<p>Below we list the results of fitting a Cox regression model stored in
+matrix $M$ with the following schema:</p>
+
+<ul>
+  <li>Column 1: estimated regression coefficients $\hat{\beta}$</li>
+  <li>Column 2: $\exp(\hat{\beta})$</li>
+  <li>Column 3: standard error of the estimated coefficients
+$se{\hat{\beta}}$</li>
+  <li>Column 4: ratio of $\hat{\beta}$ to $se{\hat{\beta}}$ denoted by
+$Z$</li>
+  <li>Column 5: $P$-value of $Z$</li>
+  <li>Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for
+$\hat{\beta}$</li>
+  <li>Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for
+$\hat{\beta}$.</li>
+</ul>
+
+<p>Note that above $Z$ is the Wald test statistic which is asymptotically
+standard normal under the hypothesis that $\beta=\textbf{0}$.</p>
+
+<p>Moreover, <code>Cox.dml</code> outputs two log files <code>S</code> and
+<code>T</code> containing a summary statistics of the fitted model as
+follows. File <code>S</code> stores the following information</p>
+
+<ul>
+  <li>Line 1: total number of observations</li>
+  <li>Line 2: total number of events</li>
+  <li>Line 3: log-likelihood (of the fitted model)</li>
+  <li>Line 4: AIC</li>
+  <li>Line 5: Cox &amp; Snell Rsquare</li>
+  <li>Line 6: maximum possible Rsquare.</li>
+</ul>
+
+<p>Above, the AIC is computed as in <a href="algorithms-regression.html#stepwise-linear-regression">Stepwise Linear Regression</a>, the Cox &amp; Snell Rsquare
+is equal to <script type="math/tex">1-\exp\{ -l/n \}</script>, where $l$ is the log-rank test statistic
+as discussed above and $n$ is total number of observations, and the
+maximum possible Rsquare computed as <script type="math/tex">1-\exp\{ -2 L(\textbf{0})/n \}</script>,
+where $L(\textbf{0})$ denotes the initial likelihood.</p>
+
+<p>File <code>T</code> contains the following information</p>
+
+<ul>
+  <li>Line 1: Likelihood ratio test statistic, degree of freedom of the
+corresponding Chi-squared distribution, $P$-value</li>
+  <li>Line 2: Wald test statistic, degree of freedom of the corresponding
+Chi-squared distribution, $P$-value</li>
+  <li>Line 3: Score (log-rank) test statistic, degree of freedom of the
+corresponding Chi-squared distribution, $P$-value.</li>
+</ul>
+
+<p>Additionally, the following matrices will be stored. Note that these
+matrices are required for prediction.</p>
+
+<ul>
+  <li>Order-preserving recoded timestamps $RT$, i.e., contiguously
+numbered from 1 $\ldots$ #timestamps</li>
+  <li>Feature matrix ordered by the timestamps $XO$</li>
+  <li>Variance-covariance matrix of the coefficients $COV$</li>
+  <li>Column indices of the feature matrix with baseline factors removed
+(if available) $MF$.</li>
+</ul>
+
+<p><strong>Prediction.</strong> Finally, the results of prediction is stored in Matrix
+$P$ with the following schema</p>
+
+<ul>
+  <li>Column 1: linear predictors</li>
+  <li>Column 2: standard error of the linear predictors</li>
+  <li>Column 3: risk</li>
+  <li>Column 4: standard error of the risk</li>
+  <li>Column 5: estimated cumulative hazard</li>
+  <li>Column 6: standard error of the estimated cumulative hazard.</li>
+</ul>
+
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

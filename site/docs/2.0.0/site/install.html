@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>SystemDS Install from source - SystemDS 2.0.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css" />
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="http://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="http://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.0.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>ML Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+                <li><input id="s-bar" placeholder="Search Docs.." style="margin-top: 20px;"></input>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>
+    <div class="container" id="content">
+        <h1 class="title">SystemDS Install from source</h1>
+        <!--
+
+-->
+
+<p>This guide helps in the install and setup of SystemDS from source code.</p>
+
+<h2 id="windows">Windows</h2>
+
+<p>TODO</p>
+
+<h2 id="build-from-source-on-ubuntu-2004">Build from source on Ubuntu 20.04</h2>
+
+<h3 id="java-and-maven">Java and Maven</h3>
+
+<p>First setup java and maven to compile the system note that the java version is 1.8.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>apt <span class="nb">install </span>openjdk-8-jdk-headless
+<span class="nb">sudo </span>apt <span class="nb">install </span>maven
+</code></pre></div></div>
+
+<p>Verify the install with:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>java <span class="nt">-version</span>
+mvn <span class="nt">-version</span>
+</code></pre></div></div>
+
+<p>This should return something like:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>openjdk version <span class="s2">"1.8.0_252"</span>
+OpenJDK Runtime Environment <span class="o">(</span>build 1.8.0_252-8u252-b09-1ubuntu1-b09<span class="o">)</span>
+OpenJDK 64-Bit Server VM <span class="o">(</span>build 25.252-b09, mixed mode<span class="o">)</span>
+Apache Maven 3.6.3
+Maven home: /usr/share/maven
+Java version: 1.8.0_252, vendor: Private Build, runtime: /usr/lib/jvm/java-8-openjdk-amd64/jre
+Default locale: en_US, platform encoding: UTF-8
+OS name: <span class="s2">"linux"</span>, version: <span class="s2">"5.4.0-37-generic"</span>, <span class="nb">arch</span>: <span class="s2">"amd64"</span>, family: <span class="s2">"unix"</span>
+</code></pre></div></div>
+
+<h3 id="testing">Testing</h3>
+
+<p>R is required to be install to run the test suite, since many tests are constructed to comprare output with common R packages.
+One option to install this is to follow the guide on the following link: <a href="https://linuxize.com/post/how-to-install-r-on-ubuntu-20-04/">https://linuxize.com/post/how-to-install-r-on-ubuntu-20-04/</a></p>
+
+<p>At the time of writing the commands to install R 4.0.2 are:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>apt <span class="nb">install </span>dirmngr gnupg apt-transport-https ca-certificates software-properties-common
+<span class="nb">sudo </span>apt-key adv <span class="nt">--keyserver</span> keyserver.ubuntu.com <span class="nt">--recv-keys</span> E298A3A825C0D65DFD57CBB651716619E084DAB9
+<span class="nb">sudo </span>add-apt-repository <span class="s1">'deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/'</span>
+<span class="nb">sudo </span>apt <span class="nb">install </span>r-base
+</code></pre></div></div>
+
+<h2 id="build-the-project">Build the project</h2>
+
+<p>To compile the project use:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn package <span class="nt">-P</span> distribution
+</code></pre></div></div>
+
+<p>After some time it should return with:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>INFO] <span class="nt">------------------------------------------------------------------------</span>
+<span class="o">[</span>INFO] BUILD SUCCESS
+<span class="o">[</span>INFO] <span class="nt">------------------------------------------------------------------------</span>
+<span class="o">[</span>INFO] Total <span class="nb">time</span>:  31.730 s
+<span class="o">[</span>INFO] Finished at: 2020-06-18T11:00:29+02:00
+<span class="o">[</span>INFO] <span class="nt">------------------------------------------------------------------------</span>
+</code></pre></div></div>
+
+<p>The first time you package the system it will take longer since maven will download the dependencies.
+But successive compiles should become faster.</p>
+
+<p>Now everything is setup and ready to go!
+To execute dml scripts look at <a href="run">Execute SystemDS</a></p>
+
+    </div>
+    <!--
+
+-->
+ 
+<!-- Analytics -->
+<script>
+    (function(i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function() {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-71553733-1', 'auto');
+    ga('send', 'pageview');
+</script>
+ 
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+<!-- Algolia search section -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<script>
+    // Crawler configuration for the search indexing is available at:
+    // https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json
+
+    docsearch({
+        apiKey: '78c19564c220d4642a41197baae304ef',
+        indexName: 'apache_systemml',
+        inputSelector: "#s-bar",
+        // For custom styling for the dropdown, please set debug to true
+        // so that the dropdown won't disappear when the inspect tools are 
+        // open.
+        debug: false
+    });
+</script>
+</body>
+
+</html>

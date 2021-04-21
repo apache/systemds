@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Invoking SystemML in Spark Batch Mode - SystemML 0.14.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Invoking SystemML in Spark Batch Mode">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML (incubating)" title="Apache SystemML (incubating)"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup> (incubating)</a><br/>
+                        <span class="version">0.14.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Javadoc</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Invoking SystemML in Spark Batch Mode</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#overview" id="markdown-toc-overview">Overview</a></li>
+  <li><a href="#spark-batch-mode-invocation-syntax" id="markdown-toc-spark-batch-mode-invocation-syntax">Spark Batch Mode Invocation Syntax</a></li>
+  <li><a href="#execution-modes" id="markdown-toc-execution-modes">Execution modes</a></li>
+  <li><a href="#recommended-spark-configuration-settings" id="markdown-toc-recommended-spark-configuration-settings">Recommended Spark Configuration Settings</a></li>
+  <li><a href="#examples" id="markdown-toc-examples">Examples</a></li>
+</ul>
+
+<p><br /></p>
+
+<h1 id="overview">Overview</h1>
+
+<p>Given that a primary purpose of SystemML is to perform machine learning on large distributed data
+sets, one of the most important ways to invoke SystemML is Spark Batch. Here, we will look at this
+mode in more depth.</p>
+
+<p><strong>NOTE:</strong> For a programmatic API to run and interact with SystemML via Scala or Python, please see the
+<a href="spark-mlcontext-programming-guide">Spark MLContext Programming Guide</a>.</p>
+
+<hr />
+
+<h1 id="spark-batch-mode-invocation-syntax">Spark Batch Mode Invocation Syntax</h1>
+
+<p>SystemML can be invoked in Hadoop Batch mode using the following syntax:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>spark-submit SystemML.jar [-? | -help | -f &lt;filename&gt;] (-config=&lt;config_filename&gt;) ([-args | -nvargs] &lt;args-list&gt;)
+</code></pre>
+</div>
+
+<p>The DML script to invoke is specified after the <code class="highlighter-rouge">-f</code> argument. Configuration settings can be passed to SystemML
+using the optional <code class="highlighter-rouge">-config=</code> argument. DML scripts can optionally take named arguments (<code class="highlighter-rouge">-nvargs</code>) or positional
+arguments (<code class="highlighter-rouge">-args</code>). Named arguments are preferred over positional arguments. Positional arguments are considered
+to be deprecated. All the primary algorithm scripts included with SystemML use named arguments.</p>
+
+<p><strong>Example #1: DML Invocation with Named Arguments</strong></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>spark-submit systemml/SystemML.jar -f systemml/algorithms/Kmeans.dml -nvargs X=X.mtx k=5
+</code></pre>
+</div>
+
+<p><strong>Example #2: DML Invocation with Positional Arguments</strong></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>spark-submit systemml/SystemML.jar -f example/test/LinearRegression.dml -args "v" "y" 0.00000001 "w"
+</code></pre>
+</div>
+
+<h1 id="execution-modes">Execution modes</h1>
+
+<p>SystemML works seamlessly with all Spark execution modes, including <em>local</em> (<code class="highlighter-rouge">--master local[*]</code>),
+<em>yarn client</em> (<code class="highlighter-rouge">--master yarn-client</code>), <em>yarn cluster</em> (<code class="highlighter-rouge">--master yarn-cluster</code>), <em>etc</em>.  More
+information on Spark cluster execution modes can be found on the
+<a href="https://spark.apache.org/docs/latest/cluster-overview.html">official Spark cluster deployment documentation</a>.
+<em>Note</em> that Spark can be easily run on a laptop in local mode using the <code class="highlighter-rouge">--master local[*]</code> described
+above, which SystemML supports.</p>
+
+<h1 id="recommended-spark-configuration-settings">Recommended Spark Configuration Settings</h1>
+
+<p>For best performance, we recommend setting the following flags when running SystemML with Spark:
+<code class="highlighter-rouge">--conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128</code>.</p>
+
+<h1 id="examples">Examples</h1>
+
+<p>Please see the MNIST examples in the included
+<a href="https://github.com/apache/incubator-systemml/tree/master/scripts/staging/SystemML-NN">SystemML-NN</a>
+library for examples of Spark Batch mode execution with SystemML to train MNIST classifiers:</p>
+
+<ul>
+  <li><a href="https://github.com/apache/incubator-systemml/blob/master/scripts/staging/SystemML-NN/examples/mnist_softmax-train.dml">MNIST Softmax Classifier</a></li>
+  <li><a href="https://github.com/apache/incubator-systemml/blob/master/scripts/staging/SystemML-NN/examples/mnist_lenet-train.dml">MNIST LeNet ConvNet</a></li>
+</ul>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

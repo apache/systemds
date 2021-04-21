@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>SystemML Debugger Guide - SystemML 0.14.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="SystemML Debugger Guide">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML (incubating)" title="Apache SystemML (incubating)"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup> (incubating)</a><br/>
+                        <span class="version">0.14.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Javadoc</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">SystemML Debugger Guide</h1>
+          
+
+          <!--
+
+-->
+
+<h2 id="overview">Overview</h2>
+
+<p>SystemML supports DML script-level debugging through a command line interface.  The SystemML debugger provides functionality typically found in a debugging environment like setting breakpoints, controlling program execution, and inspecting variables.  To run a script in debug mode, specify the &#8216;-debug&#8217; option as shown in below example.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>hadoop jar SystemML.jar -f test.dml -debug
+</code></pre>
+</div>
+
+<h2 id="debugger-commands">Debugger Commands</h2>
+
+<p>After starting a SystemML debug session, a list of available commands is automatically displayed.  Debugger commands can be entered at the SystemML debugger prompt (SystemMLdb).
+The following sections describe each command along with example usage.</p>
+
+<ul>
+  <li><a href="#help">Help</a></li>
+  <li><a href="#quit">Quit</a></li>
+  <li><a href="#list">List</a></li>
+  <li><a href="#step">Step</a></li>
+  <li><a href="#break">Break</a></li>
+  <li><a href="#delete">Delete</a></li>
+  <li><a href="#info-break">Info break</a></li>
+  <li><a href="#continue">Continue</a></li>
+  <li><a href="#run">Run</a></li>
+  <li><a href="#whatis">Whatis</a></li>
+  <li><a href="#print">Print</a></li>
+  <li><a href="#set">Set</a></li>
+  <li><a href="#info-frame">Info frame</a></li>
+  <li><a href="#list-instruction">List instruction</a></li>
+  <li><a href="#step-instruction">Step instruction</a></li>
+</ul>
+
+<h3 id="help">Help</h3>
+
+<p>Type h for help to display a summary of available debugger commands.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) h
+
+SystemMLdb commands:
+h,help                                                 list debugger functions
+r,run                                                  start your DML script
+q,quit                                                 exit debug mode
+c,continue                                             continue running your DML script
+l,list &lt;[next numlines] | [prev numlines] | [all]&gt;     display DML script source lines. Default: numlines = 10
+b,break &lt;line-number&gt;                                  set breakpoint at given line number
+d,delete &lt;line-number&gt;                                 delete breakpoint at given line number
+s,step                                                 next line, stepping into function calls
+i,info &lt;break | frame&gt;                                 show all breakpoints or frames (info &lt;break | frame&gt;)
+p,print &lt;varName&gt;                                      display contents of a scalar or matrix variable or
+                                                       rows/columns/cell of matrix. (Eg: 'p alpha' or 'p A' or 'p A[1,]')
+set &lt;varName value&gt;                                    set value of a scalar or specified cell of a matrix variable. (Eg:
+                                                       'set alpha 0.1' or 'set A[1,2] 20')
+whatis &lt;varName&gt;                                       display the type (and metadata) of a variable. (Eg: 'whatis alpha'
+                                                       or 'whatis A')
+li,listi &lt;[next numlines] | [prev numlines] | [all]&gt;   display corresponding instructions for DML script source lines.
+                                                       Default: numlines = 10  (for advanced users)
+si,stepi                                               next runtime instruction rather than DML source lines (for advanced
+                                                       users)
+
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<h3 id="quit">Quit</h3>
+
+<p>To exit a debug session, simply type q.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>q,quit                                                 exit debug mode
+</code></pre>
+</div>
+
+<p>This returns control to the terminal or console shell which was used to launch the session.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) q
+$
+</code></pre>
+</div>
+
+<h2 id="debugger-commands-for-controlling-script-execution">Debugger commands for controlling script execution</h2>
+
+<p>This section describes commands that can be used to view and control script execution.  The following example script test.dml is used to demonstrate simple command usage scenarios.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>A = rand (rows=10, cols=5);
+B = rand (rows=5, cols=4);
+D = sum(A);
+print("Sum(A)=" + D);
+C = A %*% B;
+write(C, "output.csv", format="csv");
+</code></pre>
+</div>
+
+<h3 id="list">List</h3>
+
+<p>After initially launching a debug session, the script is loaded and ready to be run.  The l command can be used to display the source lines of the loaded script.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>l,list &lt;[next numlines] | [prev numlines] | [all]&gt;     display DML script source lines. Default: numlines = 10
+</code></pre>
+</div>
+
+<p>Without specifying any options, the list shows up to the next 10 lines of the script.  For example:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) l
+line    1: A = rand (rows=10, cols=5);
+line    2: B = rand (rows=5, cols=4);
+line    3: D = sum(A);
+line    4: print("Sum(A)=" + D);
+line    5: C = A %*% B;
+line    6: write(C, "output.csv", format="csv");
+</code></pre>
+</div>
+
+<h3 id="step">Step</h3>
+
+<p>Each line of the script can be stepped through using the s command.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>s,step                                                 next line, stepping into function calls
+</code></pre>
+</div>
+
+<p>So continuing with the example from previous section, typing s executes the current line 1:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) s
+Step reached at .defaultNS::main: (line 2).
+2    B = rand (rows=5, cols=4);
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<p>As can be seen from the output, the debugger executed line 1 and advanced to the next line in script.  The current line is automatically displayed.</p>
+
+<h3 id="break">Break</h3>
+
+<p>To execute a group of instructions up to a specific line, breakpoints can be used. To set a breakpoint, use the b command.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>b,break &lt;line-number&gt;                                  set breakpoint at given line number
+</code></pre>
+</div>
+
+<p>Continuing the example from step command, the current line was 2.  The below command sets a breakpoint at script source line number 4.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) b 4    
+Breakpoint added at .defaultNS::main, line 4.
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<h3 id="delete">Delete</h3>
+
+<p>Use the d command to remove a breakpoint.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>d,delete &lt;line-number&gt;                                 delete breakpoint at given line number
+</code></pre>
+</div>
+
+<p>Below is sample output when removing a breakpoint.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) d 4
+Breakpoint updated at .defaultNS::main, line 4.
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<p>If no breakpoint was set at the specified line number, then an appropriate message is displayed.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) d 4
+Sorry, a breakpoint cannot be deleted at line 4. Please try a different line number.
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<h3 id="info-break">Info break</h3>
+
+<p>To see a list of breakpoints, use the i command with the break option.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>i,info break                                           show all breakpoints
+</code></pre>
+</div>
+
+<p>Below is sample output after setting breakpoints at lines 2 and 4 of test.dml script.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) i break
+Breakpoint  1, at line    2 (enabled)
+Breakpoint  2, at line    4 (enabled)
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<p>The info command also has a frame option which is discussed in the section related to inspecting script variables.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>i,info &lt;break | frame&gt;                                 show all breakpoints or frames (info &lt;break | frame&gt;)
+</code></pre>
+</div>
+
+<h3 id="continue">Continue</h3>
+
+<p>The continue command resumes script execution from the current line up to the next breakpoint.  If no breakpoints are set, then the rest of the script will be executed and the debugger session terminated.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>c,continue                                             continue running your DML script
+</code></pre>
+</div>
+
+<p>Since the previous section set a breakpoint at line number 4, typing c to continue executes from the current line (2) up to but not including line 4 (i.e., the line with the breakpoint).</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) c
+Resuming DML script execution ...
+Breakpoint reached at .defaultNS::main instID 1: (line 4).
+4    print("Sum(A)=" + D);
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<p>Note that continue is not a valid command if the SystemML runtime has not been started.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) c
+Runtime has not been started. Try "r" to start DML runtime execution.
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<h3 id="run">Run</h3>
+
+<p>There are two ways of starting the SystemML runtime for a debug session - the step command or the run command.  A common scenario is to set breakpoint(s) in the beginning of a debug session, then use r to start the runtime and run until the breakpoint is reached or script completion.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>r,run                                                  start your DML script
+</code></pre>
+</div>
+
+<p>Using the same script from the previous example, the r command can be used in the beginning of the session to run the script up to a breakpoint or program completion if no breakpoint were set or reached.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) l
+line    1: A = rand (rows=10, cols=5);
+line    2: B = rand (rows=5, cols=4);
+line    3: D = sum(A);
+line    4: print("Sum(A)=" + D);
+line    5: C = A %*% B;
+line    6: write(C, "output.csv", format="csv");
+(SystemMLdb) b 4
+Breakpoint added at .defaultNS::main, line 4.
+(SystemMLdb) r
+Breakpoint reached at .defaultNS::main instID 1: (line 4).
+4    print("Sum(A)=" + D);
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<p>Note the run command is not valid if the runtime has already been started.  In that case, use continue or step to execute line(s) of the script.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) r
+Runtime has already started. Try "s" to go to next line, or "c" to continue running your DML script.
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<h2 id="debugger-commands-for-inspecting-or-modifying-script-variables">Debugger Commands for inspecting or modifying script variables</h2>
+
+<p>Variables that are in scope can be displayed in multiple ways.  The same test.dml script is used for showing sample command usage.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>A = rand (rows=10, cols=5);
+B = rand (rows=5, cols=4);
+D = sum(A);
+print("Sum(A)=" + D);
+C = A %*% B;
+write(C, "output.csv", format="csv");
+</code></pre>
+</div>
+
+<h3 id="whatis">Whatis</h3>
+
+<p>To display the type of a variable, use the whatis command.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>whatis &lt;varName&gt;                                       display the type (and metadata) of a variable. (Eg: 'whatis alpha'
+                                                       or 'whatis A')
+</code></pre>
+</div>
+
+<p>Given sample test.dml script with current line 4, then the metadata of variables A, B, D can be shown.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) whatis A
+Metadata of A: matrix[rows = 10, cols = 5, rpb = 1000, cpb = 1000]
+(SystemMLdb) whatis B
+Metadata of B: matrix[rows = 5, cols = 4, rpb = 1000, cpb = 1000]
+(SystemMLdb) whatis D
+Metadata of D: DataType.SCALAR
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<h3 id="print">Print</h3>
+
+<p>To view the contents of a variable, use the p command.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>p,print &lt;varName&gt;                                      display contents of a scalar or matrix variable or
+                                                       rows/columns/cell of matrix. (Eg: 'p alpha' or 'p A' or 'p A[1,]')
+</code></pre>
+</div>
+
+<p>Below is sample print output for the same variables used in previous section.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) p A
+0.6911	0.0533	0.7659	0.9130	0.1196	
+0.8153	0.6145	0.5440	0.2916	0.7330	
+0.0520	0.9484	0.2044	0.5571	0.6952	
+0.7422	0.4134	0.5388	0.1192	0.8733	
+0.6413	0.1825	0.4818	0.9019	0.7446	
+0.5984	0.8577	0.7151	0.3002	0.2228	
+0.0090	0.1429	0.2569	0.1421	0.1357	
+0.6778	0.8078	0.5075	0.0085	0.5159	
+0.8835	0.5621	0.7637	0.4362	0.4392	
+0.6108	0.5600	0.6140	0.0163	0.8640	
+(SystemMLdb) p B
+0.4141	0.9905	0.1642	0.7545	
+0.5733	0.1489	0.1204	0.5375	
+0.5202	0.9833	0.3421	0.7099	
+0.5846	0.7585	0.9751	0.1174	
+0.8431	0.5806	0.4122	0.3694	
+(SystemMLdb) p D
+D = 25.28558886582987
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<p>To display a specific element of a matrix, use [row,column] notation.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) p A[1,1]
+0.6911
+(SystemMLdb) p A[10,5]
+0.8640
+(SystemMLdb)  
+</code></pre>
+</div>
+
+<p>Specific rows or columns of a matrix can also be displayed.  The below examples show the first row and the fifth column of matrix A.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) p A[1,]
+0.6911	0.0533	0.7659	0.9130	0.1196	
+(SystemMLdb) p A[,5]
+0.1196	
+0.7330	
+0.6952	
+0.8733	
+0.7446	
+0.2228	
+0.1357	
+0.5159	
+0.4392	
+0.8640	
+(SystemMLdb)
+</code></pre>
+</div>
+
+<h3 id="set">Set</h3>
+
+<p>The set command is used for modifying variable contents.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>set &lt;varName value&gt;                                set value of a scalar or specified cell of a matrix variable. (Eg:
+                                                   'set alpha 0.1' or 'set A[1,2] 20')
+</code></pre>
+</div>
+
+<p>The following example modifies the first cell in matrix A.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) set A[1,1] 0.3299
+A[1,1] = 0.3299
+(SystemMLdb)  
+</code></pre>
+</div>
+
+<p>This example updates scalar D.  Note an equals sign is not needed when setting a variable.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) set D 25.0
+D = 25.0
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<h3 id="info-frame">Info frame</h3>
+
+<p>In addition to being used for displaying breakpoints, the i command is used for displaying frames.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>i,info frame                                       show all frames
+</code></pre>
+</div>
+
+<p>So if our test.xml script was executed up to line 4, then the following frame information is shown.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) i frame
+Current frame id: 0
+  Current program counter at .defaultNS::main instID -1: (line 4)
+  Local variables:
+    Variable name                            Variable value                          
+    A                                        Matrix: scratch_space//_p48857_9.30.252.162//_t0/temp1_1, [10 x 5, nnz=50, blocks (1000 x 1000)], binaryblock, dirty
+    B                                        Matrix: scratch_space//_p48857_9.30.252.162//_t0/temp2_2, [5 x 4, nnz=20, blocks (1000 x 1000)], binaryblock, dirty
+    D                                        25.28558886582987                       
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<p>Note only variables that are in scope are included (e.g., the variable C is not part of the frame since not yet in scope).</p>
+
+<h2 id="advanced-debugger-commands">Advanced Debugger Commands</h2>
+
+<p>This section describes commands for advanced users.  The same test.dml script is used for showing sample command usage.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>A = rand (rows=10, cols=5);
+B = rand (rows=5, cols=4);
+D = sum(A);
+print("Sum(A)=" + D);
+C = A %*% B;
+write(C, "output.csv", format="csv");
+</code></pre>
+</div>
+
+<h3 id="list-instruction">List Instruction</h3>
+
+<p>The li command can be used to display lower-level instructions along with the source lines of the loaded script.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>li,listi &lt;[next numlines] | [prev numlines] | [all]&gt;   display corresponding instructions for DML script source lines.
+                                                       Default: numlines = 10  (for advanced users)
+</code></pre>
+</div>
+
+<p>For example:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) li
+line    1: A = rand (rows=10, cols=5);
+	 id   -1: CP createvar _mVar1 scratch_space//_p1939_9.30.252.162//_t0/temp1 true binaryblock 10 5 1000 1000 50
+	 id   -1: CP rand 10 5 1000 1000 0.0 1.0 1.0 -1 uniform 1.0 4 _mVar1.MATRIX.DOUBLE
+	 id   -1: CP cpvar _mVar1 A
+	 id   -1: CP rmvar _mVar1
+line    2: B = rand (rows=5, cols=4);
+	 id   -1: CP createvar _mVar2 scratch_space//_p1939_9.30.252.162//_t0/temp2 true binaryblock 5 4 1000 1000 20
+	 id   -1: CP rand 5 4 1000 1000 0.0 1.0 1.0 -1 uniform 1.0 4 _mVar2.MATRIX.DOUBLE
+	 id   -1: CP cpvar _mVar2 B
+	 id   -1: CP rmvar _mVar2
+line    3: D = sum(A);
+	 id   -1: CP uak+ A.MATRIX.DOUBLE _Var3.SCALAR.DOUBLE
+	 id   -1: CP assignvar _Var3.SCALAR.DOUBLE.false D.SCALAR.DOUBLE
+	 id   -1: CP rmvar _Var3
+line    4: print("Sum(A)=" + D);
+	 id   -1: CP + Sum(A)=.SCALAR.STRING.true D.SCALAR.DOUBLE.false _Var4.SCALAR.STRING
+	 id   -1: CP print _Var4.SCALAR.STRING.false _Var5.SCALAR.STRING
+	 id   -1: CP rmvar _Var4
+	 id   -1: CP rmvar _Var5
+	 id   -1: CP rmvar D
+line    5: C = A %*% B;
+	 id   -1: CP createvar _mVar6 scratch_space//_p1939_9.30.252.162//_t0/temp3 true binaryblock 10 4 1000 1000 -1
+	 id   -1: CP ba+* A.MATRIX.DOUBLE B.MATRIX.DOUBLE _mVar6.MATRIX.DOUBLE 4
+	 id   -1: CP cpvar _mVar6 C
+	 id   -1: CP rmvar _mVar6
+	 id   -1: CP rmvar A
+	 id   -1: CP rmvar B
+line    6: write(C, "output.csv", format="csv");
+	 id   -1: CP write C.MATRIX.DOUBLE output.csv.SCALAR.STRING.true csv.SCALAR.STRING.true false , false
+	 id   -1: CP rmvar C
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<h3 id="step-instruction">Step Instruction</h3>
+
+<p>The si command can be used to step through the lower level instructions of an individual source line in a DML script.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>si,stepi                                               next runtime instruction rather than DML source lines (for advanced
+                                                       users)
+</code></pre>
+</div>
+
+<p>The first DML source line in test.dml consists of four instructions.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) li next 0
+line    1: A = rand (rows=10, cols=5);
+	 id   -1: CP createvar _mVar1 scratch_space//_p34473_9.30.252.162//_t0/temp1 true binaryblock 10 5 1000 1000 50
+	 id   -1: CP rand 10 5 1000 1000 0.0 1.0 1.0 -1 uniform 1.0 4 _mVar1.MATRIX.DOUBLE
+	 id   -1: CP cpvar _mVar1 A
+	 id   -1: CP rmvar _mVar1
+(SystemMLdb) 
+</code></pre>
+</div>
+
+<p>Type si to step through each individual instruction.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) si
+Step instruction reached at .defaultNS::main instID -1: (line 1).
+1    A = rand (rows=10, cols=5);
+(SystemMLdb) si
+Step instruction reached at .defaultNS::main instID -1: (line 1).
+1    A = rand (rows=10, cols=5);
+(SystemMLdb) si
+Step instruction reached at .defaultNS::main instID -1: (line 1).
+1    A = rand (rows=10, cols=5);
+(SystemMLdb) si
+Step instruction reached at .defaultNS::main instID -1: (line 1).
+1    A = rand (rows=10, cols=5);
+(SystemMLdb)
+</code></pre>
+</div>
+
+<p>Typing si again starts executing instructions of the next DML source line.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>(SystemMLdb) si
+Step instruction reached at .defaultNS::main instID -1: (line 2).
+2    B = rand (rows=5, cols=4);
+(SystemMLdb)
+</code></pre>
+</div>
+
+<hr />
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

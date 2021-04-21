@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Contributing to SystemML - SystemML 0.13.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Contributing to SystemML">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML (incubating)" title="Apache SystemML (incubating)"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup> (incubating)</a><br/>
+                        <span class="version">0.13.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Javadoc</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Contributing to SystemML</h1>
+          
+
+          <!--
+
+-->
+
+<p>There are many ways to become involved with SystemML:</p>
+
+<ul id="markdown-toc">
+  <li><a href="#mailing-lists" id="markdown-toc-mailing-lists">Mailing Lists</a>    <ul>
+      <li><a href="#development-mailing-list" id="markdown-toc-development-mailing-list">Development Mailing List</a></li>
+      <li><a href="#issues-mailing-list" id="markdown-toc-issues-mailing-list">Issues Mailing List</a></li>
+      <li><a href="#commits-mailing-list" id="markdown-toc-commits-mailing-list">Commits Mailing List</a></li>
+    </ul>
+  </li>
+  <li><a href="#issue-tracker" id="markdown-toc-issue-tracker">Issue Tracker</a></li>
+  <li><a href="#systemml-on-github" id="markdown-toc-systemml-on-github">SystemML on GitHub</a></li>
+  <li><a href="#documentation" id="markdown-toc-documentation">Documentation</a></li>
+</ul>
+
+<h2 id="mailing-lists">Mailing Lists</h2>
+
+<h3 id="development-mailing-list">Development Mailing List</h3>
+
+<p>Perhaps the easiest way to obtain help and contribute to SystemML is to join the SystemML Development
+mailing list (dev@systemml.incubator.apache.org). You can subscribe to this list by sending an email to
+<a href="&#109;&#097;&#105;&#108;&#116;&#111;:&#100;&#101;&#118;&#045;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;">&#100;&#101;&#118;&#045;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;</a>.
+You can unsubscribe from this list by sending an email to <a href="&#109;&#097;&#105;&#108;&#116;&#111;:&#100;&#101;&#118;&#045;&#117;&#110;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;">&#100;&#101;&#118;&#045;&#117;&#110;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;</a>. The dev mailing list archive can be found
+<a href="http://mail-archives.apache.org/mod_mbox/incubator-systemml-dev/">here</a>.</p>
+
+<h3 id="issues-mailing-list">Issues Mailing List</h3>
+
+<p>The issues mailing list archive can be found
+<a href="http://mail-archives.apache.org/mod_mbox/incubator-systemml-issues/">here</a>.
+To subscribe to the issues list, send an email to
+<a href="&#109;&#097;&#105;&#108;&#116;&#111;:&#105;&#115;&#115;&#117;&#101;&#115;&#045;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;">&#105;&#115;&#115;&#117;&#101;&#115;&#045;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;</a>.
+To unsubscribe from the issues list, send an email to
+<a href="&#109;&#097;&#105;&#108;&#116;&#111;:&#105;&#115;&#115;&#117;&#101;&#115;&#045;&#117;&#110;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;">&#105;&#115;&#115;&#117;&#101;&#115;&#045;&#117;&#110;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;</a>.</p>
+
+<h3 id="commits-mailing-list">Commits Mailing List</h3>
+
+<p>The commits mailing list archive can be found
+<a href="http://mail-archives.apache.org/mod_mbox/incubator-systemml-commits/">here</a>.
+To subscribe to the issues list, send an email to
+<a href="&#109;&#097;&#105;&#108;&#116;&#111;:&#099;&#111;&#109;&#109;&#105;&#116;&#115;&#045;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;">&#099;&#111;&#109;&#109;&#105;&#116;&#115;&#045;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;</a>.
+To unsubscribe from the issues list, send an email to
+<a href="&#109;&#097;&#105;&#108;&#116;&#111;:&#099;&#111;&#109;&#109;&#105;&#116;&#115;&#045;&#117;&#110;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;">&#099;&#111;&#109;&#109;&#105;&#116;&#115;&#045;&#117;&#110;&#115;&#117;&#098;&#115;&#099;&#114;&#105;&#098;&#101;&#064;&#115;&#121;&#115;&#116;&#101;&#109;&#109;&#108;&#046;&#105;&#110;&#099;&#117;&#098;&#097;&#116;&#111;&#114;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;</a>.</p>
+
+<h2 id="issue-tracker">Issue Tracker</h2>
+
+<p>Have you found a bug in SystemML? Have you thought of a way to improve SystemML? Are
+you interested in working on SystemML itself? If so, the SystemML
+<a href="https://issues.apache.org/jira/browse/SYSTEMML">JIRA Issue Tracker</a> is the place to go.</p>
+
+<h2 id="systemml-on-github">SystemML on GitHub</h2>
+
+<p>Have you found an issue on the SystemML <a href="https://issues.apache.org/jira/browse/SYSTEMML">JIRA Issue Tracker</a>
+that you are interested in working on?
+If so, add a comment to the issue asking to be assigned the issue. If you don&#8217;t hear back in a timely
+fashion, please contact us on the dev mailing list and we will be happy to help you.</p>
+
+<p>Once you have an issue to work on, how do you go about doing your work? The first thing you need is a GitHub
+account. Once you have a GitHub account, go to the Apache SystemML GitHub site at
+<a href="https://github.com/apache/incubator-systemml">https://github.com/apache/incubator-systemml</a> and
+click the Fork button to fork a personal remote copy of the SystemML repository to your GitHub account.</p>
+
+<p>The next step is to clone your SystemML fork to your local machine.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ git clone https://github.com/YOUR_GITHUB_NAME/incubator-systemml.git
+</code></pre>
+</div>
+
+<p>Following this, it&#8217;s a good idea to set your git user name and email address. In addition, you may want
+to set the <code class="highlighter-rouge">push.default</code> property to <code class="highlighter-rouge">simple</code>. You only need to execute these commands once.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ git config --global user.name "Your Name"
+$ git config --global user.email "yourname@yourhost.com"
+$ git config --global push.default simple
+</code></pre>
+</div>
+
+<p>Next, reference the main SystemML repository as a remote repository. By convention, you can
+call this <code class="highlighter-rouge">upstream</code>. You only need to add the remote <code class="highlighter-rouge">upstream</code> repository once.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ git remote add upstream https://github.com/apache/incubator-systemml.git
+</code></pre>
+</div>
+
+<p>After this, you should have an <code class="highlighter-rouge">origin</code> repository, which references your personal forked SystemML
+repository on GitHub, and the <code class="highlighter-rouge">upstream</code> repository, which references the main SystemML repository
+on GitHub.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ git remote -v
+origin   https://github.com/YOUR_GITHUB_NAME/incubator-systemml.git (fetch)
+origin   https://github.com/YOUR_GITHUB_NAME/incubator-systemml.git (push)
+upstream https://github.com/apache/incubator-systemml.git (fetch)
+upstream https://github.com/apache/incubator-systemml.git (push)
+</code></pre>
+</div>
+
+<p>The main code branch by convention is the <code class="highlighter-rouge">master</code> branch. You can check out the <code class="highlighter-rouge">master</code> branch
+using the <code class="highlighter-rouge">checkout</code> command:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git checkout master
+</code></pre>
+</div>
+
+<p>To update this branch with the latest official code, you can <code class="highlighter-rouge">pull</code> from the <code class="highlighter-rouge">upstream</code> <code class="highlighter-rouge">master</code>
+branch. A <code class="highlighter-rouge">pull</code> essentially does a <code class="highlighter-rouge">fetch</code> (retrieves code) and a <code class="highlighter-rouge">merge</code> (merges latest remote
+changes into your local branch):</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git pull upstream master
+</code></pre>
+</div>
+
+<p>It&#8217;s recommended that you create a new, separate branch for your work based on the current <code class="highlighter-rouge">master</code>
+branch. Give this branch a descriptive name. For example, if you were assigned the issue <code class="highlighter-rouge">SYSTEMML-101</code>,
+you could use the <code class="highlighter-rouge">checkout -b</code> command to create a new branch based on the <code class="highlighter-rouge">master</code> branch and
+check out this branch:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git checkout -b SYSTEMML-101-my_cool_new_feature
+</code></pre>
+</div>
+
+<p>At this point, you are ready to do your work on this branch.</p>
+
+<p>If you updates involve code, you should run the complete test suite to verify that your
+updates have not had unexpected side-effects in the project. You can do this via
+the Maven <code class="highlighter-rouge">verify</code> command:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn clean verify
+</code></pre>
+</div>
+
+<p>Your commit messages should follow standard git formatting conventions. If your
+commit is in regards to a particular JIRA issue, please
+include a reference to the JIRA issue, such as in the following:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git commit -m "[SYSTEMML-101] My cool new feature"
+</code></pre>
+</div>
+
+<p>When ready, push your changes on this branch to your remote GitHub fork:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ git push
+fatal: The current branch SYSTEMML-101-my_cool_new_feature has no upstream branch.
+To push the current branch and set the remote as upstream, use
+
+    git push --set-upstream origin SYSTEMML-101-my_cool_new_feature
+
+$ git push --set-upstream origin SYSTEMML-101-my_cool_new_feature
+</code></pre>
+</div>
+
+<p>At this stage, you can go to your GitHub web page and file a Pull Request for the work
+that you did on this branch. A Pull Request is a request for project committers (who have
+write access to Apache SystemML) to review your code and integrate your code into the project.
+Typically, you will see a green button to allow you to file a Pull Request.</p>
+
+<p>Once your Pull Request is opened at <a href="https://github.com/apache/incubator-systemml/pulls">SystemML Pull Requests</a>,
+typically Jenkins will automatically build the project to see
+if all tests pass when run for your particular branch. These automatic builds
+can be seen <a href="https://sparktc.ibmcloud.com/jenkins/job/SystemML-PullRequestBuilder/">here</a>.</p>
+
+<p>A conversation typically will proceed with regards to your Pull Request. Project committers and
+potentially others will give you useful feedback and potentially request that some changes be made
+to your code. In response, you can make the requested updates or explain why you feel that they make
+sense as they are. If you make additional updates, you can commit the changes and then push
+the changes to your remote branch. These updates will automatically appear in the pull request.</p>
+
+<p>When your changes are accepted (a committer will write &#8220;Looks good to me&#8221;, &#8220;LGTM&#8221;, or something
+similar), a committer will attempt to incorporate your changes into the
+SystemML project. Typically this is done by squashing all of your commits into a single commit
+and then rebasing your changes into the master branch. Rebasing gives a linear commit history
+to the project.</p>
+
+<p>If the merge in complicated, it is possible that a committer may ask you to resolve any merge
+conflicts in your pull request. If any difficulties are experienced, a project committer will be
+more than happy to assist in the integration of your work into the project.</p>
+
+<p>After the Pull Request is closed, a comment can be added to the original JIRA issue referencing
+the Pull Request, and the issue can be resolved and closed.</p>
+
+<h2 id="documentation">Documentation</h2>
+
+<p>Documentation is one useful way to become involved with SystemML. SystemML online documentation
+is generated from markdown using Jekyll. For more information, please see GitHub&#8217;s
+<a href="https://help.github.com/articles/using-jekyll-with-pages/">Using Jekyll with Pages</a>.</p>
+
+<p>After installing Jekyll, Jekyll can be run from the <code class="highlighter-rouge">docs</code> folder via:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>bundle exec jekyll serve
+</code></pre>
+</div>
+
+<p>This allows you to work on the documentation locally at http://127.0.0.1:4000.</p>
+
+<p>You can allow others to preview your documentation updates on GitHub by pushing the
+<code class="highlighter-rouge">docs</code> subtree of your branch to your remote <code class="highlighter-rouge">gh-pages</code> branch.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git subtree push --prefix docs origin gh-pages
+</code></pre>
+</div>
+
+<p>For instance, if you have filed a Pull Request for a documentation update on a regular branch,
+you could additionally push the <code class="highlighter-rouge">docs</code> subtree to the remote <code class="highlighter-rouge">gh-pages</code> branch. In the Pull Request
+conversation, you could include a link to the documentation that was automatically generated
+when you pushed to <code class="highlighter-rouge">gh-pages</code>. The URL is http://&lt;YOUR_NAME&gt;.github.io/incubator-systemml/.</p>
+
+<p>If you experience issues pushing the <code class="highlighter-rouge">docs</code> subtree to the <code class="highlighter-rouge">gh-pages</code> branch because you&#8217;ve
+previously pushed from a different branch, one simple solution is to delete the remote <code class="highlighter-rouge">gh-pages</code>
+branch and perform the <code class="highlighter-rouge">subtree</code> command again.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git push origin --delete gh-pages
+</code></pre>
+</div>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

@@ -1,0 +1,1712 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>systemml documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="None" href="index.html#document-index" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-systemml-s-documentation">
+<h1>Welcome to systemml&#8217;s documentation!<a class="headerlink" href="#welcome-to-systemml-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<span id="document-systemml"></span><div class="section" id="systemml-package">
+<h2>systemml package<a class="headerlink" href="#systemml-package" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="subpackages">
+<h3>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<span id="document-systemml.mllearn"></span><div class="section" id="systemml-mllearn-package">
+<h4>systemml.mllearn package<a class="headerlink" href="#systemml-mllearn-package" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="submodules">
+<h5>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h5>
+</div>
+<div class="section" id="module-systemml.mllearn.estimators">
+<span id="systemml-mllearn-estimators-module"></span><h5>systemml.mllearn.estimators module<a class="headerlink" href="#module-systemml.mllearn.estimators" title="Permalink to this headline">¶</a></h5>
+<dl class="class">
+<dt id="systemml.mllearn.estimators.LinearRegression">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">LinearRegression</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#LinearRegression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.estimators.LinearRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLRegressor</span></code></p>
+<p>Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LinearRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Load the diabetes dataset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_diabetes</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Use only one feature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Split the data into training/testing sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X_train</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X_test</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Split the targets into training/testing sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_y_train</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_y_test</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create linear regression object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regr</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s1">&#39;newton-cg&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train the model using the training sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">diabetes_X_train</span><span class="p">,</span> <span class="n">diabetes_y_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># The mean square error</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Residual sum of squares: </span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">regr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">diabetes_X_test</span><span class="p">)</span> <span class="o">-</span> <span class="n">diabetes_y_test</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.estimators.LogisticRegression">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">LogisticRegression</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>penalty='l2'</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>max_inner_iter=0</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#LogisticRegression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.estimators.LogisticRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs both binomial and multinomial logistic regression.</p>
+<p>Scikit-learn way</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LogisticRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logistic</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LogisticRegression score: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">logistic</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>MLPipeline way</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.ml</span> <span class="k">import</span> <span class="n">Pipeline</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LogisticRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.ml.feature</span> <span class="k">import</span> <span class="n">HashingTF</span><span class="p">,</span> <span class="n">Tokenizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">training</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">0</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;a b c d e spark&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">1</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;b d&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">2</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark f g h&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">3</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;hadoop mapreduce&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">4</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;b spark who&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">5</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;g d a y&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">6</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark fly&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">7</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;was mapreduce&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">8</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;e spark program&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">9</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;a e c l&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">10</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark compile&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">11</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;hadoop software&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="n">inputCol</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">outputCol</span><span class="o">=</span><span class="s2">&quot;words&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">hashingTF</span> <span class="o">=</span> <span class="n">HashingTF</span><span class="p">(</span><span class="n">inputCol</span><span class="o">=</span><span class="s2">&quot;words&quot;</span><span class="p">,</span> <span class="n">outputCol</span><span class="o">=</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="n">numFeatures</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">stages</span><span class="o">=</span><span class="p">[</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">hashingTF</span><span class="p">,</span> <span class="n">lr</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">12</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark i j k&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">13</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;l m n&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">14</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;mapreduce spark&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">15</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;apache hadoop&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.estimators.SVM">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">SVM</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>is_multi_class=False</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#SVM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.estimators.SVM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs both binary-class and multiclass SVM (Support Vector Machines).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">SVM</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">svm</span> <span class="o">=</span> <span class="n">SVM</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">,</span> <span class="n">is_multi_class</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LogisticRegression score: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">svm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.estimators.NaiveBayes">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">NaiveBayes</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>laplace=1.0</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#NaiveBayes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.estimators.NaiveBayes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs Naive Bayes.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">fetch_20newsgroups</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="k">import</span> <span class="n">TfidfVectorizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">NaiveBayes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">metrics</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">categories</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;alt.atheism&#39;</span><span class="p">,</span> <span class="s1">&#39;talk.religion.misc&#39;</span><span class="p">,</span> <span class="s1">&#39;comp.graphics&#39;</span><span class="p">,</span> <span class="s1">&#39;sci.space&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newsgroups_train</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newsgroups_test</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectorizer</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Both vectors and vectors_test are SciPy CSR matrix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectors</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">newsgroups_train</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectors_test</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">newsgroups_test</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nb</span> <span class="o">=</span> <span class="n">NaiveBayes</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nb</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span> <span class="n">newsgroups_train</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pred</span> <span class="o">=</span> <span class="n">nb</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">vectors_test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metrics</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">newsgroups_test</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-systemml.mllearn">
+<span id="module-contents"></span><h5>Module contents<a class="headerlink" href="#module-systemml.mllearn" title="Permalink to this headline">¶</a></h5>
+<div class="section" id="systemml-algorithms">
+<h6>SystemML Algorithms<a class="headerlink" href="#systemml-algorithms" title="Permalink to this headline">¶</a></h6>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" colspan="2">Classification Algorithms</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>LogisticRegression</td>
+<td>Performs binomial and multinomial logistic regression</td>
+</tr>
+<tr class="row-odd"><td>SVM</td>
+<td>Performs both binary-class and multi-class SVM</td>
+</tr>
+<tr class="row-even"><td>NaiveBayes</td>
+<td>Multinomial naive bayes classifier</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" colspan="2">Regression Algorithms</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>LinearRegression</td>
+<td>Performs linear regression</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="systemml.mllearn.LinearRegression">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">LinearRegression</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#LinearRegression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.LinearRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLRegressor</span></code></p>
+<p>Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LinearRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Load the diabetes dataset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_diabetes</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Use only one feature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Split the data into training/testing sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X_train</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X_test</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Split the targets into training/testing sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_y_train</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_y_test</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create linear regression object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regr</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s1">&#39;newton-cg&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Train the model using the training sets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">diabetes_X_train</span><span class="p">,</span> <span class="n">diabetes_y_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># The mean square error</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Residual sum of squares: </span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">regr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">diabetes_X_test</span><span class="p">)</span> <span class="o">-</span> <span class="n">diabetes_y_test</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.LogisticRegression">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">LogisticRegression</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>penalty='l2'</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>max_inner_iter=0</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#LogisticRegression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.LogisticRegression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs both binomial and multinomial logistic regression.</p>
+<p>Scikit-learn way</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LogisticRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logistic</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LogisticRegression score: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">logistic</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>MLPipeline way</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.ml</span> <span class="k">import</span> <span class="n">Pipeline</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">LogisticRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.ml.feature</span> <span class="k">import</span> <span class="n">HashingTF</span><span class="p">,</span> <span class="n">Tokenizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">training</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">0</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;a b c d e spark&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">1</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;b d&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">2</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark f g h&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">3</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;hadoop mapreduce&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">4</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;b spark who&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">5</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;g d a y&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">6</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark fly&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">7</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;was mapreduce&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">8</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;e spark program&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">9</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;a e c l&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">10</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark compile&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">11</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;hadoop software&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="n">inputCol</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">outputCol</span><span class="o">=</span><span class="s2">&quot;words&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">hashingTF</span> <span class="o">=</span> <span class="n">HashingTF</span><span class="p">(</span><span class="n">inputCol</span><span class="o">=</span><span class="s2">&quot;words&quot;</span><span class="p">,</span> <span class="n">outputCol</span><span class="o">=</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="n">numFeatures</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">stages</span><span class="o">=</span><span class="p">[</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">hashingTF</span><span class="p">,</span> <span class="n">lr</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">12</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;spark i j k&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">13</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;l m n&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">14</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;mapreduce spark&quot;</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">(</span><span class="mi">15</span><span class="n">L</span><span class="p">,</span> <span class="s2">&quot;apache hadoop&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.SVM">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">SVM</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>is_multi_class=False</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#SVM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.SVM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs both binary-class and multiclass SVM (Support Vector Machines).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">SVM</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">svm</span> <span class="o">=</span> <span class="n">SVM</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">,</span> <span class="n">is_multi_class</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LogisticRegression score: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">svm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mllearn.NaiveBayes">
+<em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">NaiveBayes</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>laplace=1.0</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#NaiveBayes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.NaiveBayes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<p>Performs Naive Bayes.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">fetch_20newsgroups</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="k">import</span> <span class="n">TfidfVectorizer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">NaiveBayes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">metrics</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">categories</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;alt.atheism&#39;</span><span class="p">,</span> <span class="s1">&#39;talk.religion.misc&#39;</span><span class="p">,</span> <span class="s1">&#39;comp.graphics&#39;</span><span class="p">,</span> <span class="s1">&#39;sci.space&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newsgroups_train</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newsgroups_test</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectorizer</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Both vectors and vectors_test are SciPy CSR matrix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectors</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">newsgroups_train</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vectors_test</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">newsgroups_test</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nb</span> <span class="o">=</span> <span class="n">NaiveBayes</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nb</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span> <span class="n">newsgroups_train</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pred</span> <span class="o">=</span> <span class="n">nb</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">vectors_test</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metrics</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">newsgroups_test</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+</div>
+<span id="document-systemml.random"></span><div class="section" id="systemml-random-package">
+<h4>systemml.random package<a class="headerlink" href="#systemml-random-package" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="submodules">
+<h5>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h5>
+</div>
+<div class="section" id="module-systemml.random.sampling">
+<span id="systemml-random-sampling-module"></span><h5>systemml.random.sampling module<a class="headerlink" href="#module-systemml.random.sampling" title="Permalink to this headline">¶</a></h5>
+<dl class="function">
+<dt id="systemml.random.sampling.normal">
+<code class="descclassname">systemml.random.sampling.</code><code class="descname">normal</code><span class="sig-paren">(</span><em>loc=0.0</em>, <em>scale=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/random/sampling.html#normal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.random.sampling.normal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw random samples from a normal (Gaussian) distribution.</p>
+<p>loc: Mean (&#8220;centre&#8221;) of the distribution.
+scale: Standard deviation (spread or &#8220;width&#8221;) of the distribution.
+size: Output shape (only tuple of length 2, i.e. (m, n), supported).
+sparsity: Sparsity (between 0.0 and 1.0).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 3.48857226,  6.17261819,  2.51167259],</span>
+<span class="go">       [ 3.60506708, -1.90266305,  3.97601633],</span>
+<span class="go">       [ 3.62245706,  5.9430881 ,  2.53070413]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.random.sampling.uniform">
+<code class="descclassname">systemml.random.sampling.</code><code class="descname">uniform</code><span class="sig-paren">(</span><em>low=0.0</em>, <em>high=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/random/sampling.html#uniform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.random.sampling.uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw samples from a uniform distribution.</p>
+<p>low: Lower boundary of the output interval.
+high: Upper boundary of the output interval.
+size: Output shape (only tuple of length 2, i.e. (m, n), supported). 
+sparsity: Sparsity (between 0.0 and 1.0).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 0.54511396,  0.11937437,  0.72975775],</span>
+<span class="go">       [ 0.14135946,  0.01944448,  0.52544478],</span>
+<span class="go">       [ 0.67582422,  0.87068849,  0.02766852]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.random.sampling.poisson">
+<code class="descclassname">systemml.random.sampling.</code><code class="descname">poisson</code><span class="sig-paren">(</span><em>lam=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/random/sampling.html#poisson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.random.sampling.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw samples from a Poisson distribution.</p>
+<p>lam: Expectation of interval, should be &gt; 0.
+size: Output shape (only tuple of length 2, i.e. (m, n), supported). 
+sparsity: Sparsity (between 0.0 and 1.0).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 1.,  0.,  2.],</span>
+<span class="go">       [ 1.,  0.,  0.],</span>
+<span class="go">       [ 0.,  0.,  0.]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-systemml.random">
+<span id="module-contents"></span><h5>Module contents<a class="headerlink" href="#module-systemml.random" title="Permalink to this headline">¶</a></h5>
+<div class="section" id="random-number-generation">
+<h6>Random Number Generation<a class="headerlink" href="#random-number-generation" title="Permalink to this headline">¶</a></h6>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" colspan="2">Univariate distributions</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>normal</td>
+<td>Normal / Gaussian distribution.</td>
+</tr>
+<tr class="row-odd"><td>poisson</td>
+<td>Poisson distribution.</td>
+</tr>
+<tr class="row-even"><td>uniform</td>
+<td>Uniform distribution.</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="systemml.random.normal">
+<code class="descclassname">systemml.random.</code><code class="descname">normal</code><span class="sig-paren">(</span><em>loc=0.0</em>, <em>scale=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/random/sampling.html#normal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.random.normal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw random samples from a normal (Gaussian) distribution.</p>
+<p>loc: Mean (&#8220;centre&#8221;) of the distribution.
+scale: Standard deviation (spread or &#8220;width&#8221;) of the distribution.
+size: Output shape (only tuple of length 2, i.e. (m, n), supported).
+sparsity: Sparsity (between 0.0 and 1.0).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 3.48857226,  6.17261819,  2.51167259],</span>
+<span class="go">       [ 3.60506708, -1.90266305,  3.97601633],</span>
+<span class="go">       [ 3.62245706,  5.9430881 ,  2.53070413]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.random.uniform">
+<code class="descclassname">systemml.random.</code><code class="descname">uniform</code><span class="sig-paren">(</span><em>low=0.0</em>, <em>high=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/random/sampling.html#uniform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.random.uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw samples from a uniform distribution.</p>
+<p>low: Lower boundary of the output interval.
+high: Upper boundary of the output interval.
+size: Output shape (only tuple of length 2, i.e. (m, n), supported). 
+sparsity: Sparsity (between 0.0 and 1.0).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 0.54511396,  0.11937437,  0.72975775],</span>
+<span class="go">       [ 0.14135946,  0.01944448,  0.52544478],</span>
+<span class="go">       [ 0.67582422,  0.87068849,  0.02766852]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.random.poisson">
+<code class="descclassname">systemml.random.</code><code class="descname">poisson</code><span class="sig-paren">(</span><em>lam=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/random/sampling.html#poisson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.random.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw samples from a Poisson distribution.</p>
+<p>lam: Expectation of interval, should be &gt; 0.
+size: Output shape (only tuple of length 2, i.e. (m, n), supported). 
+sparsity: Sparsity (between 0.0 and 1.0).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">systemml</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml</span> <span class="k">import</span> <span class="n">random</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[ 1.,  0.,  2.],</span>
+<span class="go">       [ 1.,  0.,  0.],</span>
+<span class="go">       [ 0.,  0.,  0.]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="submodules">
+<h3>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="module-systemml.converters">
+<span id="systemml-converters-module"></span><h3>systemml.converters module<a class="headerlink" href="#module-systemml.converters" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="systemml.converters.getNumCols">
+<code class="descclassname">systemml.converters.</code><code class="descname">getNumCols</code><span class="sig-paren">(</span><em>numPyArr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#getNumCols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.converters.getNumCols" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.converters.convertToMatrixBlock">
+<code class="descclassname">systemml.converters.</code><code class="descname">convertToMatrixBlock</code><span class="sig-paren">(</span><em>sc</em>, <em>src</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToMatrixBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.converters.convertToMatrixBlock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.converters.convertToNumPyArr">
+<code class="descclassname">systemml.converters.</code><code class="descname">convertToNumPyArr</code><span class="sig-paren">(</span><em>sc</em>, <em>mb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToNumPyArr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.converters.convertToNumPyArr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.converters.convertToPandasDF">
+<code class="descclassname">systemml.converters.</code><code class="descname">convertToPandasDF</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToPandasDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.converters.convertToPandasDF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.converters.convertToLabeledDF">
+<code class="descclassname">systemml.converters.</code><code class="descname">convertToLabeledDF</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>X</em>, <em>y=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToLabeledDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.converters.convertToLabeledDF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-systemml.defmatrix">
+<span id="systemml-defmatrix-module"></span><h3>systemml.defmatrix module<a class="headerlink" href="#module-systemml.defmatrix" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="systemml.defmatrix.setSparkContext">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">setSparkContext</code><span class="sig-paren">(</span><em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#setSparkContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.setSparkContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Before using the matrix, the user needs to invoke this function.</p>
+<dl class="docutils">
+<dt>sc: SparkContext</dt>
+<dd>SparkContext</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.defmatrix.matrix">
+<em class="property">class </em><code class="descclassname">systemml.defmatrix.</code><code class="descname">matrix</code><span class="sig-paren">(</span><em>data</em>, <em>op=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>matrix class is a python wrapper that implements basic matrix operators, matrix functions
+as well as converters to common Python types (for example: Numpy arrays, PySpark DataFrame
+and Pandas DataFrame).</p>
+<p>The operators supported are:</p>
+<ol class="arabic simple">
+<li>Arithmetic operators: +, -, <em>, /, //, %, *</em> as well as dot (i.e. matrix multiplication)</li>
+<li>Indexing in the matrix</li>
+<li>Relational/Boolean operators: &lt;, &lt;=, &gt;, &gt;=, ==, !=, &amp;, |</li>
+</ol>
+<p>In addition, following functions are supported for matrix:</p>
+<ol class="arabic simple">
+<li>transpose</li>
+<li>Aggregation functions: sum, mean, var, sd, max, min, argmin, argmax, cumsum</li>
+<li>Global statistical built-In functions: exp, log, abs, sqrt, round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve</li>
+</ol>
+<p>Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemML</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Welcome to Apache SystemML!</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">m2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span>
+<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
+<span class="go">mVar1 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar2 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar3 = mVar2 + mVar1</span>
+<span class="go">mVar4 = mVar1 * mVar3</span>
+<span class="go">mVar5 = 1.0 - mVar4</span>
+<span class="go">save(mVar5, &quot; &quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span>
+<span class="go"># This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span>
+<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
+<span class="go">mVar4 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar5 = 1.0 - mVar4</span>
+<span class="go">save(mVar5, &quot; &quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[-60.],</span>
+<span class="go">       [-60.],</span>
+<span class="go">       [-60.]])</span>
+</pre></div>
+</div>
+<p>Design Decisions:</p>
+<ol class="arabic simple">
+<li>Until eval() method is invoked, we create an AST (not exposed to the user) that consist of unevaluated operations and data required by those operations.
+As an anology, a spark user can treat eval() method similar to calling RDD.persist() followed by RDD.count().</li>
+<li>The AST consist of two kinds of nodes: either of type matrix or of type DMLOp.
+Both these classes expose _visit method, that helps in traversing the AST in DFS manner.</li>
+<li>A matrix object can either be evaluated or not.
+If evaluated, the attribute &#8216;data&#8217; is set to one of the supported types (for example: NumPy array or DataFrame). In this case, the attribute &#8216;op&#8217; is set to None.
+If not evaluated, the attribute &#8216;op&#8217; which refers to one of the intermediate node of AST and if of type DMLOp.  In this case, the attribute &#8216;data&#8217; is set to None.</li>
+</ol>
+<ol class="arabic" start="5">
+<li><p class="first">DMLOp has an attribute &#8216;inputs&#8217; which contains list of matrix objects or DMLOp.</p>
+</li>
+<li><p class="first">To simplify the traversal, every matrix object is considered immutable and an matrix operations creates a new matrix object.
+As an example: 
+<cite>m1 = sml.matrix(np.ones((3,3)))</cite> creates a matrix object backed by &#8216;data=(np.ones((3,3))&#8217;.
+<cite>m1 = m1 * 2</cite> will create a new matrix object which is now backed by &#8216;op=DMLOp( ... )&#8217; whose input is earlier created matrix object.</p>
+</li>
+<li><p class="first">Left indexing (implemented in __setitem__ method) is a special case, where Python expects the existing object to be mutated.
+To ensure the above property, we make deep copy of existing object and point any references to the left-indexed matrix to the newly created object.
+Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
+left-indexed-matrix = new-deep-copied-matrix
+left-indexed-matrix[index] = value</p>
+</li>
+<li><p class="first">Please use m.printAST() and/or  type <cite>m</cite> for debugging. Here is a sample session:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">npm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">npm</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">npm</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span>
+<span class="go">mVar2 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar1 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar3 = mVar1 + mVar2</span>
+<span class="go">save(mVar3, &quot; &quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span><span class="o">.</span><span class="n">printAST</span><span class="p">()</span>
+<span class="go">- [mVar3] (op).</span>
+<span class="go">  - [mVar1] (data).</span>
+<span class="go">  - [mVar2] (data).    </span>
+</pre></div>
+</div>
+</li>
+</ol>
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.argmax">
+<code class="descname">argmax</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.argmax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.argmax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the maximum values along an axis.</p>
+<p>axis : int, optional (only axis=1, i.e. rowIndexMax is supported in this version)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.argmin">
+<code class="descname">argmin</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.argmin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.argmin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the minimum values along an axis.</p>
+<p>axis : int, optional  (only axis=1, i.e. rowIndexMax is supported in this version)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.cumsum">
+<code class="descname">cumsum</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.cumsum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.cumsum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the maximum values along an axis.</p>
+<p>axis : int, optional (only axis=0, i.e. cumsum along the rows is supported in this version)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.defmatrix.matrix.dml">
+<code class="descname">dml</code><em class="property"> = []</em><a class="headerlink" href="#systemml.defmatrix.matrix.dml" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.dot">
+<code class="descname">dot</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.dot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.dot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numpy way of performing matrix multiplication</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.eval">
+<code class="descname">eval</code><span class="sig-paren">(</span><em>outputDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.eval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a convenience function that calls the global eval method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.max">
+<code class="descname">max</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.max"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.max" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the maximum value along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.mean">
+<code class="descname">mean</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the arithmetic mean along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.min">
+<code class="descname">min</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.min"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.min" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the minimum value along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.defmatrix.matrix.ml">
+<code class="descname">ml</code><em class="property"> = None</em><a class="headerlink" href="#systemml.defmatrix.matrix.ml" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.printAST">
+<code class="descname">printAST</code><span class="sig-paren">(</span><em>numSpaces=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.printAST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.printAST" title="Permalink to this definition">¶</a></dt>
+<dd><p>Please use m.printAST() and/or  type <cite>m</cite> for debugging. Here is a sample session:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">npm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">npm</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">npm</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span>
+<span class="go">mVar2 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar1 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar3 = mVar1 + mVar2</span>
+<span class="go">save(mVar3, &quot; &quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span><span class="o">.</span><span class="n">printAST</span><span class="p">()</span>
+<span class="go">- [mVar3] (op).</span>
+<span class="go">  - [mVar1] (data).</span>
+<span class="go">  - [mVar2] (data).</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.defmatrix.matrix.script">
+<code class="descname">script</code><em class="property"> = None</em><a class="headerlink" href="#systemml.defmatrix.matrix.script" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.sd">
+<code class="descname">sd</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.sd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.sd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the standard deviation along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.sum">
+<code class="descname">sum</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the sum along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.defmatrix.matrix.systemmlVarID">
+<code class="descname">systemmlVarID</code><em class="property"> = 0</em><a class="headerlink" href="#systemml.defmatrix.matrix.systemmlVarID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.toDF">
+<code class="descname">toDF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.toDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.toNumPy">
+<code class="descname">toNumPy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toNumPy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.toNumPy" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.toPandas">
+<code class="descname">toPandas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toPandas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.toPandas" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into Pandas DataFrame.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.trace">
+<code class="descname">trace</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sum of the cells of the main diagonal square matrix</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.transpose">
+<code class="descname">transpose</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.transpose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.transpose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transposes the matrix.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.defmatrix.matrix.var">
+<code class="descname">var</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.matrix.var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the variance along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.defmatrix.matrix.visited">
+<code class="descname">visited</code><em class="property"> = []</em><a class="headerlink" href="#systemml.defmatrix.matrix.visited" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.eval">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">eval</code><span class="sig-paren">(</span><em>outputs</em>, <em>outputDF=False</em>, <em>execute=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#eval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the unevaluated DML script and computes the matrices specified by outputs.</p>
+<p>outputs: list of matrices or a matrix object
+outputDF: back the data of matrix as PySpark DataFrame</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.solve">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">solve</code><span class="sig-paren">(</span><em>A</em>, <em>b</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#solve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the least squares solution for system of linear equations A %*% x = b</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemML</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_diabetes</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">beta</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_predicted</span> <span class="o">=</span> <span class="n">X_test</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Residual sum of squares: </span><span class="si">%.2f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">y_predicted</span> <span class="o">-</span> <span class="n">y_test</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+<span class="go">Residual sum of squares: 25282.12</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.defmatrix.DMLOp">
+<em class="property">class </em><code class="descclassname">systemml.defmatrix.</code><code class="descname">DMLOp</code><span class="sig-paren">(</span><em>inputs</em>, <em>dml=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#DMLOp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.DMLOp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Represents an intermediate node of Abstract syntax tree created to generate the PyDML script</p>
+<dl class="method">
+<dt id="systemml.defmatrix.DMLOp.printAST">
+<code class="descname">printAST</code><span class="sig-paren">(</span><em>numSpaces</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#DMLOp.printAST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.DMLOp.printAST" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.exp">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">exp</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#exp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.exp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.log">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">log</code><span class="sig-paren">(</span><em>X</em>, <em>y=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.abs">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">abs</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#abs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.abs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.sqrt">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">sqrt</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#sqrt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.sqrt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.round">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">round</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#round"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.round" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.floor">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">floor</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#floor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.floor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.ceil">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">ceil</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#ceil"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.ceil" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.sin">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">sin</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#sin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.sin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.cos">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">cos</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#cos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.cos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.tan">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">tan</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#tan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.tan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.asin">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">asin</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#asin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.asin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.acos">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">acos</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#acos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.acos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.atan">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">atan</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#atan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.atan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.defmatrix.sign">
+<code class="descclassname">systemml.defmatrix.</code><code class="descname">sign</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#sign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.defmatrix.sign" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="systemml-mlcontext-module">
+<h3>systemml.mlcontext module<a class="headerlink" href="#systemml-mlcontext-module" title="Permalink to this headline">¶</a></h3>
+<span class="target" id="module-systemml.mlcontext"></span><dl class="class">
+<dt id="systemml.mlcontext.MLResults">
+<em class="property">class </em><code class="descclassname">systemml.mlcontext.</code><code class="descname">MLResults</code><span class="sig-paren">(</span><em>results</em>, <em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLResults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.MLResults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Wrapper around a Java ML Results object.</p>
+<dl class="docutils">
+<dt>results: JavaObject</dt>
+<dd>A Java MLResults object as returned by calling <cite>ml.execute()</cite>.</dd>
+<dt>sc: SparkContext</dt>
+<dd>SparkContext</dd>
+</dl>
+<dl class="method">
+<dt id="systemml.mlcontext.MLResults.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>*outputs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLResults.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.MLResults.get" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>outputs: string, list of strings</dt>
+<dd>Output variables as defined inside the DML script.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mlcontext.MLContext">
+<em class="property">class </em><code class="descclassname">systemml.mlcontext.</code><code class="descname">MLContext</code><span class="sig-paren">(</span><em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.MLContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Wrapper around the new SystemML MLContext.</p>
+<dl class="docutils">
+<dt>sc: SparkContext</dt>
+<dd>SparkContext</dd>
+</dl>
+<dl class="method">
+<dt id="systemml.mlcontext.MLContext.execute">
+<code class="descname">execute</code><span class="sig-paren">(</span><em>script</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.MLContext.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a DML / PyDML script.</p>
+<dl class="docutils">
+<dt>script: Script instance</dt>
+<dd>Script instance defined with the appropriate input and output variables.</dd>
+</dl>
+<dl class="docutils">
+<dt>ml_results: MLResults</dt>
+<dd>MLResults instance.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mlcontext.MLContext.setExplain">
+<code class="descname">setExplain</code><span class="sig-paren">(</span><em>explain</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext.setExplain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.MLContext.setExplain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explanation about the program. Mainly intended for developers.</p>
+<p>explain: boolean</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mlcontext.MLContext.setExplainLevel">
+<code class="descname">setExplainLevel</code><span class="sig-paren">(</span><em>explainLevel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext.setExplainLevel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.MLContext.setExplainLevel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set explain level.</p>
+<dl class="docutils">
+<dt>explainLevel: string</dt>
+<dd>Can be one of &#8220;hops&#8221;, &#8220;runtime&#8221;, &#8220;recompile_hops&#8221;, &#8220;recompile_runtime&#8221;
+or in the above in upper case.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mlcontext.MLContext.setStatistics">
+<code class="descname">setStatistics</code><span class="sig-paren">(</span><em>statistics</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext.setStatistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.MLContext.setStatistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to output statistics (such as execution time, elapsed time)
+about script executions.</p>
+<p>statistics: boolean</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.mlcontext.Script">
+<em class="property">class </em><code class="descclassname">systemml.mlcontext.</code><code class="descname">Script</code><span class="sig-paren">(</span><em>scriptString</em>, <em>scriptType='dml'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#Script"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.Script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Instance of a DML/PyDML Script.</p>
+<dl class="docutils">
+<dt>scriptString: string</dt>
+<dd>Can be either a file path to a DML script or a DML script itself.</dd>
+<dt>scriptType: string</dt>
+<dd>Script language, either &#8220;dml&#8221; for DML (R-like) or &#8220;pydml&#8221; for PyDML (Python-like).</dd>
+</dl>
+<dl class="method">
+<dt id="systemml.mlcontext.Script.input">
+<code class="descname">input</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#Script.input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.Script.input" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>args: name, value tuple</dt>
+<dd>where name is a string, and currently supported value formats
+are double, string, dataframe, rdd, and list of such object.</dd>
+<dt>kwargs: dict of name, value pairs</dt>
+<dd>To know what formats are supported for name and value, look above.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.mlcontext.Script.output">
+<code class="descname">output</code><span class="sig-paren">(</span><em>*names</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#Script.output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.Script.output" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>names: string, list of strings</dt>
+<dd>Output variables as defined inside the DML script.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.mlcontext.dml">
+<code class="descclassname">systemml.mlcontext.</code><code class="descname">dml</code><span class="sig-paren">(</span><em>scriptString</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#dml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.dml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dml script object based on a string.</p>
+<dl class="docutils">
+<dt>scriptString: string</dt>
+<dd>Can be a path to a dml script or a dml script itself.</dd>
+</dl>
+<dl class="docutils">
+<dt>script: Script instance</dt>
+<dd>Instance of a script object.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.mlcontext.pydml">
+<code class="descclassname">systemml.mlcontext.</code><code class="descname">pydml</code><span class="sig-paren">(</span><em>scriptString</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#pydml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.pydml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a pydml script object based on a string.</p>
+<dl class="docutils">
+<dt>scriptString: string</dt>
+<dd>Can be a path to a pydml script or a pydml script itself.</dd>
+</dl>
+<dl class="docutils">
+<dt>script: Script instance</dt>
+<dd>Instance of a script object.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.mlcontext.getNumCols">
+<code class="descclassname">systemml.mlcontext.</code><code class="descname">getNumCols</code><span class="sig-paren">(</span><em>numPyArr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#getNumCols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.getNumCols" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.mlcontext.convertToMatrixBlock">
+<code class="descclassname">systemml.mlcontext.</code><code class="descname">convertToMatrixBlock</code><span class="sig-paren">(</span><em>sc</em>, <em>src</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToMatrixBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.convertToMatrixBlock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.mlcontext.convertToNumPyArr">
+<code class="descclassname">systemml.mlcontext.</code><code class="descname">convertToNumPyArr</code><span class="sig-paren">(</span><em>sc</em>, <em>mb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToNumPyArr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.convertToNumPyArr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.mlcontext.convertToPandasDF">
+<code class="descclassname">systemml.mlcontext.</code><code class="descname">convertToPandasDF</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToPandasDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.convertToPandasDF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.mlcontext.convertToLabeledDF">
+<code class="descclassname">systemml.mlcontext.</code><code class="descname">convertToLabeledDF</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>X</em>, <em>y=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToLabeledDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.convertToLabeledDF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-systemml">
+<span id="module-contents"></span><h3>Module contents<a class="headerlink" href="#module-systemml" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="systemml.MLResults">
+<em class="property">class </em><code class="descclassname">systemml.</code><code class="descname">MLResults</code><span class="sig-paren">(</span><em>results</em>, <em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLResults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.MLResults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Wrapper around a Java ML Results object.</p>
+<dl class="docutils">
+<dt>results: JavaObject</dt>
+<dd>A Java MLResults object as returned by calling <cite>ml.execute()</cite>.</dd>
+<dt>sc: SparkContext</dt>
+<dd>SparkContext</dd>
+</dl>
+<dl class="method">
+<dt id="systemml.MLResults.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>*outputs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLResults.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.MLResults.get" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>outputs: string, list of strings</dt>
+<dd>Output variables as defined inside the DML script.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.MLContext">
+<em class="property">class </em><code class="descclassname">systemml.</code><code class="descname">MLContext</code><span class="sig-paren">(</span><em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.MLContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Wrapper around the new SystemML MLContext.</p>
+<dl class="docutils">
+<dt>sc: SparkContext</dt>
+<dd>SparkContext</dd>
+</dl>
+<dl class="method">
+<dt id="systemml.MLContext.execute">
+<code class="descname">execute</code><span class="sig-paren">(</span><em>script</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.MLContext.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a DML / PyDML script.</p>
+<dl class="docutils">
+<dt>script: Script instance</dt>
+<dd>Script instance defined with the appropriate input and output variables.</dd>
+</dl>
+<dl class="docutils">
+<dt>ml_results: MLResults</dt>
+<dd>MLResults instance.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.MLContext.setExplain">
+<code class="descname">setExplain</code><span class="sig-paren">(</span><em>explain</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext.setExplain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.MLContext.setExplain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explanation about the program. Mainly intended for developers.</p>
+<p>explain: boolean</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.MLContext.setExplainLevel">
+<code class="descname">setExplainLevel</code><span class="sig-paren">(</span><em>explainLevel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext.setExplainLevel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.MLContext.setExplainLevel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set explain level.</p>
+<dl class="docutils">
+<dt>explainLevel: string</dt>
+<dd>Can be one of &#8220;hops&#8221;, &#8220;runtime&#8221;, &#8220;recompile_hops&#8221;, &#8220;recompile_runtime&#8221;
+or in the above in upper case.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.MLContext.setStatistics">
+<code class="descname">setStatistics</code><span class="sig-paren">(</span><em>statistics</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext.setStatistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.MLContext.setStatistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to output statistics (such as execution time, elapsed time)
+about script executions.</p>
+<p>statistics: boolean</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.Script">
+<em class="property">class </em><code class="descclassname">systemml.</code><code class="descname">Script</code><span class="sig-paren">(</span><em>scriptString</em>, <em>scriptType='dml'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#Script"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.Script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Instance of a DML/PyDML Script.</p>
+<dl class="docutils">
+<dt>scriptString: string</dt>
+<dd>Can be either a file path to a DML script or a DML script itself.</dd>
+<dt>scriptType: string</dt>
+<dd>Script language, either &#8220;dml&#8221; for DML (R-like) or &#8220;pydml&#8221; for PyDML (Python-like).</dd>
+</dl>
+<dl class="method">
+<dt id="systemml.Script.input">
+<code class="descname">input</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#Script.input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.Script.input" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>args: name, value tuple</dt>
+<dd>where name is a string, and currently supported value formats
+are double, string, dataframe, rdd, and list of such object.</dd>
+<dt>kwargs: dict of name, value pairs</dt>
+<dd>To know what formats are supported for name and value, look above.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.Script.output">
+<code class="descname">output</code><span class="sig-paren">(</span><em>*names</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#Script.output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.Script.output" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>names: string, list of strings</dt>
+<dd>Output variables as defined inside the DML script.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.dml">
+<code class="descclassname">systemml.</code><code class="descname">dml</code><span class="sig-paren">(</span><em>scriptString</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#dml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.dml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dml script object based on a string.</p>
+<dl class="docutils">
+<dt>scriptString: string</dt>
+<dd>Can be a path to a dml script or a dml script itself.</dd>
+</dl>
+<dl class="docutils">
+<dt>script: Script instance</dt>
+<dd>Instance of a script object.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.pydml">
+<code class="descclassname">systemml.</code><code class="descname">pydml</code><span class="sig-paren">(</span><em>scriptString</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#pydml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.pydml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a pydml script object based on a string.</p>
+<dl class="docutils">
+<dt>scriptString: string</dt>
+<dd>Can be a path to a pydml script or a pydml script itself.</dd>
+</dl>
+<dl class="docutils">
+<dt>script: Script instance</dt>
+<dd>Instance of a script object.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.setSparkContext">
+<code class="descclassname">systemml.</code><code class="descname">setSparkContext</code><span class="sig-paren">(</span><em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#setSparkContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.setSparkContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Before using the matrix, the user needs to invoke this function.</p>
+<dl class="docutils">
+<dt>sc: SparkContext</dt>
+<dd>SparkContext</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.matrix">
+<em class="property">class </em><code class="descclassname">systemml.</code><code class="descname">matrix</code><span class="sig-paren">(</span><em>data</em>, <em>op=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>matrix class is a python wrapper that implements basic matrix operators, matrix functions
+as well as converters to common Python types (for example: Numpy arrays, PySpark DataFrame
+and Pandas DataFrame).</p>
+<p>The operators supported are:</p>
+<ol class="arabic simple">
+<li>Arithmetic operators: +, -, <em>, /, //, %, *</em> as well as dot (i.e. matrix multiplication)</li>
+<li>Indexing in the matrix</li>
+<li>Relational/Boolean operators: &lt;, &lt;=, &gt;, &gt;=, ==, !=, &amp;, |</li>
+</ol>
+<p>In addition, following functions are supported for matrix:</p>
+<ol class="arabic simple">
+<li>transpose</li>
+<li>Aggregation functions: sum, mean, var, sd, max, min, argmin, argmax, cumsum</li>
+<li>Global statistical built-In functions: exp, log, abs, sqrt, round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve</li>
+</ol>
+<p>Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemML</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Welcome to Apache SystemML!</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">m2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span>
+<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
+<span class="go">mVar1 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar2 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar3 = mVar2 + mVar1</span>
+<span class="go">mVar4 = mVar1 * mVar3</span>
+<span class="go">mVar5 = 1.0 - mVar4</span>
+<span class="go">save(mVar5, &quot; &quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span>
+<span class="go"># This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span>
+<span class="go"># This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
+<span class="go">mVar4 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar5 = 1.0 - mVar4</span>
+<span class="go">save(mVar5, &quot; &quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m4</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="go">array([[-60.],</span>
+<span class="go">       [-60.],</span>
+<span class="go">       [-60.]])</span>
+</pre></div>
+</div>
+<p>Design Decisions:</p>
+<ol class="arabic simple">
+<li>Until eval() method is invoked, we create an AST (not exposed to the user) that consist of unevaluated operations and data required by those operations.
+As an anology, a spark user can treat eval() method similar to calling RDD.persist() followed by RDD.count().</li>
+<li>The AST consist of two kinds of nodes: either of type matrix or of type DMLOp.
+Both these classes expose _visit method, that helps in traversing the AST in DFS manner.</li>
+<li>A matrix object can either be evaluated or not.
+If evaluated, the attribute &#8216;data&#8217; is set to one of the supported types (for example: NumPy array or DataFrame). In this case, the attribute &#8216;op&#8217; is set to None.
+If not evaluated, the attribute &#8216;op&#8217; which refers to one of the intermediate node of AST and if of type DMLOp.  In this case, the attribute &#8216;data&#8217; is set to None.</li>
+</ol>
+<ol class="arabic" start="5">
+<li><p class="first">DMLOp has an attribute &#8216;inputs&#8217; which contains list of matrix objects or DMLOp.</p>
+</li>
+<li><p class="first">To simplify the traversal, every matrix object is considered immutable and an matrix operations creates a new matrix object.
+As an example: 
+<cite>m1 = sml.matrix(np.ones((3,3)))</cite> creates a matrix object backed by &#8216;data=(np.ones((3,3))&#8217;.
+<cite>m1 = m1 * 2</cite> will create a new matrix object which is now backed by &#8216;op=DMLOp( ... )&#8217; whose input is earlier created matrix object.</p>
+</li>
+<li><p class="first">Left indexing (implemented in __setitem__ method) is a special case, where Python expects the existing object to be mutated.
+To ensure the above property, we make deep copy of existing object and point any references to the left-indexed matrix to the newly created object.
+Then the left-indexed matrix is set to be backed by DMLOp consisting of following pydml:
+left-indexed-matrix = new-deep-copied-matrix
+left-indexed-matrix[index] = value</p>
+</li>
+<li><p class="first">Please use m.printAST() and/or  type <cite>m</cite> for debugging. Here is a sample session:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">npm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">npm</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">npm</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span>
+<span class="go">mVar2 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar1 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar3 = mVar1 + mVar2</span>
+<span class="go">save(mVar3, &quot; &quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span><span class="o">.</span><span class="n">printAST</span><span class="p">()</span>
+<span class="go">- [mVar3] (op).</span>
+<span class="go">  - [mVar1] (data).</span>
+<span class="go">  - [mVar2] (data).    </span>
+</pre></div>
+</div>
+</li>
+</ol>
+<dl class="method">
+<dt id="systemml.matrix.argmax">
+<code class="descname">argmax</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.argmax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.argmax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the maximum values along an axis.</p>
+<p>axis : int, optional (only axis=1, i.e. rowIndexMax is supported in this version)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.argmin">
+<code class="descname">argmin</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.argmin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.argmin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the minimum values along an axis.</p>
+<p>axis : int, optional  (only axis=1, i.e. rowIndexMax is supported in this version)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.cumsum">
+<code class="descname">cumsum</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.cumsum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.cumsum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the maximum values along an axis.</p>
+<p>axis : int, optional (only axis=0, i.e. cumsum along the rows is supported in this version)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.matrix.dml">
+<code class="descname">dml</code><em class="property"> = []</em><a class="headerlink" href="#systemml.matrix.dml" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.dot">
+<code class="descname">dot</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.dot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.dot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numpy way of performing matrix multiplication</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.eval">
+<code class="descname">eval</code><span class="sig-paren">(</span><em>outputDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.eval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a convenience function that calls the global eval method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.max">
+<code class="descname">max</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.max"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.max" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the maximum value along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.mean">
+<code class="descname">mean</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the arithmetic mean along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.min">
+<code class="descname">min</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.min"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.min" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the minimum value along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.matrix.ml">
+<code class="descname">ml</code><em class="property"> = None</em><a class="headerlink" href="#systemml.matrix.ml" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.printAST">
+<code class="descname">printAST</code><span class="sig-paren">(</span><em>numSpaces=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.printAST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.printAST" title="Permalink to this definition">¶</a></dt>
+<dd><p>Please use m.printAST() and/or  type <cite>m</cite> for debugging. Here is a sample session:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">npm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">npm</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">npm</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span>
+<span class="go">mVar2 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar1 = load(&quot; &quot;, format=&quot;csv&quot;)</span>
+<span class="go">mVar3 = mVar1 + mVar2</span>
+<span class="go">save(mVar3, &quot; &quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m3</span><span class="o">.</span><span class="n">printAST</span><span class="p">()</span>
+<span class="go">- [mVar3] (op).</span>
+<span class="go">  - [mVar1] (data).</span>
+<span class="go">  - [mVar2] (data).</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.matrix.script">
+<code class="descname">script</code><em class="property"> = None</em><a class="headerlink" href="#systemml.matrix.script" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.sd">
+<code class="descname">sd</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.sd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.sd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the standard deviation along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.sum">
+<code class="descname">sum</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the sum along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.matrix.systemmlVarID">
+<code class="descname">systemmlVarID</code><em class="property"> = 0</em><a class="headerlink" href="#systemml.matrix.systemmlVarID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.toDF">
+<code class="descname">toDF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.toDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into DataFrame.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.toNumPy">
+<code class="descname">toNumPy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toNumPy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.toNumPy" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into NumPy array.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.toPandas">
+<code class="descname">toPandas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.toPandas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.toPandas" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a convenience function that calls the global eval method and then converts the matrix object into Pandas DataFrame.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.trace">
+<code class="descname">trace</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sum of the cells of the main diagonal square matrix</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.transpose">
+<code class="descname">transpose</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.transpose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.transpose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transposes the matrix.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="systemml.matrix.var">
+<code class="descname">var</code><span class="sig-paren">(</span><em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#matrix.var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.matrix.var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the variance along the specified axis</p>
+<p>axis : int, optional</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="systemml.matrix.visited">
+<code class="descname">visited</code><em class="property"> = []</em><a class="headerlink" href="#systemml.matrix.visited" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.eval">
+<code class="descclassname">systemml.</code><code class="descname">eval</code><span class="sig-paren">(</span><em>outputs</em>, <em>outputDF=False</em>, <em>execute=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#eval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the unevaluated DML script and computes the matrices specified by outputs.</p>
+<p>outputs: list of matrices or a matrix object
+outputDF: back the data of matrix as PySpark DataFrame</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.solve">
+<code class="descclassname">systemml.</code><code class="descname">solve</code><span class="sig-paren">(</span><em>A</em>, <em>b</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#solve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the least squares solution for system of linear equations A %*% x = b</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemML</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_diabetes</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_train</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_test</span> <span class="o">=</span> <span class="n">diabetes_X</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_train</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_test</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">beta</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_predicted</span> <span class="o">=</span> <span class="n">X_test</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Residual sum of squares: </span><span class="si">%.2f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">y_predicted</span> <span class="o">-</span> <span class="n">y_test</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+<span class="go">Residual sum of squares: 25282.12</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="systemml.DMLOp">
+<em class="property">class </em><code class="descclassname">systemml.</code><code class="descname">DMLOp</code><span class="sig-paren">(</span><em>inputs</em>, <em>dml=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#DMLOp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.DMLOp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Represents an intermediate node of Abstract syntax tree created to generate the PyDML script</p>
+<dl class="method">
+<dt id="systemml.DMLOp.printAST">
+<code class="descname">printAST</code><span class="sig-paren">(</span><em>numSpaces</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#DMLOp.printAST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.DMLOp.printAST" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="systemml.exp">
+<code class="descclassname">systemml.</code><code class="descname">exp</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#exp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.exp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.log">
+<code class="descclassname">systemml.</code><code class="descname">log</code><span class="sig-paren">(</span><em>X</em>, <em>y=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.abs">
+<code class="descclassname">systemml.</code><code class="descname">abs</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#abs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.abs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.sqrt">
+<code class="descclassname">systemml.</code><code class="descname">sqrt</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#sqrt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.sqrt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.round">
+<code class="descclassname">systemml.</code><code class="descname">round</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#round"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.round" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.floor">
+<code class="descclassname">systemml.</code><code class="descname">floor</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#floor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.floor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.ceil">
+<code class="descclassname">systemml.</code><code class="descname">ceil</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#ceil"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.ceil" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.sin">
+<code class="descclassname">systemml.</code><code class="descname">sin</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#sin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.sin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.cos">
+<code class="descclassname">systemml.</code><code class="descname">cos</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#cos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.cos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.tan">
+<code class="descclassname">systemml.</code><code class="descname">tan</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#tan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.tan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.asin">
+<code class="descclassname">systemml.</code><code class="descname">asin</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#asin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.asin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.acos">
+<code class="descclassname">systemml.</code><code class="descname">acos</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#acos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.acos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.atan">
+<code class="descclassname">systemml.</code><code class="descname">atan</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#atan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.atan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.sign">
+<code class="descclassname">systemml.</code><code class="descname">sign</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/defmatrix.html#sign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.sign" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.getNumCols">
+<code class="descclassname">systemml.</code><code class="descname">getNumCols</code><span class="sig-paren">(</span><em>numPyArr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#getNumCols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.getNumCols" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.convertToMatrixBlock">
+<code class="descclassname">systemml.</code><code class="descname">convertToMatrixBlock</code><span class="sig-paren">(</span><em>sc</em>, <em>src</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToMatrixBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.convertToMatrixBlock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.convertToNumPyArr">
+<code class="descclassname">systemml.</code><code class="descname">convertToNumPyArr</code><span class="sig-paren">(</span><em>sc</em>, <em>mb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToNumPyArr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.convertToNumPyArr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.convertToPandasDF">
+<code class="descclassname">systemml.</code><code class="descname">convertToPandasDF</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToPandasDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.convertToPandasDF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="systemml.convertToLabeledDF">
+<code class="descclassname">systemml.</code><code class="descname">convertToLabeledDF</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>X</em>, <em>y=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/converters.html#convertToLabeledDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.convertToLabeledDF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html#document-index">Table Of Contents</a></h3>
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-systemml">systemml package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="index.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="index.html#document-systemml.mllearn">systemml.mllearn package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="index.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#module-systemml.mllearn.estimators">systemml.mllearn.estimators module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#module-systemml.mllearn">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#document-systemml.random">systemml.random package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="index.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#module-systemml.random.sampling">systemml.random.sampling module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#module-systemml.random">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#module-systemml.converters">systemml.converters module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#module-systemml.defmatrix">systemml.defmatrix module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#systemml-mlcontext-module">systemml.mlcontext module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#module-systemml">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html#document-index">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

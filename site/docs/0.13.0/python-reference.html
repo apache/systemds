@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <title>Reference Guide for Python Users - SystemML 0.13.0</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <meta name="description" content="Reference Guide for Python Users">
+        
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/pygments-default.css">
+        <link rel="shortcut icon" href="img/favicon.png">
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+        <![endif]-->
+
+        <header class="navbar navbar-default navbar-fixed-top" id="topbar">
+            <div class="container">
+                <div class="navbar-header">
+                    <div class="navbar-brand brand projectlogo">
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML (incubating)" title="Apache SystemML (incubating)"/></a>
+                    </div>
+                    <div class="navbar-brand brand projecttitle">
+                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup> (incubating)</a><br/>
+                        <span class="version">0.13.0</span>
+                    </div>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <nav class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="index.html">Overview</a></li>
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>Running SystemML:</b></li>
+                                <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
+                                <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
+                                <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
+                                <li><a href="standalone-guide.html">Standalone Guide</a></li>
+                                <li><a href="jmlc.html">Java Machine Learning Connector (JMLC)</a>
+                                <li class="divider"></li>
+                                <li><b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li><a href="beginners-guide-python.html">Beginner's Guide for Python Users</a></li>
+                                <li><a href="python-reference.html">Reference Guide for Python Users</a></li>
+                                <li class="divider"></li>
+                                <li><b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li><b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
+                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li class="divider"></li>
+                                <li><b>Other:</b></li>
+                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
+                                <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
+                                <li><a href="release-process.html">Release Process</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="./api/java/index.html">Javadoc</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><b>JIRA:</b></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <div class="container" id="content">
+          
+            <h1 class="title">Reference Guide for Python Users</h1>
+          
+
+          <!--
+
+-->
+
+<ul id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
+  <li><a href="#matrix-api" id="markdown-toc-matrix-api">matrix API</a>    <ul>
+      <li><a href="#usage" id="markdown-toc-usage">Usage:</a></li>
+      <li><a href="#reference-documentation" id="markdown-toc-reference-documentation">Reference Documentation:</a></li>
+    </ul>
+  </li>
+  <li><a href="#mlcontext-api" id="markdown-toc-mlcontext-api">MLContext API</a>    <ul>
+      <li><a href="#usage-1" id="markdown-toc-usage-1">Usage</a></li>
+      <li><a href="#reference-documentation-1" id="markdown-toc-reference-documentation-1">Reference documentation</a></li>
+    </ul>
+  </li>
+  <li><a href="#mllearn-api" id="markdown-toc-mllearn-api">mllearn API</a>    <ul>
+      <li><a href="#usage-2" id="markdown-toc-usage-2">Usage</a></li>
+      <li><a href="#reference-documentation-2" id="markdown-toc-reference-documentation-2">Reference documentation</a></li>
+    </ul>
+  </li>
+  <li><a href="#utility-classes-used-internally" id="markdown-toc-utility-classes-used-internally">Utility classes (used internally)</a>    <ul>
+      <li><a href="#systemmlclassloader" id="markdown-toc-systemmlclassloader">systemml.classloader</a></li>
+      <li><a href="#systemmlconverters" id="markdown-toc-systemmlconverters">systemml.converters</a></li>
+      <li><a href="#other-classes-from-systemmldefmatrix" id="markdown-toc-other-classes-from-systemmldefmatrix">Other classes from systemml.defmatrix</a></li>
+    </ul>
+  </li>
+  <li><a href="#troubleshooting-python-apis" id="markdown-toc-troubleshooting-python-apis">Troubleshooting Python APIs</a>    <ul>
+      <li><a href="#unable-to-load-systemmljar-into-current-pyspark-session" id="markdown-toc-unable-to-load-systemmljar-into-current-pyspark-session">Unable to load SystemML.jar into current pyspark session.</a></li>
+      <li><a href="#matrix-api-is-running-slow-when-setlazyfalse-or-when-eval-is-called-often" id="markdown-toc-matrix-api-is-running-slow-when-setlazyfalse-or-when-eval-is-called-often">matrix API is running slow when set_lazy(False) or when eval() is called often.</a></li>
+      <li><a href="#maximum-recursion-depth-exceeded" id="markdown-toc-maximum-recursion-depth-exceeded">maximum recursion depth exceeded</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p><br /></p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>SystemML enables flexible, scalable machine learning. This flexibility is achieved through the specification of a high-level declarative machine learning language that comes in two flavors, 
+one with an R-like syntax (DML) and one with a Python-like syntax (PyDML).</p>
+
+<p>Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or in Standalone mode. 
+No script modifications are required to change between modes. SystemML automatically performs advanced optimizations 
+based on data and cluster characteristics, so much of the need to manually tweak algorithms is largely reduced or eliminated.
+To understand more about DML and PyDML, we recommend that you read <a href="https://apache.github.io/incubator-systemml/beginners-guide-to-dml-and-pydml.html">Beginner&#8217;s Guide to DML and PyDML</a>.</p>
+
+<p>For convenience of Python users, SystemML exposes several language-level APIs that allow Python users to use SystemML
+and its algorithms without the need to know DML or PyDML. We explain these APIs in the below sections.</p>
+
+<h2 id="matrix-api">matrix API</h2>
+
+<p>The matrix class allows users to perform linear algebra operations in SystemML using a NumPy-like interface.
+This class supports several arithmetic operators (such as +, -, *, /, ^, etc) and also supports most of NumPy&#8217;s universal functions (i.e. ufuncs).</p>
+
+<p>The current version of NumPy explicitly disables overriding ufunc, but this should be enabled in next release. 
+Until then to test above code, please use:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git clone https://github.com/niketanpansare/numpy.git
+<span class="nb">cd </span>numpy
+python setup.py install
+</code></pre>
+</div>
+
+<p>This will enable NumPy&#8217;s functions to invoke matrix class:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">systemml</span> <span class="kn">as</span> <span class="nn">sml</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+</code></pre>
+</div>
+
+<p>The matrix class doesnot support following ufuncs:</p>
+
+<ul>
+  <li>Complex number related ufunc (for example: <code class="highlighter-rouge">conj</code>)</li>
+  <li>Hyperbolic/inverse-hyperbolic functions (for example: sinh, arcsinh, cosh, &#8230;)</li>
+  <li>Bitwise operators</li>
+  <li>Xor operator</li>
+  <li>Infinite/Nan-checking (for example: isreal, iscomplex, isfinite, isinf, isnan)</li>
+  <li>Other ufuncs: copysign, nextafter, modf, frexp, trunc.</li>
+</ul>
+
+<p>This class also supports several input/output formats such as NumPy arrays, Pandas DataFrame, SciPy sparse matrix and PySpark DataFrame.</p>
+
+<p>By default, the operations are evaluated lazily to avoid conversion overhead and also to maximize optimization scope.
+To disable lazy evaluation, please us <code class="highlighter-rouge">set_lazy</code> method:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">systemml</span> <span class="kn">as</span> <span class="nn">sml</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="n">Welcome</span> <span class="n">to</span> <span class="n">Apache</span> <span class="n">SystemML</span><span class="err">!</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span> <span class="o">+</span> <span class="n">m1</span>
+<span class="c"># This matrix (mVar4) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.</span>
+<span class="n">mVar2</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s">" "</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"csv"</span><span class="p">)</span>
+<span class="n">mVar1</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s">" "</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"csv"</span><span class="p">)</span>
+<span class="n">mVar3</span> <span class="o">=</span> <span class="n">mVar1</span> <span class="o">+</span> <span class="n">mVar2</span>
+<span class="n">mVar4</span> <span class="o">=</span> <span class="n">mVar3</span> <span class="o">+</span> <span class="n">mVar1</span>
+<span class="n">save</span><span class="p">(</span><span class="n">mVar4</span><span class="p">,</span> <span class="s">" "</span><span class="p">)</span>
+
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sml</span><span class="o">.</span><span class="n">set_lazy</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span> <span class="o">+</span> <span class="n">m1</span>
+<span class="c"># This matrix (mVar8) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.</span>
+</code></pre>
+</div>
+
+<h3 id="usage">Usage:</h3>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">systemml</span> <span class="kn">as</span> <span class="nn">sml</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m1</span><span class="p">)</span>
+<span class="n">m4</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">m2</span>
+<span class="n">m4</span><span class="o">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+</code></pre>
+</div>
+
+<p>Output:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>array<span class="o">([[</span>-60.],
+       <span class="o">[</span>-60.],
+       <span class="o">[</span>-60.]]<span class="o">)</span>
+</code></pre>
+</div>
+
+<h3 id="reference-documentation">Reference Documentation:</h3>
+
+<dl>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.defmatrix.matrix</code>(<em>data</em>, <em>op=None</em>)</dt>
+  <dd>Bases: <code class="highlighter-rouge">object</code>
+
+    <p>matrix class is a python wrapper that implements basic matrix
+operators, matrix functions as well as converters to common Python
+types (for example: Numpy arrays, PySpark DataFrame and Pandas
+DataFrame).</p>
+
+    <p>The operators supported are:</p>
+
+    <ol>
+      <li>Arithmetic operators: +, -, <em>, /, //, %, *</em> as well as dot
+(i.e. matrix multiplication)</li>
+      <li>Indexing in the matrix</li>
+      <li>Relational/Boolean operators: &lt;, &lt;=, &gt;, &gt;=, ==, !=, &amp;, |</li>
+    </ol>
+
+    <p>In addition, following functions are supported for matrix:</p>
+
+    <ol>
+      <li>transpose</li>
+      <li>Aggregation functions: sum, mean, var, sd, max, min, argmin,
+argmax, cumsum</li>
+      <li>Global statistical built-In functions: exp, log, abs, sqrt,
+round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve</li>
+    </ol>
+
+    <p>For all the above functions, we always return a two dimensional matrix, especially for aggregation functions with axis. 
+For example: Assuming m1 is a matrix of (3, n), NumPy returns a 1d vector of dimension (3,) for operation m1.sum(axis=1)
+whereas SystemML returns a 2d matrix of dimension (3, 1).</p>
+
+    <p>Note: an evaluated matrix contains a data field computed by eval
+method as DataFrame or NumPy array.</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; import SystemML as sml
+&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; sml.setSparkContext(sc)
+</code></pre>
+    </div>
+
+    <p>Welcome to Apache SystemML!</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; m1 = sml.matrix(np.ones((3,3)) + 2)
+&gt;&gt;&gt; m2 = sml.matrix(np.ones((3,3)) + 3)
+&gt;&gt;&gt; m2 = m1 * (m2 + m1)
+&gt;&gt;&gt; m4 = 1.0 - m2
+&gt;&gt;&gt; m4
+# This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
+mVar1 = load(" ", format="csv")
+mVar2 = load(" ", format="csv")
+mVar3 = mVar2 + mVar1
+mVar4 = mVar1 * mVar3
+mVar5 = 1.0 - mVar4
+save(mVar5, " ")
+&gt;&gt;&gt; m2.eval()
+&gt;&gt;&gt; m2
+# This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.
+&gt;&gt;&gt; m4
+# This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
+mVar4 = load(" ", format="csv")
+mVar5 = 1.0 - mVar4
+save(mVar5, " ")
+&gt;&gt;&gt; m4.sum(axis=1).toNumPy()
+array([[-60.],
+       [-60.],
+       [-60.]])
+</code></pre>
+    </div>
+
+    <p>Design Decisions:</p>
+
+    <ol>
+      <li>Until eval() method is invoked, we create an AST (not exposed to
+the user) that consist of unevaluated operations and data
+required by those operations. As an anology, a spark user can
+treat eval() method similar to calling RDD.persist() followed by
+RDD.count().</li>
+      <li>The AST consist of two kinds of nodes: either of type matrix or
+of type DMLOp. Both these classes expose _visit method, that
+helps in traversing the AST in DFS manner.</li>
+      <li>
+        <p>A matrix object can either be evaluated or not. If evaluated,
+the attribute &#8216;data&#8217; is set to one of the supported types (for
+example: NumPy array or DataFrame). In this case, the attribute
+&#8216;op&#8217; is set to None. If not evaluated, the attribute &#8216;op&#8217; which
+refers to one of the intermediate node of AST and if of type
+DMLOp. In this case, the attribute &#8216;data&#8217; is set to None.</p>
+      </li>
+      <li>
+        <p>DMLOp has an attribute &#8216;inputs&#8217; which contains list of matrix
+objects or DMLOp.</p>
+      </li>
+      <li>
+        <p>To simplify the traversal, every matrix object is considered
+immutable and an matrix operations creates a new matrix object.
+As an example: m1 = sml.matrix(np.ones((3,3))) creates a matrix
+object backed by &#8216;data=(np.ones((3,3))&#8217;. m1 = m1 * 2 will
+create a new matrix object which is now backed by &#8216;op=DMLOp( &#8230;
+)&#8217; whose input is earlier created matrix object.</p>
+      </li>
+      <li>
+        <p>Left indexing (implemented in __setitem__ method) is a
+special case, where Python expects the existing object to be
+mutated. To ensure the above property, we make deep copy of
+existing object and point any references to the left-indexed
+matrix to the newly created object. Then the left-indexed matrix
+is set to be backed by DMLOp consisting of following pydml:
+left-indexed-matrix = new-deep-copied-matrix
+left-indexed-matrix[index] = value</p>
+      </li>
+      <li>
+        <p>Please use m.print_ast() and/or type m for debugging. Here is a
+sample session:</p>
+
+        <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; npm = np.ones((3,3))
+&gt;&gt;&gt; m1 = sml.matrix(npm + 3)
+&gt;&gt;&gt; m2 = sml.matrix(npm + 5)
+&gt;&gt;&gt; m3 = m1 + m2
+&gt;&gt;&gt; m3
+mVar2 = load(" ", format="csv")
+mVar1 = load(" ", format="csv")
+mVar3 = mVar1 + mVar2
+save(mVar3, " ")
+&gt;&gt;&gt; m3.print_ast()
+- [mVar3] (op).
+  - [mVar1] (data).
+  - [mVar2] (data).    
+</code></pre>
+        </div>
+      </li>
+    </ol>
+  </dd>
+  <dt><code class="highlighter-rouge">abs</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">acos</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">arccos</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">arcsin</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">arctan</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">argmax</code>(<em>axis=None</em>)</dt>
+  <dd>Returns the indices of the maximum values along an axis.
+
+    <p>axis : int, optional (only axis=1, i.e. rowIndexMax is supported
+in this version)</p>
+  </dd>
+  <dt><code class="highlighter-rouge">argmin</code>(<em>axis=None</em>)</dt>
+  <dd>Returns the indices of the minimum values along an axis.
+
+    <p>axis : int, optional (only axis=1, i.e. rowIndexMax is supported
+in this version)</p>
+  </dd>
+  <dt><code class="highlighter-rouge">asfptype</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">asin</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">astype</code>(<em>t</em>)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">atan</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">ceil</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">cos</code>()</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">cumsum</code>(<em>axis=None</em>)</dt>
+  <dd>Returns the indices of the maximum values along an axis.
+
+    <p>axis : int, optional (only axis=0, i.e. cumsum along the rows is
+supported in this version)</p>
+  </dd>
+  <dt><code class="highlighter-rouge">deg2rad</code>()</dt>
+  <dd>Convert angles from degrees to radians.</dd>
+  <dt><code class="highlighter-rouge">dot</code>(<em>other</em>)[](#systemml.defmatrix.matrix.dot &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Numpy way of performing matrix multiplication</dd>
+  <dt><code class="highlighter-rouge">eval</code>(<em>outputDF=False</em>)[](#systemml.defmatrix.matrix.eval &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>This is a convenience function that calls the global eval method</dd>
+  <dt><code class="highlighter-rouge">exp</code>()[](#systemml.defmatrix.matrix.exp &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">exp2</code>()[](#systemml.defmatrix.matrix.exp2 &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">expm1</code>()[](#systemml.defmatrix.matrix.expm1 &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">floor</code>()[](#systemml.defmatrix.matrix.floor &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">get_shape</code>()[](#systemml.defmatrix.matrix.get_shape &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">ldexp</code>(<em>other</em>)[](#systemml.defmatrix.matrix.ldexp &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">log</code>(<em>y=None</em>)[](#systemml.defmatrix.matrix.log &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">log10</code>()[](#systemml.defmatrix.matrix.log10 &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">log1p</code>()[](#systemml.defmatrix.matrix.log1p &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">log2</code>()[](#systemml.defmatrix.matrix.log2 &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">logaddexp</code>(<em>other</em>)[](#systemml.defmatrix.matrix.logaddexp &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">logaddexp2</code>(<em>other</em>)[](#systemml.defmatrix.matrix.logaddexp2 &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">logical_not</code>()[](#systemml.defmatrix.matrix.logical_not &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">max</code>(<em>other=None</em>, <em>axis=None</em>)[](#systemml.defmatrix.matrix.max &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Compute the maximum value along the specified axis
+
+    <p>other: matrix or numpy array (&amp; other supported types) or scalar
+axis : int, optional</p>
+  </dd>
+  <dt><code class="highlighter-rouge">mean</code>(<em>axis=None</em>)[](#systemml.defmatrix.matrix.mean &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Compute the arithmetic mean along the specified axis
+
+    <p>axis : int, optional</p>
+  </dd>
+  <dt><code class="highlighter-rouge">min</code>(<em>other=None</em>, <em>axis=None</em>)[](#systemml.defmatrix.matrix.min &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Compute the minimum value along the specified axis
+
+    <p>other: matrix or numpy array (&amp; other supported types) or scalar
+axis : int, optional</p>
+  </dd>
+  <dt><code class="highlighter-rouge">mod</code>(<em>other</em>)[](#systemml.defmatrix.matrix.mod &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">ndim</code><em>= 2</em>[](#systemml.defmatrix.matrix.ndim &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">negative</code>()[](#systemml.defmatrix.matrix.negative &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">ones_like</code>()[](#systemml.defmatrix.matrix.ones_like &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">print_ast</code>()[](#systemml.defmatrix.matrix.print_ast &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Please use m.print_ast() and/or type m for debugging. Here is a
+sample session:
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; npm = np.ones((3,3))
+&gt;&gt;&gt; m1 = sml.matrix(npm + 3)
+&gt;&gt;&gt; m2 = sml.matrix(npm + 5)
+&gt;&gt;&gt; m3 = m1 + m2
+&gt;&gt;&gt; m3
+mVar2 = load(" ", format="csv")
+mVar1 = load(" ", format="csv")
+mVar3 = mVar1 + mVar2
+save(mVar3, " ")
+&gt;&gt;&gt; m3.print_ast()
+- [mVar3] (op).
+  - [mVar1] (data).
+  - [mVar2] (data).
+</code></pre>
+    </div>
+  </dd>
+  <dt><code class="highlighter-rouge">rad2deg</code>()[](#systemml.defmatrix.matrix.rad2deg &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Convert angles from radians to degrees.</dd>
+  <dt><code class="highlighter-rouge">reciprocal</code>()[](#systemml.defmatrix.matrix.reciprocal &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">remainder</code>(<em>other</em>)[](#systemml.defmatrix.matrix.remainder &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">round</code>()[](#systemml.defmatrix.matrix.round &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">script</code><em>= None</em>[](#systemml.defmatrix.matrix.script &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">sd</code>(<em>axis=None</em>)[](#systemml.defmatrix.matrix.sd &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Compute the standard deviation along the specified axis
+
+    <p>axis : int, optional</p>
+  </dd>
+  <dt><code class="highlighter-rouge">set_shape</code>(<em>shape</em>)[](#systemml.defmatrix.matrix.set_shape &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">shape</code>[](#systemml.defmatrix.matrix.shape &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">sign</code>()[](#systemml.defmatrix.matrix.sign &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">sin</code>()[](#systemml.defmatrix.matrix.sin &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">sqrt</code>()[](#systemml.defmatrix.matrix.sqrt &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">square</code>()[](#systemml.defmatrix.matrix.square &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">sum</code>(<em>axis=None</em>)[](#systemml.defmatrix.matrix.sum &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Compute the sum along the specified axis.
+
+    <p>axis : int, optional</p>
+  </dd>
+  <dt><code class="highlighter-rouge">systemmlVarID</code><em>= 0</em>[](#systemml.defmatrix.matrix.systemmlVarID &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">tan</code>()[](#systemml.defmatrix.matrix.tan &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">toDF</code>()[](#systemml.defmatrix.matrix.toDF &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>This is a convenience function that calls the global eval method
+and then converts the matrix object into DataFrame.</dd>
+  <dt><code class="highlighter-rouge">toNumPy</code>()[](#systemml.defmatrix.matrix.toNumPy &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>This is a convenience function that calls the global eval method
+and then converts the matrix object into NumPy array.</dd>
+  <dt><code class="highlighter-rouge">toPandas</code>()[](#systemml.defmatrix.matrix.toPandas &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>This is a convenience function that calls the global eval method
+and then converts the matrix object into Pandas DataFrame.</dd>
+  <dt><code class="highlighter-rouge">trace</code>()[](#systemml.defmatrix.matrix.trace &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Return the sum of the cells of the main diagonal square matrix</dd>
+  <dt><code class="highlighter-rouge">transpose</code>()[](#systemml.defmatrix.matrix.transpose &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Transposes the matrix.</dd>
+  <dt><code class="highlighter-rouge">var</code>(<em>axis=None</em>)[](#systemml.defmatrix.matrix.var &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Compute the variance along the specified axis
+
+    <p>axis : int, optional</p>
+  </dd>
+  <dt><code class="highlighter-rouge">zeros_like</code>()[](#systemml.defmatrix.matrix.zeros_like &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.defmatrix.eval</code>(<em>outputs</em>, <em>outputDF=False</em>, <em>execute=True</em>)[](#systemml.defmatrix.eval &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Executes the unevaluated DML script and computes the matrices
+specified by outputs.
+
+    <p>outputs: list of matrices or a matrix object outputDF: back the data
+of matrix as PySpark DataFrame</p>
+  </dd>
+  <dt><code class="highlighter-rouge">systemml.defmatrix.solve</code>(<em>A</em>, <em>b</em>)[](#systemml.defmatrix.solve &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Computes the least squares solution for system of linear equations A
+%*% x = b
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; from sklearn import datasets
+&gt;&gt;&gt; import SystemML as sml
+&gt;&gt;&gt; from pyspark.sql import SQLContext
+&gt;&gt;&gt; diabetes = datasets.load_diabetes()
+&gt;&gt;&gt; diabetes_X = diabetes.data[:, np.newaxis, 2]
+&gt;&gt;&gt; X_train = diabetes_X[:-20]
+&gt;&gt;&gt; X_test = diabetes_X[-20:]
+&gt;&gt;&gt; y_train = diabetes.target[:-20]
+&gt;&gt;&gt; y_test = diabetes.target[-20:]
+&gt;&gt;&gt; sml.setSparkContext(sc)
+&gt;&gt;&gt; X = sml.matrix(X_train)
+&gt;&gt;&gt; y = sml.matrix(y_train)
+&gt;&gt;&gt; A = X.transpose().dot(X)
+&gt;&gt;&gt; b = X.transpose().dot(y)
+&gt;&gt;&gt; beta = sml.solve(A, b).toNumPy()
+&gt;&gt;&gt; y_predicted = X_test.dot(beta)
+&gt;&gt;&gt; print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
+Residual sum of squares: 25282.12
+</code></pre>
+    </div>
+  </dd>
+  <dt><code class="highlighter-rouge">systemml.defmatrix.set_lazy</code>(<em>isLazy</em>)[](#systemml.defmatrix.set_max_depth &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>This method allows users to set whether the matrix operations should be executed in lazy manner.
+
+    <p>isLazy: True if matrix operations should be evaluated in lazy manner.</p>
+  </dd>
+  <dt><code class="highlighter-rouge">systemml.defmatrix.debug_array_conversion</code>(<em>throwError</em>)[](#systemml.defmatrix.debug_array_conversion &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.random.sampling.normal</code>(<em>loc=0.0</em>, <em>scale=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em>)(#systemml.random.sampling.normal &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Draw random samples from a normal (Gaussian) distribution.
+
+    <p>loc: Mean (&#8216;centre&#8217;) of the distribution. scale: Standard deviation
+(spread or &#8216;width&#8217;) of the distribution. size: Output shape (only
+tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
+(between 0.0 and 1.0).</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; import systemml as sml
+&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; sml.setSparkContext(sc)
+&gt;&gt;&gt; from systemml import random
+&gt;&gt;&gt; m1 = sml.random.normal(loc=3, scale=2, size=(3,3))
+&gt;&gt;&gt; m1.toNumPy()
+array([[ 3.48857226,  6.17261819,  2.51167259],
+       [ 3.60506708, -1.90266305,  3.97601633],
+       [ 3.62245706,  5.9430881 ,  2.53070413]])
+</code></pre>
+    </div>
+  </dd>
+  <dt><code class="highlighter-rouge">systemml.random.sampling.uniform</code>(<em>low=0.0</em>, <em>high=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em>)(#systemml.random.sampling.uniform &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Draw samples from a uniform distribution.
+
+    <p>low: Lower boundary of the output interval. high: Upper boundary of
+the output interval. size: Output shape (only tuple of length 2,
+i.e. (m, n), supported). sparsity: Sparsity (between 0.0 and 1.0).</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; import systemml as sml
+&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; sml.setSparkContext(sc)
+&gt;&gt;&gt; from systemml import random
+&gt;&gt;&gt; m1 = sml.random.uniform(size=(3,3))
+&gt;&gt;&gt; m1.toNumPy()
+array([[ 0.54511396,  0.11937437,  0.72975775],
+       [ 0.14135946,  0.01944448,  0.52544478],
+       [ 0.67582422,  0.87068849,  0.02766852]])
+</code></pre>
+    </div>
+  </dd>
+  <dt><code class="highlighter-rouge">systemml.random.sampling.poisson</code>(<em>lam=1.0</em>, <em>size=(1</em>, <em>1)</em>, <em>sparsity=1.0</em>)(#systemml.random.sampling.poisson &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Draw samples from a Poisson distribution.
+
+    <p>lam: Expectation of interval, should be &gt; 0. size: Output shape
+(only tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
+(between 0.0 and 1.0).</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; import systemml as sml
+&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; sml.setSparkContext(sc)
+&gt;&gt;&gt; from systemml import random
+&gt;&gt;&gt; m1 = sml.random.poisson(lam=1, size=(3,3))
+&gt;&gt;&gt; m1.toNumPy()
+array([[ 1.,  0.,  2.],
+       [ 1.,  0.,  0.],
+       [ 0.,  0.,  0.]])
+</code></pre>
+    </div>
+  </dd>
+</dl>
+
+<h2 id="mlcontext-api">MLContext API</h2>
+
+<p>The Spark MLContext API offers a programmatic interface for interacting with SystemML from Spark using languages such as Scala, Java, and Python. 
+As a result, it offers a convenient way to interact with SystemML from the Spark Shell and from Notebooks such as Jupyter and Zeppelin.</p>
+
+<h3 id="usage-1">Usage</h3>
+
+<p>The below example demonstrates how to invoke the algorithm <a href="https://github.com/apache/incubator-systemml/blob/master/scripts/algorithms/MultiLogReg.dml">scripts/algorithms/MultiLogReg.dml</a>
+using Python <a href="https://apache.github.io/incubator-systemml/spark-mlcontext-programming-guide">MLContext API</a>.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">SQLContext</span>
+<span class="kn">import</span> <span class="nn">systemml</span> <span class="kn">as</span> <span class="nn">sml</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">imp</span>
+<span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="c"># Split the data into training/testing sets and convert to PySpark DataFrame</span>
+<span class="n">X_df</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]))</span>
+<span class="n">y_df</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]))</span>
+<span class="n">ml</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">MLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="c"># Get the path of MultiLogReg.dml</span>
+<span class="n">scriptPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">imp</span><span class="o">.</span><span class="n">find_module</span><span class="p">(</span><span class="s">"systemml"</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span> <span class="s">'systemml-java'</span><span class="p">,</span> <span class="s">'scripts'</span><span class="p">,</span> <span class="s">'algorithms'</span><span class="p">,</span> <span class="s">'MultiLogReg.dml'</span><span class="p">)</span>
+<span class="n">script</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">dml</span><span class="p">(</span><span class="n">scriptPath</span><span class="p">)</span><span class="o">.</span><span class="nb">input</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X_df</span><span class="p">,</span> <span class="n">Y_vec</span><span class="o">=</span><span class="n">y_df</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="s">"B_out"</span><span class="p">)</span>
+<span class="n">beta</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">script</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">'B_out'</span><span class="p">)</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+</code></pre>
+</div>
+
+<h3 id="reference-documentation-1">Reference documentation</h3>
+
+<dl>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.mlcontext.MLResults</code>(<em>results</em>, <em>sc</em>)[](#systemml.mlcontext.MLResults &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Bases: <code class="highlighter-rouge">object</code>{.xref .py .py-class .docutils .literal}
+
+    <p>Wrapper around a Java ML Results object.</p>
+
+    <dl>
+      <dt>results: JavaObject</dt>
+      <dd>A Java MLResults object as returned by calling ml.execute().
+sc: SparkContext</dd>
+      <dd>SparkContext</dd>
+      <dt><code class="highlighter-rouge">get</code>(<em>*outputs</em>)[](#systemml.mlcontext.MLResults.get &#8220;Permalink to this definition&#8221;)</dt>
+      <dd>
+        <dl>
+          <dt>outputs: string, list of strings</dt>
+          <dd>Output variables as defined inside the DML script.</dd>
+        </dl>
+      </dd>
+    </dl>
+  </dd>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.mlcontext.MLContext</code>(<em>sc</em>)[](#systemml.mlcontext.MLContext &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Bases: <code class="highlighter-rouge">object</code>{.xref .py .py-class .docutils .literal}
+
+    <p>Wrapper around the new SystemML MLContext.</p>
+
+    <dl>
+      <dt>sc: SparkContext</dt>
+      <dd>SparkContext</dd>
+    </dl>
+  </dd>
+  <dt><code class="highlighter-rouge">execute</code>(<em>script</em>)[](#systemml.mlcontext.MLContext.execute &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Execute a DML / PyDML script.
+
+    <dl>
+      <dt>script: Script instance</dt>
+      <dd>Script instance defined with the appropriate input and
+output variables.</dd>
+      <dt>ml_results: MLResults</dt>
+      <dd>MLResults instance.</dd>
+    </dl>
+  </dd>
+  <dt><code class="highlighter-rouge">setExplain</code>(<em>explain</em>)[](#systemml.mlcontext.MLContext.setExplain &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Explanation about the program. Mainly intended for developers.
+
+    <p>explain: boolean</p>
+  </dd>
+  <dt><code class="highlighter-rouge">setExplainLevel</code>(<em>explainLevel</em>)[](#systemml.mlcontext.MLContext.setExplainLevel &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Set explain level.
+
+    <dl>
+      <dt>explainLevel: string</dt>
+      <dd>Can be one of &#8216;hops&#8217;, &#8216;runtime&#8217;, &#8216;recompile_hops&#8217;,
+&#8216;recompile_runtime&#8217; or in the above in upper case.</dd>
+    </dl>
+  </dd>
+  <dt><code class="highlighter-rouge">setStatistics</code>(<em>statistics</em>)[](#systemml.mlcontext.MLContext.setStatistics &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Whether or not to output statistics (such as execution time,
+elapsed time) about script executions.
+
+    <p>statistics: boolean</p>
+  </dd>
+  <dt><code class="highlighter-rouge">setStatisticsMaxHeavyHitters</code>(<em>maxHeavyHitters</em>)[](#systemml.mlcontext.MLContext.setStatisticsMaxHeavyHitters &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>The maximum number of heavy hitters that are printed as part of
+the statistics.
+
+    <p>maxHeavyHitters: int</p>
+  </dd>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.mlcontext.Script</code>(<em>scriptString</em>, <em>scriptType=&#8217;dml&#8217;</em>)[](#systemml.mlcontext.Script &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Bases: <code class="highlighter-rouge">object</code>{.xref .py .py-class .docutils .literal}
+
+    <p>Instance of a DML/PyDML Script.</p>
+
+    <dl>
+      <dt>scriptString: string</dt>
+      <dd>Can be either a file path to a DML script or a DML script
+itself.
+scriptType: string</dd>
+      <dd>Script language, either &#8216;dml&#8217; for DML (R-like) or &#8216;pydml&#8217; for
+PyDML (Python-like).</dd>
+    </dl>
+  </dd>
+  <dt><code class="highlighter-rouge">input</code>(<em>*args</em>, <em>**kwargs</em>)[](#systemml.mlcontext.Script.input &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>
+    <dl>
+      <dt>args: name, value tuple</dt>
+      <dd>where name is a string, and currently supported value
+formats are double, string, dataframe, rdd, and list of such
+object.
+kwargs: dict of name, value pairs</dd>
+      <dd>To know what formats are supported for name and value, look
+above.</dd>
+    </dl>
+  </dd>
+  <dt><code class="highlighter-rouge">output</code>(<em>*names</em>)[](#systemml.mlcontext.Script.output &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>
+    <dl>
+      <dt>names: string, list of strings</dt>
+      <dd>Output variables as defined inside the DML script.</dd>
+    </dl>
+  </dd>
+  <dt><code class="highlighter-rouge">systemml.mlcontext.dml</code>(<em>scriptString</em>)[](#systemml.mlcontext.dml &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Create a dml script object based on a string.
+
+    <dl>
+      <dt>scriptString: string</dt>
+      <dd>Can be a path to a dml script or a dml script itself.</dd>
+      <dt>script: Script instance</dt>
+      <dd>Instance of a script object.</dd>
+    </dl>
+  </dd>
+  <dt><code class="highlighter-rouge">systemml.mlcontext.pydml</code>(<em>scriptString</em>)[](#systemml.mlcontext.pydml &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Create a pydml script object based on a string.
+
+    <dl>
+      <dt>scriptString: string</dt>
+      <dd>Can be a path to a pydml script or a pydml script itself.</dd>
+      <dt>script: Script instance</dt>
+      <dd>Instance of a script object.</dd>
+    </dl>
+  </dd>
+  <dt><code class="highlighter-rouge">systemml.mlcontext.getNumCols</code>(<em>numPyArr</em>)[](#systemml.mlcontext.getNumCols &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.mlcontext.convertToMatrixBlock</code>(<em>sc</em>, <em>src</em>)[](#systemml.mlcontext.convertToMatrixBlock &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.mlcontext.convertToNumPyArr</code>(<em>sc</em>, <em>mb</em>)[](#systemml.mlcontext.convertToNumPyArr &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.mlcontext.convertToPandasDF</code>(<em>X</em>)[](#systemml.mlcontext.convertToPandasDF &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.mlcontext.convertToLabeledDF</code>(<em>sqlCtx</em>, <em>X</em>, <em>y=None</em>)[](#systemml.mlcontext.convertToLabeledDF &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+</dl>
+
+<h2 id="mllearn-api">mllearn API</h2>
+
+<h3 id="usage-2">Usage</h3>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="c"># Scikit-learn way</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
+<span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="kn">import</span> <span class="n">LogisticRegression</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SQLContext</span>
+<span class="n">sqlCtx</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="n">digits</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_digits</span><span class="p">()</span>
+<span class="n">X_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">data</span>
+<span class="n">y_digits</span> <span class="o">=</span> <span class="n">digits</span><span class="o">.</span><span class="n">target</span> 
+<span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_digits</span><span class="p">)</span>
+<span class="n">X_train</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="n">y_train</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[:</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">]</span>
+<span class="n">X_test</span> <span class="o">=</span> <span class="n">X_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="n">y_test</span> <span class="o">=</span> <span class="n">y_digits</span><span class="p">[</span><span class="o">.</span><span class="mi">9</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">:]</span>
+<span class="n">logistic</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">sqlCtx</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'LogisticRegression score: </span><span class="si">%</span><span class="s">f'</span> <span class="o">%</span> <span class="n">logistic</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">))</span>
+</code></pre>
+</div>
+
+<p>Output:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>LogisticRegression score: 0.922222
+</code></pre>
+</div>
+
+<h3 id="reference-documentation-2">Reference documentation</h3>
+
+<dl>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.mllearn.estimators.LinearRegression</code>(<em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=float(&#8220;inf&#8221;)</em>, <em>solver=&#8217;newton-cg&#8217;</em>, <em>transferUsingDF=False</em>)(#systemml.mllearn.estimators.LinearRegression &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Bases: <code class="highlighter-rouge">systemml.mllearn.estimators.BaseSystemMLRegressor</code>{.xref .py
+.py-class .docutils .literal}
+
+    <p>Performs linear regression to model the relationship between one
+numerical response variable and one or more explanatory (feature)
+variables.</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; from sklearn import datasets
+&gt;&gt;&gt; from systemml.mllearn import LinearRegression
+&gt;&gt;&gt; from pyspark.sql import SQLContext
+&gt;&gt;&gt; # Load the diabetes dataset
+&gt;&gt;&gt; diabetes = datasets.load_diabetes()
+&gt;&gt;&gt; # Use only one feature
+&gt;&gt;&gt; diabetes_X = diabetes.data[:, np.newaxis, 2]
+&gt;&gt;&gt; # Split the data into training/testing sets
+&gt;&gt;&gt; diabetes_X_train = diabetes_X[:-20]
+&gt;&gt;&gt; diabetes_X_test = diabetes_X[-20:]
+&gt;&gt;&gt; # Split the targets into training/testing sets
+&gt;&gt;&gt; diabetes_y_train = diabetes.target[:-20]
+&gt;&gt;&gt; diabetes_y_test = diabetes.target[-20:]
+&gt;&gt;&gt; # Create linear regression object
+&gt;&gt;&gt; regr = LinearRegression(sqlCtx, solver='newton-cg')
+&gt;&gt;&gt; # Train the model using the training sets
+&gt;&gt;&gt; regr.fit(diabetes_X_train, diabetes_y_train)
+&gt;&gt;&gt; # The mean square error
+&gt;&gt;&gt; print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
+</code></pre>
+    </div>
+  </dd>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.mllearn.estimators.LogisticRegression</code>(<em>sqlCtx</em>, <em>penalty=&#8217;l2&#8217;</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>,  <em>max_iter=100</em>, <em>max_inner_iter=0</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver=&#8217;newton-cg&#8217;</em>, <em>transferUsingDF=False</em>)(#systemml.mllearn.estimators.LogisticRegression &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Bases: <code class="highlighter-rouge">systemml.mllearn.estimators.BaseSystemMLClassifier</code>{.xref
+.py .py-class .docutils .literal}
+
+    <p>Performs both binomial and multinomial logistic regression.</p>
+
+    <p>Scikit-learn way</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; from sklearn import datasets, neighbors
+&gt;&gt;&gt; from systemml.mllearn import LogisticRegression
+&gt;&gt;&gt; from pyspark.sql import SQLContext
+&gt;&gt;&gt; sqlCtx = SQLContext(sc)
+&gt;&gt;&gt; digits = datasets.load_digits()
+&gt;&gt;&gt; X_digits = digits.data
+&gt;&gt;&gt; y_digits = digits.target + 1
+&gt;&gt;&gt; n_samples = len(X_digits)
+&gt;&gt;&gt; X_train = X_digits[:.9 * n_samples]
+&gt;&gt;&gt; y_train = y_digits[:.9 * n_samples]
+&gt;&gt;&gt; X_test = X_digits[.9 * n_samples:]
+&gt;&gt;&gt; y_test = y_digits[.9 * n_samples:]
+&gt;&gt;&gt; logistic = LogisticRegression(sqlCtx)
+&gt;&gt;&gt; print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
+</code></pre>
+    </div>
+
+    <p>MLPipeline way</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; from pyspark.ml import Pipeline
+&gt;&gt;&gt; from systemml.mllearn import LogisticRegression
+&gt;&gt;&gt; from pyspark.ml.feature import HashingTF, Tokenizer
+&gt;&gt;&gt; from pyspark.sql import SQLContext
+&gt;&gt;&gt; sqlCtx = SQLContext(sc)
+&gt;&gt;&gt; training = sqlCtx.createDataFrame([
+&gt;&gt;&gt;     (0L, "a b c d e spark", 1.0),
+&gt;&gt;&gt;     (1L, "b d", 2.0),
+&gt;&gt;&gt;     (2L, "spark f g h", 1.0),
+&gt;&gt;&gt;     (3L, "hadoop mapreduce", 2.0),
+&gt;&gt;&gt;     (4L, "b spark who", 1.0),
+&gt;&gt;&gt;     (5L, "g d a y", 2.0),
+&gt;&gt;&gt;     (6L, "spark fly", 1.0),
+&gt;&gt;&gt;     (7L, "was mapreduce", 2.0),
+&gt;&gt;&gt;     (8L, "e spark program", 1.0),
+&gt;&gt;&gt;     (9L, "a e c l", 2.0),
+&gt;&gt;&gt;     (10L, "spark compile", 1.0),
+&gt;&gt;&gt;     (11L, "hadoop software", 2.0)
+&gt;&gt;&gt; ], ["id", "text", "label"])
+&gt;&gt;&gt; tokenizer = Tokenizer(inputCol="text", outputCol="words")
+&gt;&gt;&gt; hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
+&gt;&gt;&gt; lr = LogisticRegression(sqlCtx)
+&gt;&gt;&gt; pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
+&gt;&gt;&gt; model = pipeline.fit(training)
+&gt;&gt;&gt; test = sqlCtx.createDataFrame([
+&gt;&gt;&gt;     (12L, "spark i j k"),
+&gt;&gt;&gt;     (13L, "l m n"),
+&gt;&gt;&gt;     (14L, "mapreduce spark"),
+&gt;&gt;&gt;     (15L, "apache hadoop")], ["id", "text"])
+&gt;&gt;&gt; prediction = model.transform(test)
+&gt;&gt;&gt; prediction.show()
+</code></pre>
+    </div>
+  </dd>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.mllearn.estimators.SVM</code>(<em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>normalize=False</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>is_multi_class=False</em>, <em>transferUsingDF=False</em>)(#systemml.mllearn.estimators.SVM &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Bases: <code class="highlighter-rouge">systemml.mllearn.estimators.BaseSystemMLClassifier</code>{.xref
+.py .py-class .docutils .literal}
+
+    <p>Performs both binary-class and multiclass SVM (Support Vector
+Machines).</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; from sklearn import datasets, neighbors
+&gt;&gt;&gt; from systemml.mllearn import SVM
+&gt;&gt;&gt; from pyspark.sql import SQLContext
+&gt;&gt;&gt; sqlCtx = SQLContext(sc)
+&gt;&gt;&gt; digits = datasets.load_digits()
+&gt;&gt;&gt; X_digits = digits.data
+&gt;&gt;&gt; y_digits = digits.target 
+&gt;&gt;&gt; n_samples = len(X_digits)
+&gt;&gt;&gt; X_train = X_digits[:.9 * n_samples]
+&gt;&gt;&gt; y_train = y_digits[:.9 * n_samples]
+&gt;&gt;&gt; X_test = X_digits[.9 * n_samples:]
+&gt;&gt;&gt; y_test = y_digits[.9 * n_samples:]
+&gt;&gt;&gt; svm = SVM(sqlCtx, is_multi_class=True)
+&gt;&gt;&gt; print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y_test))
+</code></pre>
+    </div>
+  </dd>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.mllearn.estimators.NaiveBayes</code>(<em>sqlCtx</em>, <em>laplace=1.0</em>, <em>transferUsingDF=False</em>)(#systemml.mllearn.estimators.NaiveBayes &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Bases: <code class="highlighter-rouge">systemml.mllearn.estimators.BaseSystemMLClassifier</code>{.xref
+.py .py-class .docutils .literal}
+
+    <p>Performs Naive Bayes.</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>&gt;&gt;&gt; from sklearn.datasets import fetch_20newsgroups
+&gt;&gt;&gt; from sklearn.feature_extraction.text import TfidfVectorizer
+&gt;&gt;&gt; from systemml.mllearn import NaiveBayes
+&gt;&gt;&gt; from sklearn import metrics
+&gt;&gt;&gt; from pyspark.sql import SQLContext
+&gt;&gt;&gt; sqlCtx = SQLContext(sc)
+&gt;&gt;&gt; categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
+&gt;&gt;&gt; newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
+&gt;&gt;&gt; newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
+&gt;&gt;&gt; vectorizer = TfidfVectorizer()
+&gt;&gt;&gt; # Both vectors and vectors_test are SciPy CSR matrix
+&gt;&gt;&gt; vectors = vectorizer.fit_transform(newsgroups_train.data)
+&gt;&gt;&gt; vectors_test = vectorizer.transform(newsgroups_test.data)
+&gt;&gt;&gt; nb = NaiveBayes(sqlCtx)
+&gt;&gt;&gt; nb.fit(vectors, newsgroups_train.target)
+&gt;&gt;&gt; pred = nb.predict(vectors_test)
+&gt;&gt;&gt; metrics.f1_score(newsgroups_test.target, pred, average='weighted')
+</code></pre>
+    </div>
+  </dd>
+</dl>
+
+<h2 id="utility-classes-used-internally">Utility classes (used internally)</h2>
+
+<h3 id="systemmlclassloader">systemml.classloader</h3>
+
+<dl>
+  <dt><code class="highlighter-rouge">systemml.classloader.createJavaObject</code>(<em>sc</em>, <em>obj_type</em>)[](#systemml.classloader.createJavaObject &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Performs appropriate check if SystemML.jar is available and returns
+the handle to MLContext object on JVM
+
+    <dl>
+      <dt>sc: SparkContext</dt>
+      <dd>SparkContext</dd>
+    </dl>
+
+    <p>obj_type: Type of object to create (&#8216;mlcontext&#8217; or &#8216;dummy&#8217;)</p>
+  </dd>
+</dl>
+
+<h3 id="systemmlconverters">systemml.converters</h3>
+
+<dl>
+  <dt><code class="highlighter-rouge">systemml.converters.getNumCols</code>(<em>numPyArr</em>)[](#systemml.converters.getNumCols &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.converters.convertToMatrixBlock</code>(<em>sc</em>, <em>src</em>)[](#systemml.converters.convertToMatrixBlock &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.converters.convertToNumPyArr</code>(<em>sc</em>, <em>mb</em>)[](#systemml.converters.convertToNumPyArr &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.converters.convertToPandasDF</code>(<em>X</em>)[](#systemml.converters.convertToPandasDF &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+  <dt><code class="highlighter-rouge">systemml.converters.convertToLabeledDF</code>(<em>sqlCtx</em>, <em>X</em>, <em>y=None</em>)[](#systemml.converters.convertToLabeledDF &#8220;Permalink to this definition&#8221;)</dt>
+  <dd></dd>
+</dl>
+
+<h3 id="other-classes-from-systemmldefmatrix">Other classes from systemml.defmatrix</h3>
+
+<dl>
+  <dt><em>class</em><code class="highlighter-rouge">systemml.defmatrix.DMLOp</code>(<em>inputs</em>, <em>dml=None</em>)[](#systemml.defmatrix.DMLOp &#8220;Permalink to this definition&#8221;)</dt>
+  <dd>Bases: <code class="highlighter-rouge">object</code>{.xref .py .py-class .docutils .literal}
+
+    <p>Represents an intermediate node of Abstract syntax tree created to
+generate the PyDML script</p>
+  </dd>
+</dl>
+
+<h2 id="troubleshooting-python-apis">Troubleshooting Python APIs</h2>
+
+<h4 id="unable-to-load-systemmljar-into-current-pyspark-session">Unable to load SystemML.jar into current pyspark session.</h4>
+
+<p>While using SystemML&#8217;s Python package through pyspark or notebook (SparkContext is not previously created in the session), the
+below method is not required. However, if the user wishes to use SystemML through spark-submit and has not previously invoked</p>
+
+<dl>
+  <dt><code class="highlighter-rouge">systemml.defmatrix.setSparkContext</code>(<em>sc</em>)</dt>
+  <dd>Before using the matrix, the user needs to invoke this function if SparkContext is not previously created in the session.
+
+    <dl>
+      <dt>sc: SparkContext</dt>
+      <dd>SparkContext</dd>
+    </dl>
+  </dd>
+</dl>
+
+<p>Example:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">systemml</span> <span class="kn">as</span> <span class="nn">sml</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+<span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m1</span><span class="p">)</span>
+<span class="n">m4</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">m2</span>
+<span class="n">m4</span><span class="o">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toNumPy</span><span class="p">()</span>
+</code></pre>
+</div>
+
+<p>If SystemML was not installed via pip, you may have to download SystemML.jar and provide it to pyspark via <code class="highlighter-rouge">--driver-class-path</code> and <code class="highlighter-rouge">--jars</code>.</p>
+
+<h4 id="matrix-api-is-running-slow-when-setlazyfalse-or-when-eval-is-called-often">matrix API is running slow when set_lazy(False) or when eval() is called often.</h4>
+
+<p>This is a known issue. The matrix API is slow in this scenario due to slow Py4J conversion from Java MatrixObject or Java RDD to Python NumPy or DataFrame.
+To resolve this for now, we recommend writing the matrix to FileSystemML and using <code class="highlighter-rouge">load</code> function.</p>
+
+<h4 id="maximum-recursion-depth-exceeded">maximum recursion depth exceeded</h4>
+
+<p>SystemML matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS).
+Python can throw <code class="highlighter-rouge">RuntimeError: maximum recursion depth exceeded</code> when the recursion of DFS exceeds beyond the limit 
+set by Python. There are two ways to address it:</p>
+
+<ol>
+  <li>
+    <p>Increase the limit in Python:</p>
+
+    <p><code class="highlighter-rouge">python
+ import sys
+ some_large_number = 2000
+ sys.setrecursionlimit(some_large_number)
+</code></p>
+  </li>
+  <li>
+    <p>Evaluate the intermeditate matrix to cut-off large recursion.</p>
+  </li>
+</ol>
+
+
+        </div> <!-- /container -->
+
+        
+
+        <script src="js/vendor/jquery-1.12.0.min.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/anchor.min.js"></script>
+        <script src="js/main.js"></script>
+        
+
+
+
+
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-71553733-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+
+
+
+        <!-- MathJax Section -->
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                TeX: { equationNumbers: { autoNumber: "AMS" } }
+            });
+        </script>
+        <script>
+            // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+            // We could use "//cdn.mathjax...", but that won't support "file://".
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    MathJax.Hub.Config({
+                        tex2jax: {
+                            inlineMath: [ ["$", "$"], ["\\\\(","\\\\)"] ],
+                            displayMath: [ ["$$","$$"], ["\\[", "\\]"] ],
+                            processEscapes: true,
+                            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                        }
+                    });
+                };
+                script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+                    'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        </script>
+    </body>
+</html>

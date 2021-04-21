@@ -283,11 +283,10 @@
 			<plugin> <!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.0.0-M4</version><!--$NO-MVN-MAN-VER$ -->
+				<version>3.0.0-M5</version>
 				<configuration>
 					<skipTests>${maven.test.skip}</skipTests>
 					<parallel>classes</parallel>
-					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
 					<threadCount>12</threadCount>
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>1C</forkCount>

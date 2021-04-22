@@ -53,3 +53,8 @@ github:
       # Do not allow merge commits
       # by allowing linear history
       required_linear_history: true
+
+publish:
+  profile: ~
+  whoami: master
+  outputdir: docs

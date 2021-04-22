@@ -74,11 +74,11 @@ m_discoverFD = function(Matrix[Double] X, Matrix[Double] Mask, Double threshold)
   parfor(i in 1 : d, check=0) {
     index_i = as.scalar(cm2[i,1])
     ndX = as.scalar(cm[1,index_i])
-    if( ndX!=1 & ndX!=n) {
+    if(ndX!=1 & ndX != n) {
       Xi = X[,index_i];
       k = ifelse(threshold < 1, 1, (i+1)); # enumerate only upper triangle if threshold = 1
       parfor(j in k:d , check=0) {
-        if(j != i) {
+        if((j != i) & (j > 0) & (j <= d)) {
           index_j = as.scalar(cm2[j,1])
           [A_determines_B, ratio] = isFD(Xi, X[,index_j], ndX);
           if(A_determines_B | ratio >= threshold)

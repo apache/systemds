@@ -21,9 +21,9 @@
 
 s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask,
   Matrix[Double] FD, Matrix[Double] hyperParameters, Integer flagsCount, Boolean verbose)
-  return (Matrix[Double] X, Matrix[Double] Y)
+  return (Matrix[Double] X, Matrix[Double] Y, Double t2)
 {
-
+  t1 = time();
   print("PIPELINE EXECUTION START ... "+toString(pipeline))
 
   if(verbose) {
@@ -47,6 +47,8 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[D
 
     X = confirmMeta(X, mask)
   }
+  t2 = floor((time() - t1) / 1e+6)
+  print("PIPELINE EXECUTION ENDED: "+t2+" ms")
 }
 
 # This function will convert the matrix row-vector into list
@@ -214,7 +216,6 @@ return (Matrix[Double] dX_train) {
 }
 
 
-
 #######################################################################
 # Wrapper of imputeByFD OHE call, to call inside eval as a function
 # Inputs: The input dataset X, and  mask of the columns and threshold value
@@ -293,7 +294,7 @@ fillDefault = function(Matrix[Double] X)
 return(Matrix[Double] X){
   defaullt = round(colMaxs(X) - colMins(X))
   Mask = is.na(X)
-  X = replace(target=X, pattern=NaN, replacement=0)
+  X = replace(target=X, pattern=NaN, replacement=max(X))
   Mask = Mask * defaullt
   X = X + Mask
 }

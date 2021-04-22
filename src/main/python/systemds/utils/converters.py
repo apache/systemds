@@ -20,7 +20,8 @@
 # -------------------------------------------------------------
 
 import numpy as np
-from py4j.java_gateway import JavaClass, JavaObject, JVMView
+import pandas as pd
+from py4j.java_gateway import JavaClass, JavaObject, JVMView, JavaGateway
 
 def numpy_to_matrix_block(sds: 'SystemDSContext', np_arr: np.array):
     """Converts a given numpy array, to internal matrix block representation.
@@ -69,5 +70,73 @@ def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
     num_ros = mb.getNumRows()
     num_cols = mb.getNumColumns()
     buf = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertMBtoPy4JDenseArr(
-        mb)
-    return np.frombuffer(buf, count=num_ros * num_cols, dtype=np.float64).reshape((num_ros, num_cols))
+        mb
+    )
+    return np.frombuffer(buf, count=num_ros * num_cols, dtype=np.float64).reshape(
+        (num_ros, num_cols)
+    )
+
+
+def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
+    """Converts a given numpy array, to internal matrix block representation.
+
+    :param sds: The current systemds context.
+    :param np_arr: the numpy array to convert to matrixblock.
+    """
+    assert pd_df.ndim <= 2, "pd_df invalid, because it has more than 2 dimensions"
+    rows = pd_df.shape[0]
+    cols = pd_df.shape[1]
+
+    jvm: JVMView = sds.java_gateway.jvm
+    java_gate: JavaGateway = sds.java_gateway
+
+    # pandas type mapping to systemds Valuetypes
+    data_type_mapping = {
+        np.dtype(np.object_): jvm.org.apache.sysds.common.Types.ValueType.STRING,
+        np.dtype(np.int64): jvm.org.apache.sysds.common.Types.ValueType.INT64,
+        np.dtype(np.float64): jvm.org.apache.sysds.common.Types.ValueType.FP64,
+        np.dtype(np.bool_): jvm.org.apache.sysds.common.Types.ValueType.BOOLEAN,
+        np.dtype("<M8[ns]"): jvm.org.apache.sysds.common.Types.ValueType.STRING,
+    }
+    schema = []
+    col_names = []
+
+    for col_name, dtype in dict(pd_df.dtypes).items():
+        col_names.append(col_name)
+        if dtype in data_type_mapping.keys():
+            schema.append(data_type_mapping[dtype])
+        else:
+            schema.append(jvm.org.apache.sysds.common.Types.ValueType.STRING)
+    try:
+        jc_ValueType = jvm.org.apache.sysds.common.Types.ValueType
+        jc_String = jvm.java.lang.String
+        jc_FrameBlock = jvm.org.apache.sysds.runtime.matrix.data.FrameBlock
+        j_valueTypeArray = java_gate.new_array(jc_ValueType, len(schema))
+        j_colNameArray = java_gate.new_array(jc_String, len(col_names))
+        j_dataArray = java_gate.new_array(jc_String, rows, cols)
+        for i in range(len(schema)):
+            j_valueTypeArray[i] = schema[i]
+        for i in range(len(col_names)):
+            j_colNameArray[i] = col_names[i]
+        j = 0
+        for j, col_name in enumerate(col_names):
+            col_data = pd_df[col_name].fillna("").to_numpy(dtype=str)
+            for i in range(col_data.shape[0]):
+                if col_data[i]:
+                    j_dataArray[i][j] = col_data[i]
+        fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, j_dataArray)
+
+        return fb
+    except Exception as e:
+        sds.exception_and_close(e)
+
+
+def frame_block_to_pandas(sds: "SystemDSContext", fb: JavaObject):
+    num_rows = fb.getNumRows()
+    num_cols = fb.getNumColumns()
+    df = pd.DataFrame()
+    for c_index in range(num_cols):
+        col_data = fb.getColumnData(c_index)
+        df[fb.getColumnName(c_index)] = np.array(col_data[:num_rows])
+
+    return df

@@ -38,7 +38,8 @@ ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
 REQUIRED_PACKAGES = [
     'numpy >= 1.8.2',
     'py4j >= 0.10.9',
-    'requests >= 2.24.0'
+    'requests >= 2.24.0',
+    'pandas >= 1.2.2' 
 ]
 
 python_dir = 'systemds'

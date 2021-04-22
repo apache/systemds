@@ -41,7 +41,6 @@ from .builtin.dbscan import dbscan
 from .builtin.decisionTree import decisionTree 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
-from .builtin.gaussianClassifier import gaussianClassifier 
 from .builtin.getAccuracy import getAccuracy 
 from .builtin.glm import glm 
 from .builtin.gmm import gmm 
@@ -62,7 +61,6 @@ from .builtin.kmeans import kmeans
 from .builtin.kmeansPredict import kmeansPredict 
 from .builtin.knnbf import knnbf 
 from .builtin.l2svm import l2svm 
-from .builtin.l2svmPredict import l2svmPredict 
 from .builtin.lasso import lasso 
 from .builtin.lm import lm 
 from .builtin.lmCG import lmCG 
@@ -95,7 +93,6 @@ from .builtin.splitBalanced import splitBalanced
 from .builtin.statsNA import statsNA 
 from .builtin.steplm import steplm 
 from .builtin.toOneHot import toOneHot 
-from .builtin.tomeklink import tomeklink 
 from .builtin.univar import univar 
 from .builtin.vectorToCsv import vectorToCsv 
 from .builtin.winsorize import winsorize 

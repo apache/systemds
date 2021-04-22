@@ -54,7 +54,7 @@ github:
       # by allowing linear history
       required_linear_history: true
 
-publish:
-  profile: ~
+staging:
+  profile: beta
   whoami: master
   outputdir: docs

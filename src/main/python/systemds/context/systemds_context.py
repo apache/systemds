@@ -299,6 +299,13 @@ class SystemDSContext(object):
         See: http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions for more details
         :return: an Operation Node, containing the read data.
         """
+        data_type = kwargs.get("data_type", False)
+        file_format = kwargs.get("format", False)
+        if data_type == "frame":
+            kwargs["data_type"] = f'"{data_type}"'
+            if isinstance(file_format, str):
+                kwargs["format"] = f'"{kwargs["format"]}"'
+            return OperationNode(self, 'read', [f'"{path}"'], named_input_nodes=kwargs, shape=(-1,), output_type=OutputType.FRAME)
         return OperationNode(self, 'read', [f'"{path}"'], named_input_nodes=kwargs, shape=(-1,))
 
     def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':

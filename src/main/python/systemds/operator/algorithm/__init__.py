@@ -40,6 +40,7 @@ from .builtin.dbscan import dbscan
 from .builtin.decisionTree import decisionTree 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
+from .builtin.gaussianClassifier import gaussianClassifier 
 from .builtin.getAccuracy import getAccuracy 
 from .builtin.glm import glm 
 from .builtin.gmm import gmm 
@@ -58,6 +59,7 @@ from .builtin.kmeans import kmeans
 from .builtin.kmeansPredict import kmeansPredict 
 from .builtin.knnbf import knnbf 
 from .builtin.l2svm import l2svm 
+from .builtin.l2svmPredict import l2svmPredict 
 from .builtin.lasso import lasso 
 from .builtin.lm import lm 
 from .builtin.lmCG import lmCG 
@@ -86,10 +88,11 @@ from .builtin.split import split
 from .builtin.statsNA import statsNA 
 from .builtin.steplm import steplm 
 from .builtin.toOneHot import toOneHot 
+from .builtin.tomeklink import tomeklink 
 from .builtin.univar import univar 
 from .builtin.vectorToCsv import vectorToCsv 
 from .builtin.winsorize import winsorize 
 from .builtin.xdummy1 import xdummy1 
 from .builtin.xdummy2 import xdummy2 
 
-__all__ = [abstain, als, alsCG, alsDS, alsPredict, alsTopkPredict, arima, bandit, bivar, components, confusionMatrix, cor, cspline, csplineDS, cvlm, dbscan, decisionTree, discoverFD, dist, getAccuracy, glm, gmm, gmmPredict, gnmf, gridSearch, hyperband, img_brightness, img_crop, img_mirror, imputeByFD, imputeByMean, imputeByMedian, intersect, kmeans, kmeansPredict, knnbf, l2svm, lasso, lm, lmCG, lmDS, logSumExp, msvm, msvmPredict, multiLogReg, multiLogRegPredict, na_locf, naivebayes, normalize, outlier, outlierByArima, outlierByIQR, outlierBySd, pca, pnmf, ppca, scale, scaleApply, sigmoid, slicefinder, smote, split, statsNA, steplm, toOneHot, univar, vectorToCsv, winsorize, xdummy1, xdummy2] 
+__all__ = [abstain, als, alsCG, alsDS, alsPredict, alsTopkPredict, arima, bandit, bivar, components, confusionMatrix, cor, cspline, csplineDS, cvlm, dbscan, decisionTree, discoverFD, dist, gaussianClassifier, getAccuracy, glm, gmm, gmmPredict, gnmf, gridSearch, hyperband, img_brightness, img_crop, img_mirror, imputeByFD, imputeByMean, imputeByMedian, intersect, kmeans, kmeansPredict, knnbf, l2svm, l2svmPredict, lasso, lm, lmCG, lmDS, logSumExp, msvm, msvmPredict, multiLogReg, multiLogRegPredict, na_locf, naivebayes, normalize, outlier, outlierByArima, outlierByIQR, outlierBySd, pca, pnmf, ppca, scale, scaleApply, sigmoid, slicefinder, smote, split, statsNA, steplm, toOneHot, tomeklink, univar, vectorToCsv, winsorize, xdummy1, xdummy2] 

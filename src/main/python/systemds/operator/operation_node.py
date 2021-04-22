@@ -25,9 +25,13 @@ from multiprocessing import Process
 import numpy as np
 from py4j.java_gateway import JVMView, JavaObject
 
-from systemds.utils.consts import VALID_INPUT_TYPES, BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES
+from systemds.utils.consts import (
+    VALID_INPUT_TYPES,
+    BINARY_OPERATIONS,
+    VALID_ARITHMETIC_TYPES,
+)
 from systemds.utils.helpers import create_params_string
-from systemds.utils.converters import matrix_block_to_numpy
+from systemds.utils.converters import matrix_block_to_numpy, frame_block_to_pandas
 from systemds.script_building.script import DMLScript
 from systemds.script_building.dag import OutputType, DAGNode
 
@@ -39,20 +43,25 @@ if TYPE_CHECKING:
 
 class OperationNode(DAGNode):
     """A Node representing an operation in SystemDS"""
+
     shape: Optional[Tuple[int]]
     _result_var: Optional[Union[float, np.array]]
     _lineage_trace: Optional[str]
     _script: Optional[DMLScript]
     _output_types: Optional[Iterable[VALID_INPUT_TYPES]]
 
-    def __init__(self, sds_context: 'SystemDSContext', operation: str,
-                 unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
-                 named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 output_type: OutputType = OutputType.MATRIX,
-                 is_python_local_data: bool = False,
-                 shape: Tuple[int] = (),
-                 number_of_outputs=1,
-                 output_types: Iterable[OutputType] = None):
+    def __init__(
+        self,
+        sds_context: "SystemDSContext",
+        operation: str,
+        unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
+        named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
+        output_type: OutputType = OutputType.MATRIX,
+        is_python_local_data: bool = False,
+        shape: Tuple[int] = (),
+        number_of_outputs=1,
+        output_types: Iterable[OutputType] = None,
+    ):
         """
         Create general `OperationNode`
 
@@ -84,8 +93,9 @@ class OperationNode(DAGNode):
         self._number_of_outputs = number_of_outputs
         self._output_types = output_types
 
-    def compute(self, verbose: bool = False, lineage: bool = False) -> \
-            Union[float, np.array, Tuple[Union[float, np.array], str]]:
+    def compute(
+        self, verbose: bool = False, lineage: bool = False
+    ) -> Union[float, np.array, Tuple[Union[float, np.array], str]]:
 
         if self._result_var is None or self._lineage_trace is None:
             self._script = DMLScript(self.sds_context)
@@ -95,11 +105,14 @@ class OperationNode(DAGNode):
                 print(self._script.dml_script)
 
             if lineage:
-                result_variables, self._lineage_trace = self._script.execute_with_lineage()
+                (
+                    result_variables,
+                    self._lineage_trace,
+                ) = self._script.execute_with_lineage()
             else:
                 result_variables = self._script.execute()
 
-            self._result_var =  self.__parse_output_result_variables(result_variables)
+            self._result_var = self.__parse_output_result_variables(result_variables)
 
         if verbose:
             for x in self.sds_context.get_stdout():
@@ -114,27 +127,50 @@ class OperationNode(DAGNode):
 
     def __parse_output_result_variables(self, result_variables):
         if self.output_type == OutputType.DOUBLE:
-            return self.__parse_output_result_double(result_variables, self._script.out_var_name[0])
+            return self.__parse_output_result_double(
+                result_variables, self._script.out_var_name[0]
+            )
         elif self.output_type == OutputType.MATRIX:
-            return self.__parse_output_result_matrix(result_variables, self._script.out_var_name[0])
+            return self.__parse_output_result_matrix(
+                result_variables, self._script.out_var_name[0]
+            )
         elif self.output_type == OutputType.LIST:
             return self.__parse_output_result_list(result_variables)
+        elif self.output_type == OutputType.FRAME:
+            return self.__parse_output_result_frame(
+                result_variables, self._script.out_var_name[0]
+            )
 
     def __parse_output_result_double(self, result_variables, var_name):
         return result_variables.getDouble(var_name)
-    
+
     def __parse_output_result_matrix(self, result_variables, var_name):
-        return matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
-                                         result_variables.getMatrixBlock(var_name))
+        return matrix_block_to_numpy(
+            self.sds_context.java_gateway.jvm, result_variables.getMatrixBlock(var_name)
+        )
+
+    def __parse_output_result_frame(self, result_variables, var_name):
+        return frame_block_to_pandas(
+            self.sds_context, result_variables.getFrameBlock(var_name)
+        )
 
     def __parse_output_result_list(self, result_variables):
+
         result_var = []
         for idx, v in enumerate(self._script.out_var_name):
-            if(self._output_types == None or self._output_types[idx] == OutputType.MATRIX):
-                result_var.append(self.__parse_output_result_matrix(result_variables,v))
+            if (
+                self._output_types == None
+                or self._output_types[idx] == OutputType.MATRIX
+            ):
+                result_var.append(
+                    self.__parse_output_result_matrix(result_variables, v)
+                )
+            elif self._output_types[idx] == OutputType.FRAME:
+                result_var.append(self.__parse_output_result_frame(result_variables, v))
             else:
-                result_var.append(result_variables.getDouble(
-                    self._script.out_var_name[idx]))
+                result_var.append(
+                    result_variables.getDouble(self._script.out_var_name[idx])
+                )
         return result_var
 
     def get_lineage_trace(self) -> str:
@@ -149,114 +185,157 @@ class OperationNode(DAGNode):
 
         return self._lineage_trace
 
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
-                  named_input_vars: Dict[str, str]) -> str:
+    def code_line(
+        self,
+        var_name: str,
+        unnamed_input_vars: Sequence[str],
+        named_input_vars: Dict[str, str],
+    ) -> str:
         if self.operation in BINARY_OPERATIONS:
-            assert len(
-                named_input_vars) == 0, 'Named parameters can not be used with binary operations'
-            assert len(
-                unnamed_input_vars) == 2, 'Binary Operations need exactly two input variables'
-            return f'{var_name}={unnamed_input_vars[0]}{self.operation}{unnamed_input_vars[1]}'
+            assert (
+                len(named_input_vars) == 0
+            ), "Named parameters can not be used with binary operations"
+            assert (
+                len(unnamed_input_vars) == 2
+            ), "Binary Operations need exactly two input variables"
+            return f"{var_name}={unnamed_input_vars[0]}{self.operation}{unnamed_input_vars[1]}"
 
-        inputs_comma_sep = create_params_string(
-            unnamed_input_vars, named_input_vars)
+        inputs_comma_sep = create_params_string(unnamed_input_vars, named_input_vars)
 
         if self.output_type == OutputType.LIST:
             output = "["
             for idx in range(self._number_of_outputs):
-                output += f'{var_name}_{idx},'
+                output += f"{var_name}_{idx},"
             output = output[:-1] + "]"
-            return f'{output}={self.operation}({inputs_comma_sep});'
+            return f"{output}={self.operation}({inputs_comma_sep});"
         elif self.output_type == OutputType.NONE:
-            return f'{self.operation}({inputs_comma_sep});'
+            return f"{self.operation}({inputs_comma_sep});"
         elif self.output_type == OutputType.ASSIGN:
-            return f'{var_name}={self.operation};'
+            return f"{var_name}={self.operation};"
         else:
-            return f'{var_name}={self.operation}({inputs_comma_sep});'
+            return f"{var_name}={self.operation}({inputs_comma_sep});"
 
-    def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
+    def pass_python_data_to_prepared_script(
+        self, jvm: JVMView, var_name: str, prepared_script: JavaObject
+    ) -> None:
         raise NotImplementedError(
-            'Operation node has no python local data. Missing implementation in derived class?')
+            "Operation node has no python local data. Missing implementation in derived class?"
+        )
 
     def _check_matrix_op(self):
         """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
 
         :raise: AssertionError
         """
-        assert self.output_type == OutputType.MATRIX, f'{self.operation} only supported for matrices'
+        assert (
+            self.output_type == OutputType.MATRIX
+        ), f"{self.operation} only supported for matrices"
 
-    def __add__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '+', [self, other], shape=self.shape)
+    def _check_frame_op(self):
+        """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
+
+        :raise: AssertionError
+        """
+        assert (
+            self.output_type == OutputType.FRAME
+        ), f"{self.operation} only supported for frames"
+
+    def _check_matrix_or_frame_op(self):
+        """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
+
+        :raise: AssertionError
+        """
+        assert (
+            self.output_type == OutputType.FRAME or self.output_type == OutputType.MATRIX
+        ), f"{self.operation} only supported for frames or matrices"
+
+    def _check_equal_op_type_as(self, other: "OperationNode"):
+        """Perform checks to assure operation is equal to 'other'. Used for rBind and cBind type equality check.
+
+        :raise: AssertionError
+        """
+        assert (
+            self.output_type == other.output_type
+        ), f"{self.operation} only supported for Nodes of equal output-type. Got self: {self.output_type} and other: {other.output_type}"
+
+
+    def __add__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "+", [self, other], shape=self.shape)
 
     # Left hand side
-    def __radd__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '+', [other, self], shape=self.shape)
+    def __radd__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "+", [other, self], shape=self.shape)
 
-    def __sub__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '-', [self, other], shape=self.shape)
+    def __sub__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "-", [self, other], shape=self.shape)
 
     # Left hand side
-    def __rsub__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '-', [other, self], shape=self.shape)
+    def __rsub__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "-", [other, self], shape=self.shape)
 
-    def __mul__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '*', [self, other], shape=self.shape)
+    def __mul__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "*", [self, other], shape=self.shape)
 
-    def __rmul__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '*', [other, self], shape=self.shape)
+    def __rmul__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "*", [other, self], shape=self.shape)
 
-    def __truediv__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '/', [self, other], shape=self.shape)
+    def __truediv__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "/", [self, other], shape=self.shape)
 
-    def __rtruediv__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '/', [other, self], shape=self.shape)
+    def __rtruediv__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "/", [other, self], shape=self.shape)
 
-    def __floordiv__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '//', [self, other], shape=self.shape)
+    def __floordiv__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "//", [self, other], shape=self.shape)
 
-    def __rfloordiv__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '//', [other, self], shape=self.shape)
+    def __rfloordiv__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
+        return OperationNode(self.sds_context, "//", [other, self], shape=self.shape)
 
-    def __lt__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '<', [self, other], shape=self.shape)
+    def __lt__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, "<", [self, other], shape=self.shape)
 
-    def __rlt__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '<', [other, self], shape=self.shape)
+    def __rlt__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, "<", [other, self], shape=self.shape)
 
-    def __le__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '<=', [self, other], shape=self.shape)
+    def __le__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, "<=", [self, other], shape=self.shape)
 
-    def __rle__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '<=', [other, self], shape=self.shape)
+    def __rle__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, "<=", [other, self], shape=self.shape)
 
-    def __gt__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '>', [self, other], shape=self.shape)
+    def __gt__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, ">", [self, other], shape=self.shape)
 
-    def __rgt__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '>', [other, self], shape=self.shape)
+    def __rgt__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, ">", [other, self], shape=self.shape)
 
-    def __ge__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '>=', [self, other], shape=self.shape)
+    def __ge__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, ">=", [self, other], shape=self.shape)
 
-    def __rge__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '>=', [other, self], shape=self.shape)
+    def __rge__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, ">=", [other, self], shape=self.shape)
 
-    def __eq__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '==', [self, other], shape=self.shape)
+    def __eq__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, "==", [self, other], shape=self.shape)
 
-    def __req__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '==', [other, self], shape=self.shape)
+    def __req__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, "==", [other, self], shape=self.shape)
 
-    def __ne__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '!=', [self, other], shape=self.shape)
+    def __ne__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, "!=", [self, other], shape=self.shape)
 
-    def __rne__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '!=', [other, self], shape=self.shape)
+    def __rne__(self, other) -> "OperationNode":
+        return OperationNode(self.sds_context, "!=", [other, self], shape=self.shape)
 
-    def __matmul__(self, other: 'OperationNode') -> 'OperationNode':
-        return OperationNode(self.sds_context, '%*%', [self, other], shape=(self.shape[0], other.shape[1]))
+    def __matmul__(self, other: "OperationNode") -> "OperationNode":
+        return OperationNode(
+            self.sds_context,
+            "%*%",
+            [self, other],
+            shape=(self.shape[0], other.shape[1]),
+        )
 
-    def sum(self, axis: int = None) -> 'OperationNode':
+    def sum(self, axis: int = None) -> "OperationNode":
         """Calculate sum of matrix.
 
         :param axis: can be 0 or 1 to do either row or column sums
@@ -264,15 +343,22 @@ class OperationNode(DAGNode):
         """
         self._check_matrix_op()
         if axis == 0:
-            return OperationNode(self.sds_context, 'colSums', [self], shape=(self.shape[1],))
+            return OperationNode(
+                self.sds_context, "colSums", [self], shape=(self.shape[1],)
+            )
         elif axis == 1:
-            return OperationNode(self.sds_context, 'rowSums', [self], shape=(self.shape[0],))
+            return OperationNode(
+                self.sds_context, "rowSums", [self], shape=(self.shape[0],)
+            )
         elif axis is None:
-            return OperationNode(self.sds_context, 'sum', [self], output_type=OutputType.DOUBLE)
+            return OperationNode(
+                self.sds_context, "sum", [self], output_type=OutputType.DOUBLE
+            )
         raise ValueError(
-            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}"
+        )
 
-    def mean(self, axis: int = None) -> 'OperationNode':
+    def mean(self, axis: int = None) -> "OperationNode":
         """Calculate mean of matrix.
 
         :param axis: can be 0 or 1 to do either row or column means
@@ -280,15 +366,22 @@ class OperationNode(DAGNode):
         """
         self._check_matrix_op()
         if axis == 0:
-            return OperationNode(self.sds_context, 'colMeans', [self], shape=(self.shape[1],))
+            return OperationNode(
+                self.sds_context, "colMeans", [self], shape=(self.shape[1],)
+            )
         elif axis == 1:
-            return OperationNode(self.sds_context, 'rowMeans', [self], shape=(self.shape[0],))
+            return OperationNode(
+                self.sds_context, "rowMeans", [self], shape=(self.shape[0],)
+            )
         elif axis is None:
-            return OperationNode(self.sds_context, 'mean', [self], output_type=OutputType.DOUBLE)
+            return OperationNode(
+                self.sds_context, "mean", [self], output_type=OutputType.DOUBLE
+            )
         raise ValueError(
-            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}"
+        )
 
-    def var(self, axis: int = None) -> 'OperationNode':
+    def var(self, axis: int = None) -> "OperationNode":
         """Calculate variance of matrix.
 
         :param axis: can be 0 or 1 to do either row or column vars
@@ -296,94 +389,108 @@ class OperationNode(DAGNode):
         """
         self._check_matrix_op()
         if axis == 0:
-            return OperationNode(self.sds_context, 'colVars', [self], shape=(self.shape[1],))
+            return OperationNode(
+                self.sds_context, "colVars", [self], shape=(self.shape[1],)
+            )
         elif axis == 1:
-            return OperationNode(self.sds_context, 'rowVars', [self], shape=(self.shape[0],))
+            return OperationNode(
+                self.sds_context, "rowVars", [self], shape=(self.shape[0],)
+            )
         elif axis is None:
-            return OperationNode(self.sds_context, 'var', [self], output_type=OutputType.DOUBLE)
+            return OperationNode(
+                self.sds_context, "var", [self], output_type=OutputType.DOUBLE
+            )
         raise ValueError(
-            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}"
+        )
 
-    def abs(self) -> 'OperationNode':
+    def abs(self) -> "OperationNode":
         """Calculate absolute.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'abs', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "abs", [self], shape=self.shape)
 
-    def sin(self) -> 'OperationNode':
+    def sin(self) -> "OperationNode":
         """Calculate sin.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'sin', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "sin", [self], shape=self.shape)
 
-    def cos(self) -> 'OperationNode':
+    def cos(self) -> "OperationNode":
         """Calculate cos.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'cos', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "cos", [self], shape=self.shape)
 
-    def tan(self) -> 'OperationNode':
+    def tan(self) -> "OperationNode":
         """Calculate tan.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'tan', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "tan", [self], shape=self.shape)
 
-    def asin(self) -> 'OperationNode':
+    def asin(self) -> "OperationNode":
         """Calculate arcsin.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'asin', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "asin", [self], shape=self.shape)
 
-    def acos(self) -> 'OperationNode':
+    def acos(self) -> "OperationNode":
         """Calculate arccos.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'acos', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "acos", [self], shape=self.shape)
 
-    def atan(self) -> 'OperationNode':
+    def atan(self) -> "OperationNode":
         """Calculate arctan.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'atan', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "atan", [self], shape=self.shape)
 
-    def sinh(self) -> 'OperationNode':
+    def sinh(self) -> "OperationNode":
         """Calculate sin.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'sinh', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "sinh", [self], shape=self.shape)
 
-    def cosh(self) -> 'OperationNode':
+    def cosh(self) -> "OperationNode":
         """Calculate cos.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'cosh', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "cosh", [self], shape=self.shape)
 
-    def tanh(self) -> 'OperationNode':
+    def tanh(self) -> "OperationNode":
         """Calculate tan.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'tanh', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "tanh", [self], shape=self.shape)
 
-    def moment(self, moment: int, weights: DAGNode = None) -> 'OperationNode':
+    def moment(self, moment: int, weights: DAGNode = None) -> "OperationNode":
         # TODO write tests
         self._check_matrix_op()
         unnamed_inputs = [self]
         if weights is not None:
             unnamed_inputs.append(weights)
         unnamed_inputs.append(moment)
-        return OperationNode(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
+        return OperationNode(
+            self.sds_context, "moment", unnamed_inputs, output_type=OutputType.DOUBLE
+        )
 
-    def write(self, destination: str, format: str = "binary", **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+    def write(
+        self,
+        destination: str,
+        format: str = "binary",
+        **kwargs: Dict[str, VALID_INPUT_TYPES],
+    ) -> "OperationNode":
         """ Write input to disk. 
         The written format is easily read by SystemDSContext.read(). 
         There is no return on write.
@@ -395,32 +502,43 @@ class OperationNode(DAGNode):
         unnamed_inputs = [self, f'"{destination}"']
         named_parameters = {"format": f'"{format}"'}
         named_parameters.update(kwargs)
-        return OperationNode(self.sds_context, 'write', unnamed_inputs, named_parameters, output_type=OutputType.NONE)
+        return OperationNode(
+            self.sds_context,
+            "write",
+            unnamed_inputs,
+            named_parameters,
+            output_type=OutputType.NONE,
+        )
 
-    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> "OperationNode":
         """ Converts the input to a string representation.
         :return: `OperationNode` containing the string.
         """
-        return OperationNode(self.sds_context, 'toString', [self], kwargs, output_type=OutputType.SCALAR)
+        return OperationNode(
+            self.sds_context, "toString", [self], kwargs, output_type=OutputType.SCALAR
+        )
 
-    def print(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+    def print(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> "OperationNode":
         """ Prints the given Operation Node.
         There is no return on calling.
         To get the returned string look at the stdout of SystemDSContext.
         """
-        return OperationNode(self.sds_context, 'print', [self], kwargs, output_type=OutputType.NONE)
+        return OperationNode(
+            self.sds_context, "print", [self], kwargs, output_type=OutputType.NONE
+        )
 
-    def rev(self) -> 'OperationNode':
+    def rev(self) -> "OperationNode":
         """ Reverses the rows in a matrix
 
         :return: the OperationNode representing this operation
         """
 
         self._check_matrix_op()
-        return OperationNode(self.sds_context, 'rev', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "rev", [self], shape=self.shape)
 
-    def order(self, by: int = 1, decreasing: bool = False,
-              index_return: bool = False) -> 'OperationNode':
+    def order(
+        self, by: int = 1, decreasing: bool = False, index_return: bool = False
+    ) -> "OperationNode":
         """ Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data
 
         :param by: sort matrix by this column number
@@ -434,27 +552,40 @@ class OperationNode(DAGNode):
         cols = self._np_array.shape[1]
         if by > cols:
             raise IndexError(
-                "Index {i} is out of bounds for axis 1 with size {c}".format(i=by, c=cols))
+                "Index {i} is out of bounds for axis 1 with size {c}".format(
+                    i=by, c=cols
+                )
+            )
 
-        named_input_nodes = {'target': self, 'by': by, 'decreasing': str(decreasing).upper(),
-                             'index.return': str(index_return).upper()}
+        named_input_nodes = {
+            "target": self,
+            "by": by,
+            "decreasing": str(decreasing).upper(),
+            "index.return": str(index_return).upper(),
+        }
 
-        return OperationNode(self.sds_context, 'order', [], named_input_nodes=named_input_nodes, shape=self.shape)
+        return OperationNode(
+            self.sds_context,
+            "order",
+            [],
+            named_input_nodes=named_input_nodes,
+            shape=self.shape,
+        )
 
-    def t(self) -> 'OperationNode':
+    def t(self) -> "OperationNode":
         """ Transposes the input matrix
 
         :return: the OperationNode representing this operation
         """
 
         self._check_matrix_op()
-        if(len(self.shape) > 1):
+        if len(self.shape) > 1:
             shape = (self.shape[1], self.shape[0])
         else:
             shape = (0, self.shape[0])
-        return OperationNode(self.sds_context, 't', [self], shape=shape)
+        return OperationNode(self.sds_context, "t", [self], shape=shape)
 
-    def cholesky(self, safe: bool = False) -> 'OperationNode':
+    def cholesky(self, safe: bool = False) -> "OperationNode":
         """ Computes the Cholesky decomposition of a symmetric, positive definite matrix
 
         :param safe: default value is False, if flag is True additional checks to ensure
@@ -476,9 +607,9 @@ class OperationNode(DAGNode):
             if not np.allclose(self._np_array, self._np_array.transpose()):
                 raise ValueError("Matrix is not symmetric")
 
-        return OperationNode(self.sds_context, 'cholesky', [self], shape=self.shape)
+        return OperationNode(self.sds_context, "cholesky", [self], shape=self.shape)
 
-    def to_one_hot(self, num_classes: int) -> 'OperationNode':
+    def to_one_hot(self, num_classes: int) -> "OperationNode":
         """ OneHot encode the matrix.
 
         It is assumed that there is only one column to encode, and all values are whole numbers > 0
@@ -490,42 +621,88 @@ class OperationNode(DAGNode):
         self._check_matrix_op()
         if len(self.shape) == 2 and self.shape[1] != 1:
             raise ValueError(
-                "Only Matrixes with a single column is valid in One Hot, " + str(self.shape) + " is invalid")
+                "Only Matrixes with a single column is valid in One Hot, "
+                + str(self.shape)
+                + " is invalid"
+            )
 
         if num_classes < 2:
             raise ValueError("Number of classes should be larger than 1")
 
         named_input_nodes = {"X": self, "numClasses": num_classes}
-        return OperationNode(self.sds_context, 'toOneHot', named_input_nodes=named_input_nodes, shape=(self.shape[0], num_classes))
+        return OperationNode(
+            self.sds_context,
+            "toOneHot",
+            named_input_nodes=named_input_nodes,
+            shape=(self.shape[0], num_classes),
+        )
 
-    def rbind(self, other) -> 'OperationNode':
+    def rbind(self, other: "OperationNode") -> "OperationNode":
         """
         Row-wise matrix concatenation, by concatenating the second matrix as additional rows to the first matrix. 
         :param: The other matrix to bind to the right hand side
         :return: The OperationNode containing the concatenated matrices.
         """
+        self._check_equal_op_type_as(other)
+        # self._check_matrix_op()
+        self._check_matrix_or_frame_op()
+        # other._check_matrix_or_frame_op()
+        if self.output_type == OutputType.MATRIX:
+            if self.shape[1] != other.shape[1]:
+                raise ValueError(
+                    "The input matrices to rbind does not have the same number of columns"
+                )
 
-        self._check_matrix_op()
-        other._check_matrix_op()
+            return OperationNode(
+                self.sds_context,
+                "rbind",
+                [self, other],
+                shape=(self.shape[0] + other.shape[0], self.shape[1]),
+            )
+        if self.output_type == OutputType.FRAME:
+            if self.shape[1] != other.shape[1]:
+                raise ValueError(
+                    "The input frames to rbind do not have the same number of columns"
+                )
+            return OperationNode(
+                self.sds_context,
+                "rbind",
+                [self, other],
+                shape=(self.shape[0] + other.shape[0], self.shape[1]),
+                output_type=OutputType.FRAME,
+            )
 
-        if self.shape[1] != other.shape[1]:
-            raise ValueError(
-                "The input matrices to rbind does not have the same number of columns")
-
-        return OperationNode(self.sds_context, 'rbind', [self, other], shape=(self.shape[0] + other.shape[0], self.shape[1]))
-
-    def cbind(self, other) -> 'OperationNode':
+    def cbind(self, other: "OperationNode") -> "OperationNode":
         """
         Column-wise matrix concatenation, by concatenating the second matrix as additional columns to the first matrix. 
         :param: The other matrix to bind to the right hand side.
         :return: The OperationNode containing the concatenated matrices.
         """
+        self._check_equal_op_type_as(other)
+        # self._check_matrix_op()
+        self._check_matrix_or_frame_op()
+        # other._check_matrix_or_frame_op()
+        if self.output_type == OutputType.MATRIX:
+            if self.shape[0] != other.shape[0]:
+                raise ValueError(
+                    "The input matrices to cbind does not have the same number of rows"
+                )
+            return OperationNode(
+                self.sds_context,
+                "cbind",
+                [self, other],
+                shape=(self.shape[0], self.shape[1] + other.shape[1]),
+            )
+        if self.output_type == OutputType.FRAME:
+            if self.shape[0] != other.shape[0]:
+                raise ValueError(
+                    "The input frames to cbind do not have the same number of rows"
+                )
+            return OperationNode(
+                self.sds_context,
+                "cbind",
+                [self, other],
+                shape=(self.shape[0], self.shape[1] + other.shape[1],),
+                output_type=OutputType.FRAME,
+            )
 
-        self._check_matrix_op()
-        other._check_matrix_op()
-
-        if self.shape[0] != other.shape[0]:
-            raise ValueError(
-                "The input matrices to cbind does not have the same number of columns")
-
-        return OperationNode(self.sds_context, 'cbind', [self, other], shape=(self.shape[0], self.shape[1] + other.shape[1]))

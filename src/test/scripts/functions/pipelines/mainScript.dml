@@ -139,7 +139,7 @@ FD = FD > 0
 logical1 =  frame(["4", "MVI", "SCALE", "DUMMY", "DIM", "0", "0", "0"], rows=1, cols=8)
 logical2 =  frame(["2", "MVI", "DUMMY", "0", "0", "0", "0", "0"], rows=1, cols=8)
 logical3 =  frame(["3", "MVI", "SCALE", "DUMMY", "0", "0", "0", "0"], rows=1, cols=8)
-logical4 =  frame(["7", "MVI", "OTLR", "CI", "SCALE", "DUMMY", "DIM", "0"], rows=1, cols=8)
+logical4 =  frame(["6", "MVI", "OTLR", "CI", "SCALE", "DUMMY", "DIM", "0"], rows=1, cols=8)
 logical5 = frame(["7", "MVI", "OTLR", "MVI", "CI", "SCALE", "DUMMY", "DIM"], rows=1, cols=8)
 logical6 = frame(["6", "OTLR", "MVI", "CI", "SCALE", "DUMMY", "DIM", "0"], rows=1, cols=8)
 

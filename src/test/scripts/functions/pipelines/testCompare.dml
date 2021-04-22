@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 # Generate the logical pipelines for data cleaning
 
-source("scripts/pipelines/scripts/utils.dml") as utils;
+
 source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
 
 # read the inputs
@@ -64,7 +64,7 @@ X = dropInvalidType(F, getSchema)
 if(sum(getMask) > 0)
 {
   # always recode the label
-  index = utils::vectorToCsv(getMask)
+  index = vectorToCsv(getMask)
   jspecR = "{ids:true, recode:["+index+"]}"
 
   [eX, X_meta] = transformencode(target=rbind(cleanData, X), spec=jspecR);
@@ -78,8 +78,10 @@ if(sum(getMask) > 0)
 
 } 
 # if no categorical value exist then just cast the frame into matrix
-else
+else {
   eX = as.matrix(X)
+  cleanX = as.matrix(cleanData)  
+}
   
 
 # get the logical seed

@@ -27,7 +27,7 @@ from py4j.java_gateway import JVMView, JavaObject
 
 from systemds.utils.consts import VALID_INPUT_TYPES, BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES
 from systemds.utils.helpers import create_params_string
-from systemds.utils.converters import matrix_block_to_numpy
+from systemds.utils.converters import matrix_block_to_numpy, frame_block_to_pandas
 from systemds.script_building.script import DMLScript
 from systemds.script_building.dag import OutputType, DAGNode
 
@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
 class OperationNode(DAGNode):
     """A Node representing an operation in SystemDS"""
+
     shape: Optional[Tuple[int]]
     _result_var: Optional[Union[float, np.array]]
     _lineage_trace: Optional[str]
@@ -99,7 +100,7 @@ class OperationNode(DAGNode):
             else:
                 result_variables = self._script.execute()
 
-            self._result_var =  self.__parse_output_result_variables(result_variables)
+            self._result_var = self.__parse_output_result_variables(result_variables)
 
         if verbose:
             for x in self.sds_context.get_stdout():
@@ -119,6 +120,10 @@ class OperationNode(DAGNode):
             return self.__parse_output_result_matrix(result_variables, self._script.out_var_name[0])
         elif self.output_type == OutputType.LIST:
             return self.__parse_output_result_list(result_variables)
+        elif self.output_type == OutputType.FRAME:
+            return self.__parse_output_result_frame(
+                result_variables, self._script.out_var_name[0]
+            )
 
     def __parse_output_result_double(self, result_variables, var_name):
         return result_variables.getDouble(var_name)
@@ -127,11 +132,19 @@ class OperationNode(DAGNode):
         return matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
                                          result_variables.getMatrixBlock(var_name))
 
+    def __parse_output_result_frame(self, result_variables, var_name):
+        return frame_block_to_pandas(
+            self.sds_context, result_variables.getFrameBlock(var_name)
+        )
+
     def __parse_output_result_list(self, result_variables):
         result_var = []
         for idx, v in enumerate(self._script.out_var_name):
             if(self._output_types == None or self._output_types[idx] == OutputType.MATRIX):
                 result_var.append(self.__parse_output_result_matrix(result_variables,v))
+            elif self._output_types[idx] == OutputType.FRAME:
+                result_var.append(self.__parse_output_result_frame(result_variables, v))
+
             else:
                 result_var.append(result_variables.getDouble(
                     self._script.out_var_name[idx]))
@@ -184,7 +197,43 @@ class OperationNode(DAGNode):
         :raise: AssertionError
         """
         assert self.output_type == OutputType.MATRIX, f'{self.operation} only supported for matrices'
+    
+    def _check_frame_op(self):
+        """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
 
+        :raise: AssertionError
+        """
+        assert (
+            self.output_type == OutputType.FRAME
+        ), f"{self.operation} only supported for frames"
+
+    def _check_matrix_or_frame_op(self):
+        """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
+
+        :raise: AssertionError
+        """
+        assert (
+            self.output_type == OutputType.FRAME
+            or self.output_type == OutputType.MATRIX
+        ), f"{self.operation} only supported for frames or matrices"
+
+    def _check_equal_op_type_as(self, other: "OperationNode"):
+        """Perform checks to assure operation is equal to 'other'. Used for rBind and cBind type equality check.
+
+        :raise: AssertionError
+        """
+        assert (
+            self.output_type == other.output_type
+        ), f"{self.operation} only supported for Nodes of equal output-type. Got self: {self.output_type} and other: {other.output_type}"
+
+    def _check_other(self, other: "OperationNode", expectedOutputType: OutputType):
+        """Perform check to assure other operation has expected output type.
+
+        :raise: AssertionError
+        """
+        assert other.output_type == expectedOutputType
+
+    
     def __add__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
         return OperationNode(self.sds_context, '+', [self, other], shape=self.shape)
 
@@ -500,32 +549,39 @@ class OperationNode(DAGNode):
 
     def rbind(self, other) -> 'OperationNode':
         """
-        Row-wise matrix concatenation, by concatenating the second matrix as additional rows to the first matrix. 
-        :param: The other matrix to bind to the right hand side
-        :return: The OperationNode containing the concatenated matrices.
+        Row-wise matrix/frame concatenation, by concatenating the second matrix/frame as additional rows to the first matrix/frame. 
+        :param: The other matrix/frame to bind to the right hand side
+        :return: The OperationNode containing the concatenated matrices/frames.
         """
-
-        self._check_matrix_op()
-        other._check_matrix_op()
-
+        self._check_equal_op_type_as(other)
+        self._check_matrix_or_frame_op()
         if self.shape[1] != other.shape[1]:
             raise ValueError(
-                "The input matrices to rbind does not have the same number of columns")
-
-        return OperationNode(self.sds_context, 'rbind', [self, other], shape=(self.shape[0] + other.shape[0], self.shape[1]))
+                "The inputs to rbind do not have the same number of columns"
+            )
+        return OperationNode(
+            self.sds_context,
+            "rbind",
+            [self, other],
+            shape=(self.shape[0] + other.shape[0], self.shape[1]),
+            output_type=self._output_type,
+        )
 
     def cbind(self, other) -> 'OperationNode':
         """
-        Column-wise matrix concatenation, by concatenating the second matrix as additional columns to the first matrix. 
-        :param: The other matrix to bind to the right hand side.
-        :return: The OperationNode containing the concatenated matrices.
+        Column-wise matrix/frame concatenation, by concatenating the second matrix/frame as additional columns to the first matrix/frame. 
+        :param: The other matrix/frame to bind to the right hand side.
+        :return: The OperationNode containing the concatenated matrices/frames.
         """
-
-        self._check_matrix_op()
-        other._check_matrix_op()
-
+        self._check_equal_op_type_as(other)
+        self._check_matrix_or_frame_op()
         if self.shape[0] != other.shape[0]:
-            raise ValueError(
-                "The input matrices to cbind does not have the same number of columns")
+            raise ValueError("The inputs to cbind do not have the same number of rows")
+        return OperationNode(
+            self.sds_context,
+            "cbind",
+            [self, other],
+            shape=(self.shape[0], self.shape[1] + other.shape[1],),
+            output_type=self._output_type,
+        )
 
-        return OperationNode(self.sds_context, 'cbind', [self, other], shape=(self.shape[0], self.shape[1] + other.shape[1]))

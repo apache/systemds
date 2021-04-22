@@ -40,6 +40,8 @@ from systemds.script_building import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
 
+from systemds.frame import Frame
+
 
 class SystemDSContext(object):
     """A context with a connection to a java instance with which SystemDS operations are executed. 
@@ -299,7 +301,28 @@ class SystemDSContext(object):
         See: http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions for more details
         :return: an Operation Node, containing the read data.
         """
-        return OperationNode(self, 'read', [f'"{path}"'], named_input_nodes=kwargs, shape=(-1,))
+        data_type = kwargs.get("data_type", None)
+        file_format = kwargs.get("format", None)
+        if data_type == "frame":
+            kwargs["data_type"] = f'"{data_type}"'
+            if isinstance(file_format, str):
+                kwargs["format"] = f'"{kwargs["format"]}"'
+            return Frame(self, None, f'"{path}"', **kwargs)
+        elif data_type == "scalar":
+            kwargs["data_type"] = f'"{data_type}"'
+            value_type = kwargs.get("value_type", None)
+            if value_type == "string":
+                kwargs["value_type"] = f'"{kwargs["value_type"]}"'
+                return OperationNode(
+                    self,
+                    "read",
+                    [f'"{path}"'],
+                    named_input_nodes=kwargs,
+                    shape=(-1,),
+                    output_type=OutputType.SCALAR,
+                )
+        return OperationNode(self, "read", [f'"{path}"'], 
+                             named_input_nodes=kwargs, shape=(-1,))
 
     def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
         """ Construct an scalar value, this can contain str, float, double, integers and booleans.

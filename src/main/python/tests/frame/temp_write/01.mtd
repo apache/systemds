@@ -1,9 +1,0 @@
-{
-    "data_type": "frame",
-    "schema": "STRING,INT64,FP64,",
-    "rows": 100,
-    "cols": 3,
-    "format": "binary",
-    "author": "thisislb",
-    "created": "2021-04-22 15:38:20 CEST"
-}

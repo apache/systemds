@@ -52,8 +52,7 @@ class TestWriteRead(unittest.TestCase):
         cls.sds.close()
 
     def tearDown(self):
-        pass
-        # shutil.rmtree(self.temp_dir, ignore_errors=True)
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_write_read_binary(self):
         frame = Frame(self.sds, self.df)

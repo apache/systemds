@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.pre.ArrPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -280,11 +282,6 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupValue that) {
-		return that instanceof ColGroupConst;
-	}
-
-	@Override
 	public int getIndexStructureHash() {
 		throw new NotImplementedException("This function should not be called");
 	}
@@ -342,5 +339,15 @@ public class ColGroupConst extends ColGroupValue {
 	@Override
 	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
 		throw new DMLCompressionException("Does not make sense to call this");
+	}
+
+	@Override
+	protected int containsAllZeroTuple() {
+		return -1;
+	}
+
+	@Override
+	protected boolean sameIndexStructure(ColGroupCompressed that) {
+		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
 	}
 }

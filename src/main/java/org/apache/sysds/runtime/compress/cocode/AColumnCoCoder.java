@@ -41,33 +41,36 @@ public abstract class AColumnCoCoder {
 	}
 
 	/**
-	 * Cocode columns into groups.
+	 * CoCode columns into groups.
 	 * 
-	 * @param colInfos The current individually sampled and evaluated column groups
-	 * @param k The parallelization available to the underlying implementation.
+	 * @param colInfos The current individually sampled and evaluated column groups.
+	 * @param k        The parallelization available to the underlying implementation.
 	 * @return CoCoded column groups.
 	 */
-	public abstract CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k);
+	protected abstract CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k);
 
-	protected CompressedSizeInfoColGroup join(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs, boolean analyze){
-		return analyze ? joinWithAnalysis(lhs, rhs): joinWithoutAnalysis(lhs,rhs);
+	protected CompressedSizeInfoColGroup join(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs,
+		boolean analyze) {
+		return analyze ? joinWithAnalysis(lhs, rhs) : joinWithoutAnalysis(lhs, rhs);
 	}
 
-	protected CompressedSizeInfoColGroup joinWithAnalysis(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs) {
+	protected CompressedSizeInfoColGroup joinWithAnalysis(CompressedSizeInfoColGroup lhs,
+		CompressedSizeInfoColGroup rhs) {
 		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
 		return _est.estimateCompressedColGroupSize(joined);
 	}
 
-	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs){
+	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs,
+		CompressedSizeInfoColGroup rhs) {
 		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
-		int numVals =  lhs.getNumVals() + rhs.getNumVals();
+		int numVals = lhs.getNumVals() + rhs.getNumVals();
 		return new CompressedSizeInfoColGroup(joined, numVals, _numRows);
 	}
 
-	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g){
+	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g) {
 		if(g.getBestCompressionType() == null)
 			return _est.estimateCompressedColGroupSize(g.getColumns());
-		else 
+		else
 			return g;
 	}
 }

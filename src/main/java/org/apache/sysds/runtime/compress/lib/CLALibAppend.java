@@ -50,14 +50,14 @@ public class CLALibAppend {
 		if(!(left instanceof CompressedMatrixBlock) && m > 1000) {
 			LOG.warn("Compressing left for append operation");
 			Pair<MatrixBlock, CompressionStatistics> x = CompressedMatrixBlockFactory.compress(left);
-			if(x.getRight().ratio > 3.0)
+			if(x.getRight().getRatio() > 3.0)
 				left = x.getLeft();
 
 		}
 		if(!(right instanceof CompressedMatrixBlock) && m > 1000) {
 			LOG.warn("Compressing right for append operation");
 			Pair<MatrixBlock, CompressionStatistics> x = CompressedMatrixBlockFactory.compress(right);
-			if(x.getRight().ratio > 3.0)
+			if(x.getRight().getRatio() > 3.0)
 				right = x.getLeft();
 		}
 

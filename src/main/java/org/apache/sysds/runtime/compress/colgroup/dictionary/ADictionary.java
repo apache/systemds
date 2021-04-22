@@ -17,9 +17,8 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup;
+package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
-import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
@@ -151,31 +150,30 @@ public abstract class ADictionary {
 	}
 
 	/**
-	 * The read function to instantiate the dictionary.
-	 * 
-	 * @param in    The data input source to read the stored dictionary from
-	 * @param lossy Boolean specifying if the dictionary stored was lossy.
-	 * @return The concrete dictionary.
-	 * @throws IOException if the reading source throws it.
-	 */
-	public static ADictionary read(DataInput in, boolean lossy) throws IOException {
-		return lossy ? QDictionary.read(in) : Dictionary.read(in);
-	}
-
-	/**
 	 * Write the dictionary to a DataOutput.
 	 * 
 	 * @param out the output sink to write the dictionary to.
 	 * @throws IOException if the sink fails.
 	 */
-	public abstract void write(DataOutput out) throws IOException;
+	public void write(DataOutput out) throws IOException {
+		out.writeBoolean(isLossy());
+	}
 
 	/**
 	 * Calculate the space consumption if the dictionary is stored on disk.
 	 * 
 	 * @return the long count of bytes to store the dictionary.
 	 */
-	public abstract long getExactSizeOnDisk();
+	public long getExactSizeOnDisk(){
+		return 1;
+	}
+
+	/**
+	 * Specify if the Dictionary is lossy.
+	 * 
+	 * @return A boolean
+	 */
+	public abstract boolean isLossy();
 
 	/**
 	 * Get the number of values given that the column group has n columns
@@ -202,7 +200,7 @@ public abstract class ADictionary {
 	 * @param nrColumns The number of columns in the ColGroup to know how to get the values from the dictionary.
 	 * @return a double array containing the row sums from this dictionary.
 	 */
-	protected abstract double[] sumAllRowsToDouble(boolean square, int nrColumns);
+	public abstract double[] sumAllRowsToDouble(boolean square, int nrColumns);
 
 	/**
 	 * Sum the values at a specific row.
@@ -212,13 +210,13 @@ public abstract class ADictionary {
 	 * @param nrColumns The number of columns
 	 * @return The sum of the row.
 	 */
-	protected abstract double sumRow(int k, boolean square, int nrColumns);
+	public abstract double sumRow(int k, boolean square, int nrColumns);
 
-	protected abstract void colSum(double[] c, int[] counts, int[] colIndexes, boolean square);
+	public abstract void colSum(double[] c, int[] counts, int[] colIndexes, boolean square);
 
-	protected abstract double sum(int[] counts, int ncol);
+	public abstract double sum(int[] counts, int ncol);
 
-	protected abstract double sumsq(int[] counts, int ncol);
+	public abstract double sumsq(int[] counts, int ncol);
 
 	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
 
@@ -230,7 +228,7 @@ public abstract class ADictionary {
 	 * @param ret        The double array that contains all columns min and max.
 	 * @param colIndexes The column indexes contained in this dictionary.
 	 */
-	protected abstract void addMaxAndMin(double[] ret, int[] colIndexes);
+	public abstract void addMaxAndMin(double[] ret, int[] colIndexes);
 
 	/**
 	 * Modify the dictionary by removing columns not within the index range.
@@ -264,8 +262,7 @@ public abstract class ADictionary {
 	 */
 	public abstract void addToEntry(Dictionary d, int fr, int to, int nCol);
 
-
-	public static ADictionary getDictionary(ABitmap ubm){
+	public static ADictionary getDictionary(ABitmap ubm) {
 		if(ubm instanceof BitmapLossy)
 			return new QDictionary((BitmapLossy) ubm).makeDoubleDictionary();
 		else

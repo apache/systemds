@@ -25,7 +25,10 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -73,14 +76,19 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
+		if(data == null)
+			throw new DMLCompressionException("data null input In SDC Construction");
 		_indexes = OffsetFactory.create(indexes, numRows);
 		_data = data;
 		_zeros = true;
+
 	}
 
 	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
+		if(data == null)
+			throw new DMLCompressionException("data null input In SDC Construction");
 		_indexes = offsets;
 		_data = data;
 		_zeros = true;
@@ -358,7 +366,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupValue that) {
+	public boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupSDCZeros && ((ColGroupSDCZeros) that)._indexes == _indexes &&
 			((ColGroupSDCZeros) that)._data == _data;
 	}

@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -71,7 +72,7 @@ public class ColGroupUncompressed extends AColGroup {
 	 */
 	public ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
 		super(colIndicesList);
-		final int _numRows =  transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+		final int _numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 		if(colIndicesList.length == 1) {
 			final int col = colIndicesList[0];
 			if(transposed) {
@@ -80,7 +81,7 @@ public class ColGroupUncompressed extends AColGroup {
 			}
 			else
 				_data = rawBlock.slice(0, rawBlock.getNumRows() - 1, col, col);
-			
+
 			return;
 		}
 
@@ -438,7 +439,19 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] result, int rl, int ru) {
-		throw new NotImplementedException("Unimplemented Specific Sub ColGroup Aggregation Operation");
+		LOG.warn("Inefficient Unary Aggregate because of Uncompressed ColumnGroup");
+		MatrixBlock tmp = _data.aggregateUnaryOperations(op, new MatrixBlock(), _data.getNumRows(),
+			new MatrixIndexes(1, 1), true);
+		// The output is always dense in unary aggregates.
+		double[] tmpV = tmp.getDenseBlockValues();
+
+		if(op.isColAggregate())
+			for(int i = 0; i < tmpV.length; i++)
+				result[_colIndexes[i]] += tmpV[i];
+		else
+			for(int i = 0; i < tmpV.length; i++)
+				result[i] += tmpV[i];
+
 	}
 
 	@Override
@@ -503,18 +516,16 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public boolean getIfCountsType() {
-		return false;
-	}
-
-	@Override
 	public double[] getValues() {
-		if(_data.isInSparseFormat()) {
-			return _data.getSparseBlock().values(0);
+		if(_data.isInSparseFormat()){
+			SparseBlock sb = _data.getSparseBlock();
+			if(sb.isEmpty(0))
+				return null;
+			else
+				return _data.getSparseBlock().values(0);
 		}
-		else {
+		else 
 			return _data.getDenseBlock().values(0);
-		}
 	}
 
 	@Override
@@ -567,12 +578,16 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public int getNumRows(){
+	public int getNumRows() {
 		return _data.getNumRows();
 	}
 
-	@Override 
+	@Override
 	public boolean isDense() {
 		return !_data.isInSparseFormat();
+	}
+
+	public void leftMultByAColGroup(AColGroup lhs, double[] result, final int numRows, final int numCols) {
+		throw new NotImplementedException("Not implemented copy of uncompressed colGroup yet.");
 	}
 }

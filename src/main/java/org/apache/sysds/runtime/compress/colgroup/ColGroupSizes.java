@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -46,10 +47,8 @@ public class ColGroupSizes {
 		size += 1; // _zeros boolean reference
 		size += 1; // _lossy boolean reference
 		size += 2; // padding
-		if(lossy)
-			size += QDictionary.getInMemorySize(nrValues * nrColumns);
-		else
-			size += Dictionary.getInMemorySize(nrValues * nrColumns);
+		size += DictionaryFactory.getInMemorySize(nrValues, nrColumns, lossy);
+
 
 		return size;
 	}

@@ -17,9 +17,8 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup;
+package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
-import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
@@ -52,7 +51,7 @@ public class QDictionary extends ADictionary {
 		_scale = bm.getScale();
 	}
 
-	private QDictionary(byte[] values, double scale) {
+	protected QDictionary(byte[] values, double scale) {
 		_values = values;
 		_scale = scale;
 	}
@@ -259,18 +258,10 @@ public class QDictionary extends ADictionary {
 		return new QDictionary(ret, _scale);
 	}
 
-	public static QDictionary read(DataInput in) throws IOException {
-		double scale = in.readDouble();
-		int numVals = in.readInt();
-		// read distinct values
-		byte[] values = numVals == 0 ? null : new byte[numVals];
-		for(int i = 0; i < numVals; i++)
-			values[i] = in.readByte();
-		return new QDictionary(values, scale);
-	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		super.write(out);
 		out.writeDouble(_scale);
 		out.writeInt(_values.length);
 		for(int i = 0; i < _values.length; i++)
@@ -288,12 +279,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected double[] sumAllRowsToDouble(boolean square, int nrColumns) {
+	public double[] sumAllRowsToDouble(boolean square, int nrColumns) {
 		if(nrColumns == 1 && !square)
 			return getValues(); // shallow copy of values
 
 		final int numVals = getNumberOfValues(nrColumns);
-		double[] ret = ColGroupValue.allocDVector(numVals, false);
+		double[] ret = new double[numVals];
 		for(int k = 0; k < numVals; k++) {
 			ret[k] = sumRow(k, square, nrColumns);
 		}
@@ -302,7 +293,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sumRow(int k, boolean square, int nrColumns) {
+	public double sumRow(int k, boolean square, int nrColumns) {
 		if(_values == null)
 			return 0;
 		int valOff = k * nrColumns;
@@ -324,7 +315,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
+	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		throw new NotImplementedException("Not Implemented");
 		// final int rows = c.length / 2;
 		// if(!(kplus instanceof KahanPlusSq)) {
@@ -356,7 +347,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sum(int[] counts, int ncol) {
+	public double sum(int[] counts, int ncol) {
 		throw new NotImplementedException("Not Implemented");
 		// if(!(kplus instanceof KahanPlusSq)) {
 		// int sum = 0;
@@ -383,12 +374,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sumsq(int[] counts, int ncol) {
+	public double sumsq(int[] counts, int ncol) {
 		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
-	protected void addMaxAndMin(double[] ret, int[] colIndexes) {
+	public void addMaxAndMin(double[] ret, int[] colIndexes) {
 		byte[] mins = new byte[colIndexes.length];
 		byte[] maxs = new byte[colIndexes.length];
 		for(int i = 0; i < colIndexes.length; i++) {
@@ -473,5 +464,10 @@ public class QDictionary extends ADictionary {
 	@Override
 	public void addToEntry(Dictionary d, int fr, int to, int nCol){
 		throw new NotImplementedException("Not implemented yet");	
+	}
+
+	@Override
+	public boolean isLossy() {
+		return false;
 	}
 }

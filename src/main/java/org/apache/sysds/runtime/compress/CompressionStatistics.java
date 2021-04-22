@@ -25,10 +25,12 @@ import java.util.Map;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 
+/**
+ * Compression Statistics contain the main information gathered from the compression, such as sizes of the original
+ * matrix, vs the compressed representation at different stages of the compression.
+ */
 public class CompressionStatistics {
 
-	private double lastPhase;
-	public double ratio;
 	public long originalSize;
 	public long denseSize;
 	public long estimatedSizeColGroups;
@@ -37,17 +39,6 @@ public class CompressionStatistics {
 
 	private Map<String, int[]> colGroupCounts;
 
-	public CompressionStatistics() {
-	}
-
-	public void setNextTimePhase(double time) {
-		lastPhase = time;
-	}
-
-	public double getLastTimePhase() {
-		return lastPhase;
-	}
-
 	/**
 	 * Set array of counts regarding col group types.
 	 * 
@@ -55,7 +46,7 @@ public class CompressionStatistics {
 	 * 
 	 * @param colGroups list of ColGroups used in compression.
 	 */
-	public void setColGroupsCounts(List<AColGroup> colGroups) {
+	protected void setColGroupsCounts(List<AColGroup> colGroups) {
 		HashMap<String, int[]> ret = new HashMap<>();
 		for(AColGroup c : colGroups) {
 			String ct = c.getClass().getSimpleName();
@@ -81,18 +72,23 @@ public class CompressionStatistics {
 	public String getGroupsTypesString() {
 		StringBuilder sb = new StringBuilder();
 
-		for(String ctKey : colGroupCounts.keySet()) {
+		for(String ctKey : colGroupCounts.keySet())
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[0] + " ");
-		}
+		
 		return sb.toString();
 	}
 
 	public String getGroupsSizesString() {
 		StringBuilder sb = new StringBuilder();
-		for(String ctKey : colGroupCounts.keySet()) {
+
+		for(String ctKey : colGroupCounts.keySet()) 
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[1] + " ");
-		}
+		
 		return sb.toString();
+	}
+
+	public double getRatio(){
+		return (double) originalSize / size;
 	}
 
 	@Override

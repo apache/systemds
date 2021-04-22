@@ -29,8 +29,13 @@ import java.util.Set;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.QDictionary;
 import org.apache.sysds.runtime.compress.colgroup.pre.ArrPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.MapPreAggregate;
@@ -56,7 +61,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * Base class for column groups encoded with value dictionary. This include column groups such as DDC OLE and RLE.
  * 
  */
-public abstract class ColGroupValue extends AColGroup implements Cloneable {
+public abstract class ColGroupValue extends ColGroupCompressed implements Cloneable {
 	private static final long serialVersionUID = 3786247536054353658L;
 
 	/** thread-local pairs of reusable temporary vectors for positions and values */
@@ -67,23 +72,20 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 		}
 	};
 
-	final protected int _numRows;
 	/**
-	 * ColGroup Implementation Contains zero row. Note this is not if it contains a zero value. If false then the stored
-	 * values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
+	 * ColGroup Implementation Contains zero tuple. Note this is not if it contains a zero value. If false then the
+	 * stored values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
 	 */
 	protected boolean _zeros = false;
 
-	/** boolean specifying if the column group is encoded lossy */
-	protected boolean _lossy = false;
-
 	/** Distinct value tuples associated with individual bitmaps. */
 	protected ADictionary _dict;
-	protected int[] counts;
+
+	/** The count of each distinct value contained in the dictionary */
+	private int[] counts;
 
 	protected ColGroupValue(int numRows) {
-		super();
-		_numRows = numRows;
+		super(numRows);
 	}
 
 	/**
@@ -96,8 +98,7 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	 * @param cs         The Compression settings used for compression
 	 */
 	protected ColGroupValue(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
-		super(colIndices);
-		_numRows = numRows;
+		super(colIndices, numRows);
 
 		_zeros = ubm.getNumOffsets() < (long) numRows;
 		// sort values by frequency, if requested
@@ -116,8 +117,7 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	}
 
 	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
-		super(colIndices);
-		_numRows = numRows;
+		super(colIndices, numRows);
 		_dict = dict;
 		counts = cachedCounts;
 	}
@@ -161,17 +161,12 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	@Override
 	public MatrixBlock getValuesAsBlock() {
 		final double[] values = getValues();
-		if(values != null) {
-
-			int vlen = values.length;
-
-			int rlen = _zeros ? vlen + 1 : vlen;
-			MatrixBlock ret = new MatrixBlock(rlen, 1, false);
-			for(int i = 0; i < vlen; i++)
-				ret.quickSetValue(i, 0, values[i]);
-			return ret;
-		}
-		return new MatrixBlock(0, 0, false);
+		int vlen = values.length;
+		int rlen = _zeros ? vlen + 1 : vlen;
+		MatrixBlock ret = new MatrixBlock(rlen, 1, false);
+		for(int i = 0; i < vlen; i++)
+			ret.quickSetValue(i, 0, values[i]);
+		return ret;
 	}
 
 	/**
@@ -225,7 +220,8 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 		return true;
 	}
 
-	protected int containsAllZeroValue() {
+	@Override
+	protected int containsAllZeroTuple() {
 		return _dict.hasZeroTuple(_colIndexes.length);
 	}
 
@@ -538,7 +534,7 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append("Is Lossy: " + _lossy + " num Rows: " + getNumRows() + " contain zero row:" + _zeros);
+		sb.append("Is Lossy: " + _dict.isLossy() + " num Rows: " + getNumRows() + " contain zero row:" + _zeros);
 		if(_dict != null) {
 			sb.append(String.format("\n%15s%5d ", "Values:", _dict.getValues().length));
 			_dict.getString(sb, _colIndexes.length);
@@ -548,7 +544,7 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 
 	@Override
 	public boolean isLossy() {
-		return _lossy;
+		return _dict.isLossy();
 	}
 
 	@Override
@@ -556,30 +552,22 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 		super.readFields(in);
 
 		_zeros = in.readBoolean();
-		_lossy = in.readBoolean();
-
-		if(in.readBoolean())
-			_dict = ADictionary.read(in, _lossy);
+		_dict = DictionaryFactory.read(in);
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
 		super.write(out);
-		
-		out.writeBoolean(_zeros);
-		out.writeBoolean(_lossy);
 
-		if(_dict != null) {
-			out.writeBoolean(true);
-			_dict.write(out);
-		}
-		else
-			out.writeBoolean(false);
+		out.writeBoolean(_zeros);
+		out.writeBoolean(_dict.isLossy());
+		_dict.write(out);
+
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		long ret = super.getExactSizeOnDisk(); 
+		long ret = super.getExactSizeOnDisk();
 		ret += 1; // zeros boolean
 		ret += 1; // lossy boolean
 		// distinct values (groups of values)
@@ -686,7 +674,7 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 			return sliceMultiColumns(cl, cu);
 	}
 
-	private AColGroup sliceSingleColumn(int col) {
+	protected AColGroup sliceSingleColumn(int col) {
 		ColGroupValue ret = (ColGroupValue) copy();
 
 		int idx = Arrays.binarySearch(_colIndexes, col);
@@ -707,7 +695,7 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 			return null;
 	}
 
-	private AColGroup sliceMultiColumns(int cl, int cu) {
+	protected AColGroup sliceMultiColumns(int cl, int cu) {
 		ColGroupValue ret = (ColGroupValue) copy();
 		int idStart = 0;
 		int idEnd = 0;
@@ -832,8 +820,6 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	 */
 	public abstract double[] preAggregateSparse(SparseBlock sb, int row);
 
-	public abstract boolean sameIndexStructure(ColGroupValue that);
-
 	public abstract int getIndexStructureHash();
 
 	// try to make a memo table.
@@ -888,8 +874,6 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 			return preAggregateRLE((ColGroupRLE) lhs);
 		else if(lhs instanceof ColGroupConst)
 			return preAggregateCONST((ColGroupConst) lhs);
-		else if(lhs instanceof ColGroupEmpty)
-			return null;
 
 		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
 			+ this.getClass().getSimpleName());
@@ -953,18 +937,18 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 		return ret;
 	}
 
-	/**
-	 * Multiply with a matrix on the left.
-	 * 
-	 * @param lhs     Left hand side ColGroupValue
-	 * @param result  Dense result matrix block
-	 * @param numRows The number of rows in the left hand side matrix
-	 * @param numCols The number of columns in the colGroups parent matrix.
-	 */
-	public void leftMultByAggregatedColGroup(ColGroupValue lhs, double[] result, final int numRows, final int numCols) {
-		if(this instanceof ColGroupEmpty || lhs instanceof ColGroupEmpty)
+	@Override
+	public void leftMultByAColGroup(AColGroup lhs, double[] result, final int numRows, final int numCols) {
+		if(lhs instanceof ColGroupEmpty)
 			return;
+		else if(lhs instanceof ColGroupValue)
+			leftMultByColGroupValue((ColGroupValue) lhs, result, numRows, numCols);
+		else
+			throw new DMLCompressionException(
+				"Not supported left multiplication with A ColGroup of type: " + lhs.getClass().getSimpleName());
+	}
 
+	private void leftMultByColGroupValue(ColGroupValue lhs, double[] result, final int numRows, final int numCols) {
 		final int nvL = lhs.getNumValues();
 		final int nvR = this.getNumValues();
 		final double[] lhValues = lhs.getValues();
@@ -1063,11 +1047,11 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 
 	@Override
 	public long getNumberNonZeros() {
-		if(_dict != null){
+		if(_dict != null) {
 			int[] counts = getCounts();
 			return _dict.getNumberNonZeros(counts, _colIndexes.length);
 		}
-		else{
+		else {
 			return 0;
 		}
 	}
@@ -1091,12 +1075,13 @@ public abstract class ColGroupValue extends AColGroup implements Cloneable {
 	}
 
 	@Override
-	public int getNumRows(){
+	public int getNumRows() {
 		return _numRows;
 	}
 
-	@Override 
+	@Override
 	public boolean isDense() {
 		return !_zeros;
 	}
+
 }

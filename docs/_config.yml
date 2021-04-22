@@ -19,6 +19,11 @@
 #
 #-------------------------------------------------------------
 
+# Documentation https://jekyllrb.com/docs/configuration/options/#build-command-options
+
+baseurl: "/docs/latest" # the subpath of your site, e.g. /blog
+url: "http://systemds.apache.org" # the base hostname & protocol for your site
+
 highlighter: rouge
 markdown: kramdown
 

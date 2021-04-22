@@ -73,7 +73,7 @@ public class MatMultCP extends Lop {
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
 		if(!useTranspose) {
-			return InstructionUtils.concatOperands(getExecType().name(),
+			InstructionUtils.concatBaseOperands(getExecType().name(),
 				"ba+*",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
@@ -81,7 +81,7 @@ public class MatMultCP extends Lop {
 				String.valueOf(numThreads));
 		}
 		else { // GPU or compressed
-			return InstructionUtils.concatOperands(getExecType().name(),
+			InstructionUtils.concatBaseOperands(getExecType().name(),
 				"ba+*",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
@@ -90,5 +90,8 @@ public class MatMultCP extends Lop {
 				String.valueOf(isLeftTransposed),
 				String.valueOf(isRightTransposed));
 		}
+		if ( getExecType() == ExecType.FED && federatedOutput )
+			InstructionUtils.concatAdditionalOperand(String.valueOf(federatedOutput));
+		return InstructionUtils.getInstructionString();
 	}
 }

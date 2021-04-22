@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -41,6 +42,7 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -548,26 +550,53 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws IOException
 	{
 		// TODO sparse optimization
-		MatrixBlock ret = new MatrixBlock((int) dims[0], (int) dims[1], false);
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = fedMap.requestFederatedData();
 		try {
-			for (Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
-				FederatedRange range = readResponse.getLeft();
-				FederatedResponse response = readResponse.getRight().get();
-				// add result
-				int[] beginDimsInt = range.getBeginDimsInt();
-				int[] endDimsInt = range.getEndDimsInt();
-				MatrixBlock multRes = (MatrixBlock) response.getData()[0];
-				ret.copy(beginDimsInt[0], endDimsInt[0] - 1,
-					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
-				ret.setNonZeros(ret.getNonZeros() + multRes.getNonZeros());
+			if ( fedMap.getType() == FederationMap.FType.PART )
+				return aggregateResponses(readResponses);
+			else {
+				return bindResponses(readResponses, dims);
 			}
 		}
-		catch (Exception e) {
+		catch(Exception e) {
 			throw new DMLRuntimeException("Federated matrix read failed.", e);
 		}
-		
+	}
+
+	/**
+	 * Bind data from federated workers based on non-overlapping federated ranges.
+	 * @param readResponses responses from federated workers containing the federated ranges and data
+	 * @param dims dimensions of output MatrixBlock
+	 * @return MatrixBlock of consolidated data
+	 * @throws Exception in case of problems with getting data from responses
+	 */
+	private MatrixBlock bindResponses(List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses, long[] dims)
+	throws Exception {
+		MatrixBlock ret = new MatrixBlock((int) dims[0], (int) dims[1], false);
+		for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
+			FederatedRange range = readResponse.getLeft();
+			FederatedResponse response = readResponse.getRight().get();
+			// add result
+			int[] beginDimsInt = range.getBeginDimsInt();
+			int[] endDimsInt = range.getEndDimsInt();
+			MatrixBlock multRes = (MatrixBlock) response.getData()[0];
+			ret.copy(beginDimsInt[0], endDimsInt[0] - 1, beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
+			ret.setNonZeros(ret.getNonZeros() + multRes.getNonZeros());
+		}
 		return ret;
+	}
+
+	/**
+	 * Aggregate partially aggregated data from federated workers
+	 * by adding values with the same index in different federated locations.
+	 * @param readResponses responses from federated workers containing the federated data
+	 * @return MatrixBlock of consolidated, aggregated data
+	 */
+	private MatrixBlock aggregateResponses(List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses) {
+		List<Future<FederatedResponse>> dataParts = new ArrayList<>();
+		for ( Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses )
+			dataParts.add(readResponse.getValue());
+		return FederationUtils.aggAdd(dataParts.toArray(new Future[0]));
 	}
 	
 	/**

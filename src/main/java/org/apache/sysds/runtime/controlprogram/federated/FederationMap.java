@@ -50,6 +50,7 @@ public class FederationMap {
 		ROW, // row partitioned, groups of rows
 		COL, // column partitioned, groups of columns
 		FULL, // Meaning both Row and Column indicating a single federated location and a full matrix
+		PART, // Partial aggregates in several federated locations with addition as the aggregation method
 		OTHER;
 
 		public boolean isRowPartitioned() {
@@ -189,9 +190,14 @@ public class FederationMap {
 		return ret;
 	}
 
+	/**
+	 * Determines if the two federation maps are aligned row/column partitions
+	 * at the same federated sites (which allows for purely federated operation)
+	 * @param that FederationMap to check alignment with
+	 * @param transposed true if that FederationMap should be transposed before checking alignment
+	 * @return true if this and that FederationMap are aligned
+	 */
 	public boolean isAligned(FederationMap that, boolean transposed) {
-		// determines if the two federated data are aligned row/column partitions
-		// at the same federated site (which allows for purely federated operation)
 		boolean ret = true;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
 			FederatedRange range = !transposed ? e.getKey() : new FederatedRange(e.getKey()).transpose();
@@ -348,10 +354,21 @@ public class FederationMap {
 		return copyFederationMap;
 	}
 
+	/**
+	 * Copy the federation map with the next available federated ID as reference to the federated data.
+	 * This means that the federated map refers to the next federated data object on the workers.
+	 * @return copied federation map with next federated ID
+	 */
 	public FederationMap copyWithNewID() {
 		return copyWithNewID(FederationUtils.getNextFedDataID());
 	}
 
+	/**
+	 * Copy the federation map with the given ID as reference to the federated data.
+	 * This means that the federated map refers to the federated data object on the workers with the given ID.
+	 * @param id federated data object ID
+	 * @return copied federation map with given federated ID
+	 */
 	public FederationMap copyWithNewID(long id) {
 		Map<FederatedRange, FederatedData> map = new TreeMap<>();
 		// TODO handling of file path, but no danger as never written
@@ -362,12 +379,42 @@ public class FederationMap {
 		return new FederationMap(id, map, _type);
 	}
 
+	/**
+	 * Copy the federation map with the given ID as reference to the federated data
+	 * and with given clen as end dimension for the columns in the range.
+	 * This means that the federated map refers to the federated data object on the workers with the given ID.
+	 * @param id federated data object ID
+	 * @param clen column length of data objects on federated workers
+	 * @return copied federation map with given federated ID and ranges adapted according to clen
+	 */
 	public FederationMap copyWithNewID(long id, long clen) {
 		Map<FederatedRange, FederatedData> map = new TreeMap<>();
 		// TODO handling of file path, but no danger as never written
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
 			map.put(new FederatedRange(e.getKey(), clen), e.getValue().copyWithNewID(id));
 		return new FederationMap(id, map, _type);
+	}
+
+	/**
+	 * Copy federated mapping while giving the federated data new IDs
+	 * and setting the ranges from zero to row and column ends specified.
+	 * The overlapping ranges are given an overlap number to separate the ranges when putting to the federated map.
+	 * The federation map returned is of type FType.PART.
+	 * @param rowRangeEnd end of range for the rows
+	 * @param colRangeEnd end of range for the columns
+	 * @param outputID ID given to the output
+	 * @return new federation map with overlapping ranges with partially aggregated values
+	 */
+	public FederationMap copyWithNewIDAndRange(long rowRangeEnd, long colRangeEnd, long outputID){
+		Map<FederatedRange, FederatedData> outputMap = new TreeMap<>();
+		int overlapNum = 1;
+		for(Map.Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+			if(e.getKey().getSize() != 0)
+				outputMap.put(
+					new FederatedRange(new long[]{0,0}, new long[]{rowRangeEnd, colRangeEnd}, overlapNum++),
+					e.getValue().copyWithNewID(outputID));
+		}
+		return new FederationMap(outputID, outputMap, FType.PART);
 	}
 
 	public FederationMap bind(long rOffset, long cOffset, FederationMap that) {

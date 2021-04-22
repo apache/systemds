@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -54,30 +55,20 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		if(!opcode.equalsIgnoreCase("ba+*")) {
 			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
-		int numFields = parts.length - 1;
-		if(numFields == 4) {
-			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			CPOperand out = new CPOperand(parts[3]);
-			int k = Integer.parseInt(parts[4]);
-			AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(k);
-			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
-		}
-		else if(numFields == 6) {
-			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			CPOperand out = new CPOperand(parts[3]);
-			int k = Integer.parseInt(parts[4]);
+
+		int numFields = InstructionUtils.checkNumFields(parts, 4, 6);
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand out = new CPOperand(parts[3]);
+		int k = Integer.parseInt(parts[4]);
+		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(k);
+		if ( numFields == 6 ){
 			boolean isLeftTransposed = Boolean.parseBoolean(parts[5]);
 			boolean isRightTransposed = Boolean.parseBoolean(parts[6]);
-			AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(k);
 			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str, isLeftTransposed,
 				isRightTransposed);
 		}
-		else {
-			throw new DMLRuntimeException("NumFields expected number  (" + 4 + " or " + 6
-				+ ") != is not equal to actual number (" + numFields + ").");
-		}
+		else return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
 	}
 
 	@Override

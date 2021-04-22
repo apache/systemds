@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.util.IndexRange;
 public class FederatedRange implements Comparable<FederatedRange> {
 	private long[] _beginDims;
 	private long[] _endDims;
+	private int _overlapNum = 0;
 	
 	/**
 	 * Create a range with the indexes of each dimension between their respective <code>beginDims</code> and
@@ -36,6 +37,12 @@ public class FederatedRange implements Comparable<FederatedRange> {
 	public FederatedRange(long[] beginDims, long[] endDims) {
 		_beginDims = beginDims;
 		_endDims = endDims;
+	}
+
+	public FederatedRange(long[] beginDims, long[] endDims, int overlapNum) {
+		_beginDims = beginDims;
+		_endDims = endDims;
+		_overlapNum = overlapNum;
 	}
 	
 	/**
@@ -81,6 +88,10 @@ public class FederatedRange implements Comparable<FederatedRange> {
 			size *= getSize(i);
 		return size;
 	}
+
+	public int getOverlapNum(){
+		return _overlapNum;
+	}
 	
 	public long getSize(int dim) {
 		return _endDims[dim] - _beginDims[dim];
@@ -94,12 +105,19 @@ public class FederatedRange implements Comparable<FederatedRange> {
 			if ( _beginDims[i] > o._beginDims[i])
 				return 1;
 		}
+		if (_overlapNum < o._overlapNum)
+			return -1;
+		if (_overlapNum > o._overlapNum)
+			return 1;
 		return 0;
 	}
 	
 	@Override
 	public String toString() {
-		return Arrays.toString(_beginDims) + " - " + Arrays.toString(_endDims);
+		String rangeStr = Arrays.toString(_beginDims) + " - " + Arrays.toString(_endDims);
+		if ( _overlapNum != 0 )
+			rangeStr = rangeStr + " Overlap " + _overlapNum;
+		return rangeStr;
 	}
 
 	@Override public boolean equals(Object o) {
@@ -108,12 +126,15 @@ public class FederatedRange implements Comparable<FederatedRange> {
 		if(o == null || getClass() != o.getClass())
 			return false;
 		FederatedRange range = (FederatedRange) o;
-		return Arrays.equals(_beginDims, range._beginDims) && Arrays.equals(_endDims, range._endDims);
+		return Arrays.equals(_beginDims, range._beginDims) && Arrays.equals(_endDims, range._endDims)
+			&& _overlapNum == range.getOverlapNum();
 	}
 
 	@Override public int hashCode() {
 		int result = Arrays.hashCode(_beginDims);
 		result = 31 * result + Arrays.hashCode(_endDims);
+		if (_overlapNum != 0)
+			result = result * _overlapNum;
 		return result;
 	}
 

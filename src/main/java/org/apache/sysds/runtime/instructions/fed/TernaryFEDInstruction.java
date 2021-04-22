@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 
 import com.sun.tools.javac.util.List;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -166,7 +167,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 	 */
 	private void sendFederatedRequests(ExecutionContext ec, MatrixObject fedMapObj, long fedOutputID,
 		FederatedRequest[] federatedSlices1, FederatedRequest[] federatedSlices2, FederatedRequest... federatedRequests){
-		if ( _federatedOutput ){
+		if (!OptimizerUtils.FEDERATED_COMPILATION || _federatedOutput ){
 			fedMapObj.getFedMapping().execute(getTID(), true, federatedSlices1, federatedSlices2, federatedRequests);
 			setOutputFedMapping(ec, fedMapObj, fedOutputID);
 		} else {

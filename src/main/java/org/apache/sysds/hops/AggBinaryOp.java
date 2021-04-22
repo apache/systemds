@@ -249,7 +249,9 @@ public class AggBinaryOp extends MultiThreadedHop
 		} 
 		else
 			throw new HopsException(this.printErrorLocation() + "Invalid operation in AggBinary Hop, aggBin(" + innerOp + "," + outerOp + ") while constructing lops.");
-		
+
+		setFederatedOutput(getLops());
+
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
 

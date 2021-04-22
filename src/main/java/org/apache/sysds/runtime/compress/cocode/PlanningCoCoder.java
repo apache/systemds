@@ -42,15 +42,6 @@ public class PlanningCoCoder {
 	 */
 	public enum PartitionerType {
 		BIN_PACKING, STATIC, COST;
-
-		public static boolean isCost(PartitionerType x) {
-			switch(x) {
-				case COST:
-					return true;
-				default:
-					return false;
-			}
-		}
 	}
 
 	/**
@@ -62,8 +53,8 @@ public class PlanningCoCoder {
 	 * @param colInfos The information already gathered on the individual ColGroups of columns.
 	 * @param numRows  The number of rows in the input matrix.
 	 * @param k        The concurrency degree allowed for this operation.
-	 * @param cs       The Compression Settings used in the compression.
-	 * @return The Estimated (hopefully) best groups of ColGroups.
+	 * @param cs       The compression settings used in the compression.
+	 * @return The estimated (hopefully) best groups of ColGroups.
 	 */
 	public static CompressedSizeInfo findCoCodesByPartitioning(CompressedSizeEstimator est, CompressedSizeInfo colInfos,
 		int numRows, int k, CompressionSettings cs) {
@@ -86,21 +77,14 @@ public class PlanningCoCoder {
 			colInfos.setInfo(newGroups);
 		}
 
-		// LOG.error("memorizer before: " + mem);
-		// use column group partitioner to create partitions of columns
+		// Use column group partitioner to create partitions of columns
 		CompressedSizeInfo bins = createColumnGroupPartitioner(cs.columnPartitioner, est, cs, numRows)
 			.coCodeColumns(colInfos, k);
 
-		// LOG.error("Binning CoCode ColGroups: " + bins);
-		// LOG.error("memorizer After Binning: " + mem);
-
 		if(cs.columnPartitioner == PartitionerType.BIN_PACKING) {
 			getCoCodingGroupsBruteForce(bins, k, est, mem, cs);
-			List<CompressedSizeInfoColGroup> groups = bins.getInfo();
-			groups.addAll(constantGroups);
+			bins.getInfo().addAll(constantGroups);
 		}
-
-		// LOG.error("memorizer After CoCode: " + mem);
 
 		return bins;
 	}

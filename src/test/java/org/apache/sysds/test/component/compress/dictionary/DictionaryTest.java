@@ -21,27 +21,27 @@ package org.apache.sysds.test.component.compress.dictionary;
 
 import static org.junit.Assert.assertTrue;
 
-import org.apache.sysds.runtime.compress.colgroup.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.junit.Test;
 
 public class DictionaryTest {
 
-    @Test
-    public void testContainsValue() {
-        Dictionary d = new Dictionary(new double[] {1, 2, 3});
-        assertTrue(d.containsValue(1));
-        assertTrue(!d.containsValue(-1));
-    }
+	@Test
+	public void testContainsValue() {
+		Dictionary d = new Dictionary(new double[] {1, 2, 3});
+		assertTrue(d.containsValue(1));
+		assertTrue(!d.containsValue(-1));
+	}
 
-    @Test
-    public void testContainsValue_nan() {
-        Dictionary d = new Dictionary(new double[] {Double.NaN, 2, 3});
-        assertTrue(d.containsValue(Double.NaN));
-    }
+	@Test
+	public void testContainsValue_nan() {
+		Dictionary d = new Dictionary(new double[] {Double.NaN, 2, 3});
+		assertTrue(d.containsValue(Double.NaN));
+	}
 
-    @Test
-    public void testContainsValue_nan_not() {
-        Dictionary d = new Dictionary(new double[] {1, 2, 3});
-        assertTrue(!d.containsValue(Double.NaN));
-    }
+	@Test
+	public void testContainsValue_nan_not() {
+		Dictionary d = new Dictionary(new double[] {1, 2, 3});
+		assertTrue(!d.containsValue(Double.NaN));
+	}
 }

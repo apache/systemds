@@ -34,7 +34,7 @@ public class CoCodeStatic extends AColumnCoCoder {
 	}
 
 	@Override
-	public CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
+	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 		return colInfos;
 	}
 

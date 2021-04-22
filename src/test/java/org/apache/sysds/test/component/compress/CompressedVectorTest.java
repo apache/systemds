@@ -74,13 +74,10 @@ public class CompressedVectorTest extends CompressedTestBase {
 			if(!(cmb instanceof CompressedMatrixBlock) || cols != 1)
 				return; // Input was not compressed then just pass test
 
-			// quantile uncompressed
 			AggregateOperationTypes opType = CMOperator.getCMAggOpType(2);
 			CMOperator cm = new CMOperator(CM.getCMFnObject(opType), opType);
 
 			double ret1 = mb.cmOperations(cm).getRequiredResult(opType);
-
-			// quantile compressed
 			double ret2 = cmb.cmOperations(cm).getRequiredResult(opType);
 
 			if(compressionSettings.lossy) {
@@ -90,7 +87,8 @@ public class CompressedVectorTest extends CompressedTestBase {
 					TestUtils.compareCellValue(ret1, ret2, tol, false));
 			}
 			else {
-				assertTrue(this.toString() + "\n expected: " + ret1 + " was:" + ret2, TestUtils.compareScalarBits(ret1, ret2, 1024));
+				assertTrue(this.toString() + "\n expected: " + ret1 + " was:" + ret2,
+					TestUtils.compareScalarBits(ret1, ret2, 1024));
 			}
 		}
 		catch(Exception e) {
@@ -105,20 +103,14 @@ public class CompressedVectorTest extends CompressedTestBase {
 			if(!(cmb instanceof CompressedMatrixBlock) || cols != 1)
 				return; // Input was not compressed then just pass test
 
-			// quantile uncompressed
-			MatrixBlock tmp1 = mb.sortOperations(null, new MatrixBlock());
-			double ret1 = tmp1.pickValue(0.95);
+			double ret1 = mb.sortOperations(null, new MatrixBlock()).pickValue(0.95);
+			double ret2 = cmb.sortOperations(null, new MatrixBlock()).pickValue(0.95);
 
-			// quantile compressed
-			MatrixBlock tmp2 = cmb.sortOperations(null, new MatrixBlock());
-			double ret2 = tmp2.pickValue(0.95);
-
-			if(compressionSettings.lossy) {
+			if(compressionSettings.lossy)
 				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
-			}
-			else {
-				assertTrue(this.toString(), TestUtils.compareScalarBits(ret1, ret2, 64));
-			}
+			else
+				assertTrue(this.toString(), TestUtils.compareScalarBits(ret1, ret2, 0));
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();

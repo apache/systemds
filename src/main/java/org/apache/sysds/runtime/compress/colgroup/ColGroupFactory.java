@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +35,8 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.tree.AInsertionSorter;
@@ -45,6 +49,7 @@ import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -74,14 +79,16 @@ public class ColGroupFactory {
 
 	}
 
-	private static List<AColGroup> compressColGroupsSingleThreaded(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings compSettings) {
+	private static List<AColGroup> compressColGroupsSingleThreaded(MatrixBlock in, CompressedSizeInfo csi,
+		CompressionSettings compSettings) {
 		List<AColGroup> ret = new ArrayList<>(csi.getNumberColGroups());
 		for(CompressedSizeInfoColGroup g : csi.getInfo())
-			ret.add(compressColGroup(in, g.getColumns(), compSettings));
+			ret.addAll(compressColGroup(in, g.getColumns(), compSettings));
 		return ret;
 	}
 
-	private static List<AColGroup> compressColGroupsParallel(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings compSettings, int k) {
+	private static List<AColGroup> compressColGroupsParallel(MatrixBlock in, CompressedSizeInfo csi,
+		CompressionSettings compSettings, int k) {
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			List<CompressTask> tasks = new ArrayList<>();
@@ -89,8 +96,8 @@ public class ColGroupFactory {
 				tasks.add(new CompressTask(in, g.getColumns(), compSettings));
 
 			List<AColGroup> ret = new ArrayList<>(csi.getNumberColGroups());
-			for(Future<AColGroup> lrtask : pool.invokeAll(tasks))
-				ret.add(lrtask.get());
+			for(Future<Collection<AColGroup>> t : pool.invokeAll(tasks))
+				ret.addAll(t.get());
 			pool.shutdown();
 			return ret;
 		}
@@ -129,7 +136,7 @@ public class ColGroupFactory {
 	// }
 	// }
 
-	private static class CompressTask implements Callable<AColGroup> {
+	private static class CompressTask implements Callable<Collection<AColGroup>> {
 		private final MatrixBlock _in;
 		private final int[] _colIndexes;
 		private final CompressionSettings _compSettings;
@@ -141,18 +148,45 @@ public class ColGroupFactory {
 		}
 
 		@Override
-		public AColGroup call() {
+		public Collection<AColGroup> call() {
 			return compressColGroup(_in, _colIndexes, _compSettings);
 		}
 	}
 
-	private static AColGroup compressColGroup(MatrixBlock in, int[] colIndexes, CompressionSettings compSettings) {
-		return compressColGroupForced(in, colIndexes, compSettings);
-		// return (compRatios == null) ? compressColGroupForced(in,
-		// colIndexes,
-		// compSettings) : compressColGroupCorrecting(in, compRatios, colIndexes,
-		// compSettings);
+	private static Collection<AColGroup> compressColGroup(MatrixBlock in, int[] colIndexes,
+		CompressionSettings compSettings) {
+		if(in.isInSparseFormat() && compSettings.transposed) {
+			
+			final SparseBlock sb = in.getSparseBlock();
+			for(int col : colIndexes)
+				if(sb.isEmpty(col))
+					return compressColGroupAndExtractEmptyColumns(in, colIndexes, compSettings);
 
+			// return (compRatios == null) ? compressColGroupForced(in,
+			// colIndexes,
+			// compSettings) : compressColGroupCorrecting(in, compRatios, colIndexes,
+			// compSettings);
+			return Collections.singletonList(compressColGroupForced(in, colIndexes, compSettings));
+		}
+		else
+			return Collections.singletonList(compressColGroupForced(in, colIndexes, compSettings));
+
+	}
+
+	private static Collection<AColGroup> compressColGroupAndExtractEmptyColumns(MatrixBlock in, int[] colIndexes,
+		CompressionSettings compSettings) {
+		final IntArrayList e = new IntArrayList();
+		final IntArrayList v = new IntArrayList();
+		final SparseBlock sb = in.getSparseBlock();
+		for(int col : colIndexes) {
+			if(sb.isEmpty(col))
+				e.appendValue(col);
+			else
+				v.appendValue(col);
+		}
+		AColGroup empty = compressColGroupForced(in, e.extractValues(true), compSettings);
+		AColGroup colGroup = compressColGroupForced(in, v.extractValues(true), compSettings);
+		return Arrays.asList(empty, colGroup);
 	}
 
 	private static AColGroup compressColGroupForced(MatrixBlock in, int[] colIndexes,

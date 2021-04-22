@@ -24,6 +24,8 @@ import java.util.Arrays;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
@@ -1011,7 +1013,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupValue that) {
+	public boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupOLE && ((ColGroupOLE) that)._data == _data;
 	}
 

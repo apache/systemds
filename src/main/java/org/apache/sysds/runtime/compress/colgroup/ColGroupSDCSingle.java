@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
@@ -400,7 +402,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupValue that) {
+	public boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupSDCSingle && ((ColGroupSDCSingle) that)._indexes == _indexes;
 	}
 

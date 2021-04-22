@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup;
+package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -26,6 +26,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -42,12 +43,14 @@ public class Dictionary extends ADictionary {
 	private final double[] _values;
 
 	public Dictionary(double[] values) {
+		if(values == null || values.length == 0)
+			throw new DMLCompressionException("Invalid construction of dictionary with null array");
 		_values = values;
 	}
 
 	@Override
 	public double[] getValues() {
-		return (_values == null) ? new double[0] : _values;
+		return _values;
 	}
 
 	@Override
@@ -63,13 +66,11 @@ public class Dictionary extends ADictionary {
 
 	protected static long getInMemorySize(int valuesCount) {
 		// object + values array
-		return 16 + (long)MemoryEstimates.doubleArrayCost(valuesCount);
+		return 16 + (long) MemoryEstimates.doubleArrayCost(valuesCount);
 	}
 
 	@Override
 	public int hasZeroTuple(int nCol) {
-		if(_values == null)
-			return -1;
 		int len = getNumberOfValues(nCol);
 		for(int i = 0, off = 0; i < len; i++, off += nCol) {
 			boolean allZeros = true;
@@ -214,7 +215,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected double[] sumAllRowsToDouble(boolean square, int nrColumns) {
+	public double[] sumAllRowsToDouble(boolean square, int nrColumns) {
 		if(nrColumns == 1 && !square)
 			return getValues(); // shallow copy of values
 
@@ -229,7 +230,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sumRow(int k, boolean square, int nrColumns) {
+	public double sumRow(int k, boolean square, int nrColumns) {
 		if(_values == null)
 			return 0;
 		int valOff = k * nrColumns;
@@ -248,7 +249,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
+	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		if(_values == null)
 			return;
 
@@ -266,7 +267,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sum(int[] counts, int ncol) {
+	public double sum(int[] counts, int ncol) {
 		if(_values == null)
 			return 0;
 		double out = 0;
@@ -281,7 +282,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected double sumsq(int[] counts, int ncol) {
+	public double sumsq(int[] counts, int ncol) {
 		if(_values == null)
 			return 0;
 		double out = 0;
@@ -306,7 +307,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected void addMaxAndMin(double[] ret, int[] colIndexes) {
+	public void addMaxAndMin(double[] ret, int[] colIndexes) {
 		if(_values == null || _values.length == 0)
 			return;
 		double[] mins = new double[colIndexes.length];
@@ -389,15 +390,15 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public long getNumberNonZeros(int[] counts, int nCol){
-		long nnz =  0;
+	public long getNumberNonZeros(int[] counts, int nCol) {
+		long nnz = 0;
 		final int nRow = _values.length / nCol;
-		for(int i = 0; i < nRow; i++){
+		for(int i = 0; i < nRow; i++) {
 			long rowCount = 0;
-			final int off = i * nCol; 
-			for(int j = off; j < off + nCol; j++){
+			final int off = i * nCol;
+			for(int j = off; j < off + nCol; j++) {
 				if(_values[j] != 0)
-					rowCount ++;
+					rowCount++;
 			}
 			nnz += rowCount * counts[i];
 		}
@@ -405,12 +406,17 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void addToEntry(Dictionary d, int fr, int to, int nCol){
+	public void addToEntry(Dictionary d, int fr, int to, int nCol) {
 		final int sf = nCol * fr; // start from
 		final int ef = sf + nCol; // end from
 		double[] v = d.getValues();
-		for(int i = sf, j = nCol * to; i < ef; i++, j++){
+		for(int i = sf, j = nCol * to; i < ef; i++, j++) {
 			v[j] += _values[i];
 		}
+	}
+
+	@Override
+	public boolean isLossy() {
+		return false;
 	}
 }

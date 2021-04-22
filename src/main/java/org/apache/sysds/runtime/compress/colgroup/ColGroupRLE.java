@@ -25,6 +25,8 @@ import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
@@ -967,7 +969,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupValue that) {
+	public boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupRLE && ((ColGroupRLE) that)._data == _data;
 	}
 

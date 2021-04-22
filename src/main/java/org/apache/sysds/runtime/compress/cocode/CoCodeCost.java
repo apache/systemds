@@ -56,7 +56,7 @@ public class CoCodeCost extends AColumnCoCoder {
 	}
 
 	@Override
-	public CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
+	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 		colInfos.setInfo(join(colInfos.getInfo()));
 		return colInfos;
 	}

@@ -38,17 +38,20 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 	private static final int MAX_COL_FIRST_FIT = 16384;
 	private static final int MAX_COL_PER_GROUP = 1024;
 
-	// we use a constant partition size (independent of the number of rows
-	// in order to ensure constant compression speed independent of blocking)
-	// VLDB 2017 Paper: Default 0.000032
-	public static double BIN_CAPACITY = 0.000032; // higher values, more grouping 
+	/**
+	 * Use a constant partition size independent of the number of rows in order to ensure constant compression speed
+	 * independent of blocking. Higher values gives more CoCoding at the cost of longer compressionTimes.
+	 * 
+	 * VLDB 2018 Paper: Default 0.000032
+	 */
+	public static double BIN_CAPACITY = 0.000032;
 
 	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
 		super(sizeEstimator, cs, numRows);
 	}
 
 	@Override
-	public CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
+	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 		colInfos.setInfo(partitionColumns(colInfos.getInfo()));
 		return colInfos;
 	}
@@ -93,10 +96,10 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 
 	/**
 	 * Pack into the bins such that no bin exceed the Bin Capacity. This ensure that each bin only contains columns that
-	 * are amenable to compression. And poentially coCoding.
+	 * are amenable to compression. And potentially CoCoding.
 	 * 
-	 * @param currentGroups Column Groups
-	 * @return
+	 * @param currentGroups Column groups in current batch
+	 * @return The currently selected groups, packed together in bins.
 	 */
 	private List<CompressedSizeInfoColGroup> packFirstFit(List<CompressedSizeInfoColGroup> currentGroups) {
 		List<CompressedSizeInfoColGroup> bins = new ArrayList<>();

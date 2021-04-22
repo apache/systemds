@@ -253,6 +253,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param rl     The row to start at
 	 * @param ru     The row to end at
 	 * @param offT   The offset into the target to decompress to.
+	 * @param values The dictionary values materialized.
 	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
 	 */
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
@@ -488,14 +489,6 @@ public abstract class AColGroup implements Serializable {
 	public abstract MatrixBlock getValuesAsBlock();
 
 	/**
-	 * Returns true if in the getValuesAsBlock method returns values in groups (that needs to be counted) or
-	 * individually potentially repeated values
-	 * 
-	 * @return boolean
-	 */
-	public abstract boolean getIfCountsType();
-
-	/**
 	 * Multiply the slice of the matrix that this column group represents by a vector on the right.
 	 * 
 	 * @param vector   Vector to multiply by (tall vector)
@@ -602,6 +595,17 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows,
 		int numCols, int row, double[] MaterializedRow);
+
+	/**
+	 * Left side matrix multiplication with a column group that is transposed.
+	 * 
+	 * @param lhs     The left hand side Column group to multiply with, the left hand side should be considered
+	 *                transposed.
+	 * @param result  The result matrix to insert the result of the multiplication into
+	 * @param numRows The number of rows in the left hand side matrix
+	 * @param numCols The number of columns in the right hand side matrix
+	 */
+	public abstract void leftMultByAColGroup(AColGroup lhs, double[] result, final int numRows, final int numCols);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual

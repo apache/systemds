@@ -184,7 +184,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
 			CompressionStatistics cStat = cmbStats;
-			assertTrue("Compression ration if compressed should be larger than 1", cStat.ratio > 1);
+			assertTrue("Compression ration if compressed should be larger than 1", cStat.getRatio() > 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -275,14 +275,12 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			CompressionStatistics cStat = cmbStats;
 
-			double compressRatio = cStat.ratio;
-			long actualSize = cStat.size;
-			long originalSize = cStat.originalSize;
+			final double compressRatio = cStat.getRatio();
 
 			StringBuilder builder = new StringBuilder();
 			builder.append("Compression Ratio sounds suspiciously good at: " + compressRatio);
-			builder.append("\n\tActual compressed size: " + actualSize);
-			builder.append(" original size: " + originalSize);
+			builder.append("\n\tActual compressed size: " + cStat.size);
+			builder.append(" original size: " + cStat.originalSize);
 			builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
 			builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
 			builder.append("\n\t" + this.toString());

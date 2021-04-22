@@ -19,15 +19,16 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.sysds.runtime.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
+import java.util.Arrays;
+
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
-public class ColGroupEmpty extends ColGroupValue {
+public class ColGroupEmpty extends ColGroupCompressed {
 
 	private static final long serialVersionUID = 3204391661346504L;
 
@@ -47,8 +48,7 @@ public class ColGroupEmpty extends ColGroupValue {
 	 * @param numRows    The number of rows contained in the group.
 	 */
 	public ColGroupEmpty(int[] colIndices, int numRows) {
-		super(colIndices, numRows, (ADictionary) null, null);
-		_zeros = true;
+		super(colIndices, numRows);
 	}
 
 	public static ColGroupEmpty generate(int nCol, int nRow) {
@@ -57,18 +57,6 @@ public class ColGroupEmpty extends ColGroupValue {
 			cols[i] = i;
 		}
 		return new ColGroupEmpty(cols, nRow);
-	}
-
-	@Override
-	public int[] getCounts(int[] out) {
-		// nothing
-		return out;
-	}
-
-	@Override
-	public int[] getCounts(int rl, int ru, int[] out) {
-		// nothing
-		return out;
 	}
 
 	@Override
@@ -199,77 +187,121 @@ public class ColGroupEmpty extends ColGroupValue {
 	}
 
 	@Override
-	public double[] preAggregate(double[] a, int row) {
+	public double[] getValues() {
 		return null;
 	}
 
 	@Override
-	public double[] preAggregateSparse(SparseBlock sb, int row) {
-		return null;
+	public void addMinMax(double[] ret) {
+		// do nothing
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupValue that) {
+	public boolean isLossy() {
 		return false;
 	}
 
 	@Override
-	public int getIndexStructureHash() {
-		throw new DMLCompressionException("Does not make sense to call this");
+	protected int containsAllZeroTuple() {
+		return 0;
 	}
 
 	@Override
-	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	protected double computeMxx(double c, Builtin builtin) {
+		return 0;
 	}
 
 	@Override
-	public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	protected void computeColMxx(double[] c, Builtin builtin) {
+		for(int col : _colIndexes)
+			c[col] = builtin.execute(c[col], 0);
 	}
 
 	@Override
-	public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	protected void computeSum(double[] c, boolean square) {
+		// do nothing
 	}
 
 	@Override
-	public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	protected AColGroup sliceSingleColumn(int col) {
+		final int idx = Arrays.binarySearch(_colIndexes, col);
+		return (idx >= 0) ? new ColGroupEmpty(new int[col], _numRows) : null;
 	}
 
 	@Override
-	public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	protected AColGroup sliceMultiColumns(int cl, int cu) {
+
+		int idStart = 0;
+		int idEnd = 0;
+		for(int i = 0; i < _colIndexes.length; i++) {
+			if(_colIndexes[i] < cl)
+				idStart++;
+			if(_colIndexes[i] < cu)
+				idEnd++;
+		}
+		int numberOfOutputColumns = idEnd - idStart;
+		if(numberOfOutputColumns > 0) {
+			int[] cols = new int[numberOfOutputColumns];
+
+			for(int i = 0; i < numberOfOutputColumns; i++) {
+				cols[i] = _colIndexes[idStart++] - cl;
+			}
+			return new ColGroupEmpty(cols, _numRows);
+		}
+		else
+			return null;
 	}
 
 	@Override
-	public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	protected boolean sameIndexStructure(ColGroupCompressed that) {
+		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
 	}
 
 	@Override
-	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	public MatrixBlock getValuesAsBlock() {
+		return new MatrixBlock(0, 0, false);
 	}
 
 	@Override
-	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	public void leftMultByRowVector(double[] vector, double[] result, int offT) {
+		// do nothing
+
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	public void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values) {
+		// do nothing
+
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	public void leftMultBySelfDiagonalColGroup(double[] result, int numColumns) {
+		// do nothing
+
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
-		throw new DMLCompressionException("Does not make sense to call this");
+	public void leftMultByAColGroup(AColGroup lhs, double[] result, int numRows, int numCols) {
+		// do nothing
+	}
+
+	@Override
+	public boolean isDense() {
+		return false;
+	}
+
+	@Override
+	public AColGroup copy() {
+		return new ColGroupEmpty(_colIndexes, _numRows);
+	}
+
+	@Override
+	public boolean containsValue(double pattern) {
+		return pattern == 0;
+	}
+
+	@Override
+	public long getNumberNonZeros() {
+		return 0;
 	}
 }

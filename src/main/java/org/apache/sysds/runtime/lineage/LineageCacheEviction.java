@@ -27,13 +27,14 @@ import java.util.TreeSet;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 public class LineageCacheEviction
 {
-	protected static long _cachesize = 0;
+	private static long _cachesize = 0;
 	private static long CACHE_LIMIT; //limit in bytes
 	private static long _startTimestamp = 0;
 	protected static final Map<LineageItem, Integer> _removelist = new HashMap<>();
@@ -46,8 +47,7 @@ public class LineageCacheEviction
 		_cachesize = 0;
 		weightedQueue.clear();
 		_outdir = null;
-		if (DMLScript.STATISTICS)
-			_removelist.clear();
+		_removelist.clear();
 	}
 
 	//--------------- CACHE MAINTENANCE & LOOKUP FUNCTIONS --------------//
@@ -82,7 +82,7 @@ public class LineageCacheEviction
 		// Reset the timestamp to maintain the LRU component of the scoring function
 		if (LineageCacheConfig.isTimeBased()) { 
 			if (weightedQueue.remove(entry)) {
-				entry.setTimestamp();
+				entry.updateTimestamp();
 				weightedQueue.add(entry);
 			}
 		}
@@ -173,7 +173,9 @@ public class LineageCacheEviction
 
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------//
 	
-	protected static void setCacheLimit(long limit) {
+	protected static void setCacheLimit(double fraction) {
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		long limit = (long)(fraction * maxMem);
 		CACHE_LIMIT = limit;
 	}
 

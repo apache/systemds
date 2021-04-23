@@ -1,17 +1,134 @@
 
-m_xgboost = function(
-  Matrix[Double] X,
-  Matrix[Double] Y
-) return (Matrix[Double] M) {
+# ---------------------------------------------------------------------------------------------
+# OUTPUT:
+# Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
+#  M[1,j]: id of node j (in a complete binary tree)
+#  M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
+#  M[3,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical)
+#    that node j looks at if j is an internal node, otherwise 0
+#  M[4,j]: Type of the feature that node j looks at if j is an internal node: holds the same information as R input vector
+#  M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values
+#    stored in rows 6,7,... if j is categorical
+#    If j is a leaf node: number of misclassified samples reaching at node j
+#  M[6:,j]: If j is an internal node: Threshold the example's feature value is compared to is stored at M[6,j] if the feature chosen for j is scale,
+#     otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
+#     If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
+# -------------------------------------------------------------------------------------------
+
+m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] M) {
     print("[DEBUG] inside xgboost")
 
-   M = matrix(1,1,1)
+   # test if input correct
+   assert(nrow(X) == nrow(Y))
+   init_prediction = 0.5 # todo init prediction wirklich immer 0.5?
+   feature_to_observe = X[,1];
 
-   # STEPS
 
-   # 1. identify root note feature
-   # 2. identify root note value
-   # 3.
+   residual_matrix = calculateResidiuals(feature_to_observe, init_prediction)
 
+   printMatrix(residual_matrix, "residual matrix")
+
+   first_tree_matrix = matrix(0, rows=6, cols=3)
+   similarity_score = calculateSimilarityScore(residual_matrix)
+   printDebug(similarity_score)
+
+   # TODO: split dataset in 2 branches. try out each average value of 2 datapoints and calc sim- score for each new leaf
+   best_split = findBestSplit(feature_to_observe)
+
+   # todo take best split as the root node value and add it finally as first node to M
+
+   M = matrix(1,rows=1,cols=1)
    print("[DEBUG] Return xgboost")
+}
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    one_featureX: a 1xn matrix (one feature with all values)
+# OUTPUT:   best_split: the best split (highest gain indicates best splitting of datasets)
+findBestSplit = function(Matrix[Double] one_featureX) return (Double best_split) {
+    assert(ncol(one_featureX) == 1)
+    best_split = 0
+    printDebug("inside find best split")
+
+    # order entries by feature value
+    ordered_X = order(target=one_featureX,by=1,decreasing=FALSE,index.return=FALSE)
+    printMatrix(ordered_X, "ordered X")
+
+    first_average = (ordered_X[1,] + ordered_X[2,]) / 2
+    printDebug(toString(first_average))
+    [left, right] = splitMatrixByValue(one_featureX, as.scalar(first_average))
+    printMatrix(left, "left matrix")
+    printMatrix(right, "right matrix")
+
+    # todo: caluclate similarity score for that split and calculate gain
+
+    # todo do this for all possible splits and compair gain
+
+    # todo: best gain is then the best split
+}
+
+
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    X: a 1xn matrix (one feature with all values)
+#           value: the border to separate the values
+# OUTPUT:   left: a 1xn matrix with all values smaller than "value"
+#           right: a 1xn matrix with all values larger than "value"
+splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Double] left, Matrix[Double] right) {
+    assert(ncol(X) == 1)
+    printDebug("in splitMatrixByValue")
+    printDebug("split at " + value)
+    left = matrix(0, rows=0, cols=1)
+    right = matrix(0, rows=0, cols=1)
+
+    for(i in 1:nrow(X)) {
+        printDebug("current to look " + as.scalar(X[i,]))
+        if(as.scalar(X[i,]) < value) {
+            left = rbind(left,X[i,])
+        }
+        else {
+            right = rbind(right, X[i,])
+        }
+    }
+
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    one_feature_residualsX: a 1xn matrix (one feature with all residuals)
+# OUTPUT:   similarity_score: the sim score of the residuals
+calculateSimilarityScore = function(Matrix[Double] one_feature_residualsX) return(Double similarity_score) {
+    assert(ncol(one_feature_residualsX) == 1)
+    sum_of_x = sum(one_feature_residualsX)
+    similarity_score = (sum_of_x * sum_of_x) / nrow(one_feature_residualsX) # TODO: add lamda parameter here
+}
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    a 1xn matrix (one feature with all rows)
+#           the current prediction value
+# OUTPUT:   the residuals to "current_prediction" as 1xn matrix
+calculateResidiuals = function(Matrix[Double] one_featureX, double current_prediction) return(Matrix[Double] residual_matrix) {
+    assert(ncol(one_featureX) == 1)
+    residual_matrix = matrix(0, rows=(nrow(one_featureX)), cols=1)
+    for(row in 1:nrow(one_featureX)) {
+        residual_matrix[row,1] = one_featureX[row,1] - current_prediction;
+    }
+    #printMatrix(residual_matrix, "residual matrix")
+}
+
+
+
+
+printDebug = function(string variable) return() {
+    print("[DEBUG] " + variable)
+}
+
+printMatrix = function(Matrix[Double] m, string name) return() {
+    print("--------------------------------------")
+    print(":: [MATRIX] " + name + "  (col:" + ncol(m) + ",row:" + nrow(m) + ")")
+    for(i in 1:nrow(m)) {
+        print(":(" + i + ")   " + toString(m[i,], linesep=" ", sep="    "))
+    }
+    print("--------------------------------------")
 }

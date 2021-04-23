@@ -48,17 +48,13 @@ public class CLALibSquash {
 
 	public static CompressedMatrixBlock squash(CompressedMatrixBlock m, int k) {
 
-		CompressedMatrixBlock ret = new CompressedMatrixBlock(true);
-		ret.setNumColumns(m.getNumColumns());
-		ret.setNumRows(m.getNumRows());
-
+		CompressedMatrixBlock ret = new CompressedMatrixBlock(m.getNumRows(), m.getNumColumns());
 		CompressionSettings cs = new CompressionSettingsBuilder().create();
 
 		double[] minMaxes = extractMinMaxes(m);
 		List<AColGroup> retCg = (k <= 1) ? singleThreadSquash(m, cs, minMaxes) : multiThreadSquash(m, cs, k, minMaxes);
 
 		ret.allocateColGroupList(retCg);
-		ret.setOverlapping(false);
 		ret.recomputeNonZeros();
 
 		if(ret.isOverlapping())

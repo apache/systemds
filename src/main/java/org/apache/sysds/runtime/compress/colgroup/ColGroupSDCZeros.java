@@ -234,24 +234,6 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-		int voff) {
-		final int numVals = values.length / _colIndexes.length;
-		for(int i = rl, j = voff; i < ru; i++, j++) {
-			double[] vals = preAggregate(a, j);
-			postScaling(values, vals, c, numVals, i, numCols);
-		}
-	}
-
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] MaterializedRow) {
-		final int numVals = values.length / _colIndexes.length;
-		double[] vals = preAggregateSparse(sb, row);
-		postScaling(values, vals, c, numVals, row, numCols);
-	}
-
-	@Override
 	public double[] preAggregate(double[] a, int aRows) {
 		final double[] vals = allocDVector(getNumValues(), true);
 		final AIterator it = _indexes.getIterator();
@@ -299,26 +281,6 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		size += _indexes.getInMemorySize();
 		size += _data.getInMemorySize();
 		return size;
-	}
-
-	@Override
-	public void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals) {
-		throw new NotImplementedException("Not Implemented Right Mult By Vector");
-	}
-
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
-
-		final int nCol = outputColumns.length;
-		final AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
-		while(it.hasNext() && it.value() < ru) {
-			int rc = it.value() * thatNrColumns;
-			int offset = getIndex(it.getDataIndexAndIncrement()) * outputColumns.length;
-			for(int j = 0; j < nCol; j++)
-				c[rc + outputColumns[j]] += preAggregatedB[offset + j];
-		}
 	}
 
 	@Override

@@ -246,7 +246,8 @@ class OperationNode(DAGNode):
         :raise: AssertionError
         """
         assert (
-            self.output_type == OutputType.FRAME or self.output_type == OutputType.MATRIX
+            self.output_type == OutputType.FRAME
+            or self.output_type == OutputType.MATRIX
         ), f"{self.operation} only supported for frames or matrices"
 
     def _check_equal_op_type_as(self, other: "OperationNode"):
@@ -258,6 +259,12 @@ class OperationNode(DAGNode):
             self.output_type == other.output_type
         ), f"{self.operation} only supported for Nodes of equal output-type. Got self: {self.output_type} and other: {other.output_type}"
 
+    def _check_other(self, other: "OperationNode", expectedOutputType: OutputType):
+        """Perform check to assure other operation has expected output type.
+
+        :raise: AssertionError
+        """
+        assert other.output_type == expectedOutputType
 
     def __add__(self, other: VALID_ARITHMETIC_TYPES) -> "OperationNode":
         return OperationNode(self.sds_context, "+", [self, other], shape=self.shape)
@@ -705,4 +712,30 @@ class OperationNode(DAGNode):
                 shape=(self.shape[0], self.shape[1] + other.shape[1],),
                 output_type=OutputType.FRAME,
             )
+
+    def transform_encode(self, spec):
+        self._check_frame_op()
+        self._check_other(spec, OutputType.SCALAR)
+        params_dict = {"target": self, "spec": spec}
+        return OperationNode(
+            self.sds_context,
+            "transformencode",
+            named_input_nodes=params_dict,
+            output_type=OutputType.LIST,
+            number_of_outputs=2,
+            output_types=[OutputType.MATRIX, OutputType.FRAME],
+        )
+
+    def transform_apply(self, spec: "OperationNode", meta: "OperationNode"):
+        self._check_frame_op()
+        self._check_other(spec, OutputType.SCALAR)
+        self._check_other(meta, OutputType.FRAME)
+        params_dict = {"target": self, "spec": spec, "meta": meta}
+        return OperationNode(
+            self.sds_context,
+            "transformapply",
+            named_input_nodes=params_dict,
+            output_type=OutputType.MATRIX,
+            number_of_outputs=1,
+        )
 

@@ -25,7 +25,6 @@ from typing import Dict, Optional, Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import JavaObject, JVMView
-from systemds.context import SystemDSContext
 from systemds.operator import OperationNode
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import pandas_to_frame_block
@@ -33,8 +32,6 @@ from systemds.script_building.dag import OutputType, DAGNode
 
 
 class Frame(OperationNode):
-    _pd_dataframe: Optional[pd.DataFrame]
-
     def __init__(
         self,
         sds_context: "SystemDSContext",
@@ -43,12 +40,14 @@ class Frame(OperationNode):
         **kwargs: Dict[str, VALID_INPUT_TYPES]
     ) -> None:
 
+        if args:
+            unnamed_params = args
+        else:
+            unnamed_params = ["'./tmp/{file_name}'"]
+            unnamed_params.extend(args)
 
-        unnamed_params = ["'./tmp/{file_name}'"]
-        named_params = {
-            "data_type": '"frame"',
-            "header": True
-        }
+        named_params = {"data_type": '"frame"'}
+
         self._pd_dataframe = df
         self.shape = None
         if isinstance(self._pd_dataframe, pd.DataFrame):
@@ -56,7 +55,6 @@ class Frame(OperationNode):
             named_params["rows"] = self.shape[0]
             named_params["cols"] = self.shape[1]
 
-        unnamed_params.extend(args)
         named_params.update(kwargs)
         super().__init__(
             sds_context,
@@ -102,55 +100,3 @@ class Frame(OperationNode):
 
     def _is_pandas(self) -> bool:
         return self._pd_dataframe is not None
-
-    # def _check_frame_op(self):
-    #     """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
-
-    #     :raise: AssertionError
-    #     """
-    #     assert (
-    #         self.output_type == OutputType.FRAME
-    #     ), f"{self.operation} only supported for frames"
-
-
-    # def rbind(self, other: "OperationNode") -> "OperationNode":
-    #     """
-    #     Row-wise matrix concatenation, by concatenating the second matrix as additional rows to the first matrix. 
-    #     :param: The other matrix to bind to the right hand side
-    #     :return: The OperationNode containing the concatenated matrices.
-    #     """
-    #     self._check_equal_op_type_as(other)
-    #     self._check_frame_op()
-    #     if self.shape[1] != other.shape[1]:
-    #         raise ValueError(
-    #             "The input frames to rbind do not have the same number of columns"
-    #         )
-    #     return OperationNode(
-    #         self.sds_context,
-    #         "rbind",
-    #         [self, other],
-    #         shape=(self.shape[0] + other.shape[0], self.shape[1]),
-    #         output_type=OutputType.FRAME,
-    #     )
-
-    # def cbind(self, other: "OperationNode") -> "OperationNode":
-    #     """
-    #     Column-wise matrix concatenation, by concatenating the second matrix as additional columns to the first matrix. 
-    #     :param: The other matrix to bind to the right hand side.
-    #     :return: The OperationNode containing the concatenated matrices.
-    #     """
-    #     self._check_equal_op_type_as(other)
-    #     self._check_frame_op()
-
-    #     if self.shape[0] != other.shape[0]:
-    #         raise ValueError(
-    #             "The input frames to cbind do not have the same number of rows"
-    #         )
-    #     return OperationNode(
-    #         self.sds_context,
-    #         "cbind",
-    #         [self, other],
-    #         shape=(self.shape[0], self.shape[1] + other.shape[1],),
-    #         output_type=OutputType.FRAME,
-    #     )
-

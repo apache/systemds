@@ -88,7 +88,6 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
     rows = pd_df.shape[0]
     cols = pd_df.shape[1]
 
-
     jvm: JVMView = sds.java_gateway.jvm
     java_gate: JavaGateway = sds.java_gateway
 
@@ -115,15 +114,18 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
         jc_FrameBlock = jvm.org.apache.sysds.runtime.matrix.data.FrameBlock
         j_valueTypeArray = java_gate.new_array(jc_ValueType, len(schema))
         j_colNameArray = java_gate.new_array(jc_String, len(col_names))
-        j_dataArray = java_gate.new_array(jc_String, rows , cols)
+        j_dataArray = java_gate.new_array(jc_String, rows, cols)
         for i in range(len(schema)):
             j_valueTypeArray[i] = schema[i]
         for i in range(len(col_names)):
             j_colNameArray[i] = col_names[i]
         j = 0
+
         for j, col_name in enumerate(col_names):
             col_data = pd_df[col_name].to_numpy().astype(str)
             for i in range(col_data.shape[0]):
+                if col_data[i] == "None":
+                    continue
                 j_dataArray[i][j] = col_data[i]
         fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, j_dataArray)
 

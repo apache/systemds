@@ -34,12 +34,12 @@ class TestWriteRead(unittest.TestCase):
     sds: SystemDSContext = None
     temp_dir: str = "tests/frame/temp_write/"
     n_cols = 3
-    n_rows = 100    
+    n_rows = 100
     df = df_rb_2 = pd.DataFrame(
         {
             "col1": [f"col1_string_{i}" for i in range(n_rows)],
             "col2": [i for i in range(n_rows)],
-            "col3": [i*0.1 for i in range(n_rows) ],
+            "col3": [i * 0.1 for i in range(n_rows)],
         }
     )
 
@@ -68,7 +68,7 @@ class TestWriteRead(unittest.TestCase):
         NX = self.sds.read(self.temp_dir + "02", data_type="frame", format="csv")
         result_df = NX.compute()
         self.assertTrue(self.df.equals(result_df))
-    
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

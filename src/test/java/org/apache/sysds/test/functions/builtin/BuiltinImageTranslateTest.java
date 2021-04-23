@@ -59,6 +59,25 @@ public class BuiltinImageTranslateTest extends AutomatedTestBase {
 		runImageTranslateTest(false, ExecType.SPARK);
 	}
 
+	@Test public void testImageTranslatePillow() throws Exception {
+		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		final int w = 500, h = 135, out_w = 510, out_h = 125, offset_x = 39, offset_y = -13;
+		final double fill_value = 128.0;
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), h, w);
+		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformTranslated"), out_h, out_w);
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + w,
+				"height=" + h, "offset_x=" + offset_x, "offset_y=" + offset_y, "out_w=" + out_w, "out_h=" + out_h,
+				"fill_value=" + fill_value};
+		writeInputMatrixWithMTD("A", input, true);
+		runTest(true, false, null, -1);
+
+		HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+		double[][] dml_res = TestUtils.convertMatrix(dmlfile, out_h, out_w);
+		TestUtils.compareMatrices(reference, dml_res, eps, "Pillow vs. DML");
+	}
+
 	private void runImageTranslateTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();
@@ -70,7 +89,7 @@ public class BuiltinImageTranslateTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
-				"height=" + rows, "offset_x=" + offset_x, "offset_y=" + offset_y};
+				"height=" + rows, "offset_x=" + offset_x, "offset_y=" + offset_y, "out_w=" + cols, "out_h=" + rows};
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + cols + " " + rows + " " + offset_x + " " + offset_y;

@@ -37,19 +37,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
-import java.util.StringTokenizer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -68,10 +57,7 @@ import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixCell;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.*;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -3072,5 +3058,47 @@ public class TestUtils
 		// returns cudaSuccess if at least one gpu is available
 		final int[] deviceCount = new int[1];
 		return JCuda.cudaGetDeviceCount(deviceCount);
+	}
+
+	public static double[][] convertMatrix(HashMap<MatrixValue.CellIndex, Double> m, int rows, int cols) {
+		double[][] res = new double[rows][cols];
+		m.forEach((k, v) -> res[k.row - 1][k.column - 1] = v);
+		return res;
+	}
+
+	public static HashMap<MatrixValue.CellIndex, Double> convertMatrix(double[][] m) {
+		HashMap<MatrixValue.CellIndex, Double> res = new HashMap<MatrixValue.CellIndex, Double>();
+		for (int r = 0; r < m.length; ++r) {
+			double[] row = m[r];
+			for (int c = 0; c < row.length; ++c) {
+				res.put(new CellIndex(r + 1, c + 1), row[c]);
+			}
+		}
+
+		return res;
+	}
+
+	/**
+	 * Reads a matrix from a text file. Rows are separated by newline, Values are separated by space.
+	 * Take from https://www.tutorialspoint.com/How-to-read-a-2d-array-from-a-file-in-java
+	 * @param url URL to the resource file obtained by Class.getResource()
+	 * @param rows The expected number of rows
+	 * @param cols The expected number of columns
+	 * @return The matrix
+	 * @throws Exception
+	 */
+	public static double[][] readMatrixFromFile(java.net.URL url, int rows, int cols) throws Exception {
+		Scanner sc = new Scanner(new BufferedReader(new InputStreamReader(url.openStream())));
+		double [][] myArray = new double[rows][cols];
+		while(sc.hasNextLine()) {
+			for (int i=0; i<myArray.length; i++) {
+				String[] line = sc.nextLine().trim().split(" ");
+				for (int j=0; j<line.length; j++) {
+					myArray[i][j] = Double.parseDouble(line[j]);
+				}
+			}
+		}
+
+		return myArray;
 	}
 }

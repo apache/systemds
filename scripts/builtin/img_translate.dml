@@ -19,22 +19,32 @@
 #
 #-------------------------------------------------------------
 
-m_img_translate = function(Matrix[Double] img_in, Double offset_x, Double offset_y) return (Matrix[Double] img_out) {
+m_img_translate = function(Matrix[Double] img_in, Double offset_x, Double offset_y, Integer out_w, Integer out_h, Double fill_value) return (Matrix[Double] img_out) {
   # Translates by x pixels to the right and y pixels down
-
-  #img_out = img_transform(img_in, ncol(img_in), nrow(img_in), 1, 0, offset_x, 0, 1, offset_y)
 
   w = ncol(img_in)
   h = nrow(img_in)
   offset_x = round(offset_x)
   offset_y = round(offset_y)
-  nneg_x = max(0, offset_x)
-  npos_x = min(0, offset_x)
-  nneg_y = max(0, offset_y)
-  npos_y = min(0, offset_y)
+  start_x = 1 - offset_x
+  start_y = 1 - offset_y
+  end_x = max(w , out_w) - offset_x
+  end_y = max(h, out_h) - offset_y
+  if (start_x < 1)
+    start_x = 1
+  if (start_y < 1)
+    start_y = 1
+  if (w < end_x)
+    end_x = w
+  if (out_w < end_x + offset_x)
+    end_x = out_w - offset_x
+  if (h < end_y)
+    end_y = h
+  if (out_h < end_y + offset_y)
+    end_y = out_h - offset_y
 
-  img_out = matrix(0, rows=h, cols=w)
-  if (nneg_x < w & -npos_x < w & nneg_y < h & -npos_y < h) {
-    img_out[(1+nneg_x):(w+npos_x), (1+nneg_y):(h+npos_y)] = img_in[(1-npos_x):(w-nneg_x),(1-npos_y):(h-nneg_y)]
+  img_out = matrix(fill_value, rows=out_h, cols=out_w)
+  if (start_x < end_x & start_y < end_y) {
+    img_out[(start_y+offset_y):(end_y+offset_y), (start_x+offset_x):(end_x+offset_x)] = img_in[start_y:end_y, start_x:end_x]
   }
 }

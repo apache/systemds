@@ -51,10 +51,6 @@ public class ColGroupDDC extends ColGroupValue {
 		super(numRows);
 	}
 
-	// protected ColGroupDDC(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
-	// super(colIndices, numRows, ubm, cs);
-	// }
-
 	protected ColGroupDDC(int[] colIndices, int numRows, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_zeros = false;
@@ -78,20 +74,11 @@ public class ColGroupDDC extends ColGroupValue {
 		double[] c = target.getDenseBlockValues();
 		offT = offT * tCol;
 
-		if(_zeros)
-			for(int i = rl; i < ru; i++, offT += tCol) {
-				int rowIndex = getIndex(i) * nCol;
-				if(rowIndex < values.length)
-					for(int j = 0; j < nCol; j++)
-						c[offT + _colIndexes[j]] += values[rowIndex + j];
-
-			}
-		else
-			for(int i = rl; i < ru; i++, offT += tCol) {
-				int rowIndex = getIndex(i) * nCol;
-				for(int j = 0; j < nCol; j++)
-					c[offT + _colIndexes[j]] += values[rowIndex + j];
-			}
+		for(int i = rl; i < ru; i++, offT += tCol) {
+			int rowIndex = getIndex(i) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[offT + _colIndexes[j]] += values[rowIndex + j];
+		}
 
 	}
 
@@ -101,14 +88,13 @@ public class ColGroupDDC extends ColGroupValue {
 		double[] dictionary = getValues();
 		for(int i = 0; i < _numRows; i++) {
 			int rowIndex = getIndex(i) * ncol;
-			if(rowIndex < dictionary.length) {
-				for(int colIx = 0; colIx < ncol; colIx++) {
-					int origMatrixColIx = getColIndex(colIx);
-					int col = colIndexTargets[origMatrixColIx];
-					double cellVal = dictionary[rowIndex + colIx];
-					target.quickSetValue(i, col, target.quickGetValue(i, col) + cellVal);
-				}
+			for(int colIx = 0; colIx < ncol; colIx++) {
+				int origMatrixColIx = getColIndex(colIx);
+				int col = colIndexTargets[origMatrixColIx];
+				double cellVal = dictionary[rowIndex + colIx];
+				target.quickSetValue(i, col, target.quickGetValue(i, col) + cellVal);
 			}
+
 		}
 	}
 
@@ -221,47 +207,6 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-		int voff) {
-
-		int numVals = getNumValues();
-		// if(8 * numVals < _numRows) {
-		for(int i = rl, j = voff; i < ru; i++, j++) {
-			double[] vals = preAggregate(a, j);
-			postScaling(values, vals, c, numVals, i, numCols);
-		}
-		// }
-		// else {
-		// for(int i = rl, j = voff; i < ru; i++, j++) {
-		// int offC = i * numCols;
-		// numVals = numVals * _colIndexes.length;
-		// for(int k = 0, aOff = j * _numRows; k < _numRows; k++, aOff++) {
-		// double aval = a[aOff];
-		// if(aval != 0) {
-		// int valOff = getIndex(k) * _colIndexes.length;
-		// if(valOff < numVals) {
-		// for(int h = 0; h < _colIndexes.length; h++) {
-		// int colIx = _colIndexes[h] + offC;
-		// c[colIx] += aval * values[valOff + h];
-		// }
-		// }
-		// }
-		// }
-
-		// }
-		// }
-	}
-
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] MaterializedRow) {
-		final int numVals = getNumValues();
-		double[] vals = preAggregateSparse(sb, row);
-		postScaling(values, vals, c, numVals, row, numCols);
-		// LOG.error(Arrays.toString(c));
-	}
-
-	@Override
 	public double[] preAggregate(double[] a, int row) {
 		double[] vals = allocDVector(getNumValues(), true);
 		if(row > 0)
@@ -277,37 +222,14 @@ public class ColGroupDDC extends ColGroupValue {
 	@Override
 	public double[] preAggregateSparse(SparseBlock sb, int row) {
 
-		// LOG.error(this);
-		// LOG.error(sb);
 		double[] vals = allocDVector(getNumValues(), true);
 		int[] indexes = sb.indexes(row);
 		double[] sparseV = sb.values(row);
 		for(int i = sb.pos(row); i < sb.size(row) + sb.pos(row); i++)
 			vals[getIndex(indexes[i])] += sparseV[i];
-
-		// LOG.error(Arrays.toString(vals));
 		return vals;
-	}
 
-	// @Override
-	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
-	// // if(8 * numVals < _numRows) {
-	// double[] vals = preAggregate(a);
-	// postScaling(values, vals, c, numVals);
-	// // }
-	// // else {
-	// // numVals = numVals * _colIndexes.length;
-	// // // iterate over codes, compute all, and add to the result
-	// // for(int i = 0; i < _numRows; i++) {
-	// // double aval = a[i];
-	// // if(aval != 0)
-	// // for(int j = 0, valOff = getIndex(i) * _colIndexes.length; j < _colIndexes.length; j++)
-	// // if(valOff < numVals) {
-	// // c[_colIndexes[j]] += aval * values[valOff + j];
-	// // }
-	// // }
-	// // }
-	// }
+	}
 
 	/**
 	 * Generic get index in dictionary for value at row position.
@@ -562,7 +484,7 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
 		final int nCol = that._colIndexes.length;
 
@@ -588,40 +510,11 @@ public class ColGroupDDC extends ColGroupValue {
 	@Override
 	public ColGroupType getColGroupType() {
 		return ColGroupType.DDC;
-		// if(_data instanceof MapToBit)
-		// return ColGroupType.DDC0;
-		// if(_data instanceof MapToByte)
-		// return ColGroupType.DDC1;
-		// else if(_data instanceof MapToChar)
-		// return ColGroupType.DDC2;
-		// else if(_data instanceof MapToInt)
-		// return ColGroupType.DDC3;
-		// throw new DMLCompressionException("Unknown ColGroupType for DDC");
 	}
 
 	@Override
 	public long estimateInMemorySize() {
 		return ColGroupSizes.estimateInMemorySizeDDC(getNumCols(), getNumValues(), _numRows, isLossy());
-
-	}
-
-	@Override
-	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
-		final int numVals = getNumValues();
-		double[] vals = preaggValues(numVals, b, dictVals);
-		for(int i = rl; i < ru; i++)
-			c[i] += vals[_data.getIndex(i)];
-
-	}
-
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
-		for(int j = rl, off = rl * thatNrColumns; j < ru; j++, off += thatNrColumns) {
-			int rowIdx = _data.getIndex(j);
-			for(int k = 0; k < outputColumns.length; k++)
-				c[off + outputColumns[k]] += preAggregatedB[rowIdx * outputColumns.length + k];
-		}
 
 	}
 

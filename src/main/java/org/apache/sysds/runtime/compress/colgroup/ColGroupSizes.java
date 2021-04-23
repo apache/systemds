@@ -37,7 +37,7 @@ public class ColGroupSizes {
 		size += MemoryEstimates.intArrayCost(nrColumns);
 		return size;
 	}
-	
+
 	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, boolean lossy) {
 		long size = estimateInMemorySizeGroup(nrColumns);
 		// LOG.error("MemorySize Group Value: " + nrColumns + " " + nrValues + " " + lossy);
@@ -48,8 +48,6 @@ public class ColGroupSizes {
 		size += 1; // _lossy boolean reference
 		size += 2; // padding
 		size += DictionaryFactory.getInMemorySize(nrValues, nrColumns, lossy);
-
-
 		return size;
 	}
 
@@ -93,7 +91,8 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff,
 		boolean largestOffIsZero, boolean containNoZeroValues, boolean lossy) {
-		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), lossy);
+		long size = estimateInMemorySizeGroupValue(nrColumns,
+			nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), lossy);
 		// LOG.error("SDC Estimation values: " + nrColumns + " " + nrValues + " " + nrRows + " " + largestOff);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff - 1, nrRows);
 		if(nrValues > 1)
@@ -103,7 +102,8 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff,
 		boolean largestOffIsZero, boolean containNoZeroValues, boolean lossy) {
-		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), lossy);
+		long size = estimateInMemorySizeGroupValue(nrColumns,
+			nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), lossy);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
 		return size;
 	}

@@ -280,25 +280,6 @@ public class ColGroupSDC extends ColGroupValue {
 		return _data.getIndex(r);
 	}
 
-	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-		int voff) {
-
-		final int numVals = getNumValues();
-		for(int i = rl, j = voff; i < ru; i++, j++) {
-			double[] vals = preAggregate(a, j);
-			postScaling(values, vals, c, numVals, i, numCols);
-		}
-	}
-
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] MaterializedRow) {
-		final int numVals = getNumValues();
-		double[] vals = preAggregateSparse(sb, row);
-		postScaling(values, vals, c, numVals, row, numCols);
-	}
-
 	public double[] preAggregate(double[] a, int row) {
 		final int numVals = getNumValues();
 		final double[] vals = allocDVector(numVals, true);
@@ -353,44 +334,6 @@ public class ColGroupSDC extends ColGroupValue {
 		size += _indexes.getInMemorySize();
 		size += _data.getInMemorySize();
 		return size;
-	}
-
-	@Override
-	public void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals) {
-		throw new NotImplementedException("Not Implemented Right Mult By Vector");
-	}
-
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
-		final int nCol = outputColumns.length;
-		final int offsetToDefault = getNumValues() * outputColumns.length - outputColumns.length;
-		final AIterator it = _indexes.getIterator();
-
-		it.skipTo(rl);
-		int i = rl;
-
-		for(; i < ru && it.hasNext(); i++) {
-			int rc = i * thatNrColumns;
-			if(it.value() == i) {
-				int offset = getIndex(it.getDataIndexAndIncrement()) * outputColumns.length;
-				for(int j = 0; j < nCol; j++) {
-					c[rc + outputColumns[j]] += preAggregatedB[offset + j];
-				}
-			}
-			else {
-				for(int j = 0; j < nCol; j++) {
-					c[rc + outputColumns[j]] += preAggregatedB[offsetToDefault + j];
-				}
-			}
-		}
-
-		for(; i < ru; i++) {
-			int rc = i * thatNrColumns;
-			for(int j = 0; j < nCol; j++) {
-				c[rc + outputColumns[j]] += preAggregatedB[offsetToDefault + j];
-			}
-		}
 	}
 
 	@Override

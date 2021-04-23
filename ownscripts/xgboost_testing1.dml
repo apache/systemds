@@ -1,0 +1,15 @@
+
+
+
+print("[DEBUG] starting script calling xgboost")
+
+X = matrix(1, rows=1, cols=1)
+Y = matrix(1, rows=1, cols=1)
+R = matrix(1, rows=1, cols=1)
+print("[DEBUG] calling xgboost")
+M = xgboost(X = X, Y = Y, R = R);
+
+print("[DEBUG] calling xgboostPredict")
+y_predict = xgboostPredict(X, M)
+
+print("[DEBUG] finish script")

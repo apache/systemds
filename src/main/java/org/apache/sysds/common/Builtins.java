@@ -245,6 +245,8 @@ public enum Builtins {
 	XOR("xor", false),
 	UNIVAR("univar", true),
 	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val
+	XGBOOST("xgboost", true),
+	XGBOOSTPREDICT("xgboostPredict", true),
 
 	//parameterized builtin functions
 	CDF("cdf", false, true),

@@ -1,0 +1,17 @@
+
+m_xgboost = function(
+  Matrix[Double] X,
+  Matrix[Double] Y
+) return (Matrix[Double] M) {
+    print("[DEBUG] inside xgboost")
+
+   M = matrix(1,1,1)
+
+   # STEPS
+
+   # 1. identify root note feature
+   # 2. identify root note value
+   # 3.
+
+   print("[DEBUG] Return xgboost")
+}

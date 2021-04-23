@@ -1,0 +1,31 @@
+
+
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME                              TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# X                                 Matrix    ---      Matrix of feature vectors.
+# B                                 Matrix    ---      1-column matrix of weights. ( TODO: but must be tree, no idea how)
+
+# RETURN VALUES
+# ----------------------------------------------------------------------------
+# NAME     TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# M        String    "M.mtx"  The model fit
+# ----------------------------------------------------------------------------
+
+m_xgboostPredict = function(Matrix[Double] X, Matrix[Double] B
+) return (Matrix[Double] M) {
+    print("[DEBUG] inside xgboostPredict")
+
+   M = matrix(1,1,1)
+
+   # STEPS
+
+   # 1. identify root note feature
+   # 2. identify root note value
+   # 3.
+
+   print("[DEBUG] Return xgboostPredict")
+}

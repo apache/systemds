@@ -34,12 +34,12 @@ import org.junit.Test;
 
 import jcuda.runtime.cudaError;
 
-public class GPUFullReuseTest extends AutomatedTestBase{
+public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "FullReuseGPU1"; 
-	protected static final String TEST_NAME2 = "LineageTraceGPU1"; 
-	protected String TEST_CLASS_DIR = TEST_DIR + GPUFullReuseTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME1 = "GPUCacheEviction1"; 
+	protected static final String TEST_NAME2 = "GPUCacheEviction2"; 
+	protected String TEST_CLASS_DIR = TEST_DIR + GPULineageCacheEvictionTest.class.getSimpleName() + "/";
 	
 	@BeforeClass
 	public static void checkGPU() {
@@ -55,15 +55,16 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 	}
 	
 	@Test
-	public void ReuseAggBin() {           //reuse AggregateBinary and sum
-		testLineageTraceExec(TEST_NAME1);
+	public void eviction() {  // generate eviction
+		testLineageTraceExec(TEST_NAME2);
 	}
 
 	@Test
-	public void ReuseSimpleHLM() {        //hyper-parameter tuning over LM (simple)
-		testLineageTraceExec(TEST_NAME2);
+	public void reuseAndEviction() {  // reuse and eviction
+		testLineageTraceExec(TEST_NAME1);
 	}
-	
+
+
 	private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
 		getAndLoadTestConfiguration(testname);
@@ -76,6 +77,7 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
 		
+		// reset clears the lineage cache held memory from the last run
 		Lineage.resetInternalState();
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);

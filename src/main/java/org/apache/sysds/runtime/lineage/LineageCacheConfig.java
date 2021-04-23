@@ -72,6 +72,8 @@ public class LineageCacheConfig
 		}
 	}
 
+	protected static final double CPU_CACHE_FRAC = 0.05; // 5% of JVM heap size
+	protected static final double GPU_CACHE_MAX = 0.30; // 30% of gpu memory
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
@@ -118,6 +120,7 @@ public class LineageCacheConfig
 		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
 		PINNED,    //Pinned to memory. Cannot be evicted.
+		GPUCACHED, //Points to GPU intermediate
 		TOSPILL,   //To be spilled lazily 
 		TODELETE;  //TO be removed lazily
 		public boolean canEvict() {

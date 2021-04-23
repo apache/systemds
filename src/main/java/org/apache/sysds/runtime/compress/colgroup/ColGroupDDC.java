@@ -78,20 +78,11 @@ public class ColGroupDDC extends ColGroupValue {
 		double[] c = target.getDenseBlockValues();
 		offT = offT * tCol;
 
-		if(_zeros)
-			for(int i = rl; i < ru; i++, offT += tCol) {
-				int rowIndex = getIndex(i) * nCol;
-				if(rowIndex < values.length)
-					for(int j = 0; j < nCol; j++)
-						c[offT + _colIndexes[j]] += values[rowIndex + j];
-
-			}
-		else
-			for(int i = rl; i < ru; i++, offT += tCol) {
-				int rowIndex = getIndex(i) * nCol;
-				for(int j = 0; j < nCol; j++)
-					c[offT + _colIndexes[j]] += values[rowIndex + j];
-			}
+		for(int i = rl; i < ru; i++, offT += tCol) {
+			int rowIndex = getIndex(i) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[offT + _colIndexes[j]] += values[rowIndex + j];
+		}
 
 	}
 
@@ -101,14 +92,13 @@ public class ColGroupDDC extends ColGroupValue {
 		double[] dictionary = getValues();
 		for(int i = 0; i < _numRows; i++) {
 			int rowIndex = getIndex(i) * ncol;
-			if(rowIndex < dictionary.length) {
-				for(int colIx = 0; colIx < ncol; colIx++) {
-					int origMatrixColIx = getColIndex(colIx);
-					int col = colIndexTargets[origMatrixColIx];
-					double cellVal = dictionary[rowIndex + colIx];
-					target.quickSetValue(i, col, target.quickGetValue(i, col) + cellVal);
-				}
+			for(int colIx = 0; colIx < ncol; colIx++) {
+				int origMatrixColIx = getColIndex(colIx);
+				int col = colIndexTargets[origMatrixColIx];
+				double cellVal = dictionary[rowIndex + colIx];
+				target.quickSetValue(i, col, target.quickGetValue(i, col) + cellVal);
 			}
+
 		}
 	}
 
@@ -253,8 +243,7 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] MaterializedRow) {
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
 		final int numVals = getNumValues();
 		double[] vals = preAggregateSparse(sb, row);
 		postScaling(values, vals, c, numVals, row, numCols);
@@ -562,7 +551,7 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
 		final int nCol = that._colIndexes.length;
 
@@ -605,14 +594,14 @@ public class ColGroupDDC extends ColGroupValue {
 
 	}
 
-	@Override
-	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
-		final int numVals = getNumValues();
-		double[] vals = preaggValues(numVals, b, dictVals);
-		for(int i = rl; i < ru; i++)
-			c[i] += vals[_data.getIndex(i)];
+	// @Override
+	// public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
+	// 	final int numVals = getNumValues();
+	// 	double[] vals = preaggValues(numVals, b, dictVals);
+	// 	for(int i = rl; i < ru; i++)
+	// 		c[i] += vals[_data.getIndex(i)];
 
-	}
+	// }
 
 	@Override
 	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,

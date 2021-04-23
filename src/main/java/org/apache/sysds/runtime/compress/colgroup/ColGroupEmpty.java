@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import java.util.Arrays;
-
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -127,35 +125,19 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
-		// do nothing.
-	}
-
-	@Override
 	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
 		int ru) {
 		// do nothing.
 	}
 
 	@Override
-	public void leftMultByRowVector(double[] a, double[] c) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values, int offT) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
+	public void leftMultByMatrix(double[] a, double[] c, int numRows, int numCols, int rl, int ru,
 		int vOff) {
 		// do nothing.
 	}
 
 	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] MaterializedRow) {
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, int numRows, int numCols, int rl, int ru) {
 		// do nothing.
 	}
 
@@ -223,36 +205,6 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup sliceSingleColumn(int col) {
-		final int idx = Arrays.binarySearch(_colIndexes, col);
-		return (idx >= 0) ? new ColGroupEmpty(new int[col], _numRows) : null;
-	}
-
-	@Override
-	protected AColGroup sliceMultiColumns(int cl, int cu) {
-
-		int idStart = 0;
-		int idEnd = 0;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			if(_colIndexes[i] < cl)
-				idStart++;
-			if(_colIndexes[i] < cu)
-				idEnd++;
-		}
-		int numberOfOutputColumns = idEnd - idStart;
-		if(numberOfOutputColumns > 0) {
-			int[] cols = new int[numberOfOutputColumns];
-
-			for(int i = 0; i < numberOfOutputColumns; i++) {
-				cols[i] = _colIndexes[idStart++] - cl;
-			}
-			return new ColGroupEmpty(cols, _numRows);
-		}
-		else
-			return null;
-	}
-
-	@Override
 	protected boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
 	}
@@ -263,19 +215,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByRowVector(double[] vector, double[] result, int offT) {
-		// do nothing
-
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values) {
-		// do nothing
-
-	}
-
-	@Override
-	public void leftMultBySelfDiagonalColGroup(double[] result, int numColumns) {
+	public void tsmm(double[] result, int numColumns) {
 		// do nothing
 
 	}
@@ -304,4 +244,15 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	public long getNumberNonZeros() {
 		return 0;
 	}
+
+	@Override
+	protected AColGroup sliceSingleColumn(int col, int idx) {
+		return new ColGroupEmpty(new int[col], _numRows);
+	}
+
+	@Override
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+		return new ColGroupEmpty(outputCols, _numRows);
+	}
+
 }

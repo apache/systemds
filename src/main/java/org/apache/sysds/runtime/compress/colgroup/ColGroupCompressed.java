@@ -20,15 +20,17 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Mean;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
@@ -85,17 +87,42 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru);
 
-	/**
-	 * Slice out the column given, if the column is not contained in the colGroup return null.
-	 * 
-	 * @param col The column to slice.
-	 * @return Either a new colGroup or null.
-	 */
-	protected abstract AColGroup sliceSingleColumn(int col);
-
-	protected abstract AColGroup sliceMultiColumns(int cl, int cu);
-
 	protected abstract boolean sameIndexStructure(ColGroupCompressed that);
+
+	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru, int offT) {
+		if(matrix.isInSparseFormat())
+			leftMultBySparseMatrix(matrix.getSparseBlock(), result, matrix.getNumRows(), numCols, rl, ru);
+		else {
+			leftMultByMatrix(matrix.getDenseBlockValues(), result, matrix.getNumRows(), numCols, rl, ru, 0);
+		}
+	}
+
+	/**
+	 * Multiply with a matrix on the left.
+	 * 
+	 * @param matrix  matrix to left multiply
+	 * @param result  matrix block result
+	 * @param numRows The number of rows in the matrix input
+	 * @param numCols The number of columns in the colGroups parent matrix.
+	 * @param rl      The row to start the matrix multiplication from
+	 * @param ru      The row to stop the matrix multiplication at.
+	 * @param vOff    The offset into the first argument matrix to start at.
+	 */
+	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru,
+		int vOff);
+
+	/**
+	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
+	 * 
+	 * @param sb      The sparse block to multiply with
+	 * @param result  The linearized output matrix
+	 * @param numRows The number of rows in the left hand side input matrix (the sparse one)
+	 * @param numCols The number of columns in the compression.
+	 * @param rl      The row to start the matrix multiplication from
+	 * @param ru      The row to stop the matrix multiplication at.
+	 */
+	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, int numRows, int numCols, int rl,
+		int ru);
 
 	@Override
 	public double getMin() {
@@ -115,18 +142,16 @@ public abstract class ColGroupCompressed extends AColGroup {
 	@Override
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
 		// sum and sumsq (reduceall/reducerow over tuples and counts)
-		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq ||
-			op.aggOp.increOp.fn instanceof Mean) {
-			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus ||
-				op.aggOp.increOp.fn instanceof Mean) ? KahanPlus
-					.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
+		if(op.aggOp.increOp.fn instanceof Plus || op.aggOp.increOp.fn instanceof KahanPlus ||
+			op.aggOp.increOp.fn instanceof KahanPlusSq) {
+			boolean square = op.aggOp.increOp.fn instanceof KahanPlusSq;
 			boolean mean = op.aggOp.increOp.fn instanceof Mean;
 			if(op.indexFn instanceof ReduceAll)
-				computeSum(c, kplus instanceof KahanPlusSq);
+				computeSum(c, square);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, kplus instanceof KahanPlusSq, rl, ru, mean);
+				computeRowSums(c, square, rl, ru, mean);
 			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(c, kplus instanceof KahanPlusSq);
+				computeColSums(c, square);
 		}
 		// min and max (reduceall/reducerow over tuples only)
 		else if(op.aggOp.increOp.fn instanceof Builtin &&
@@ -152,15 +177,6 @@ public abstract class ColGroupCompressed extends AColGroup {
 		sb.append(super.toString());
 		sb.append("num Rows: " + getNumRows());
 		return sb.toString();
-	}
-
-	@Override
-	public AColGroup sliceColumns(int cl, int cu) {
-		if(cu - cl == 1)
-			return sliceSingleColumn(cl);
-		else {
-			return sliceMultiColumns(cl, cu);
-		}
 	}
 
 	@Override

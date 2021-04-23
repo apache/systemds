@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
@@ -108,16 +109,16 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] {
 		// CLA TESTS!
 
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+		// .setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.OLE)).setInvestigateEstimate(true),
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true),
 
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+		// .setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.SDC, CompressionType.DDC)).setInvestigateEstimate(true),
@@ -125,11 +126,12 @@ public abstract class CompressedTestBase extends TestBase {
 		// .setValidCompressions(EnumSet.of(CompressionType.OLE, CompressionType.SDC, CompressionType.DDC))
 		// .setInvestigateEstimate(true),
 
-		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("false")
-		// .setInvestigateEstimate(true),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("false")
+		.setInvestigateEstimate(true),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
-			.setColumnPartitioner(PartitionerType.BIN_PACKING)
-			.setInvestigateEstimate(true),
+		.setColumnPartitioner(PartitionerType.BIN_PACKING).setInvestigateEstimate(true),
+
+		new CompressionSettingsBuilder().setValidCompressions(EnumSet.of(CompressionType.UNCOMPRESSED)),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setInvestigateEstimate(true),
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
@@ -194,10 +196,24 @@ public abstract class CompressedTestBase extends TestBase {
 		try {
 			if(compressionSettings.lossy || ov == OverLapping.SQUASH)
 				setLossyTolerance(valueRange);
-			Pair<MatrixBlock, CompressionStatistics> pair = CompressedMatrixBlockFactory.compress(mb, _k,
-				compSettings.create());
-			cmb = pair.getLeft();
-			cmbStats = pair.getRight();
+			CompressionSettings cs = compSettings.create();
+			if(cs.validCompressions.size() == 2) { // In case only Uncompressed and Const colgroups are available.
+				// filter the big tests from uncompressed colgroup tests since the functionality should be verified even
+				// with smaller matrices
+				if(rows < 10000) {
+
+					int[] colIndexes = new int[mb.getNumColumns()];
+					for(int i = 0; i < colIndexes.length; i++)
+						colIndexes[i] = i;
+					cmb = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
+					((CompressedMatrixBlock) cmb).allocateColGroup(new ColGroupUncompressed(colIndexes, mb, false));
+				}
+			}
+			else {
+				Pair<MatrixBlock, CompressionStatistics> pair = CompressedMatrixBlockFactory.compress(mb, _k, cs);
+				cmb = pair.getLeft();
+				cmbStats = pair.getRight();
+			}
 			MatrixBlock tmp = null;
 			switch(ov) {
 				case COL:
@@ -293,9 +309,11 @@ public abstract class CompressedTestBase extends TestBase {
 
 			MatrixBlock decompressedMatrixBlock = ((CompressedMatrixBlock) cmb).decompress(_k);
 
-			// LOG.error(mb.slice(0, 10, 0, mb.getNumColumns() - 1, null));
-			// LOG.error(decompressedMatrixBlock.slice(0,10, 0, decompressedMatrixBlock.getNumColumns()-1, null));
+			// LOG.error(mb.slice(0, 3, 0, mb.getNumColumns() - 1, null));
+			// LOG.error(decompressedMatrixBlock.slice(0, 3, 0, decompressedMatrixBlock.getNumColumns()-1, null));
 			compareResultMatrices(mb, decompressedMatrixBlock, 1);
+			assertEquals(this.toString() + " number of non zeros should be equal after decompression", mb.getNonZeros(),
+				decompressedMatrixBlock.getNonZeros());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -1029,6 +1047,7 @@ public abstract class CompressedTestBase extends TestBase {
 				return;
 			MatrixBlock ret2 = cmb.slice(rl, ru, cl, cu);
 			MatrixBlock ret1 = mb.slice(rl, ru, cl, cu);
+			LOG.error(ret2);
 			assertEquals(ret1.getNonZeros(), ret2.getNonZeros());
 			compareResultMatrices(ret1, ret2, 1);
 		}

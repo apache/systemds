@@ -347,6 +347,10 @@ public class LibMatrixMult
 	}
 
 	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) {
+		matrixMultTransposeSelf(m1, ret, leftTranspose, true);
+	}
+
+	public static void matrixMultTransposeSelf(MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, boolean copyToLowerTriangle){
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
@@ -365,9 +369,11 @@ public class LibMatrixMult
 			matrixMultTransposeSelfDense(m1, ret, leftTranspose, 0, ret.rlen );
 
 		//post-processing
-		long nnz = copyUpperToLowerTriangle(ret);
-		ret.setNonZeros(nnz);
-		ret.examSparsity();
+		if(copyToLowerTriangle){
+			long nnz = copyUpperToLowerTriangle(ret);
+			ret.setNonZeros(nnz);
+			ret.examSparsity();
+		}
 		
 		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
 	}

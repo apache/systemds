@@ -30,7 +30,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLCompressionException;
-import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -45,16 +44,8 @@ import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
-import org.apache.sysds.runtime.functionobjects.Mean;
-import org.apache.sysds.runtime.functionobjects.ReduceAll;
-import org.apache.sysds.runtime.functionobjects.ReduceCol;
-import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -435,45 +426,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			.applyBinaryRowOp(fn, v, sparseSafe, _colIndexes, left);
 	}
 
-	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c) {
-		unaryAggregateOperations(op, c, 0, _numRows);
-	}
-
-	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
-		// sum and sumsq (reduceall/reducerow over tuples and counts)
-		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq ||
-			op.aggOp.increOp.fn instanceof Mean) {
-			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus ||
-				op.aggOp.increOp.fn instanceof Mean) ? KahanPlus
-					.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
-			boolean mean = op.aggOp.increOp.fn instanceof Mean;
-			if(op.indexFn instanceof ReduceAll)
-				computeSum(c, kplus instanceof KahanPlusSq);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, kplus instanceof KahanPlusSq, rl, ru, mean);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(c, kplus instanceof KahanPlusSq);
-		}
-		// min and max (reduceall/reducerow over tuples only)
-		else if(op.aggOp.increOp.fn instanceof Builtin &&
-			(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX ||
-				((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN)) {
-			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
-
-			if(op.indexFn instanceof ReduceAll)
-				c[0] = computeMxx(c[0], builtin);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowMxx(c, builtin, rl, ru);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColMxx(c, builtin);
-		}
-		else {
-			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
-		}
-	}
-
 	protected void setandExecute(double[] c, boolean square, double val, int rix) {
 		if(square)
 			c[rix] += val * val;
@@ -640,85 +592,54 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return null;
 	}
 
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c) {
-		final double[] values = getValues();
-		final int numVals = getNumValues();
-		leftMultByRowVector(a, c, numVals, values);
-	}
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c) {
+	// final double[] values = getValues();
+	// final int numVals = getNumValues();
+	// leftMultByRowVector(a, c, numVals, values);
+	// }
+
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int offT) {
+	// final double[] values = getValues();
+	// final int numVals = getNumValues();
+	// leftMultByRowVector(a, c, numVals, values, offT);
+	// }
+
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
+	// final double[] vals = preAggregate(a);
+	// postScaling(values, vals, c, numVals);
+	// }
+
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values, int offT) {
+	// final double[] vals = preAggregate(a);
+	// postScaling(values, vals, c, numVals, 0, 0, offT);
+	// }
 
 	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int offT) {
-		final double[] values = getValues();
-		final int numVals = getNumValues();
-		leftMultByRowVector(a, c, numVals, values, offT);
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
-		final double[] vals = preAggregate(a);
-		postScaling(values, vals, c, numVals);
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values, int offT) {
-		final double[] vals = preAggregate(a);
-		postScaling(values, vals, c, numVals, 0, 0, offT);
-	}
-
-	@Override
-	public AColGroup sliceColumns(int cl, int cu) {
-		if(cu - cl == 1)
-			return sliceSingleColumn(cl);
-		else
-			return sliceMultiColumns(cl, cu);
-	}
-
-	protected AColGroup sliceSingleColumn(int col) {
+	protected AColGroup sliceSingleColumn(int col, int idx) {
 		ColGroupValue ret = (ColGroupValue) copy();
+		ret._colIndexes = new int[1];
+		ret._colIndexes[0] = _colIndexes[idx] - col;
+		if(ret._dict != null)
+			if(_colIndexes.length == 1)
+				ret._dict = ret._dict.clone();
+			else
+				ret._dict = ret._dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
 
-		int idx = Arrays.binarySearch(_colIndexes, col);
-		// Binary search returns negative value if the column is not found.
-		// Therefore return null, if the column is not inside this colGroup.
-		if(idx >= 0) {
-			ret._colIndexes = new int[1];
-			ret._colIndexes[0] = _colIndexes[idx] - col;
-			if(ret._dict != null)
-				if(_colIndexes.length == 1)
-					ret._dict = ret._dict.clone();
-				else
-					ret._dict = ret._dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
-
-			return ret;
-		}
-		else
-			return null;
+		return ret;
 	}
 
-	protected AColGroup sliceMultiColumns(int cl, int cu) {
-		ColGroupValue ret = (ColGroupValue) copy();
-		int idStart = 0;
-		int idEnd = 0;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			if(_colIndexes[i] < cl)
-				idStart++;
-			if(_colIndexes[i] < cu)
-				idEnd++;
-		}
-		int numberOfOutputColumns = idEnd - idStart;
-		if(numberOfOutputColumns > 0) {
-			ret._dict = ret._dict != null ? ret._dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length) : null;
+	@Override
+	protected AColGroup sliceMultiColumns( int idStart, int idEnd, int[] outputCols) {
 
-			ret._colIndexes = new int[numberOfOutputColumns];
-			// Incrementing idStart here so make sure that the dictionary is extracted
-			// before
-			for(int i = 0; i < numberOfOutputColumns; i++) {
-				ret._colIndexes[i] = _colIndexes[idStart++] - cl;
-			}
-			return ret;
-		}
-		else
-			return null;
+		ColGroupValue ret = (ColGroupValue) copy();
+		ret._dict = ret._dict != null ? ret._dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length) : null;
+		ret._colIndexes = outputCols;
+
+		return ret;
 	}
 
 	/**
@@ -1021,7 +942,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	public void leftMultBySelfDiagonalColGroup(double[] result, int numColumns) {
+	public void tsmm(double[] result, int numColumns) {
 		int[] counts = getCounts();
 		double[] values = getValues();
 		int[] columns = getColIndices();
@@ -1029,7 +950,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			return;
 		for(int i = 0; i < columns.length; i++) {
 			final int y = columns[i] * numColumns;
-			for(int j = 0; j < columns.length; j++) {
+			for(int j = i; j < columns.length; j++) {
 				final int x = columns[j];
 				for(int h = 0; h < values.length / columns.length; h++) {
 					double a = values[h * columns.length + i];
@@ -1083,5 +1004,45 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	public boolean isDense() {
 		return !_zeros;
 	}
+
+	@Override
+	public void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru, int vOff) {
+		leftMultByMatrix(matrix, result, getValues(), numRows, numCols, rl, ru, vOff);
+	}
+
+	@Override
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] result, int numRows, int numCols, int rl, int ru) {
+		double[] values = getValues();
+		for(int i = rl; i < ru; i++) {
+			leftMultBySparseMatrix(sb, result, values, numRows, numCols, i);
+		}
+	}
+
+	/**
+	 * Multiply with a matrix on the left.
+	 * 
+	 * @param matrix  matrix to left multiply
+	 * @param result  matrix block result
+	 * @param values  The materialized values contained in the ColGroupValue
+	 * @param numRows The number of rows in the matrix input
+	 * @param numCols The number of columns in the colGroups parent matrix.
+	 * @param rl      The row to start the matrix multiplication from
+	 * @param ru      The row to stop the matrix multiplication at.
+	 * @param vOff    The offset into the first argument matrix to start at.
+	 */
+	public abstract void leftMultByMatrix(double[] matrix, double[] result, double[] values, int numRows, int numCols,
+		int rl, int ru, int vOff);
+
+	/**
+	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
+	 * 
+	 * @param sb      The sparse block to multiply with
+	 * @param result  The linearized output matrix
+	 * @param numRows The number of rows in the left hand side input matrix (the sparse one)
+	 * @param numCols The number of columns in the compression.
+	 * @param row     The row index of the sparse row to multiply with.
+	 */
+	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows,
+		int numCols, int row);
 
 }

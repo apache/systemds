@@ -230,8 +230,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] MaterializedRow) {
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
 		final int numVals = getNumValues();
 		double[] vals = preAggregateSparse(sb, row);
 		postScaling(values, vals, c, numVals, row, numCols);
@@ -284,11 +283,6 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getNumValues(), isLossy());
 		size += _indexes.getInMemorySize();
 		return size;
-	}
-
-	@Override
-	public void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals) {
-		throw new NotImplementedException("Not Implemented Right Mult By Vector");
 	}
 
 	@Override

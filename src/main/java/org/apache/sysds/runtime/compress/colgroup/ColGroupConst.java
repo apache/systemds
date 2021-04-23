@@ -187,13 +187,13 @@ public class ColGroupConst extends ColGroupValue {
 		return _dict.getValue(Arrays.binarySearch(_colIndexes, c));
 	}
 
-	@Override
-	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
-		double[] vals = preaggValues(1, b, dictVals);
-		for (int i = 0; i < c.length; i++) {
-			c[i] += vals[0];
-		}
-	}
+	// @Override
+	// public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
+	// 	double[] vals = preaggValues(1, b, dictVals);
+	// 	for (int i = 0; i < c.length; i++) {
+	// 		c[i] += vals[0];
+	// 	}
+	// }
 
 	@Override
 	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
@@ -227,14 +227,14 @@ public class ColGroupConst extends ColGroupValue {
 		return vals;
 	}
 
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
-		double preAggVals = preAggregateSingle(a, 0);
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
+	// 	double preAggVals = preAggregateSingle(a, 0);
 
-		for (int i = 0; i < _colIndexes.length; i++) {
-			c[_colIndexes[i]] += preAggVals * values[i];
-		}
-	}
+	// 	for (int i = 0; i < _colIndexes.length; i++) {
+	// 		c[_colIndexes[i]] += preAggVals * values[i];
+	// 	}
+	// }
 
 	@Override
 	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
@@ -249,8 +249,7 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-			double[] MaterializedRow) {
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
 		double v = preAggregateSparseSingle(sb, row);
 		int offC = row * numCols;
 		for (int j = 0; j < _colIndexes.length; j++) {

@@ -28,7 +28,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -488,16 +487,16 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract MatrixBlock getValuesAsBlock();
 
-	/**
-	 * Multiply the slice of the matrix that this column group represents by a vector on the right.
-	 * 
-	 * @param vector   Vector to multiply by (tall vector)
-	 * @param c        Accumulator for holding the result
-	 * @param rl       Row to start at
-	 * @param ru       Row to stop at
-	 * @param dictVals The dictionary values materialized
-	 */
-	public abstract void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals);
+	// /**
+	// * Multiply the slice of the matrix that this column group represents by a vector on the right.
+	// *
+	// * @param vector Vector to multiply by (tall vector)
+	// * @param c Accumulator for holding the result
+	// * @param rl Row to start at
+	// * @param ru Row to stop at
+	// * @param dictVals The dictionary values materialized
+	// */
+	// public abstract void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals);
 
 	/**
 	 * Right multiply by matrix. for which the compressed matrix is on the left and the uncompressed is on the right.
@@ -514,47 +513,48 @@ public abstract class AColGroup implements Serializable {
 	public abstract void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns,
 		int rl, int ru);
 
-	/**
-	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
-	 * 
-	 * @param vector row vector
-	 * @param result matrix block result
-	 */
-	public abstract void leftMultByRowVector(double[] vector, double[] result);
+	// /**
+	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
+	// * column vector is assumed to be transposed already i.e. its size now is 1xn).
+	// *
+	// * @param vector row vector
+	// * @param result matrix block result
+	// */
+	// public abstract void leftMultByRowVector(double[] vector, double[] result);
 
-	/**
-	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
-	 * 
-	 * @param vector row vector
-	 * @param result matrix block result
-	 * @param offT   The offset into target result array to put the result values.
-	 */
-	public abstract void leftMultByRowVector(double[] vector, double[] result, int offT);
+	// /**
+	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
+	// * column vector is assumed to be transposed already i.e. its size now is 1xn).
+	// *
+	// * @param vector row vector
+	// * @param result matrix block result
+	// * @param offT The offset into target result array to put the result values.
+	// */
+	// public abstract void leftMultByRowVector(double[] vector, double[] result, int offT);
 
-	/**
-	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
-	 * 
-	 * @param vector  Row vector
-	 * @param result  Matrix block result
-	 * @param numVals The Number of values contained in the Column.
-	 * @param values  The materialized list of values contained in the dictionary.
-	 */
-	public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values);
+	// /**
+	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
+	// * column vector is assumed to be transposed already i.e. its size now is 1xn).
+	// *
+	// * @param vector Row vector
+	// * @param result Matrix block result
+	// * @param numVals The Number of values contained in the Column.
+	// * @param values The materialized list of values contained in the dictionary.
+	// */
+	// public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values);
 
-	/**
-	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
-	 * 
-	 * @param vector  Row vector
-	 * @param result  Matrix block result
-	 * @param numVals The Number of values contained in the Column.
-	 * @param values  The materialized list of values contained in the dictionary.
-	 * @param offT    The offset into target result array to put the result values.
-	 */
-	public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values, int offT);
+	// /**
+	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
+	// * column vector is assumed to be transposed already i.e. its size now is 1xn).
+	// *
+	// * @param vector Row vector
+	// * @param result Matrix block result
+	// * @param numVals The Number of values contained in the Column.
+	// * @param values The materialized list of values contained in the dictionary.
+	// * @param offT The offset into target result array to put the result values.
+	// */
+	// public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values, int
+	// offT);
 
 	/**
 	 * Do a transposed self matrix multiplication, but only with this column group.
@@ -562,39 +562,52 @@ public abstract class AColGroup implements Serializable {
 	 * This gives better performance since there is no need to iterate through all the rows of the matrix, but the
 	 * execution can be limited to its number of distinct values.
 	 * 
+	 * Note it only calculate the upper triangle
+	 * 
 	 * @param result     A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]
 	 * @param numColumns The number of columns in the row major result matrix.
 	 */
-	public abstract void leftMultBySelfDiagonalColGroup(double[] result, int numColumns);
+	public abstract void tsmm(double[] result, int numColumns);
 
 	/**
-	 * Multiply with a matrix on the left.
+	 * Left multiply with this column group
 	 * 
-	 * @param matrix  matrix to left multiply
-	 * @param result  matrix block result
-	 * @param values  The materialized list of values contained in the dictionary.
-	 * @param numRows The number of rows in the matrix input
-	 * @param numCols The number of columns in the colGroups parent matrix.
-	 * @param rl      The row to start the matrix multiplication from
-	 * @param ru      The row to stop the matrix multiplication at.
-	 * @param vOff    The offset into the first argument matrix to start at.
+	 * @param matrix  The matrix to multiply with on the left
+	 * @param result  The result to output the values into, always dense for the purpose of the column groups
+	 *                parallelizing
+	 * @param numCols The number of columns contained in the CompressedMatrixBlock that this column group is inside.
 	 */
-	public abstract void leftMultByMatrix(double[] matrix, double[] result, double[] values, int numRows, int numCols,
-		int rl, int ru, int vOff);
+	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols) {
+		leftMultByMatrix(matrix, result, numCols, 0, matrix.getNumRows());
+	}
 
 	/**
-	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
+	 * Left multiply with this column group.
 	 * 
-	 * @param sb              The sparse block to multiply with
-	 * @param result          The linearized output matrix
-	 * @param values          The dictionary values materialized
-	 * @param numRows         The number of rows in the left hand side input matrix (the sparse one)
-	 * @param numCols         The number of columns in the compression.
-	 * @param row             The row index of the sparse row to multiply with.
-	 * @param MaterializedRow A Temporary dense row vector to materialize the sparse values into used for OLE
+	 * @param matrix  The matrix to multiply with on the left
+	 * @param result  The result to output the values into, always dense for the purpose of the column groups
+	 *                parallelizing
+	 * @param numCols The number of columns contained in the CompressedMatrixBlock that this column group is inside.
+	 * @param rl      The row to begin the multiplication from
+	 * @param ru      The row to end the multiplication at.
 	 */
-	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows,
-		int numCols, int row, double[] MaterializedRow);
+	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
+		leftMultByMatrix(matrix, result, numCols, rl, ru, 0);
+	}
+
+	/**
+	 * Left multiply with this column group.
+	 * 
+	 * @param matrix  The matrix to multiply with on the left
+	 * @param result  The result to output the values into, always dense for the purpose of the column groups
+	 *                parallelizing
+	 * @param numCols The number of columns contained in the CompressedMatrixBlock that this column group is inside.
+	 * @param rl      The row to begin the multiplication from
+	 * @param ru      The row to end the multiplication at.
+	 * @param offT    A offset into the result matrix to allocate the results into. This enable one to do multiplication
+	 *                and only allocate a subset of the output matrix
+	 */
+	public abstract void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru, int offT);
 
 	/**
 	 * Left side matrix multiplication with a column group that is transposed.
@@ -605,7 +618,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param numRows The number of rows in the left hand side matrix
 	 * @param numCols The number of columns in the right hand side matrix
 	 */
-	public abstract void leftMultByAColGroup(AColGroup lhs, double[] result, final int numRows, final int numCols);
+	public abstract void leftMultByAColGroup(AColGroup lhs, double[] result, int numRows, int numCols);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual
@@ -690,7 +703,44 @@ public abstract class AColGroup implements Serializable {
 	 * @return A cloned Column Group, with a copied pointer to the old column groups index structure, but reduced
 	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
 	 */
-	public abstract AColGroup sliceColumns(int cl, int cu);
+	public AColGroup sliceColumns(int cl, int cu) {
+		if(cu - cl == 1)
+			return sliceColumn(cl);
+		else
+			return sliceMultiColumns(cl, cu);
+	}
+
+	public AColGroup sliceColumn(int col) {
+		int idx = Arrays.binarySearch(_colIndexes, col);
+		if(idx >= 0)
+			return sliceSingleColumn(col, idx);
+		else
+			return null;
+	}
+
+	protected AColGroup sliceMultiColumns(int cl, int cu) {
+		int idStart = 0;
+		int idEnd = 0;
+		for(int i = 0; i < _colIndexes.length; i++) {
+			if(_colIndexes[i] < cl)
+				idStart++;
+			if(_colIndexes[i] < cu)
+				idEnd++;
+		}
+		int numberOfOutputColumns = idEnd - idStart;
+		if(numberOfOutputColumns > 0) {
+			int[] outputCols = new int[numberOfOutputColumns];
+			for(int i = 0; i < numberOfOutputColumns; i++)
+				outputCols[i] = _colIndexes[idStart++] - cl;
+			return sliceMultiColumns( idStart, idEnd, outputCols);
+		}
+		else
+			return null;
+	}
+
+	protected abstract AColGroup sliceSingleColumn(int col, int idx);
+
+	protected abstract AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols);
 
 	/**
 	 * Short hand method for getting minimum value contained in this column group.

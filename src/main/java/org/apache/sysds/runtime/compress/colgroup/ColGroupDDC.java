@@ -603,16 +603,15 @@ public class ColGroupDDC extends ColGroupValue {
 
 	// }
 
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
-		for(int j = rl, off = rl * thatNrColumns; j < ru; j++, off += thatNrColumns) {
-			int rowIdx = _data.getIndex(j);
-			for(int k = 0; k < outputColumns.length; k++)
-				c[off + outputColumns[k]] += preAggregatedB[rowIdx * outputColumns.length + k];
-		}
-
-	}
+	// @Override
+	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	// 	int ru) {
+	// 	for(int j = rl, off = rl * thatNrColumns; j < ru; j++, off += thatNrColumns) {
+	// 		int rowIdx = _data.getIndex(j);
+	// 		for(int k = 0; k < outputColumns.length; k++)
+	// 			c[off + outputColumns[k]] += preAggregatedB[rowIdx * outputColumns.length + k];
+	// 	}
+	// }
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {

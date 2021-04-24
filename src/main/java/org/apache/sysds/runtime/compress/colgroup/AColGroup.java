@@ -487,6 +487,9 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract MatrixBlock getValuesAsBlock();
 
+
+	public abstract AColGroup rightMultByMatrix(MatrixBlock right);
+
 	// /**
 	// * Multiply the slice of the matrix that this column group represents by a vector on the right.
 	// *
@@ -498,20 +501,20 @@ public abstract class AColGroup implements Serializable {
 	// */
 	// public abstract void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals);
 
-	/**
-	 * Right multiply by matrix. for which the compressed matrix is on the left and the uncompressed is on the right.
-	 * Note that there is no b argument, but the b is aggregated into the values needed for assignment and addition into
-	 * output.
-	 * 
-	 * @param outputColumns  The Columns that are affected by the right multiplication.
-	 * @param preAggregatedB The preAggregated values that is to be put into c
-	 * @param c              The output matrix
-	 * @param thatNrColumns  The number of columns in B (before aggregation)
-	 * @param rl             The row index to start the multiplication from
-	 * @param ru             The row index to stop the multiplication at
-	 */
-	public abstract void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns,
-		int rl, int ru);
+	// /**
+	//  * Right multiply by matrix. for which the compressed matrix is on the left and the uncompressed is on the right.
+	//  * Note that there is no b argument, but the b is aggregated into the values needed for assignment and addition into
+	//  * output.
+	//  * 
+	//  * @param outputColumns  The Columns that are affected by the right multiplication.
+	//  * @param preAggregatedB The preAggregated values that is to be put into c
+	//  * @param c              The output matrix
+	//  * @param thatNrColumns  The number of columns in B (before aggregation)
+	//  * @param rl             The row index to start the multiplication from
+	//  * @param ru             The row index to stop the multiplication at
+	//  */
+	// public abstract void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns,
+	// 	int rl, int ru);
 
 	// /**
 	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
@@ -704,10 +707,8 @@ public abstract class AColGroup implements Serializable {
 	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
 	 */
 	public AColGroup sliceColumns(int cl, int cu) {
-		if(cu - cl == 1)
-			return sliceColumn(cl);
-		else
-			return sliceMultiColumns(cl, cu);
+		AColGroup ret  = (cu - cl == 1) ? sliceColumn(cl) :  sliceMultiColumns(cl, cu);
+		return ret;
 	}
 
 	public AColGroup sliceColumn(int col) {
@@ -726,12 +727,15 @@ public abstract class AColGroup implements Serializable {
 				idStart++;
 			if(_colIndexes[i] < cu)
 				idEnd++;
+			else
+				break;
 		}
 		int numberOfOutputColumns = idEnd - idStart;
 		if(numberOfOutputColumns > 0) {
 			int[] outputCols = new int[numberOfOutputColumns];
+			int idIt = idStart;
 			for(int i = 0; i < numberOfOutputColumns; i++)
-				outputCols[i] = _colIndexes[idStart++] - cl;
+				outputCols[i] = _colIndexes[idIt++] - cl;
 			return sliceMultiColumns( idStart, idEnd, outputCols);
 		}
 		else

@@ -211,7 +211,17 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1);
 
 		ret.allocateDenseBlock();
-		// todo Add sparse decompress.
+		decompress(ret);
+
+		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
+			double t = time.stop();
+			LOG.debug("decompressed block w/ k=" + 1 + " in " + t + "ms.");
+			DMLCompressionStatistics.addDecompressTime(t, 1);
+		}
+		return ret;
+	}
+
+	public MatrixBlock decompress(MatrixBlock ret){
 
 		for(AColGroup grp : _colGroups)
 			grp.decompressToBlockUnSafe(ret, 0, rlen, 0, grp.getValues());
@@ -224,11 +234,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		else
 			ret.setNonZeros(nonZeros);
 
-		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
-			double t = time.stop();
-			LOG.debug("decompressed block w/ k=" + 1 + " in " + t + "ms.");
-			DMLCompressionStatistics.addDecompressTime(t, 1);
-		}
 		return ret;
 	}
 
@@ -244,9 +249,21 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return decompress();
 
 		Timing time = new Timing(true);
-
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1).allocateBlock();
 		ret.allocateDenseBlock();
+		decompress(ret, k);
+
+		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
+			double t = time.stop();
+			LOG.debug("decompressed block w/ k=" + k + " in " + time.stop() + "ms.");
+			DMLCompressionStatistics.addDecompressTime(t, k);
+		}
+
+		return ret;
+	}
+
+	public MatrixBlock decompress(MatrixBlock ret, int k){
+
 		if(nonZeros == -1)
 			ret.setNonZeros(this.recomputeNonZeros());
 		else
@@ -270,12 +287,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			LOG.error("Parallel decompression failed defaulting to non parallel implementation " + ex.getMessage());
 			ex.printStackTrace();
 			return decompress();
-		}
-
-		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
-			double t = time.stop();
-			LOG.debug("decompressed block w/ k=" + k + " in " + time.stop() + "ms.");
-			DMLCompressionStatistics.addDecompressTime(t, k);
 		}
 
 		return ret;
@@ -802,7 +813,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	private CompressedMatrixBlock sliceColumns(int cl, int cu) {
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(this.getNumRows(), cu + 1 - cl);
-
 		List<AColGroup> newColGroups = new ArrayList<>();
 		for(AColGroup grp : getColGroups()) {
 			AColGroup slice = grp.sliceColumns(cl, cu + 1);
@@ -810,7 +820,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 				newColGroups.add(slice);
 		}
 		ret.allocateColGroupList(newColGroups);
-
 		return ret;
 	}
 

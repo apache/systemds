@@ -471,40 +471,40 @@ public class ColGroupRLE extends ColGroupOffset {
 	// 	}
 	// }
 
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
-		final int nrVals = getNumValues();
-		for(int k = 0; k < nrVals; k++) {
-			int boff = _ptr[k];
-			int blen = len(k);
-			int bix = 0;
-			int start = 0;
+	// @Override
+	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	// 	int ru) {
+	// 	final int nrVals = getNumValues();
+	// 	for(int k = 0; k < nrVals; k++) {
+	// 		int boff = _ptr[k];
+	// 		int blen = len(k);
+	// 		int bix = 0;
+	// 		int start = 0;
 
-			// scan to beginning offset if necessary
-			if(rl > 0) { // rl aligned with blksz
-				while(bix < blen) {
-					int lstart = _data[boff + bix]; // start
-					int llen = _data[boff + bix + 1]; // len
-					if(start + lstart + llen >= rl)
-						break;
-					start += lstart + llen;
-					bix += 2;
-				}
-			}
-			// compute partial results, not aligned
-			while(bix < blen) {
-				int lstart = _data[boff + bix];
-				int llen = _data[boff + bix + 1];
-				LinearAlgebraUtils.vectListAdd(preAggregatedB, c, Math.max(rl, start + lstart),
-					Math.min(start + lstart + llen, ru), outputColumns, thatNrColumns, k);
-				if(start + lstart + llen >= ru)
-					break;
-				start += lstart + llen;
-				bix += 2;
-			}
-		}
-	}
+	// 		// scan to beginning offset if necessary
+	// 		if(rl > 0) { // rl aligned with blksz
+	// 			while(bix < blen) {
+	// 				int lstart = _data[boff + bix]; // start
+	// 				int llen = _data[boff + bix + 1]; // len
+	// 				if(start + lstart + llen >= rl)
+	// 					break;
+	// 				start += lstart + llen;
+	// 				bix += 2;
+	// 			}
+	// 		}
+	// 		// compute partial results, not aligned
+	// 		while(bix < blen) {
+	// 			int lstart = _data[boff + bix];
+	// 			int llen = _data[boff + bix + 1];
+	// 			LinearAlgebraUtils.vectListAdd(preAggregatedB, c, Math.max(rl, start + lstart),
+	// 				Math.min(start + lstart + llen, ru), outputColumns, thatNrColumns, k);
+	// 			if(start + lstart + llen >= ru)
+	// 				break;
+	// 			start += lstart + llen;
+	// 			bix += 2;
+	// 		}
+	// 	}
+	// }
 
 	// @Override
 	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {

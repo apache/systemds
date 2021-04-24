@@ -621,8 +621,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	@Override
 	protected AColGroup sliceSingleColumn(int col, int idx) {
 		ColGroupValue ret = (ColGroupValue) copy();
-		ret._colIndexes = new int[1];
-		ret._colIndexes[0] = _colIndexes[idx] - col;
+		ret._colIndexes = new int[] {0};
 		if(ret._dict != null)
 			if(_colIndexes.length == 1)
 				ret._dict = ret._dict.clone();
@@ -633,7 +632,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns( int idStart, int idEnd, int[] outputCols) {
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
 
 		ColGroupValue ret = (ColGroupValue) copy();
 		ret._dict = ret._dict != null ? ret._dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length) : null;
@@ -1045,4 +1044,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows,
 		int numCols, int row);
 
+	public AColGroup rightMultByMatrix(MatrixBlock right) {
+		Pair<int[], double[]> pre = preaggValues(getNumValues(), right, getValues(), 0, right.getNumColumns(),
+			right.getNumColumns());
+		if(pre.getLeft().length > 0)
+			return copyAndSet(pre.getLeft(), pre.getRight());
+		return null;
+	}
 }

@@ -23,9 +23,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
@@ -38,6 +38,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.SortUtils;
+
+import scala.reflect.macros.Infrastructure;
 
 /**
  * Column group type for columns that are stored as dense arrays of doubles. Uses a MatrixBlock internally to store the
@@ -53,6 +55,9 @@ public class ColGroupUncompressed extends AColGroup {
 	 */
 	private MatrixBlock _data;
 
+	/**
+	 * Constructor for serialization
+	 */
 	protected ColGroupUncompressed() {
 		super();
 	}
@@ -117,30 +122,6 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	/**
-	 * Constructor for creating temporary decompressed versions of one or more compressed column groups.
-	 * 
-	 * @param groupsToDecompress compressed columns to subsume. Must contain at least one element.
-	 */
-	protected ColGroupUncompressed(List<AColGroup> groupsToDecompress) {
-		super(mergeColIndices(groupsToDecompress));
-		final int _numRows = groupsToDecompress.get(0).getNumRows();
-
-		// Invert the list of column indices
-		int maxColIndex = _colIndexes[_colIndexes.length - 1];
-		int[] colIndicesInverted = new int[maxColIndex + 1];
-		for(int i = 0; i < _colIndexes.length; i++) {
-			colIndicesInverted[_colIndexes[i]] = i;
-		}
-
-		// Create the buffer that holds the uncompressed data, packed together
-		_data = new MatrixBlock(_numRows, _colIndexes.length, false);
-
-		for(AColGroup colGroup : groupsToDecompress) {
-			colGroup.decompressToBlock(_data, colIndicesInverted);
-		}
-	}
-
-	/**
 	 * Constructor for internal use. Used when a method needs to build an instance of this class from scratch.
 	 * 
 	 * @param colIndices column mapping for this column group
@@ -168,33 +149,6 @@ public class ColGroupUncompressed extends AColGroup {
 	 */
 	public MatrixBlock getData() {
 		return _data;
-	}
-
-	/**
-	 * Subroutine of constructor.
-	 * 
-	 * @param groupsToDecompress input to the constructor that decompresses into a temporary UncompressedColGroup
-	 * @return a merged set of column indices across all those groups
-	 */
-	private static int[] mergeColIndices(List<AColGroup> groupsToDecompress) {
-		// Pass 1: Determine number of columns
-		int sz = 0;
-		for(AColGroup colGroup : groupsToDecompress) {
-			sz += colGroup.getNumCols();
-		}
-
-		// Pass 2: Copy column offsets out
-		int[] ret = new int[sz];
-		int pos = 0;
-		for(AColGroup colGroup : groupsToDecompress) {
-			int[] tmp = colGroup.getColIndices();
-			System.arraycopy(tmp, 0, ret, pos, tmp.length);
-			pos += tmp.length;
-		}
-
-		// Pass 3: Sort and return the list of columns
-		Arrays.sort(ret);
-		return ret;
 	}
 
 	@Override
@@ -402,6 +356,8 @@ public class ColGroupUncompressed extends AColGroup {
 	public AColGroup scalarOperation(ScalarOperator op) {
 		// execute scalar operations
 		MatrixBlock retContent = _data.scalarOperations(op, new MatrixBlock());
+		if(retContent.isEmpty())
+			return new ColGroupEmpty(_colIndexes, _data.getNumRows());
 		// construct new uncompressed column group
 		return new ColGroupUncompressed(getColIndices(), retContent);
 	}
@@ -412,7 +368,7 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] ret) {
-		throw new NotImplementedException("Should not be called");
+		unaryAggregateOperations(op, ret, 0, _data.getNumRows());
 	}
 
 	@Override
@@ -597,14 +553,24 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	protected AColGroup sliceSingleColumn(int col, int idx) {
-		return sliceMultiColumns(idx, idx, new int[col]);
+		return sliceMultiColumns(idx, idx + 1, new int[] {0});
 	}
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		MatrixBlock newData = _data.slice(0, _data.getNumRows()-1, idStart, idEnd, true);
-		LOG.error(newData);
-		LOG.error(_data);
+		MatrixBlock newData = _data.slice(0, _data.getNumRows() - 1, idStart, idEnd - 1, true);
+		if(newData.isEmpty())
+			return new ColGroupEmpty(outputCols, newData.getNumRows());
 		return new ColGroupUncompressed(outputCols, newData, false);
+	}
+
+	@Override
+	public AColGroup rightMultByMatrix(MatrixBlock right) {
+		int[] outputCols = new int[right.getNumColumns()];
+		for(int i = 0; i< outputCols.length; i++)
+			outputCols[i] = i; 
+		MatrixBlock out = new MatrixBlock(_data.getNumRows(),right.getNumColumns(),true);
+		LibMatrixMult.matrixMult(_data, right, out, InfrastructureAnalyzer.getLocalParallelism());
+		return new ColGroupUncompressed(outputCols, out, false);
 	}
 }

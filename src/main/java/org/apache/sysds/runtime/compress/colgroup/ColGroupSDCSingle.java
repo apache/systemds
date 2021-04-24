@@ -332,39 +332,38 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	}
 
 
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
-		final int nCol = outputColumns.length;
-		final AIterator it = _indexes.getIterator();
+	// @Override
+	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	// 	int ru) {
+	// 	final int nCol = outputColumns.length;
+	// 	final AIterator it = _indexes.getIterator();
 		
-		it.skipTo(rl);
-		int i = rl;
+	// 	it.skipTo(rl);
+	// 	int i = rl;
 
-		final int offsetToDefault = getNumValues() * outputColumns.length - outputColumns.length;
-		for(; i < ru && it.hasNext(); i++) {
-			int rc = i * thatNrColumns;
-			if(it.value() != i) {
-				for(int j = 0; j < nCol; j++) {
-					c[rc + outputColumns[j]] += preAggregatedB[offsetToDefault + j];
-				}
-			}
-			else{
-				for(int j = 0; j < nCol; j++) {
-					c[rc + outputColumns[j]] += preAggregatedB[j];
-				}
-				it.next();
-			}
-		}
+	// 	final int offsetToDefault = getNumValues() * outputColumns.length - outputColumns.length;
+	// 	for(; i < ru && it.hasNext(); i++) {
+	// 		int rc = i * thatNrColumns;
+	// 		if(it.value() != i) {
+	// 			for(int j = 0; j < nCol; j++) {
+	// 				c[rc + outputColumns[j]] += preAggregatedB[offsetToDefault + j];
+	// 			}
+	// 		}
+	// 		else{
+	// 			for(int j = 0; j < nCol; j++) {
+	// 				c[rc + outputColumns[j]] += preAggregatedB[j];
+	// 			}
+	// 			it.next();
+	// 		}
+	// 	}
 
-		for(; i < ru; i++) {
-			int rc = i * thatNrColumns;
-			for(int j = 0; j < nCol; j++) {
-				c[rc + outputColumns[j]] += preAggregatedB[j];
-			}
-		}
-
-	}
+	// 	for(; i < ru; i++) {
+	// 		int rc = i * thatNrColumns;
+	// 		for(int j = 0; j < nCol; j++) {
+	// 			c[rc + outputColumns[j]] += preAggregatedB[j];
+	// 		}
+	// 	}
+	// }
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {

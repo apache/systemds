@@ -300,20 +300,20 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		return size;
 	}
 
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
+	// @Override
+	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	// 	int ru) {
 
-		final int nCol = outputColumns.length;
-		final AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
-		while(it.hasNext() && it.value() < ru) {
-			int rc = it.value() * thatNrColumns;
-			int offset = getIndex(it.getDataIndexAndIncrement()) * outputColumns.length;
-			for(int j = 0; j < nCol; j++)
-				c[rc + outputColumns[j]] += preAggregatedB[offset + j];
-		}
-	}
+	// 	final int nCol = outputColumns.length;
+	// 	final AIterator it = _indexes.getIterator();
+	// 	it.skipTo(rl);
+	// 	while(it.hasNext() && it.value() < ru) {
+	// 		int rc = it.value() * thatNrColumns;
+	// 		int offset = getIndex(it.getDataIndexAndIncrement()) * outputColumns.length;
+	// 		for(int j = 0; j < nCol; j++)
+	// 			c[rc + outputColumns[j]] += preAggregatedB[offset + j];
+	// 	}
+	// }
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {

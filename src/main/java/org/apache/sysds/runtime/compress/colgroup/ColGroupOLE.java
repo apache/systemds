@@ -499,59 +499,59 @@ public class ColGroupOLE extends ColGroupOffset {
 	// 	}
 	// }
 
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
+	// @Override
+	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	// 	int ru) {
 
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numVals = getNumValues();
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	final int numVals = getNumValues();
 
-		if(numVals > 1 && _numRows > blksz * 2) {
-			final int blksz2 = blksz * 2;
-			int[] apos = skipScan(numVals, rl);
-			int blockStart = rl - rl % blksz;
-			for(int bi = blockStart; bi < ru; bi += blksz2) {
-				int bimax = Math.min(bi + blksz2, ru);
-				for(int k = 0; k < numVals; k++) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
-						int len = _data[boff + bix];
-						int pos = _data[boff + bix + 1];
-						if(pos >= rl)
-							addV(c, preAggregatedB, outputColumns, (bi + pos) * thatNrColumns, k);
-						bix += len + 1;
-					}
-					apos[k] = bix;
-				}
-			}
-		}
-		else {
-			for(int k = 0; k < numVals; k++) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = skipScanVal(k, rl);
-				int off = rl;
-				int slen = 0;
-				// compute partial results
-				for(; bix < blen & off < ru; bix += slen + 1, off += blksz) {
-					slen = _data[boff + bix];
-					for(int blckIx = 1; blckIx <= slen; blckIx++) {
-						int rowIdx = (_data[boff + bix + blckIx] + off) * thatNrColumns;
-						addV(c, preAggregatedB, outputColumns, rowIdx, k);
-					}
-				}
-			}
-		}
-	}
+	// 	if(numVals > 1 && _numRows > blksz * 2) {
+	// 		final int blksz2 = blksz * 2;
+	// 		int[] apos = skipScan(numVals, rl);
+	// 		int blockStart = rl - rl % blksz;
+	// 		for(int bi = blockStart; bi < ru; bi += blksz2) {
+	// 			int bimax = Math.min(bi + blksz2, ru);
+	// 			for(int k = 0; k < numVals; k++) {
+	// 				int boff = _ptr[k];
+	// 				int blen = len(k);
+	// 				int bix = apos[k];
+	// 				for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
+	// 					int len = _data[boff + bix];
+	// 					int pos = _data[boff + bix + 1];
+	// 					if(pos >= rl)
+	// 						addV(c, preAggregatedB, outputColumns, (bi + pos) * thatNrColumns, k);
+	// 					bix += len + 1;
+	// 				}
+	// 				apos[k] = bix;
+	// 			}
+	// 		}
+	// 	}
+	// 	else {
+	// 		for(int k = 0; k < numVals; k++) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = skipScanVal(k, rl);
+	// 			int off = rl;
+	// 			int slen = 0;
+	// 			// compute partial results
+	// 			for(; bix < blen & off < ru; bix += slen + 1, off += blksz) {
+	// 				slen = _data[boff + bix];
+	// 				for(int blckIx = 1; blckIx <= slen; blckIx++) {
+	// 					int rowIdx = (_data[boff + bix + blckIx] + off) * thatNrColumns;
+	// 					addV(c, preAggregatedB, outputColumns, rowIdx, k);
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	private static void addV(double[] c, double[] preAggregatedB, int[] outputColumns, int rowIdx, int k) {
-		int n = k * outputColumns.length;
-		for(int i = 0; i < outputColumns.length; i++) {
-			c[rowIdx + outputColumns[i]] += preAggregatedB[n + i];
-		}
-	}
+	// private static void addV(double[] c, double[] preAggregatedB, int[] outputColumns, int rowIdx, int k) {
+	// 	int n = k * outputColumns.length;
+	// 	for(int i = 0; i < outputColumns.length; i++) {
+	// 		c[rowIdx + outputColumns[i]] += preAggregatedB[n + i];
+	// 	}
+	// }
 
 	// @Override
 	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {

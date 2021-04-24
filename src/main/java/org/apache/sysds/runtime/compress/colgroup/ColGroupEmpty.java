@@ -125,14 +125,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultByMatrix(double[] a, double[] c, int numRows, int numCols, int rl, int ru,
-		int vOff) {
+	public void leftMultByMatrix(double[] a, double[] c, int numRows, int numCols, int rl, int ru, int vOff) {
 		// do nothing.
 	}
 
@@ -247,7 +240,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 
 	@Override
 	protected AColGroup sliceSingleColumn(int col, int idx) {
-		return new ColGroupEmpty(new int[col], _numRows);
+		return new ColGroupEmpty(new int[] {0}, _numRows);
 	}
 
 	@Override
@@ -255,4 +248,8 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		return new ColGroupEmpty(outputCols, _numRows);
 	}
 
+	@Override
+	public AColGroup rightMultByMatrix(MatrixBlock right) {
+		return null;
+	}
 }

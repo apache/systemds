@@ -195,13 +195,13 @@ public class ColGroupConst extends ColGroupValue {
 	// 	}
 	// }
 
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-			int ru) {
-		for (int i = rl * thatNrColumns; i < ru * thatNrColumns; i += thatNrColumns)
-			for (int j = 0; j < outputColumns.length; j++)
-				c[outputColumns[j] + i] += preAggregatedB[j];
-	}
+	// @Override
+	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	// 		int ru) {
+	// 	for (int i = rl * thatNrColumns; i < ru * thatNrColumns; i += thatNrColumns)
+	// 		for (int j = 0; j < outputColumns.length; j++)
+	// 			c[outputColumns[j] + i] += preAggregatedB[j];
+	// }
 
 	public double[] preAggregate(double[] a, int row) {
 		return new double[] { preAggregateSingle(a, row) };

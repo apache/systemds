@@ -1,0 +1,200 @@
+
+
+
+sim_garch = function(Double a0, Double arch_coef, Double var_coef, Integer simsteps, Integer seed)
+return (Matrix[Double] Xt, Matrix[Double] var_hist) {
+
+    # init var and std
+    var = a0 / (1 - arch_coef - var_coef)
+    std = sqrt(var)
+
+    # init outputs
+    var_hist = matrix(0, rows=0, cols=1)
+    Xt = matrix(0, rows=0, cols=1)
+
+    # recursively construct time series
+    for (t in seq(1,simsteps,1)) {
+        noise = as.scalar(rand(rows=1, cols=1, pdf="normal", seed=seed)) # N(0,1) noise
+        xt = noise * std
+
+        Xt = rbind(Xt, matrix(xt, rows=1,cols=1))
+        var_hist = rbind(var_hist,  matrix(var, rows=1,cols=1))
+
+        # get var and std for next round
+        var = a0 + arch_coef * (xt^2) + var_coef * var
+        std = sqrt(var)
+
+        seed = seed + 1
+    }
+}
+
+# test sim garch ______________________________________________________
+a0 = 0.2
+arch_coef = 0.02
+var_coef = 0.005
+simsteps = 500
+seed = 0
+
+[Xt, var_hist] = sim_garch(a0, arch_coef, var_coef, simsteps, seed)
+print(nrow(Xt))
+
+# ______________________________________________________
+
+# qmle ________________________________________________________________
+# https://math.berkeley.edu/~btw/thesis4.pdf
+
+qmle = function(Matrix[Double] Xt, Double a0, Double arch_coef, Double var_coef)
+return (Double qmle) {
+    n = nrow(Xt)
+
+    # initialize var
+    var_0 = a0 / (1-arch_coef - var_coef)
+    vars = matrix(var_0, rows=1, cols=1)
+
+    # init loop for var and qmle computation
+    var_lag = var_0
+    xq_lag = as.scalar(Xt[1,1])^2
+    qmle = 0
+
+    # compute vars and qmle recursively
+    for (t in 2:n) {
+
+        xq_t = as.scalar(Xt[t,1])^2
+        var_t = a0 + arch_coef*xq_lag + var_coef*var_lag
+        qmle = qmle + 1/2*log(var_t) + (xq_t / var_t)
+
+        vars = rbind(vars, matrix(var_t, rows=1, cols=1))
+        var_lag = var_t
+        xq_lag = xq_t
+    }
+}
+
+#log_likelihood =  qmle(Xt, a0, arch_coef, var_coef)
+#print(log_likelihood)
+
+#log_likelihood =  qmle(Xt, 0.1, 0.4, 0.1)
+#print(log_likelihood)
+
+
+# ______________________________________________________
+# returns coefs which yield a stationary garch process sampled uniform at random
+
+sample_candidate = function()
+return (Double a0, Double arch_coef, Double var_coef) {
+    a0 = as.scalar(rand(rows=1, cols=1))
+    arch_coef = as.scalar(rand(rows=1, cols=1))
+    var_coef = as.scalar(rand(rows=1, cols=1))
+
+    while (arch_coef + var_coef >= 1) {
+        arch_coef = as.scalar(rand(rows=1, cols=1))
+        var_coef = as.scalar(rand(rows=1, cols=1))
+    }
+}
+
+sample_neighbor = function(Double a0, Double arch_coef, Double var_coef, Double nb_eps)
+return (Double nb_a0, Double nb_arch_coef, Double nb_var_coef) {
+
+    [sample_a0, sample_arch_coef, sample_var_coef] = sample_candidate()
+
+    nb_a0 = nb_eps * sample_a0 + (1-nb_eps) * a0
+    nb_arch_coef = nb_eps * sample_arch_coef + (1-nb_eps) * arch_coef
+    nb_var_coef = nb_eps * sample_var_coef + (1-nb_eps) * var_coef
+
+    print("inside fct")
+    print(nb_a0)
+    print(nb_arch_coef)
+    print(nb_var_coef)
+
+}
+
+diff_qmle = function(Matrix[Double] Xt, Double a0, Double arch_coef, Double var_coef, Double curr_qmle)
+return (Double diff_a0, Double diff_arch_coef, Double diff_var_coef) {
+
+    nb_eps = 0.1
+    [nb_a0, nb_arch_coef, nb_var_coef] = sample_neighbor(a0, arch_coef, var_coef, nb_eps)
+
+    # BUG ? ________________________________________________________
+    # what is happening here ?
+    # comment L120 and uncomment L124 yields a null-pointer exception; commenting both works, uncomment L120 and comment L124 works too
+
+    df_a0 = qmle(Xt, nb_a0, arch_coef, var_coef) - curr_qmle
+    print("arch_coef")
+    print(nb_arch_coef)
+
+    df_a0 = qmle(Xt, nb_a0, arch_coef, var_coef) - curr_qmle
+    #_______________________________________________________________
+
+
+    #print(nb_a0)
+    #print(nb_arch_coef)
+    #print(nb_var_coef)
+    #print(curr_qmle)
+
+    #print(a0)
+    #print(arch_coef)
+    #print(var_coef)
+
+    #df_a0 = qmle(Xt, nb_a0, arch_coef, var_coef) - curr_qmle
+    #df_arch_coef = 0 #qmle(Xt, a0, nb_arch_coef, var_coef) - curr_qmle
+    #df_var_coef = 0 #qmle(Xt, a0, arch_coef, nb_var_coef) - curr_qmle
+
+    diff_a0 = 0             # df_a0 / (nb_a0 - a0)
+    diff_arch_coef = 0      # df_arch_coef / (nb_arch_coef - arch_coef)
+    diff_var_coef = 0       #df_var_coef / (nb_var_coef - var_coef)
+
+}
+
+
+# TODO implement descent with momentum (esque)
+# use simulated annealing
+# when available, use BHHH or BFGS to maximize qmle
+
+fit_garch = function(Matrix[Double] Xt, Integer kmax, Double stepsize, Double momentum)
+return (Double a0, Double arch_coef, Double var_coef) {
+
+    decay_rate = - 2/(log(2)*kmax) # halflife of kmax/2
+    nb_eps = 0.01
+
+    # initialize
+    [a0, arch_coef, var_coef] = sample_candidate()
+    print(arch_coef)
+
+    curr_qmle = qmle(Xt, a0, arch_coef, var_coef)
+
+    change_a0 = 0
+    change_arch_coef = 0
+    change_var_coef = 0
+
+    for (k in 1:kmax-1) {
+        #temp = (kmax-k) / kmax # from 1 -> 0
+        temp = exp(decay_rate*k)
+
+        [diff_a0, diff_arch_coef, diff_var_coef] = diff_qmle(Xt, a0, arch_coef, var_coef, curr_qmle)
+
+
+        #print(diff_a0)
+        #print(diff_arch_coef)
+        #print(diff_var_coef)
+        print("")
+
+        change_a0 = stepsize * diff_a0 #+ momentum * change_a0
+        change_arch_coef = stepsize * diff_arch_coef #+ momentum * change_arch_coef
+        change_var_coef = stepsize * diff_var_coef #+ momentum * change_var_coef
+
+        #a0 = a0 + change_a0
+        #arch_coef = arch_coef + change_a0
+        #var_coef = var_coef + change_var_coef
+    }
+}
+
+[fitted_a0, fitted_arch_coef, fitted_var_coef] = fit_garch(Xt, 10, 0.005, 0.9)
+
+#print(a0)
+#print(arch_coef)
+#print(garch_coef)
+
+#[Yt, var_hist] = sim_garch(fitted_a0, fitted_arch_coef, fitted_var_coef, nrow(Xt), 0)
+
+
+#print("")
+#print("mse: " + toString(sum((Xt - Yt)^2) / nrow(Xt)))

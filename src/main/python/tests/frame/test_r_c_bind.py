@@ -43,7 +43,6 @@ class TestRCBind(unittest.TestCase):
     df_rb_1 = pd.DataFrame(
         {"col1": ["col1_hello_1", "col1_world_1"], "col2": [0, 1], "col3": [0.0, 0.1]}
     )
-
     #shape (4, 3)
     df_rb_2 = pd.DataFrame(
         {
@@ -52,7 +51,6 @@ class TestRCBind(unittest.TestCase):
             "col3": [0.2, 0.3, 0.4, 0.5],
         }
     )
-
     #shape (3, 3)
     df_rb_3 = pd.DataFrame(
         {
@@ -75,6 +73,7 @@ class TestRCBind(unittest.TestCase):
         f1 = Frame(self.sds, self.df_rb_1)
         f2 = Frame(self.sds, self.df_rb_2)
         result_df = f1.rbind(f2).compute()
+        self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_rb_1, self.df_rb_2], ignore_index=True)
         self.assertTrue(target_df.equals(result_df))
 
@@ -82,7 +81,8 @@ class TestRCBind(unittest.TestCase):
         f1 = Frame(self.sds, self.df_rb_1)
         f2 = Frame(self.sds, self.df_rb_2)
         f3 = Frame(self.sds, self.df_rb_3)
-        result_df = f1.rbind(f2).rbind(f3).compute()        
+        result_df = f1.rbind(f2).rbind(f3).compute()
+        self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_rb_1, self.df_rb_2, self.df_rb_3], ignore_index=True)
         self.assertTrue(target_df.equals(result_df))
     
@@ -92,6 +92,7 @@ class TestRCBind(unittest.TestCase):
         f3 = Frame(self.sds, self.df_rb_3)
         tmp_df = f1.rbind(f2).compute()
         result_df = Frame(self.sds, tmp_df).rbind(f3).compute()
+        self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_rb_1, self.df_rb_2, self.df_rb_3], ignore_index=True)
         self.assertTrue(target_df.equals(result_df))
     
@@ -99,6 +100,7 @@ class TestRCBind(unittest.TestCase):
         f1 = Frame(self.sds, self.df_cb_1)
         f2 = Frame(self.sds, self.df_cb_2)
         result_df = f1.cbind(f2).compute()
+        self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df= pd.concat([self.df_cb_1, self.df_cb_2], axis=1)
         self.assertTrue(target_df.equals(result_df))
 
@@ -107,6 +109,7 @@ class TestRCBind(unittest.TestCase):
         f2 = Frame(self.sds, self.df_cb_2)
         f3 = Frame(self.sds, self.df_cb_3)
         result_df = f1.cbind(f2).cbind(f3).compute()
+        self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_cb_1, self.df_cb_2, self.df_cb_3], axis=1)
         self.assertTrue(target_df.equals(result_df))
 
@@ -116,6 +119,7 @@ class TestRCBind(unittest.TestCase):
         f3 = Frame(self.sds, self.df_cb_3)
         tmp_df = f1.cbind(f2).compute()
         result_df = Frame(self.sds, tmp_df).cbind(f3).compute()
+        self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_cb_1, self.df_cb_2, self.df_cb_3], axis=1)
         self.assertTrue(target_df.equals(result_df))
 

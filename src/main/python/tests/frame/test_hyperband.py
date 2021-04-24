@@ -56,7 +56,7 @@ class TestHyperband(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_return_types(self):
+    def test_hyperband(self):
         x_train = Matrix(self.sds, self.X_train)
         y_train = Matrix(self.sds, self.y_train)
         x_val = Matrix(self.sds, self.X_val)

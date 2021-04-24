@@ -651,33 +651,18 @@ class OperationNode(DAGNode):
         :return: The OperationNode containing the concatenated matrices.
         """
         self._check_equal_op_type_as(other)
-        # self._check_matrix_op()
         self._check_matrix_or_frame_op()
-        # other._check_matrix_or_frame_op()
-        if self.output_type == OutputType.MATRIX:
-            if self.shape[1] != other.shape[1]:
-                raise ValueError(
-                    "The input matrices to rbind does not have the same number of columns"
-                )
-
-            return OperationNode(
-                self.sds_context,
-                "rbind",
-                [self, other],
-                shape=(self.shape[0] + other.shape[0], self.shape[1]),
+        if self.shape[1] != other.shape[1]:
+            raise ValueError(
+                "The inputs to rbind do not have the same number of columns"
             )
-        if self.output_type == OutputType.FRAME:
-            if self.shape[1] != other.shape[1]:
-                raise ValueError(
-                    "The input frames to rbind do not have the same number of columns"
-                )
-            return OperationNode(
-                self.sds_context,
-                "rbind",
-                [self, other],
-                shape=(self.shape[0] + other.shape[0], self.shape[1]),
-                output_type=OutputType.FRAME,
-            )
+        return OperationNode(
+            self.sds_context,
+            "rbind",
+            [self, other],
+            shape=(self.shape[0] + other.shape[0], self.shape[1]),
+            output_type=self._output_type,
+        )
 
     def cbind(self, other: "OperationNode") -> "OperationNode":
         """
@@ -686,56 +671,14 @@ class OperationNode(DAGNode):
         :return: The OperationNode containing the concatenated matrices.
         """
         self._check_equal_op_type_as(other)
-        # self._check_matrix_op()
         self._check_matrix_or_frame_op()
-        # other._check_matrix_or_frame_op()
-        if self.output_type == OutputType.MATRIX:
-            if self.shape[0] != other.shape[0]:
-                raise ValueError(
-                    "The input matrices to cbind does not have the same number of rows"
-                )
-            return OperationNode(
-                self.sds_context,
-                "cbind",
-                [self, other],
-                shape=(self.shape[0], self.shape[1] + other.shape[1]),
-            )
-        if self.output_type == OutputType.FRAME:
-            if self.shape[0] != other.shape[0]:
-                raise ValueError(
-                    "The input frames to cbind do not have the same number of rows"
-                )
-            return OperationNode(
-                self.sds_context,
-                "cbind",
-                [self, other],
-                shape=(self.shape[0], self.shape[1] + other.shape[1],),
-                output_type=OutputType.FRAME,
-            )
-
-    def transform_encode(self, spec):
-        self._check_frame_op()
-        self._check_other(spec, OutputType.SCALAR)
-        params_dict = {"target": self, "spec": spec}
+        if self.shape[0] != other.shape[0]:
+            raise ValueError("The inputs to cbind do not have the same number of rows")
         return OperationNode(
             self.sds_context,
-            "transformencode",
-            named_input_nodes=params_dict,
-            output_type=OutputType.LIST,
-            number_of_outputs=2,
-            output_types=[OutputType.MATRIX, OutputType.FRAME],
-        )
-
-    def transform_apply(self, spec: "OperationNode", meta: "OperationNode"):
-        self._check_frame_op()
-        self._check_other(spec, OutputType.SCALAR)
-        self._check_other(meta, OutputType.FRAME)
-        params_dict = {"target": self, "spec": spec, "meta": meta}
-        return OperationNode(
-            self.sds_context,
-            "transformapply",
-            named_input_nodes=params_dict,
-            output_type=OutputType.MATRIX,
-            number_of_outputs=1,
+            "cbind",
+            [self, other],
+            shape=(self.shape[0], self.shape[1] + other.shape[1],),
+            output_type=self._output_type,
         )
 

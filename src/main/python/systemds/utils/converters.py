@@ -120,13 +120,11 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
         for i in range(len(col_names)):
             j_colNameArray[i] = col_names[i]
         j = 0
-
         for j, col_name in enumerate(col_names):
-            col_data = pd_df[col_name].to_numpy().astype(str)
+            col_data = pd_df[col_name].fillna("").to_numpy(dtype=str)
             for i in range(col_data.shape[0]):
-                if col_data[i] == "None":
-                    continue
-                j_dataArray[i][j] = col_data[i]
+                if col_data[i]:
+                    j_dataArray[i][j] = col_data[i]
         fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, j_dataArray)
 
         return fb

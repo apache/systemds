@@ -35,7 +35,7 @@ class TestWriteRead(unittest.TestCase):
     temp_dir: str = "tests/frame/temp_write/"
     n_cols = 3
     n_rows = 100
-    df = df_rb_2 = pd.DataFrame(
+    df = pd.DataFrame(
         {
             "col1": [f"col1_string_{i}" for i in range(n_rows)],
             "col2": [i for i in range(n_rows)],
@@ -59,7 +59,6 @@ class TestWriteRead(unittest.TestCase):
         frame.write(self.temp_dir + "01").compute()
         NX = self.sds.read(self.temp_dir + "01", data_type="frame")
         result_df = NX.compute()
-        # currently only checking for values, because column names are not stored?
         self.assertTrue((self.df.values == result_df.values).all())
 
     def test_write_read_csv(self):
@@ -67,6 +66,7 @@ class TestWriteRead(unittest.TestCase):
         frame.write(self.temp_dir + "02", header=True, format="csv").compute()
         NX = self.sds.read(self.temp_dir + "02", data_type="frame", format="csv")
         result_df = NX.compute()
+        self.assertTrue(isinstance(result_df, pd.DataFrame))
         self.assertTrue(self.df.equals(result_df))
 
 

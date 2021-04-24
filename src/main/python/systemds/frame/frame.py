@@ -100,3 +100,29 @@ class Frame(OperationNode):
 
     def _is_pandas(self) -> bool:
         return self._pd_dataframe is not None
+
+    def transform_encode(self, spec):
+        self._check_frame_op()
+        self._check_other(spec, OutputType.SCALAR)
+        params_dict = {"target": self, "spec": spec}
+        return OperationNode(
+            self.sds_context,
+            "transformencode",
+            named_input_nodes=params_dict,
+            output_type=OutputType.LIST,
+            number_of_outputs=2,
+            output_types=[OutputType.MATRIX, OutputType.FRAME],
+        )
+
+    def transform_apply(self, spec: "OperationNode", meta: "OperationNode"):
+        self._check_frame_op()
+        self._check_other(spec, OutputType.SCALAR)
+        self._check_other(meta, OutputType.FRAME)
+        params_dict = {"target": self, "spec": spec, "meta": meta}
+        return OperationNode(
+            self.sds_context,
+            "transformapply",
+            named_input_nodes=params_dict,
+            output_type=OutputType.MATRIX,
+            number_of_outputs=1,
+        )

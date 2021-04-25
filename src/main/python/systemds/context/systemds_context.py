@@ -69,20 +69,15 @@ class SystemDSContext(object):
         self.__stdout = Queue()
         self.__stderr = Queue()
 
-        Thread(
-            target=self.__enqueue_output,
-            args=(process.stdout, self.__stdout),
-            daemon=True,
-        ).start()
-        Thread(
-            target=self.__enqueue_output,
-            args=(process.stderr, self.__stderr),
-            daemon=True,
-        ).start()
+        Thread(target=self.__enqueue_output, args=(
+            process.stdout, self.__stdout), daemon=True).start()
+        Thread(target=self.__enqueue_output, args=(
+            process.stderr, self.__stderr), daemon=True).start()
 
         # Py4j connect to the started process.
         gwp = GatewayParameters(port=port, eager_load=True)
-        self.java_gateway = JavaGateway(gateway_parameters=gwp, java_process=process)
+        self.java_gateway = JavaGateway(
+            gateway_parameters=gwp, java_process=process)
 
     def get_stdout(self, lines: int = -1):
         """Getter for the stdout of the java subprocess
@@ -120,47 +115,43 @@ class SystemDSContext(object):
         print(e)
         self.close()
 
-    def __try_startup(self, command, rep=0):
+
+    def __try_startup(self, command, rep = 0):
         try:
             process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
             self.__verify_startup(process)
             return process
         except Exception as e:
-            if rep > 3:
-                raise Exception(
-                    "Failed to start SystemDS context with " + rep + " repeated tries"
-                )
+            if rep > 3: 
+                raise Exception("Failed to start SystemDS context with " + rep + " repeated tries")
             else:
                 rep += 1
                 print("Failed to startup JVM process, retrying: " + rep)
-                sleep(rep)  # Sleeping increasingly long time, maybe this helps.
+                sleep(rep) # Sleeping increasingly long time, maybe this helps.
                 return self.__try_startup(command, rep)
 
     def __verify_startup(self, process):
         first_stdout = process.stdout.readline()
-        if not b"GatewayServer Started" in first_stdout:
+        if(not b"GatewayServer Started" in first_stdout):
             stderr = process.stderr.readline().decode("utf-8")
-            if len(stderr) > 1:
-                raise Exception("Exception in startup of GatewayServer: " + stderr)
+            if(len(stderr) > 1):
+                raise Exception(
+                    "Exception in startup of GatewayServer: " + stderr)
             outputs = []
             outputs.append(first_stdout.decode("utf-8"))
             max_tries = 10
             for i in range(max_tries):
                 next_line = process.stdout.readline()
-                if b"GatewayServer Started" in next_line:
+                if(b"GatewayServer Started" in next_line):
                     print("WARNING: Stdout corrupted by prints: " + str(outputs))
                     print("Startup success")
                     break
                 else:
                     outputs.append(next_line)
 
-                if i == max_tries - 1:
-                    raise Exception(
-                        "Error in startup of systemDS gateway process: \n gateway StdOut: "
-                        + str(outputs)
-                        + " \n gateway StdErr"
-                        + process.stderr.readline().decode("utf-8")
-                    )
+                if (i == max_tries-1):
+                    raise Exception("Error in startup of systemDS gateway process: \n gateway StdOut: " + str(
+                        outputs) + " \n gateway StdErr" + process.stderr.readline().decode("utf-8"))
 
     def __build_startup_command(self):
 
@@ -181,13 +172,12 @@ class SystemDSContext(object):
             command.append(classpath)
             files = glob(os.path.join(root, "conf", "log4j*.properties"))
             if len(files) > 1:
-                print("WARNING: Multiple logging files found selecting: " + files[0])
-            if len(files) == 0:
                 print(
-                    "WARNING: No log4j file found at: "
-                    + os.path.join(root, "conf")
-                    + " therefore using default settings"
-                )
+                    "WARNING: Multiple logging files found selecting: " + files[0])
+            if len(files) == 0:
+                print("WARNING: No log4j file found at: "
+                      + os.path.join(root, "conf")
+                      + " therefore using default settings")
             else:
                 command.append("-Dlog4j.configuration=file:" + files[0])
         else:
@@ -233,7 +223,7 @@ class SystemDSContext(object):
         s.close()
         return port
 
-    def full(self, shape: Tuple[int, int], value: Union[float, int]) -> "OperationNode":
+    def full(self, shape: Tuple[int, int], value: Union[float, int]) -> 'OperationNode':
         """Generates a matrix completely filled with a value
 
         :param sds_context: SystemDS context
@@ -242,15 +232,11 @@ class SystemDSContext(object):
         :return: the OperationNode representing this operation
         """
         unnamed_input_nodes = [value]
-        named_input_nodes = {"rows": shape[0], "cols": shape[1]}
-        return OperationNode(self, "matrix", unnamed_input_nodes, named_input_nodes)
+        named_input_nodes = {'rows': shape[0], 'cols': shape[1]}
+        return OperationNode(self, 'matrix', unnamed_input_nodes, named_input_nodes)
 
-    def seq(
-        self,
-        start: Union[float, int],
-        stop: Union[float, int] = None,
-        step: Union[float, int] = 1,
-    ) -> "OperationNode":
+    def seq(self, start: Union[float, int], stop: Union[float, int] = None,
+            step: Union[float, int] = 1) -> 'OperationNode':
         """Create a single column vector with values from `start` to `stop` and an increment of `step`.
         If no stop is defined and only one parameter is given, then start will be 0 and the parameter will be interpreted as
         stop.
@@ -265,19 +251,12 @@ class SystemDSContext(object):
             stop = start
             start = 0
         unnamed_input_nodes = [start, stop, step]
-        return OperationNode(self, "seq", unnamed_input_nodes)
+        return OperationNode(self, 'seq', unnamed_input_nodes)
 
-    def rand(
-        self,
-        rows: int,
-        cols: int,
-        min: Union[float, int] = None,
-        max: Union[float, int] = None,
-        pdf: str = "uniform",
-        sparsity: Union[float, int] = None,
-        seed: Union[float, int] = None,
-        lambd: Union[float, int] = 1,
-    ) -> "OperationNode":
+    def rand(self, rows: int, cols: int,
+             min: Union[float, int] = None, max: Union[float, int] = None, pdf: str = "uniform",
+             sparsity: Union[float, int] = None, seed: Union[float, int] = None,
+             lambd: Union[float, int] = 1) -> 'OperationNode':
         """Generates a matrix filled with random values
 
         :param sds_context: SystemDS context
@@ -293,38 +272,30 @@ class SystemDSContext(object):
         """
         available_pdfs = ["uniform", "normal", "poisson"]
         if rows < 0:
-            raise ValueError(
-                "In rand statement, can only assign rows a long (integer) value >= 0 "
-                "-- attempted to assign value: {r}".format(r=rows)
-            )
+            raise ValueError("In rand statement, can only assign rows a long (integer) value >= 0 "
+                             "-- attempted to assign value: {r}".format(r=rows))
         if cols < 0:
-            raise ValueError(
-                "In rand statement, can only assign cols a long (integer) value >= 0 "
-                "-- attempted to assign value: {c}".format(c=cols)
-            )
+            raise ValueError("In rand statement, can only assign cols a long (integer) value >= 0 "
+                             "-- attempted to assign value: {c}".format(c=cols))
         if pdf not in available_pdfs:
-            raise ValueError(
-                "The pdf passed is invalid! given: {g}, expected: {e}".format(
-                    g=pdf, e=available_pdfs
-                )
-            )
+            raise ValueError("The pdf passed is invalid! given: {g}, expected: {e}".format(
+                g=pdf, e=available_pdfs))
 
-        pdf = '"' + pdf + '"'
-        named_input_nodes = {"rows": rows, "cols": cols, "pdf": pdf, "lambda": lambd}
+        pdf = '\"' + pdf + '\"'
+        named_input_nodes = {
+            'rows': rows, 'cols': cols, 'pdf': pdf, 'lambda': lambd}
         if min is not None:
-            named_input_nodes["min"] = min
+            named_input_nodes['min'] = min
         if max is not None:
-            named_input_nodes["max"] = max
+            named_input_nodes['max'] = max
         if sparsity is not None:
-            named_input_nodes["sparsity"] = sparsity
+            named_input_nodes['sparsity'] = sparsity
         if seed is not None:
-            named_input_nodes["seed"] = seed
+            named_input_nodes['seed'] = seed
 
-        return OperationNode(self, "rand", [], named_input_nodes=named_input_nodes)
+        return OperationNode(self, 'rand', [], named_input_nodes=named_input_nodes)
 
-    def read(
-        self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]
-    ) -> "OperationNode":
+    def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
         """ Read an file from disk. Supportted types include:
         CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binay
         See: http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions for more details
@@ -350,11 +321,10 @@ class SystemDSContext(object):
                     shape=(-1,),
                     output_type=OutputType.SCALAR,
                 )
-        return OperationNode(
-            self, "read", [f'"{path}"'], named_input_nodes=kwargs, shape=(-1,)
-        )
+        return OperationNode(self, "read", [f'"{path}"'], 
+                             named_input_nodes=kwargs, shape=(-1,))
 
-    def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> "OperationNode":
+    def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
         """ Construct an scalar value, this can contain str, float, double, integers and booleans.
         :return: An `OperationNode` containing the scalar value.
         """

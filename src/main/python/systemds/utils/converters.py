@@ -23,14 +23,13 @@ import numpy as np
 import pandas as pd
 from py4j.java_gateway import JavaClass, JavaObject, JVMView, JavaGateway
 
-
-def numpy_to_matrix_block(sds: "SystemDSContext", np_arr: np.array):
+def numpy_to_matrix_block(sds: 'SystemDSContext', np_arr: np.array):
     """Converts a given numpy array, to internal matrix block representation.
 
     :param sds: The current systemds context.
     :param np_arr: the numpy array to convert to matrixblock.
     """
-    assert np_arr.ndim <= 2, "np_arr invalid, because it has more than 2 dimensions"
+    assert (np_arr.ndim <= 2), "np_arr invalid, because it has more than 2 dimensions"
     rows = np_arr.shape[0]
     cols = np_arr.shape[1] if np_arr.ndim == 2 else 1
     # If not numpy array then convert to numpy array

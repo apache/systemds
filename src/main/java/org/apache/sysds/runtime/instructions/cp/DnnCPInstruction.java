@@ -475,8 +475,8 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
 			}
 			else {
-				outputBlock = new MatrixBlock(N, C*H*W, false).allocateBlock();
 				PoolingType poolType = (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) ? PoolingType.MAX : PoolingType.AVG;
+				outputBlock = (poolType == PoolingType.MAX ) ? new MatrixBlock(N, C*H*W, true).allocateBlock() : new MatrixBlock(N, C*H*W, false).allocateBlock();
 				boolean performReLUBackward = instOpcode.equalsIgnoreCase("relu_maxpooling_backward");
 				if(performReLUBackward)
 					params.minValForMaxPoolOperations = 0;
@@ -494,6 +494,9 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				boolean sparse = matBlock.isUltraSparse(false) && params.bias == null
 					&& matBlock.getInMemorySize() < MatrixBlock.estimateSizeDenseInMemory(N, K*P*Q);
 				outputBlock = new MatrixBlock(N, K*P*Q, sparse).allocateBlock();
+				if(params.enableNative && matBlock.isInSparseFormat())
+					matBlock.sparseToDense();
+				
 				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
 					LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
 				else
@@ -528,6 +531,9 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 					// Handle situation where both input and filter are non empty, but bias is empty
 					params.bias = bias;
 				}
+				if(params.enableNative  && matBlock.isInSparseFormat())
+					matBlock.sparseToDense();
+				
 				if(params.enableNative && !isFilterSparse(filter) && !matBlock.isInSparseFormat())
 					LibMatrixNative.conv2d(matBlock, filter, outputBlock, params);
 				else

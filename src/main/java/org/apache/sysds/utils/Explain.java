@@ -926,7 +926,7 @@ public class Explain
 		}
 	}
 
-	private static String explainFunctionCallGraph(FunctionCallGraph fgraph, HashSet<String> fstack, String fkey, int level)
+	public static String explainFunctionCallGraph(FunctionCallGraph fgraph, HashSet<String> fstack, String fkey, int level)
 	{
 		StringBuilder builder = new StringBuilder();
 		String offset = createOffset(level);

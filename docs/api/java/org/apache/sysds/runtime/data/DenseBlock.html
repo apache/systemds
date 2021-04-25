@@ -18,8 +18,8 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":10,"i9":10,"i10":6,"i11":10,"i12":6,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":6,"i20":10,"i21":10,"i22":6,"i23":6,"i24":6,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":6,"i31":10,"i32":6,"i33":6,"i34":6,"i35":6,"i36":6,"i37":6,"i38":6,"i39":10,"i40":6,"i41":10,"i42":10,"i43":10,"i44":10,"i45":6,"i46":10,"i47":6,"i48":6};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":9,"i7":6,"i8":6,"i9":10,"i10":10,"i11":6,"i12":10,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":6,"i20":6,"i21":10,"i22":10,"i23":6,"i24":6,"i25":6,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":6,"i32":10,"i33":6,"i34":6,"i35":6,"i36":6,"i37":6,"i38":6,"i39":6,"i40":10,"i41":6,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":6,"i48":10,"i49":6,"i50":6};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -160,7 +160,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
@@ -208,56 +208,61 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </td>
 </tr>
 <tr id="i6" class="altColor">
+<td class="colFirst"><code>static double</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#estimateMemory-long-long-">estimateMemory</a></span>(long&nbsp;nrows,
+              long&nbsp;ncols)</code>&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>abstract double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#get-int:A-">get</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Get the value of a given cell</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>abstract double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#get-int-int-">get</a></span>(int&nbsp;r,
    int&nbsp;c)</code>
 <div class="block">Get the value for a given row and column.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getCumODims-int-">getCumODims</a></span>(int&nbsp;i)</code>
 <div class="block">Get the ith cumulative dimensions size of the dense block, without row.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getDim-int-">getDim</a></span>(int&nbsp;i)</code>
 <div class="block">Get the ith dimensions size of the dense block.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>abstract long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getLong-int:A-">getLong</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Get the value of a given cell as long</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getNextIndexes-int:A-">getNextIndexes</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Calculates the next index array.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>abstract <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getString-int:A-">getString</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Get the value of a given cell as a String</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#incr-int-int-">incr</a></span>(int&nbsp;r,
     int&nbsp;c)</code>
 <div class="block">Increments the given value for a given row and column.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#incr-int-int-double-">incr</a></span>(int&nbsp;r,
     int&nbsp;c,
@@ -266,20 +271,20 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  by delta.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#index-int-">index</a></span>(int&nbsp;r)</code>
 <div class="block">Get the block index for a given row.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#isContiguous--">isContiguous</a></span>()</code>
 <div class="block">Indicates if the dense block has a single
  underlying block, i.e., if numBlocks==1.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#isContiguous-int-int-">isContiguous</a></span>(int&nbsp;rl,
             int&nbsp;ru)</code>
@@ -287,45 +292,45 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  underlying block for the given row range.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#isNumeric--">isNumeric</a></span>()</code>
 <div class="block">Indicates if the dense block is numeric.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#numBlocks--">numBlocks</a></span>()</code>
 <div class="block">Get the number of allocated blocks.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#numDims--">numDims</a></span>()</code>
 <div class="block">Get the number of dimensions.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#numRows--">numRows</a></span>()</code>
 <div class="block">Get the number of rows.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>abstract int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#pos-int-">pos</a></span>(int&nbsp;r)</code>
 <div class="block">Get the position for a given row within
  its associated block.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#pos-int:A-">pos</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Get the position for a given cell
  within the associated block.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>abstract int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#pos-int-int-">pos</a></span>(int&nbsp;r,
    int&nbsp;c)</code>
@@ -333,40 +338,40 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  within the associated block.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset--">reset</a></span>()</code>
 <div class="block">Resets the dense block by deleting non-zero values.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int:A-">reset</a></span>(int[]&nbsp;dims)</code>
 <div class="block">Resets the dense block by deleting non-zero values.</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int:A-double-">reset</a></span>(int[]&nbsp;dims,
      double&nbsp;v)</code>
 <div class="block">Resets the dense block by deleting non-zeros.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int-">reset</a></span>(int&nbsp;rlen,
      int&nbsp;clen)</code>
 <div class="block">Resets the dense block by deleting non-zeros.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int:A-">reset</a></span>(int&nbsp;rlen,
      int[]&nbsp;odims)</code>
 <div class="block">Resets the dense block by deleting non-zeros.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int:A-double-">reset</a></span>(int&nbsp;rlen,
      int[]&nbsp;odims,
@@ -374,7 +379,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Resets the dense block by setting the given value.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int-double-">reset</a></span>(int&nbsp;rlen,
      int&nbsp;clen,
@@ -382,47 +387,47 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Resets the dense block by setting the given value.</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-org.apache.sysds.runtime.data.DenseBlock-">set</a></span>(<a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;db)</code>
 <div class="block">Copy the given dense block.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-double-">set</a></span>(double&nbsp;v)</code>
 <div class="block">Set the given value for the entire dense block (fill).</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int:A-double-">set</a></span>(int[]&nbsp;ix,
    double&nbsp;v)</code>
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int:A-long-">set</a></span>(int[]&nbsp;ix,
    long&nbsp;v)</code>
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int:A-java.lang.String-">set</a></span>(int[]&nbsp;ix,
    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;v)</code>
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int-double:A-">set</a></span>(int&nbsp;r,
    double[]&nbsp;v)</code>
 <div class="block">Copy the given vector into the given row.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int-int-double-">set</a></span>(int&nbsp;r,
    int&nbsp;c,
@@ -430,7 +435,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Set the given value for a given row and column.</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int-int-int-int-org.apache.sysds.runtime.data.DenseBlock-">set</a></span>(int&nbsp;rl,
    int&nbsp;ru,
@@ -441,7 +446,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  index range.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int-int-int-int-double-">set</a></span>(int&nbsp;rl,
    int&nbsp;ru,
@@ -452,7 +457,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  dense block (fill).</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int-org.apache.sysds.runtime.instructions.cp.KahanObject-">set</a></span>(int&nbsp;r,
    <a href="../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>&nbsp;kbuff)</code>
@@ -460,42 +465,48 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  into the given row.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-org.apache.sysds.runtime.instructions.cp.KahanObject-">set</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>&nbsp;kbuff)</code>
 <div class="block">Copy the given kahan object sum and correction.</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-java.lang.String-">set</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;s)</code>
 <div class="block">Set the given string for the entire dense block (fill).</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i45" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#setDims-int:A-">setDims</a></span>(int[]&nbsp;dims)</code>
+<div class="block">Set the dimensions of the dense MatrixBlock.</div>
+</td>
+</tr>
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#size--">size</a></span>()</code>
 <div class="block">Get the length of the dense block as the product
  of all dimensions.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>abstract int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#size-int-">size</a></span>(int&nbsp;bix)</code>
 <div class="block">Get the length of the given block.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#values-int-">values</a></span>(int&nbsp;r)</code>
 <div class="block">Get the allocated block for the given row.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#valuesAt-int-">valuesAt</a></span>(int&nbsp;bix)</code>
 <div class="block">Get an allocated block.</div>
@@ -664,6 +675,30 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <dd><code>rlen</code> - number of rows</dd>
 <dd><code>odims</code> - other dimensions</dd>
 <dd><code>v</code> - value</dd>
+</dl>
+</li>
+</ul>
+<a name="estimateMemory-long-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimateMemory</h4>
+<pre>public static&nbsp;double&nbsp;estimateMemory(long&nbsp;nrows,
+                                    long&nbsp;ncols)</pre>
+</li>
+</ul>
+<a name="setDims-int:A-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setDims</h4>
+<pre>public&nbsp;void&nbsp;setDims(int[]&nbsp;dims)</pre>
+<div class="block">Set the dimensions of the dense MatrixBlock.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>dims</code> - The dimensions to set, first dimension is rows, second cols.</dd>
 </dl>
 </li>
 </ul>
@@ -1413,6 +1448,6 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

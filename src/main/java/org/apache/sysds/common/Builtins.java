@@ -101,6 +101,7 @@ public enum Builtins {
 	CUMSUMPROD("cumsumprod", false),
 	CONFUSIONMATRIX("confusionMatrix", true),
 	COR("cor", true),
+	COX("cox", true),
 	DBSCAN("dbscan", true),
 	DETECTSCHEMA("detectSchema", false),
 	DENIALCONSTRAINTS("denialConstraints", true),
@@ -132,6 +133,7 @@ public enum Builtins {
 	IMG_BRIGHTNESS("img_brightness", true),
 	IMPUTE_BY_MEAN("imputeByMean", true),
 	IMPUTE_BY_MEDIAN("imputeByMedian", true),
+	IMPUTE_BY_MODE("imputeByMode", true),
 	IMG_CROP("img_crop", true),
 	IMPUTE_FD("imputeByFD", true),
 	INTERQUANTILE("interQuantile", false),
@@ -141,6 +143,7 @@ public enum Builtins {
 	ISNA("is.na", "isNA", false),
 	ISNAN("is.nan", "isNaN", false),
 	ISINF("is.infinite", false),
+	KM("km", true),
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),
 	KNNBF("knnbf", true),
@@ -193,6 +196,7 @@ public enum Builtins {
 	PROD("prod", false),
 	QR("qr", false, ReturnType.MULTI_RETURN),
 	QUANTILE("quantile", false),
+	RANDOM_FOREST("randomForest", true),
 	RANGE("range", false),
 	RBIND("rbind", false),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),
@@ -210,6 +214,8 @@ public enum Builtins {
 	SAMPLE("sample", false),
 	SD("sd", false),
 	SEQ("seq", false),
+	SHERLOCK("sherlock", true),
+	SHERLOCKPREDICT("sherlockPredict", true),
 	SIGMOID("sigmoid", true),   // 1 / (1 + exp(-X))
 	SIGN("sign", false),
 	SIN("sin", false),
@@ -219,6 +225,7 @@ public enum Builtins {
 	SMOTE("smote", true),
 	SOLVE("solve", false),
 	SPLIT("split", true),
+	SPLIT_BALANCED("splitBalanced", true),
 	STATSNA("statsNA", true),
 	SQRT("sqrt", false),
 	SUM("sum", false),
@@ -368,6 +375,7 @@ public enum Builtins {
 	}
 
 	public static String getInternalFName(String name, DataType dt) {
-		return (dt.isMatrix() ? "m_" : "s_") + name;
+		return !contains(name, true, false) ? name : // private builtin
+			(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
 	}
 }

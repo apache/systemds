@@ -337,18 +337,30 @@ __device__ void vectDivAdd(T* a, T b, T* c, int ai, int ci, int len) {
 }
 
 template<typename T>
+__device__ Vector<T>& vectCbindWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t alen, uint32_t blen, TempStorage<T>* fop) {
+	Vector<T>& c = fop->getTempStorage(alen+blen);
+	auto i = threadIdx.x;
+	while(i < alen) {
+		c[i] = a[ai + i];
+		i+=gridDim.x;
+	}
+	while(i < blen) {
+		c[alen + i] = b[bi + i];
+	}
+	return c;
+}
+
+template<typename T>
 __device__ Vector<T>& vectCbindWrite(T* a, T b, uint32_t ai, uint32_t len, TempStorage<T>* fop) {
 
 	Vector<T>& c = fop->getTempStorage(len+1);
-
-	if(threadIdx.x < len) {
-//		 if(blockIdx.x==1 && threadIdx.x ==0)
-//		 	printf("vecCbindWrite: bid=%d, tid=%d, ai=%d, len=%d, a[%d]=%f\n", blockIdx.x, threadIdx.x, ai, len, ai * len + threadIdx.x, a[ai * len + threadIdx.x]);
-		c[threadIdx.x] = a[ai + threadIdx.x];
+	auto i = threadIdx.x;
+	while(i < len) {
+		c[i] = a[ai + i];
+		i += gridDim.x;
 	}
-	if(threadIdx.x == len) {
-//		printf("---> block %d thread %d, b=%f,, len=%d, a[%d]=%f\n",blockIdx.x, threadIdx.x, b, len, ai, a[ai]);
-        c[threadIdx.x] = b;
+	if(i == len) {
+        c[i] = b;
 	}
 	return c;
 }
@@ -681,9 +693,8 @@ Vector<T>& vectPow2Write(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, ui
 template<typename T>
 T vectCountnnz(T* a, uint32_t ai, uint32_t len) {
 	SumOp<T> agg_op;
-	NotEqualOp<T> load_op;
-	T result = BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
-	return result;
+	NotZero<T> load_op;
+	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
 }
 
 template<typename T>

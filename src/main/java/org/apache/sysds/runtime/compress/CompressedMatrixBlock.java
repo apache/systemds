@@ -48,6 +48,9 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
@@ -205,34 +208,20 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		// preallocation sparse rows to avoid repeated reallocations
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1);
+
 		ret.allocateDenseBlock();
-		// (nonZeros == -1) ?
-		// .allocateBlock() : new MatrixBlock(rlen, clen, sparse,
-		// nonZeros).allocateBlock();
+		// todo Add sparse decompress.
 
-		// if(ret.isInSparseFormat()) {
-		// int[] rnnz = new int[rlen];
-		// // for(ColGroup grp : _colGroups)
-		// // grp.countNonZerosPerRow(rnnz, 0, rlen);
-		// ret.allocateSparseRowsBlock();
-		// SparseBlock rows = ret.getSparseBlock();
-		// for(int i = 0; i < rlen; i++)
-		// rows.allocate(i, rnnz[i]);
-		// }
-
-		// core decompression (append if sparse)
 		for(AColGroup grp : _colGroups)
 			grp.decompressToBlockUnSafe(ret, 0, rlen, 0, grp.getValues());
 
-		// post-processing (for append in decompress)
-		if(ret.getNonZeros() == -1 || nonZeros == -1) {
-			ret.recomputeNonZeros();
-		}
-		else {
-			ret.setNonZeros(nonZeros);
-		}
 		if(ret.isInSparseFormat())
 			ret.sortSparseRows();
+
+		if(nonZeros == -1)
+			ret.setNonZeros(this.recomputeNonZeros());
+		else
+			ret.setNonZeros(nonZeros);
 
 		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
 			double t = time.stop();
@@ -256,9 +245,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		Timing time = new Timing(true);
 
 		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1).allocateBlock();
+		ret.allocateDenseBlock();
+		if(nonZeros == -1)
+			ret.setNonZeros(this.recomputeNonZeros());
+		else
+			ret.setNonZeros(nonZeros);
 
-		nonZeros = 0;
-		boolean overlapping = isOverlapping();
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
@@ -268,23 +260,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			ArrayList<DecompressTask> tasks = new ArrayList<>();
 			for(int i = 0; i < k & i * blklen < getNumRows(); i++)
 				tasks.add(
-					new DecompressTask(_colGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen), overlapping));
+					new DecompressTask(_colGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen), overlappingColGroups));
 			List<Future<Long>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
 			for(Future<Long> rt : rtasks)
-				nonZeros += rt.get(); // error handling
+				rt.get(); // error handling
 		}
 		catch(InterruptedException | ExecutionException ex) {
 			LOG.error("Parallel decompression failed defaulting to non parallel implementation " + ex.getMessage());
-			nonZeros = -1;
 			ex.printStackTrace();
 			return decompress();
-		}
-		if(overlapping) {
-			ret.recomputeNonZeros();
-		}
-		else {
-			ret.setNonZeros(nonZeros);
 		}
 
 		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
@@ -292,11 +277,28 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			LOG.debug("decompressed block w/ k=" + k + " in " + time.stop() + "ms.");
 			DMLCompressionStatistics.addDecompressTime(t, k);
 		}
+
 		return ret;
 	}
 
 	public CompressedMatrixBlock squash(int k) {
 		return CLALibSquash.squash(this, k);
+	}
+
+	@Override
+	public long recomputeNonZeros() {
+		if(overlappingColGroups) {
+			nonZeros = clen * rlen;
+		}
+		else {
+			long nnz = 0;
+			for(AColGroup g : _colGroups) {
+				nnz += g.getNumberNonZeros();
+			}
+			nonZeros = nnz;
+		}
+		return nonZeros;
+
 	}
 
 	/**
@@ -346,16 +348,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	//////////////////////////////////////////
-	// Serialization / Deserialization
+	// Serialization / De-serialization
 
 	@Override
 	public long getExactSizeOnDisk() {
 		// header information
-		long ret = 20;
-		for(AColGroup grp : _colGroups) {
-			ret += 1; // type info
-			ret += grp.getExactSizeOnDisk();
-		}
+		long ret = 4+4+8+1;
+		ret += ColGroupIO.getExactSizeOnDisk(_colGroups);
 		return ret;
 	}
 
@@ -366,7 +365,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		clen = in.readInt();
 		nonZeros = in.readLong();
 		overlappingColGroups = in.readBoolean();
-		_colGroups = ColGroupIO.readGroups(in);
+		_colGroups = ColGroupIO.readGroups(in, rlen);
 	}
 
 	@Override
@@ -419,8 +418,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock append(MatrixBlock that, MatrixBlock ret) {
-		ret = CLALibAppend.append(this, that);
-		return ret;
+		return CLALibAppend.append(this, that);
 	}
 
 	@Override
@@ -497,6 +495,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		CLALibLeftMultBy.leftMultByMatrixTransposed(this, tmp, out, k);
 		out = LibMatrixReorg.transposeInPlace(out, k);
 
+		out.recomputeNonZeros();
 		return out;
 	}
 
@@ -623,25 +622,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		// prepare output dimensions
 		CellIndex tempCellIndex = new CellIndex(-1, -1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
-
-		// if(op.aggOp.existsCorrection()) {
-		// switch(op.aggOp.correction) {
-		// case LASTROW:
-		// // tempCellIndex.row++;
-		// break;
-		// case LASTCOLUMN:
-		// // tempCellIndex.column++;
-		// break;
-		// case LASTTWOROWS:
-		// tempCellIndex.row += 1;
-		// break;
-		// case LASTTWOCOLUMNS:
-		// tempCellIndex.column += 1;
-		// break;
-		// default:
-		// throw new DMLRuntimeException("unrecognized correctionLocation: " + op.aggOp.correction);
-		// }
-		// }
 
 		// initialize and allocate the result
 		if(result == null)
@@ -811,7 +791,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			tmp = new MatrixBlock(ru + 1 - rl, getNumColumns(), false).allocateDenseBlock();
 			for(AColGroup g : getColGroups())
 				g.decompressToBlock(tmp, rl, ru + 1, 0);
-
+			tmp.recomputeNonZeros();
 			return tmp;
 		}
 		else {
@@ -825,6 +805,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			// this is fine.
 			tmp = tmp.slice(rl, ru, 0, tmp.getNumColumns() - 1, ret);
 		}
+		tmp.recomputeNonZeros();
 		ret = tmp;
 		return tmp;
 	}
@@ -1056,24 +1037,32 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
-		printDecompressWarning("sortOperations");
 		MatrixBlock right = getUncompressed(weights);
-		AColGroup grp = _colGroups.get(0);
-		if(grp.getIfCountsType() != true)
-			return grp.getValuesAsBlock().sortOperations(right, result);
-
-		if(right == null && grp instanceof ColGroupValue) {
-			MatrixBlock vals = grp.getValuesAsBlock();
-			int[] counts = ((ColGroupValue) grp).getCounts();
-			double[] data = (vals.getDenseBlock() != null) ? vals.getDenseBlockValues() : null;
-			SortUtils.sortByValue(0, vals.getNumRows(), data, counts);
-			MatrixBlock counts2 = getCountsAsBlock(counts);
-			if(counts2.isEmpty())
-				return vals;
-			return vals.sortOperations(counts2, result);
+		if(_colGroups.size() == 1){
+			AColGroup grp = _colGroups.get(0);
+			if(grp instanceof ColGroupEmpty || grp instanceof ColGroupConst)
+				return this;
+			printDecompressWarning("sortOperations");
+			if(grp instanceof ColGroupUncompressed)
+				return grp.getValuesAsBlock().sortOperations(right, result);
+	
+			if(right == null && grp instanceof ColGroupCompressed) {
+				MatrixBlock vals = grp.getValuesAsBlock();
+				int[] counts =	((ColGroupValue) grp).getCounts();
+				double[] data = (vals.getDenseBlock() != null) ? vals.getDenseBlockValues() : null;
+				SortUtils.sortByValue(0, vals.getNumRows(), data, counts);
+				MatrixBlock counts2 = getCountsAsBlock(counts);
+				if(counts2.isEmpty())
+					return vals;
+				return vals.sortOperations(counts2, result);
+			}
+			else
+				return getUncompressed().sortOperations(right, result);
 		}
-		else
-			return getUncompressed().sortOperations(right, result);
+		else{
+			printDecompressWarning("sortOperations with multiple column groups is not supported");
+			return getUncompressed().sortOperations(weights, result);
+		}
 	}
 
 	@Override
@@ -1234,7 +1223,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed, int k) {
 		throw new DMLRuntimeException("CompressedMatrixBlock: randOperationsInPlace not supported.");
 	}
-
+	
 	@Override
 	public MatrixBlock seqOperationsInPlace(double from, double to, double incr) {
 		// output should always be uncompressed
@@ -1289,7 +1278,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	}
 
-	private CompressedMatrixBlock checkType(MatrixValue thatValue) {
+	private static CompressedMatrixBlock checkType(MatrixValue thatValue) {
 		if(thatValue == null || !(thatValue instanceof CompressedMatrixBlock)) {
 			throw new DMLRuntimeException("Invalid call to copy, requre a compressed MatrixBlock to copy to");
 		}

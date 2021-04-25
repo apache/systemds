@@ -82,7 +82,7 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		// write input matrices
-		int r = r = rows / 4;
+		int r = rows / 4;
 		int c = cols;
 
 		// empty script name because we don't execute any script, just start the worker

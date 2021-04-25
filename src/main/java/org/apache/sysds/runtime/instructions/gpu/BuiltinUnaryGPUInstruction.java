@@ -29,16 +29,12 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 	int _arity;
-	CPOperand _input;
-	CPOperand _output;
 
 	protected BuiltinUnaryGPUInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String opcode,
 			String istr) {
-		super(op, opcode, istr);
+		super(op, in, null, out, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
 		this._arity = _arity;
-		_input = in;
-		_output = out;
 	}
 
 	public int getArity() {

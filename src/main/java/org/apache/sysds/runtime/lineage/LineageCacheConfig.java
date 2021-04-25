@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 
 import java.util.Comparator;
 
@@ -71,6 +72,8 @@ public class LineageCacheConfig
 		}
 	}
 
+	protected static final double CPU_CACHE_FRAC = 0.05; // 5% of JVM heap size
+	protected static final double GPU_CACHE_MAX = 0.30; // 30% of gpu memory
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
@@ -117,6 +120,7 @@ public class LineageCacheConfig
 		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
 		PINNED,    //Pinned to memory. Cannot be evicted.
+		GPUCACHED, //Points to GPU intermediate
 		TOSPILL,   //To be spilled lazily 
 		TODELETE;  //TO be removed lazily
 		public boolean canEvict() {
@@ -188,6 +192,7 @@ public class LineageCacheConfig
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		boolean insttype = inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
+			|| inst instanceof GPUInstruction
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
@@ -208,12 +213,20 @@ public class LineageCacheConfig
 			long c2 = ec.getMatrixObject(fedinst.input2).getNumColumns();
 			return(c1 == 1 || c2 == 1);
 		}
-		else { //CPInstruction
+		else if (inst instanceof ComputationCPInstruction) { //CPInstruction
 			ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
 			if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
 				return false;
 			long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
 			long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
+		else { //GPUInstruction
+			GPUInstruction gpuinst = (GPUInstruction)inst;
+			if( !gpuinst._input1.isMatrix() || !gpuinst._input2.isMatrix() )
+				return false;
+			long c1 = ec.getMatrixObject(gpuinst._input1).getNumColumns();
+			long c2 = ec.getMatrixObject(gpuinst._input2).getNumColumns();
 			return(c1 == 1 || c2 == 1);
 		}
 	}

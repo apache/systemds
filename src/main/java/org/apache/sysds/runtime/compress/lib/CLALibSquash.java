@@ -59,7 +59,7 @@ public class CLALibSquash {
 
 		ret.allocateColGroupList(retCg);
 		ret.setOverlapping(false);
-		ret.setNonZeros(-1);
+		ret.recomputeNonZeros();
 
 		if(ret.isOverlapping())
 			throw new DMLCompressionException("Squash should output compressed nonOverlapping matrix");
@@ -130,7 +130,7 @@ public class CLALibSquash {
 			map = BitmapLossyEncoder.extractMapFromCompressedSingleColumn(m,
 				columnIds[0],
 				minMaxes[columnIds[0] * 2],
-				minMaxes[columnIds[0] * 2 + 1]);
+				minMaxes[columnIds[0] * 2 + 1], m.getNumRows());
 
 		AColGroup newGroup = ColGroupFactory.compress(columnIds, m.getNumRows(), map, CompressionType.DDC, cs, m);
 		return newGroup;
@@ -138,8 +138,8 @@ public class CLALibSquash {
 
 	private static ABitmap extractBitmap(int[] colIndices, CompressedMatrixBlock compressedBlock) {
 		Bitmap x = BitmapEncoder.extractBitmap(colIndices,
-			ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices));
-		return BitmapLossyEncoder.makeBitmapLossy(x);
+			ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices),  compressedBlock.getNumRows());
+		return BitmapLossyEncoder.makeBitmapLossy(x, compressedBlock.getNumRows());
 	}
 
 	private static class SquashTask implements Callable<AColGroup> {

@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup.tree;
 
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MergeSort extends AInsertionSorter {
@@ -113,7 +113,7 @@ public class MergeSort extends AInsertionSorter {
 	}
 
 	@Override
-	public IMapToData getData() {
+	public AMapToData getData() {
 		return _labels;
 	}
 

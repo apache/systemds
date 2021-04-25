@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -43,8 +44,13 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	/** Linearized bitmaps (variable lengths) */
 	protected char[] _data;
 
-	protected ColGroupOffset() {
-		super();
+	/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupOffset(int numRows) {
+		super(numRows);
 	}
 
 	/**
@@ -85,10 +91,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	public long estimateInMemorySize() {
 		// Could use a ternary operator, but it looks odd with our code formatter here.
 
-		return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(),
-			getValues() == null ? 0 : getValues().length,
-			_ptr == null ? 0 : _ptr.length,
-			_data == null ? 0 : _data.length,
+		return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), getNumValues(), _ptr.length, _data.length,
 			isLossy());
 
 	}

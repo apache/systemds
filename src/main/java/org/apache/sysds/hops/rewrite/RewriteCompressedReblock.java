@@ -127,8 +127,10 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 	}
 
 	private static boolean satisfiesSizeConstraintsForCompression(Hop hop) {
-		return hop.getDim2() >= 1 &&
-			((hop.getDim1() >= 1000 && hop.getDim2() < 100) || hop.getDim1() / hop.getDim2() >= 1000);
+		if(hop.getDim2() >= 1) {
+			return (hop.getDim1() >= 1000 && hop.getDim2() < 100) || hop.getDim1() / hop.getDim2() >= 75;
+		}
+		return false;
 	}
 
 	private static boolean satisfiesCompressionCondition(Hop hop) {
@@ -191,8 +193,11 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 	}
 
 	private static boolean satisfiesCostCompressionCondition(Hop hop, DMLProgram prog) {
-		return satisfiesAggressiveCompressionCondition(hop) && hop.dimsKnown(false) &&
-			analyseProgram(hop, prog).isValidAggressiveCompression();
+		boolean satisfies = true;
+		satisfies &= satisfiesAggressiveCompressionCondition(hop);
+		satisfies &= hop.dimsKnown(false);
+		satisfies &= analyseProgram(hop, prog).isValidAggressiveCompression();
+		return satisfies;
 
 	}
 
@@ -210,7 +215,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		private int numberCompressedOpsExecuted = 0;
 		private int numberDecompressedOpsExecuted = 0;
 		private int inefficientSupportedOpsExecuted = 0;
-		private int superEfficientSuportedOpsExecuted = 0;
+		// private int superEfficientSupportedOpsExecuted = 0;
 
 		private boolean foundStart = false;
 		private boolean usedInLoop = false;
@@ -363,7 +368,6 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		private void handleApplicableOps(Hop current) {
 			// Valid with uncompressed outputs
 			boolean compUCOut = false;
-			LOG.error(current);
 			// // tsmm
 			// compUCOut |= (current instanceof AggBinaryOp && current.getDim2() <= current.getBlocksize() &&
 			// ((AggBinaryOp) current).checkTransposeSelf() == MMTSJType.LEFT);
@@ -403,7 +407,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 			boolean metaOp = HopRewriteUtils.isUnary(current, OpOp1.NROW, OpOp1.NCOL);
 			boolean ctableOp = HopRewriteUtils.isTernary(current, OpOp3.CTABLE);
 
-			if(ctableOp){
+			if(ctableOp) {
 				numberCompressedOpsExecuted += 4;
 				compCOut = true;
 			}
@@ -431,7 +435,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 			if(LOG.isDebugEnabled())
 				LOG.debug(this.toString());
 			return (inefficientSupportedOpsExecuted < numberCompressedOpsExecuted) &&
-				(usedInLoop  || numberCompressedOpsExecuted > 3) && numberDecompressedOpsExecuted < 1;
+				(usedInLoop || numberCompressedOpsExecuted > 3) && numberDecompressedOpsExecuted < 1;
 		}
 
 		@Override

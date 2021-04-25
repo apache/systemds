@@ -415,7 +415,7 @@ public class TemplateRow extends TemplateBase
 			}
 			else {
 				cdata2 = tmp.get(hop.getInput().get(1).getHopID());
-				cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
+				cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1), true);
 			}
 			out = new CNodeBinary(cdata1, cdata2, BinType.VECT_CBIND);
 			if( cdata1 instanceof CNodeData && !inHops2.containsKey("X") )

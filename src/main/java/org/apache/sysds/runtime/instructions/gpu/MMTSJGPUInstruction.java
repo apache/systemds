@@ -31,8 +31,6 @@ import org.apache.sysds.utils.GPUStatistics;
 
 public class MMTSJGPUInstruction extends GPUInstruction {
 	private MMTSJType _type = null;
-	CPOperand _input;
-	CPOperand _output;
 
 	/**
 	 * MMTSJGPUInstruction constructor.
@@ -51,11 +49,9 @@ public class MMTSJGPUInstruction extends GPUInstruction {
 	 *			?
 	 */
 	private MMTSJGPUInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, String opcode, String istr) {
-		super(op, opcode, istr);
+		super(op, in1, null, out, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.MMTSJ;
 		_type = type;
-		_input = in1;
-		_output = out;
 	}
 
 	public static MMTSJGPUInstruction parseInstruction ( String str )
@@ -77,14 +73,14 @@ public class MMTSJGPUInstruction extends GPUInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
-		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
+		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		boolean isLeftTransposed = ( _type == MMTSJType.LEFT);
 		int rlen = (int) (isLeftTransposed? mat.getNumColumns() : mat.getNumRows());
 		int clen = rlen;
 		//execute operations 
 		ec.setMetaData(_output.getName(), rlen, clen);
 		LibMatrixCUDA.matmultTSMM(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName(), isLeftTransposed);
-		ec.releaseMatrixInputForGPUInstruction(_input.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 

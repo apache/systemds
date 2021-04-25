@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -38,6 +39,8 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinC
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
@@ -56,6 +59,7 @@ import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantilePickSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.SpoofSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 
@@ -123,7 +127,8 @@ public class FEDInstructionUtils {
 					((AggregateUnaryCPInstruction) instruction).getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
 					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
 				else if(inst instanceof UnaryMatrixCPInstruction && mo1.isFederated()) {
-					if(UnaryMatrixFEDInstruction.isValidOpcode(inst.getOpcode()))
+					if(UnaryMatrixFEDInstruction.isValidOpcode(inst.getOpcode()) &&
+						!(inst.getOpcode().equalsIgnoreCase("ucumk+*") && mo1.isFederated(FType.COL)))
 						fedinst = UnaryMatrixFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
 			}
@@ -174,6 +179,14 @@ public class FEDInstructionUtils {
 				fedinst = IndexingFEDInstruction.parseInstruction(minst.getInstructionString());
 			}
 		}
+		else if(inst instanceof TernaryCPInstruction) {
+			TernaryCPInstruction tinst = (TernaryCPInstruction) inst;
+			if((tinst.input1.isMatrix() && ec.getCacheableData(tinst.input1).isFederated())
+				|| (tinst.input2.isMatrix() && ec.getCacheableData(tinst.input2).isFederated())
+				|| (tinst.input3.isMatrix() && ec.getCacheableData(tinst.input3).isFederated())) {
+				fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
+			}
+		}
 		else if(inst instanceof VariableCPInstruction ){
 			VariableCPInstruction ins = (VariableCPInstruction) inst;
 			if(ins.getVariableOpcode() == VariableOperationCode.Write
@@ -204,6 +217,11 @@ public class FEDInstructionUtils {
 			Data data = ec.getVariable(instruction.input1);
 			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
 				fedinst = QuaternaryFEDInstruction.parseInstruction(instruction.getInstructionString());
+		}
+		else if(inst instanceof SpoofCPInstruction) {
+			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
+			if(instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class && instruction.isFederated(ec))
+				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
 		}
 
 		//set thread id for federated context management
@@ -295,6 +313,12 @@ public class FEDInstructionUtils {
 			Data data = ec.getVariable(instruction.input1);
 			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
 				fedinst = QuaternaryFEDInstruction.parseInstruction(instruction.getInstructionString());
+		}
+		else if(inst instanceof SpoofSPInstruction) {
+			SpoofSPInstruction instruction = (SpoofSPInstruction) inst;
+			if(instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class && instruction.isFederated(ec)) {
+				fedinst = SpoofFEDInstruction.parseInstruction(inst.getInstructionString());
+			}
 		}
 		//set thread id for federated context management
 		if( fedinst != null ) {

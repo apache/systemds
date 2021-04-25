@@ -1,0 +1,52 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/batch_norm1d.dml") as batch_norm1d
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+print("Testing the 1D batch normalization function.")
+
+# Generate data
+N = 4  # Number of examples
+D = 4  # Number of features
+mode = 'train'  # execution mode
+mu = 0.9  # momentum of moving averages
+eps = 1e-5  # smoothing term
+X = matrix(seq(1,16), rows=N, cols=D)
+
+# Create layer
+[gamma, beta, ema_mean, ema_var] = batch_norm1d::init(D)
+
+# Forward
+[out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+    batch_norm1d::forward(X, gamma, beta, mode, ema_mean, ema_var, mu, eps)
+
+# Equivalency check
+target = matrix("-1.34160721 -1.34160721 -1.34160733 -1.34160709
+                 -0.44720244 -0.44720244 -0.44720244 -0.44720232
+                  0.44720244  0.44720232  0.44720244  0.44720244
+                  1.34160733  1.34160721  1.34160733  1.34160733", rows=1, cols=N*D)
+
+out = matrix(out, rows=1, cols=N*D)
+for (i in 1:length(out)) {
+  rel_error = test_util::check_rel_error(as.scalar(out[1,i]),
+                                         as.scalar(target[1,i]), 1e-3, 1e-4)
+}

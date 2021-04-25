@@ -437,6 +437,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");
 	}
 	
+	public synchronized void removeGPUObject(GPUContext gCtx) {
+		_gpuObjects.remove(gCtx);
+	}
+	
 	// *********************************************
 	// ***                                       ***
 	// ***    HIGH-LEVEL METHODS THAT SPECIFY    ***
@@ -721,8 +725,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			_bcHandle.setBackReference(null);
 		if( _gpuObjects != null ) {
 			for (GPUObject gObj : _gpuObjects.values())
-				if (gObj != null)
+				if (gObj != null) {
 					gObj.clearData(null, DMLScript.EAGER_CUDA_FREE);
+					if (gObj.isLinCached())
+						// set rmVarPending which helps detecting liveness
+						gObj.setrmVarPending(true);
+				}
 		}
 		
 		//clear federated matrix
@@ -1040,7 +1048,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	
 	protected void writeMetaData (String filePathAndName, String outputFormat, FileFormatProperties formatProperties)
 		throws IOException
-	{		
+	{	
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 	
 		if (iimd == null)

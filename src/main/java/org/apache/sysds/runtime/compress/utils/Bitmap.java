@@ -34,8 +34,8 @@ public final class Bitmap extends ABitmap {
 	 */
 	private double[] _values;
 
-	public Bitmap(int numCols, IntArrayList[] offsetsLists, int numZeroGroups, double[] values) {
-		super(numCols, offsetsLists, numZeroGroups);
+	public Bitmap(int numCols, IntArrayList[] offsetsLists, double[] values, int rows) {
+		super(numCols, offsetsLists, rows);
 		_values = values;
 	}
 
@@ -56,6 +56,16 @@ public final class Bitmap extends ABitmap {
 	 */
 	public double[] getValues(int ix) {
 		return Arrays.copyOfRange(_values, ix * _numCols, (ix + 1) * _numCols);
+	}
+
+	public int getNumNonZerosInOffset(int idx){
+		if(_numCols == 1)
+			return  _offsetsLists[idx].size();
+		int nz = 0;
+		for(int i = idx * _numCols; i < (idx+1) * _numCols; i++)
+			nz += _values[i] == 0 ? 0 : 1;
+		
+		return nz;
 	}
 
 	public int getNumValues() {

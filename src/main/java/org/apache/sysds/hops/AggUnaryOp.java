@@ -123,7 +123,7 @@ public class AggUnaryOp extends MultiThreadedHop
 			ExecType et = optFindExecType();
 			Hop input = getInput().get(0);
 			
-			if ( et == ExecType.CP || et == ExecType.GPU ) 
+			if ( et == ExecType.CP || et == ExecType.GPU || et == ExecType.FED )
 			{
 				Lop agg1 = null; 
 				if( isTernaryAggregateRewriteApplicable() ) {
@@ -209,6 +209,7 @@ public class AggUnaryOp extends MultiThreadedHop
 					}
 				}
 			}
+			else throw new HopsException("ExecType " + et + " not recognized in " + this.toString() );
 		} 
 		catch (Exception e) {
 			throw new HopsException(this.printErrorLocation() + "In AggUnary Hop, error constructing Lops " , e);
@@ -216,7 +217,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		//return created lops
 		return getLops();
 	}
@@ -381,7 +382,9 @@ public class AggUnaryOp extends MultiThreadedHop
 			//pull unary aggregate into spark 
 			_etype = ExecType.SPARK;
 		}
-		
+
+		updateETFed();
+
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

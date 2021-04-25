@@ -79,6 +79,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -1303,7 +1304,13 @@ public class Recompiler
 					FrameObject fo = (FrameObject) dat;
 					d.setDim1(fo.getNumRows());
 					d.setDim2(fo.getNumColumns());
-				} else if( dat instanceof TensorObject) {
+				}
+				else if( dat instanceof ListObject ) {
+					ListObject lo = (ListObject) dat;
+					d.setDim1(lo.getLength());
+					d.setDim2(1);
+				}
+				else if( dat instanceof TensorObject) {
 					TensorObject to = (TensorObject) dat;
 					// TODO: correct dimensions
 					d.setDim1(to.getNumRows());
@@ -1387,18 +1394,42 @@ public class Recompiler
 			}
 		}
 		//update size expression for indexing according to symbol table entries
-		else if( hop instanceof IndexingOp && hop.getDataType()!=DataType.LIST ) {
+		else if( hop instanceof IndexingOp ) {
 			hop.refreshSizeInformation(); //update, incl reset
 			if( !hop.dimsKnown() ) {
-				HashMap<Long, Double> memo = new HashMap<>();
-				double rl = Hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
-				double ru = Hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
-				double cl = Hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
-				double cu = Hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
-				if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
-					hop.setDim1( (long)(ru-rl+1) );
-				if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
-					hop.setDim2( (long)(cu-cl+1) );
+				if( hop.getDataType().isList() 
+					&& hop.getInput().get(1).getValueType() == ValueType.STRING ) {
+					hop.setDim1(1);
+					hop.setDim2(1);
+				}
+				else {
+					HashMap<Long, Double> memo = new HashMap<>();
+					double rl = Hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
+					double ru = Hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
+					double cl = Hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
+					double cu = Hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
+					if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
+						hop.setDim1( (long)(ru-rl+1) );
+					if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
+						hop.setDim2( (long)(cu-cl+1) );
+				}
+			}
+		}
+		else if(HopRewriteUtils.isUnary(hop, OpOp1.CAST_AS_MATRIX)
+			&& hop.getInput(0) instanceof IndexingOp && hop.getInput(0).getDataType().isList()
+			&& HopRewriteUtils.isData(hop.getInput(0).getInput(0), OpOpData.TRANSIENTREAD) ) {
+			Data ldat = vars.get(hop.getInput(0).getInput(0).getName()); //list, or matrix during IPA
+			Hop rix = hop.getInput(0);
+			if( ldat != null && ldat instanceof ListObject
+				&& rix.getInput(1) instanceof LiteralOp
+				&& rix.getInput(2) instanceof LiteralOp
+				&& HopRewriteUtils.isEqualValue(rix.getInput(1), rix.getInput(2))) {
+				ListObject list = (ListObject) ldat;
+				MatrixObject mo = (MatrixObject) ((rix.getInput(1).getValueType() == ValueType.STRING) ? 
+					list.getData(((LiteralOp)rix.getInput(1)).getStringValue()) :
+					list.getData((int)HopRewriteUtils.getIntValueSafe(rix.getInput(1))-1));
+				hop.setDim1(mo.getNumRows());
+				hop.setDim2(mo.getNumColumns());
 			}
 		}
 		else {

@@ -18,6 +18,7 @@
  */
 package org.apache.sysds.runtime.instructions.gpu;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -28,6 +29,8 @@ import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
@@ -37,20 +40,16 @@ import jcuda.Pointer;
 
 public class MatrixReshapeGPUInstruction extends GPUInstruction {
 	
-	private final CPOperand _input;
-	private final CPOperand _output;
 	private final CPOperand _opRows;
 	private final CPOperand _opCols;
 	private final CPOperand _opByRow;
 	
 	protected MatrixReshapeGPUInstruction(Operator op, String opcode, String istr, 
 			CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out) {
-		super(op, opcode, istr);
-		_input = in1;
+		super(op, in1, null, out, opcode, istr);
 		_opRows = in2;
 		_opCols = in3;
 		_opByRow = in4;
-		_output = out;
 	}
 	
 	public static MatrixReshapeGPUInstruction parseInstruction ( String str ) {
@@ -80,7 +79,7 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		String instName = getExtendedOpcode();
 		GPUContext gCtx = ec.getGPUContext(0); 
-		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
+		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		if(rows*cols != mat.getNumRows()*mat.getNumColumns()) {
 			throw new DMLRuntimeException("Incorrect number of rows and cols in rshape instruction");
 		}
@@ -100,8 +99,14 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 				LibMatrixCUDA.toInt(mat.getNumRows()), LibMatrixCUDA.toInt(mat.getNumColumns()),
 				rows, cols);
 		}
-		ec.releaseMatrixInputForGPUInstruction(_input.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(_output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, _input1, _opRows, _opCols, _opByRow)));
 	}
 
 }

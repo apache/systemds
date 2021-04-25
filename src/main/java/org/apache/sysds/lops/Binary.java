@@ -81,20 +81,17 @@ public class Binary extends Lop
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		if( getExecType() == ExecType.CP ) {
-			return InstructionUtils.concatOperands(
-				getExecType().name(), getOpcode(),
-				getInputs().get(0).prepInputOperand(input1),
-				getInputs().get(1).prepInputOperand(input2),
-				prepOutputOperand(output),
-				String.valueOf(_numThreads));
-		}
-		else {
-			return InstructionUtils.concatOperands(
-				getExecType().name(), getOpcode(),
-				getInputs().get(0).prepInputOperand(input1),
-				getInputs().get(1).prepInputOperand(input2),
-				prepOutputOperand(output));
-		}
+		String baseInstruction = InstructionUtils.concatOperands(
+			getExecType().name(), getOpcode(),
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			prepOutputOperand(output)
+		);
+
+		if( getExecType() == ExecType.CP || (!federatedOutput && getExecType() == ExecType.FED) )
+			return InstructionUtils.concatOperands(baseInstruction, String.valueOf(_numThreads));
+		else if ( getExecType() == ExecType.FED )
+			return InstructionUtils.concatOperands(baseInstruction, String.valueOf(_numThreads), String.valueOf(federatedOutput));
+		else return baseInstruction;
 	}
 }

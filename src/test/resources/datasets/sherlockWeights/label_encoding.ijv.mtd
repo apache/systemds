@@ -1,0 +1,9 @@
+{
+    "data_type": "frame",
+    "schema": "STRING,",
+    "rows": 78,
+    "cols": 1,
+    "format": "text",
+    "author": "cfindenig",
+    "created": "2021-02-19 19:34:19 CET"
+}

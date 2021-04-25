@@ -33,14 +33,14 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 
 public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	protected final ArrayList<CPOperand> _outputs;
 
 	private MultiReturnParameterizedBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
-			ArrayList<CPOperand> outputs, String opcode, String istr) {
+		ArrayList<CPOperand> outputs, String opcode, String istr) {
 		super(CPType.MultiReturnBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
 		_outputs = outputs;
 	}
@@ -49,25 +49,25 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		return _outputs.get(i);
 	}
 
-	public List<CPOperand> getOutputs(){
+	public List<CPOperand> getOutputs() {
 		return _outputs;
 	}
 
 	public String[] getOutputNames() {
-		return _outputs.stream().map(output -> output.getName()).toArray(String[]::new);
+		return _outputs.stream().map(CPOperand::getName).toArray(String[]::new);
 	}
 
-	public static MultiReturnParameterizedBuiltinCPInstruction parseInstruction ( String str ) {
+	public static MultiReturnParameterizedBuiltinCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		ArrayList<CPOperand> outputs = new ArrayList<>();
 		String opcode = parts[0];
-		
-		if ( opcode.equalsIgnoreCase("transformencode") ) {
+
+		if(opcode.equalsIgnoreCase("transformencode")) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
-			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[4], ValueType.STRING, DataType.FRAME) );
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[4], ValueType.STRING, DataType.FRAME));
 			return new MultiReturnParameterizedBuiltinCPInstruction(null, in1, in2, outputs, opcode, str);
 		}
 		else {
@@ -76,20 +76,20 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 
 	}
 
-	@Override 
+	@Override
 	public void processInstruction(ExecutionContext ec) {
-		//obtain and pin input frame
+		// obtain and pin input frame
 		FrameBlock fin = ec.getFrameInput(input1.getName());
 		String spec = ec.getScalarInput(input2).getStringValue();
-		String[] colnames = fin.getColumnNames(); 
-		
-		//execute block transform encode
-		Encoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
-		MatrixBlock data = encoder.encode(fin, new MatrixBlock(fin.getNumRows(), fin.getNumColumns(), false)); //build and apply
+		String[] colnames = fin.getColumnNames();
+
+		// execute block transform encode
+		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
+		MatrixBlock data = encoder.encode(fin); // build and apply
 		FrameBlock meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING));
 		meta.setColumnNames(colnames);
-		
-		//release input and outputs
+
+		// release input and outputs
 		ec.releaseFrameInput(input1.getName());
 		ec.setMatrixOutput(getOutput(0).getName(), data);
 		ec.setFrameOutput(getOutput(1).getName(), meta);
@@ -103,10 +103,10 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 	@Override
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public Pair[] getLineageItems(ExecutionContext ec) {
-		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1,input2,input3);
+		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1, input2, input3);
 		ArrayList<Pair> items = new ArrayList<>();
-		for (CPOperand out : _outputs)
+		for(CPOperand out : _outputs)
 			items.add(Pair.of(out.getName(), new LineageItem(getOpcode(), inputLineage)));
-		return items.toArray(new Pair[items.size()]);
+		return items.toArray(new Pair[0]);
 	}
 }

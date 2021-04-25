@@ -33,21 +33,19 @@ public class BuiltinBayesianOptimisationTest extends AutomatedTestBase {
 
 	private final static String TEST_NAME = "bayesianOptimization";
 	private final static String TEST_DIR = "functions/builtin/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinBayesianOptimisationTest.class.getSimpleName() + "/";
-
 	private final static int rows = 300;
 	private final static int cols = 200;
 
 	@Override
 	public void setUp()
 	{
-        addTestConfiguration(TEST_DIR, TEST_NAME);
+		addTestConfiguration(TEST_DIR, TEST_NAME);
 	}
 
-    @Test
-    public void bayesianOptimisationMLMinimisationTest() {
+	@Test
+	public void bayesianOptimisationMLMinimisationTest() {
 		testBayesianOptimization("TRUE", 10, ExecType.CP);
-    }
+	}
 
 	@Test
 	public void bayesianOptimisationMLMaximizationTest() {
@@ -60,7 +58,7 @@ public class BuiltinBayesianOptimisationTest extends AutomatedTestBase {
 	}
 
 
-    public void testBayesianOptimization(String minimize, int iter, ExecType exec) {
+	public void testBayesianOptimization(String minimize, int iter, ExecType exec) {
 
 		ExecMode modeOld = setExecMode(exec);
 
@@ -82,6 +80,6 @@ public class BuiltinBayesianOptimisationTest extends AutomatedTestBase {
 		finally {
 			resetExecMode(modeOld);
 		}
-    }
+	}
 }
 

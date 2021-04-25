@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
-import org.apache.sysds.runtime.compress.colgroup.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -57,7 +57,9 @@ public class CLALibScalar {
 	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1, MatrixValue result) {
 		// Special case handling of overlapping relational operations
 		if(CLALibRelationalOp.isValidForRelationalOperation(sop, m1)) {
-			return CLALibRelationalOp.overlappingRelativeRelationalOperation(sop, m1);
+			MatrixBlock ret =  CLALibRelationalOp.overlappingRelativeRelationalOperation(sop, m1);
+			ret.recomputeNonZeros();
+			return ret;
 		}
 
 		if(isInvalidForCompressedOutput(m1, sop)) {
@@ -96,7 +98,7 @@ public class CLALibScalar {
 			ret.setOverlapping(m1.isOverlapping());
 		}
 
-		ret.setNonZeros(-1);
+		ret.recomputeNonZeros();
 
 		return ret;
 

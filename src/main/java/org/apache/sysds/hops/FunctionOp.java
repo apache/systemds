@@ -54,6 +54,7 @@ public class FunctionOp extends Hop
 	private String _fnamespace = null;
 	private String _fname = null;
 	private boolean _opt = true; //call to optimized/unoptimized
+	private boolean _pseudo = false;
 	
 	private String[] _inputNames = null;  // A,B in C = foo(A=X, B=Y)
 	private String[] _outputNames = null; // C in C = foo(A=X, B=Y)
@@ -67,8 +68,11 @@ public class FunctionOp extends Hop
 		this(type, fnamespace, fname, inputNames, inputs, outputNames, false);
 		_outputHops = outputHops;
 	}
-
-	public FunctionOp(FunctionType type, String fnamespace, String fname, String[] inputNames, List<Hop> inputs, String[] outputNames, boolean singleOut) 
+	public FunctionOp(FunctionType type, String fnamespace, String fname, String[] inputNames, List<Hop> inputs, String[] outputNames, boolean singleOut) {
+		this(type, fnamespace, fname, inputNames, inputs, outputNames, singleOut, false);
+	}
+	
+	public FunctionOp(FunctionType type, String fnamespace, String fname, String[] inputNames, List<Hop> inputs, String[] outputNames, boolean singleOut, boolean pseudo) 
 	{
 		super(fnamespace + Program.KEY_DELIM + fname, DataType.UNKNOWN, ValueType.UNKNOWN );
 		
@@ -77,6 +81,7 @@ public class FunctionOp extends Hop
 		_fname = fname;
 		_inputNames = inputNames;
 		_outputNames = outputNames;
+		_pseudo = pseudo;
 		
 		for( Hop in : inputs ) {
 			getInput().add(in);
@@ -136,6 +141,10 @@ public class FunctionOp extends Hop
 	
 	public void setCallOptimized(boolean opt) {
 		_opt = opt;
+	}
+	
+	public boolean isPseudoFunctionCall() {
+		return _pseudo;
 	}
 
 	@Override
@@ -291,7 +300,7 @@ public class FunctionOp extends Hop
 		setLops(fcall);
 		
 		//note: no reblock lop because outputs directly bound
-		
+
 		return getLops();
 	}
 

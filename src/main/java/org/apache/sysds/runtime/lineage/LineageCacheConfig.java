@@ -116,6 +116,7 @@ public class LineageCacheConfig
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
+		NOTCACHED, //Placeholder removed from the cache
 		CACHED,    //General cached data. Can be evicted.
 		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.

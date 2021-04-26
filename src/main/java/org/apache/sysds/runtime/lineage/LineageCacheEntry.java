@@ -63,9 +63,10 @@ public class LineageCacheEntry {
 		try {
 			//wait until other thread completes operation
 			//in order to avoid redundant computation
-			while( _MBval == null ) {
+			while(_status == LineageCacheStatus.EMPTY) {
 				wait();
 			}
+			//comes here if data is placed or the entry is removed by the running thread
 			return _MBval;
 		}
 		catch( InterruptedException ex ) {
@@ -77,9 +78,10 @@ public class LineageCacheEntry {
 		try {
 			//wait until other thread completes operation
 			//in order to avoid redundant computation
-			while( _SOval == null ) {
+			while(_status == LineageCacheStatus.EMPTY) {
 				wait();
 			}
+			//comes here if data is placed or the entry is removed by the running thread
 			return _SOval;
 		}
 		catch( InterruptedException ex ) {
@@ -89,6 +91,14 @@ public class LineageCacheEntry {
 	
 	public synchronized LineageCacheStatus getCacheStatus() {
 		return _status;
+	}
+	
+	protected synchronized void removeAndNotify() {
+		//Set the status to NOTCACHED (not cached anymore) and wake up the sleeping threads
+		if (_status != LineageCacheStatus.EMPTY)
+			return;
+		_status = LineageCacheStatus.NOTCACHED;
+		notifyAll();
 	}
 	
 	public synchronized long getSize() {

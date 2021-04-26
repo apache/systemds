@@ -156,10 +156,20 @@ public class LineageCache
 					else if (inst instanceof GPUInstruction)
 						outName = gpuinst._output.getName();
 					
-					if (e.isMatrixValue() && e._gpuObject == null)
-						ec.setMatrixOutput(outName, e.getMBValue());
-					else if (e.isScalarValue())
-						ec.setScalarOutput(outName, e.getSOValue());
+					if (e.isMatrixValue() && e._gpuObject == null) {
+						MatrixBlock mb = e.getMBValue(); //wait if another thread is executing the same inst.
+						if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+							return false;  //the executing thread removed this entry from cache
+						else
+							ec.setMatrixOutput(outName, e.getMBValue());
+					}
+					else if (e.isScalarValue()) {
+						ScalarObject so = e.getSOValue(); //wait if another thread is executing the same inst.
+						if (so == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+							return false;  //the executing thread removed this entry from cache
+						else
+							ec.setScalarOutput(outName, e.getSOValue());
+					}
 					else { //TODO handle locks on gpu objects
 						//shallow copy the cached GPUObj to the output MatrixObject
 						ec.getMatrixObject(outName).setGPUObject(ec.getGPUContext(0), 
@@ -450,18 +460,22 @@ public class LineageCache
 			for (Pair<LineageItem, Data> entry : liData) {
 				LineageItem item = entry.getKey();
 				Data data = entry.getValue();
+
+				if (!probe(item))
+					continue;
+
 				LineageCacheEntry centry = _cache.get(item);
 
 				if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
 					// Reusable instructions can return a frame (rightIndex). Remove placeholders.
-					_cache.remove(item);
+					removePlaceholder(item);
 					continue;
 				}
-				
+
 				if (LineageCacheConfig.isOutputFederated(inst, data)) {
 					// Do not cache federated outputs (in the coordinator)
 					// Cannot skip putting the placeholder as the above is only known after execution
-					_cache.remove(item);
+					removePlaceholder(item);
 					continue;
 				}
 
@@ -470,10 +484,8 @@ public class LineageCache
 				long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
 
 				//remove the placeholder if the entry is bigger than the cache.
-				//FIXME: the resumed threads will enter into infinite wait as the entry
-				//is removed. Need to add support for graceful remove (placeholder) and resume.
 				if (size > LineageCacheEviction.getCacheLimit()) {
-					_cache.remove(item);
+					removePlaceholder(item);
 					continue; 
 				}
 
@@ -544,7 +556,7 @@ public class LineageCache
 			if(AllOutputsCacheable)
 				FuncLIMap.forEach((Li, boundLI) -> mvIntern(Li, boundLI, computetime));
 			else
-				FuncLIMap.forEach((Li, boundLI) -> _cache.remove(Li));
+				FuncLIMap.forEach((Li, boundLI) -> removePlaceholder(Li));
 		}
 		
 		return;
@@ -561,11 +573,13 @@ public class LineageCache
 			return;
 		synchronized (_cache) {
 			LineageItem item = udf.getLineageItem(ec).getValue();
+			if (!probe(item))
+				return;
 			LineageCacheEntry entry = _cache.get(item);
 			Data data = ec.getVariable(String.valueOf(outIds.get(0)));
 			if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
 				// Don't cache if the udf outputs frames
-				_cache.remove(item);
+				removePlaceholder(item);
 				return;
 			}
 			
@@ -574,10 +588,8 @@ public class LineageCache
 			long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
 
 			//remove the placeholder if the entry is bigger than the cache.
-			//FIXME: the resumed threads will enter into infinite wait as the entry
-			//is removed. Need to add support for graceful remove (placeholder) and resume.
 			if (size > LineageCacheEviction.getCacheLimit()) {
-				_cache.remove(item);
+				removePlaceholder(item);
 				return;
 			}
 
@@ -689,7 +701,16 @@ public class LineageCache
 			LineageCacheEviction.addEntry(e);
 		}
 		else
-			_cache.remove(item);    //remove the placeholder
+			removePlaceholder(item);    //remove the placeholder
+	}
+	
+	private static void removePlaceholder(LineageItem item) {
+		//Caller should hold the monitor on _cache
+		if (!_cache.containsKey(item))
+			return;
+		LineageCacheEntry centry = _cache.get(item);
+		centry.removeAndNotify();
+		_cache.remove(item);
 	}
 	
 	private static boolean isMarkedForCaching (Instruction inst, ExecutionContext ec) {

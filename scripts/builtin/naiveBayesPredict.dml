@@ -19,30 +19,14 @@
 #
 #-------------------------------------------------------------
 
-m_naivebayesPredict = function(Matrix[Double] D, Matrix[Double] C, Double probabilities = 1, Boolean verbose = TRUE)
- return (Matrix[Double] YRaw,Matrix[Double] Y)
+m_naiveBayesPredict = function(Matrix[Double] X, Matrix[Double] P, Matrix[Double] C)
+ return (Matrix[Double] YRaw, Matrix[Double] Y)
 {
-	numRows = nrow(D);
-	[prior, conditionals] = naivebayes(D=D, C=C, laplace=probabilities, verbose=verbose);
+  numRows = nrow(X)
+  model = cbind(C, P)
 
-	ones = matrix(1, rows=numRows, cols=1)
-	D_w_ones = cbind(D, ones)
-	model = cbind(conditionals, prior)
-	YRaw = D_w_ones %*% t(log(model))
-
-	if(min(C) < 1)
-	  stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
-
-	Y = rowIndexMax(YRaw)
-			
-	if(verbose){
-      num_classes = nrow(prior)
-	  num_classes_ground_truth = max(C)
-
-	  if(num_classes < num_classes_ground_truth)
-	    num_classes = num_classes_ground_truth
-	  confusion_mat = table(Y, C, num_classes, num_classes)
-	  write(confusion_mat, verbose, format="csv")
-	}
+  ones = matrix(1, rows=numRows, cols=1);
+  X_w_ones = cbind(X, ones);
+  YRaw = X_w_ones %*% t(log(model));
+  Y = rowIndexMax(YRaw);
 }
-

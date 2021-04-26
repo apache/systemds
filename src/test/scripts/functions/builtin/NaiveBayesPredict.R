@@ -28,45 +28,46 @@ C = as.matrix(readMM(paste(args[1], "C.mtx", sep="")))
 
 # reading input args
 numClasses = as.integer(args[2])
-probabilities = as.double(args[3])
+laplace = as.double(args[3])
 
+# divide D into "train" and "test" data
 numRows = nrow(D)
-numFeatures = ncol(D)
+trainSize = numRows * 0.8
+trainData = D[1:trainSize,]
+testData = D[(trainSize+1):numRows,]
+
+C = C[1:trainSize,]
+numFeatures = ncol(trainData)
 
 # Compute conditionals
 # Compute the feature counts for each class
 classFeatureCounts = matrix(0, numClasses, numFeatures)
 for (i in 1:numFeatures) {
-  Col = D[,i]
+  Col = trainData[,i]
   classFeatureCounts[,i] = aggregate(as.vector(Col), by=list(as.vector(C)), FUN=sum)[,2]
 }
 
 # Compute the total feature count for each class
 # and add the number of features to this sum
 # for subsequent regularization (Laplace's rule)
-classSums = rowSums(classFeatureCounts) + numFeatures*probabilities
+classSums = rowSums(classFeatureCounts) + numFeatures * laplace
 
 # Compute class conditional probabilities
 ones = matrix(1, 1, numFeatures)
 repClassSums = classSums %*% ones
-class_conditionals = (classFeatureCounts + probabilities) / repClassSums
+class_conditionals = (classFeatureCounts + laplace) / repClassSums
 
 # Compute class priors
 class_counts = aggregate(as.vector(C), by=list(as.vector(C)), FUN=length)[,2]
-class_prior = class_counts / numRows;
+class_prior = class_counts / trainSize;
 
 # Compute accuracy on training set
-ones = matrix(1, numRows, 1)
-D_w_ones = cbind(D, ones)
+ones = matrix(1, nrow(testData), 1)
+testData_w_ones = cbind(testData, ones)
 model = cbind(class_conditionals, class_prior)
-YRaw = D_w_ones %*% t(log(model))
+YRaw = testData_w_ones %*% t(log(model))
 
-if(min(C) < 1)
-  stop("Stopping due to invalid argument: Label vector (C) must be recoded")
-
-Y = max.col(YRaw,ties.method="last");
-acc = sum(Y == C) / numRows * 100;
-print(paste("Training Accuracy (%): ", acc, sep=""))
+Y = max.col(YRaw, ties.method="last");
 
 # write out the predict
 writeMM(as(YRaw, "CsparseMatrix"), paste(args[4], "YRaw", sep=""))

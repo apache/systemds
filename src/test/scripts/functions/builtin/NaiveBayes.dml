@@ -21,6 +21,6 @@
 
 X = read($1);
 y = read($2);
-[prior, conditionals] = naivebayes(D=X, C=y, laplace=$4);
+[prior, conditionals] = naiveBayes(D=X, C=y, laplace=$4);
 write(prior, $5);
 write(conditionals, $6);

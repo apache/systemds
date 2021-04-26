@@ -181,8 +181,8 @@ public enum Builtins {
 	NCOL("ncol", false),
 	NORMALIZE("normalize", true),
 	NROW("nrow", false),
-	NAIVEBAYES("naivebayes", true, false),
-	NAIVEBAYESPREDICT("naivebayesPredict", true, false),
+	NAIVEBAYES("naiveBayes", true, false),
+	NAIVEBAYESPREDICT("naiveBayesPredict", true, false),
 	OUTER("outer", false),
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	OUTLIER_SD("outlierBySd", true),

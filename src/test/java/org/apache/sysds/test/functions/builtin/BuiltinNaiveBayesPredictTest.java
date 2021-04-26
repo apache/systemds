@@ -36,7 +36,7 @@ public class BuiltinNaiveBayesPredictTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinNaiveBayesPredictTest.class.getSimpleName() + "/";
 	private final static int numClasses = 10;
 
-	public double eps = 0.0000001;
+	public double eps = 1e-7;
 
 	@Override
 	public void setUp() {
@@ -72,19 +72,19 @@ public class BuiltinNaiveBayesPredictTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
 		int classes = numClasses;
-		double probabilities = 1;
+		double laplace = 1;
 
 		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-args");
 		proArgs.add(input("D"));
 		proArgs.add(input("C"));
 		proArgs.add(String.valueOf(classes));
-		proArgs.add(String.valueOf(probabilities));
+		proArgs.add(String.valueOf(laplace));
 		proArgs.add(output("YRaw"));
 		proArgs.add(output("Y"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 
-		rCmd = getRCmd(inputDir(), Integer.toString(classes), Double.toString(probabilities), expectedDir());
+		rCmd = getRCmd(inputDir(), Integer.toString(classes), Double.toString(laplace), expectedDir());
 		
 		double[][] D = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
 		double[][] C = getRandomMatrix(rows, 1, 0, 1, 1, -1);

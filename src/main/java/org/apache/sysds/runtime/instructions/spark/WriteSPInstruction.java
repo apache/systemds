@@ -55,300 +55,301 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class WriteSPInstruction extends SPInstruction implements LineageTraceable {
-  public CPOperand input1 = null;
-  private CPOperand input2 = null;
-  private CPOperand input3 = null;
-  private CPOperand input4 = null;
-  private FileFormatProperties formatProperties;
+	public CPOperand input1 = null;
+	private CPOperand input2 = null;
+	private CPOperand input3 = null;
+	private CPOperand input4 = null;
+	private FileFormatProperties formatProperties;
 
-  private WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
-    super(SPType.Write, opcode, str);
-    input1 = in1;
-    input2 = in2;
-    input3 = in3;
-    formatProperties = null; // set in case of csv
-  }
+	private WriteSPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, String opcode, String str) {
+		super(SPType.Write, opcode, str);
+		input1 = in1;
+		input2 = in2;
+		input3 = in3;
+		formatProperties = null; // set in case of csv
+	}
 
-  public static WriteSPInstruction parseInstruction(String str) {
-    String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-    String opcode = parts[0];
+	public static WriteSPInstruction parseInstruction(String str) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 
-    if(!opcode.equals("write")) {
-      throw new DMLRuntimeException("Unsupported opcode");
-    }
+		if(!opcode.equals("write")) {
+			throw new DMLRuntimeException("Unsupported opcode");
+		}
 
-    // All write instructions have 3 parameters, except in case of delimited/csv/libsvm file.
-    // Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-    // Write instructions for libsvm files also include three additional parameters (delimiter, index delimiter, sparse)
-    if(parts.length != 5 && parts.length != 9) {
-      throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
-    }
+		// All write instructions have 3 parameters, except in case of delimited/csv/libsvm file.
+		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
+		// Write instructions for libsvm files also include three additional parameters (delimiter, index delimiter, sparse)
+		if(parts.length != 5 && parts.length != 9) {
+			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
+		}
 
-    // _mVar2·MATRIX·DOUBLE
-    CPOperand in1 = new CPOperand(parts[1]);
-    CPOperand in2 = new CPOperand(parts[2]);
-    CPOperand in3 = new CPOperand(parts[3]);
+		// _mVar2·MATRIX·DOUBLE
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand in3 = new CPOperand(parts[3]);
 
-    WriteSPInstruction inst = new WriteSPInstruction(in1, in2, in3, opcode, str);
+		WriteSPInstruction inst = new WriteSPInstruction(in1, in2, in3, opcode, str);
 
-    if(in3.getName().equalsIgnoreCase("csv")) {
-      boolean hasHeader = Boolean.parseBoolean(parts[4]);
-      String delim = parts[5];
-      boolean sparse = Boolean.parseBoolean(parts[6]);
-      FileFormatProperties formatProperties = new FileFormatPropertiesCSV(hasHeader, delim, sparse);
-      inst.setFormatProperties(formatProperties);
-      CPOperand in4 = new CPOperand(parts[8]);
-      inst.input4 = in4;
-    }
-    else if(in3.getName().equalsIgnoreCase("libsvm")) {
-      String delim = parts[4];
-      String indexDelim = parts[5];
-      boolean sparse = Boolean.parseBoolean(parts[6]);
-      FileFormatProperties formatProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
-      inst.setFormatProperties(formatProperties);
-      CPOperand in4 = new CPOperand(parts[8]);
-      inst.input4 = in4;
-    }
-    else {
-      FileFormatProperties ffp = new FileFormatProperties();
-      CPOperand in4 = new CPOperand(parts[4]);
-      inst.input4 = in4;
-      inst.setFormatProperties(ffp);
-    }
-    return inst;
-  }
+		if(in3.getName().equalsIgnoreCase("csv")) {
+			boolean hasHeader = Boolean.parseBoolean(parts[4]);
+			String delim = parts[5];
+			boolean sparse = Boolean.parseBoolean(parts[6]);
+			FileFormatProperties formatProperties = new FileFormatPropertiesCSV(hasHeader, delim, sparse);
+			inst.setFormatProperties(formatProperties);
+			CPOperand in4 = new CPOperand(parts[8]);
+			inst.input4 = in4;
+		}
+		else if(in3.getName().equalsIgnoreCase("libsvm")) {
+			String delim = parts[4];
+			String indexDelim = parts[5];
+			boolean sparse = Boolean.parseBoolean(parts[6]);
+			FileFormatProperties formatProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
+			inst.setFormatProperties(formatProperties);
+			CPOperand in4 = new CPOperand(parts[8]);
+			inst.input4 = in4;
+		}
+		else {
+			FileFormatProperties ffp = new FileFormatProperties();
+			CPOperand in4 = new CPOperand(parts[4]);
+			inst.input4 = in4;
+			inst.setFormatProperties(ffp);
+		}
+		return inst;
+	}
 
-  public FileFormatProperties getFormatProperties() {
-    return formatProperties;
-  }
+	public FileFormatProperties getFormatProperties() {
+		return formatProperties;
+	}
 
-  public void setFormatProperties(FileFormatProperties prop) {
-    formatProperties = prop;
-  }
+	public void setFormatProperties(FileFormatProperties prop) {
+		formatProperties = prop;
+	}
 
-  public CPOperand getInput1() {
-    return input1;
-  }
+	public CPOperand getInput1() {
+		return input1;
+	}
 
-  public CPOperand getInput2() {
-    return input2;
-  }
+	public CPOperand getInput2() {
+		return input2;
+	}
 
-  @Override public void processInstruction(ExecutionContext ec) {
-    SparkExecutionContext sec = (SparkExecutionContext) ec;
+	@Override public void processInstruction(ExecutionContext ec) {
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
 
-    //get filename (literal or variable expression)
-    String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
-    String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
-    formatProperties.setDescription(desc);
+		//get filename (literal or variable expression)
+		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
+		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
+		formatProperties.setDescription(desc);
 
-    ValueType[] schema = (input1.getDataType() == DataType.FRAME) ? sec.getFrameObject(input1.getName())
-      .getSchema() : null;
+		ValueType[] schema = (input1.getDataType() == DataType.FRAME) ? sec.getFrameObject(input1.getName())
+			.getSchema() : null;
 
-    try {
-      //if the file already exists on HDFS, remove it.
-      HDFSTool.deleteFileIfExistOnHDFS(fname);
+		try {
+			//if the file already exists on HDFS, remove it.
+			HDFSTool.deleteFileIfExistOnHDFS(fname);
 
-      //prepare output info according to meta data
-      FileFormat fmt = FileFormat.safeValueOf(input3.getName());
+			//prepare output info according to meta data
+			FileFormat fmt = FileFormat.safeValueOf(input3.getName());
 
-      //core matrix/frame write
-      switch(input1.getDataType()) {
-        case MATRIX:
-          processMatrixWriteInstruction(sec, fname, fmt);
-          break;
-        case FRAME:
-          processFrameWriteInstruction(sec, fname, fmt, schema);
-          break;
-        default:
-          throw new DMLRuntimeException("Unsupported data type " + input1.getDataType() + " in WriteSPInstruction.");
-      }
-    }
-    catch(IOException ex) {
-      throw new DMLRuntimeException("Failed to process write instruction", ex);
-    }
-  }
+			//core matrix/frame write
+			switch(input1.getDataType()) {
+				case MATRIX:
+					processMatrixWriteInstruction(sec, fname, fmt);
+					break;
+				case FRAME:
+					processFrameWriteInstruction(sec, fname, fmt, schema);
+					break;
+				default:
+					throw new DMLRuntimeException(
+						"Unsupported data type " + input1.getDataType() + " in WriteSPInstruction.");
+			}
+		}
+		catch(IOException ex) {
+			throw new DMLRuntimeException("Failed to process write instruction", ex);
+		}
+	}
 
-  protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt)
-    throws IOException {
-    //get input rdd
-    JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
-    DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
+	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt)
+		throws IOException {
+		//get input rdd
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 
-    if(fmt == FileFormat.MM || fmt == FileFormat.TEXT) {
-      //piggyback nnz maintenance on write
-      LongAccumulator aNnz = null;
-      if(!mc.nnzKnown()) {
-        aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
-        in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
-      }
+		if(fmt == FileFormat.MM || fmt == FileFormat.TEXT) {
+			//piggyback nnz maintenance on write
+			LongAccumulator aNnz = null;
+			if(!mc.nnzKnown()) {
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}
 
-      JavaRDD<String> header = null;
-      if(fmt == FileFormat.MM) {
-        ArrayList<String> headerContainer = new ArrayList<>(1);
-        // First output MM header
-        String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
-          // output number of rows, number of columns and number of nnz
-          mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros();
-        headerContainer.add(headerStr);
-        header = sec.getSparkContext().parallelize(headerContainer);
-      }
+			JavaRDD<String> header = null;
+			if(fmt == FileFormat.MM) {
+				ArrayList<String> headerContainer = new ArrayList<>(1);
+				// First output MM header
+				String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
+					// output number of rows, number of columns and number of nnz
+					mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros();
+				headerContainer.add(headerStr);
+				header = sec.getSparkContext().parallelize(headerContainer);
+			}
 
-      JavaRDD<String> ijv = RDDConverterUtils.binaryBlockToTextCell(in1, mc);
-      if(header != null)
-        customSaveTextFile(header.union(ijv), fname, true);
-      else
-        customSaveTextFile(ijv, fname, false);
+			JavaRDD<String> ijv = RDDConverterUtils.binaryBlockToTextCell(in1, mc);
+			if(header != null)
+				customSaveTextFile(header.union(ijv), fname, true);
+			else
+				customSaveTextFile(ijv, fname, false);
 
-      if(!mc.nnzKnown())
-        mc.setNonZeros(aNnz.value());
-    }
-    else if(fmt == FileFormat.CSV) {
-      if(mc.getRows() == 0 || mc.getCols() == 0) {
-        throw new IOException(
-          "Write of matrices with zero rows or columns" + " not supported (" + mc.getRows() + "x" + mc
-            .getCols() + ").");
-      }
+			if(!mc.nnzKnown())
+				mc.setNonZeros(aNnz.value());
+		}
+		else if(fmt == FileFormat.CSV) {
+			if(mc.getRows() == 0 || mc.getCols() == 0) {
+				throw new IOException(
+					"Write of matrices with zero rows or columns" + " not supported (" + mc.getRows() + "x" + mc
+						.getCols() + ").");
+			}
 
-      LongAccumulator aNnz = null;
+			LongAccumulator aNnz = null;
 
-      //piggyback nnz computation on actual write
-      if(!mc.nnzKnown()) {
-        aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
-        in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
-      }
+			//piggyback nnz computation on actual write
+			if(!mc.nnzKnown()) {
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}
 
-      JavaRDD<String> out = RDDConverterUtils
-        .binaryBlockToCsv(in1, mc, (FileFormatPropertiesCSV) formatProperties, true);
+			JavaRDD<String> out = RDDConverterUtils
+				.binaryBlockToCsv(in1, mc, (FileFormatPropertiesCSV) formatProperties, true);
 
-      customSaveTextFile(out, fname, false);
+			customSaveTextFile(out, fname, false);
 
-      if(!mc.nnzKnown())
-        mc.setNonZeros(aNnz.value().longValue());
-    }
-    else if(fmt == FileFormat.BINARY) {
-      //piggyback nnz computation on actual write
-      LongAccumulator aNnz = null;
-      if(!mc.nnzKnown()) {
-        aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
-        in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
-      }
+			if(!mc.nnzKnown())
+				mc.setNonZeros(aNnz.value().longValue());
+		}
+		else if(fmt == FileFormat.BINARY) {
+			//piggyback nnz computation on actual write
+			LongAccumulator aNnz = null;
+			if(!mc.nnzKnown()) {
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}
 
-      //save binary block rdd on hdfs
-      in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
+			//save binary block rdd on hdfs
+			in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 
-      if(!mc.nnzKnown())
-        mc.setNonZeros(aNnz.value().longValue());
-    }
-    else if(fmt == FileFormat.LIBSVM) {
-      if(mc.getRows() == 0 || mc.getCols() == 0) {
-        throw new IOException(
-          "Write of matrices with zero rows or columns" + " not supported (" + mc.getRows() + "x" + mc
-            .getCols() + ").");
-      }
+			if(!mc.nnzKnown())
+				mc.setNonZeros(aNnz.value().longValue());
+		}
+		else if(fmt == FileFormat.LIBSVM) {
+			if(mc.getRows() == 0 || mc.getCols() == 0) {
+				throw new IOException(
+					"Write of matrices with zero rows or columns" + " not supported (" + mc.getRows() + "x" + mc
+						.getCols() + ").");
+			}
 
-      LongAccumulator aNnz = null;
+			LongAccumulator aNnz = null;
 
-      //piggyback nnz computation on actual write
-      if(!mc.nnzKnown()) {
-        aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
-        in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
-      }
+			//piggyback nnz computation on actual write
+			if(!mc.nnzKnown()) {
+				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}
 
-      JavaRDD<String> out = RDDConverterUtils
-        .binaryBlockToLibsvm(in1, mc, (FileFormatPropertiesLIBSVM) formatProperties, true);
+			JavaRDD<String> out = RDDConverterUtils
+				.binaryBlockToLibsvm(in1, mc, (FileFormatPropertiesLIBSVM) formatProperties, true);
 
-      customSaveTextFile(out, fname, false);
+			customSaveTextFile(out, fname, false);
 
-      if(!mc.nnzKnown())
-        mc.setNonZeros(aNnz.value().longValue());
-    }
-    else {
-      //unsupported formats: binarycell (not externalized)
-      throw new DMLRuntimeException("Unexpected data format: " + fmt.toString());
-    }
+			if(!mc.nnzKnown())
+				mc.setNonZeros(aNnz.value().longValue());
+		}
+		else {
+			//unsupported formats: binarycell (not externalized)
+			throw new DMLRuntimeException("Unexpected data format: " + fmt.toString());
+		}
 
-    // write meta data file
-    HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.FP64, mc, fmt, formatProperties);
-  }
+		// write meta data file
+		HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.FP64, mc, fmt, formatProperties);
+	}
 
-  protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt,
-    ValueType[] schema) throws IOException {
-    //get input rdd
-    JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
-    DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
+	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt,
+		ValueType[] schema) throws IOException {
+		//get input rdd
+		JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 
-    switch(fmt) {
-      case TEXT: {
-        JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToTextCell(in1, mc);
-        customSaveTextFile(out, fname, false);
-        break;
-      }
-      case CSV: {
-        FileFormatPropertiesCSV props = (formatProperties != null) ? (FileFormatPropertiesCSV) formatProperties : null;
-        JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
-        customSaveTextFile(out, fname, false);
-        break;
-      }
-      case LIBSVM: {
-        // TODO: implement for libsvm
-        //				FileFormatPropertiesCSV props = (formatProperties!=null) ?(FileFormatPropertiesCSV) formatProperties : null;
-        //				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
-        //				customSaveTextFile(out, fname, false);
-        break;
-      }
-      case BINARY: {
-        JavaPairRDD<LongWritable, FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
-        out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
-        break;
-      }
-      default:
-        throw new DMLRuntimeException("Unexpected data format: " + fmt.toString());
-    }
+		switch(fmt) {
+			case TEXT: {
+				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToTextCell(in1, mc);
+				customSaveTextFile(out, fname, false);
+				break;
+			}
+			case CSV: {
+				FileFormatPropertiesCSV props = (formatProperties != null) ? (FileFormatPropertiesCSV) formatProperties : null;
+				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
+				customSaveTextFile(out, fname, false);
+				break;
+			}
+			case LIBSVM: {
+				// TODO: implement for libsvm
+				//				FileFormatPropertiesCSV props = (formatProperties!=null) ?(FileFormatPropertiesCSV) formatProperties : null;
+				//				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
+				//				customSaveTextFile(out, fname, false);
+				break;
+			}
+			case BINARY: {
+				JavaPairRDD<LongWritable, FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
+				out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
+				break;
+			}
+			default:
+				throw new DMLRuntimeException("Unexpected data format: " + fmt.toString());
+		}
 
-    // write meta data file
-    HDFSTool
-      .writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, fmt, formatProperties);
-  }
+		// write meta data file
+		HDFSTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, fmt,
+			formatProperties);
+	}
 
-  private static void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) {
-    if(inSingleFile) {
-      Random rand = new Random();
-      String randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
-      try {
-        while(HDFSTool.existsFileOnHDFS(randFName)) {
-          randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
-        }
+	private static void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) {
+		if(inSingleFile) {
+			Random rand = new Random();
+			String randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
+			try {
+				while(HDFSTool.existsFileOnHDFS(randFName)) {
+					randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
+				}
 
-        rdd.saveAsTextFile(randFName);
-        HDFSTool.mergeIntoSingleFile(randFName, fname); // Faster version :)
+				rdd.saveAsTextFile(randFName);
+				HDFSTool.mergeIntoSingleFile(randFName, fname); // Faster version :)
 
-        // rdd.coalesce(1, true).saveAsTextFile(randFName);
-        // MapReduceTool.copyFileOnHDFS(randFName + "/part-00000", fname);
-      }
-      catch(IOException e) {
-        throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
-      }
-      finally {
-        try {
-          // This is to make sure that we donot create random files on HDFS
-          HDFSTool.deleteFileIfExistOnHDFS(randFName);
-        }
-        catch(IOException e) {
-          throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
-        }
-      }
-    }
-    else {
-      rdd.saveAsTextFile(fname);
-    }
-  }
+				// rdd.coalesce(1, true).saveAsTextFile(randFName);
+				// MapReduceTool.copyFileOnHDFS(randFName + "/part-00000", fname);
+			}
+			catch(IOException e) {
+				throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
+			}
+			finally {
+				try {
+					// This is to make sure that we donot create random files on HDFS
+					HDFSTool.deleteFileIfExistOnHDFS(randFName);
+				}
+				catch(IOException e) {
+					throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
+				}
+			}
+		}
+		else {
+			rdd.saveAsTextFile(fname);
+		}
+	}
 
-  @Override public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-    LineageItem[] ret = LineageItemUtils.getLineage(ec, input1, input2, input3, input4);
-    if(formatProperties != null && formatProperties.getDescription() != null && !formatProperties.getDescription()
-      .isEmpty())
-      ret = (LineageItem[]) ArrayUtils.add(ret, new LineageItem(formatProperties.getDescription()));
-    return Pair.of(input1.getName(), new LineageItem(getOpcode(), ret));
-  }
+	@Override public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		LineageItem[] ret = LineageItemUtils.getLineage(ec, input1, input2, input3, input4);
+		if(formatProperties != null && formatProperties.getDescription() != null && !formatProperties.getDescription()
+			.isEmpty())
+			ret = (LineageItem[]) ArrayUtils.add(ret, new LineageItem(formatProperties.getDescription()));
+		return Pair.of(input1.getName(), new LineageItem(getOpcode(), ret));
+	}
 }

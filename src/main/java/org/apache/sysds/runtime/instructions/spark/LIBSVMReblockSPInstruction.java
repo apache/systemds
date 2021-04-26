@@ -43,92 +43,93 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.Statistics;
 
 public class LIBSVMReblockSPInstruction extends UnarySPInstruction {
-  private int _blen;
-  private String _delim;
-  private String _indexDelim;
+	private int _blen;
+	private String _delim;
+	private String _indexDelim;
 
-  protected LIBSVMReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, String opcode,
-    String delim, String indexDelim, String instr) {
-    super(SPType.LIBSVMReblock, op, in, out, opcode, instr);
-    _blen = br;
-    _blen = bc;
-    _delim = delim;
-    _indexDelim = indexDelim;
-  }
+	protected LIBSVMReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, String opcode,
+		String delim, String indexDelim, String instr) {
+		super(SPType.LIBSVMReblock, op, in, out, opcode, instr);
+		_blen = br;
+		_blen = bc;
+		_delim = delim;
+		_indexDelim = indexDelim;
+	}
 
-  public static LIBSVMReblockSPInstruction parseInstruction(String str) {
-    String opcode = InstructionUtils.getOpCode(str);
-    if(!opcode.equals("libsvmrblk"))
-      throw new DMLRuntimeException("Incorrect opcode for LIBSVMReblockSPInstruction:" + opcode);
+	public static LIBSVMReblockSPInstruction parseInstruction(String str) {
+		String opcode = InstructionUtils.getOpCode(str);
+		if(!opcode.equals("libsvmrblk"))
+			throw new DMLRuntimeException("Incorrect opcode for LIBSVMReblockSPInstruction:" + opcode);
 
-    String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 
-    CPOperand in = new CPOperand(parts[1]);
-    CPOperand out = new CPOperand(parts[2]);
-    int blen = Integer.parseInt(parts[3]);
-    String delim = parts[4];
-    String indexDelim = parts[5];
+		CPOperand in = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
+		int blen = Integer.parseInt(parts[3]);
+		String delim = parts[4];
+		String indexDelim = parts[5];
 
-    return new LIBSVMReblockSPInstruction(null, in, out, blen, blen, opcode, delim, indexDelim, str);
-  }
+		return new LIBSVMReblockSPInstruction(null, in, out, blen, blen, opcode, delim, indexDelim, str);
+	}
 
-  @Override public void processInstruction(ExecutionContext ec) {
-    SparkExecutionContext sec = (SparkExecutionContext) ec;
+	@Override public void processInstruction(ExecutionContext ec) {
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
 
-    //sanity check input info
-    CacheableData<?> obj = sec.getCacheableData(input1.getName());
-    MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
-    if(iimd.getFileFormat() != FileFormat.LIBSVM) {
-      throw new DMLRuntimeException(
-        "The given format is not implemented for " + "LIBSVMReblockSPInstruction:" + iimd.getFileFormat().toString());
-    }
+		//sanity check input info
+		CacheableData<?> obj = sec.getCacheableData(input1.getName());
+		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
+		if(iimd.getFileFormat() != FileFormat.LIBSVM) {
+			throw new DMLRuntimeException(
+				"The given format is not implemented for " + "LIBSVMReblockSPInstruction:" + iimd.getFileFormat()
+					.toString());
+		}
 
-    //set output characteristics
-    DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
-    DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-    mcOut.set(mcIn.getRows(), mcIn.getCols(), _blen);
+		//set output characteristics
+		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+		mcOut.set(mcIn.getRows(), mcIn.getCols(), _blen);
 
-    //check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
-    if(Recompiler.checkCPReblock(sec, input1.getName())) {
-      if(input1.getDataType().isMatrix() || input1.getDataType().isFrame())
-        Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName());
-      Statistics.decrementNoOfExecutedSPInst();
-      return;
-    }
+		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
+		if(Recompiler.checkCPReblock(sec, input1.getName())) {
+			if(input1.getDataType().isMatrix() || input1.getDataType().isFrame())
+				Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName());
+			Statistics.decrementNoOfExecutedSPInst();
+			return;
+		}
 
-    //execute matrix/frame libsvmreblock
-    JavaPairRDD<?, ?> out = null;
-    if(input1.getDataType() == DataType.MATRIX)
-      out = processMatrixLIBSVMReblockInstruction(sec, mcOut);
-    else if(input1.getDataType() == DataType.FRAME)
-      out = processFrameLIBSVMReblockInstruction(sec, mcOut, ((FrameObject) obj).getSchema());
+		//execute matrix/frame libsvmreblock
+		JavaPairRDD<?, ?> out = null;
+		if(input1.getDataType() == DataType.MATRIX)
+			out = processMatrixLIBSVMReblockInstruction(sec, mcOut);
+		else if(input1.getDataType() == DataType.FRAME)
+			out = processFrameLIBSVMReblockInstruction(sec, mcOut, ((FrameObject) obj).getSchema());
 
-    // put output RDD handle into symbol table
-    sec.setRDDHandleForVariable(output.getName(), out);
-    sec.addLineageRDD(output.getName(), input1.getName());
-  }
+		// put output RDD handle into symbol table
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), input1.getName());
+	}
 
-  @SuppressWarnings("unchecked") protected JavaPairRDD<MatrixIndexes, MatrixBlock> processMatrixLIBSVMReblockInstruction(
-    SparkExecutionContext sec, DataCharacteristics mcOut) {
-    //get input rdd (needs to be longwritable/text for consistency with meta data, in case of
-    //serialization issues create longwritableser/textser as serializable wrappers
-    JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) sec
-      .getRDDHandleForMatrixObject(sec.getMatrixObject(input1), FileFormat.LIBSVM);
+	@SuppressWarnings("unchecked") protected JavaPairRDD<MatrixIndexes, MatrixBlock> processMatrixLIBSVMReblockInstruction(
+		SparkExecutionContext sec, DataCharacteristics mcOut) {
+		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
+		//serialization issues create longwritableser/textser as serializable wrappers
+		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) sec
+			.getRDDHandleForMatrixObject(sec.getMatrixObject(input1), FileFormat.LIBSVM);
 
-    //reblock libsvm to binary block
-    return RDDConverterUtils.libsvmToBinaryBlock(sec.getSparkContext(), in, mcOut, _delim, _indexDelim);
-  }
+		//reblock libsvm to binary block
+		return RDDConverterUtils.libsvmToBinaryBlock(sec.getSparkContext(), in, mcOut, _delim, _indexDelim);
+	}
 
-  @SuppressWarnings("unchecked") protected JavaPairRDD<Long, FrameBlock> processFrameLIBSVMReblockInstruction(
-    SparkExecutionContext sec, DataCharacteristics mcOut, ValueType[] schema) {
-    // TODO
-    //get input rdd (needs to be longwritable/text for consistency with meta data, in case of
-    //serialization issues create longwritableser/textser as serializable wrappers
-    JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) sec
-      .getRDDHandleForFrameObject(sec.getFrameObject(input1), FileFormat.LIBSVM);
+	@SuppressWarnings("unchecked") protected JavaPairRDD<Long, FrameBlock> processFrameLIBSVMReblockInstruction(
+		SparkExecutionContext sec, DataCharacteristics mcOut, ValueType[] schema) {
+		// TODO
+		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
+		//serialization issues create longwritableser/textser as serializable wrappers
+		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) sec
+			.getRDDHandleForFrameObject(sec.getFrameObject(input1), FileFormat.LIBSVM);
 
-    //reblock libsvm to binary block
-    //return FrameRDDConverterUtils.libsvmToBinaryBlock(sec.getSparkContext(), in, mcOut, schema, _delim, _indexDelim);
-    return null;
-  }
+		//reblock libsvm to binary block
+		//return FrameRDDConverterUtils.libsvmToBinaryBlock(sec.getSparkContext(), in, mcOut, schema, _delim, _indexDelim);
+		return null;
+	}
 }

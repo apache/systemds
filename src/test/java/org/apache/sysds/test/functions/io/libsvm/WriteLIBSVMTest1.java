@@ -21,18 +21,18 @@ package org.apache.sysds.test.functions.io.libsvm;
 
 public class WriteLIBSVMTest1 extends WriteLIBSVMTest {
 
-  private final static String TEST_NAME = "WriteLIBSVMTest";
-  private final static String TEST_CLASS_DIR = TEST_DIR + WriteLIBSVMTest1.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "WriteLIBSVMTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + WriteLIBSVMTest1.class.getSimpleName() + "/";
 
-  protected String getTestName() {
-    return TEST_NAME;
-  }
+	protected String getTestName() {
+		return TEST_NAME;
+	}
 
-  protected String getTestClassDir() {
-    return TEST_CLASS_DIR;
-  }
+	protected String getTestClassDir() {
+		return TEST_CLASS_DIR;
+	}
 
-  protected int getId() {
-    return 1;
-  }
+	protected int getId() {
+		return 1;
+	}
 }

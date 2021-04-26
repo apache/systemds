@@ -27,52 +27,52 @@ import org.junit.Test;
 
 public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
 
-  protected abstract int getId();
+	protected abstract int getId();
 
-  protected String getInputLIBSVMFileName() {
-    return "transfusion_" + getId() + ".libsvm";
-  }
+	protected String getInputLIBSVMFileName() {
+		return "transfusion_" + getId() + ".libsvm";
+	}
 
-  @Test public void testlibsvm1_Seq_CP() {
-    runlibsvmTest(getId(), ExecMode.SINGLE_NODE, false);
-  }
+	@Test public void testlibsvm1_Seq_CP() {
+		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, false);
+	}
 
-  @Test public void testlibsvm2_Pllel_CP() {
-    runlibsvmTest(getId(), ExecMode.SINGLE_NODE, true);
-  }
+	@Test public void testlibsvm2_Pllel_CP() {
+		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, true);
+	}
 
-  @Test public void testlibsvm3_SP() {
-    runlibsvmTest(getId(), ExecMode.SPARK, false);
-  }
+	@Test public void testlibsvm3_SP() {
+		runlibsvmTest(getId(), ExecMode.SPARK, false);
+	}
 
-  protected void runlibsvmTest(int testNumber, ExecMode platform, boolean parallel) {
-    ExecMode oldPlatform = rtplatform;
-    rtplatform = platform;
+	protected void runlibsvmTest(int testNumber, ExecMode platform, boolean parallel) {
+		ExecMode oldPlatform = rtplatform;
+		rtplatform = platform;
 
-    boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-    if(rtplatform == ExecMode.SPARK)
-      DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if(rtplatform == ExecMode.SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-    boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
+		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
-    try {
-      CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
+		try {
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
-      TestConfiguration config = getTestConfiguration(getTestName());
-      loadTestConfiguration(config);
+			TestConfiguration config = getTestConfiguration(getTestName());
+			loadTestConfiguration(config);
 
-      String HOME = SCRIPT_DIR + TEST_DIR;
-      String inputMatrix = HOME + INPUT_DIR + getInputLIBSVMFileName();
-      String dmlOutput = output("dml.scalar");
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			String inputMatrix = HOME + INPUT_DIR + getInputLIBSVMFileName();
+			String dmlOutput = output("dml.scalar");
 
-      fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
-      programArgs = new String[] {"-explain", "hops", "-args", inputMatrix, dmlOutput};
-      runTest(true, false, null, -1);
-    }
-    finally {
-      rtplatform = oldPlatform;
-      CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
-      DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-    }
-  }
+			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
+			programArgs = new String[] {"-explain", "hops", "-args", inputMatrix, dmlOutput};
+			runTest(true, false, null, -1);
+		}
+		finally {
+			rtplatform = oldPlatform;
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+	}
 }

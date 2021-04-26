@@ -26,64 +26,64 @@ import org.apache.sysds.parser.DataExpression;
 import java.io.Serializable;
 
 public class FileFormatPropertiesLIBSVM extends FileFormatProperties implements Serializable {
-  protected static final Log LOG = LogFactory.getLog(FileFormatPropertiesLIBSVM.class.getName());
-  private static final long serialVersionUID = -2870393360885401604L;
+	protected static final Log LOG = LogFactory.getLog(FileFormatPropertiesLIBSVM.class.getName());
+	private static final long serialVersionUID = -2870393360885401604L;
 
-  private String delim;
-  private String indexDelim;
-  private boolean sparse;
+	private String delim;
+	private String indexDelim;
+	private boolean sparse;
 
-  public FileFormatPropertiesLIBSVM() {
-    // get the default values for LIBSVM properties from the language layer
-    this.delim = DataExpression.DEFAULT_DELIM_DELIMITER;
-    this.indexDelim = DataExpression.LIBSVM_INDEX_DELIM;
+	public FileFormatPropertiesLIBSVM() {
+		// get the default values for LIBSVM properties from the language layer
+		this.delim = DataExpression.DEFAULT_DELIM_DELIMITER;
+		this.indexDelim = DataExpression.LIBSVM_INDEX_DELIM;
 
-    if(LOG.isDebugEnabled())
-      LOG.debug("FileFormatPropertiesLIBSVM: " + this.toString());
-  }
+		if(LOG.isDebugEnabled())
+			LOG.debug("FileFormatPropertiesLIBSVM: " + this.toString());
+	}
 
-  public FileFormatPropertiesLIBSVM(String delim, String indexDelim) {
-    this();
-    this.delim = delim;
-    this.indexDelim = indexDelim;
-    if(LOG.isDebugEnabled())
-      LOG.debug("FileFormatPropertiesLIBSVM full settings: " + this.toString());
-  }
+	public FileFormatPropertiesLIBSVM(String delim, String indexDelim) {
+		this();
+		this.delim = delim;
+		this.indexDelim = indexDelim;
+		if(LOG.isDebugEnabled())
+			LOG.debug("FileFormatPropertiesLIBSVM full settings: " + this.toString());
+	}
 
-  public FileFormatPropertiesLIBSVM(String delim, String indexDelim, boolean sparse) {
-    this();
-    this.delim = delim;
-    this.indexDelim = indexDelim;
-    this.sparse = sparse;
-    if(LOG.isDebugEnabled())
-      LOG.debug("FileFormatPropertiesLIBSVM full settings: " + this.toString());
-  }
+	public FileFormatPropertiesLIBSVM(String delim, String indexDelim, boolean sparse) {
+		this();
+		this.delim = delim;
+		this.indexDelim = indexDelim;
+		this.sparse = sparse;
+		if(LOG.isDebugEnabled())
+			LOG.debug("FileFormatPropertiesLIBSVM full settings: " + this.toString());
+	}
 
-  public String getDelim() {
-    return delim;
-  }
+	public String getDelim() {
+		return delim;
+	}
 
-  public void setDelim(String delim) {
-    this.delim = delim;
-  }
+	public void setDelim(String delim) {
+		this.delim = delim;
+	}
 
-  public String getIndexDelim() {
-    return indexDelim;
-  }
+	public String getIndexDelim() {
+		return indexDelim;
+	}
 
-  public void setIndexDelim(String indexDelim) {
-    this.indexDelim = indexDelim;
-  }
+	public void setIndexDelim(String indexDelim) {
+		this.indexDelim = indexDelim;
+	}
 
-  public boolean isSparse() {
-    return sparse;
-  }
+	public boolean isSparse() {
+		return sparse;
+	}
 
-  @Override public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(" delim " + delim);
-    sb.append(" indexDelim " + indexDelim);
-    sb.append(" sparse " + sparse);
-    return sb.toString();
-  }
+	@Override public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(" delim " + delim);
+		sb.append(" indexDelim " + indexDelim);
+		sb.append(" sparse " + sparse);
+		return sb.toString();
+	}
 }

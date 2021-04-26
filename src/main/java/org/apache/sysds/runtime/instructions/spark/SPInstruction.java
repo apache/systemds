@@ -29,74 +29,69 @@ import org.apache.sysds.utils.Statistics;
 
 public abstract class SPInstruction extends Instruction {
 
-  public enum SPType {
-    MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions
-    MatrixIndexing, Reorg, Binary, Ternary,
-    AggregateUnary, AggregateTernary, Reblock, CSVReblock, LIBSVMReblock,
-    Builtin, Unary, BuiltinNary, MultiReturnBuiltin, Checkpoint, Compression, DeCompression, Cast,
-    CentralMoment, Covariance, QSort, QPick, ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand,
-    MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain,
-    Write, SpoofFused, Dnn
-  }
+	public enum SPType {
+		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions
+		MatrixIndexing, Reorg, Binary, Ternary, AggregateUnary, AggregateTernary, Reblock, CSVReblock, LIBSVMReblock, Builtin, Unary, BuiltinNary, MultiReturnBuiltin, Checkpoint, Compression, DeCompression, Cast, CentralMoment, Covariance, QSort, QPick, ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, Write, SpoofFused, Dnn
+	}
 
-  protected final SPType _sptype;
-  protected final boolean _requiresLabelUpdate;
+	protected final SPType _sptype;
+	protected final boolean _requiresLabelUpdate;
 
-  protected SPInstruction(SPType type, String opcode, String istr) {
-    this(type, null, opcode, istr);
-  }
+	protected SPInstruction(SPType type, String opcode, String istr) {
+		this(type, null, opcode, istr);
+	}
 
-  protected SPInstruction(SPType type, Operator op, String opcode, String istr) {
-    super(op);
-    _sptype = type;
-    instString = istr;
+	protected SPInstruction(SPType type, Operator op, String opcode, String istr) {
+		super(op);
+		_sptype = type;
+		instString = istr;
 
-    // prepare opcode and update requirement for repeated usage
-    instOpcode = opcode;
-    _requiresLabelUpdate = super.requiresLabelUpdate();
-  }
+		// prepare opcode and update requirement for repeated usage
+		instOpcode = opcode;
+		_requiresLabelUpdate = super.requiresLabelUpdate();
+	}
 
-  @Override public IType getType() {
-    return IType.SPARK;
-  }
+	@Override public IType getType() {
+		return IType.SPARK;
+	}
 
-  public SPType getSPInstructionType() {
-    return _sptype;
-  }
+	public SPType getSPInstructionType() {
+		return _sptype;
+	}
 
-  @Override public boolean requiresLabelUpdate() {
-    return _requiresLabelUpdate;
-  }
+	@Override public boolean requiresLabelUpdate() {
+		return _requiresLabelUpdate;
+	}
 
-  @Override public String getGraphString() {
-    return getOpcode();
-  }
+	@Override public String getGraphString() {
+		return getOpcode();
+	}
 
-  @Override public Instruction preprocessInstruction(ExecutionContext ec) {
-    //default pre-process behavior (e.g., debug state)
-    Instruction tmp = super.preprocessInstruction(ec);
+	@Override public Instruction preprocessInstruction(ExecutionContext ec) {
+		//default pre-process behavior (e.g., debug state)
+		Instruction tmp = super.preprocessInstruction(ec);
 
-    //instruction patching
-    if(tmp.requiresLabelUpdate()) //update labels only if required
-    {
-      //note: no exchange of updated instruction as labels might change in the general case
-      String updInst = CPInstruction.updateLabels(tmp.toString(), ec.getVariables());
-      tmp = SPInstructionParser.parseSingleInstruction(updInst);
-    }
+		//instruction patching
+		if(tmp.requiresLabelUpdate()) //update labels only if required
+		{
+			//note: no exchange of updated instruction as labels might change in the general case
+			String updInst = CPInstruction.updateLabels(tmp.toString(), ec.getVariables());
+			tmp = SPInstructionParser.parseSingleInstruction(updInst);
+		}
 
-    //robustness federated instructions (runtime assignment)
-    tmp = FEDInstructionUtils.checkAndReplaceSP(tmp, ec);
+		//robustness federated instructions (runtime assignment)
+		tmp = FEDInstructionUtils.checkAndReplaceSP(tmp, ec);
 
-    return tmp;
-  }
+		return tmp;
+	}
 
-  @Override public abstract void processInstruction(ExecutionContext ec);
+	@Override public abstract void processInstruction(ExecutionContext ec);
 
-  @Override public void postprocessInstruction(ExecutionContext ec) {
-    //maintain statistics
-    Statistics.incrementNoOfExecutedSPInst();
+	@Override public void postprocessInstruction(ExecutionContext ec) {
+		//maintain statistics
+		Statistics.incrementNoOfExecutedSPInst();
 
-    //default post-process behavior
-    super.postprocessInstruction(ec);
-  }
+		//default post-process behavior
+		super.postprocessInstruction(ec);
+	}
 }

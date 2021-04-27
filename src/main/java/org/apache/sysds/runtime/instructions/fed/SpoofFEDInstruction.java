@@ -94,18 +94,20 @@ public class SpoofFEDInstruction extends FEDInstruction
 			throw new DMLRuntimeException("Federated code generation only supported" +
 				" for cellwise, rowwise, multiaggregate, and outerproduct templates.");
 
+
+		ArrayList<CPOperand> inCpoFed = new ArrayList<>();
 		ArrayList<CPOperand> inCpoMat = new ArrayList<>();
 		ArrayList<CPOperand> inCpoScal = new ArrayList<>();
+		ArrayList<FederationMap> fedMaps = new ArrayList<>();
 		ArrayList<MatrixObject> inMo = new ArrayList<>();
 		ArrayList<ScalarObject> inSo = new ArrayList<>();
-		FederationMap fedMap = null;
 		for(CPOperand cpo : _inputs) {
 			Data tmpData = ec.getVariable(cpo);
 			if(tmpData instanceof MatrixObject) {
 				MatrixObject tmp = (MatrixObject) tmpData;
-				if(fedMap == null & tmp.isFederated()) { //take first
-					inCpoMat.add(0, cpo); // insert federated CPO at the beginning
-					fedMap = tmp.getFedMapping();
+				if(tmp.isFederated()) {
+					inCpoFed.add(cpo);
+					fedMaps.add(tmp.getFedMapping());
 				}
 				else {
 					inCpoMat.add(cpo);
@@ -121,23 +123,25 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		ArrayList<FederatedRequest> frBroadcast = new ArrayList<>();
 		ArrayList<FederatedRequest[]> frBroadcastSliced = new ArrayList<>();
-		long[] frIds = new long[1 + inMo.size() + inSo.size()];
+		long[] frIds = new long[fedMaps.size() + inMo.size() + inSo.size()];
 		int index = 0;
-		frIds[index++] = fedMap.getID(); // insert federation map id at the beginning
+		for(FederationMap fm : fedMaps) {
+			frIds[index++] = fm.getID(); // insert federation map IDs at the beginning
+		}
 		for(MatrixObject mo : inMo) {
-			if(spoofType.needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns(), index)) {
-				FederatedRequest[] tmpFr = spoofType.broadcastSliced(mo, fedMap);
+			if(spoofType.needsBroadcastSliced(fedMaps.get(0), mo.getNumRows(), mo.getNumColumns(), index)) {
+				FederatedRequest[] tmpFr = spoofType.broadcastSliced(mo, fedMaps.get(0));
 				frIds[index++] = tmpFr[0].getID();
 				frBroadcastSliced.add(tmpFr);
 			}
 			else {
-				FederatedRequest tmpFr = fedMap.broadcast(mo);
+				FederatedRequest tmpFr = fedMaps.get(0).broadcast(mo);
 				frIds[index++] = tmpFr.getID();
 				frBroadcast.add(tmpFr);
 			}
 		}
 		for(ScalarObject so : inSo) {
-			FederatedRequest tmpFr = fedMap.broadcast(so);
+			FederatedRequest tmpFr = fedMaps.get(0).broadcast(so);
 			frIds[index++] = tmpFr.getID();
 			frBroadcast.add(tmpFr);
 		}
@@ -145,29 +149,29 @@ public class SpoofFEDInstruction extends FEDInstruction
 		// change the is_literal flag from true to false because when broadcasted it is not a literal anymore
 		instString = instString.replace("true", "false");
 
-		CPOperand[] inCpo = ArrayUtils.addAll(inCpoMat.toArray(new CPOperand[0]),
-			inCpoScal.toArray(new CPOperand[0]));
+		CPOperand[] inCpo = ArrayUtils.addAll(inCpoFed.toArray(new CPOperand[0]),
+			ArrayUtils.addAll(inCpoMat.toArray(new CPOperand[0]), inCpoScal.toArray(new CPOperand[0])));
 		FederatedRequest frCompute = FederationUtils.callInstruction(instString, _output, inCpo, frIds);
 
 		// get partial results from federated workers
 		FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frCompute.getID());
 
 		ArrayList<FederatedRequest> frCleanup = new ArrayList<>();
-		frCleanup.add(fedMap.cleanup(getTID(), frCompute.getID()));
+		frCleanup.add(fedMaps.get(0).cleanup(getTID(), frCompute.getID()));
 		for(FederatedRequest fr : frBroadcast)
-			frCleanup.add(fedMap.cleanup(getTID(), fr.getID()));
+			frCleanup.add(fedMaps.get(0).cleanup(getTID(), fr.getID()));
 		for(FederatedRequest[] fr : frBroadcastSliced)
-			frCleanup.add(fedMap.cleanup(getTID(), fr[0].getID()));
+			frCleanup.add(fedMaps.get(0).cleanup(getTID(), fr[0].getID()));
 
 		FederatedRequest[] frAll = ArrayUtils.addAll(ArrayUtils.addAll(
 			frBroadcast.toArray(new FederatedRequest[0]), frCompute, frGet),
 			frCleanup.toArray(new FederatedRequest[0]));
-		Future<FederatedResponse>[] response = fedMap.executeMultipleSlices(
+		Future<FederatedResponse>[] response = fedMaps.get(0).executeMultipleSlices(
 			getTID(), true, frBroadcastSliced.toArray(new FederatedRequest[0][]), frAll);
 
 		// setting the output with respect to the different aggregation types
 		// of the different spoof templates
-		spoofType.setOutput(ec, response, fedMap);
+		spoofType.setOutput(ec, response, fedMaps.get(0));
 	}
 
 

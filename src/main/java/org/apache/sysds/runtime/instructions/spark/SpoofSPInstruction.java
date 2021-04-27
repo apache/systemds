@@ -39,14 +39,17 @@ import org.apache.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
@@ -678,16 +681,24 @@ public class SpoofSPInstruction extends SPInstruction {
 	}
 
 	public boolean isFederated(ExecutionContext ec) {
-		for(CPOperand input : _in)
-			if( ec.isFederated(input) )
-				return true;
-		return false;
+		return isFederated(ec, null);
 	}
 	
 	public boolean isFederated(ExecutionContext ec, FType type) {
-		for(CPOperand input : _in)
-			if( ec.isFederated(input, type) )
-				return true;
-		return false;
+		FederationMap fedMap = null;
+		boolean retVal = false;
+		for(CPOperand input : _in) {
+			Data data = ec.getVariable(input);
+			if(data instanceof MatrixObject && (type == null ? ((MatrixObject) data).isFederated() : (((MatrixObject) data).isFederated(type)))) {
+				if(fedMap == null) {
+					fedMap = ((MatrixObject)data).getFedMapping();
+					retVal = true;
+				}
+				else if(!((MatrixObject) data).getFedMapping().isAligned(fedMap, false)) {
+					retVal = false;
+				}
+			}
+		}
+		return retVal;
 	}
 }

@@ -39,19 +39,19 @@ m1.shape = (dim, dim)
 m2 = np.array(np.random.randint(5, size=dim * dim) + 1, dtype=np.double)
 m2.shape = (dim, dim)
 
-tempdir = "/tmp/test_federated_aggregations/"
-mtd = {"format": "csv", "header": "false", "rows": dim, "cols": dim}
+tempdir = "./tests/federated/tmp/test_federated_aggregations/"
+mtd = {"format": "csv", "header": True, "rows": dim, "cols": dim, "data_type": "matrix", "value_type": "double" }
 
 # Create the testing directory if it does not exist.
 if not os.path.exists(tempdir):
     os.makedirs(tempdir)
 
 # Save data files for the Federated workers.
-np.savetxt(tempdir + "m1.csv", m1, delimiter=",")
+np.savetxt(tempdir + "m1.csv", m1, delimiter=",", header="a,b,c,d,e")
 with io.open(tempdir + "m1.csv.mtd", "w", encoding="utf-8") as f:
     f.write(json.dumps(mtd, ensure_ascii=False))
 
-np.savetxt(tempdir + "m2.csv", m2, delimiter=",")
+np.savetxt(tempdir + "m2.csv", m2, delimiter=",", header="a,b,c,d,e")
 with io.open(tempdir + "m2.csv.mtd", "w", encoding="utf-8") as f:
     f.write(json.dumps(mtd, ensure_ascii=False))
 
@@ -251,4 +251,3 @@ class TestFederatedAggFn(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    shutil.rmtree(tempdir)

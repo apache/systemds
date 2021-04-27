@@ -1,0 +1,137 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+test_num = $in_test_num;
+row_part = $in_rp;
+
+if(row_part) {
+  X = federated(addresses=list($in_X1, $in_X2),
+    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)));
+  Y = federated(addresses=list($in_Y1, $in_Y2),
+    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)));
+}
+else {
+  X = federated(addresses=list($in_X1, $in_X2),
+    ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)));
+  Y = federated(addresses=list($in_Y1, $in_Y2),
+    ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)));
+}
+
+if(test_num == 1) { # cellwise #4
+  # X ... 4x4 matrix
+  # Y ... 4x4 matrix
+  w = matrix(3, rows=4, cols=4);
+  Z = 10 + floor(round(abs((X + w) * Y)));
+}
+else if(test_num == 2) { # cellwise #5
+  # X ... 4x1 vector
+  # Y ... 4x1 vector
+  U = matrix( "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16", rows=4, cols=4);
+  G = abs(exp(U));
+  V = 10 + floor(round(abs((U / X) + Y)));
+  Z = G + V;
+}
+else if(test_num == 3) { # cellwise #6
+  # X ... 4x1 vector
+  # Y ... 4x1 vector
+  v = matrix("3 3 3 3", rows=4, cols=1);
+
+  Z = as.matrix(sum(X * Y * v));
+}
+else if(test_num == 4) { # cellwise #7
+  # X ... 1000x1 vector
+  # Y ... 1000x1 vector
+  U = X + Y - 7 + abs(X);
+  Z = t(U) %*% U;
+}
+else if(test_num == 5) { # cellwise #9
+  # X ... 500x2 matrix
+  # Y ... 500x2 matrix
+  U = X + 7 * Y;
+  Z = as.matrix(sum(log(U)));
+}
+else if(test_num == 6) { # cellwise #12
+  # X ... 2x500 matrix
+  # Y ... 2x500 matrix
+  U = X + 7 * Y;
+  Z = as.matrix(sum(sqrt(U)));
+}
+else if(test_num == 7) { # cellwise #13
+  # X ... 2x4 matrix
+  # Y ... 2x4 matrix
+  w = matrix(seq(1,8), rows=2, cols=4);
+  Z = 10 + floor(round(abs((X + w) * Y)));
+}
+else if(test_num == 101) { # rowwise #2
+  # X ... 6x2 matrix
+  # Y ... 6x2 matrix
+  U = matrix(1, rows=2, cols=1);
+  lambda = sum(Y);
+
+  Z = t(X) %*% (lambda * (X %*% U));
+}
+else if(test_num == 102) { # rowwise #3
+  # X ... 6x1 vector
+  # Y ... 6x1 vector
+  U = matrix( "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24", rows=6, cols=4);
+  V = matrix(1,rows=4,cols=1);
+
+  Z = t(U) %*% (Y + (2 - (X * (U %*% V))));
+}
+else if(test_num == 201) { # multiagg #4
+  # X ... 6x4 matrix
+  # Y ... 6x4 matrix
+  #disjoint partitions with partial shared reads
+  r1 = sum(X * Y);
+  r2 = sum(X ^ 2);
+  r3 = sum(Y ^ 2);
+  Z = as.matrix(r1 + r2 + r3);
+}
+else if(test_num == 202) { # multiagg #5
+  # X ... 6x4 matrix
+  # Y ... 6x4 matrix
+  U = matrix(seq(0,23), rows=6, cols=4);
+  V = matrix(seq(2,25), rows=6, cols=4);
+  #disjoint partitions with transitive partial shared reads
+  r1 = sum(X * U);
+  r2 = sum(V * Y);
+  r3 = sum(X * V * Y);
+  Z = as.matrix(r1 + r2 + r3);
+}
+else if(test_num == 203) { # multiagg #7
+  # X ... 20x1 vector
+  # Y ... 20x1 vector
+  while(FALSE){}
+
+  r1 = t(X) %*% X;
+  r2 = t(X) %*% Y;
+  r3 = t(Y) %*% Y;
+  Z = r1 + r2 + r3;
+}
+else if(test_num == 301) { # outerproduct #1
+  # X ... 2000x10 matrix
+  # Y ... 2000x10 matrix
+  U = matrix(3, rows=2000, cols=2000);
+  eps = 0.1;
+  Z = as.matrix(sum(U * log(X %*% t(Y) + eps)));
+}
+
+write(Z, $out_Z);

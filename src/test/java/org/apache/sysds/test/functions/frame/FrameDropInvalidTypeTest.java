@@ -62,7 +62,7 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 		if (TEST_CACHE_ENABLED) {
-			setOutAndExpectedDeletionDisabled(true);
+//			setOutAndExpectedDeletionDisabled(true);
 		}
 	}
 
@@ -106,6 +106,12 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 	public void testLongInInt() {
 		// This test now verifies that changing from INT32 to INT64 is okay.
 		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, LopProperties.ExecType.CP, true);
+	}
+
+	@Test
+	public void testIntInBool() {
+		// This test now verifies that changing from INT32 to INT64 is okay.
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 5, LopProperties.ExecType.CP, true);
 	}
 
 	@Test
@@ -177,6 +183,16 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 						tmp1[i] = "12345678910111212";
 					frame1.appendColumn(tmp1);
 					meta[meta.length - 1] = "INT32";
+					break;
+				}
+				case 5: { // int in bool
+					String[] tmp1 = new String[rows];
+					for (int i = 0; i < rows; i++)
+						tmp1[i] = "true";
+					for (int i = 0; i < badValues; i++)
+						tmp1[i] = "1";
+					frame1.appendColumn(tmp1);
+					meta[meta.length - 1] = "BOOLEAN";
 					break;
 				}
 			}

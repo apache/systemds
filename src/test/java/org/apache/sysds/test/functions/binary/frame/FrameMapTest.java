@@ -139,8 +139,8 @@ public class FrameMapTest extends AutomatedTestBase {
 			else if(type == TestType.SHERLOCK_PREP) {
 				String[][] data = new String[1][1];
 				data[0][0] =  "\"['Global', 'United States', 'Australia']\"";
-        FileFormatPropertiesCSV ffp = new FileFormatPropertiesCSV();
-        ffp.setDelim(";");
+        		FileFormatPropertiesCSV ffp = new FileFormatPropertiesCSV();
+        		ffp.setDelim(";");
 				FrameWriterFactory.createFrameWriter(FileFormat.CSV, ffp).
 					writeFrameToHDFS(new FrameBlock(schemaStrings1, data), input("A"), 1, 1);
 			}

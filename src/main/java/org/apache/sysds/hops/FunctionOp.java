@@ -384,4 +384,9 @@ public class FunctionOp extends Hop
 	public boolean compare(Hop that) {
 		return false;
 	}
+
+	@Override
+	public String toString(){
+		return getOpString();
+	}
 }

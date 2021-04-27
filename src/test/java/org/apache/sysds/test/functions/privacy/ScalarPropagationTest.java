@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.wink.json4j.JSONObject;
 
 public class ScalarPropagationTest extends AutomatedTestBase 
 {

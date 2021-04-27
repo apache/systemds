@@ -139,6 +139,7 @@ public class MetaDataAll extends DataIdentifier {
 		return retVal;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void parseMetaDataParams()
 	{
 		for( Object obj : _metaObj.entrySet() ){

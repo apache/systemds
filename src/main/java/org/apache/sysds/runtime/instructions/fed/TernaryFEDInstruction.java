@@ -199,7 +199,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 	 * @param fedRequest1 federated request to occur after array
 	 * @return federated requests collected in a single array
 	 */
-	private FederatedRequest[] collectRequests(FederatedRequest[] fedRequests, FederatedRequest fedRequest1){
+	private static FederatedRequest[] collectRequests(FederatedRequest[] fedRequests, FederatedRequest fedRequest1){
 		FederatedRequest[] allRequests = new FederatedRequest[fedRequests.length + 1];
 		for ( int i = 0; i < fedRequests.length; i++ )
 			allRequests[i] = fedRequests[i];

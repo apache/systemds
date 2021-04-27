@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.privacy;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -29,7 +28,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -39,7 +37,6 @@ import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
 import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacyList;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.wink.json4j.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 

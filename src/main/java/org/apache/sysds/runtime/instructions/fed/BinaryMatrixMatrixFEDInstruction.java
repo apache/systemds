@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-
 public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 {
 	protected BinaryMatrixMatrixFEDInstruction(Operator op,
@@ -41,7 +40,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
-
+		
 		//canonicalization for federated lhs
 		if( !mo1.isFederated() && mo2.isFederated()
 			&& mo1.getDataCharacteristics().equalDims(mo2.getDataCharacteristics())
@@ -85,8 +84,8 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					throw new DMLRuntimeException("Matrix-matrix binary operations with a full partitioned federated input with multiple partitions are not supported yet.");
 				}
 			}
-			else if((mo1.isFederated(FType.ROW) && mo2.getNumRows() == 1 && mo2.getNumColumns() > 1)
-				|| (mo1.isFederated(FType.COL) && mo2.getNumRows() > 1 && mo2.getNumColumns() == 1)) {
+			else if((mo1.isFederated(FType.ROW) && mo2.getNumRows() == 1)      //matrix-rowVect
+				|| (mo1.isFederated(FType.COL) && mo2.getNumColumns() == 1)) { //matrix-colVect
 				// MV row partitioned row vector, MV col partitioned col vector
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},

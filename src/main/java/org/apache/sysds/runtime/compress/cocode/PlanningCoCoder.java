@@ -200,7 +200,7 @@ public class PlanningCoCoder {
 		private int st1 = 0, st2 = 0, st3 = 0, st4 = 0;
 
 		public Memorizer() {
-			mem = new HashMap<ColIndexes, CompressedSizeInfoColGroup>();
+			mem = new HashMap<>();
 		}
 
 		public void put(CompressedSizeInfoColGroup g) {

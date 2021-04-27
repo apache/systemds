@@ -232,11 +232,11 @@ public class CompressedMatrixBlockFactory {
 		logPhase();
 	}
 
-	private AColGroup combineEmpty(List<AColGroup> e) {
+	private static AColGroup combineEmpty(List<AColGroup> e) {
 		return new ColGroupEmpty(combineColIndexes(e), e.get(0).getNumRows());
 	}
 
-	private AColGroup combineConst(List<AColGroup> c) {
+	private static AColGroup combineConst(List<AColGroup> c) {
 		int[] resCols = combineColIndexes(c);
 
 		double[] values = new double[resCols.length];
@@ -257,7 +257,7 @@ public class CompressedMatrixBlockFactory {
 		return new ColGroupConst(resCols, c.get(0).getNumRows(), dict);
 	}
 
-	private int[] combineColIndexes(List<AColGroup> gs) {
+	private static int[] combineColIndexes(List<AColGroup> gs) {
 		int numCols = 0;
 		for(AColGroup g : gs)
 			numCols += g.getNumCols();

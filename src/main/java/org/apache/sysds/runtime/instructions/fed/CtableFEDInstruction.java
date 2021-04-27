@@ -50,16 +50,16 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 public class CtableFEDInstruction extends ComputationFEDInstruction {
 	private final CPOperand _outDim1;
 	private final CPOperand _outDim2;
-	private final boolean _isExpand;
-	private final boolean _ignoreZeros;
+	//private final boolean _isExpand;
+	//private final boolean _ignoreZeros;
 
 	private CtableFEDInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
 		boolean ignoreZeros, String opcode, String istr) {
 		super(FEDType.Ctable, null, in1, in2, in3, out, opcode, istr);
 		_outDim1 = new CPOperand(outputDim1, ValueType.FP64, DataType.SCALAR, dim1Literal);
 		_outDim2 = new CPOperand(outputDim2, ValueType.FP64, DataType.SCALAR, dim2Literal);
-		_isExpand = isExpand;
-		_ignoreZeros = ignoreZeros;
+		//_isExpand = isExpand;
+		//_ignoreZeros = ignoreZeros;
 	}
 
 	public static CtableFEDInstruction parseInstruction(String inst) {
@@ -199,7 +199,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	}
 
 
-	private void setFedOutput(MatrixObject mo1, MatrixObject out, FederationMap fedMap, Long[] dims1, long outId) {
+	private static void setFedOutput(MatrixObject mo1, MatrixObject out, FederationMap fedMap, Long[] dims1, long outId) {
 		long fedSize = Collections.max(Arrays.asList(dims1), Long::compare) / dims1.length;
 
 		long d1 = Collections.max(Arrays.asList(dims1), Long::compare);
@@ -225,7 +225,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		});
 	}
 
-	private MatrixBlock aggResult(Future<FederatedResponse>[] ffr) {
+	private static MatrixBlock aggResult(Future<FederatedResponse>[] ffr) {
 		MatrixBlock resultBlock = new MatrixBlock(1, 1, 0);
 		int dim1 = 0, dim2 = 0;
 		for(int i = 0; i < ffr.length; i++) {
@@ -252,7 +252,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		return resultBlock;
 	}
 
-	private FederationMap modifyFedRanges(FederationMap fedMap, Long[] dims1, Long[] dims2) {
+	private static FederationMap modifyFedRanges(FederationMap fedMap, Long[] dims1, Long[] dims2) {
 		IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
 			fedMap.getFederatedRanges()[i]
 				.setBeginDim(0, i == 0 ? 0 : fedMap.getFederatedRanges()[i - 1].getEndDims()[0]);
@@ -291,7 +291,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		return computeOutputDims(tmp);
 	}
 
-	private Long[] computeOutputDims(Future<FederatedResponse>[] tmp) {
+	private static Long[] computeOutputDims(Future<FederatedResponse>[] tmp) {
 		Long[] fedDims = new Long[tmp.length];
 		for(int i = 0; i < tmp.length; i ++)
 			try {

@@ -1143,7 +1143,7 @@ public class LibMatrixAgg
 	}
 
 	private static void aggregateBinaryMatrixLastRowDenseGeneric(MatrixBlock in, MatrixBlock aggVal) {
-		if( in.denseBlock==null || in.isEmptyBlock(false) )
+		if( in.denseBlock==null || in.isEmptyBlock(false)  || aggVal.isEmpty())
 			return;
 		
 		final int m = in.rlen;

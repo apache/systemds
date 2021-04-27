@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.Arrays;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types.DataType;
@@ -40,6 +41,7 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
+
 	protected UnaryMatrixFEDInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(FEDType.Unary, op, in, out, opcode, instr);
 	}
@@ -53,14 +55,18 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode;
-		opcode = parts[0];
-		if( (opcode.equalsIgnoreCase("exp") || opcode.startsWith("ucum")) && parts.length == 5) {
+		String opcode = parts[0];
+		
+		if(parts.length == 5 && (opcode.equalsIgnoreCase("exp") || opcode.equalsIgnoreCase("log") || opcode.startsWith("ucum"))) {
 			in.split(parts[1]);
 			out.split(parts[2]);
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
-			return new UnaryMatrixFEDInstruction(new UnaryOperator(func,
-				Integer.parseInt(parts[3]),Boolean.parseBoolean(parts[4])), in, out, opcode, str);
+			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucumk+*","ucummin","ucummax","exp","log","sigmoid"}).contains(opcode) ){
+				UnaryOperator op = new UnaryOperator(func,Integer.parseInt(parts[3]),Boolean.parseBoolean(parts[4]));
+				return new UnaryMatrixFEDInstruction(op, in, out, opcode, str);
+			}
+			else
+				return new UnaryMatrixFEDInstruction(null, in, out, opcode, str);
 		}
 		opcode = parseUnaryInstruction(str, in, out);
 		return new UnaryMatrixFEDInstruction(InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);

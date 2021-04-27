@@ -93,7 +93,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	private Array[] _coldata = null;
 
 	/** Cached size in memory to avoid repeated scans of string columns */
-	 long _msize = -1;
+	long _msize = -1;
 
 	public FrameBlock() {
 		_numRows = 0;

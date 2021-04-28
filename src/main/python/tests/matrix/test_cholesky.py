@@ -23,7 +23,7 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
+from systemds.operator import Matrix
 
 np.random.seed(7)
 shape = np.random.randint(1, 100)
@@ -31,43 +31,49 @@ A = np.random.rand(shape, shape)
 # set A = MM^T and A is a positive definite matrix
 A = np.matmul(A, A.transpose())
 
-m1 = -np.random.rand(shape, shape)
-m2 = np.asarray([[4, 9], [1, 4]])
-m3 = np.random.rand(shape, shape + 1)
-
 class TestCholesky(unittest.TestCase):
 
     sds: SystemDSContext = None
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(11412)
 
     @classmethod
     def tearDownClass(cls):
         cls.sds.close()
 
+
+class TestCholesky_0(TestCholesky):
+
     def test_basic1(self):
-        L = Matrix(self.sds, A).cholesky().compute()
+        L = self.sds.from_numpy(A).cholesky().compute()
         self.assertTrue(np.allclose(L, np.linalg.cholesky(A)))
 
     def test_basic2(self):
-        L = Matrix(self.sds, A).cholesky().compute()
+        L = self.sds.from_numpy(A).cholesky().compute()
         # L * L.H = A
         self.assertTrue(np.allclose(A, np.dot(L, L.T.conj())))
 
+class TestCholesky_1(TestCholesky):
     def test_pos_def(self):
-        with self.assertRaises(ValueError) as context:
-            Matrix(self.sds, m1).cholesky(safe=True).compute()
+        m1 = -np.random.rand(shape, shape)
+        with self.assertRaises(RuntimeError) as context:
+            self.sds.from_numpy(m1).cholesky().compute()
+            
+class TestCholesky_2(TestCholesky):
 
     def test_symmetric_matrix(self):
+        m2 = np.asarray([[4, 9], [1, 4]])
         np.linalg.cholesky(m2)
-        with self.assertRaises(ValueError) as context:
-            Matrix(self.sds, m2).cholesky(safe=True).compute()
+        with self.assertRaises(RuntimeError) as context:
+            self.sds.from_numpy(m2).cholesky().compute()
 
+class TestCholesky_3(TestCholesky):
     def test_asymetric_dim(self):
-        with self.assertRaises(ValueError) as context:
-            Matrix(self.sds, m3).cholesky().compute()
+        m3 = np.random.rand(shape, shape + 1)
+        with self.assertRaises(RuntimeError) as context:
+            self.sds.from_numpy(m3).cholesky().compute()
 
 
 if __name__ == "__main__":

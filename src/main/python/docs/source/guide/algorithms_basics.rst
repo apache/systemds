@@ -86,7 +86,7 @@ To start with, we setup a SystemDS context::
 
 Then setup the data::
 
-    from systemds.matrix import Matrix
+    from systemds.operator import Matrix
     X_ds = Matrix(sds, X)
     Y_ds = Matrix(sds, Y)
 
@@ -178,7 +178,7 @@ One noteworthy change is the + 1 is done on the matrix ready for SystemDS,
 this makes SystemDS responsible for adding the 1 to each value.::
 
     from systemds.context import SystemDSContext
-    from systemds.matrix import Matrix
+    from systemds.operator import Matrix
     from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
     from systemds.examples.tutorials.mnist import DataManager
 

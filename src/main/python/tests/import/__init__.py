@@ -16,11 +16,5 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
 # -------------------------------------------------------------
-
-from typing import Union
-
-MODULE_NAME = 'systemds'
-VALID_INPUT_TYPES = Union['DAGNode', str, int, float, bool]
-BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=', '%*%']
-VALID_ARITHMETIC_TYPES = Union['DAGNode', int, float]

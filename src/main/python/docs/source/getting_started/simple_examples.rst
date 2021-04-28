@@ -64,7 +64,7 @@ Remember to first start up a new terminal:
 
   # Import SystemDSContext
   from systemds.context import SystemDSContext
-  from systemds.matrix import Matrix
+  from systemds.operator import Matrix
 
   # create a random array
   m1 = np.array(np.random.randint(100, size=5 * 5) + 1.01, dtype=np.double)
@@ -92,7 +92,7 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let's 
   # Import numpy and SystemDS matrix
   import numpy as np
   from systemds.context import SystemDSContext
-  from systemds.matrix import Matrix
+  from systemds.operator import Matrix
   from systemds.operator.algorithm import l2svm
 
   # Set a seed

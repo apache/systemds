@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
+from systemds.operator import Matrix
 from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 from systemds.examples.tutorials.mnist import DataManager
 

@@ -19,11 +19,12 @@
 #
 # -------------------------------------------------------------
 
-from enum import Enum, auto
-from typing import Any, Dict, Union, Sequence, TYPE_CHECKING
 from abc import ABC
+from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, Dict, Sequence, Union
 
 from py4j.java_gateway import JavaObject, JVMView
+from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
@@ -31,13 +32,41 @@ if TYPE_CHECKING:
 
 
 class OutputType(Enum):
-    MATRIX = auto()
-    FRAME = auto()
+    # ASSIGN = auto()
     DOUBLE = auto()
-    SCALAR = auto()
-    ASSIGN = auto()
+    FRAME = auto()
     LIST = auto()
+    MATRIX = auto()
     NONE = auto()
+    SCALAR = auto()
+    STRING = auto()
+    IMPORT = auto()
+
+    @staticmethod
+    def from_str(label: Union[str, VALID_INPUT_TYPES]):
+
+        if label is not None:
+            if isinstance(label, str):
+                lc = label.lower()
+                if lc in ['matrix', 'matrixblock']:
+                    return OutputType.MATRIX
+                elif lc in ['frame', 'frameblock']:
+                    return OutputType.FRAME
+                elif lc in ['scalar']:
+                    return OutputType.SCALAR
+                elif lc in ['double']:
+                    return OutputType.DOUBLE
+                elif lc in ['string', 'str']:
+                    return OutputType.STRING
+                elif lc in ['list']:
+                    return OutputType.LIST
+            else:
+                if isinstance(label, DAGNode):
+                    return label._output_type
+                else:
+                    return OutputType.DOUBLE
+
+        return OutputType.NONE
 
 
 class DAGNode(ABC):

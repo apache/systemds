@@ -31,7 +31,7 @@ As an example the lm algorithm can be used as follows:
   # Import numpy and SystemDS matrix
   import numpy as np
   from systemds.context import SystemDSContext
-  from systemds.matrix import Matrix
+  from systemds.operator import Matrix
   from systemds.operator.algorithm import lm
 
   # Set a seed

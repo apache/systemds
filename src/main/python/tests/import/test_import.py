@@ -19,7 +19,35 @@
 #
 # -------------------------------------------------------------
 
-from systemds.matrix.matrix import Matrix
-from systemds.matrix.federated import Federated
+import math
+import os
+import random
+import shutil
+import sys
+import unittest
 
-__all__ = [Matrix, Federated]
+import numpy as np
+import scipy.stats as st
+from systemds.context import SystemDSContext
+from systemds.operator import Matrix
+
+
+class TestImport(unittest.TestCase):
+
+    sds: SystemDSContext = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sds = SystemDSContext()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sds.close()
+
+    def test_print_01(self):
+        res = self.sds.source("./tests/import/source_01.dml", "test").test_01().compute(verbose = True)
+        print(res)
+
+
+if __name__ == "__main__":
+    unittest.main(exit=False)

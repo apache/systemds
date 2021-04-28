@@ -1,4 +1,4 @@
-# -------------------------------------------------------------
+#-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,8 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# -------------------------------------------------------------
+#-------------------------------------------------------------
 
-from systemds.frame.frame import Frame
 
-__all__ = [Frame]
+test_01 = function() return(matrix[double] C){
+    C = matrix(1,1,1)
+}

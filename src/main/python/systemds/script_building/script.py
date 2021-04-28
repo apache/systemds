@@ -184,8 +184,11 @@ class DMLScript:
             return str(dag_node)
         # for each node do the dfs operation and save the variable names in `input_var_names`
         # get variable names of unnamed parameters
-        unnamed_input_vars = [self._dfs_dag_nodes(
-            input_node) for input_node in dag_node.unnamed_input_nodes]
+        print(dag_node.unnamed_input_nodes)
+        unnamed_input_vars =  []
+        for input_node in dag_node.unnamed_input_nodes:
+            if not input_node == OutputType.IMPORT:
+                self._dfs_dag_nodes(input_node) 
         # get variable names of named parameters
         named_input_vars = {name: self._dfs_dag_nodes(input_node) for name, input_node in
                             dag_node.named_input_nodes.items()}

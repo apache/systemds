@@ -23,7 +23,6 @@ import unittest
 
 import pandas as pd
 from systemds.context import SystemDSContext
-from systemds.frame import Frame
 
 
 class TestRCBind(unittest.TestCase):
@@ -70,55 +69,55 @@ class TestRCBind(unittest.TestCase):
         cls.sds.close()
 
     def test_r_bind_pair(self):
-        f1 = Frame(self.sds, self.df_rb_1)
-        f2 = Frame(self.sds, self.df_rb_2)
+        f1 = self.sds.from_pandas(self.df_rb_1)
+        f2 = self.sds.from_pandas(self.df_rb_2)
         result_df = f1.rbind(f2).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_rb_1, self.df_rb_2], ignore_index=True)
         self.assertTrue(target_df.equals(result_df))
 
     def test_r_bind_triple(self):
-        f1 = Frame(self.sds, self.df_rb_1)
-        f2 = Frame(self.sds, self.df_rb_2)
-        f3 = Frame(self.sds, self.df_rb_3)
+        f1 = self.sds.from_pandas(self.df_rb_1)
+        f2 = self.sds.from_pandas(self.df_rb_2)
+        f3 = self.sds.from_pandas(self.df_rb_3)
         result_df = f1.rbind(f2).rbind(f3).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_rb_1, self.df_rb_2, self.df_rb_3], ignore_index=True)
         self.assertTrue(target_df.equals(result_df))
     
     def test_r_bind_triple_twostep(self):
-        f1 = Frame(self.sds, self.df_rb_1)
-        f2 = Frame(self.sds, self.df_rb_2)
-        f3 = Frame(self.sds, self.df_rb_3)
+        f1 = self.sds.from_pandas(self.df_rb_1)
+        f2 = self.sds.from_pandas(self.df_rb_2)
+        f3 = self.sds.from_pandas(self.df_rb_3)
         tmp_df = f1.rbind(f2).compute()
-        result_df = Frame(self.sds, tmp_df).rbind(f3).compute()
+        result_df = self.sds.from_pandas(tmp_df).rbind(f3).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_rb_1, self.df_rb_2, self.df_rb_3], ignore_index=True)
         self.assertTrue(target_df.equals(result_df))
     
     def test_c_bind_pair(self):
-        f1 = Frame(self.sds, self.df_cb_1)
-        f2 = Frame(self.sds, self.df_cb_2)
+        f1 = self.sds.from_pandas(self.df_cb_1)
+        f2 = self.sds.from_pandas(self.df_cb_2)
         result_df = f1.cbind(f2).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df= pd.concat([self.df_cb_1, self.df_cb_2], axis=1)
         self.assertTrue(target_df.equals(result_df))
 
     def test_c_bind_triple(self):
-        f1 = Frame(self.sds, self.df_cb_1)
-        f2 = Frame(self.sds, self.df_cb_2)
-        f3 = Frame(self.sds, self.df_cb_3)
+        f1 = self.sds.from_pandas(self.df_cb_1)
+        f2 = self.sds.from_pandas(self.df_cb_2)
+        f3 = self.sds.from_pandas(self.df_cb_3)
         result_df = f1.cbind(f2).cbind(f3).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_cb_1, self.df_cb_2, self.df_cb_3], axis=1)
         self.assertTrue(target_df.equals(result_df))
 
     def test_c_bind_triple_twostep(self):
-        f1 = Frame(self.sds, self.df_cb_1)
-        f2 = Frame(self.sds, self.df_cb_2)
-        f3 = Frame(self.sds, self.df_cb_3)
+        f1 = self.sds.from_pandas(self.df_cb_1)
+        f2 = self.sds.from_pandas(self.df_cb_2)
+        f3 = self.sds.from_pandas(self.df_cb_3)
         tmp_df = f1.cbind(f2).compute()
-        result_df = Frame(self.sds, tmp_df).cbind(f3).compute()
+        result_df = self.sds.from_pandas(tmp_df).cbind(f3).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat([self.df_cb_1, self.df_cb_2, self.df_cb_3], axis=1)
         self.assertTrue(target_df.equals(result_df))

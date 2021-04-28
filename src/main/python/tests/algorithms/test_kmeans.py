@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
 from systemds.operator.algorithm import kmeans, kmeansPredict
 
 
@@ -67,8 +66,8 @@ class TestKMeans(unittest.TestCase):
         """
         features = self.generate_matrices_for_k_means((500, 2), seed=1304)
         [c, _] = kmeans(features, k=4).compute()
-        C = Matrix(self.sds, c)
-        elm = Matrix(self.sds, np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]]))
+        C = self.sds.from_numpy( c)
+        elm = self.sds.from_numpy( np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]]))
         res = kmeansPredict(elm, C).compute()
         corners = set()
         for x in res:
@@ -90,7 +89,7 @@ class TestKMeans(unittest.TestCase):
         m1 = np.array(s, dtype=np.double)
         m1 = np.reshape(m1, (dims[0], dims[1]))
 
-        return Matrix(self.sds, m1)
+        return self.sds.from_numpy( m1)
 
 
 if __name__ == "__main__":

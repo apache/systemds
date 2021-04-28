@@ -26,7 +26,6 @@ import unittest
 
 import pandas as pd
 from systemds.context import SystemDSContext
-from systemds.frame import Frame
 
 
 class TestWriteRead(unittest.TestCase):
@@ -55,14 +54,14 @@ class TestWriteRead(unittest.TestCase):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_write_read_binary(self):
-        frame = Frame(self.sds, self.df)
+        frame = self.sds.from_pandas(self.df)
         frame.write(self.temp_dir + "01").compute()
         NX = self.sds.read(self.temp_dir + "01", data_type="frame")
         result_df = NX.compute()
         self.assertTrue((self.df.values == result_df.values).all())
 
     def test_write_read_csv(self):
-        frame = Frame(self.sds, self.df)
+        frame = self.sds.from_pandas(self.df)
         frame.write(self.temp_dir + "02", header=True, format="csv").compute()
         NX = self.sds.read(self.temp_dir + "02", data_type="frame", format="csv")
         result_df = NX.compute()

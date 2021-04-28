@@ -28,7 +28,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Federated
 
 os.environ['SYSDS_QUIET'] = "1"
 
@@ -79,7 +78,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]]
         f_m_a = (
-            Federated(self.sds,
+            self.sds.federated(
                 [fed1, fed2],
                 [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])])
             .sum()
@@ -90,7 +89,7 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_sum1(self):
         f_m1 = (
-            Federated(self.sds,
+            self.sds.federated(
                 [fed1],
                 [([0, 0], [dim, dim])])
             .sum()
@@ -101,7 +100,7 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_sum2(self):
         f_m2 = (
-            Federated(self.sds,
+            self.sds.federated(
                 [fed2],
                 [([0, 0], [dim, dim])])
             .sum()
@@ -117,7 +116,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]]
         f_m1_m2 = (
-            Federated(self.sds,
+            self.sds.federated(
                 [fed1, fed2],
                 [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])])
             .sum()
@@ -140,7 +139,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m2,m2,m2,m2,m2]
         #    [m2,m2,m2,m2,m2]]
         f_m1_m2 = (
-            Federated(self.sds, 
+            self.sds.federated( 
                 [fed1, fed2],
                 [([0, 0], [dim, dim]), ([dim, 0], [dim * 2, dim])])
             .sum()
@@ -163,7 +162,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]
         #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]]
         f_m_a = (
-            Federated(self.sds, 
+            self.sds.federated( 
                 [fed1, fed2],
                 [([0, 0], [dim, dim]), ([2, dim], [dim + 2, dim * 2])])
             .sum()
@@ -182,7 +181,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]]
     #     f_m_a = (
-    #         Federated(self.sds, 
+    #         self.sds.federated( 
     #             [fed1, fed2], [([0, 0], [dim, dim]), ([2, 3], [dim + 2, dim + 3])]
     #         )
     #         .sum()
@@ -201,7 +200,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [m1,m1,m1,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]]
-    #     f_m_a = Federated(self.sds, 
+    #     f_m_a = self.sds.federated( 
     #         [fed1, fed2], [([0, 0], [dim, dim]), ([2, 3], [dim + 2, dim + 3])]
     #     )
     #     f_m_a = (f_m_a + 1).sum().compute()
@@ -221,7 +220,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
         f_m_a = (
-            Federated(self.sds, 
+            self.sds.federated( 
                 [fed1],
                 [([2, 3], [dim + 2, dim + 3])])
             .sum()
@@ -240,7 +239,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
-    #     f_m_a = Federated(self.sds, [fed1], [([2, 3], [dim + 2, dim + 3])])
+    #     f_m_a = self.sds.federated( [fed1], [([2, 3], [dim + 2, dim + 3])])
     #     f_m_a = (f_m_a + 1).sum().compute()
 
     #     m = m1.sum()

@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
 from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 
 
@@ -47,7 +46,7 @@ class TestMultiLogReg(unittest.TestCase):
         [X, labels, Y] = self.gen_data()
 
         # Call algorithm
-        bias = multiLogReg(Matrix(self.sds,X),Matrix(self.sds,Y)).compute()
+        bias = multiLogReg(self.sds.from_numpy(X),self.sds.from_numpy(Y)).compute()
         
         # Calculate result.
         res = np.reshape(np.dot(X, bias[:len(X[0])]) + bias[len(X[0])], (250))
@@ -63,9 +62,9 @@ class TestMultiLogReg(unittest.TestCase):
         """
         [X, labels, Y] = self.gen_data()
         # Call algorithm
-        bias = multiLogReg(Matrix(self.sds,X),Matrix(self.sds,Y)).compute()
+        bias = multiLogReg(self.sds.from_numpy(X),self.sds.from_numpy(Y)).compute()
 
-        [m, y_pred, acc] = multiLogRegPredict(Matrix(self.sds,X),Matrix(self.sds,bias), Matrix(self.sds,Y)).compute()
+        [m, y_pred, acc] = multiLogRegPredict(self.sds.from_numpy(X),self.sds.from_numpy(bias), self.sds.from_numpy(Y)).compute()
 
         self.assertTrue(acc > 98)
 

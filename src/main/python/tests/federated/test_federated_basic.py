@@ -28,7 +28,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Federated
 
 os.environ['SYSDS_QUIET'] = "1"
 
@@ -73,12 +72,12 @@ class TestFederatedAggFn(unittest.TestCase):
         cls.sds.close()
 
     def test_1(self):
-        f_m1 = Federated(self.sds, [fed1], [([0,0], [dim, dim])]).compute()
+        f_m1 = self.sds.federated( [fed1], [([0,0], [dim, dim])]).compute()
         res = np.allclose(f_m1, m1)
         self.assertTrue(res, "\n" + str(f_m1) + " is not equal to \n" + str(m1))
 
     def test_2(self):
-        f_m2 = Federated(self.sds, [fed2], [([0, 0], [dim, dim])]).compute()
+        f_m2 = self.sds.federated( [fed2], [([0, 0], [dim, dim])]).compute()
         res = np.allclose(f_m2, m2)
         self.assertTrue(res)
 
@@ -88,7 +87,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]]
-        f_m1_m2 = Federated(self.sds, 
+        f_m1_m2 = self.sds.federated( 
             [fed1, fed2],
             [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])]
         ).compute()
@@ -107,7 +106,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m2,m2,m2,m2,m2]
         #    [m2,m2,m2,m2,m2]
         #    [m2,m2,m2,m2,m2]]
-        f_m1_m2 = Federated(self.sds, 
+        f_m1_m2 = self.sds.federated( 
             [fed1, fed2],
             [([0, 0], [dim, dim]), ([dim, 0], [dim * 2, dim])]
         ).compute()
@@ -123,7 +122,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]
         #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]]
-        f_m1_m2 = Federated(self.sds, 
+        f_m1_m2 = self.sds.federated( 
             [fed1, fed2],
             [([0, 0], [dim, dim]), ([2, dim], [dim + 2, dim * 2])]
         ).compute()
@@ -143,7 +142,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [m1,m1,m1,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]]
-    #     f_m1_m2 = Federated(self.sds, 
+    #     f_m1_m2 = self.sds.federated( 
     #         [fed1, fed2], [([0, 0], [dim, dim]), ([2, 3], [dim + 2, dim + 3])]
     #     ).compute()
 
@@ -162,7 +161,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [m1,m1,m1,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]]
-    #     f_m1_m2 = Federated(self.sds, 
+    #     f_m1_m2 = self.sds.federated( 
     #         [fed1, fed2], [([0, 0], [dim, dim]), ([2, 3], [dim + 2, dim + 3])]
     #     )
     #     f_m1_m2 = (f_m1_m2 + 1).compute()
@@ -186,7 +185,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
-        f_m1_m2 = Federated(self.sds, [fed1], [([2, 3], [dim + 2, dim + 3])])
+        f_m1_m2 = self.sds.federated( [fed1], [([2, 3], [dim + 2, dim + 3])])
         f_m1_m2 = (f_m1_m2).compute()
         m1_m2 = np.zeros((dim + 2, dim + 3))
         m1_m2[2: dim + 2, 3: dim + 3] = m1
@@ -206,7 +205,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
-    #     f_m1_m2 = Federated(self.sds, [fed1], [([2, 3], [dim + 2, dim + 3])])
+    #     f_m1_m2 = self.sds.federated( [fed1], [([2, 3], [dim + 2, dim + 3])])
     #     f_m1_m2 = (f_m1_m2 + 1).compute()
 
     #     m1_m2 = np.zeros((dim + 2, dim + 3))
@@ -230,7 +229,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [m1,m1,m1,m1,m1, 0, 0, 0]
     #     #    [ 0, 0, 0, 0, 0, 0, 0, 0]
     #     #    [ 0, 0, 0, 0, 0, 0, 0, 0]]
-    #     f_m1_m2 = Federated(self.sds, [fed1], [([0, 0], [dim + 2, dim + 3])])
+    #     f_m1_m2 = self.sds.federated( [fed1], [([0, 0], [dim + 2, dim + 3])])
     #     f_m1_m2 = (f_m1_m2).compute()
 
     #     m1_m2 = np.zeros((dim + 2, dim + 3))
@@ -253,7 +252,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [ 0,m1,m1,m1,m1,m1, 0, 0]
     #     #    [ 0,m1,m1,m1,m1,m1, 0, 0]
     #     #    [ 0, 0, 0, 0, 0, 0, 0, 0]]
-    #     f_m1_m2 = Federated(self.sds, [fed1], [([1, 1], [dim + 2, dim + 3])])
+    #     f_m1_m2 = self.sds.federated( [fed1], [([1, 1], [dim + 2, dim + 3])])
     #     f_m1_m2 = (f_m1_m2).compute()
 
     #     m1_m2 = np.zeros((dim + 2, dim + 3))

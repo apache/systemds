@@ -64,7 +64,6 @@ Remember to first start up a new terminal:
 
   # Import SystemDSContext
   from systemds.context import SystemDSContext
-  from systemds.matrix import Matrix
 
   # create a random array
   m1 = np.array(np.random.randint(100, size=5 * 5) + 1.01, dtype=np.double)
@@ -76,7 +75,7 @@ Remember to first start up a new terminal:
   # Create a context
   with SystemDSContext() as sds:
       # element-wise matrix multiplication, note that nothing is executed yet!
-      m_res = Matrix(sds, m1) * Matrix(sds, m2)
+      m_res = sds.from_numpy(m1) * sds.from_numpy(m2)
       # lets do the actual computation in SystemDS! The result is an numpy array
       m_res_np = m_res.compute()
       print(m_res_np)
@@ -92,7 +91,6 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let's 
   # Import numpy and SystemDS matrix
   import numpy as np
   from systemds.context import SystemDSContext
-  from systemds.matrix import Matrix
   from systemds.operator.algorithm import l2svm
 
   # Set a seed
@@ -110,7 +108,7 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let's 
 
   # compute our model
   with SystemDSContext() as sds:
-      model = l2svm(Matrix(sds, features), Matrix(sds, labels)).compute()
+      model = l2svm(sds.from_numpy(features), sds.from_numpy(labels)).compute()
       print(model)
 
 The output should be similar to::

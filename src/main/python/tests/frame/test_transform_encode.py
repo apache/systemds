@@ -19,17 +19,15 @@
 #
 # -------------------------------------------------------------
 
+import json
 import os
 import shutil
 import sys
 import unittest
 
-import pandas as pd
 import numpy as np
-import json
+import pandas as pd
 from systemds.context import SystemDSContext
-from systemds.frame import Frame
-from systemds.matrix import Matrix
 
 
 class TestTransformEncode(unittest.TestCase):

@@ -100,8 +100,8 @@ def parse_trace(path: str):
         for line in log:
             data.append(line.strip().split("°"))
 
-    # Remove the last 3 lines of the System output because they are after lintrace.
-    return data[:-3]
+    # Remove the last 4 lines of the System output because they are after lintrace.
+    return data[:-4]
 
 
 if __name__ == "__main__":

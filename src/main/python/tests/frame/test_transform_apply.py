@@ -19,17 +19,15 @@
 #
 # -------------------------------------------------------------
 
+import json
 import os
 import shutil
 import sys
 import unittest
 
-import pandas as pd
 import numpy as np
-import json
+import pandas as pd
 from systemds.context import SystemDSContext
-from systemds.frame import Frame
-from systemds.matrix import Matrix
 
 
 class TestTransformApply(unittest.TestCase):
@@ -76,10 +74,9 @@ class TestTransformApply(unittest.TestCase):
             relevant_columns.add(pd_F1.columns.get_loc(col_name))
             self.assertTrue(M[col_name].nunique() == binning["numbins"])
 
-        X2 = F1.transform_apply(spec=jspec, meta=Frame(self.sds, M)).compute()
+        X2 = F1.transform_apply(spec=jspec, meta=self.sds.from_pandas(M)).compute()
         self.assertTrue(X.shape == X2.shape)
         self.assertTrue(np.all(np.isreal(X2)))
-
 
 
 if __name__ == "__main__":

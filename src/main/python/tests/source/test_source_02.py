@@ -20,20 +20,12 @@
 # -------------------------------------------------------------
 
 import unittest
-import random
 
 import numpy as np
 from systemds.context import SystemDSContext
 
-np.random.seed(7)
 
-shape = (random.randrange(1, 25), random.randrange(1, 25))
-m = np.random.rand(shape[0], shape[1])
-mx = np.random.rand(1, shape[1])
-my = np.random.rand(shape[0], 1)
-by = random.randrange(1, np.size(m, 1)+1)
-
-class TestOrder(unittest.TestCase):
+class TestSource_01(unittest.TestCase):
 
     sds: SystemDSContext = None
 
@@ -45,26 +37,33 @@ class TestOrder(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_basic(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=False).compute()
-        s = m[np.argsort(m[:, by-1])]
-        self.assertTrue(np.allclose(o, s))
+    def test_func_01(self):
+        c = self.sds.source("./tests/source/source_02.dml",
+                            "test").func_01()
+        res = c.compute()
+        self.assertEqual(1, self.imports(c.script_str))
+        self.assertTrue(np.allclose(np.array([[1]]), res))
 
-    def test_index(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=True).compute()
-        s = np.argsort(m[:, by - 1]) + 1
-        self.assertTrue(np.allclose(np.transpose(o), s))
+    def test_func_02(self):
+        m = self.sds.full((3, 5), 2)
+        c = self.sds.source("./tests/source/source_02.dml",
+                            "test").func_02(m)
+        res = c.compute()
+        self.assertEqual(1, self.imports(c.script_str))
+        self.assertEqual(1, res.shape[1])
 
-    def test_decreasing(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=True, index_return=True).compute()
-        s = np.argsort(-m[:, by - 1]) + 1
-        self.assertTrue(np.allclose(np.transpose(o), s))
+    def test_func_02_call_self(self):
+        m = self.sds.full((3, 2), 2)
+        s = self.sds.source("./tests/source/source_02.dml", "test")
+        c = s.func_02(m)
+        cc = s.func_02(c)
+        res = cc.compute()
+        self.assertEqual(1, self.imports(cc.script_str))
+        self.assertEqual(1, res.shape[1])
 
-class TestOrder_1(TestOrder):
-    def test_out_of_bounds(self):
-        by_max = np.size(m, 1) + 2
-        with self.assertRaises(RuntimeError) as context:
-            self.sds.from_numpy(m).order(by=by_max).compute()
+    def imports(self, script: str) -> int:
+        return script.split("\n").count('source("./tests/source/source_02.dml") as test')
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

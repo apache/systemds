@@ -20,22 +20,15 @@
 # -------------------------------------------------------------
 
 import unittest
-import random
 
 import numpy as np
 from systemds.context import SystemDSContext
 
-np.random.seed(7)
 
-shape = (random.randrange(1, 25), random.randrange(1, 25))
-m = np.random.rand(shape[0], shape[1])
-mx = np.random.rand(1, shape[1])
-my = np.random.rand(shape[0], 1)
-by = random.randrange(1, np.size(m, 1)+1)
-
-class TestOrder(unittest.TestCase):
+class TestSource_MultiArguments(unittest.TestCase):
 
     sds: SystemDSContext = None
+    src_path: str = "./tests/source/source_multi_arguments.dml"
 
     @classmethod
     def setUpClass(cls):
@@ -45,26 +38,30 @@ class TestOrder(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_basic(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=False).compute()
-        s = m[np.argsort(m[:, by-1])]
-        self.assertTrue(np.allclose(o, s))
+    def test_01(self):
+        s = self.sds.source(self.src_path,"test")
 
-    def test_index(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=True).compute()
-        s = np.argsort(m[:, by - 1]) + 1
-        self.assertTrue(np.allclose(np.transpose(o), s))
+        m1 = self.sds.rand(12,1)
+        m2 = self.sds.rand(1,2)
+        m3 = self.sds.rand(23,3)
+        c = s.blaaa_is_a_BAAD_function_name_but_it_works(m1,m2,m3)
 
-    def test_decreasing(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=True, index_return=True).compute()
-        s = np.argsort(-m[:, by - 1]) + 1
-        self.assertTrue(np.allclose(np.transpose(o), s))
+        res = c.compute()
+        self.assertEqual(1, self.imports(c.script_str))
 
-class TestOrder_1(TestOrder):
-    def test_out_of_bounds(self):
-        by_max = np.size(m, 1) + 2
-        with self.assertRaises(RuntimeError) as context:
-            self.sds.from_numpy(m).order(by=by_max).compute()
+
+    # def test_02(self):
+    #     s = self.sds.source(self.src_path,"test")
+
+    #     m = self.sds.rand(12,1)
+    #     c = s.blaaa_is_a_BAAD_function_name_but_it_works(m,m,m)
+
+    #     res = c.compute()
+    #     self.assertEqual(1, self.imports(c.script_str))
+    #     self.assertTrue("V3" not in c.script_str, "Only 2 variables should be allocated.")
+
+    def imports(self, script:str) -> int:
+        return script.split("\n").count(f'source("{self.src_path}") as test')
 
 if __name__ == "__main__":
     unittest.main(exit=False)

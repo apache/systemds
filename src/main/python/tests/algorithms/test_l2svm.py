@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
 from systemds.operator.algorithm import l2svm
 
 
@@ -59,7 +58,7 @@ class TestL2svm(unittest.TestCase):
         for i in range(dims):
             if np.random.random() > 0.5:
                 m2[i][0] = 1
-        return Matrix(self.sds, m1), Matrix(self.sds, m2)
+        return self.sds.from_numpy( m1), self.sds.from_numpy( m2)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,6 @@
 # -------------------------------------------------------------
 
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
 from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 from systemds.examples.tutorials.mnist import DataManager
 
@@ -28,12 +27,12 @@ d = DataManager()
 
 with SystemDSContext() as sds:
     # Train Data
-    X = Matrix(sds, d.get_train_data().reshape((60000, 28*28)))
-    Y = Matrix(sds, d.get_train_labels()) + 1.0
+    X = sds.from_numpy(d.get_train_data().reshape((60000, 28*28)))
+    Y = sds.from_numpy(d.get_train_labels()) + 1.0
     bias = multiLogReg(X, Y, tol= 0.0001, verbose= False)
     # Test data
-    Xt = Matrix(sds, d.get_test_data().reshape((10000, 28*28)))
-    Yt = Matrix(sds, d.get_test_labels()) + 1.0
+    Xt = sds.from_numpy(d.get_test_data().reshape((10000, 28*28)))
+    Yt = sds.from_numpy(d.get_test_labels()) + 1.0
     [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
 
 print(acc)

@@ -20,22 +20,14 @@
 # -------------------------------------------------------------
 
 import unittest
-import random
 
 import numpy as np
 from systemds.context import SystemDSContext
 
-np.random.seed(7)
-
-shape = (random.randrange(1, 25), random.randrange(1, 25))
-m = np.random.rand(shape[0], shape[1])
-mx = np.random.rand(1, shape[1])
-my = np.random.rand(shape[0], 1)
-by = random.randrange(1, np.size(m, 1)+1)
-
-class TestOrder(unittest.TestCase):
+class TestSource_MultiArguments(unittest.TestCase):
 
     sds: SystemDSContext = None
+    src_path: str = "./tests/source/source_with_no_return.dml"
 
     @classmethod
     def setUpClass(cls):
@@ -45,26 +37,26 @@ class TestOrder(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_basic(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=False).compute()
-        s = m[np.argsort(m[:, by-1])]
-        self.assertTrue(np.allclose(o, s))
+    def test_01(self):
+        s = self.sds.source(self.src_path,"test")
+        c = s.no_return()
+        c.compute()
+        stdout = self.sds.get_stdout()
+        self.assertEqual(4.2 + 14 * 2,float(stdout[0]))
 
-    def test_index(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=True).compute()
-        s = np.argsort(m[:, by - 1]) + 1
-        self.assertTrue(np.allclose(np.transpose(o), s))
+    def test_02(self):
+        s = self.sds.source(self.src_path,"test")
+        c = s.no_return(4)
+        c.compute()
+        stdout = self.sds.get_stdout()
+        self.assertEqual(4 + 14 * 2,float(stdout[0]))
 
-    def test_decreasing(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=True, index_return=True).compute()
-        s = np.argsort(-m[:, by - 1]) + 1
-        self.assertTrue(np.allclose(np.transpose(o), s))
-
-class TestOrder_1(TestOrder):
-    def test_out_of_bounds(self):
-        by_max = np.size(m, 1) + 2
-        with self.assertRaises(RuntimeError) as context:
-            self.sds.from_numpy(m).order(by=by_max).compute()
+    def test_03(self):
+        s = self.sds.source(self.src_path,"test")
+        c = s.no_return(a=14)
+        c.compute()
+        stdout = self.sds.get_stdout()
+        self.assertEqual(14 + 14 * 2,float(stdout[0]))
 
 if __name__ == "__main__":
     unittest.main(exit=False)

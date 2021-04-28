@@ -35,8 +35,9 @@ from systemds.matrix import Matrix
 class TestTransformApply(unittest.TestCase):
 
     sds: SystemDSContext = None
-    HOMES_PATH = "tests/frame/data/homes.csv"
+    HOMES_PATH = "../../test/resources/datasets/homes/homes.csv"
     HOMES_SCHEMA = '"int,string,int,int,double,int,boolean,int,int"'
+    JSPEC_PATH = "../../test/resources/datasets/homes/homes.tfspec_bin2.json"
 
     @classmethod
     def setUpClass(cls):
@@ -50,8 +51,7 @@ class TestTransformApply(unittest.TestCase):
         pass
 
     def test_apply_recode_bin(self):
-        JSPEC_PATH = "tests/frame/data/homes.tfspec_bin2.json"
-        with open(JSPEC_PATH) as jspec_file:
+        with open(self.JSPEC_PATH) as jspec_file:
             JSPEC = json.load(jspec_file)
         F1 = self.sds.read(
             self.HOMES_PATH,
@@ -61,7 +61,7 @@ class TestTransformApply(unittest.TestCase):
             header=True,
         )
         pd_F1 = F1.compute()
-        jspec = self.sds.read(JSPEC_PATH, data_type="scalar", value_type="string")
+        jspec = self.sds.read(self.JSPEC_PATH, data_type="scalar", value_type="string")
         X, M = F1.transform_encode(spec=jspec).compute()
         self.assertTrue(isinstance(X, np.ndarray))
         self.assertTrue(isinstance(M, pd.DataFrame))

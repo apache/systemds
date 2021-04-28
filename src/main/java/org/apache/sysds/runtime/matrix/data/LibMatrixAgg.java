@@ -1143,7 +1143,7 @@ public class LibMatrixAgg
 	}
 
 	private static void aggregateBinaryMatrixLastRowDenseGeneric(MatrixBlock in, MatrixBlock aggVal) {
-		if( in.denseBlock==null || in.isEmptyBlock(false)  || aggVal.isEmpty())
+		if( in.denseBlock==null || in.isEmptyBlock(false))
 			return;
 		
 		final int m = in.rlen;
@@ -1153,21 +1153,25 @@ public class LibMatrixAgg
 		
 		double[] a = in.getDenseBlockValues();
 
-		if(aggVal.isInSparseFormat()){
-			// If for some reason the agg Val is sparse then force it to dence, since the values that are going to be added
+		if(aggVal.isEmpty()){
+			aggVal.allocateDenseBlock();
+			aggVal.setNonZeros(in.getNonZeros());
+		}
+		else if(aggVal.isInSparseFormat()){
+			// If for some reason the agg Val is sparse then force it to dence,
+			// since the values that are going to be added
 			// will make it dense anyway.
 			aggVal.sparseToDense();
 			aggVal.setNonZeros(in.getNonZeros()); 
-			if(aggVal.denseBlock == null){
+			if(aggVal.denseBlock == null)
 				aggVal.allocateDenseBlock();
-			}
 		}
 		
 		double[] t = aggVal.getDenseBlockValues();
 		KahanObject buffer = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
 		
-		// Dont include nnz maintenence since this function most likely aggregate more than one matrixblock.
+		// Don't include nnz maintenence since this function most likely aggregate more than one matrixblock.
 		
 		// j is the pointer to column.
 		// c is the pointer to correction. 
@@ -1193,6 +1197,11 @@ public class LibMatrixAgg
 		final int m = in.rlen;
 		final int rlen = Math.min(a.numRows(), m);
 		
+		if(aggVal.isEmpty()){
+			aggVal.allocateSparseRowsBlock();
+			aggVal.setNonZeros(in.getNonZeros());
+		}
+
 		for( int i=0; i<rlen-1; i++ )
 		{
 			if( !a.isEmpty(i) )

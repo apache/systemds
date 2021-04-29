@@ -39,9 +39,9 @@ if [ -z "$SYSDS_QUIET" ]; then
   SYSDS_QUIET=0
 fi
 
-# if not set by env, set to hybrid execution by default
+# if not set by env, set to singlenode execution by default
 if [[ -z "$SYSDS_EXEC_MODE" ]]; then
-  SYSDS_EXEC_MODE=hybrid
+  SYSDS_EXEC_MODE=singlenode
 fi
 
 # an echo toggle

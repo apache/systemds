@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def sherlock(X_train: OperationNode, y_train: OperationNode) -> OperationNode:
+def sherlock(X_train: OperationNode, y_train: OperationNode) -> Matrix:
     
     
     X_train._check_matrix_op()

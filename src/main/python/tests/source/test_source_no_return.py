@@ -24,7 +24,7 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 
-class TestSource_MultiArguments(unittest.TestCase):
+class TestSource_NoReturn(unittest.TestCase):
 
     sds: SystemDSContext = None
     src_path: str = "./tests/source/source_with_no_return.dml"

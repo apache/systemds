@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def cox(X: OperationNode, TE: OperationNode, F: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def cox(X: OperationNode, TE: OperationNode, F: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     """
     :param X: Location to read the input matrix X containing the survival data 
     :param containing: information

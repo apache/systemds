@@ -27,3 +27,25 @@ func_02 = function(matrix[double] A)
     return(matrix[double] C){
     C = A %*% rand(rows=ncol(A), cols=1)
 }
+
+
+Preprocess = function(matrix[double] data) return(matrix[double] X){
+
+    Fall = as.frame(data)
+
+    # one hot encoding categorical column, other passthrough
+    jspec = "{ ids:true, dummycode:[1] }"
+    [X,M] = transformencode(target=Fall, spec=jspec)
+
+    # clipping out of value ranges
+    colSD = colSds(X)
+    colMean = (colMeans(X))
+    upperBound = colMean + 1.5 * colSD
+    lowerBound = colMean - 1.5 * colSD
+    outFilter = (X < lowerBound) | (X > upperBound)
+    X = X - outFilter*X + outFilter*colMeans(X); 
+    
+    # normalization
+    X = scale(X=X, center=TRUE, scale=TRUE);
+
+}

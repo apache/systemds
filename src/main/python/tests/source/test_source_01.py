@@ -77,6 +77,13 @@ class TestSource_01(unittest.TestCase):
         with self.assertRaises(TypeError) as context:
             a = s.test_01(m)
 
+    def test_01_sum(self):
+        c = self.sds.source("./tests/source/source_01.dml",
+                              "test").test_01().sum()
+        res = c.compute()
+        self.assertEqual(1, self.imports(c.script_str))
+        self.assertTrue(np.allclose(np.array([[1]]), res))
+
     def imports(self, script:str) -> int:
         return script.split("\n").count('source("./tests/source/source_01.dml") as test')
 

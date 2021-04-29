@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def msvmPredict(X: OperationNode, W: OperationNode) -> OperationNode:
+def msvmPredict(X: OperationNode, W: OperationNode) -> Matrix:
     """
     :param X: matrix X of feature vectors to classify
     :param W: matrix of the trained variables

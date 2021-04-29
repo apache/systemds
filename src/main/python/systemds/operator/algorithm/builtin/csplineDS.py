@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def csplineDS(X: OperationNode, Y: OperationNode, inp_x: float) -> OperationNode:
+def csplineDS(X: OperationNode, Y: OperationNode, inp_x: float) -> Matrix:
     
     
     X._check_matrix_op()

@@ -45,19 +45,18 @@ class Func(object):
 
     def get_func(self, sds_context: "SystemDSContext", source_name, id: int, print_imported_methods: bool = False) -> MethodType:
         operation = f'"{source_name}::{self._name}"'
-        argument_string, unnamed_arguments, named_arguments = self.parse_inputs()
-        unnamed_intput_nodes = f'unnamed_arguments = [{unnamed_arguments}]'
+        argument_string, named_arguments = self.parse_inputs()
         named_intput_nodes = f'named_arguments = {{{named_arguments}}}'
         output_object = self.parse_outputs()
         
         definition = f'def {self._name}(self{argument_string}):'
         if self._outputs is None:
-            output = f'out = {output_object}(self.sds_context, {operation}, unnamed_input_nodes=unnamed_arguments, named_input_nodes=named_arguments, output_type=OutputType.NONE)'
+            output = f'out = {output_object}(self.sds_context, {operation}, named_input_nodes=named_arguments, output_type=OutputType.NONE)'
         else:
-            output = f'out = {output_object}(self.sds_context, {operation}, unnamed_input_nodes=unnamed_arguments, named_input_nodes=named_arguments)'
+            output = f'out = {output_object}(self.sds_context, {operation}, named_input_nodes=named_arguments)'
 
         lines = [definition,
-                 unnamed_intput_nodes, named_intput_nodes, output,
+                 named_intput_nodes, output,
                  "out._source_node = self",  "return out"]
 
         full_function = "\n\t".join(lines)
@@ -72,18 +71,17 @@ class Func(object):
 
     def parse_inputs(self):
         argument_string = ""
-        unnamed_arguments = ""
         named_arguments = ""
         for s in self._inputs:
             if s != "":
                 v, t = self.parse_type_and_name(s)
                 if len(v) == 1:
                     argument_string += f', {v[0]}:{t}'
-                    unnamed_arguments += f'{v[0]}, '
+                    named_arguments += f'"{v[0]}":{v[0]}, '
                 else:
                     argument_string += f', {v[0]}:{t} = {v[1]}'
                     named_arguments += f'"{v[0]}":{v[0]}, '
-        return (argument_string, unnamed_arguments, named_arguments)
+        return (argument_string, named_arguments)
 
     def parse_outputs(self):
         if self._outputs is None:
@@ -101,9 +99,16 @@ class Func(object):
         elif var_l[0] == 'd':  # double
             return (self.split_to_value_and_def(var[6:]), 'Scalar')
         elif var_l[0] == 'i':  # integer
-            return (self.split_to_value_and_def(var[7:]), 'Scalar')
+            if "integer" in var_l:
+                return (self.split_to_value_and_def(var[7:]), 'Scalar')
+            else: # int
+                return (self.split_to_value_and_def(var[3:]), 'Scalar')
         elif var_l[0] == 'b':  # boolean
             return (self.split_to_value_and_def(var[7:], True), 'Scalar')
+        elif var_l[0] == 'l': # list[unknown]
+            return (self.split_to_value_and_def(var[13:]), 'OperationNode')
+        elif var_l[0] == 's': # string
+            return (self.split_to_value_and_def(var[6:]), 'Scalar')
         else:
             raise NotImplementedError(
                 "Not Implemented type parsing for function def: " + var)
@@ -160,19 +165,24 @@ class Source(OperationNode):
     def __parse_lines_with_filter(self, path: str) -> Iterable[str]:
         lines = []
         with open(path) as file:
-            insideBracket = False
+            insideBracket = 0
             for l in file.readlines():
                 ls = l.strip()
-                if insideBracket:
-                    if '}' in ls:
-                        insideBracket = False
-                    else:
+                if len(ls) == 0 or ls[0] == '#':
+                    continue
+                elif insideBracket > 0:
+                    for c in ls:
+                        if c == '{':
+                            insideBracket += 1
+                        elif c == '}':
+                            insideBracket -= 1
+                else:
+                    if "source(" in ls:
                         continue
-                elif len(ls) > 0 and ls[0] != '#':
-                    if '{' in ls:
+                    elif '{' in ls:
                         en = ''.join(ls.split('{')[0].split())
                         lines.append(en)
-                        insideBracket = True
+                        insideBracket += 1
                     else:
                         en = ''.join(ls.split())
                         lines.append(en)

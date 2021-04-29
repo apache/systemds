@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def randomForest(X: OperationNode, Y: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def randomForest(X: OperationNode, Y: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     """
     :param X: Feature matrix X; note that X needs to be both recoded and dummy coded
     :param Y: Label matrix Y; note that Y needs to be both recoded and dummy coded

@@ -94,7 +94,7 @@ class PythonAPIFileGenerator(object):
 
 class PythonAPIFunctionGenerator(object):
 
-    api_template = u"""def {function_name}({parameters}) -> OperationNode:
+    api_template = u"""def {function_name}({parameters}) -> Matrix:
     {header}
     {value_checks}
     {params_dict}
@@ -211,7 +211,7 @@ class PythonAPIFunctionGenerator(object):
         function_name: str
     ) -> str:
         length = len(return_values)
-        result = "OperationNode({params})"
+        result = "Matrix({params})"
         param_string = ""
         param = parameters[0]
         pattern = r"^[^\[]+"
@@ -219,7 +219,7 @@ class PythonAPIFunctionGenerator(object):
             output_type_list = ""
             for value in return_values:
                 output_type = re.search(pattern, value[1])[0].upper()
-                # print(output_type)
+
                 if len(output_type_list):
                     output_type_list = "{output_type_list}, ".format(
                         output_type_list=output_type_list
@@ -238,6 +238,14 @@ class PythonAPIFunctionGenerator(object):
                 n=length,
                 output_type_list=output_type_list
             )
+            result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, " \
+                 "output_type=OutputType.{output_type}".format(
+                     param=param[0],
+                     function_name=function_name,
+                     output_type=output_type
+                 )
+            result = "OperationNode({params})".format(params=result)
+            return result
         else:
             value = return_values[0]
             output_type = re.search(pattern, value[1])
@@ -245,15 +253,13 @@ class PythonAPIFunctionGenerator(object):
                 output_type = output_type[0].upper()
             else:
                 raise AttributeError("Error in pattern match")
-            # print(output_type)
-        result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, " \
-                 "output_type=OutputType.{output_type}".format(
+            result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict".format(
                      param=param[0],
                      function_name=function_name,
-                     output_type=output_type
                  )
-        result = "OperationNode({params})".format(params=result)
-        return result
+            result = "Matrix({params})".format(params=result)
+            return result
+       
 
     def format_value_checks(self, parameters: List[Tuple[str]]) -> str:
         result = ""

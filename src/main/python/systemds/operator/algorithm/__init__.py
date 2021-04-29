@@ -67,6 +67,7 @@ from .builtin.lasso import lasso
 from .builtin.lm import lm 
 from .builtin.lmCG import lmCG 
 from .builtin.lmDS import lmDS 
+from .builtin.lmPredict import lmPredict 
 from .builtin.logSumExp import logSumExp 
 from .builtin.msvm import msvm 
 from .builtin.msvmPredict import msvmPredict 
@@ -102,4 +103,4 @@ from .builtin.winsorize import winsorize
 from .builtin.xdummy1 import xdummy1 
 from .builtin.xdummy2 import xdummy2 
 
-__all__ = [abstain, als, alsCG, alsDS, alsPredict, alsTopkPredict, arima, bandit, bivar, components, confusionMatrix, cor, cox, cspline, csplineDS, cvlm, dbscan, decisionTree, discoverFD, dist, gaussianClassifier, getAccuracy, glm, gmm, gmmPredict, gnmf, gridSearch, hyperband, img_brightness, img_crop, img_mirror, imputeByFD, imputeByMean, imputeByMedian, imputeByMode, intersect, km, kmeans, kmeansPredict, knnbf, l2svm, l2svmPredict, lasso, lm, lmCG, lmDS, logSumExp, msvm, msvmPredict, multiLogReg, multiLogRegPredict, na_locf, naivebayes, normalize, outlier, outlierByArima, outlierByIQR, outlierBySd, pca, pnmf, ppca, randomForest, scale, scaleApply, sherlock, sherlockPredict, sigmoid, slicefinder, smote, split, splitBalanced, statsNA, steplm, toOneHot, tomeklink, univar, vectorToCsv, winsorize, xdummy1, xdummy2] 
+__all__ = [abstain, als, alsCG, alsDS, alsPredict, alsTopkPredict, arima, bandit, bivar, components, confusionMatrix, cor, cox, cspline, csplineDS, cvlm, dbscan, decisionTree, discoverFD, dist, gaussianClassifier, getAccuracy, glm, gmm, gmmPredict, gnmf, gridSearch, hyperband, img_brightness, img_crop, img_mirror, imputeByFD, imputeByMean, imputeByMedian, imputeByMode, intersect, km, kmeans, kmeansPredict, knnbf, l2svm, l2svmPredict, lasso, lm, lmCG, lmDS, lmPredict, logSumExp, msvm, msvmPredict, multiLogReg, multiLogRegPredict, na_locf, naivebayes, normalize, outlier, outlierByArima, outlierByIQR, outlierBySd, pca, pnmf, ppca, randomForest, scale, scaleApply, sherlock, sherlockPredict, sigmoid, slicefinder, smote, split, splitBalanced, statsNA, steplm, toOneHot, tomeklink, univar, vectorToCsv, winsorize, xdummy1, xdummy2] 

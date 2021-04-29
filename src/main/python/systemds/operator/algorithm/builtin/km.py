@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def km(X: OperationNode, TE: OperationNode, GI: OperationNode, SI: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def km(X: OperationNode, TE: OperationNode, GI: OperationNode, SI: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     """
     :param X: Input matrix X containing the survival data: 
     :param number: (categorical features) for grouping and/or stratifying 

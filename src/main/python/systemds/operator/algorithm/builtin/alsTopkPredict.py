@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def alsTopkPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def alsTopkPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     """
     :param userIDs: Column vector of user-ids (n x 1)
     :param I: Indicator matrix user-id x user-id to exclude from scoring

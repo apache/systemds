@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def lasso(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def lasso(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     """
     :param X: input feature matrix
     :param y: matrix Y columns of the design matrix
@@ -43,7 +43,7 @@ def lasso(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TY
     y._check_matrix_op()
     params_dict = {'X':X, 'y':y}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'lasso', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'lasso', named_input_nodes=params_dict)
 
 
     

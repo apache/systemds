@@ -31,7 +31,6 @@ from systemds.utils.converters import matrix_block_to_numpy, frame_block_to_pand
 from systemds.script_building.script import DMLScript
 from systemds.script_building.dag import OutputType, DAGNode
 
-
 if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
     from systemds.context import SystemDSContext
@@ -263,3 +262,9 @@ class OperationNode(DAGNode):
         :return: the OperationNode representing this operation
         """
         return OperationNode(self.sds_context, 'rev', [self])
+
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+        """ Converts the input to a string representation.
+        :return: `Scalar` containing the string.
+        """
+        return OperationNode(self.sds_context, 'toString', [self], kwargs, output_type=OutputType.STRING)

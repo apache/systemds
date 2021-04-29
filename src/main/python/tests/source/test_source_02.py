@@ -61,6 +61,22 @@ class TestSource_01(unittest.TestCase):
         self.assertEqual(1, self.imports(cc.script_str))
         self.assertEqual(1, res.shape[1])
 
+    def test_func_02_sum(self):
+        m = self.sds.full((3, 5), 2)
+        c = self.sds.source("./tests/source/source_02.dml",
+                            "test").func_02(m)
+        c = c.sum()
+        res = c.compute()
+        self.assertEqual(1, self.imports(c.script_str))
+
+    def test_Preprocess_sum(self):
+        m = self.sds.full((3, 5), 2)
+        c = self.sds.source("./tests/source/source_02.dml",
+                            "test").Preprocess(m)
+        c = c.sum()
+        res = c.compute()
+        self.assertEqual(1, self.imports(c.script_str))
+
     def imports(self, script: str) -> int:
         return script.split("\n").count('source("./tests/source/source_02.dml") as test')
 

@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def tomeklink(X: OperationNode, y: OperationNode) -> OperationNode:
+def tomeklink(X: OperationNode, y: OperationNode) -> Matrix:
     """
     :param X: Data Matrix (nxm)
     :param y: Label Matrix (nx1)

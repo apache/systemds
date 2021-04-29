@@ -30,7 +30,7 @@ class TestSource_MultiArguments(unittest.TestCase):
 
     sds: SystemDSContext = None
     source: Source = None
-    src_path: str = "./tests/source/source_with_default_values.dml"
+    src_path: str = "./tests/source/source_with_no_return.dml"
 
     @classmethod
     def setUpClass(cls):
@@ -42,34 +42,24 @@ class TestSource_MultiArguments(unittest.TestCase):
 
     def test_01(self):
         s = self.sds.source(self.src_path,"test")
-        c = s.d()
-        res = c.compute()
-        self.assertEqual(4.2,res)
+        c = s.no_return()
+        c.compute()
+        stdout = self.sds.get_stdout()
+        self.assertEqual(4.2 + 14 * 2,float(stdout[0]))
 
     def test_02(self):
         s = self.sds.source(self.src_path,"test")
-        c = s.d(a=self.sds.scalar(5))
-        res = c.compute()
-        self.assertEqual(5,res)
+        c = s.no_return(4)
+        c.compute()
+        stdout = self.sds.get_stdout()
+        self.assertEqual(4 + 14 * 2,float(stdout[0]))
 
     def test_03(self):
         s = self.sds.source(self.src_path,"test")
-        c = s.d(a=5)
-        res = c.compute()
-        self.assertEqual(5,res)
-
-    def test_04(self):
-        s = self.sds.source(self.src_path,"test")
-        c = s.d(c=False)
-        res = c.compute()
-        self.assertEqual(10,res)
-
-    def test_05(self):
-        s = self.sds.source(self.src_path,"test")
-        c = s.d(b = 1, c=False)
-        res = c.compute()
-        self.assertEqual(1,res)
-
+        c = s.no_return(a=14)
+        c.compute()
+        stdout = self.sds.get_stdout()
+        self.assertEqual(14 + 14 * 2,float(stdout[0]))
 
 if __name__ == "__main__":
     unittest.main(exit=False)

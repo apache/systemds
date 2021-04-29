@@ -38,7 +38,10 @@ class Func(object):
     def __init__(self, name: str, inputs: str, outputs: str):
         self._name = name
         self._inputs = inputs.split(",")
-        self._outputs = outputs.split(",")
+        if outputs is not None:
+            self._outputs = outputs.split(",")
+        else:
+            self._outputs = None
 
     def get_func(self, sds_context: "SystemDSContext", source_name, id: int, print_imported_methods: bool = False) -> MethodType:
         operation = f'"{source_name}::{self._name}"'
@@ -46,10 +49,18 @@ class Func(object):
         unnamed_intput_nodes = f'unnamed_arguments = [{unnamed_arguments}]'
         named_intput_nodes = f'named_arguments = {{{named_arguments}}}'
         output_object = self.parse_outputs()
-        output = f'{output_object}(self.sds_context, {operation}, unnamed_input_nodes=unnamed_arguments, named_input_nodes=named_arguments)'
-        definition = f'def {self._name}(self{argument_string}):\n\t'
+        
+        definition = f'def {self._name}(self{argument_string}):'
+        if self._outputs is None:
+            output = f'out = {output_object}(self.sds_context, {operation}, unnamed_input_nodes=unnamed_arguments, named_input_nodes=named_arguments, output_type=OutputType.NONE)'
+        else:
+            output = f'out = {output_object}(self.sds_context, {operation}, unnamed_input_nodes=unnamed_arguments, named_input_nodes=named_arguments)'
 
-        full_function = f'{definition}{unnamed_intput_nodes}\n\t{named_intput_nodes}\n\tout = {output}\n\tout._source_node = self\n\treturn out\n'
+        lines = [definition,
+                 unnamed_intput_nodes, named_intput_nodes, output,
+                 "out._source_node = self",  "return out"]
+
+        full_function = "\n\t".join(lines)
 
         if print_imported_methods:
             print(full_function)
@@ -75,7 +86,9 @@ class Func(object):
         return (argument_string, unnamed_arguments, named_arguments)
 
     def parse_outputs(self):
-        if len(self._outputs) == 1:
+        if self._outputs is None:
+            return "OperationNode"
+        elif len(self._outputs) == 1:
             v, t = self.parse_type_and_name(self._outputs[0])
             return t
         else:
@@ -134,9 +147,13 @@ class Source(OperationNode):
         for l in lines:
             split = l.split("=function(")
             name = split[0]
-            split2 = split[1].split(")return(")
-            inputs = split2[0]
-            outputs = split2[1][:-1]
+            if "return" in split[1]:
+                split2 = split[1].split(")return(")
+                inputs = split2[0]
+                outputs = split2[1][:-1]
+            else:
+                inputs = split[1].split(")")[0]
+                outputs = None
             functions.append(Func(name, inputs, outputs))
         return functions
 

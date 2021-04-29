@@ -44,7 +44,8 @@ class OperationNode(DAGNode):
     _lineage_trace: Optional[str]
     _script: Optional[DMLScript]
     _output_types: Optional[Iterable[VALID_INPUT_TYPES]]
-
+    _source_node: Optional["DAGNode"]
+    
     def __init__(self, sds_context: 'SystemDSContext', operation: str,
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,
@@ -53,6 +54,7 @@ class OperationNode(DAGNode):
                  is_python_local_data: bool = False,
                  number_of_outputs=1,
                  output_types: Iterable[OutputType] = None):
+                 
         """
         Create general `OperationNode`
 
@@ -82,6 +84,7 @@ class OperationNode(DAGNode):
         self._script = None
         self._number_of_outputs = number_of_outputs
         self._output_types = output_types
+        self._source_node = None
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
             Union[float, np.array, Tuple[Union[float, np.array], str]]:
@@ -165,6 +168,7 @@ class OperationNode(DAGNode):
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
         if self.operation in BINARY_OPERATIONS:
+            print(unnamed_input_vars)
             assert len(
                 named_input_vars) == 0, 'Named parameters can not be used with binary operations'
             assert len(
@@ -173,7 +177,7 @@ class OperationNode(DAGNode):
 
         inputs_comma_sep = create_params_string(
             unnamed_input_vars, named_input_vars)
-            
+
         if self.output_type == OutputType.LIST:
             output = "["
             for idx in range(self._number_of_outputs):
@@ -254,10 +258,8 @@ class OperationNode(DAGNode):
         return OperationNode(self.sds_context, 'print', [self], kwargs, output_type=OutputType.NONE)
 
     def rev(self) -> 'OperationNode':
-        """ Reverses the rows in a matrix
+        """ Reverses the rows
 
         :return: the OperationNode representing this operation
         """
-
-        self._check_matrix_op()
         return OperationNode(self.sds_context, 'rev', [self])

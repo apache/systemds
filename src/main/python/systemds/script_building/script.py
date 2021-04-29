@@ -100,7 +100,6 @@ class DMLScript:
             connection.setLineage(True)
             ret = self.prepared_script.executeScript()
 
-
             if len(self.out_var_name) == 1:
                 return ret, self.prepared_script.getLineageTrace(self.out_var_name[0])
             else:
@@ -108,7 +107,7 @@ class DMLScript:
                 for output in self.out_var_name:
                     traces.append(self.prepared_script.getLineageTrace(output))
                 return ret, traces
-          
+
         except Exception as e:
             self.sds_context.exception_and_close(e)
             return None, None
@@ -127,7 +126,6 @@ class DMLScript:
                 input_node.pass_python_data_to_prepared_script(
                     self.sds_context, name, self.prepared_script)
             return connection
-
 
     def get_lineage(self) -> str:
         gateway = self.sds_context.java_gateway
@@ -171,7 +169,6 @@ class DMLScript:
                 self.out_var_name.append(baseOutVarString)
                 self.add_code(f'write({baseOutVarString}, \'./tmp\');')
 
-
     def _dfs_dag_nodes(self, dag_node: VALID_INPUT_TYPES) -> str:
         """Uses Depth-First-Search to create code from DAG
 
@@ -182,19 +179,24 @@ class DMLScript:
             if isinstance(dag_node, bool):
                 return 'TRUE' if dag_node else 'FALSE'
             return str(dag_node)
+        if dag_node._output_type == OutputType.IMPORT:
+            self.add_code(dag_node.code_line(None, None))
+            return None
+        if dag_node._source_node is not None:
+            self._dfs_dag_nodes(dag_node._source_node)
         # for each node do the dfs operation and save the variable names in `input_var_names`
         # get variable names of unnamed parameters
-        print(dag_node.unnamed_input_nodes)
-        unnamed_input_vars =  []
-        for input_node in dag_node.unnamed_input_nodes:
-            if not input_node == OutputType.IMPORT:
-                self._dfs_dag_nodes(input_node) 
+        # print(dag_node.unnamed_input_nodes)
+        unnamed_input_vars = [self._dfs_dag_nodes(
+            input_node) for input_node in dag_node.unnamed_input_nodes]
         # get variable names of named parameters
         named_input_vars = {name: self._dfs_dag_nodes(input_node) for name, input_node in
                             dag_node.named_input_nodes.items()}
         curr_var_name = self._next_unique_var()
+
         if dag_node.is_python_local_data:
             self.add_input_from_python(curr_var_name, dag_node)
+        
         code_line = dag_node.code_line(
             curr_var_name, unnamed_input_vars, named_input_vars)
         self.add_code(code_line)

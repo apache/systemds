@@ -21,7 +21,7 @@
 
 from abc import ABC
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, Optional
 
 from py4j.java_gateway import JavaObject, JVMView
 from systemds.utils.consts import VALID_INPUT_TYPES
@@ -74,6 +74,7 @@ class DAGNode(ABC):
     sds_context: 'SystemDSContext'
     _unnamed_input_nodes: Sequence[Union['DAGNode', str, int, float, bool]]
     _named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
+    _source_node: Optional["DAGNode"]
     _output_type: OutputType
     _is_python_local_data: bool
     _number_of_outputs: int

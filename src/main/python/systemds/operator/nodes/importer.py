@@ -42,7 +42,9 @@ class Import(OperationNode):
         self.__name = name
         self.__parse_functions_from_script(path)
         def x():
-            return Matrix(sds_context,  f'{self.__name}::test_01', [self])
+            m =  Matrix(sds_context,  f'{self.__name}::test_01')
+            m._source_node = self
+            return m
         self.test_01 = x
 
     def __parse_functions_from_script(self, path: str) -> Func:
@@ -66,7 +68,7 @@ class Import(OperationNode):
                         lines.append(ls)
         print(lines)
 
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str], named_input_vars: Dict[str, str]) -> str:
+    def code_line(self, unnamed_input_vars: Sequence[str], named_input_vars: Dict[str, str]) -> str:
         return f'source({self.operation}) as { self.__name}'
 
     def compute(self, verbose: bool = False, lineage: bool = False):

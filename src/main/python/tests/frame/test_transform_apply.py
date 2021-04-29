@@ -28,7 +28,6 @@ import unittest
 import numpy as np
 import pandas as pd
 from systemds.context import SystemDSContext
-from systemds.operator import Frame, Matrix
 
 
 class TestTransformApply(unittest.TestCase):

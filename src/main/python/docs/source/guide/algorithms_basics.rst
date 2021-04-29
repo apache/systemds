@@ -87,15 +87,15 @@ To start with, we setup a SystemDS context::
 Then setup the data::
 
     from systemds.operator import Matrix
-    X_ds = Matrix(sds, X)
-    Y_ds = Matrix(sds, Y)
+    X_ds = sds.from_numpy(X)
+    Y_ds = sds.from_numpy( Y)
 
 to reduce the training time and verify everything works, it is usually good to reduce the amount of data,
 to train on a smaller sample to start with::
 
     sample_size = 1000
-    X_ds = Matrix(sds, X[:sample_size])
-    Y_ds = Matrix(sds, Y[:sample_size])
+    X_ds = sds.from_numpy(X[:sample_size])
+    Y_ds = sds.from_numpy(Y[:sample_size])
 
 And now everything is ready for our algorithm::
 
@@ -117,8 +117,8 @@ To see what accuracy the model achieves, we have to load in the test dataset as 
 
 this can also be extracted from our builtin MNIST loader, to keep the tutorial short the operations are combined::
 
-    Xt = Matrix(sds, d.get_test_data().reshape((10000, 28*28)))
-    Yt = Matrix(sds, d.get_test_labels()) + 1
+    Xt = sds.from_numpy(d.get_test_data().reshape((10000, 28*28)))
+    Yt = sds.from_numpy(d.get_test_labels()) + 1
 
 The above loads the test data, and reshapes the X data the same way the training data was reshaped.
 
@@ -157,8 +157,8 @@ To improve further we have to increase the training data, here for example we in
 from our sample of 1k to the full training dataset of 60k, in this example the maxi is set to reduce the number of iterations the algorithm takes,
 to again reduce training time::
 
-    X_ds = Matrix(sds, X)
-    Y_ds = Matrix(sds, Y)
+    X_ds = sds.from_numpy(X)
+    Y_ds = sds.from_numpy(Y)
 
     bias = multiLogReg(X_ds, Y_ds, maxi=30)
 
@@ -178,7 +178,6 @@ One noteworthy change is the + 1 is done on the matrix ready for SystemDS,
 this makes SystemDS responsible for adding the 1 to each value.::
 
     from systemds.context import SystemDSContext
-    from systemds.operator import Matrix
     from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
     from systemds.examples.tutorials.mnist import DataManager
 

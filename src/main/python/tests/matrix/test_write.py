@@ -19,17 +19,11 @@
 #
 # -------------------------------------------------------------
 
-import math
-import os
-import random
 import shutil
-import sys
 import unittest
 
 import numpy as np
-import scipy.stats as st
 from systemds.context import SystemDSContext
-from systemds.operator import Matrix
 
 
 class TestWrite(unittest.TestCase):

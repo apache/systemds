@@ -49,8 +49,6 @@ class SystemDSContext(object):
     The java process is started and is running using a random tcp port for instruction parsing."""
 
     java_gateway: JavaGateway
-    # __stdout: Queue
-    # __stderr: Queue
 
     def __init__(self, port: int = -1):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
@@ -105,6 +103,8 @@ class SystemDSContext(object):
     def exception_and_close(self, e: Exception):
         """
         Method for printing exception, printing stdout and error, while also closing the context correctly.
+
+        :param e: the exception thrown
         """
 
         # e = sys.exc_info()[0]
@@ -116,6 +116,12 @@ class SystemDSContext(object):
         raise RuntimeError(message)
 
     def __try_startup(self, command, port, rep=0):
+        """ Try to perform startup of system.
+
+        :param command: The command to execute for starting JMLC content
+        :param port: The port to try to connect to to.
+        :param rep: The number of repeated tries to startup the jvm.
+        """
         if port == -1:
             assignedPort = self.__get_open_port()
         elif rep == 0:
@@ -435,27 +441,17 @@ class SystemDSContext(object):
         return Matrix(self, 'federated', args, named_params)
 
     def source(self, path: str, name: str, print_imported_methods: bool = False):
-        """ Import methods from a given dml file.
+        """Import methods from a given dml file.
 
         The importing is done thorugh the DML command source, and adds all defined methods from
         the script to the Source object returned in python. This gives the flexibility to call the methods 
         directly on the object returned.
-
-        Example DML file:
-        
-        ```dml
-        func_01= function() return(matrix[double] C){
-            C = matrix(1,1,1)
-            C = C + 2 
-        }
-        ```
-        
-        In systemds this can then be imported using:
+    
+        In systemds a method called func_01 can then be imported using
 
         ```python
         res = self.sds.source("PATH_TO_FILE", "UNIQUE_NAME").func_01().compute(verbose = True)
         ```
-
 
         :param path: The absolute or relative path to the file to import
         :param name: The name to give the imported file in the script, this name must be unique

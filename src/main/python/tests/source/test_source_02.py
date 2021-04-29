@@ -23,13 +23,11 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.operator import Source
 
 
 class TestSource_01(unittest.TestCase):
 
     sds: SystemDSContext = None
-    source: Source = None
 
     @classmethod
     def setUpClass(cls):
@@ -40,32 +38,32 @@ class TestSource_01(unittest.TestCase):
         cls.sds.close()
 
     def test_func_01(self):
-        c =  self.sds.source("./tests/source/source_02.dml",
-                      "test").func_01()
+        c = self.sds.source("./tests/source/source_02.dml",
+                            "test").func_01()
         res = c.compute()
         self.assertEqual(1, self.imports(c.script_str))
         self.assertTrue(np.allclose(np.array([[1]]), res))
 
     def test_func_02(self):
-        m = self.sds.full((3,5), 2)
+        m = self.sds.full((3, 5), 2)
         c = self.sds.source("./tests/source/source_02.dml",
-                      "test").func_02(m)
+                            "test").func_02(m)
         res = c.compute()
         self.assertEqual(1, self.imports(c.script_str))
         self.assertEqual(1, res.shape[1])
 
     def test_func_02_call_self(self):
-        m = self.sds.full((3,2), 2)
+        m = self.sds.full((3, 2), 2)
         s = self.sds.source("./tests/source/source_02.dml", "test")
         c = s.func_02(m)
         cc = s.func_02(c)
         res = cc.compute()
         self.assertEqual(1, self.imports(cc.script_str))
-        self.assertEqual(1, res.shape[1])      
+        self.assertEqual(1, res.shape[1])
 
-
-    def imports(self, script:str) -> int:
+    def imports(self, script: str) -> int:
         return script.split("\n").count('source("./tests/source/source_02.dml") as test')
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

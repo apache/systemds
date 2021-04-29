@@ -24,7 +24,6 @@ import random
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.operator import Matrix
 
 np.random.seed(7)
 

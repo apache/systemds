@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.operator import Matrix
 
 np.random.seed(7)
 shape = np.random.randint(1, 100)

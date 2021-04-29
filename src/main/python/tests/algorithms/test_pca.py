@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.operator import Matrix
 from systemds.operator.algorithm import pca
 
 

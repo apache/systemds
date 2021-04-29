@@ -30,7 +30,7 @@ Matrices are the most fundamental objects SystemDS operates on.
 Although it is possible to generate matrices with the function calls or object construction specified below,
 the recommended way is to use the methods defined on ``SystemDSContext``.
 
-.. autoclass:: systemds.matrix.Matrix
+.. autoclass:: systemds.operator.Matrix
     :members:
     
     .. automethod:: __init__

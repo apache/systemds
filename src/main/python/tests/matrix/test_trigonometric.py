@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.operator import Matrix
 
 dim = 5
 m1 = np.array(np.random.randint(100, size=dim * dim) + 1.01, dtype=np.double)

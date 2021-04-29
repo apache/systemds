@@ -26,7 +26,6 @@ import unittest
 
 import pandas as pd
 from systemds.context import SystemDSContext
-from systemds.operator import Frame
 
 
 class TestWriteRead(unittest.TestCase):

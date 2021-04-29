@@ -27,7 +27,6 @@ import unittest
 import numpy as np
 import pandas as pd
 from systemds.context import SystemDSContext
-from systemds.operator import Frame, Matrix
 from systemds.operator.algorithm import hyperband
 
 

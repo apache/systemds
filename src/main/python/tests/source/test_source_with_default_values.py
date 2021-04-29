@@ -23,13 +23,10 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.operator import Source
-
 
 class TestSource_MultiArguments(unittest.TestCase):
 
     sds: SystemDSContext = None
-    source: Source = None
     src_path: str = "./tests/source/source_with_default_values.dml"
 
     @classmethod

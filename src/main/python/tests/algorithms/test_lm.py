@@ -25,7 +25,6 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import lm
-from systemds.operator import Matrix
 
 np.random.seed(7)
 

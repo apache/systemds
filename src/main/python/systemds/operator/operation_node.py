@@ -85,6 +85,7 @@ class OperationNode(DAGNode):
         self._number_of_outputs = number_of_outputs
         self._output_types = output_types
         self._source_node = None
+        self._already_added = False
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
             Union[float, np.array, Tuple[Union[float, np.array], str]]:
@@ -168,7 +169,6 @@ class OperationNode(DAGNode):
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
         if self.operation in BINARY_OPERATIONS:
-            print(unnamed_input_vars)
             assert len(
                 named_input_vars) == 0, 'Named parameters can not be used with binary operations'
             assert len(

@@ -1,4 +1,4 @@
-# -------------------------------------------------------------
+#-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,37 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# -------------------------------------------------------------
+#-------------------------------------------------------------
 
-import math
-import os
-import random
-import shutil
-import sys
-import unittest
-
-import numpy as np
-import scipy.stats as st
-from systemds.context import SystemDSContext
-from systemds.operator import Matrix
-
-
-class TestImport(unittest.TestCase):
-
-    sds: SystemDSContext = None
-
-    @classmethod
-    def setUpClass(cls):
-        cls.sds = SystemDSContext()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.sds.close()
-
-    def test_print_01(self):
-        res = self.sds.source("./tests/import/source_01.dml", "test").test_01().compute(verbose = True)
-        print(res)
-
-
-if __name__ == "__main__":
-    unittest.main(exit=False)
+# Slightly anoying input with inconsistant big and small letters.
+blaaa_is_a_BAAD_function_name_but_it_works = function(matrix[double] A,
+    Matrix[double] B, matrix[Double] C) 
+    return(Double C){
+    C = sum(A) + sum(B) + sum(C) 
+}

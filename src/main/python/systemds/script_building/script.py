@@ -180,18 +180,21 @@ class DMLScript:
                 return 'TRUE' if dag_node else 'FALSE'
             return str(dag_node)
         if dag_node._output_type == OutputType.IMPORT:
-            self.add_code(dag_node.code_line(None, None))
+            if not dag_node.already_added:
+                self.add_code(dag_node.code_line(None, None))
             return None
         if dag_node._source_node is not None:
             self._dfs_dag_nodes(dag_node._source_node)
         # for each node do the dfs operation and save the variable names in `input_var_names`
         # get variable names of unnamed parameters
-        # print(dag_node.unnamed_input_nodes)
+
         unnamed_input_vars = [self._dfs_dag_nodes(
             input_node) for input_node in dag_node.unnamed_input_nodes]
+        
         # get variable names of named parameters
         named_input_vars = {name: self._dfs_dag_nodes(input_node) for name, input_node in
                             dag_node.named_input_nodes.items()}
+
         curr_var_name = self._next_unique_var()
 
         if dag_node.is_python_local_data:

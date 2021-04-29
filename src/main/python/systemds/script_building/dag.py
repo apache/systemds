@@ -76,8 +76,10 @@ class DAGNode(ABC):
     _named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
     _source_node: Optional["DAGNode"]
     _output_type: OutputType
+    _script: Optional["DMLScript"]
     _is_python_local_data: bool
     _number_of_outputs: int
+    _already_added: bool
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> Any:
         """Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
@@ -134,3 +136,15 @@ class DAGNode(ABC):
     @property
     def output_type(self):
         return self._output_type
+    
+    @property
+    def already_added(self):
+        return self._already_added
+
+    @property
+    def script(self):
+        return self._script
+
+    @property
+    def script_str(self):
+        return self._script.dml_script

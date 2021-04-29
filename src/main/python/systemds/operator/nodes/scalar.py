@@ -44,8 +44,8 @@ class Scalar(OperationNode):
                  output_type : OutputType = OutputType.DOUBLE,
                  assign : bool = False) -> 'Scalar':
         self.__assign = assign
-        super().__init__(sds_context, operation, unnamed_input_nodes,
-                         named_input_nodes, output_type)
+        super().__init__(sds_context, operation, unnamed_input_nodes=unnamed_input_nodes,
+                         named_input_nodes=named_input_nodes, output_type=output_type)
 
     def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
         raise RuntimeError('Scalar Operation Nodes, should not have python data input')

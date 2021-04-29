@@ -38,7 +38,7 @@ import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway
 from py4j.protocol import Py4JNetworkError
-from systemds.operator import Frame, Matrix, OperationNode, Scalar, Import
+from systemds.operator import Frame, Matrix, OperationNode, Scalar, Source
 from systemds.script_building import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
@@ -343,10 +343,9 @@ class SystemDSContext(object):
             output_type = OutputType.from_str(kwargs.get("value_type", None))
             kwargs["value_type"] = f'"{output_type.name}"'
             return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
-        
+
         print("WARNING: Unknown type read please add a mtd file, or specify in arguments")
         return OperationNode(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
-
 
     def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> 'Scalar':
         """ Construct an scalar value, this can contain str, float, double, integers and booleans.
@@ -355,7 +354,7 @@ class SystemDSContext(object):
         if type(v) is str:
             if not ((v[0] == '"' and v[-1] == '"') or (v[0] == "'" and v[-1] == "'")):
                 v = f'"{v}"'
-        
+
         # output type assign simply assigns the given variable to the value
         # therefore the output type is assign.
         return Scalar(self, v, assign=True, output_type=OutputType.from_str(v))
@@ -385,8 +384,8 @@ class SystemDSContext(object):
         named_params.update(kwargs)
         return Matrix(self, 'read', unnamed_params, named_params, local_data=mat)
 
-    def from_pandas(self, df: pd.DataFrame, 
-        *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Frame:
+    def from_pandas(self, df: pd.DataFrame,
+                    *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Frame:
         """Generate DAGNode representing frame with data given by a pandas dataframe, which will be sent to SystemDS
         on need.
 
@@ -410,11 +409,11 @@ class SystemDSContext(object):
         self._pd_dataframe = df
 
         named_params.update(kwargs)
-        return Frame( self, "read", unnamed_params, named_params, local_data=df)
+        return Frame(self, "read", unnamed_params, named_params, local_data=df)
 
     def federated(self, addresses: Iterable[str],
-                 ranges: Iterable[Tuple[Iterable[int], Iterable[int]]], *args,
-                 **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+                  ranges: Iterable[Tuple[Iterable[int], Iterable[int]]], *args,
+                  **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
         """Create federated matrix object.
 
         :param sds_context: the SystemDS context
@@ -435,5 +434,31 @@ class SystemDSContext(object):
         named_params.update(kwargs)
         return Matrix(self, 'federated', args, named_params)
 
-    def source(self, path: str, name:str):
-        return Import(self, path, name)
+    def source(self, path: str, name: str, print_imported_methods: bool = False):
+        """ Import methods from a given dml file.
+
+        The importing is done thorugh the DML command source, and adds all defined methods from
+        the script to the Source object returned in python. This gives the flexibility to call the methods 
+        directly on the object returned.
+
+        Example DML file:
+        
+        ```dml
+        func_01= function() return(matrix[double] C){
+            C = matrix(1,1,1)
+            C = C + 2 
+        }
+        ```
+        
+        In systemds this can then be imported using:
+
+        ```python
+        res = self.sds.source("PATH_TO_FILE", "UNIQUE_NAME").func_01().compute(verbose = True)
+        ```
+
+
+        :param path: The absolute or relative path to the file to import
+        :param name: The name to give the imported file in the script, this name must be unique
+        :param print_imported_methods: boolean specifying if the imported methods should be printed.
+        """
+        return Source(self, path, name, print_imported_methods)

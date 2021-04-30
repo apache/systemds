@@ -104,7 +104,7 @@ m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
           tol=as.scalar(args[1]), reg=as.scalar(args[2]), maxi=r_i, verbose=FALSE));
         
         candidateWeights[curCandidate] = t(weights)
-        preds = lmPredict(X=X_val, B=weights);
+        preds = lmPredict(X=X_val, B=weights, ytest= matrix(0,1,1));
         scoreboard[curCandidate,1] = as.matrix(sum((y_val - preds)^2));
       }
       

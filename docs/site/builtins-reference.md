@@ -824,7 +824,7 @@ The `lmPredict`-function predicts the class of a feature vector.
 ### Usage
 
 ```r
-lmPredict(X=X, B=w)
+lmPredict(X=X, B=w, ytest= Y)
 ```
 
 ### Arguments
@@ -833,7 +833,7 @@ lmPredict(X=X, B=w)
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vector(s). |
 | B       | Matrix[Double] | required | 1-column matrix of weights. |
-| ytest   | Matrix[Double] | optional | Optional test labels, used only for verbose output. |
+| ytest   | Matrix[Double] | required | test labels, used only for verbose output. can be set to matrix(0,1,1) if verbose output is not wanted |
 | icpt    | Integer        | 0        | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
 | verbose | Boolean        | FALSE    | Print various statistics for evaluating accuracy. |
 
@@ -850,7 +850,7 @@ lmPredict(X=X, B=w)
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
-yp = lmPredict(X = X, B = w)
+yp = lmPredict(X = X, B = w, ytest=matrix(0,1,1))
 ```
 
 ## `mice`-Function

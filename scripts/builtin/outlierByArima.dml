@@ -64,7 +64,7 @@ m_outlierByArima = function(Matrix[Double] X, Double k = 3, Integer repairMethod
 
   # TODO replace by ARIMA once fully supported, LM only emulated the AR part
   model = lm(X=features, y=X_adapted)
-  y_hat = lmPredict(X=features, B=model)
+  y_hat = lmPredict(X=features, B=model, ytest=matrix(0,1,1))
 
   upperBound = sd(X) + k * y_hat
   lowerBound = sd(X) - k * y_hat

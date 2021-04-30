@@ -140,7 +140,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
         # learn a regression line
         beta = lm(X=train_X, y=train_Y, verbose=FALSE, icpt=1, reg = 1e-7, tol = 1e-7);
         # predicting missing values 
-        pred = lmPredict(X=test_X, B=beta, icpt=1)
+        pred = lmPredict(X=test_X, B=beta, ytest= matrix(0,1,1), icpt=1)
         # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
         R = removeEmpty(target=Mask_Filled[, in_c] * seq(1,n), margin="rows");
         # TODO modify removeEmpty to return zero row and n columns

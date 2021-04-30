@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.io.libsvm;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.TestConfiguration;
@@ -29,36 +30,44 @@ public abstract class WriteLIBSVMTest extends WriteLIBSVMTestBase {
 
 	protected abstract int getId();
 
+	protected abstract int getColCount();
+
+	protected abstract String getSep();
+
+	protected abstract String getIndSep();
+
 	protected String getInputLIBSVMFileName() {
 		return "transfusion_W" + getId() + ".libsvm";
 	}
 
+	private final static double eps = 1e-9;
+
 	@Test public void testlibsvm1_Seq_CP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, " ", ":", false);
+		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, getSep(), getIndSep(), getColCount(), false);
 	}
 
 	@Test public void testlibsvm2_Seq_CP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, " ", ":", true);
+		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, getSep(), getIndSep(), getColCount(), true);
 	}
 
 	@Test public void testlibsvm1_Pllel_CP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, " ", ":", true);
+		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, getSep(), getIndSep(), getColCount(), true);
 	}
 
 	@Test public void testlibsvm2_Pllel_CP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, " ", ":", false);
+		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, getSep(), getIndSep(), getColCount(), false);
 	}
 
 	@Test public void testlibsvm1_SP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, " ", ":", true);
+		runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, getSep(), getIndSep(), getColCount(), true);
 	}
 
 	@Test public void testlibsvm2_SP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, " ", ":", false);
+		runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, getSep(), getIndSep(), getColCount(), false);
 	}
 
 	protected void runWriteLIBSVMTest(int testNumber, ExecMode platform, boolean parallel, String sep, String indSep,
-		boolean sparse) {
+		int cols, boolean sparse) {
 
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
@@ -79,6 +88,7 @@ public abstract class WriteLIBSVMTest extends WriteLIBSVMTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String inputMatrixName = HOME + INPUT_DIR + getInputLIBSVMFileName();
 			String dmlOutput = output("dml.scalar");
+			String rOutput = output("R.scalar");
 			String libsvmOutputName = output("libsvm_write" + testNumber + ".data");
 
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
@@ -86,6 +96,17 @@ public abstract class WriteLIBSVMTest extends WriteLIBSVMTestBase {
 				Boolean.toString(sparse)};
 
 			runTest(true, false, null, -1);
+
+			fullRScriptName = HOME + "writelibsvm_verify.R";
+			if(sep.equals(" ")) {
+				sep = "NULL";
+			}
+			rCmd = "Rscript" + " " + fullRScriptName + " " + libsvmOutputName + " " + cols + " " + sep + " " + indSep + " " + rOutput;
+			runRScript(true);
+
+			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
+			double rScalar = TestUtils.readRScalar(rOutput);
+			TestUtils.compareScalars(dmlScalar, rScalar, eps);
 		}
 		finally {
 			rtplatform = oldPlatform;

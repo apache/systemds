@@ -35,4 +35,16 @@ public class WriteLIBSVMTest2 extends WriteLIBSVMTest {
 	protected int getId() {
 		return 2;
 	}
+
+	protected int getColCount() {
+		return 124;
+	}
+
+	protected String getSep() {
+		return ",";
+	}
+
+	protected String getIndSep() {
+		return ":";
+	}
 }

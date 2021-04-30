@@ -22,52 +22,26 @@
 args <- commandArgs(TRUE)
 
 library("Matrix")
+library(naivebayes)
 
 D = as.matrix(readMM(paste(args[1], "D.mtx", sep="")))
 C = as.matrix(readMM(paste(args[1], "C.mtx", sep="")))
 
-# reading input args
-numClasses = as.integer(args[2])
-laplace = as.double(args[3])
-
 # divide D into "train" and "test" data
 numRows = nrow(D)
+
 trainSize = numRows * 0.8
+
 trainData = D[1:trainSize,]
 testData = D[(trainSize+1):numRows,]
 
-C = C[1:trainSize,]
-numFeatures = ncol(trainData)
+colnames(trainData) <- paste0("V", seq_len(ncol(trainData)))
+colnames(testData) <- paste0("V", seq_len(ncol(testData)))
+y<-factor(C[1:trainSize])
 
-# Compute conditionals
-# Compute the feature counts for each class
-classFeatureCounts = matrix(0, numClasses, numFeatures)
-for (i in 1:numFeatures) {
-  Col = trainData[,i]
-  classFeatureCounts[,i] = aggregate(as.vector(Col), by=list(as.vector(C)), FUN=sum)[,2]
-}
-
-# Compute the total feature count for each class
-# and add the number of features to this sum
-# for subsequent regularization (Laplace's rule)
-classSums = rowSums(classFeatureCounts) + numFeatures * laplace
-
-# Compute class conditional probabilities
-ones = matrix(1, 1, numFeatures)
-repClassSums = classSums %*% ones
-class_conditionals = (classFeatureCounts + laplace) / repClassSums
-
-# Compute class priors
-class_counts = aggregate(as.vector(C), by=list(as.vector(C)), FUN=length)[,2]
-class_prior = class_counts / trainSize;
-
-# Compute accuracy on training set
-ones = matrix(1, nrow(testData), 1)
-testData_w_ones = cbind(testData, ones)
-model = cbind(class_conditionals, class_prior)
-YRaw = testData_w_ones %*% t(log(model))
-
-Y = max.col(YRaw, ties.method="last");
+model<- multinomial_naive_bayes(x = trainData, y = y, laplace = 1)
+YRaw <- predict(model, newdata = testData, type = "prob")
+Y <- max.col(YRaw, ties.method="last")
 
 # write out the predict
 writeMM(as(YRaw, "CsparseMatrix"), paste(args[4], "YRaw", sep=""))

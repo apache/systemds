@@ -21,10 +21,13 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] 
    # test if input correct
    assert(nrow(X) == nrow(Y))
    init_prediction = 0.5 # todo init prediction wirklich immer 0.5?
-   feature_to_observe = X[,1];
+   target_feature = Y[,1];
+   M = matrix(1,rows=6,cols=0)
+
+   # todo select feature (gini?)
 
 
-   residual_matrix = calculateResidiuals(feature_to_observe, init_prediction)
+   residual_matrix = calculateResiduals(target_feature, init_prediction)
 
    printMatrix(residual_matrix, "residual matrix")
 
@@ -32,12 +35,35 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] 
    similarity_score = calculateSimilarityScore(residual_matrix)
    printDebug(similarity_score)
 
-   # TODO: split dataset in 2 branches. try out each average value of 2 datapoints and calc sim- score for each new leaf
-   best_split = findBestSplit(feature_to_observe)
+   # split dataset in 2 branches. try out each average value of 2 datapoints and calc sim- score for each new leaf
+   best_split = findBestSplit(target_feature, similarity_score)
 
-   # todo take best split as the root node value and add it finally as first node to M
+   printDebug("Best split is " + toString(best_split))
 
-   M = matrix(1,rows=1,cols=1)
+   # take best split as the root node value and add it finally as first node to M
+   current_node = matrix(0, rows=6, cols=1)
+   current_node[1,1] = 1 # node id
+   current_node[2,1] = 1 # offset to left child
+   current_node[3,1] = 1 # features used
+   current_node[4,1] = 1 # continuous data
+   current_node[5,1] = 1 # type of data to split (1=numeric value)
+   current_node[6,1] = best_split
+
+   M = cbind(M, current_node)
+   printMatrix(M, "final tree matrix")
+
+
+   # todo add left child und right child in matrix
+
+   # todo loop in some way to do the steps for every node (maybe recursive)
+
+   # todo pruning
+
+   # todo create next tree depending on previous
+
+
+
+
    print("[DEBUG] Return xgboost")
 }
 
@@ -45,26 +71,41 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    one_featureX: a 1xn matrix (one feature with all values)
 # OUTPUT:   best_split: the best split (highest gain indicates best splitting of datasets)
-findBestSplit = function(Matrix[Double] one_featureX) return (Double best_split) {
+findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent) return (Double best_split) {
     assert(ncol(one_featureX) == 1)
     best_split = 0
+    best_gain = 0
     printDebug("inside find best split")
 
     # order entries by feature value
     ordered_X = order(target=one_featureX,by=1,decreasing=FALSE,index.return=FALSE)
     printMatrix(ordered_X, "ordered X")
 
-    first_average = (ordered_X[1,] + ordered_X[2,]) / 2
-    printDebug(toString(first_average))
-    [left, right] = splitMatrixByValue(one_featureX, as.scalar(first_average))
-    printMatrix(left, "left matrix")
-    printMatrix(right, "right matrix")
+    # iterate over all averages between 2 points
+    for(i in 1: (nrow(ordered_X)-1)) {
 
-    # todo: caluclate similarity score for that split and calculate gain
+        current_split = average(ordered_X[i,], ordered_X[i+1,])
+        printDebug("first average = " + toString(current_split))
+        [left, right] = splitMatrixByValue(one_featureX, current_split)
+        printMatrix(left, "left matrix")
+        printMatrix(right, "right matrix")
 
-    # todo do this for all possible splits and compair gain
+        # calculate similarity score for that split and calculate gain
+        sim_score_left = calculateSimilarityScore(left)
+        sim_score_right = calculateSimilarityScore(right)
+        printDebug("sim score left " + toString(sim_score_left) + "   sim score right " + toString(sim_score_right))
+        current_gain = sim_score_left + sim_score_right - sim_score_parent
+        printDebug("current gain " + toString(current_gain))
 
-    # todo: best gain is then the best split
+        if(current_gain > best_gain)
+        {
+            best_gain = current_gain
+            best_split = current_split
+            printDebug("best gain changed to  " + toString(best_gain) + " at value " + toString(best_split))
+        }
+    }
+
+    # best gain is the best split and will be returned
 }
 
 
@@ -108,7 +149,7 @@ calculateSimilarityScore = function(Matrix[Double] one_feature_residualsX) retur
 # INPUT:    a 1xn matrix (one feature with all rows)
 #           the current prediction value
 # OUTPUT:   the residuals to "current_prediction" as 1xn matrix
-calculateResidiuals = function(Matrix[Double] one_featureX, double current_prediction) return(Matrix[Double] residual_matrix) {
+calculateResiduals = function(Matrix[Double] one_featureX, double current_prediction) return(Matrix[Double] residual_matrix) {
     assert(ncol(one_featureX) == 1)
     residual_matrix = matrix(0, rows=(nrow(one_featureX)), cols=1)
     for(row in 1:nrow(one_featureX)) {
@@ -119,6 +160,11 @@ calculateResidiuals = function(Matrix[Double] one_featureX, double current_predi
 
 
 
+average = function(Matrix[Double] x, Matrix[Double] y) return (Double avg) {
+    assert(ncol(x) == 1 & nrow(x) == 1)
+    assert(ncol(y) == 1 & nrow(y) == 1)
+    avg = (as.scalar(x) + as.scalar(y)) / 2
+}
 
 printDebug = function(string variable) return() {
     print("[DEBUG] " + variable)

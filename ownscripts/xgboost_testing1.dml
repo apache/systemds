@@ -9,10 +9,7 @@ X = read(full_path + "ownscripts/small_train.csv", format="csv");
 Y = read(full_path + "ownscripts/small_test.csv", format="csv");
 
 
-if(as.scalar(X[1,]) > 2.0)
-    print("hello")
-
-printMatrix(X, "training set")
+#printMatrix(X, "training set")
 #printMatrix(Y, "testing set")
 print("[DEBUG] calling xgboost")
 M = xgboost(X = X, Y = Y);

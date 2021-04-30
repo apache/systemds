@@ -23,5 +23,5 @@ X = read($1) # Training data
 y = read($2) # response values
 p = read($3) # random data to predict
 w = lmDS(X = X, y = y, icpt = 1, reg = 1e-12)
-p = lmPredict(X = X, B = w, icpt = 1)
+p = lmPredict(X = X, B = w, ytest=matrix(0,1,1) icpt = 1)
 write(p, $4)

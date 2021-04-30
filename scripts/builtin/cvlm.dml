@@ -42,7 +42,7 @@ m_cvlm = function(Matrix[Double] X, Matrix[Double] y, Integer k, Integer icpt = 
     }
 
     beta = lm(X=trainSet, y=trainRes, icpt=icpt, reg=reg);
-    pred = lmPredict(X=testSet, B=beta, icpt=icpt);
+    pred = lmPredict(X=testSet, B=beta, ytest=matrix(0,1,1) icpt=icpt);
     y_predict[testS:testE,] = pred;
     allbeta[i,] = t(beta);
   }

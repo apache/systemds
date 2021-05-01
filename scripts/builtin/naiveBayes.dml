@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-m_naivebayes = function(Matrix[Double] D, Matrix[Double] C, Double laplace = 1, Boolean verbose = TRUE)
+m_naiveBayes = function(Matrix[Double] D, Matrix[Double] C, Double laplace = 1, Boolean verbose = TRUE)
   return (Matrix[Double] prior, Matrix[Double] classConditionals) 
 {
   laplaceCorrection = laplace;

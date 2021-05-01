@@ -19,8 +19,22 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
-y = read($2);
-[prior, conditionals] = naiveBayes(D=X, C=y, laplace=$4);
-write(prior, $5);
-write(conditionals, $6);
+D = read($1);
+C = read($2);
+
+# divide data into "train" and "test" subsets
+numRows = nrow(D);
+trainSize = numRows * 0.8;
+trainData = D[1:trainSize,];
+testData = D[(trainSize+1):numRows,];
+C = C[1:trainSize,];
+
+# calc "prior" and "conditionals" with naiveBayes build-in function
+[prior, conditionals] = naiveBayes(D=trainData, C=C, laplace=$4, verbose=FALSE);
+
+# compute predict
+[YRaw,Y] = naiveBayesPredict(X=testData, P=prior, C=conditionals);
+
+# write the results
+write(YRaw, $5);
+write(Y, $6);

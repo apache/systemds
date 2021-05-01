@@ -19,8 +19,14 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
-y = read($2);
-[prior, conditionals] = naiveBayes(D=X, C=y, laplace=$4);
-write(prior, $5);
-write(conditionals, $6);
+m_naiveBayesPredict = function(Matrix[Double] X, Matrix[Double] P, Matrix[Double] C)
+ return (Matrix[Double] YRaw, Matrix[Double] Y)
+{
+  numRows = nrow(X)
+  model = cbind(C, P)
+
+  ones = matrix(1, rows=numRows, cols=1);
+  X_w_ones = cbind(X, ones);
+  YRaw = X_w_ones %*% t(log(model));
+  Y = rowIndexMax(YRaw);
+}

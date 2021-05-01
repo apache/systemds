@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.codegen.SpoofOuterProduct;
+import org.apache.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -321,8 +322,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 	private void setOutputOuterProduct(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
 	{
 		FType fedType = fedMap.getType();
-		SpoofOuterProduct.OutProdType outProdType = ((SpoofOuterProduct)_op).getOuterProdType();
-		if(outProdType == SpoofOuterProduct.OutProdType.LEFT_OUTER_PRODUCT) {
+		OutProdType outProdType = ((SpoofOuterProduct)_op).getOuterProdType();
+		if(outProdType == OutProdType.LEFT_OUTER_PRODUCT) {
 			if(fedType == FType.ROW) {
 				// aggregate partial results from federated responses as elementwise sum
 				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
@@ -336,7 +337,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 				throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
 			}
 		}
-		else if(outProdType == SpoofOuterProduct.OutProdType.RIGHT_OUTER_PRODUCT) {
+		else if(outProdType == OutProdType.RIGHT_OUTER_PRODUCT) {
 			if(fedType == FType.ROW) {
 				// bind partial results from federated responses
 				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
@@ -350,7 +351,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 				throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
 			}
 		}
-		else if(outProdType == SpoofOuterProduct.OutProdType.CELLWISE_OUTER_PRODUCT) {
+		else if(outProdType == OutProdType.CELLWISE_OUTER_PRODUCT) {
 			if(fedType == FType.ROW) {
 				// rbind partial results from federated responses
 				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
@@ -363,7 +364,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 				throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
 			}
 		}
-		else if(outProdType == SpoofOuterProduct.OutProdType.AGG_OUTER_PRODUCT) {
+		else if(outProdType == OutProdType.AGG_OUTER_PRODUCT) {
 			// aggregate partial results from federated responses as sum
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 			ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));

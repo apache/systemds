@@ -26,24 +26,41 @@ library(naivebayes)
 
 D = as.matrix(readMM(paste(args[1], "D.mtx", sep="")))
 C = as.matrix(readMM(paste(args[1], "C.mtx", sep="")))
+laplace <- as.numeric(args[3])
 
 # divide D into "train" and "test" data
 numRows = nrow(D)
-
 trainSize = numRows * 0.8
 
-trainData = D[1:trainSize,]
-testData = D[(trainSize+1):numRows,]
+trainData = D[1:trainSize, ]
+testData = D[(trainSize+1):numRows, ]
+y <- factor(C[1:trainSize])
 
-colnames(trainData) <- paste0("V", seq_len(ncol(trainData)))
-colnames(testData) <- paste0("V", seq_len(ncol(testData)))
-y<-factor(C[1:trainSize])
+# The Naive Bayes Predict need to unique column name
+features <- paste0("V", seq_len(ncol(trainData)))
+colnames(trainData) <- features
+colnames(testData) <- features
 
-model<- multinomial_naive_bayes(x = trainData, y = y, laplace = 1)
-YRaw <- predict(model, newdata = testData, type = "prob")
+# Create model base on train data
+model <- multinomial_naive_bayes(x = trainData, y = y, laplace = laplace)
+
+# The SystemDS DML scripts based on YRaw data
+# and the "naivebayes" predict function in R
+# return probabilities matrix
+# Example: YRaw <- predict(model, newdata = testData, type = "prob")
+
+# We need to return "Raw" values
+lev <- model$levels
+prior <- model$prior
+params <- t(model$params)
+YRaw <- tcrossprod(testData, log(params))
+
+for (ith_class in seq_along(lev)) {
+  YRaw[ ,ith_class] <- YRaw[ ,ith_class] + log(prior[ith_class])
+}
+
 Y <- max.col(YRaw, ties.method="last")
 
 # write out the predict
 writeMM(as(YRaw, "CsparseMatrix"), paste(args[4], "YRaw", sep=""))
 writeMM(as(Y, "CsparseMatrix"), paste(args[4], "Y", sep=""))
-

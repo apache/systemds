@@ -29,8 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class BuiltinNaiveBayesPredictTest extends AutomatedTestBase
-{
+public class BuiltinNaiveBayesPredictTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "NaiveBayesPredict";
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinNaiveBayesPredictTest.class.getSimpleName() + "/";
@@ -38,35 +37,28 @@ public class BuiltinNaiveBayesPredictTest extends AutomatedTestBase
 
 	public double eps = 1e-7;
 
-	@Override
-	public void setUp() {
+	@Override public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"YRaw", "Y"}));
 	}
 
-	
-	@Test
-	public void testSmallDense() {
+	@Test public void testSmallDense() {
 		testNaiveBayesPredict(100, 50, 0.7);
 	}
 
-	@Test
-	public void testLargeDense() {
+	@Test public void testLargeDense() {
 		testNaiveBayesPredict(10000, 750, 0.7);
 	}
 
-	@Test
-	public void testSmallSparse() {
+	@Test public void testSmallSparse() {
 		testNaiveBayesPredict(100, 50, 0.01);
 	}
 
-	@Test
-	public void testLargeSparse() {
+	@Test public void testLargeSparse() {
 		testNaiveBayesPredict(10000, 750, 0.01);
 	}
-	
-	public void testNaiveBayesPredict(int rows, int cols, double sparsity)
-	{
+
+	public void testNaiveBayesPredict(int rows, int cols, double sparsity) {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -85,11 +77,11 @@ public class BuiltinNaiveBayesPredictTest extends AutomatedTestBase
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 		rCmd = getRCmd(inputDir(), Integer.toString(classes), Double.toString(laplace), expectedDir());
-		
+
 		double[][] D = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
 		double[][] C = getRandomMatrix(rows, 1, 0, 1, 1, -1);
-		for(int i=0; i<rows; i++){
-			C[i][0] = (int)(C[i][0]*classes) + 1;
+		for(int i = 0; i < rows; i++) {
+			C[i][0] = (int) (C[i][0] * classes) + 1;
 			C[i][0] = (C[i][0] > classes) ? classes : C[i][0];
 		}
 
@@ -102,8 +94,8 @@ public class BuiltinNaiveBayesPredictTest extends AutomatedTestBase
 
 		HashMap<CellIndex, Double> YRawR = readRMatrixFromExpectedDir("YRaw");
 		HashMap<CellIndex, Double> YR = readRMatrixFromExpectedDir("Y");
-		HashMap<CellIndex, Double> YRawSYSTEMDS= readDMLMatrixFromOutputDir("YRaw");
-		HashMap<CellIndex, Double> YSYSTEMDS= readDMLMatrixFromOutputDir("Y");
+		HashMap<CellIndex, Double> YRawSYSTEMDS = readDMLMatrixFromOutputDir("YRaw");
+		HashMap<CellIndex, Double> YSYSTEMDS = readDMLMatrixFromOutputDir("Y");
 		TestUtils.compareMatrices(YRawR, YRawSYSTEMDS, eps, "YRawR", "YRawSYSTEMDS");
 		TestUtils.compareMatrices(YR, YSYSTEMDS, eps, "YR", "YSYSTEMDS");
 	}

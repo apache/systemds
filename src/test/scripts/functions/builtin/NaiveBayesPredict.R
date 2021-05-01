@@ -22,7 +22,7 @@
 args <- commandArgs(TRUE)
 
 library("Matrix")
-library(naivebayes)
+library("naivebayes")
 
 D = as.matrix(readMM(paste(args[1], "D.mtx", sep="")))
 C = as.matrix(readMM(paste(args[1], "C.mtx", sep="")))

@@ -28,90 +28,103 @@ import org.apache.sysds.test.TestConfiguration;
 
 public abstract class WriteLIBSVMTest extends WriteLIBSVMTestBase {
 
-	protected abstract int getId();
+    protected abstract int getId();
 
-	protected abstract int getColCount();
+    protected abstract LIBSVMConfig getLIBSVMConfig();
 
-	protected abstract String getSep();
+    protected String getInputLIBSVMFileName() {
+        return "transfusion_W" + getId() + ".libsvm";
+    }
 
-	protected abstract String getIndSep();
+    private final static double eps = 1e-9;
 
-	protected String getInputLIBSVMFileName() {
-		return "transfusion_W" + getId() + ".libsvm";
-	}
+    @Test
+    public void testlibsvm1_Seq_CP() {
+        runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, getLIBSVMConfig(), false);
+    }
 
-	private final static double eps = 1e-9;
+    @Test
+    public void testlibsvm2_Seq_CP() {
+        runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, getLIBSVMConfig(), true);
+    }
 
-	@Test public void testlibsvm1_Seq_CP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, getSep(), getIndSep(), getColCount(), false);
-	}
+    @Test
+    public void testlibsvm1_Pllel_CP() {
+        runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, getLIBSVMConfig(), true);
+    }
 
-	@Test public void testlibsvm2_Seq_CP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, getSep(), getIndSep(), getColCount(), true);
-	}
+    @Test
+    public void testlibsvm2_Pllel_CP() {
+        runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, getLIBSVMConfig(), false);
+    }
 
-	@Test public void testlibsvm1_Pllel_CP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, getSep(), getIndSep(), getColCount(), true);
-	}
+    @Test
+    public void testlibsvm1_SP() {
+        runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, getLIBSVMConfig(), true);
+    }
 
-	@Test public void testlibsvm2_Pllel_CP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, getSep(), getIndSep(), getColCount(), false);
-	}
+    @Test
+    public void testlibsvm2_SP() {
+        runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, getLIBSVMConfig(), false);
+    }
 
-	@Test public void testlibsvm1_SP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, getSep(), getIndSep(), getColCount(), true);
-	}
+    protected void runWriteLIBSVMTest(int testNumber, ExecMode platform, boolean parallel, LIBSVMConfig libsvmConfig, boolean sparse) {
 
-	@Test public void testlibsvm2_SP() {
-		runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, getSep(), getIndSep(), getColCount(), false);
-	}
+        ExecMode oldPlatform = rtplatform;
+        rtplatform = platform;
 
-	protected void runWriteLIBSVMTest(int testNumber, ExecMode platform, boolean parallel, String sep, String indSep,
-		int cols, boolean sparse) {
+        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+        if (rtplatform == ExecMode.SPARK)
+            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-		ExecMode oldPlatform = rtplatform;
-		rtplatform = platform;
+        boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if(rtplatform == ExecMode.SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+        try {
 
-		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
+            CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
-		try {
+            TestConfiguration config = getTestConfiguration(getTestName());
+            loadTestConfiguration(config);
 
-			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
+            String HOME = SCRIPT_DIR + TEST_DIR;
+            String inputMatrixName = HOME + INPUT_DIR + getInputLIBSVMFileName();
+            String dmlOutput = output("dml.scalar");
+            String rOutput = output("R.scalar");
+            String libsvmOutputName = output("libsvm_write" + testNumber + ".data");
+            String sep = libsvmConfig.getOutSep();
+            String indSep = libsvmConfig.getOutIndSep();
 
-			TestConfiguration config = getTestConfiguration(getTestName());
-			loadTestConfiguration(config);
+            fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
+            programArgs = new String[]{"-args", inputMatrixName, dmlOutput, libsvmOutputName, sep, indSep,
+                    Boolean.toString(sparse)};
 
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrixName = HOME + INPUT_DIR + getInputLIBSVMFileName();
-			String dmlOutput = output("dml.scalar");
-			String rOutput = output("R.scalar");
-			String libsvmOutputName = output("libsvm_write" + testNumber + ".data");
+            runTest(true, false, null, -1);
 
-			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
-			programArgs = new String[] {"-args", inputMatrixName, dmlOutput, libsvmOutputName, sep, indSep,
-				Boolean.toString(sparse)};
+            fullRScriptName = HOME + "writelibsvm_verify.R";
 
-			runTest(true, false, null, -1);
 
-			fullRScriptName = HOME + "writelibsvm_verify.R";
-			if(sep.equals(" ")) {
-				sep = "NULL";
-			}
-			rCmd = "Rscript" + " " + fullRScriptName + " " + libsvmOutputName + " " + cols + " " + sep + " " + indSep + " " + rOutput;
-			runRScript(true);
+            // the R scripts can't read HFDS file systems, so for the spark test
+            // we just read the original file stream and calc the sum of the cells.
+            // Then, compare the result with scalar dml
+            if (platform == ExecMode.SPARK) {
+                libsvmOutputName = inputMatrixName;
+                sep = libsvmConfig.getInSep();
+                indSep = libsvmConfig.getInIndSep();
+            }
 
-			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
-			double rScalar = TestUtils.readRScalar(rOutput);
-			TestUtils.compareScalars(dmlScalar, rScalar, eps);
-		}
-		finally {
-			rtplatform = oldPlatform;
-			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-		}
-	}
+            if (sep.equals(" ")) {
+                sep = "NULL";
+            }
+            rCmd = "Rscript" + " " + fullRScriptName + " " + libsvmOutputName + " " + libsvmConfig.getColCount() + " " + sep + " " + indSep + " " + rOutput;
+            runRScript(true);
+
+            double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
+            double rScalar = TestUtils.readRScalar(rOutput);
+            TestUtils.compareScalars(dmlScalar, rScalar, eps);
+        } finally {
+            rtplatform = oldPlatform;
+            CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
+            DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+        }
+    }
 }

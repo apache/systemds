@@ -79,6 +79,7 @@ public class WriterTextLIBSVM extends MatrixWriter {
 		boolean sparse = src.isInSparseFormat();
 		int clen = src.getNumColumns();
 
+		System.out.println("++++++++++++++++++++++++++++++++++");
 		//create buffered writer
 		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)));
 

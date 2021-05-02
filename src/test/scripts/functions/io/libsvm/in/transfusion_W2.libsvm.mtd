@@ -1,8 +1,8 @@
 {
     "data_type": "matrix",
     "value_type": "double",
-    "rows": 6,
-    "cols": 3,
+    "rows": 1605,
+    "cols": 124,
     "sep": " ",
     "indSep": ":",
     "format": "libsvm",

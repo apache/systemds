@@ -32,7 +32,8 @@ import org.apache.sysds.parser.DataExpression;
  * Lop to represent data objects. Data objects represent matrices, vectors,
  * variables, literals. Can be for both input and output.
  */
-public class Data extends Lop {
+public class Data extends Lop
+{
 	public static final String PREAD_PREFIX = "pREAD";
 	private final FileFormat formatType;
 	private final OpOpData _op;
@@ -42,14 +43,13 @@ public class Data extends Lop {
 	/**
 	 * Method to create literal LOPs.
 	 *
-	 * @param vt           value type
+	 * @param vt value type
 	 * @param literalValue literal value
 	 * @return literal low-level operator
 	 */
 	public static Data createLiteralLop(ValueType vt, String literalValue) {
 		// All literals have default format type of TEXT
-		return new Data(OpOpData.PERSISTENTREAD, null, null, null, literalValue, DataType.SCALAR, vt,
-			FileFormat.BINARY);
+		return new Data(OpOpData.PERSISTENTREAD, null, null, null, literalValue, DataType.SCALAR, vt, FileFormat.BINARY);
 	}
 
 	/**

@@ -22,7 +22,7 @@ package org.apache.sysds.test.functions.io.libsvm;
 public class WriteLIBSVMTest1 extends WriteLIBSVMTest {
 
 	private final static String TEST_NAME = "WriteLIBSVMTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + WriteLIBSVMTest1.class.getSimpleName() + "/";
+	public final static String TEST_CLASS_DIR = TEST_DIR + WriteLIBSVMTest1.class.getSimpleName() + "/";
 
 	protected String getTestName() {
 		return TEST_NAME;
@@ -36,15 +36,7 @@ public class WriteLIBSVMTest1 extends WriteLIBSVMTest {
 		return 1;
 	}
 
-	protected int getColCount() {
-		return 2;
-	}
-
-	protected String getSep() {
-		return " ";
-	}
-
-	protected String getIndSep() {
-		return ":";
+	protected LIBSVMConfig getLIBSVMConfig(){
+		return new LIBSVMConfig(" ", ":", 3, " ", ":");
 	}
 }

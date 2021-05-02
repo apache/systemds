@@ -36,15 +36,8 @@ public class WriteLIBSVMTest2 extends WriteLIBSVMTest {
 		return 2;
 	}
 
-	protected int getColCount() {
-		return 124;
-	}
+	protected LIBSVMConfig getLIBSVMConfig(){
 
-	protected String getSep() {
-		return ",";
-	}
-
-	protected String getIndSep() {
-		return ":";
+		return new LIBSVMConfig(" ", ":", 124, ",", ":");
 	}
 }

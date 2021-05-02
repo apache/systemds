@@ -906,11 +906,11 @@ public class RDDConverterUtils {
 			MatrixBlock blk = arg0._2();
 			ArrayList<String> ret = new ArrayList<>();
 			StringBuilder sb = new StringBuilder();
+			boolean sparse = blk.isInSparseFormat();
 
 			// Write data lines
-			if(_props.isSparse()) //SPARSE
+			if(sparse) //SPARSE
 			{
-
 				SparseBlock sblock = blk.getSparseBlock();
 				for(int i = 0; i < blk.getNumRows(); i++) {
 					// append the class label as the 1st column

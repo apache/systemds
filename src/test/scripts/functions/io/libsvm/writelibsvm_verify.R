@@ -24,10 +24,10 @@ args <- commandArgs(TRUE)
 library("Matrix")
 options(digits=22)
 
-filename <- args[1];
-dimensionality <- as.integer(args[2]);
-sep <- args[3];
-indSep <- args[4];
+filename <- args[1]
+dimensionality <- as.integer(args[2])
+sep <- args[3]
+indSep <- args[4]
 
 if(sep == 'NULL'){
   sep=" "
@@ -43,7 +43,6 @@ for ( i in 1:num_lines ) {
   line = as.vector( strsplit( content[i], sep )[[1]])
   # save label
   A[i,1] = as.numeric( line[[1]] )
-  #print(line[1])
   # loop over values
   for ( j in 2:length( line )) {
     # split by colon
@@ -53,7 +52,7 @@ for ( i in 1:num_lines ) {
      A[i, index] = value
      }
   }
-
-A[is.na(A)] = 0;
-x =  sum(A);
-write(x, args[5]);
+A[is.na(A)] = 0
+A <- A+1
+x =  sum(A)
+write(x, args[5])

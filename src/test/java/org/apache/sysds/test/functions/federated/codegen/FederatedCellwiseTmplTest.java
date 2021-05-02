@@ -49,7 +49,7 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 
 	private final static String OUTPUT_NAME = "Z";
-	private final static double TOLERANCE = 1e-8;
+	private final static double TOLERANCE = 1e-11;
 	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
@@ -75,28 +75,28 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 
 			// row partitioned
 			{1, 2000, 2000, true},
-			{2, 10, 10, true},
-			{3, 4, 4, true},
+			// {2, 10, 10, true},
+			// {3, 4, 4, true},
 			{4, 4, 4, true},
-			{5, 4, 4, true},
+			// {5, 4, 4, true},
 			{6, 4, 1, true},
 			{9, 500, 2, true},
 			{10, 500, 2, true},
-			{11, 1100, 2000, true},
+			// {11, 1100, 2000, true},
 			{12, 2, 500, true},
-			{13, 2, 4, true},
+			// {13, 2, 4, true},
 			{14, 1100, 200, true},
 
 			// column partitioned
-			{1, 2000, 2000, false},
+			// {1, 2000, 2000, false},
 			{2, 10, 10, false},
 			{3, 4, 4, false},
-			{4, 4, 4, false},
+			// {4, 4, 4, false},
 			{5, 4, 4, false},
 			{9, 500, 2, false},
 			{10, 500, 2, false},
 			{11, 1100, 2000, false},
-			{12, 2, 500, false},
+			// {12, 2, 500, false},
 			{14, 1100, 200, false},
 
 			// not working because of fused sequence operation
@@ -145,8 +145,8 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 3);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 7);
+		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 0.1, 3);
+		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 0.1, 23);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));

@@ -231,9 +231,9 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double
       hp_matrix = removeEmpty(target = hp, margin="rows", select = indexes)
       [X, Y, T] = executePipeline(ph_pip[i], X, Y, as.matrix(metaList['mask']), as.matrix(metaList['fd']), hp_matrix, no_of_flag_vars, FALSE)
       if(as.scalar(targetList['target']) == "compare")
-        accuracy = compareValue(clone_X, X, as.matrix(targetList['cleanData']), as.matrix(metaList['mask']))
+        [accuracy, accT] = compareValue(clone_X, X, as.matrix(targetList['cleanData']), as.matrix(metaList['mask']))
       else
-        [accuracy, cvT] = fclassify(X, Y, as.matrix(metaList['mask']), as.matrix(targetList['mlHp']), as.scalar(targetList['dirAcc']), 
+        [accuracy, accT] = fclassify(X, Y, as.matrix(metaList['mask']), as.matrix(targetList['mlHp']), as.scalar(targetList['dirAcc']), 
         as.scalar(targetList['wAccuracy']), as.scalar(targetList['cv']))
       matrix_width = as.matrix(nrow(hp_matrix) * ncol(hp_matrix))
       hp_vec = cbind(matrix_width, matrix(hp_matrix, rows=1, cols=nrow(hp_matrix)*ncol(hp_matrix), byrow=TRUE))
@@ -247,7 +247,7 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double
       feaFrame[r, (ncol(feaVec)+1)] = pip_toString
       feaFrame[r, (ncol(feaVec)+2)] = accuracy
       feaFrame[r, (ncol(feaVec)+3)] = T
-      feaFrame[r, (ncol(feaVec)+4)] = cvT
+      feaFrame[r, (ncol(feaVec)+4)] = accT
     }
     
     X = clone_X
@@ -583,8 +583,9 @@ return (Matrix[Double] features)
 ######################################################################
 
 compareValue = function(Matrix[double] dirtyX, Matrix[double] fixedX,  Matrix[Double] cleanX, Matrix[Double] mask) 
-return (Double precision)
+return (Double precision, Double T)
 {
+  t1 = time()
   DEFAULT = 404
   mv = is.na(dirtyX)
   correctionsRequired = 0
@@ -603,7 +604,9 @@ return (Double precision)
   print("total matches "+sum(match))
   # print("total matches \n"+toString(match))
   precision = max(0.001, sum(match) / correctionsMade)
-  print("---------------------------------true positives are "+toString(precision))
+  T = floor((time() - t1) / 1e+6)
+  print("Precision: "+toString(precision) + " in "+T+" ms")
+
 
 }
 

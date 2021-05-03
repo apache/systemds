@@ -55,13 +55,13 @@ RUN apt-get update -qq \
 	&& Rscript installDependencies.R \
 	&& rm -rf installDependencies.R \
 	&& rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /usr/lib/jvm \
+	&& mkdir -p /usr/lib/jvm \
 	&& wget -qO- \
 https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u282-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u282b08.tar.gz | tar xzf - \
 	&& mv jdk8u282-b08 /usr/lib/jvm/java-8-openjdk-amd64 \
 	&& wget -qO- \
 http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \ 
-    && mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
+	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 
 ENTRYPOINT ["/entrypoint.sh"]

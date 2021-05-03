@@ -31,7 +31,13 @@ public abstract class SPInstruction extends Instruction {
 
 	public enum SPType {
 		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions
-		MatrixIndexing, Reorg, Binary, Ternary, AggregateUnary, AggregateTernary, Reblock, CSVReblock, LIBSVMReblock, Builtin, Unary, BuiltinNary, MultiReturnBuiltin, Checkpoint, Compression, DeCompression, Cast, CentralMoment, Covariance, QSort, QPick, ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, Write, SpoofFused, Dnn
+		MatrixIndexing, Reorg, Binary, Ternary,
+		AggregateUnary, AggregateTernary, Reblock, CSVReblock, LIBSVMReblock,
+		Builtin, Unary, BuiltinNary, MultiReturnBuiltin, Checkpoint, Compression, DeCompression, Cast,
+		CentralMoment, Covariance, QSort, QPick,
+		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand,
+		MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain,
+		Write, SpoofFused, Dnn
 	}
 
 	protected final SPType _sptype;
@@ -51,7 +57,8 @@ public abstract class SPInstruction extends Instruction {
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
 
-	@Override public IType getType() {
+	@Override
+	public IType getType() {
 		return IType.SPARK;
 	}
 
@@ -59,20 +66,23 @@ public abstract class SPInstruction extends Instruction {
 		return _sptype;
 	}
 
-	@Override public boolean requiresLabelUpdate() {
+	@Override
+	public boolean requiresLabelUpdate() {
 		return _requiresLabelUpdate;
 	}
 
-	@Override public String getGraphString() {
+	@Override
+	public String getGraphString() {
 		return getOpcode();
 	}
 
-	@Override public Instruction preprocessInstruction(ExecutionContext ec) {
+	@Override
+	public Instruction preprocessInstruction(ExecutionContext ec) {
 		//default pre-process behavior (e.g., debug state)
 		Instruction tmp = super.preprocessInstruction(ec);
 
 		//instruction patching
-		if(tmp.requiresLabelUpdate()) //update labels only if required
+		if( tmp.requiresLabelUpdate() ) //update labels only if required
 		{
 			//note: no exchange of updated instruction as labels might change in the general case
 			String updInst = CPInstruction.updateLabels(tmp.toString(), ec.getVariables());
@@ -85,9 +95,11 @@ public abstract class SPInstruction extends Instruction {
 		return tmp;
 	}
 
-	@Override public abstract void processInstruction(ExecutionContext ec);
+	@Override
+	public abstract void processInstruction(ExecutionContext ec);
 
-	@Override public void postprocessInstruction(ExecutionContext ec) {
+	@Override
+	public void postprocessInstruction(ExecutionContext ec) {
 		//maintain statistics
 		Statistics.incrementNoOfExecutedSPInst();
 

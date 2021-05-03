@@ -141,15 +141,15 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			Operator op = InstructionUtils.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase("rmempty") || opcode.equalsIgnoreCase("replace") || opcode
-			.equalsIgnoreCase("rexpand") || opcode.equalsIgnoreCase("lowertri") || opcode
-			.equalsIgnoreCase("uppertri")) {
+		else if(opcode.equalsIgnoreCase("rmempty") || opcode.equalsIgnoreCase("replace") ||
+			opcode.equalsIgnoreCase("rexpand") || opcode.equalsIgnoreCase("lowertri") ||
+			opcode.equalsIgnoreCase("uppertri")) {
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") || opcode
-			.equals("transformcolmap") || opcode.equals("transformmeta") || opcode.equals("tokenize") || opcode
-			.equals("toString") || opcode.equals("nvlist")) {
+		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") ||
+			opcode.equals("transformcolmap") || opcode.equals("transformmeta") || opcode.equals("tokenize") ||
+			opcode.equals("toString") || opcode.equals("nvlist")) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
 		else if("paramserv".equals(opcode)) {
@@ -161,7 +161,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 
 	}
 
-	@Override public void processInstruction(ExecutionContext ec) {
+	@Override
+	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		ScalarObject sores = null;
 		if(opcode.equalsIgnoreCase("cdf")) {
@@ -260,8 +261,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			FrameBlock data = ec.getFrameInput(params.get("target"));
 
 			// compute tokenizer
-			Tokenizer tokenizer = TokenizerFactory
-				.createTokenizer(getParameterMap().get("spec"), Integer.parseInt(getParameterMap().get("max_tokens")));
+			Tokenizer tokenizer = TokenizerFactory.createTokenizer(getParameterMap().get("spec"),
+				Integer.parseInt(getParameterMap().get("max_tokens")));
 			FrameBlock fbout = tokenizer.tokenize(data, new FrameBlock(tokenizer.getSchema()));
 
 			// release locks
@@ -364,9 +365,15 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				out = DataConverter.toString(frame, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
 			else if(cacheData instanceof ListObject) {
-				out = DataConverter
-					.toString((ListObject) cacheData, rows, cols, sparse, separator, lineSeparator, rows, cols,
-						decimal);
+				out = DataConverter.toString((ListObject) cacheData,
+					rows,
+					cols,
+					sparse,
+					separator,
+					lineSeparator,
+					rows,
+					cols,
+					decimal);
 			}
 			else {
 				throw new DMLRuntimeException("toString only converts matrix, tensors, lists or frames to string");
@@ -396,8 +403,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 
 	private void warnOnTrunction(CacheBlock data, int rows, int cols) {
 		// warn on truncation because users might not be aware and use toString for verification
-		if((getParam("rows") == null && data.getNumRows() > rows) || (getParam("cols") == null && data
-			.getNumColumns() > cols)) {
+		if((getParam("rows") == null && data.getNumRows() > rows) ||
+			(getParam("cols") == null && data.getNumColumns() > cols)) {
 			LOG.warn("Truncating " + data.getClass().getSimpleName() + " of size " + data.getNumRows() + "x" + data
 				.getNumColumns() + " to " + rows + "x" + cols + ". " + "Use toString(X, rows=..., cols=...) if necessary.");
 		}
@@ -413,12 +420,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				else
 					sb.append(data.getDim(i)).append("x");
 			});
-			LOG.warn("Truncating " + data.getClass().getSimpleName() + " of size " + sb
-				.toString() + " to " + rows + "x" + cols + ". " + "Use toString(X, rows=..., cols=...) if necessary.");
+			LOG.warn("Truncating " + data.getClass().getSimpleName() + " of size " + sb.toString() + " to " + rows + "x"
+				+ cols + ". " + "Use toString(X, rows=..., cols=...) if necessary.");
 		}
 	}
 
-	@Override public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String opcode = getOpcode();
 		if(opcode.equalsIgnoreCase("groupedagg")) {
 			CPOperand target = getTargetOperand();

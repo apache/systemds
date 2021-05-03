@@ -33,7 +33,8 @@ public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
 		return "transfusion_" + getId() + ".libsvm";
 	}
 
-	@Test public void testlibsvm1_Seq_CP() {
+	@Test
+	public void testlibsvm1_Seq_CP() {
 		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, false);
 	}
 
@@ -55,7 +56,8 @@ public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
 
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
-		try {
+		try
+		{
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
 			TestConfiguration config = getTestConfiguration(getTestName());
@@ -66,7 +68,7 @@ public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
 			String dmlOutput = output("dml.scalar");
 
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
-			programArgs = new String[] {"-explain", "hops", "-args", inputMatrix, dmlOutput};
+			programArgs = new String[]{"-explain", "hops", "-args", inputMatrix, dmlOutput};
 			runTest(true, false, null, -1);
 		}
 		finally {

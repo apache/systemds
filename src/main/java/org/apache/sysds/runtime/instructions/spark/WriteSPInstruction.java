@@ -69,18 +69,18 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		formatProperties = null; // set in case of csv
 	}
 
-	public static WriteSPInstruction parseInstruction(String str) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+	public static WriteSPInstruction parseInstruction ( String str ) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
 
-		if(!opcode.equals("write")) {
+		if( !opcode.equals("write") ) {
 			throw new DMLRuntimeException("Unsupported opcode");
 		}
 
 		// All write instructions have 3 parameters, except in case of delimited/csv/libsvm file.
 		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
 		// Write instructions for libsvm files also include three additional parameters (delimiter, index delimiter, sparse)
-		if(parts.length != 5 && parts.length != 9) {
+		if ( parts.length != 5 && parts.length != 9 ) {
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 
@@ -91,7 +91,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 
 		WriteSPInstruction inst = new WriteSPInstruction(in1, in2, in3, opcode, str);
 
-		if(in3.getName().equalsIgnoreCase("csv")) {
+		if ( in3.getName().equalsIgnoreCase("csv") ) {
 			boolean hasHeader = Boolean.parseBoolean(parts[4]);
 			String delim = parts[5];
 			boolean sparse = Boolean.parseBoolean(parts[6]);
@@ -111,12 +111,14 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 		else {
 			FileFormatProperties ffp = new FileFormatProperties();
+
 			CPOperand in4 = new CPOperand(parts[4]);
 			inst.input4 = in4;
 			inst.setFormatProperties(ffp);
 		}
 		return inst;
 	}
+
 
 	public FileFormatProperties getFormatProperties() {
 		return formatProperties;
@@ -134,7 +136,8 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		return input2;
 	}
 
-	@Override public void processInstruction(ExecutionContext ec) {
+	@Override
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext) ec;
 
 		//get filename (literal or variable expression)
@@ -142,55 +145,54 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
 		formatProperties.setDescription(desc);
 
-		ValueType[] schema = (input1.getDataType() == DataType.FRAME) ? sec.getFrameObject(input1.getName())
-			.getSchema() : null;
+		ValueType[] schema = (input1.getDataType()==DataType.FRAME) ?
+				sec.getFrameObject(input1.getName()).getSchema() : null;
 
-		try {
+		try
+		{
 			//if the file already exists on HDFS, remove it.
-			HDFSTool.deleteFileIfExistOnHDFS(fname);
+			HDFSTool.deleteFileIfExistOnHDFS( fname );
 
 			//prepare output info according to meta data
 			FileFormat fmt = FileFormat.safeValueOf(input3.getName());
 
 			//core matrix/frame write
-			switch(input1.getDataType()) {
-				case MATRIX:
-					processMatrixWriteInstruction(sec, fname, fmt);
-					break;
-				case FRAME:
-					processFrameWriteInstruction(sec, fname, fmt, schema);
-					break;
-				default:
-					throw new DMLRuntimeException(
-						"Unsupported data type " + input1.getDataType() + " in WriteSPInstruction.");
+			switch( input1.getDataType() ) {
+				case MATRIX: processMatrixWriteInstruction(sec, fname, fmt); break;
+				case FRAME:  processFrameWriteInstruction(sec, fname, fmt, schema); break;
+				default: throw new DMLRuntimeException(
+					"Unsupported data type "+input1.getDataType()+" in WriteSPInstruction.");
 			}
 		}
-		catch(IOException ex) {
+		catch(IOException ex)
+		{
 			throw new DMLRuntimeException("Failed to process write instruction", ex);
 		}
 	}
 
 	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt)
-		throws IOException {
+		throws IOException
+	{
 		//get input rdd
-		JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 
-		if(fmt == FileFormat.MM || fmt == FileFormat.TEXT) {
+		if( fmt == FileFormat.MM || fmt == FileFormat.TEXT )
+		{
 			//piggyback nnz maintenance on write
 			LongAccumulator aNnz = null;
-			if(!mc.nnzKnown()) {
+			if( !mc.nnzKnown() ) {
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
 
 			JavaRDD<String> header = null;
-			if(fmt == FileFormat.MM) {
+			if( fmt == FileFormat.MM ) {
 				ArrayList<String> headerContainer = new ArrayList<>(1);
 				// First output MM header
 				String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
-					// output number of rows, number of columns and number of nnz
-					mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros();
+						// output number of rows, number of columns and number of nnz
+						mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros();
 				headerContainer.add(headerStr);
 				header = sec.getSparkContext().parallelize(headerContainer);
 			}
@@ -201,36 +203,36 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			else
 				customSaveTextFile(ijv, fname, false);
 
-			if(!mc.nnzKnown())
-				mc.setNonZeros(aNnz.value());
+			if( !mc.nnzKnown() )
+				mc.setNonZeros( aNnz.value() );
 		}
-		else if(fmt == FileFormat.CSV) {
-			if(mc.getRows() == 0 || mc.getCols() == 0) {
-				throw new IOException(
-					"Write of matrices with zero rows or columns" + " not supported (" + mc.getRows() + "x" + mc
-						.getCols() + ").");
+		else if( fmt == FileFormat.CSV )
+		{
+			if( mc.getRows() == 0 || mc.getCols() == 0 ) {
+				throw new IOException("Write of matrices with zero rows or columns"
+					+ " not supported ("+mc.getRows()+"x"+mc.getCols()+").");
 			}
 
 			LongAccumulator aNnz = null;
 
 			//piggyback nnz computation on actual write
-			if(!mc.nnzKnown()) {
+			if( !mc.nnzKnown() ) {
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
 
-			JavaRDD<String> out = RDDConverterUtils
-				.binaryBlockToCsv(in1, mc, (FileFormatPropertiesCSV) formatProperties, true);
+			JavaRDD<String> out = RDDConverterUtils.binaryBlockToCsv(
+				in1, mc, (FileFormatPropertiesCSV) formatProperties, true);
 
 			customSaveTextFile(out, fname, false);
 
-			if(!mc.nnzKnown())
+			if( !mc.nnzKnown() )
 				mc.setNonZeros(aNnz.value().longValue());
 		}
-		else if(fmt == FileFormat.BINARY) {
+		else if( fmt == FileFormat.BINARY ) {
 			//piggyback nnz computation on actual write
 			LongAccumulator aNnz = null;
-			if(!mc.nnzKnown()) {
+			if( !mc.nnzKnown() ) {
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
@@ -261,7 +263,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 
 			customSaveTextFile(out, fname, false);
 
-			if(!mc.nnzKnown())
+			if( !mc.nnzKnown() )
 				mc.setNonZeros(aNnz.value().longValue());
 		}
 		else {
@@ -270,13 +272,15 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 
 		// write meta data file
-		HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.FP64, mc, fmt, formatProperties);
+		HDFSTool.writeMetaDataFile (fname + ".mtd", ValueType.FP64, mc, fmt, formatProperties);
 	}
 
-	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt,
-		ValueType[] schema) throws IOException {
+	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt, ValueType[] schema)
+		throws IOException
+	{
 		//get input rdd
-		JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<Long,FrameBlock> in1 = sec
+			.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 
 		switch(fmt) {
@@ -286,7 +290,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				break;
 			}
 			case CSV: {
-				FileFormatPropertiesCSV props = (formatProperties != null) ? (FileFormatPropertiesCSV) formatProperties : null;
+				FileFormatPropertiesCSV props = (formatProperties!=null) ?(FileFormatPropertiesCSV) formatProperties : null;
 				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
 				customSaveTextFile(out, fname, false);
 				break;
@@ -299,7 +303,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				break;
 			}
 			case BINARY: {
-				JavaPairRDD<LongWritable, FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
+				JavaPairRDD<LongWritable,FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
 				out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
 				break;
 			}
@@ -308,8 +312,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 
 		// write meta data file
-		HDFSTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, fmt,
-			formatProperties);
+		HDFSTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, fmt, formatProperties);
 	}
 
 	private static void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) {
@@ -326,16 +329,14 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 
 				// rdd.coalesce(1, true).saveAsTextFile(randFName);
 				// MapReduceTool.copyFileOnHDFS(randFName + "/part-00000", fname);
-			}
-			catch(IOException e) {
+			} catch (IOException e) {
 				throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
 			}
 			finally {
 				try {
 					// This is to make sure that we donot create random files on HDFS
-					HDFSTool.deleteFileIfExistOnHDFS(randFName);
-				}
-				catch(IOException e) {
+					HDFSTool.deleteFileIfExistOnHDFS( randFName );
+				} catch (IOException e) {
 					throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
 				}
 			}
@@ -345,11 +346,11 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 	}
 
-	@Override public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		LineageItem[] ret = LineageItemUtils.getLineage(ec, input1, input2, input3, input4);
-		if(formatProperties != null && formatProperties.getDescription() != null && !formatProperties.getDescription()
-			.isEmpty())
-			ret = (LineageItem[]) ArrayUtils.add(ret, new LineageItem(formatProperties.getDescription()));
+		if (formatProperties != null && formatProperties.getDescription() != null && !formatProperties.getDescription().isEmpty())
+			ret = (LineageItem[])ArrayUtils.add(ret, new LineageItem(formatProperties.getDescription()));
 		return Pair.of(input1.getName(), new LineageItem(getOpcode(), ret));
 	}
 }

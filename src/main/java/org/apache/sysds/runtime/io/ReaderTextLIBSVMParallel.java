@@ -52,8 +52,11 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		_props = props;
 	}
 
-	@Override public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
-		throws IOException, DMLRuntimeException {
+	@Override
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen,
+			int blen, long estnnz)
+		throws IOException, DMLRuntimeException
+	{
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
@@ -83,56 +86,62 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		ret.examSparsity();
 
 		// sanity check for parallel row count (since determined internally)
-		if(rlen >= 0 && rlen != ret.getNumRows())
-			throw new DMLRuntimeException(
-				"Read matrix inconsistent with given meta data: " + "expected nrow=" + rlen + ", real nrow=" + ret
-					.getNumRows());
+		if (rlen >= 0 && rlen != ret.getNumRows())
+			throw new DMLRuntimeException("Read matrix inconsistent with given meta data: "
+					+ "expected nrow="+ rlen + ", real nrow=" + ret.getNumRows());
 
 		return ret;
 	}
 
-	@Override public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
-		throws IOException, DMLRuntimeException {
+	@Override
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
+		throws IOException, DMLRuntimeException
+	{
 		//not implemented yet, fallback to sequential reader
 		return new ReaderTextLIBSVM(_props).readMatrixFromInputStream(is, rlen, clen, blen, estnnz);
 	}
 
-	private void readLIBSVMMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, MatrixBlock dest, long rlen,
-		long clen, int blen) throws IOException {
+	private void readLIBSVMMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job,
+			MatrixBlock dest, long rlen, long clen, int blen)
+		throws IOException
+	{
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 
 		ExecutorService pool = CommonThreadPool.get(_numThreads);
 
-		try {
+		try
+		{
 			// create read tasks for all splits
 			ArrayList<LIBSVMReadTask> tasks = new ArrayList<>();
 			int splitCount = 0;
-			for(InputSplit split : splits) {
-				tasks.add(new LIBSVMReadTask(split, _offsets, informat, job, dest, rlen, clen, splitCount++));
+			for (InputSplit split : splits) {
+				tasks.add( new LIBSVMReadTask(split, _offsets, informat, job, dest, rlen, clen, splitCount++) );
 			}
 			pool.invokeAll(tasks);
 			pool.shutdown();
 
 			// check return codes and aggregate nnz
 			long lnnz = 0;
-			for(LIBSVMReadTask rt : tasks) {
+			for (LIBSVMReadTask rt : tasks) {
 				lnnz += rt.getPartialNnz();
-				if(!rt.getReturnCode()) {
+				if (!rt.getReturnCode()) {
 					Exception err = rt.getException();
-					throw new IOException("Read task for libsvm input failed: " + err.toString(), err);
+					throw new IOException("Read task for libsvm input failed: "+ err.toString(), err);
 				}
 			}
 			dest.setNonZeros(lnnz);
 		}
-		catch(Exception e) {
+		catch (Exception e) {
 			throw new IOException("Threadpool issue, while parallel read.", e);
 		}
 	}
 
-	private MatrixBlock computeLIBSVMSizeAndCreateOutputMatrixBlock(InputSplit[] splits, Path path, JobConf job,
-		long rlen, long clen, long estnnz) throws IOException, DMLRuntimeException {
+	private MatrixBlock computeLIBSVMSizeAndCreateOutputMatrixBlock(InputSplit[] splits, Path path,
+			JobConf job, long rlen, long clen, long estnnz)
+		throws IOException, DMLRuntimeException
+	{
 		int nrow = 0;
 		int ncol = (int) clen;
 
@@ -141,10 +150,11 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		informat.configure(job);
 
 		// count rows in parallel per split
-		try {
+		try
+		{
 			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
-			for(InputSplit split : splits) {
+			for (InputSplit split : splits) {
 				tasks.add(new CountRowsTask(split, informat, job));
 			}
 			pool.invokeAll(tasks);
@@ -153,22 +163,22 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 			// collect row counts for offset computation
 			// early error notify in case not all tasks successful
 			_offsets = new SplitOffsetInfos(tasks.size());
-			for(CountRowsTask rt : tasks) {
-				if(!rt.getReturnCode())
-					throw new IOException("Count task for libsvm input failed: " + rt.getErrMsg());
+			for (CountRowsTask rt : tasks) {
+				if (!rt.getReturnCode())
+					throw new IOException("Count task for libsvm input failed: "+ rt.getErrMsg());
 				_offsets.setOffsetPerSplit(tasks.indexOf(rt), nrow);
 				_offsets.setLenghtPerSplit(tasks.indexOf(rt), rt.getRowCount());
 				nrow = nrow + rt.getRowCount();
 			}
 		}
-		catch(Exception e) {
+		catch (Exception e) {
 			throw new IOException("Threadpool Error " + e.getMessage(), e);
 		}
 
 		//robustness for wrong dimensions which are already compiled into the plan
-		if((rlen != -1 && nrow != rlen) || (clen != -1 && ncol != clen)) {
-			String msg = "Read matrix dimensions differ from meta data: [" + nrow + "x" + ncol + "] vs. [" + rlen + "x" + clen + "].";
-			if(rlen < nrow || clen < ncol) {
+		if( (rlen != -1 && nrow != rlen) || (clen != -1 && ncol != clen) ) {
+			String msg = "Read matrix dimensions differ from meta data: ["+nrow+"x"+ncol+"] vs. ["+rlen+"x"+clen+"].";
+			if( rlen < nrow || clen < ncol ) {
 				//a) specified matrix dimensions too small
 				throw new DMLRuntimeException(msg);
 			}
@@ -182,7 +192,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 
 		// allocate target matrix block based on given size;
 		// need to allocate sparse as well since lock-free insert into target
-		long estnnz2 = (estnnz < 0) ? (long) nrow * ncol : estnnz;
+		long estnnz2 = (estnnz < 0) ? (long)nrow * ncol : estnnz;
 		return createOutputMatrixBlock(nrow, ncol, nrow, estnnz2, true, true);
 	}
 
@@ -213,7 +223,8 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		}
 	}
 
-	private static class CountRowsTask implements Callable<Object> {
+	private static class CountRowsTask implements Callable<Object>
+	{
 		private InputSplit _split = null;
 		private TextInputFormat _informat = null;
 		private JobConf _job = null;
@@ -240,20 +251,23 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 			return _errMsg;
 		}
 
-		@Override public Object call() throws Exception {
+		@Override
+		public Object call()
+			throws Exception
+		{
 			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
 			LongWritable key = new LongWritable();
 			Text oneLine = new Text();
 
 			try {
 				// count rows from the first row
-				while(reader.next(key, oneLine)) {
+				while (reader.next(key, oneLine)) {
 					_nrows++;
 				}
 			}
-			catch(Exception e) {
+			catch (Exception e) {
 				_rc = false;
-				_errMsg = "RecordReader error libsvm format. split: " + _split.toString() + e.getMessage();
+				_errMsg = "RecordReader error libsvm format. split: "+ _split.toString() + e.getMessage();
 				throw new IOException(_errMsg);
 			}
 			finally {
@@ -264,7 +278,8 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		}
 	}
 
-	private static class LIBSVMReadTask implements Callable<Object> {
+	private static class LIBSVMReadTask implements Callable<Object>
+	{
 		private InputSplit _split = null;
 		private SplitOffsetInfos _splitoffsets = null;
 		private TextInputFormat _informat = null;
@@ -277,8 +292,10 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		private Exception _exception = null;
 		private long _nnz;
 
-		public LIBSVMReadTask(InputSplit split, SplitOffsetInfos offsets, TextInputFormat informat, JobConf job,
-			MatrixBlock dest, long rlen, long clen, int splitCount) {
+		public LIBSVMReadTask(InputSplit split, SplitOffsetInfos offsets,
+				TextInputFormat informat, JobConf job, MatrixBlock dest,
+				long rlen, long clen, int splitCount)
+		{
 			_split = split;
 			_splitoffsets = offsets;
 			_informat = informat;
@@ -301,10 +318,14 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 			return _nnz;
 		}
 
-		@Override public Object call() throws Exception {
+		@Override
+		public Object call()
+			throws Exception
+		{
 			long lnnz = 0;
 
-			try {
+			try
+			{
 				RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
 				LongWritable key = new LongWritable();
 				Text value = new Text();
@@ -313,7 +334,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 				int row = _splitoffsets.getOffsetPerSplit(_splitCount);
 
 				try {
-					while(reader.next(key, value)) { // foreach line
+					while (reader.next(key, value)) { // foreach line
 						String rowStr = value.toString().trim();
 						lnnz += ReaderTextLIBSVM
 							.parseLibsvmRow(rowStr, vect, (int) _clen, _props.getDelim(), _props.getIndexDelim());
@@ -322,8 +343,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 					}
 
 					// sanity checks (number of rows)
-					if(row != (_splitoffsets.getOffsetPerSplit(_splitCount) + _splitoffsets
-						.getLenghtPerSplit(_splitCount))) {
+					if (row != (_splitoffsets.getOffsetPerSplit(_splitCount) + _splitoffsets.getLenghtPerSplit(_splitCount)) ) {
 						throw new IOException(
 							"Incorrect number of rows (" + row + ") found in delimited file (" + (_splitoffsets
 								.getOffsetPerSplit(_splitCount) + _splitoffsets
@@ -334,7 +354,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 					IOUtilFunctions.closeSilently(reader);
 				}
 			}
-			catch(Exception ex) {
+			catch (Exception ex) {
 				// central error handling (return code, message)
 				_rc = false;
 				_exception = ex;

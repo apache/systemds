@@ -38,18 +38,19 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 
-public class WriterTextLIBSVMParallel extends WriterTextLIBSVM {
-
+public class WriterTextLIBSVMParallel extends WriterTextLIBSVM
+{
 	public WriterTextLIBSVMParallel(FileFormatPropertiesLIBSVM _props) {
 		super(_props);
 	}
 
-	@Override protected void writeLIBSVMMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src)
-		throws IOException {
+	@Override
+	protected void writeLIBSVMMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src)
+		throws IOException
+	{
 		//estimate output size and number of output blocks (min 1)
-		int numPartFiles = (int) (OptimizerUtils
-			.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(), src.getNonZeros(),
-				FileFormat.LIBSVM) / InfrastructureAnalyzer.getHDFSBlockSize());
+		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(),
+				src.getNonZeros(), FileFormat.LIBSVM)  / InfrastructureAnalyzer.getHDFSBlockSize());
 		numPartFiles = Math.max(numPartFiles, 1);
 
 		//determine degree of parallelism
@@ -57,7 +58,7 @@ public class WriterTextLIBSVMParallel extends WriterTextLIBSVM {
 		numThreads = Math.min(numThreads, numPartFiles);
 
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
-		if(numThreads <= 1) {
+		if( numThreads <= 1 ) {
 			super.writeLIBSVMMatrixToHDFS(path, job, fs, src);
 			return;
 		}
@@ -66,14 +67,15 @@ public class WriterTextLIBSVMParallel extends WriterTextLIBSVM {
 		HDFSTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 
 		//create and execute tasks
-		try {
+		try
+		{
 			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<WriteLIBSVMTask> tasks = new ArrayList<>();
 			int rlen = src.getNumRows();
-			int blklen = (int) Math.ceil((double) rlen / numThreads);
-			for(int i = 0; i < numThreads & i * blklen < rlen; i++) {
+			int blklen = (int)Math.ceil((double)rlen / numThreads);
+			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));
-				tasks.add(new WriteLIBSVMTask(newPath, job, fs, src, i * blklen, Math.min((i + 1) * blklen, rlen)));
+				tasks.add(new WriteLIBSVMTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, rlen)));
 			}
 
 			//wait until all tasks have been executed
@@ -81,22 +83,23 @@ public class WriterTextLIBSVMParallel extends WriterTextLIBSVM {
 			pool.shutdown();
 
 			//check for exceptions
-			for(Future<Object> task : rt)
+			for( Future<Object> task : rt )
 				task.get();
 
 			// delete crc files if written to local file system
-			if(fs instanceof LocalFileSystem) {
-				for(int i = 0; i < numThreads & i * blklen < rlen; i++)
-					IOUtilFunctions
-						.deleteCrcFilesFromLocalFileSystem(fs, new Path(path, IOUtilFunctions.getPartFileName(i)));
+			if (fs instanceof LocalFileSystem) {
+				for(int i=0; i<numThreads & i*blklen<rlen; i++)
+					IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs,
+						new Path(path, IOUtilFunctions.getPartFileName(i)));
 			}
 		}
-		catch(Exception e) {
+		catch (Exception e) {
 			throw new IOException("Failed parallel write of libsvm output.", e);
 		}
 	}
 
-	private class WriteLIBSVMTask implements Callable<Object> {
+	private class WriteLIBSVMTask implements Callable<Object>
+	{
 		private final JobConf _job;
 		private final FileSystem _fs;
 		private final MatrixBlock _src;
@@ -112,7 +115,8 @@ public class WriterTextLIBSVMParallel extends WriterTextLIBSVM {
 			_ru = ru;
 		}
 
-		@Override public Object call() throws Exception {
+		@Override
+		public Object call() throws Exception {
 			writeLIBSVMMatrixToFile(_path, _job, _fs, _src, _rl, _ru);
 			return null;
 		}

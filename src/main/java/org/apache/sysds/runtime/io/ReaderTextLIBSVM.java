@@ -45,17 +45,19 @@ public class ReaderTextLIBSVM extends MatrixReader {
 		_props = props;
 	}
 
-	@Override public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
-		throws IOException, DMLRuntimeException {
+	@Override
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
+		throws IOException, DMLRuntimeException
+	{
 		//allocate output matrix block
 		MatrixBlock ret = null;
-		if(rlen >= 0 && clen >= 0) //otherwise allocated on read
-			ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, true, false);
+		if( rlen>=0 && clen>=0 ) //otherwise allocated on read
+			ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 
 		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		Path path = new Path(fname);
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		JobConf    job  =  new JobConf(ConfigurationManager.getCachedJobConf());
+		Path       path =  new Path( fname );
+		FileSystem fs   =  IOUtilFunctions.getFileSystem(path, job);
 
 		//check existence and non-empty file
 		checkValidInputFile(fs, path);
@@ -70,28 +72,33 @@ public class ReaderTextLIBSVM extends MatrixReader {
 		return ret;
 	}
 
-	@Override public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
-		throws IOException, DMLRuntimeException {
+	@Override
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
+		throws IOException, DMLRuntimeException
+	{
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, true, false);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 
 		//core read
-		long lnnz = readLIBSVMMatrixFromInputStream(is, "external inputstream", ret, new MutableInt(0), rlen, clen,
-			blen);
+		long lnnz = readLIBSVMMatrixFromInputStream(is, "external inputstream", ret,
+			new MutableInt(0), rlen, clen, blen);
 
 		//finally check if change of sparse/dense block representation required
-		ret.setNonZeros(lnnz);
+		ret.setNonZeros( lnnz );
 		ret.examSparsity();
 
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked") private static MatrixBlock readLIBSVMMatrixFromHDFS(Path path, JobConf job,
-		FileSystem fs, MatrixBlock dest, long rlen, long clen, int blen) throws IOException, DMLRuntimeException {
+	@SuppressWarnings("unchecked")
+	private static MatrixBlock readLIBSVMMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest,
+			long rlen, long clen, int blen)
+		throws IOException, DMLRuntimeException
+	{
 		//prepare file paths in alphanumeric order
-		ArrayList<Path> files = new ArrayList<>();
+		ArrayList<Path> files=new ArrayList<>();
 		if(fs.isDirectory(path)) {
-			for(FileStatus stat : fs.listStatus(path, IOUtilFunctions.hiddenFileFilter))
+			for(FileStatus stat: fs.listStatus(path, IOUtilFunctions.hiddenFileFilter))
 				files.add(stat.getPath());
 			Collections.sort(files);
 		}
@@ -99,7 +106,7 @@ public class ReaderTextLIBSVM extends MatrixReader {
 			files.add(path);
 
 		//determine matrix size via additional pass if required
-		if(dest == null) {
+		if ( dest == null ) {
 			dest = computeLIBSVMSize(files, clen, job, fs);
 			clen = dest.getNumColumns();
 		}
@@ -107,51 +114,54 @@ public class ReaderTextLIBSVM extends MatrixReader {
 		//actual read of individual files
 		long lnnz = 0;
 		MutableInt row = new MutableInt(0);
-		for(int fileNo = 0; fileNo < files.size(); fileNo++) {
-			lnnz += readLIBSVMMatrixFromInputStream(fs.open(files.get(fileNo)), path.toString(), dest, row, rlen, clen,
-				blen);
+		for(int fileNo=0; fileNo<files.size(); fileNo++) {
+			lnnz += readLIBSVMMatrixFromInputStream(fs.open(files.get(fileNo)),
+				path.toString(), dest, row, rlen, clen, blen);
 		}
 
 		//post processing
-		dest.setNonZeros(lnnz);
+		dest.setNonZeros( lnnz );
 
 		return dest;
 	}
 
-	private static long readLIBSVMMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
-		MutableInt rowPos, long rlen, long clen, int blen) throws IOException {
+	private static long readLIBSVMMatrixFromInputStream( InputStream is, String srcInfo, MatrixBlock dest, MutableInt rowPos,
+			long rlen, long clen, int blen )
+		throws IOException
+	{
 		SparseRowVector vect = new SparseRowVector(1024);
 		String value = null;
 		int row = rowPos.intValue();
 		long lnnz = 0;
 
 		// Read the data
-		try(BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-			while((value = br.readLine()) != null) { //for each line
+		try( BufferedReader br = new BufferedReader(new InputStreamReader(is)) ) {
+			while( (value=br.readLine())!=null ) { //for each line
 				String rowStr = value.toString().trim();
 				lnnz += ReaderTextLIBSVM
 					.parseLibsvmRow(rowStr, vect, (int) clen, _props.getDelim(), _props.getIndexDelim());
 				dest.appendRow(row, vect);
 				row++;
-
 			}
 		}
+
 		rowPos.setValue(row);
 		return lnnz;
 	}
 
 	private static MatrixBlock computeLIBSVMSize(List<Path> files, long ncol, JobConf job, FileSystem fs)
-		throws IOException, DMLRuntimeException {
+		throws IOException, DMLRuntimeException
+	{
 		int nrow = 0;
-		for(int fileNo = 0; fileNo < files.size(); fileNo++) {
-			try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))))) {
-				while(br.readLine() != null)
+		for(int fileNo=0; fileNo<files.size(); fileNo++) {
+			try( BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo)))) ) {
+				while( br.readLine() != null )
 					nrow++;
 			}
 		}
 
 		// allocate target matrix block based on given size;
-		return createOutputMatrixBlock(nrow, ncol, nrow, nrow * ncol, true, false);
+		return createOutputMatrixBlock(nrow, ncol, nrow, nrow*ncol, true, false);
 	}
 
 	protected static int parseLibsvmRow(String rowStr, SparseRowVector vect, int clen, String delim,
@@ -164,13 +174,12 @@ public class ReaderTextLIBSVM extends MatrixReader {
 		double label = Double.parseDouble(parts[0]);
 
 		//parse entire row
-		for(int i = 1; i < parts.length; i++) {
+		for( int i=1; i<parts.length; i++ ) {
 			//parse non-zero: <index#>:<value#>
 			String[] pair = parts[i].split(indexDelim);
-			vect.append(Integer.parseInt(pair[0]) - 1,
-				UtilFunctions.parseToDouble(pair[1], UtilFunctions.defaultNaString));
+			vect.append(Integer.parseInt(pair[0])-1, UtilFunctions.parseToDouble(pair[1],UtilFunctions.defaultNaString));
 		}
-		vect.append(clen - 1, label);
+		vect.append(clen-1, label);
 		return vect.size();
 	}
 }

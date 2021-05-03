@@ -36,7 +36,7 @@ public class WriteLIBSVMTest1 extends WriteLIBSVMTest {
 		return 1;
 	}
 
-	protected LIBSVMConfig getLIBSVMConfig(){
+	protected LIBSVMConfig getLIBSVMConfig() {
 		return new LIBSVMConfig(" ", ":", 3, " ", ":");
 	}
 }

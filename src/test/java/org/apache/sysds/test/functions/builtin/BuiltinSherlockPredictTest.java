@@ -28,12 +28,13 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
+//TODO: fix the reading of wieght by calling the predict inside sherlock test
+//where weights are created and read in the output dir and should not keep around
 public class BuiltinSherlockPredictTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "sherlockPredict";
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinSherlockPredictTest.class.getSimpleName() + "/";
-	private final static String WEIGHTS_DIR = SCRIPT_DIR + TEST_DIR + "data/sherlockWeights/";
+	private final static String WEIGHTS_DIR = DATASET_DIR + "sherlockWeights/";
 	
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));

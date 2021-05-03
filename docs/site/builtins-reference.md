@@ -1,6 +1,7 @@
 ---
 layout: site
-title: Builtin Reference---
+title: Builtin Functions Reference
+---
 <!--
 {% comment %}
 Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,13 +61,14 @@ limitations under the License.
     * [`gnmf`-Function](#gnmf-function)
     * [`mdedup`-Function](#mdedup-function)
     * [`msvm`-Function](#msvm-function)
-    * [`naivebayes`-Function](#naivebayes-function)
+    * [`naiveBayes`-Function](#naiveBayes-function)
+    * [`naiveBayesPredict`-Function](#naiveBayesPredict-function)
     * [`outlier`-Function](#outlier-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`winsorize`-Function](#winsorize-function)
     * [`gmm`-Function](#gmm-function)
     * [`correctTypos`-Function](#correcttypos-function)
-    
+
 # Introduction
 
 The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level functions
@@ -105,7 +107,7 @@ Note that this function is highly **unstable** and will be overworked and might 
 
 ##### `data`-Argument
 
-The `data`-argument can be a `Matrix` of any datatype from which the elements will be taken and placed in the tensor 
+The `data`-argument can be a `Matrix` of any datatype from which the elements will be taken and placed in the tensor
 until filled. If given as a `Tensor` the same procedure takes place. We iterate through `Matrix` and `Tensor` by starting
 with each dimension index at `0` and then incrementing the lowest one, until we made a complete pass over the dimension,
 and then increasing the dimension index above. This will be done until the `Tensor` is completely filled.
@@ -166,14 +168,14 @@ confusionMatrix(P, Y)
 | Y    | Matrix[Double] | ---     | vector of Golden standard One Hot Encoded |
 
 ### Returns
- 
+
 | Name         | Type           | Description |
 | :----------- | :------------- | :---------- |
 | ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
 | ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
 
 ### Example
- 
+
 ```r
 numClasses = 1
 z = rand(rows = 5, cols = 1, min = 1, max = 9)
@@ -384,7 +386,7 @@ beta = glm(X=X,Y=y)
 ## `gridSearch`-Function
 
 The `gridSearch`-function is used to find the optimal hyper-parameters of a model which results in the most _accurate_
-predictions. This function takes `train` and `eval` functions by name. 
+predictions. This function takes `train` and `eval` functions by name.
 
 ### Usage
 ```r
@@ -422,13 +424,13 @@ paramRanges = list(10^seq(0,-4), 10^seq(-5,-9), 10^seq(1,3))
 
 ## `hyperband`-Function
 
-The `hyperband`-function is used for hyper parameter optimization and is based on multi-armed bandits and early elimination. 
+The `hyperband`-function is used for hyper parameter optimization and is based on multi-armed bandits and early elimination.
 Through multiple parallel brackets and consecutive trials it will return the hyper parameter combination which performed best
 on a validation dataset. A set of hyper parameter combinations is drawn from uniform distributions with given ranges; Those
 make up the candidates for `hyperband`.
-Notes: 
+Notes:
 * `hyperband` is hard-coded for `lmCG`, and uses `lmPredict` for validation
-* `hyperband` is hard-coded to use the number of iterations as a resource 
+* `hyperband` is hard-coded to use the number of iterations as a resource
 * `hyperband` can only optimize continuous hyperparameters
 
 ### Usage
@@ -541,7 +543,7 @@ B = img_crop(img_in = A, w = 20, h = 10, x_offset = 0, y_offset = 0)
 ## `img_mirror`-Function
 
 The `img_mirror`-function is an image data augumentation function.
-It flips an image on the `X` (horizontal) or `Y` (vertical) axis. 
+It flips an image on the `X` (horizontal) or `Y` (vertical) axis.
 
 ### Usage
 
@@ -678,7 +680,7 @@ kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = F
 ## `lm`-Function
 
 The `lm`-function solves linear regression using either the **direct solve method** or the **conjugate gradient algorithm**
-depending on the input size of the matrices (See [`lmDS`-function](#lmds-function) and 
+depending on the input size of the matrices (See [`lmDS`-function](#lmds-function) and
 [`lmCG`-function](#lmcg-function) respectively).
 
 ### Usage
@@ -710,10 +712,10 @@ is called internally and parameters `tol` and `maxi` are ignored.
 ##### `icpt`-Argument
 
 The *icpt-argument* can be set to 3 modes:
- 
-  * 0 = no intercept, no shifting, no rescaling
-  * 1 = add intercept, but neither shift nor rescale X
-  * 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+
+* 0 = no intercept, no shifting, no rescaling
+* 1 = add intercept, but neither shift nor rescale X
+* 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
 
 ### Example
 
@@ -823,7 +825,7 @@ The `lmPredict`-function predicts the class of a feature vector.
 ### Usage
 
 ```r
-lmPredict(X=X, B=w)
+lmPredict(X=X, B=w, ytest= Y)
 ```
 
 ### Arguments
@@ -832,7 +834,7 @@ lmPredict(X=X, B=w)
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vector(s). |
 | B       | Matrix[Double] | required | 1-column matrix of weights. |
-| ytest   | Matrix[Double] | optional | Optional test labels, used only for verbose output. |
+| ytest   | Matrix[Double] | required | test labels, used only for verbose output. can be set to matrix(0,1,1) if verbose output is not wanted |
 | icpt    | Integer        | 0        | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
 | verbose | Boolean        | FALSE    | Print various statistics for evaluating accuracy. |
 
@@ -849,7 +851,7 @@ lmPredict(X=X, B=w)
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
-yp = lmPredict(X = X, B = w)
+yp = lmPredict(X = X, B = w, ytest=matrix(0,1,1))
 ```
 
 ## `mice`-Function
@@ -998,7 +1000,7 @@ Y= scale(X,center,scale)
 
 Implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
 
-[Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection." 
+[Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
 Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining., 2019]
 ### Usage
 
@@ -1054,7 +1056,7 @@ write(label_encoding, "weights/label_encoding")
 
 Implements prediction and evaluation phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
 
-[Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection." 
+[Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
 Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining., 2019]
 ### Usage
 
@@ -1084,7 +1086,7 @@ sherlockPredict(X, cW1, cb1, cW2, cb2, cW3, cb3, wW1, wb1, wW2, wb2, wW3, wb3,
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | Class probabilities of shape (N, K). |
-### Example 
+### Example
 
 ```r
 # preprocessed validation data taken from sherlock corpus
@@ -1115,7 +1117,7 @@ fW3,  fb3)
 
 ## `sigmoid`-Function
 
-The Sigmoid function is a type of activation function, and also defined as a squashing function which limit the output 
+The Sigmoid function is a type of activation function, and also defined as a squashing function which limit the output
 to a range between 0 and 1, which will make these functions useful in the prediction of probabilities.
 
 ### Usage
@@ -1148,9 +1150,9 @@ Y = sigmoid(X)
 The `smote`-function (Synthetic Minority Oversampling Technique) implements a classical techniques for handling class imbalance.
 The  built-in takes the samples from minority class and over-sample them by generating the synthesized samples.
 The built-in accepts two parameters s and k. The parameter s define the number of synthesized samples to be generated
- i.e., over-sample the minority class by s time, where s is the multiple of 100. For given 40 samples of minority class and
- s = 200 the smote will generate the 80 synthesized samples to over-sample the class by 200 percent. The parameter k is used to generate the 
- k nearest neighbours for each minority class sample and then the neighbours are chosen randomly in synthesis process.
+i.e., over-sample the minority class by s time, where s is the multiple of 100. For given 40 samples of minority class and
+s = 200 the smote will generate the 80 synthesized samples to over-sample the class by 200 percent. The parameter k is used to generate the
+k nearest neighbours for each minority class sample and then the neighbours are chosen randomly in synthesis process.
 
 ### Usage
 
@@ -1171,7 +1173,7 @@ smote(X, s, k, verbose);
 
 | Type           | Description |
 | :------------- | :---------- |
-| Matrix[Double] | Matrix of (N/100) * X synthetic minority class samples 
+| Matrix[Double] | Matrix of (N/100) * X synthetic minority class samples
 
 
 ### Example
@@ -1183,7 +1185,7 @@ B = smote(X = X, s=200, k=3, verbose=TRUE);
 ## `steplm`-Function
 
 The `steplm`-function (stepwise linear regression) implements a classical forward feature selection method.
-This method iteratively runs what-if scenarios and greedily selects the next best feature until the Akaike 
+This method iteratively runs what-if scenarios and greedily selects the next best feature until the Akaike
 information criterion (AIC) does not improve anymore. Each configuration trains a regression model via `lm`,
 which in turn calls either the closed form `lmDS` or iterative `lmGC`.
 
@@ -1215,13 +1217,13 @@ steplm(X, y, icpt);
 ##### `icpt`-Argument
 
 The *icpt-arg* can be set to 2 modes:
- 
-  * 0 = no intercept, no shifting, no rescaling
-  * 1 = add intercept, but neither shift nor rescale X
+
+* 0 = no intercept, no shifting, no rescaling
+* 1 = add intercept, but neither shift nor rescale X
 
 ##### `selected`-Output
 
-If the best AIC is achieved without any features the matrix of *selected* features contains 0. Moreover, in this case no further statistics will be produced 
+If the best AIC is achieved without any features the matrix of *selected* features contains 0. Moreover, in this case no further statistics will be produced
 
 ### Example
 
@@ -1270,7 +1272,7 @@ ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ## `normalize`-Function
 
 The `normalize`-function normalises the values of a matrix by changing the dataset to use a common scale.
-This is done while preserving differences in the ranges of values. 
+This is done while preserving differences in the ranges of values.
 The output is a matrix of values in range [0,1].
 
 ### Usage
@@ -1340,14 +1342,14 @@ H = rand(rows = 2, cols = ncol(X), min = -0.05, max = 0.05);
 gnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10)
 ```
 
-## `naivebayes`-Function
+## `naiveBayes`-Function
 
-The `naivebayes`-function computes the class conditional probabilities and class priors.
+The `naiveBayes`-function computes the class conditional probabilities and class priors.
 
 ### Usage
 
 ```r
-naivebayes(D, C, laplace, verbose)
+naiveBayes(D, C, laplace, verbose)
 ```
 
 ### Arguments
@@ -1371,7 +1373,38 @@ naivebayes(D, C, laplace, verbose)
 ```r
 D=rand(rows=10,cols=1,min=10)
 C=rand(rows=10,cols=1,min=10)
-[prior, classConditionals] = naivebayes(D, C, laplace = 1, verbose = TRUE)
+[prior, classConditionals] = naiveBayes(D, C, laplace = 1, verbose = TRUE)
+```
+
+## `naiveBaysePredict`-Function
+
+The `naiveBaysePredict`-function predicts the scoring with a naive Bayes model.
+
+### Usage
+
+```r
+naiveBaysePredict(X=X, P=P, C=C)
+```
+
+### Arguments
+
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of test data with N rows. |
+| P       | Matrix[Double] | required | Class priors, One dimensional column matrix with N rows. |
+| C       | Matrix[Double] | required | Class conditional probabilities, matrix with N rows. |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | A matrix containing the top-K item-ids with highest predicted ratings. |
+| Matrix[Double] | A matrix containing predicted ratings. |
+
+### Example
+
+```r
+[YRaw, Y] = naiveBaysePredict(X=data, P=model_prior, C=model_conditionals)
 ```
 
 ## `outlier`-Function
@@ -1438,7 +1471,7 @@ y = toOneHot(X,numClasses)
 
 ## `mdedup`-Function
 
-The `mdedup`-function implements builtin for deduplication using matching dependencies 
+The `mdedup`-function implements builtin for deduplication using matching dependencies
 (e.g. Street 0.95, City 0.90 -> ZIP 1.0) by Jaccard distance.
 
 ### Usage
@@ -1552,7 +1585,7 @@ Y = winsorize(X=X)
 
 ## `gmm`-Function
 
-The `gmm`-function implements builtin Gaussian Mixture Model with four different types of 
+The `gmm`-function implements builtin Gaussian Mixture Model with four different types of
 covariance matrices i.e., VVV, EEE, VVI, VII and two initialization methods namely "kmeans" and "random".
 
 ### Usage

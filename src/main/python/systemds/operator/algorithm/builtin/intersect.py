@@ -24,17 +24,17 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def intersect(X: OperationNode, Y: OperationNode) -> OperationNode:
+def intersect(X: OperationNode, Y: OperationNode) -> Matrix:
     
     
     X._check_matrix_op()
     Y._check_matrix_op()
     params_dict = {'X':X, 'Y':Y}
-    return OperationNode(X.sds_context, 'intersect', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'intersect', named_input_nodes=params_dict)
 
 
     

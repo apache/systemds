@@ -1,0 +1,56 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/logcosh_loss.dml") as logcosh
+
+logcosh_test_1 = function(){
+    X = rand(rows = 3, cols = 3, pdf = "normal")
+    labels = X 
+    loss = logcosh::forward(X, labels)
+    if( loss > 1e-10)
+        print("ERROR: Loss of perfect predictions should be equal to 0 but was " + loss)
+}
+
+logcosh_test_2 = function(){
+    X = rand(rows = 3, cols = 1, pdf = "normal")
+    labels_1 = X + 1
+    labels_2 = X - 1 
+    loss_1 = logcosh::forward(X, labels_1)
+    loss_2 = logcosh::forward(X, labels_2)
+    if( loss_1 - loss_2 > 1e-10)
+        print("ERROR: Loss for values predicted above and below by same margin should be exactly the same loss " + loss_1 +  " : " + loss_2)
+}
+
+logcosh_test_3 = function(){
+    X = rand(rows = 6, cols = 2, pdf = "normal")
+    labels_1 = X + 1
+    labels_2 = X - 1 
+    gradient_1 = sum(logcosh::backward(X, labels_1))
+    gradient_2 = sum(logcosh::backward(X, labels_2))
+    if(gradient_1 > 0)
+        print("ERROR: gradients should point negatively if prediction is to high")
+    if(gradient_2 < 0)
+        print("ERROR: gradients should point positivly if prediction is to low")
+}
+
+logcosh_test_1()
+logcosh_test_2()
+logcosh_test_3()

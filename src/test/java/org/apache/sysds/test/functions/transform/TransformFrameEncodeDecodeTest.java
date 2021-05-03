@@ -150,8 +150,8 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-explain","-nvargs", 
-				"DATA=" + HOME + "input/" + DATASET,
-				"TFSPEC=" + HOME + "input/" + SPEC,
+				"DATA=" + DATASET_DIR + DATASET,
+				"TFSPEC=" + DATASET_DIR + SPEC,
 				"TFDATA=" + output("tfout"), "SEP=,",
 				"OFMT=" + ofmt, "OSEP=," };
 
@@ -167,7 +167,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			//read input/output and compare
 			FrameReader reader1 = FrameReaderFactory.createFrameReader(FileFormat.CSV, 
 					new FileFormatPropertiesCSV(true, ",", false));
-			FrameBlock fb1 = reader1.readFrameFromHDFS(HOME + "input/" + DATASET, -1L, -1L);
+			FrameBlock fb1 = reader1.readFrameFromHDFS(DATASET_DIR + DATASET, -1L, -1L);
 			FrameReader reader2 = FrameReaderFactory.createFrameReader(FileFormat.CSV);
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("tfout"), -1L, -1L);
 			String[][] R1 = DataConverter.convertToStringFrame(fb1);

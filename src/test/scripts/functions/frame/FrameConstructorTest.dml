@@ -28,6 +28,9 @@ if($1 == "RANDOM_DATA")
   f1 = frame("", rows=40, cols=4, schema=["INT64", "STRING", "FP64", "BOOLEAN"]) # no data
 if($1 == "SINGLE_DATA")
   f1 = frame(1, rows=40, cols=4, schema=["INT64", "STRING", "FP64", "BOOLEAN"]) # no data
+if($1 == "MULTI_ROW_DATA")
+  f1 = frame(data=["1", "abc", "2.5", "TRUE", "1", "abc", "2.5", "TRUE", "1", "abc", "2.5", "TRUE", "1", "abc", "2.5", "TRUE",
+  "1", "abc", "2.5", "TRUE" ], rows=5, cols=4, schema=["INT64", "STRING", "FP64", "BOOLEAN"]) # initialization by row
 
 # f1 = frame(1, 4, 3)  # unnamed parameters not working
 write(f1, $2, format="csv")

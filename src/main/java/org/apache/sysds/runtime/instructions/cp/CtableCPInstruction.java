@@ -74,7 +74,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 
 		CPOperand out = new CPOperand(parts[6]);
 		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
-		
+
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
 		return new CtableCPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
 	}
@@ -174,7 +174,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		if( checkGuardedRepresentationChange(matBlock1, matBlock2, resultBlock) ) {
 			resultBlock.examSparsity();
 		}
-		
+
 		ec.setMatrixOutput(output.getName(), resultBlock);
 	}
 	

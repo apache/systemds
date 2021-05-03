@@ -85,7 +85,7 @@ jobs:
       run: sudo apt-get install protobuf-compiler libprotoc-dev 
   
     - name: Install pip Dependencies
-      run: pip install numpy py4j wheel scipy sklearn requests
+      run: pip install numpy py4j wheel scipy sklearn requests pandas
 
     - name: Build Python Package
       run: |

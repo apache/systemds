@@ -18,8 +18,8 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var methods = {"i0":10,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -178,7 +178,7 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
@@ -190,38 +190,43 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
 </td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>static double</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#estimateMemory-long-long-">estimateMemory</a></span>(long&nbsp;nrows,
+              long&nbsp;ncols)</code>&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#get-int:A-">get</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Get the value of a given cell</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#get-int-int-">get</a></span>(int&nbsp;r,
    int&nbsp;c)</code>
 <div class="block">Get the value for a given row and column.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#getLong-int:A-">getLong</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Get the value of a given cell as long</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#getString-int:A-">getString</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Get the value of a given cell as a String</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#incr-int-int-">incr</a></span>(int&nbsp;r,
     int&nbsp;c)</code>
 <div class="block">Increments the given value for a given row and column.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#incr-int-int-double-">incr</a></span>(int&nbsp;r,
     int&nbsp;c,
@@ -230,26 +235,26 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
  by delta.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#index-int-">index</a></span>(int&nbsp;r)</code>
 <div class="block">Get the block index for a given row.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#isNumeric--">isNumeric</a></span>()</code>
 <div class="block">Indicates if the dense block is numeric.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#pos-int-">pos</a></span>(int&nbsp;r)</code>
 <div class="block">Get the position for a given row within
  its associated block.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#pos-int-int-">pos</a></span>(int&nbsp;r,
    int&nbsp;c)</code>
@@ -257,7 +262,7 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
  within the associated block.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#reset-int-int:A-double-">reset</a></span>(int&nbsp;rlen,
      int[]&nbsp;odims,
@@ -265,41 +270,41 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
 <div class="block">Resets the dense block by setting the given value.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#set-org.apache.sysds.runtime.data.DenseBlock-">set</a></span>(<a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;db)</code>
 <div class="block">Copy the given dense block.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#set-int:A-double-">set</a></span>(int[]&nbsp;ix,
    double&nbsp;v)</code>
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#set-int:A-long-">set</a></span>(int[]&nbsp;ix,
    long&nbsp;v)</code>
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#set-int:A-java.lang.String-">set</a></span>(int[]&nbsp;ix,
    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;v)</code>
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#set-int-double:A-">set</a></span>(int&nbsp;r,
    double[]&nbsp;v)</code>
 <div class="block">Copy the given vector into the given row.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#set-int-int-double-">set</a></span>(int&nbsp;r,
    int&nbsp;c,
@@ -307,7 +312,7 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
 <div class="block">Set the given value for a given row and column.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#set-int-int-int-int-org.apache.sysds.runtime.data.DenseBlock-">set</a></span>(int&nbsp;rl,
    int&nbsp;ru,
@@ -318,13 +323,13 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
  index range.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>double[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#values-int-">values</a></span>(int&nbsp;r)</code>
 <div class="block">Get the allocated block for the given row.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/DenseBlockFP64.html#valuesAt-int-">valuesAt</a></span>(int&nbsp;bix)</code>
 <div class="block">Get an allocated block.</div>
@@ -343,7 +348,7 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.data.<a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></h3>
-<code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getCumODims-int-">getCumODims</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getDim-int-">getDim</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getNextIndexes-int:A-">getNextIndexes</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#numDims--">numDims</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#numRows--">numRows</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset--">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int:A-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int:A-double-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int:A-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int-double-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int-org.apache.sysds.runtime.instructions.cp.KahanObject-">set</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-org.apache.sysds.runtime.instructions.cp.KahanObject-">set</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-java.lang.String-">set</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#size--">size</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#toString--">toString</a></code></li>
+<code><a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getCumODims-int-">getCumODims</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getDim-int-">getDim</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#getNextIndexes-int:A-">getNextIndexes</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#numDims--">numDims</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#numRows--">numRows</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset--">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int:A-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int:A-double-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int:A-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#reset-int-int-double-">reset</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-int-org.apache.sysds.runtime.instructions.cp.KahanObject-">set</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-org.apache.sysds.runtime.instructions.cp.KahanObject-">set</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#set-java.lang.String-">set</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#setDims-int:A-">setDims</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#size--">size</a>, <a href="../../../../../org/apache/sysds/runtime/data/DenseBlock.html#toString--">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -429,6 +434,16 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
 <dd><code>odims</code> - other dimensions</dd>
 <dd><code>v</code> - value</dd>
 </dl>
+</li>
+</ul>
+<a name="estimateMemory-long-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimateMemory</h4>
+<pre>public static&nbsp;double&nbsp;estimateMemory(long&nbsp;nrows,
+                                    long&nbsp;ncols)</pre>
 </li>
 </ul>
 <a name="capacity--">
@@ -890,6 +905,6 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/DenseBlockDRB.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

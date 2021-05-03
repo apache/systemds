@@ -48,6 +48,9 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
@@ -345,16 +348,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	//////////////////////////////////////////
-	// Serialization / Deserialization
+	// Serialization / De-serialization
 
 	@Override
 	public long getExactSizeOnDisk() {
 		// header information
-		long ret = 20;
-		for(AColGroup grp : _colGroups) {
-			ret += 1; // type info
-			ret += grp.getExactSizeOnDisk();
-		}
+		long ret = 4+4+8+1;
+		ret += ColGroupIO.getExactSizeOnDisk(_colGroups);
 		return ret;
 	}
 
@@ -365,7 +365,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		clen = in.readInt();
 		nonZeros = in.readLong();
 		overlappingColGroups = in.readBoolean();
-		_colGroups = ColGroupIO.readGroups(in);
+		_colGroups = ColGroupIO.readGroups(in, rlen);
 	}
 
 	@Override
@@ -418,8 +418,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock append(MatrixBlock that, MatrixBlock ret) {
-		ret = CLALibAppend.append(this, that);
-		return ret;
+		return CLALibAppend.append(this, that);
 	}
 
 	@Override
@@ -623,25 +622,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		// prepare output dimensions
 		CellIndex tempCellIndex = new CellIndex(-1, -1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
-
-		// if(op.aggOp.existsCorrection()) {
-		// switch(op.aggOp.correction) {
-		// case LASTROW:
-		// // tempCellIndex.row++;
-		// break;
-		// case LASTCOLUMN:
-		// // tempCellIndex.column++;
-		// break;
-		// case LASTTWOROWS:
-		// tempCellIndex.row += 1;
-		// break;
-		// case LASTTWOCOLUMNS:
-		// tempCellIndex.column += 1;
-		// break;
-		// default:
-		// throw new DMLRuntimeException("unrecognized correctionLocation: " + op.aggOp.correction);
-		// }
-		// }
 
 		// initialize and allocate the result
 		if(result == null)
@@ -1057,24 +1037,32 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
-		printDecompressWarning("sortOperations");
 		MatrixBlock right = getUncompressed(weights);
-		AColGroup grp = _colGroups.get(0);
-		if(grp.getIfCountsType() != true)
-			return grp.getValuesAsBlock().sortOperations(right, result);
-
-		if(right == null && grp instanceof ColGroupValue) {
-			MatrixBlock vals = grp.getValuesAsBlock();
-			int[] counts = ((ColGroupValue) grp).getCounts();
-			double[] data = (vals.getDenseBlock() != null) ? vals.getDenseBlockValues() : null;
-			SortUtils.sortByValue(0, vals.getNumRows(), data, counts);
-			MatrixBlock counts2 = getCountsAsBlock(counts);
-			if(counts2.isEmpty())
-				return vals;
-			return vals.sortOperations(counts2, result);
+		if(_colGroups.size() == 1){
+			AColGroup grp = _colGroups.get(0);
+			if(grp instanceof ColGroupEmpty || grp instanceof ColGroupConst)
+				return this;
+			printDecompressWarning("sortOperations");
+			if(grp instanceof ColGroupUncompressed)
+				return grp.getValuesAsBlock().sortOperations(right, result);
+	
+			if(right == null && grp instanceof ColGroupCompressed) {
+				MatrixBlock vals = grp.getValuesAsBlock();
+				int[] counts =	((ColGroupValue) grp).getCounts();
+				double[] data = (vals.getDenseBlock() != null) ? vals.getDenseBlockValues() : null;
+				SortUtils.sortByValue(0, vals.getNumRows(), data, counts);
+				MatrixBlock counts2 = getCountsAsBlock(counts);
+				if(counts2.isEmpty())
+					return vals;
+				return vals.sortOperations(counts2, result);
+			}
+			else
+				return getUncompressed().sortOperations(right, result);
 		}
-		else
-			return getUncompressed().sortOperations(right, result);
+		else{
+			printDecompressWarning("sortOperations with multiple column groups is not supported");
+			return getUncompressed().sortOperations(weights, result);
+		}
 	}
 
 	@Override

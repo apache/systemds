@@ -33,7 +33,7 @@ public class CleaningTestClassification extends AutomatedTestBase {
 	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTestClassification.class.getSimpleName() + "/";
 
 	protected static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
-	protected static final String DATA_DIR = RESOURCE+"data/";
+	protected static final String DATA_DIR = DATASET_DIR+ "pipelines/";
 
 	private final static String DIRTY = DATA_DIR+ "dirty.csv";
 	private final static String CLEAN = DATA_DIR+ "clean.csv";
@@ -49,7 +49,6 @@ public class CleaningTestClassification extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 	}
-
 
 	@Ignore
 	public void testCP1() {

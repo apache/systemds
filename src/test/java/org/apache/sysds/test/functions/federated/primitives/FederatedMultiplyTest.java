@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,6 +69,10 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void federatedMultiplyCPCompileToFED() {
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, true);
+	}
 
 	@Test 
 	@Ignore
@@ -76,7 +81,11 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		federatedMultiply(Types.ExecMode.SPARK);
 	}
 
-	public void federatedMultiply(Types.ExecMode execMode) {
+	private void federatedMultiply(Types.ExecMode execMode){
+		federatedMultiply(execMode,false);
+	}
+
+	private void federatedMultiply(Types.ExecMode execMode, boolean federatedCompilation) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -116,6 +125,7 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
+		OptimizerUtils.FEDERATED_COMPILATION = federatedCompilation;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
@@ -129,6 +139,7 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		TestUtils.shutdownThreads(t1, t2);
 
 		rtplatform = platformOld;
+		OptimizerUtils.FEDERATED_COMPILATION = false;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
 }

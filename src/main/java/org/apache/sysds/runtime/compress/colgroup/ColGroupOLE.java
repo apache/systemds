@@ -24,6 +24,9 @@ import java.util.Arrays;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
@@ -41,8 +44,13 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public class ColGroupOLE extends ColGroupOffset {
 	private static final long serialVersionUID = -9157676271360528008L;
 
-	protected ColGroupOLE() {
-		super();
+		/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupOLE(int numRows) {
+		super(numRows);
 	}
 
 	/**
@@ -347,13 +355,7 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public long estimateInMemorySize() {
-		// Note 0 is because the size can be calculated based on the given values,
-		// And because the fourth argument is only needed in estimation, not when an OLE ColGroup is created.
-		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(),
-			_dict.size(),
-			(_data == null) ? 0 : _data.length,
-			_numRows,
-			isLossy());
+		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(), getNumValues(), _data.length, _numRows, isLossy());
 	}
 
 	@Override
@@ -1011,7 +1013,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupValue that) {
+	public boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupOLE && ((ColGroupOLE) that)._data == _data;
 	}
 
@@ -1104,11 +1106,11 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int retSize = NVR * NVL;
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		IPreAggregate ag = PreAggregateFactory.ag(retSize);
-		final int[] l = lhs._indexes;
+
 		final int defL = NVL - 1;
 
 		for(int kr = 0; kr < NVR; kr++) {
-			int offL = 0;
+			AIterator lIt = lhs._indexes.getIterator();
 			final int bOffR = this._ptr[kr];
 			final int bLenR = this.len(kr);
 			final int krOff = kr * NVL;
@@ -1116,10 +1118,9 @@ public class ColGroupOLE extends ColGroupOffset {
 				sLenR = this._data[bOffR + bixR];
 				for(int j = 1; j <= sLenR; j++) {
 					final int row = offR + this._data[bOffR + bixR + j];
-					while(offL < l.length && l[offL] < row)
-						offL++;
-					if(offL < l.length && l[offL] == row)
-						ag.increment(lhs.getIndex(offL++) + krOff);
+					lIt.skipTo(row);
+					if(lIt.value() == row)
+						ag.increment(lhs.getIndex(lIt.getDataIndexAndIncrement()) + krOff);
 					else
 						ag.increment(defL + krOff);
 				}
@@ -1141,22 +1142,20 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int NVL = lhs.getNumValues();
 		final int retSize = NVR * NVL;
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		IPreAggregate ag = PreAggregateFactory.ag(retSize);
-		final int[] l = lhs._indexes;
+		final IPreAggregate ag = PreAggregateFactory.ag(retSize);
 
 		for(int kr = 0; kr < NVR; kr++) {
-			int offL = 0;
+			final AIterator lIt = lhs._indexes.getIterator();
 			final int bOffR = this._ptr[kr];
 			final int bLenR = this.len(kr);
 			final int krOff = kr * NVL;
-			for(int bixR = 0, offR = 0, sLenR = 0; offL < l.length && bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
+			for(int bixR = 0, offR = 0, sLenR = 0; lIt.hasNext() && bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
 				sLenR = this._data[bOffR + bixR];
-				for(int j = 1; offL < l.length && j <= sLenR; j++) {
+				for(int j = 1; lIt.hasNext() && j <= sLenR; j++) {
 					final int row = offR + this._data[bOffR + bixR + j];
-					while(offL < l.length && l[offL] < row)
-						offL++;
-					if(offL < l.length && l[offL] == row)
-						ag.increment(lhs.getIndex(offL++) + krOff);
+					lIt.skipTo(row);
+					if(lIt.value() == row)
+						ag.increment(lhs.getIndex(lIt.getDataIndexAndIncrement()) + krOff);
 				}
 			}
 		}
@@ -1207,5 +1206,25 @@ public class ColGroupOLE extends ColGroupOffset {
 	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
 		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
 			+ this.getClass().getSimpleName());
+	}
+
+	@Override
+	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
+		throw new NotImplementedException();
 	}
 }

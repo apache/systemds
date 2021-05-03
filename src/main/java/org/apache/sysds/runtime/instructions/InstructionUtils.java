@@ -146,7 +146,10 @@ public class InstructionUtils
 	public static int checkNumFields( String[] parts, int... expected ) {
 		int numParts = parts.length;
 		int numFields = numParts - 1; //account for opcode
-		
+		return checkMatchingNumField(numFields, expected);
+	}
+
+	private static int checkMatchingNumField(int numFields, int... expected){
 		if (Arrays.stream(expected).noneMatch((i) -> numFields == i)) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("checkNumFields() -- expected number (");
@@ -158,8 +161,13 @@ public class InstructionUtils
 			sb.append(") != is not equal to actual number (").append(numFields).append(").");
 			throw new DMLRuntimeException(sb.toString());
 		}
-		
 		return numFields;
+	}
+
+	public static int checkNumFields( String str, int... expected ) {
+		int numParts = str.split(Instruction.OPERAND_DELIM).length;
+		int numFields = numParts - 2; // -2 accounts for execType and opcode
+		return checkMatchingNumField(numFields, expected);
 	}
 
 	public static int checkNumFields( String str, int expected1, int expected2 ) {
@@ -217,8 +225,13 @@ public class InstructionUtils
 	}
 	
 	public static ExecType getExecType( String str ) {
-		int ix = str.indexOf(Instruction.OPERAND_DELIM);
-		return ExecType.valueOf(str.substring(0, ix));
+		try{
+			int ix = str.indexOf(Instruction.OPERAND_DELIM);
+			return ExecType.valueOf(str.substring(0, ix));
+		}
+		catch(Exception e){
+			throw new DMLRuntimeException("Unable to extract Execution type from " + str, e);
+		}
 	}
 
 	public static String getOpCode( String str ) {
@@ -1025,16 +1038,78 @@ public class InstructionUtils
 		parts[parts.length-1] = newName;
 		return concatOperands(parts);
 	}
-	
+
+	/**
+	 * Concat the inputs as operands to generate the instruction string.
+	 * The inputs are separated by the operand delimiter and appended
+	 * using a ThreadLocal StringBuilder.
+	 * @param inputs operand inputs given as strings
+	 * @return the instruction string with the given inputs concatenated
+	 */
 	public static String concatOperands(String... inputs) {
-		return concatOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+		concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+		return _strBuilders.get().toString();
 	}
-	
+
+	/**
+	 * Concat the input parts with the value type delimiter.
+	 * @param inputs input operand parts as strings
+	 * @return concatenated input parts
+	 */
 	public static String concatOperandParts(String... inputs) {
-		return concatOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
+		concatBaseOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
+		return _strBuilders.get().toString();
 	}
-	
-	private static String concatOperandsWithDelim(String delim, String... inputs) {
+
+	/**
+	 * Concat the inputs as operands to generate the base instruction string.
+	 * The base instruction string can subsequently be extended with the
+	 * concatAdditional methods. The concatenation will be done using a
+	 * ThreadLocal StringBuilder, so the concatenation is local to the thread.
+	 * When all additional operands have been appended, the complete instruction
+	 * string can be retrieved by calling the getInstructionString method.
+	 * @param inputs operand inputs given as strings
+	 */
+	public static void concatBaseOperands(String... inputs){
+		concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+	}
+
+	/**
+	 * Concat input as an additional operand to the current thread-local base instruction string.
+	 * @param input operand input given as string
+	 */
+	public static void concatAdditionalOperand(String input){
+		StringBuilder sb = _strBuilders.get();
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(input);
+	}
+
+	/**
+	 * Concat inputs as additional operands to the current thread-local base instruction string.
+	 * @param inputs operand inputs given as strings
+	 */
+	public static void concatAdditionalOperands(String... inputs){
+		concatOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+	}
+
+	/**
+	 * Returns the current thread-local instruction string.
+	 * This instruction string is built using the concat methods.
+	 * @return instruction string
+	 */
+	public static String getInstructionString(){
+		return _strBuilders.get().toString();
+	}
+
+	private static void concatOperandsWithDelim(String delim, String... inputs){
+		StringBuilder sb = _strBuilders.get();
+		for( int i=0; i<inputs.length; i++ ) {
+			sb.append(delim);
+			sb.append(inputs[i]);
+		}
+	}
+
+	private static void concatBaseOperandsWithDelim(String delim, String... inputs){
 		StringBuilder sb = _strBuilders.get();
 		sb.setLength(0); //reuse allocated space
 		for( int i=0; i<inputs.length-1; i++ ) {
@@ -1042,7 +1117,6 @@ public class InstructionUtils
 			sb.append(delim);
 		}
 		sb.append(inputs[inputs.length-1]);
-		return sb.toString();
 	}
 	
 	public static String concatStrings(String... inputs) {
@@ -1061,5 +1135,56 @@ public class InstructionUtils
 		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		parts[1] = opcode;
 		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(op2), createOperand(out));
+	}
+
+	/**
+	 * Prepare instruction string for sending in a FederatedRequest as a CP instruction.
+	 * This involves replacing the coordinator operand names with the worker operand names,
+	 * changing the execution type, and removing the federated output flag if necessary.
+	 * @param inst instruction string to prepare for federated request
+	 * @param varOldOut current output operand (to be replaced)
+	 * @param id new output operand (always a number)
+	 * @param varOldIn current input operand (to be replaced)
+	 * @param varNewIn new input operand names (always numbers)
+	 * @param federatedOutput federated output flag
+	 * @return instruction string prepared for federated request
+	 */
+	public static String instructionStringFEDPrepare(String inst, CPOperand varOldOut, long id, CPOperand[] varOldIn, long[] varNewIn, boolean federatedOutput){
+		String linst = replaceExecTypeWithCP(inst);
+		linst = replaceOutputOperand(linst, varOldOut, id);
+		linst = replaceInputOperand(linst, varOldIn, varNewIn);
+		linst = removeFEDOutputFlag(linst, federatedOutput);
+		return linst;
+	}
+
+	private static String replaceExecTypeWithCP(String inst){
+		return inst.replace(Types.ExecType.SPARK.name(), Types.ExecType.CP.name())
+			.replace(Types.ExecType.FED.name(), Types.ExecType.CP.name());
+	}
+
+	private static String replaceOutputOperand(String linst, CPOperand varOldOut, long id){
+		return replaceOperand(linst, varOldOut, Long.toString(id));
+	}
+
+	private static String replaceInputOperand(String linst, CPOperand[] varOldIn, long[] varNewIn){
+		for(int i=0; i<varOldIn.length; i++)
+			if( varOldIn[i] != null ) {
+				linst = replaceOperand(linst, varOldIn[i], Long.toString(varNewIn[i]));
+				linst = linst.replace("="+varOldIn[i].getName(), "="+varNewIn[i]); //parameterized
+			}
+		return linst;
+	}
+
+	private static String removeFEDOutputFlag(String linst, boolean federatedOutput){
+		if ( federatedOutput ){
+			linst = linst.substring(0, linst.lastIndexOf(Lop.OPERAND_DELIMITOR));
+		}
+		return linst;
+	}
+
+	private static String replaceOperand(String linst, CPOperand oldOperand, String newOperandName){
+		return linst.replace(
+			Lop.OPERAND_DELIMITOR+oldOperand.getName()+Lop.DATATYPE_PREFIX,
+			Lop.OPERAND_DELIMITOR+newOperandName+Lop.DATATYPE_PREFIX);
 	}
 }

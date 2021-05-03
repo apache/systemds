@@ -41,7 +41,6 @@ struct Matrix {
 			col_idx(reinterpret_cast<uint32_t*>((jvals[4]))), data(reinterpret_cast<T*>(jvals[5])) {}
 };
 
-//#ifdef __CUDACC_RTC__
 #ifdef __CUDACC__
 
 template<typename T>
@@ -65,91 +64,48 @@ template<typename T>
 class MatrixAccessor {
 	
 	Matrix<T>* _mat;
-	
-	// Member function pointers
-	uint32_t (MatrixAccessor::*_len)();
-	uint32_t (MatrixAccessor::*_row_len)(uint32_t);
-	uint32_t (MatrixAccessor::*_pos)(uint32_t);
-	uint32_t* (MatrixAccessor::*_col_idxs)(uint32_t);
-	
-	T& (MatrixAccessor::*_val_i)(uint32_t);
-	T& (MatrixAccessor::*_val_rc)(uint32_t, uint32_t);
-	T* (MatrixAccessor::*_vals)(uint32_t);
-	void (MatrixAccessor::*_set)(uint32_t, uint32_t, T);
 
 public:
 	MatrixAccessor() = default;
-
-	__device__ MatrixAccessor(Matrix<T>* mat) { init(mat); }
-
-	__device__ void init(Matrix<T>* mat) {
-		_mat = mat;
-		
-		if (_mat->row_ptr == nullptr) {
-			_len = &MatrixAccessor::len_dense;
-			_pos = &MatrixAccessor::pos_dense;
-			_col_idxs = &MatrixAccessor::cols_dense;
-			_val_rc = &MatrixAccessor::val_dense_rc;
-			_vals = &MatrixAccessor::vals_dense;
-			_row_len = &MatrixAccessor::row_len_dense;
-			_val_i = &MatrixAccessor::val_dense_i;
-		} else {
-			_len = &MatrixAccessor::len_sparse;
-			_pos = &MatrixAccessor::pos_sparse;
-			_col_idxs = &MatrixAccessor::cols_sparse;
-			_val_rc = &MatrixAccessor::val_sparse_rc;
-			_vals = &MatrixAccessor::vals_sparse;
-			_row_len = &MatrixAccessor::row_len_sparse;
-			_val_i = &MatrixAccessor::val_sparse_i;
-			_set = &MatrixAccessor::set_sparse;
-		}
-	}
+	
+	__device__ MatrixAccessor(Matrix<T>* mat) : _mat(mat) {}
+	
+	__device__ void init(Matrix<T>* mat) { _mat = mat; }
 	
 	__device__ uint32_t& nnz() { return _mat->nnz; }
 	__device__ uint32_t cols() { return _mat->cols; }
 	__device__ uint32_t rows() { return _mat->rows; }
 	
-	__device__ uint32_t len() { return (this->*_len)(); }
+	__device__ uint32_t len() { return _mat->data == nullptr ? len_sparse() : len_dense(); }
 	
 	__device__ uint32_t pos(uint32_t rix) {
-		return (this->*_pos)(rix);
+		return _mat->data == nullptr ? pos_sparse(rix) : pos_dense(rix);
 	}
 	
 	__device__ T& val(uint32_t r, uint32_t c) {
-		return (this->*_val_rc)(r, c);
+		return _mat->data == nullptr ? val_sparse_rc(r, c) : val_dense_rc(r,c);
 	}
 	
 	__device__ T& val(uint32_t i) {
-		return (this->*_val_i)(i);
+		return _mat->data == nullptr ? val_sparse_i(i) : val_dense_i(i);
 	}
-
-	__device__ T* vals(uint32_t rix) {
-		return (this->*_vals)(rix);
-	}
+	__device__ T& operator[](uint32_t i) { return val(i); }
 	
-    __device__ T& operator[](uint32_t i) {
-		return (this->*_val_i)(i);
-    }
+	__device__ T* vals(uint32_t rix) {
+		return _mat->data == nullptr ? vals_sparse(rix) : vals_dense(rix);
+	}
 	
 	__device__ uint32_t row_len(uint32_t rix) {
-		return (this->*_row_len)(rix);
+		return _mat->data == nullptr ? row_len_sparse(rix) : row_len_dense(rix);
 	}
 	
-	__device__ uint32_t* col_idxs(uint32_t rix) {
-		return (this->*_col_idxs)(rix);
-	}
+	__device__ uint32_t* col_idxs(uint32_t rix) { return cols_sparse(rix); }
 
-	__device__ void set(uint32_t r, uint32_t c, T v) {
-		(this->*_set)(r,c,v);
-	}
+	__device__ void set(uint32_t r, uint32_t c, T v) { set_sparse(r,c,v); }
 	
-	__device__ uint32_t* indexes() {
-		return _mat->row_ptr;
-	}
+	__device__ uint32_t* indexes() {  return _mat->row_ptr;	}
 	
-	__device__ bool hasData() {
-		return _mat->data != nullptr;
-	}
+	__device__ bool hasData() { return _mat->data != nullptr; }
 private:
 	__device__ uint32_t len_dense() {
 		return _mat->rows * _mat->cols;
@@ -157,11 +113,6 @@ private:
 	
 	__device__ uint32_t pos_dense(uint32_t rix) {
 		return _mat->cols * rix;
-	}
-	
-	__device__ uint32_t* cols_dense(uint32_t rix) {
-		printf("ERROR: no column indices array in a dense matrix! This will likely crash :-/\n");
-		return nullptr;
 	}
 	
 	__device__ T& val_dense_rc(uint32_t r, uint32_t c) {
@@ -240,8 +191,8 @@ struct Vector {
 	__device__ T* vals(uint32_t idx) { return &data[idx]; }
 
 	__device__ T& operator[](uint32_t idx) {
-	    return data[idx];
-    }
+		return data[idx];
+	}
 	
 	__device__ void print(const char* name, uint32_t end_ = 0, uint32_t start = 0, uint32_t bID = 0, uint32_t tID = 0) {
 		if(blockIdx.x == bID && threadIdx.x==tID) {

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9,"i39":9,"i40":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9,"i39":9,"i40":9,"i41":9,"i42":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -184,19 +184,30 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#isOuterProductTSMM-int-int-boolean-">isOuterProductTSMM</a></span>(int&nbsp;rlen,
+                  int&nbsp;clen,
+                  boolean&nbsp;left)</code>&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#isSkinnyRightHandSide-long-long-long-long-boolean-">isSkinnyRightHandSide</a></span>(long&nbsp;m1rlen,
                      long&nbsp;m1clen,
                      long&nbsp;m2rlen,
                      long&nbsp;m2clen,
                      boolean&nbsp;inclCacheSize)</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#isSparseOutputMatrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">isSparseOutputMatrixMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
+                        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2)</code>&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#isUltraSparseMatrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-boolean-">isUltraSparseMatrixMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
                        boolean&nbsp;m1Perm)</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">matrixMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -204,7 +215,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Performs a matrix multiplication and stores the result in the output matrix.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-boolean-">matrixMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -213,7 +224,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">This method allows one to disabling exam sparsity.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">matrixMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -222,7 +233,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Performs a multi-threaded matrix multiplication and stores the result in the output matrix.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">matrixMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -230,7 +241,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
           int&nbsp;rl,
           int&nbsp;ru)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-boolean-">matrixMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -239,7 +250,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
           int&nbsp;ru,
           boolean&nbsp;fixedRet)</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultChain-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.MapMultChain.ChainType-">matrixMultChain</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mX,
                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mV,
@@ -249,7 +260,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Performs a matrix multiplication chain operation of type t(X)%*%(X%*%v) or t(X)%*%(w*(X%*%v)).</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultChain-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.MapMultChain.ChainType-int-">matrixMultChain</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mX,
                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mV,
@@ -260,7 +271,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Performs a parallel matrix multiplication chain operation of type t(X)%*%(X%*%v) or t(X)%*%(w*(X%*%v)).</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultDenseDenseMM-org.apache.sysds.runtime.data.DenseBlock-org.apache.sysds.runtime.data.DenseBlock-org.apache.sysds.runtime.data.DenseBlock-int-int-int-int-int-int-">matrixMultDenseDenseMM</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;a,
                       <a href="../../../../../../org/apache/sysds/runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;b,
@@ -272,14 +283,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                       int&nbsp;cl,
                       int&nbsp;cu)</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultPermute-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">matrixMultPermute</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;pm1,
                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret1,
                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret2)</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultPermute-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">matrixMultPermute</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;pm1,
                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -287,20 +298,20 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret2,
                  int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultTransposeSelf-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-boolean-">matrixMultTransposeSelf</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                        boolean&nbsp;leftTranspose)</code>&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultTransposeSelf-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-boolean-int-">matrixMultTransposeSelf</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                        boolean&nbsp;leftTranspose,
                        int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWCeMM-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-double-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType-">matrixMultWCeMM</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mW,
                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -309,7 +320,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                <a href="../../../../../../org/apache/sysds/lops/WeightedCrossEntropy.WCeMMType.html" title="enum in org.apache.sysds.lops">WeightedCrossEntropy.WCeMMType</a>&nbsp;wt)</code>&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWCeMM-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-double-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType-int-">matrixMultWCeMM</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mW,
                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -319,7 +330,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                <a href="../../../../../../org/apache/sysds/lops/WeightedCrossEntropy.WCeMMType.html" title="enum in org.apache.sysds.lops">WeightedCrossEntropy.WCeMMType</a>&nbsp;wt,
                int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWDivMM-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedDivMM.WDivMMType-">matrixMultWDivMM</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mW,
                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -331,7 +342,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  have only limited NaN support.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWDivMM-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedDivMM.WDivMMType-int-">matrixMultWDivMM</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mW,
                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -344,7 +355,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  have only limited NaN support.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWSigmoid-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedSigmoid.WSigmoidType-">matrixMultWSigmoid</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mW,
                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -352,7 +363,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                   <a href="../../../../../../org/apache/sysds/lops/WeightedSigmoid.WSigmoidType.html" title="enum in org.apache.sysds.lops">WeightedSigmoid.WSigmoidType</a>&nbsp;wt)</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWSigmoid-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedSigmoid.WSigmoidType-int-">matrixMultWSigmoid</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mW,
                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -361,7 +372,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                   <a href="../../../../../../org/apache/sysds/lops/WeightedSigmoid.WSigmoidType.html" title="enum in org.apache.sysds.lops">WeightedSigmoid.WSigmoidType</a>&nbsp;wt,
                   int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWSLoss-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedSquaredLoss.WeightsType-">matrixMultWSLoss</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mX,
                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -370,7 +381,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                 <a href="../../../../../../org/apache/sysds/lops/WeightedSquaredLoss.WeightsType.html" title="enum in org.apache.sysds.lops">WeightedSquaredLoss.WeightsType</a>&nbsp;wt)</code>&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWSLoss-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedSquaredLoss.WeightsType-int-">matrixMultWSLoss</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mX,
                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -380,7 +391,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                 <a href="../../../../../../org/apache/sysds/lops/WeightedSquaredLoss.WeightsType.html" title="enum in org.apache.sysds.lops">WeightedSquaredLoss.WeightsType</a>&nbsp;wt,
                 int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWuMM-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedUnaryMM.WUMMType-org.apache.sysds.runtime.functionobjects.ValueFunction-">matrixMultWuMM</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mW,
               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -389,7 +400,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
               <a href="../../../../../../org/apache/sysds/lops/WeightedUnaryMM.WUMMType.html" title="enum in org.apache.sysds.lops">WeightedUnaryMM.WUMMType</a>&nbsp;wt,
               <a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn)</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#matrixMultWuMM-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.lops.WeightedUnaryMM.WUMMType-org.apache.sysds.runtime.functionobjects.ValueFunction-int-">matrixMultWuMM</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mW,
               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mU,
@@ -399,13 +410,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
               <a href="../../../../../../org/apache/sysds/runtime/functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
               int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#prepMatrixMultTransposeSelfInput-org.apache.sysds.runtime.matrix.data.MatrixBlock-boolean-boolean-">prepMatrixMultTransposeSelfInput</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                                 boolean&nbsp;leftTranspose,
                                 boolean&nbsp;par)</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#satisfiesMultiThreadingConstraints-org.apache.sysds.runtime.matrix.data.MatrixBlock-boolean-boolean-long-int-">satisfiesMultiThreadingConstraints</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                                   boolean&nbsp;checkMem,
@@ -413,12 +424,12 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                   long&nbsp;FPfactor,
                                   int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#satisfiesMultiThreadingConstraints-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">satisfiesMultiThreadingConstraints</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                                   int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#satisfiesMultiThreadingConstraints-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-boolean-boolean-long-int-">satisfiesMultiThreadingConstraints</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -427,7 +438,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                   long&nbsp;FPfactor,
                                   int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectAdd-double:A-double:A-int:A-int-int-int-">vectAdd</a></span>(double[]&nbsp;a,
        double[]&nbsp;c,
@@ -436,7 +447,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
        int&nbsp;ci,
        int&nbsp;alen)</code>&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectAdd-double:A-double:A-int-int-int-">vectAdd</a></span>(double[]&nbsp;a,
        double[]&nbsp;c,
@@ -444,7 +455,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
        int&nbsp;ci,
        int&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectAdd-double:A-double-double:A-int-int-int-">vectAdd</a></span>(double[]&nbsp;a,
        double&nbsp;bval,
@@ -453,14 +464,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
        int&nbsp;ci,
        int&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectAddInPlace-double-double:A-int-int-">vectAddInPlace</a></span>(double&nbsp;aval,
               double[]&nbsp;c,
               int&nbsp;ci,
               int&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectMultiplyAdd-double-double:A-double:A-int:A-int-int-int-">vectMultiplyAdd</a></span>(double&nbsp;aval,
                double[]&nbsp;b,
@@ -470,7 +481,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                int&nbsp;ci,
                int&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectMultiplyAdd-double-double:A-double:A-int-int-int-">vectMultiplyAdd</a></span>(double&nbsp;aval,
                double[]&nbsp;b,
@@ -479,14 +490,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                int&nbsp;ci,
                int&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectMultiplyInPlace-double-double:A-int-int-">vectMultiplyInPlace</a></span>(double&nbsp;aval,
                    double[]&nbsp;c,
                    int&nbsp;ci,
                    int&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectMultiplyWrite-double:A-double:A-double:A-int:A-int-int-int-int-">vectMultiplyWrite</a></span>(double[]&nbsp;a,
                  double[]&nbsp;b,
@@ -497,7 +508,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  int&nbsp;ci,
                  int&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectMultiplyWrite-double:A-double:A-double:A-int-int-int-int-">vectMultiplyWrite</a></span>(double[]&nbsp;a,
                  double[]&nbsp;b,
@@ -507,7 +518,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  int&nbsp;ci,
                  int&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixMult.html#vectMultiplyWrite-double-double:A-double:A-int-int-int-">vectMultiplyWrite</a></span>(double&nbsp;aval,
                  double[]&nbsp;b,
@@ -1203,12 +1214,33 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <a name="isUltraSparseMatrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-boolean-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>isUltraSparseMatrixMult</h4>
 <pre>public static&nbsp;boolean&nbsp;isUltraSparseMatrixMult(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                                               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
                                               boolean&nbsp;m1Perm)</pre>
+</li>
+</ul>
+<a name="isSparseOutputMatrixMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isSparseOutputMatrixMult</h4>
+<pre>public static&nbsp;boolean&nbsp;isSparseOutputMatrixMult(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
+                                               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2)</pre>
+</li>
+</ul>
+<a name="isOuterProductTSMM-int-int-boolean-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>isOuterProductTSMM</h4>
+<pre>public static&nbsp;boolean&nbsp;isOuterProductTSMM(int&nbsp;rlen,
+                                         int&nbsp;clen,
+                                         boolean&nbsp;left)</pre>
 </li>
 </ul>
 </li>
@@ -1280,6 +1312,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

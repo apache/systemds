@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def bandit(X_train: OperationNode, Y_train: OperationNode, metaList: Iterable, targetList: Iterable, lp: OperationNode, primitives: OperationNode, param: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def bandit(X_train: OperationNode, Y_train: OperationNode, metaList: Iterable, targetList: Iterable, lp: OperationNode, primitives: OperationNode, param: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     
     
     X_train._check_matrix_op()

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -116,6 +116,10 @@ var activeTableTab = "activeTableTab";
 <dt>All Implemented Interfaces:</dt>
 <dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
 </dl>
+<dl>
+<dt>Direct Known Subclasses:</dt>
+<dd><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCUDACellwise.html" title="class in org.apache.sysds.runtime.codegen">SpoofCUDACellwise</a></dd>
+</dl>
 <hr>
 <br>
 <pre>public abstract class <span class="typeNameLabel">SpoofCellwise</span>
@@ -198,32 +202,37 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#containsSeq--">containsSeq</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.html" title="interface in org.apache.sysds.runtime.codegen">SpoofCUDAOperator</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#createCUDAInstrcution-java.lang.Integer-org.apache.sysds.runtime.codegen.SpoofCUDAOperator.PrecisionProxy-">createCUDAInstrcution</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&nbsp;opID,
+                     <a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.PrecisionProxy.html" title="class in org.apache.sysds.runtime.codegen">SpoofCUDAOperator.PrecisionProxy</a>&nbsp;ep)</code>&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#execute-java.util.ArrayList-java.util.ArrayList-int-">execute</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;inputs,
        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
        int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#execute-java.util.ArrayList-java.util.ArrayList-int-long-">execute</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;inputs,
        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
        int&nbsp;k,
        long&nbsp;rix)</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#execute-java.util.ArrayList-java.util.ArrayList-org.apache.sysds.runtime.matrix.data.MatrixBlock-">execute</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;inputs,
        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
        <a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#execute-java.util.ArrayList-java.util.ArrayList-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">execute</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;inputs,
        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
        <a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
        int&nbsp;k)</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#execute-java.util.ArrayList-java.util.ArrayList-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-long-">execute</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;inputs,
        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&gt;&nbsp;scalarObjects,
@@ -231,19 +240,19 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
        int&nbsp;k,
        long&nbsp;rix)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.AggOp.html" title="enum in org.apache.sysds.runtime.codegen">SpoofCellwise.AggOp</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#getAggOp--">getAggOp</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.CellType.html" title="enum in org.apache.sysds.runtime.codegen">SpoofCellwise.CellType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#getCellType--">getCellType</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#getSpoofType--">getSpoofType</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCellwise.html#isSparseSafe--">isSparseSafe</a></span>()</code>&nbsp;</td>
 </tr>
@@ -330,6 +339,20 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>containsSeq</h4>
 <pre>public&nbsp;boolean&nbsp;containsSeq()</pre>
+</li>
+</ul>
+<a name="createCUDAInstrcution-java.lang.Integer-org.apache.sysds.runtime.codegen.SpoofCUDAOperator.PrecisionProxy-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createCUDAInstrcution</h4>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.html" title="interface in org.apache.sysds.runtime.codegen">SpoofCUDAOperator</a>&nbsp;createCUDAInstrcution(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&nbsp;opID,
+                                               <a href="../../../../../org/apache/sysds/runtime/codegen/SpoofCUDAOperator.PrecisionProxy.html" title="class in org.apache.sysds.runtime.codegen">SpoofCUDAOperator.PrecisionProxy</a>&nbsp;ep)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofOperator.html#createCUDAInstrcution-java.lang.Integer-org.apache.sysds.runtime.codegen.SpoofCUDAOperator.PrecisionProxy-">createCUDAInstrcution</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../org/apache/sysds/runtime/codegen/SpoofOperator.html" title="class in org.apache.sysds.runtime.codegen">SpoofOperator</a></code></dd>
+</dl>
 </li>
 </ul>
 <a name="getSpoofType--">
@@ -485,6 +508,6 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

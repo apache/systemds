@@ -49,6 +49,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	private final static String TEST_NAME12 = "Functions12";
 	private final static String TEST_NAME13 = "Functions13";
 	private final static String TEST_NAME14 = "Functions14";
+	private final static String TEST_NAME15 = "Functions15";
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionNamespaceTest.class.getSimpleName() + "/";
 	
@@ -73,6 +74,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12));
 		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13));
 		addTestConfiguration(TEST_NAME14, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME14));
+		addTestConfiguration(TEST_NAME15, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME15));
 	}
 	
 	@Test
@@ -157,6 +159,11 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	@Test
 	public void testFunctionRandomCDF() {
 		runFunctionNamespaceTest(TEST_NAME14);
+	}
+	
+	@Test
+	public void testFunctionBuiltinNS() {
+		runFunctionNamespaceTest(TEST_NAME15);
 	}
 	
 	private void runFunctionNamespaceTest(String TEST_NAME)

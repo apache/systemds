@@ -785,7 +785,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(ObjectInput in) throws IOException {
 		//redirect deserialization to writable impl
 		readFields(in);
 	}
@@ -2051,8 +2051,10 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 				ValueType dataType = isType(dataValue);
 
-				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type == "INT") &&  !(dataType == ValueType.BOOLEAN && type == "FP")){
-					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " + (i+1) + ", row:" +(j+1));
+				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type.equals("INT")) &&
+					!(dataType == ValueType.BOOLEAN && type.equals("FP"))){
+					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " +
+						(i+1) + ", row:" +(j+1));
 
 					this.set(j,i,null);
 				}

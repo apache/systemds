@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -71,10 +72,15 @@ public class FederatedVarTest extends AutomatedTestBase {
 
 	@Test
 	public void testVarCP() {
-		runAggregateOperationTest(ExecMode.SINGLE_NODE);
+		runAggregateOperationTest(ExecMode.SINGLE_NODE, false);
 	}
 
-	private void runAggregateOperationTest(ExecMode execMode) {
+	@Test
+	public void testVarCPtoFED() {
+		runAggregateOperationTest(ExecMode.SINGLE_NODE, true);
+	}
+
+	private void runAggregateOperationTest(ExecMode execMode, boolean federatedCompilation) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -129,6 +135,7 @@ public class FederatedVarTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 
+		OptimizerUtils.FEDERATED_COMPILATION = federatedCompilation;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-explain", "-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
@@ -152,6 +159,7 @@ public class FederatedVarTest extends AutomatedTestBase {
 
 		TestUtils.shutdownThreads(t1, t2, t3, t4);
 
+		OptimizerUtils.FEDERATED_COMPILATION = false;
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 

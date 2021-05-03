@@ -279,7 +279,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 	@Test
 	public void matVecMultPrivateAggregationTest() {
-		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLRuntimeException.class);
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, null);
 	}
 
 	@Test

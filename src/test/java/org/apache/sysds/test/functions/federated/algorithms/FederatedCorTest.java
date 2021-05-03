@@ -107,10 +107,6 @@ public class FederatedCorTest extends AutomatedTestBase {
 		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
 		Thread t4 = startLocalFedWorkerThread(port4);
 
-		rtplatform = execMode;
-		if(rtplatform == ExecMode.SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 

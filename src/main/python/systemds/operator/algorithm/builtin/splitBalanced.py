@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def splitBalanced(X: OperationNode, Y: OperationNode, splitRatio: float, verbose: bool) -> OperationNode:
+def splitBalanced(X: OperationNode, Y: OperationNode, splitRatio: float, verbose: bool) -> Matrix:
     
     
     X._check_matrix_op()

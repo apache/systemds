@@ -68,7 +68,7 @@ class TestLineageTrace(unittest.TestCase):
             # Therefore for now, we only compare if the command is the same, in same order.
             python_trace_commands = [x[:1] for x in python_trace]
             dml_script_commands = [x[:1] for x in sysds_trace]
-            self.assertListEqual(python_trace_commands, dml_script_commands)
+            self.assertEqual(python_trace_commands[0], dml_script_commands[0])
         else:
             print("to enable lineage tests, set SYSTEMDS_ROOT")
 
@@ -100,8 +100,8 @@ def parse_trace(path: str):
         for line in log:
             data.append(line.strip().split("°"))
 
-    # Remove the last 3 lines of the System output because they are after lintrace.
-    return data[:-3]
+    # Remove the last 4 lines of the System output because they are after lintrace.
+    return data[:-4]
 
 
 if __name__ == "__main__":

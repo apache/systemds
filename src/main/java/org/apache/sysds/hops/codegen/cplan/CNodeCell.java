@@ -158,7 +158,7 @@ public class CNodeCell extends CNodeTpl
 		if(api == GeneratorAPI.CUDA) {
 			// ToDo: initial_value is misused to pass VT (values per thread) to no_agg operator
 			String agg_op = "IdentityOp";
-			String initial_value = "(T)4.0";
+			String initial_value = "(T)1.0";
 			if(_aggOp != null)
 			switch(_aggOp) {
 				case SUM:

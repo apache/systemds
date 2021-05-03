@@ -126,7 +126,7 @@ public class NaryOp extends Hop {
 		super.computeMemEstimate(memo);
 
 		//specific case for function call
-		if( _op == OpOpN.EVAL ) {
+		if( _op == OpOpN.EVAL || _op == OpOpN.LIST ) {
 			_memEstimate = OptimizerUtils.INT_SIZE;
 			_outputMemEstimate = OptimizerUtils.INT_SIZE;
 			_processingMemEstimate = 0;

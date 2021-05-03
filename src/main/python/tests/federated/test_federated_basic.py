@@ -28,7 +28,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Federated
 
 os.environ['SYSDS_QUIET'] = "1"
 
@@ -39,19 +38,19 @@ m1.shape = (dim, dim)
 m2 = np.array(np.random.randint(5, size=dim * dim) + 1, dtype=np.double)
 m2.shape = (dim, dim)
 
-tempdir = "/tmp/test_federated_basic/"
-mtd = {"format": "csv", "header": "false", "rows": dim, "cols": dim}
+tempdir = "./tests/federated/tmp/test_federated_aggregations/"
+mtd = {"format": "csv", "header": True, "rows": dim, "cols": dim, "data_type": "matrix", "value_type": "double" }
 
 # Create the testing directory if it does not exist.
 if not os.path.exists(tempdir):
     os.makedirs(tempdir)
 
 # Save data files for the Federated workers.
-np.savetxt(tempdir + "m1.csv", m1, delimiter=",")
+np.savetxt(tempdir + "m1.csv", m1, delimiter=",", header="a,b,c,d,e")
 with io.open(tempdir + "m1.csv.mtd", "w", encoding="utf-8") as f:
     f.write(json.dumps(mtd, ensure_ascii=False))
 
-np.savetxt(tempdir + "m2.csv", m2, delimiter=",")
+np.savetxt(tempdir + "m2.csv", m2, delimiter=",", header="a,b,c,d,e")
 with io.open(tempdir + "m2.csv.mtd", "w", encoding="utf-8") as f:
     f.write(json.dumps(mtd, ensure_ascii=False))
 
@@ -73,12 +72,12 @@ class TestFederatedAggFn(unittest.TestCase):
         cls.sds.close()
 
     def test_1(self):
-        f_m1 = Federated(self.sds, [fed1], [([0, 0], [dim, dim])]).compute()
+        f_m1 = self.sds.federated( [fed1], [([0,0], [dim, dim])]).compute()
         res = np.allclose(f_m1, m1)
-        self.assertTrue(res)
+        self.assertTrue(res, "\n" + str(f_m1) + " is not equal to \n" + str(m1))
 
     def test_2(self):
-        f_m2 = Federated(self.sds, [fed2], [([0, 0], [dim, dim])]).compute()
+        f_m2 = self.sds.federated( [fed2], [([0, 0], [dim, dim])]).compute()
         res = np.allclose(f_m2, m2)
         self.assertTrue(res)
 
@@ -88,7 +87,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]]
-        f_m1_m2 = Federated(self.sds, 
+        f_m1_m2 = self.sds.federated( 
             [fed1, fed2],
             [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])]
         ).compute()
@@ -107,18 +106,13 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m2,m2,m2,m2,m2]
         #    [m2,m2,m2,m2,m2]
         #    [m2,m2,m2,m2,m2]]
-        f_m1_m2 = Federated(self.sds, 
+        f_m1_m2 = self.sds.federated( 
             [fed1, fed2],
             [([0, 0], [dim, dim]), ([dim, 0], [dim * 2, dim])]
         ).compute()
         m1_m2 = np.concatenate((m1, m2))
         res = np.allclose(f_m1_m2, m1_m2)
         self.assertTrue(res)
-
-    # -----------------------------------
-    # The rest of the tests are
-    # Extended functionality not working Yet
-    # -----------------------------------
 
     def test_5(self):
         #   [[m1,m1,m1,m1,m1, 0, 0, 0, 0, 0]
@@ -128,7 +122,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]
         #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]]
-        f_m1_m2 = Federated(self.sds, 
+        f_m1_m2 = self.sds.federated( 
             [fed1, fed2],
             [([0, 0], [dim, dim]), ([2, dim], [dim + 2, dim * 2])]
         ).compute()
@@ -148,7 +142,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [m1,m1,m1,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]]
-    #     f_m1_m2 = Federated(self.sds, 
+    #     f_m1_m2 = self.sds.federated( 
     #         [fed1, fed2], [([0, 0], [dim, dim]), ([2, 3], [dim + 2, dim + 3])]
     #     ).compute()
 
@@ -167,7 +161,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [m1,m1,m1,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]]
-    #     f_m1_m2 = Federated(self.sds, 
+    #     f_m1_m2 = self.sds.federated( 
     #         [fed1, fed2], [([0, 0], [dim, dim]), ([2, 3], [dim + 2, dim + 3])]
     #     )
     #     f_m1_m2 = (f_m1_m2 + 1).compute()
@@ -191,7 +185,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
-        f_m1_m2 = Federated(self.sds, [fed1], [([2, 3], [dim + 2, dim + 3])])
+        f_m1_m2 = self.sds.federated( [fed1], [([2, 3], [dim + 2, dim + 3])])
         f_m1_m2 = (f_m1_m2).compute()
         m1_m2 = np.zeros((dim + 2, dim + 3))
         m1_m2[2: dim + 2, 3: dim + 3] = m1
@@ -211,7 +205,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
-    #     f_m1_m2 = Federated(self.sds, [fed1], [([2, 3], [dim + 2, dim + 3])])
+    #     f_m1_m2 = self.sds.federated( [fed1], [([2, 3], [dim + 2, dim + 3])])
     #     f_m1_m2 = (f_m1_m2 + 1).compute()
 
     #     m1_m2 = np.zeros((dim + 2, dim + 3))
@@ -235,7 +229,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [m1,m1,m1,m1,m1, 0, 0, 0]
     #     #    [ 0, 0, 0, 0, 0, 0, 0, 0]
     #     #    [ 0, 0, 0, 0, 0, 0, 0, 0]]
-    #     f_m1_m2 = Federated(self.sds, [fed1], [([0, 0], [dim + 2, dim + 3])])
+    #     f_m1_m2 = self.sds.federated( [fed1], [([0, 0], [dim + 2, dim + 3])])
     #     f_m1_m2 = (f_m1_m2).compute()
 
     #     m1_m2 = np.zeros((dim + 2, dim + 3))
@@ -258,7 +252,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [ 0,m1,m1,m1,m1,m1, 0, 0]
     #     #    [ 0,m1,m1,m1,m1,m1, 0, 0]
     #     #    [ 0, 0, 0, 0, 0, 0, 0, 0]]
-    #     f_m1_m2 = Federated(self.sds, [fed1], [([1, 1], [dim + 2, dim + 3])])
+    #     f_m1_m2 = self.sds.federated( [fed1], [([1, 1], [dim + 2, dim + 3])])
     #     f_m1_m2 = (f_m1_m2).compute()
 
     #     m1_m2 = np.zeros((dim + 2, dim + 3))
@@ -276,4 +270,3 @@ class TestFederatedAggFn(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    shutil.rmtree(tempdir)

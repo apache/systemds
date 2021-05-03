@@ -78,7 +78,7 @@ findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent) r
     printDebug("inside find best split")
 
     # order entries by feature value
-    ordered_X = order(target=one_featureX,by=1,decreasing=FALSE,index.return=FALSE)
+    ordered_X = orderFeature(one_featureX)
     printMatrix(ordered_X, "ordered X")
 
     # iterate over all averages between 2 points
@@ -136,29 +136,27 @@ splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Dou
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
-# INPUT:    one_feature_residualsX: a 1xn matrix (one feature with all residuals)
-# OUTPUT:   similarity_score: the sim score of the residuals
-calculateSimilarityScore = function(Matrix[Double] one_feature_residualsX) return(Double similarity_score) {
-    assert(ncol(one_feature_residualsX) == 1)
-    sum_of_x = sum(one_feature_residualsX)
-    similarity_score = (sum_of_x * sum_of_x) / nrow(one_feature_residualsX) # TODO: add lamda parameter here
+# INPUT:    row_vector: a 1xn matrix (one feature with all residuals)
+# OUTPUT:   similarity_score: the similarity score of the residuals
+calculateSimilarityScore = function (matrix[Double] row_vector) return (Double similarity_score) {
+  lambda = 0.0; # TODO
+  similarity_score = (sum(row_vector)^2) / (nrow(row_vector) + lambda);
+  printDebug("Calculated similarity score: " + similarity_score);
 }
 
 
 #-----------------------------------------------------------------------------------------------------------------------
-# INPUT:    a 1xn matrix (one feature with all rows)
-#           the current prediction value
-# OUTPUT:   the residuals to "current_prediction" as 1xn matrix
-calculateResiduals = function(Matrix[Double] one_featureX, double current_prediction) return(Matrix[Double] residual_matrix) {
-    assert(ncol(one_featureX) == 1)
-    residual_matrix = matrix(0, rows=(nrow(one_featureX)), cols=1)
-    for(row in 1:nrow(one_featureX)) {
-        residual_matrix[row,1] = one_featureX[row,1] - current_prediction;
-    }
-    #printMatrix(residual_matrix, "residual matrix")
+# INPUT:    row_vector: a 1xn matrix (one feature with all rows)
+#           prediction: the current prediction value
+# OUTPUT:   the residuals from the "prediction" as 1xn matrix
+calculateResiduals = function (matrix[Double] row_vector, Double prediction) return (matrix[Double] residuals_row) {
+   assert(ncol(row_vector) == 1)
+   residuals_row = row_vector - prediction;
 }
 
-
+orderFeature = function (matrix[double] row_vector) return (matrix[double] row_vector_ordered) {
+    row_vector_ordered = order(target=row_vector, by=1, decreasing=FALSE, index.return=FALSE);
+}
 
 average = function(Matrix[Double] x, Matrix[Double] y) return (Double avg) {
     assert(ncol(x) == 1 & nrow(x) == 1)

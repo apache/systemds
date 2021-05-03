@@ -225,8 +225,13 @@ public class InstructionUtils
 	}
 	
 	public static ExecType getExecType( String str ) {
-		int ix = str.indexOf(Instruction.OPERAND_DELIM);
-		return ExecType.valueOf(str.substring(0, ix));
+		try{
+			int ix = str.indexOf(Instruction.OPERAND_DELIM);
+			return ExecType.valueOf(str.substring(0, ix));
+		}
+		catch(Exception e){
+			throw new DMLRuntimeException("Unable to extract Execution type from " + str, e);
+		}
 	}
 
 	public static String getOpCode( String str ) {

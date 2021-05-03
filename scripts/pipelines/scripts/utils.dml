@@ -34,12 +34,17 @@ return (Frame[Unknown] frameblock)
   X = replace(target=Xd, pattern = NaN, replacement=0)
   if(nrow(select) > 1 ) {
     # TODO fix removeEmpty Spark instruction to accept margin as a variable for now only support literal 
-    X = ifelse((marginParam == "rows"), removeEmpty(target = X, margin = "rows", select = select),
-      removeEmpty(target = X, margin = "cols", select = select))
+    if(marginParam == "rows")
+      X = removeEmpty(target = X, margin = "rows", select = select)
+    else
+      X = removeEmpty(target = X, margin = "cols", select = select)
   }
-  else 
-    X = ifelse((marginParam == "rows"), removeEmpty(target = X, margin = "rows"), removeEmpty(target = X, margin = "cols"))
-  
+  else { 
+    if(marginParam == "rows")
+      X = removeEmpty(target = X, margin = "rows")
+    else
+      X = removeEmpty(target = X, margin = "cols")
+  }
   frameblock = transformdecode(target = Xd, spec = jspecR, meta = M)
   frameblock = frameblock[1:nrow(X), 1:ncol(X)]
 }

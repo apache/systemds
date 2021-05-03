@@ -92,7 +92,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, List[Unknown
       start = end + 1
 
       # sort the configurations for successive halving
-      avergae_perf =  getMaxPerConf(outPip) 
+      avergae_perf =  getMaxPerConf(outPip, nrow(configurations)) 
       configurations = frameSort(cbind(avergae_perf, configurations))
       configurations = configurations[, 2:ncol(configurations)]
     }
@@ -443,11 +443,11 @@ extractBracketWinners = function(Matrix[Double] pipeline, Matrix[Double] hyperpa
 ###########################################################################
 # The function will return the max performance by each individual pipeline
 ############################################################################
-getMaxPerConf = function(Matrix[Double] pipelines)
+getMaxPerConf = function(Matrix[Double] pipelines, Double size)
 return (Frame[Unknown] maxperconf)
 {
   tab = removeEmpty(target=table(pipelines[, 2], pipelines[, 3], pipelines[, 1]), margin="cols")
-  maxperconf = frame(0, rows=max(pipelines[, 2]), cols=1)
+  maxperconf = frame(0, rows=size, cols=1)
   maxperconf[1:ncol(tab),] = as.frame(t(colMaxs(tab)))
 }
 
@@ -612,7 +612,7 @@ return (Double precision, Double T)
   match = (abs(cleanX - fixedX) < 0.001) * correctionsRequired
   print("total matches "+sum(match))
   # print("total matches \n"+toString(match))
-  precision = max(0.001, sum(match) / correctionsMade)
+  precision = max(0.001, sum(match) / max(1, correctionsMade))
   T = floor((time() - t1) / 1e+6)
   print("Precision: "+toString(precision) + " in "+T+" ms")
 

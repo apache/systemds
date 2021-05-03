@@ -1,15 +1,31 @@
 
+# variables
+full_path = "/home/d/Desktop/TU-UNI/8.SEMESTER/AMLS/systemds/"
+
 
 
 print("[DEBUG] starting script calling xgboost")
+X = read(full_path + "ownscripts/small_train.csv", format="csv");
+Y = read(full_path + "ownscripts/small_test.csv", format="csv");
 
-X = matrix(1, rows=1, cols=1)
-Y = matrix(1, rows=1, cols=1)
-R = matrix(1, rows=1, cols=1)
+
+#printMatrix(X, "training set")
+#printMatrix(Y, "testing set")
 print("[DEBUG] calling xgboost")
-M = xgboost(X = X, Y = Y, R = R);
+M = xgboost(X = X, Y = Y);
+
 
 print("[DEBUG] calling xgboostPredict")
-y_predict = xgboostPredict(X, M)
+#y_predict = xgboostPredict(X, M)
 
 print("[DEBUG] finish script")
+
+
+printMatrix = function(Matrix[Double] m, string name) return() {
+    print("--------------------------------------")
+    print(":: [MATRIX] " + name + "  (col:" + ncol(m) + ",row:" + nrow(m) + ")")
+    for(i in 1:nrow(m)) {
+        print(":(" + i + ")   " + toString(m[i,], linesep=" ", sep="    "))
+    }
+    print("--------------------------------------")
+}

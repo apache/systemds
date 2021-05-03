@@ -1005,11 +1005,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru, int vOff) {
-		leftMultByMatrix(matrix, result, getValues(), numRows, numCols, rl, ru, vOff);
-	}
-
-	@Override
 	public void leftMultBySparseMatrix(SparseBlock sb, double[] result, int numRows, int numCols, int rl, int ru) {
 		double[] values = getValues();
 		for(int i = rl; i < ru; i++) {
@@ -1027,10 +1022,20 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param numCols The number of columns in the colGroups parent matrix.
 	 * @param rl      The row to start the matrix multiplication from
 	 * @param ru      The row to stop the matrix multiplication at.
-	 * @param vOff    The offset into the first argument matrix to start at.
 	 */
-	public abstract void leftMultByMatrix(double[] matrix, double[] result, double[] values, int numRows, int numCols,
-		int rl, int ru, int vOff);
+	public void leftMultByMatrix(double[] matrix, double[] result, double[] values, int numRows, int numCols, int rl,
+		int ru) {
+		int numVals = getNumValues();
+		for(int i = rl; i < ru; i++) {
+			double[] vals = preAggregate(matrix, i);
+			postScaling(values, vals, result, numVals, i, numCols);
+		}
+	}
+
+	@Override
+	public void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru) {
+		leftMultByMatrix(matrix, result, getValues(), numRows, numCols, rl, ru);
+	}
 
 	/**
 	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
@@ -1041,8 +1046,12 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param numCols The number of columns in the compression.
 	 * @param row     The row index of the sparse row to multiply with.
 	 */
-	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows,
-		int numCols, int row);
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows, int numCols,
+		int row) {
+		final int numVals = getNumValues();
+		double[] vals = preAggregateSparse(sb, row);
+		postScaling(values, vals, result, numVals, row, numCols);
+	}
 
 	public AColGroup rightMultByMatrix(MatrixBlock right) {
 		Pair<int[], double[]> pre = preaggValues(getNumValues(), right, getValues(), 0, right.getNumColumns(),

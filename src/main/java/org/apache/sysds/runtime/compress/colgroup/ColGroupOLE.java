@@ -588,61 +588,61 @@ public class ColGroupOLE extends ColGroupOffset {
 	// 	}
 	// }
 
-	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-		int vOff) {
-		final int numVals = getNumValues();
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		if(numVals >= 1 && _numRows > blksz)
-			leftMultByMatrixBlocking(a, c, values, numRows, numCols, rl, ru, vOff, numVals);
-		else
-			leftMultByMatrixNonBlocking(a, c, values, numRows, numCols, rl, ru, vOff, numVals);
+	// @Override
+	// public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
+	// 	int vOff) {
+	// 	final int numVals = getNumValues();
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	if(numVals >= 1 && _numRows > blksz)
+	// 		leftMultByMatrixBlocking(a, c, values, numRows, numCols, rl, ru, vOff, numVals);
+	// 	else
+	// 		leftMultByMatrixNonBlocking(a, c, values, numRows, numCols, rl, ru, vOff, numVals);
 
-	}
+	// }
 
-	private void leftMultByMatrixBlocking(double[] a, double[] c, double[] values, int numRows, int numCols, int rl,
-		int ru, int vOff, int numVals) {
-		for(int i = rl; i < ru; i++) {
-			double[] cvals = preAggregate(a, i);
-			postScaling(values, cvals, c, numVals, i, numCols);
-		}
-	}
+	// private void leftMultByMatrixBlocking(double[] a, double[] c, double[] values, int numRows, int numCols, int rl,
+	// 	int ru, int vOff, int numVals) {
+	// 	for(int i = rl; i < ru; i++) {
+	// 		double[] cvals = preAggregate(a, i);
+	// 		postScaling(values, cvals, c, numVals, i, numCols);
+	// 	}
+	// }
 
-	private void leftMultByMatrixNonBlocking(double[] a, double[] c, double[] values, int numRows, int numCols, int rl,
-		int ru, int vOff, int numVals) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		for(int i = rl, offR = vOff * _numRows; i < ru; i++, offR += _numRows) {
-			for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
-				int boff = _ptr[k];
-				int blen = len(k);
+	// private void leftMultByMatrixNonBlocking(double[] a, double[] c, double[] values, int numRows, int numCols, int rl,
+	// 	int ru, int vOff, int numVals) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	for(int i = rl, offR = vOff * _numRows; i < ru; i++, offR += _numRows) {
+	// 		for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
 
-				// iterate over bitmap blocks and add partial results
-				double vsum = 0;
-				for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
-					vsum += LinearAlgebraUtils.vectSum(a, _data, off + offR, boff + bix + 1, _data[boff + bix]);
+	// 			// iterate over bitmap blocks and add partial results
+	// 			double vsum = 0;
+	// 			for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
+	// 				vsum += LinearAlgebraUtils.vectSum(a, _data, off + offR, boff + bix + 1, _data[boff + bix]);
 
-				// scale partial results by values and write results
+	// 			// scale partial results by values and write results
 
-				int offC = i * numCols;
-				for(int j = 0; j < _colIndexes.length; j++) {
-					int colIx = _colIndexes[j] + offC;
-					c[colIx] += vsum * values[valOff + j];
-				}
-			}
-		}
-	}
+	// 			int offC = i * numCols;
+	// 			for(int j = 0; j < _colIndexes.length; j++) {
+	// 				int colIx = _colIndexes[j] + offC;
+	// 				c[colIx] += vsum * values[valOff + j];
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
-		// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		// final int numVals = getNumValues();
-		throw new NotImplementedException("Not implemented Sparse multiplication OLE");
-		// if(numVals > 1 && _numRows > blksz)
-		// 	leftMultBySparseMatrixBlocking(sb, c, values, numRows, numCols, row, tmpA, numVals);
-		// else
-		// 	leftMultBySparseMatrixNonBlock(sb, c, values, numRows, numCols, row, tmpA, numVals);
+	// @Override
+	// public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
+	// 	// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	// final int numVals = getNumValues();
+	// 	throw new NotImplementedException("Not implemented Sparse multiplication OLE");
+	// 	// if(numVals > 1 && _numRows > blksz)
+	// 	// 	leftMultBySparseMatrixBlocking(sb, c, values, numRows, numCols, row, tmpA, numVals);
+	// 	// else
+	// 	// 	leftMultBySparseMatrixNonBlock(sb, c, values, numRows, numCols, row, tmpA, numVals);
 
-	}
+	// }
 
 	// private void leftMultBySparseMatrixBlocking(SparseBlock sb, double[] c, double[] values, int numRows, int numCols,
 	// 	int row, double[] tmpA, int numVals) {

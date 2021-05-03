@@ -39,8 +39,6 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.SortUtils;
 
-import scala.reflect.macros.Infrastructure;
-
 /**
  * Column group type for columns that are stored as dense arrays of doubles. Uses a MatrixBlock internally to store the
  * column contents.
@@ -293,40 +291,35 @@ public class ColGroupUncompressed extends AColGroup {
 		LibMatrixMult.matrixMult(_data, subMatrix, result);
 	}
 
-	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru, int offT) {
-		if(offT != 0)
-			throw new NotImplementedException("not implemented Offset to output in UncompressedColGroup");
+	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
+
 		MatrixBlock tmpRet = new MatrixBlock(ru - rl, _data.getNumColumns(), false);
 		tmpRet.allocateDenseBlock();
 		MatrixBlock leftSlice = matrix.slice(rl, ru - 1, false);
-		LibMatrixMult.matrixMult(leftSlice, _data, tmpRet, rl, ru);
+		LibMatrixMult.matrixMult(leftSlice, _data, tmpRet);
+		int offT = numCols * rl;
+
 		if(tmpRet.isEmpty())
 			return;
 		if(tmpRet.isInSparseFormat()) {
 			SparseBlock sb = tmpRet.getSparseBlock();
-			for(int row = rl; row < ru; row++) {
-				if(!sb.isEmpty(row)) {
-					final int offOut = numCols * row;
-					final int apos = sb.pos(row);
-					final int alen = sb.size(row) + apos;
-					final int[] aix = sb.indexes(row);
-					final double[] avals = sb.values(row);
-					for(int col = apos; col < alen; col++) {
-						result[offOut + _colIndexes[aix[col]]] += avals[col];
-					}
+			for(int rowIdx = 0; rowIdx < ru-rl; rowIdx++,offT += numCols) {
+				if(!sb.isEmpty(rowIdx)) {
+					final int apos = sb.pos(rowIdx);
+					final int alen = sb.size(rowIdx) + apos;
+					final int[] aix = sb.indexes(rowIdx);
+					final double[] avals = sb.values(rowIdx);
+					for(int col = apos; col < alen; col++)
+						result[offT + _colIndexes[aix[col]]] += avals[col];
 				}
-
 			}
 		}
 		else {
 			double[] tmpRetV = tmpRet.getDenseBlockValues();
-			for(int j = rl, offTemp = 0; j < ru; j++, offTemp += tmpRet.getNumColumns()) {
-				final int offOut = numCols * j;
-				for(int i = 0; i < tmpRet.getNumColumns(); i++) {
-					result[offOut + _colIndexes[i]] += tmpRetV[offTemp + i];
-				}
+			for(int j = rl, offTemp = 0; j < ru; j++, offTemp += _colIndexes.length, offT += numCols){
+				for(int i = 0; i < _colIndexes.length; i++)
+					result[offT + _colIndexes[i]] += tmpRetV[offTemp + i];
 			}
-
 		}
 	}
 
@@ -567,9 +560,9 @@ public class ColGroupUncompressed extends AColGroup {
 	@Override
 	public AColGroup rightMultByMatrix(MatrixBlock right) {
 		int[] outputCols = new int[right.getNumColumns()];
-		for(int i = 0; i< outputCols.length; i++)
-			outputCols[i] = i; 
-		MatrixBlock out = new MatrixBlock(_data.getNumRows(),right.getNumColumns(),true);
+		for(int i = 0; i < outputCols.length; i++)
+			outputCols[i] = i;
+		MatrixBlock out = new MatrixBlock(_data.getNumRows(), right.getNumColumns(), true);
 		LibMatrixMult.matrixMult(_data, right, out, InfrastructureAnalyzer.getLocalParallelism());
 		return new ColGroupUncompressed(outputCols, out, false);
 	}

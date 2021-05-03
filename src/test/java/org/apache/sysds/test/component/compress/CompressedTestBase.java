@@ -127,9 +127,9 @@ public abstract class CompressedTestBase extends TestBase {
 		// .setInvestigateEstimate(true),
 
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("false")
-		.setInvestigateEstimate(true),
+			.setInvestigateEstimate(true),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
-		.setColumnPartitioner(PartitionerType.BIN_PACKING).setInvestigateEstimate(true),
+			.setColumnPartitioner(PartitionerType.BIN_PACKING).setInvestigateEstimate(true),
 
 		new CompressionSettingsBuilder().setValidCompressions(EnumSet.of(CompressionType.UNCOMPRESSED)),
 
@@ -659,18 +659,18 @@ public abstract class CompressedTestBase extends TestBase {
 			// Make Operator
 			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 
-			// vector-matrix compressed
-			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, _k)
-				.getLeft() : matrix;
-			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb).aggregateBinaryOperations(cmb, compMatrix,
-				new MatrixBlock(), abop, transposeLeft, transposeRight);
-
 			// vector-matrix uncompressed
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
 
 			MatrixBlock left = transposeLeft ? mb.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : mb;
 			MatrixBlock right = transposeRight ? matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : matrix;
 			MatrixBlock ret1 = right.aggregateBinaryOperations(left, right, new MatrixBlock(), abop);
+
+			// vector-matrix compressed
+			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, _k)
+				.getLeft() : matrix;
+			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb).aggregateBinaryOperations(cmb, compMatrix,
+				new MatrixBlock(), abop, transposeLeft, transposeRight);
 
 			compareResultMatrices(ret1, ret2, 100);
 		}
@@ -1057,28 +1057,28 @@ public abstract class CompressedTestBase extends TestBase {
 		}
 	}
 
-	protected void compareResultMatrices(double[][] d1, double[][] d2, double toleranceMultiplier) {
+	protected void compareResultMatrices(double[][] expected, double[][] result, double toleranceMultiplier) {
 		if(compressionSettings.lossy)
-			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString());
+			TestUtils.compareMatricesPercentageDistance(expected, result, 0.25, 0.83, this.toString());
 		else if(overlappingType == OverLapping.SQUASH)
-			TestUtils.compareMatrices(d1, d2, lossyTolerance * toleranceMultiplier * 1.3, this.toString());
+			TestUtils.compareMatrices(expected, result, lossyTolerance * toleranceMultiplier * 1.3, this.toString());
 		else if(rows > 65000)
-			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
+			TestUtils.compareMatricesPercentageDistance(expected, result, 0.99, 0.99, this.toString());
 		else if(OverLapping.effectOnOutput(overlappingType))
-			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
+			TestUtils.compareMatricesPercentageDistance(expected, result, 0.99, 0.99, this.toString());
 		else
-			TestUtils.compareMatricesBitAvgDistance(d1, d2, (long) (27000 * toleranceMultiplier), 1024,
+			TestUtils.compareMatricesBitAvgDistance(expected, result, (long) (27000 * toleranceMultiplier), 1024,
 				this.toString());
 
 	}
 
-	protected void compareResultMatrices(MatrixBlock ret1, MatrixBlock ret2, double toleranceMultiplier) {
-		if(ret2 instanceof CompressedMatrixBlock)
-			ret2 = ((CompressedMatrixBlock) ret2).decompress();
+	protected void compareResultMatrices(MatrixBlock expected, MatrixBlock result, double toleranceMultiplier) {
+		if(result instanceof CompressedMatrixBlock)
+			result = ((CompressedMatrixBlock) result).decompress();
 
 		// compare result with input
-		double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-		double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+		double[][] d1 = DataConverter.convertToDoubleMatrix(expected);
+		double[][] d2 = DataConverter.convertToDoubleMatrix(result);
 		compareResultMatrices(d1, d2, toleranceMultiplier);
 	}
 

@@ -233,22 +233,22 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		return _data.getIndex(r);
 	}
 
-	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-		int voff) {
-		final int numVals = values.length / _colIndexes.length;
-		for(int i = rl, j = voff; i < ru; i++, j++) {
-			double[] vals = preAggregate(a, j);
-			postScaling(values, vals, c, numVals, i, numCols);
-		}
-	}
+	// @Override
+	// public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
+	// 	int voff) {
+	// 	final int numVals = values.length / _colIndexes.length;
+	// 	for(int i = rl, j = voff; i < ru; i++, j++) {
+	// 		double[] vals = preAggregate(a, j);
+	// 		postScaling(values, vals, c, numVals, i, numCols);
+	// 	}
+	// }
 
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
-		final int numVals = values.length / _colIndexes.length;
-		double[] vals = preAggregateSparse(sb, row);
-		postScaling(values, vals, c, numVals, row, numCols);
-	}
+	// @Override
+	// public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
+	// 	final int numVals = values.length / _colIndexes.length;
+	// 	double[] vals = preAggregateSparse(sb, row);
+	// 	postScaling(values, vals, c, numVals, row, numCols);
+	// }
 
 	@Override
 	public double[] preAggregate(double[] a, int aRows) {

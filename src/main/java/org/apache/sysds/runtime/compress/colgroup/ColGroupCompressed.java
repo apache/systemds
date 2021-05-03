@@ -89,11 +89,11 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	protected abstract boolean sameIndexStructure(ColGroupCompressed that);
 
-	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru, int offT) {
+	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
 		if(matrix.isInSparseFormat())
 			leftMultBySparseMatrix(matrix.getSparseBlock(), result, matrix.getNumRows(), numCols, rl, ru);
 		else {
-			leftMultByMatrix(matrix.getDenseBlockValues(), result, matrix.getNumRows(), numCols, rl, ru, 0);
+			leftMultByMatrix(matrix.getDenseBlockValues(), result, matrix.getNumRows(), numCols, rl, ru);
 		}
 	}
 
@@ -106,10 +106,8 @@ public abstract class ColGroupCompressed extends AColGroup {
 	 * @param numCols The number of columns in the colGroups parent matrix.
 	 * @param rl      The row to start the matrix multiplication from
 	 * @param ru      The row to stop the matrix multiplication at.
-	 * @param vOff    The offset into the first argument matrix to start at.
 	 */
-	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru,
-		int vOff);
+	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru);
 
 	/**
 	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result

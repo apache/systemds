@@ -146,7 +146,7 @@ public class CLALibLeftMultBy {
 		double[] outValues = result.getDenseBlockValues();
 		for(AColGroup g : groups)
 			g.tsmm(outValues, numColumns);
-		
+
 	}
 
 	private static MatrixBlock leftMultByCompressedTransposedMatrix(List<AColGroup> colGroups,
@@ -270,14 +270,14 @@ public class CLALibLeftMultBy {
 				if(overlapping) {
 					for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize) {
 						tasks.add(new LeftMatrixMatrixMultTask(colGroups, that, retV, numColumns, blo,
-							Math.min(blo + rowBlockSize, that.getNumRows()), blo , v));
+							Math.min(blo + rowBlockSize, that.getNumRows()), v));
 					}
 				}
 				else {
 					for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize) {
 						for(AColGroup g : colGroups) {
 							tasks.add(new LeftMatrixColGroupMultTask(g, that, retV, numColumns, blo,
-								Math.min(blo + rowBlockSize, that.getNumRows()), blo, v));
+								Math.min(blo + rowBlockSize, that.getNumRows()), v));
 						}
 					}
 				}
@@ -292,8 +292,6 @@ public class CLALibLeftMultBy {
 				throw new DMLRuntimeException(e);
 			}
 		}
-		// blockL += blockSize;
-		// }
 		ret.recomputeNonZeros();
 		return ret;
 	}
@@ -422,18 +420,16 @@ public class CLALibLeftMultBy {
 		private final int _numCols;
 		private final int _rl;
 		private final int _ru;
-		private final int _vOff;
 		private final Pair<Integer, int[]> _v;
 
 		protected LeftMatrixMatrixMultTask(List<AColGroup> group, MatrixBlock that, double[] ret, int numCols, int rl,
-			int ru, int vOff, Pair<Integer, int[]> v) {
+			int ru, Pair<Integer, int[]> v) {
 			_group = group;
 			_that = that;
 			_ret = ret;
 			_numCols = numCols;
 			_rl = rl;
 			_ru = ru;
-			_vOff = vOff;
 			_v = v;
 		}
 
@@ -447,10 +443,8 @@ public class CLALibLeftMultBy {
 			}
 			try {
 				ColGroupValue.setupThreadLocalMemory(_v.getLeft() + 1);
-				for(int j = 0; j < _group.size(); j++) {
-					_group.get(j).leftMultByMatrix(_that, _ret, _numCols, _rl, _ru, _vOff);
-				}
-
+				for(int j = 0; j < _group.size(); j++) 
+					_group.get(j).leftMultByMatrix(_that, _ret, _numCols, _rl, _ru);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);
@@ -466,18 +460,16 @@ public class CLALibLeftMultBy {
 		private final int _numCols;
 		private final int _rl;
 		private final int _ru;
-		private final int _vOff;
 		private final Pair<Integer, int[]> _v;
 
 		protected LeftMatrixColGroupMultTask(AColGroup group, MatrixBlock that, double[] ret, int numCols, int rl,
-			int ru, int vOff, Pair<Integer, int[]> v) {
+			int ru, Pair<Integer, int[]> v) {
 			_group = group;
 			_that = that;
 			_ret = ret;
 			_numCols = numCols;
 			_rl = rl;
 			_ru = ru;
-			_vOff = vOff;
 			_v = v;
 		}
 
@@ -486,7 +478,7 @@ public class CLALibLeftMultBy {
 
 			try {
 				ColGroupValue.setupThreadLocalMemory(_v.getLeft() + 1);
-				_group.leftMultByMatrix(_that, _ret, _numCols, _rl, _ru, _vOff);
+				_group.leftMultByMatrix(_that, _ret, _numCols, _rl, _ru);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);

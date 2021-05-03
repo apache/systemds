@@ -594,23 +594,8 @@ public abstract class AColGroup implements Serializable {
 	 * @param rl      The row to begin the multiplication from
 	 * @param ru      The row to end the multiplication at.
 	 */
-	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
-		leftMultByMatrix(matrix, result, numCols, rl, ru, 0);
-	}
+	public abstract void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru);
 
-	/**
-	 * Left multiply with this column group.
-	 * 
-	 * @param matrix  The matrix to multiply with on the left
-	 * @param result  The result to output the values into, always dense for the purpose of the column groups
-	 *                parallelizing
-	 * @param numCols The number of columns contained in the CompressedMatrixBlock that this column group is inside.
-	 * @param rl      The row to begin the multiplication from
-	 * @param ru      The row to end the multiplication at.
-	 * @param offT    A offset into the result matrix to allocate the results into. This enable one to do multiplication
-	 *                and only allocate a subset of the output matrix
-	 */
-	public abstract void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru, int offT);
 
 	/**
 	 * Left side matrix multiplication with a column group that is transposed.

@@ -125,7 +125,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] a, double[] c, int numRows, int numCols, int rl, int ru, int vOff) {
+	public void leftMultByMatrix(double[] a, double[] c, int numRows, int numCols, int rl, int ru) {
 		// do nothing.
 	}
 

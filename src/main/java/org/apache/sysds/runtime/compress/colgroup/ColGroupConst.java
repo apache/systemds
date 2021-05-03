@@ -237,8 +237,7 @@ public class ColGroupConst extends ColGroupValue {
 	// }
 
 	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-			int vOff) {
+	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru) {
 		for (int i = rl; i < ru; i++) {
 			double preAggVals = preAggregateSingle(a, i);
 			int offC = i * numCols;

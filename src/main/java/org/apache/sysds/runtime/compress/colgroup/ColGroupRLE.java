@@ -536,82 +536,82 @@ public class ColGroupRLE extends ColGroupOffset {
 	// 	}
 	// }
 
-	@Override
-	public void leftMultByMatrix(final double[] a, final double[] c, final double[] values, final int numRows,
-		final int numCols, int rl, final int ru, final int vOff) {
+	// @Override
+	// public void leftMultByMatrix(final double[] a, final double[] c, final double[] values, final int numRows,
+	// 	final int numCols, int rl, final int ru, final int vOff) {
 
-		final int numVals = getNumValues();
-		if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
-			for(int i = rl; i < ru; i++) {
-				double[] cvals = preAggregate(a, i);
-				postScaling(values, cvals, c, numVals, i, numCols);
-			}
-		}
-		else {
-			// iterate over all values and their bitmaps
-			for(int i = rl, off = vOff * _numRows; i < ru; i++, off += _numRows) {
-				int offC = i * numCols;
-				int valOff = 0;
-				for(int k = 0; k < numVals; k++) {
-					int boff = _ptr[k];
-					int blen = len(k);
+	// 	final int numVals = getNumValues();
+	// 	if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
+	// 		for(int i = rl; i < ru; i++) {
+	// 			double[] cvals = preAggregate(a, i);
+	// 			postScaling(values, cvals, c, numVals, i, numCols);
+	// 		}
+	// 	}
+	// 	else {
+	// 		// iterate over all values and their bitmaps
+	// 		for(int i = rl, off = vOff * _numRows; i < ru; i++, off += _numRows) {
+	// 			int offC = i * numCols;
+	// 			int valOff = 0;
+	// 			for(int k = 0; k < numVals; k++) {
+	// 				int boff = _ptr[k];
+	// 				int blen = len(k);
 
-					double vsum = 0;
-					int curRunEnd = 0;
-					for(int bix = 0; bix < blen; bix += 2) {
-						int curRunStartOff = curRunEnd + _data[boff + bix];
-						int curRunLen = _data[boff + bix + 1];
-						vsum += LinearAlgebraUtils.vectSum(a, curRunStartOff + off, curRunLen);
-						curRunEnd = curRunStartOff + curRunLen;
-					}
+	// 				double vsum = 0;
+	// 				int curRunEnd = 0;
+	// 				for(int bix = 0; bix < blen; bix += 2) {
+	// 					int curRunStartOff = curRunEnd + _data[boff + bix];
+	// 					int curRunLen = _data[boff + bix + 1];
+	// 					vsum += LinearAlgebraUtils.vectSum(a, curRunStartOff + off, curRunLen);
+	// 					curRunEnd = curRunStartOff + curRunLen;
+	// 				}
 
-					for(int j = 0; j < _colIndexes.length; j++) {
-						int colIx = _colIndexes[j] + offC;
-						// scale partial results by values and write results
-						c[colIx] += vsum * values[valOff++];
-					}
-				}
-			}
-		}
-	}
+	// 				for(int j = 0; j < _colIndexes.length; j++) {
+	// 					int colIx = _colIndexes[j] + offC;
+	// 					// scale partial results by values and write results
+	// 					c[colIx] += vsum * values[valOff++];
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
+	// @Override
+	// public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
 
-		final int numVals = getNumValues();
-		int sparseEndIndex = sb.size(row) + sb.pos(row);
-		int[] indexes = sb.indexes(row);
-		double[] sparseV = sb.values(row);
-		for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
-			int boff = _ptr[k];
-			int blen = len(k);
+	// 	final int numVals = getNumValues();
+	// 	int sparseEndIndex = sb.size(row) + sb.pos(row);
+	// 	int[] indexes = sb.indexes(row);
+	// 	double[] sparseV = sb.values(row);
+	// 	for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
+	// 		int boff = _ptr[k];
+	// 		int blen = len(k);
 
-			double vsum = 0;
-			int pointSparse = sb.pos(row);
-			int curRunEnd = 0;
-			for(int bix = 0; bix < blen; bix += 2) {
-				int curRunStartOff = curRunEnd + _data[boff + bix];
-				int curRunLen = _data[boff + bix + 1];
-				curRunEnd = curRunStartOff + curRunLen;
-				while(pointSparse < sparseEndIndex && indexes[pointSparse] < curRunStartOff) {
-					pointSparse++;
-				}
-				while(pointSparse != sparseEndIndex && indexes[pointSparse] >= curRunStartOff &&
-					indexes[pointSparse] < curRunEnd) {
-					vsum += sparseV[pointSparse++];
-				}
-				if(pointSparse == sparseEndIndex) {
-					break;
-				}
-			}
+	// 		double vsum = 0;
+	// 		int pointSparse = sb.pos(row);
+	// 		int curRunEnd = 0;
+	// 		for(int bix = 0; bix < blen; bix += 2) {
+	// 			int curRunStartOff = curRunEnd + _data[boff + bix];
+	// 			int curRunLen = _data[boff + bix + 1];
+	// 			curRunEnd = curRunStartOff + curRunLen;
+	// 			while(pointSparse < sparseEndIndex && indexes[pointSparse] < curRunStartOff) {
+	// 				pointSparse++;
+	// 			}
+	// 			while(pointSparse != sparseEndIndex && indexes[pointSparse] >= curRunStartOff &&
+	// 				indexes[pointSparse] < curRunEnd) {
+	// 				vsum += sparseV[pointSparse++];
+	// 			}
+	// 			if(pointSparse == sparseEndIndex) {
+	// 				break;
+	// 			}
+	// 		}
 
-			for(int j = 0; j < _colIndexes.length; j++) {
-				int Voff = _colIndexes[j] + row * numCols;
-				c[Voff] += vsum * values[valOff + j];
-			}
-		}
+	// 		for(int j = 0; j < _colIndexes.length; j++) {
+	// 			int Voff = _colIndexes[j] + row * numCols;
+	// 			c[Voff] += vsum * values[valOff + j];
+	// 		}
+	// 	}
 
-	}
+	// }
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
